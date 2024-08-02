@@ -30,7 +30,7 @@ public class ClassCharacter extends Name {
     @Enumerated(EnumType.STRING)
     private Dice hitDice;
 
-    @OneToMany
+    @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
     private Collection<ClassFeature> features;
 }

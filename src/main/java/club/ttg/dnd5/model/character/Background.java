@@ -1,9 +1,12 @@
 package club.ttg.dnd5.model.character;
 
+import club.ttg.dnd5.dictionary.Ability;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -20,5 +23,8 @@ public class Background {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    private Set<Ability> abilities;
 
 }
