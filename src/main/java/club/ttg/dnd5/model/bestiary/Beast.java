@@ -1,10 +1,15 @@
 package club.ttg.dnd5.model.bestiary;
 
+import club.ttg.dnd5.dictionary.Alignment;
+import club.ttg.dnd5.dictionary.Size;
+import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.model.Name;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Collection;
 
 @Getter
 @Setter
@@ -21,4 +26,17 @@ public class Beast extends Name {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    private Size size;
+    @Enumerated(EnumType.STRING)
+    private CreatureType type;
+    private String tags;
+    @Enumerated(EnumType.STRING)
+    private Alignment alignment;
+
+    private byte AC;
+    private String textAC;
+
+    private short hit;
 }
