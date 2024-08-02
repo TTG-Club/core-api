@@ -3,7 +3,6 @@ package club.ttg.dnd5.model.bestiary;
 import club.ttg.dnd5.dictionary.Alignment;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
-import club.ttg.dnd5.model.Name;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,12 +16,18 @@ import java.util.Collection;
 
 @Entity
 @Table(name = "bestiary")
-public class Beast extends Name {
+public class Beast  {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @Column(nullable = false, unique = true)
     private String url;
+
+    @Column(nullable = false)
+    private String name;
+    @Column(nullable = false)
+    private String english;
+    private String alternative;
 
     @Column(columnDefinition = "TEXT")
     private String description;

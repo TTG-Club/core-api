@@ -2,6 +2,7 @@ package club.ttg.dnd5.config;
 
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,25 +35,16 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
 
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(request -> {
-                var corsConfiguration = new CorsConfiguration();
-                corsConfiguration.setAllowedOriginPatterns(List.of("*"));
-                corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                corsConfiguration.setAllowedHeaders(List.of("*"));
-                corsConfiguration.setAllowCredentials(true);
-                return corsConfiguration;
-            }))
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(this::getCorsConfigurer))
             .authorizeHttpRequests(request -> request
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers(
-                        "/swagger-ui/**",
-                        "/swagger-resources/*",
-                        "/v3/api-docs/**")
-                    .permitAll()
+                .requestMatchers("/**").permitAll()
                 .anyRequest().authenticated()
             )
-            .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS));
+            .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
+            .authenticationProvider(authenticationProvider());
+        http.httpBasic(AbstractHttpConfigurer::disable);
         return http.build();
     }
 
@@ -67,5 +59,19 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
+    }
+
+    CorsConfiguration getCorsConfigurer(final HttpServletRequest httpServletRequest) {
+        var corsConfiguration = new CorsConfiguration();
+        corsConfiguration.setAllowedOrigins(
+                List.of(
+                        "https://ttg.club/",
+                        "https://dev.ttg.club/"
+                )
+        );
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedHeaders(List.of("*"));
+        corsConfiguration.setAllowCredentials(true);
+        return corsConfiguration;
     }
 }

@@ -11,14 +11,22 @@ import lombok.Setter;
 
 
 @Entity
-@Table(name = "traits")
+@Table(name = "traits",
+        indexes = {@Index(name = "idx_url", columnList = "url")}
+)
 public class Trait {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @Column(nullable = false, unique = true)
     private String url;
+
+    @Column(nullable = false)
+    private String name;
+    @Column(nullable = false)
+    private String english;
+    private String alternative;
+
     @Column(columnDefinition = "TEXT")
     private String description;
-
 }
