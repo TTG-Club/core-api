@@ -6,6 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @NoArgsConstructor
-@RequestMapping("/api/v2/item")
-public class ItemController {
+@RequestMapping("/api/v2/armor")
+public class ArmorController {
 }

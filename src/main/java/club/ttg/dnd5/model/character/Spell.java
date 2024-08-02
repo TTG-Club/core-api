@@ -1,6 +1,5 @@
 package club.ttg.dnd5.model.character;
 
-import club.ttg.dnd5.model.Name;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 
 @Entity
-@Table(name = "classes")
-public class ClassCharacter extends Name {
+@Table(name = "spells")
+public class Spell {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
