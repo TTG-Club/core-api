@@ -9,9 +9,12 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 
+/**
+  Виды или разновидности (расы)
+ */
 @Entity
-@Table(name = "types")
-public class Type {
+@Table(name = "species")
+public class Specie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -19,5 +22,4 @@ public class Type {
     private String url;
     @Column(columnDefinition = "TEXT")
     private String description;
-
 }
