@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -38,4 +39,11 @@ public class ClassCharacter {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
     private Collection<ClassFeature> features;
+
+    @ManyToOne(cascade = { CascadeType.ALL })
+    @JoinColumn(name = "parent_id")
+    private ClassCharacter parent;
+
+    @OneToMany(mappedBy = "parent", orphanRemoval = true)
+    private Collection<ClassCharacter> subClasses;
 }
