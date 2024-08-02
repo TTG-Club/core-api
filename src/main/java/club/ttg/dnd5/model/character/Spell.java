@@ -17,4 +17,6 @@ public class Spell {
     private Integer id;
     @Column(nullable = false, unique = true)
     private String url;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }
