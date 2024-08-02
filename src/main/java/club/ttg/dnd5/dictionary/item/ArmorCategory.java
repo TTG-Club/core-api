@@ -10,13 +10,14 @@ public enum ArmorCategory {
 	MEDIUM("Средний доспех", "5 минут", "1 минута"),
 	HEAVY("Тяжелый доспех", "10 минут", "5 минут"),
 	SHIELD("Щит", "1 действие", "1 действие");
-	private String name;
+
+	private final String name;
 	/**
 	 * Время надевания
 	 */
-	private String putting;
+	private final String putting;
 	/**
 	 * Время снятия
 	 */
-	private String removal;
+	private final String removal;
 }

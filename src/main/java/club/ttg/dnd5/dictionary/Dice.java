@@ -23,9 +23,9 @@ public enum Dice {
 	d3(3),
 	d2(2);
 
-	private static Random rnd = new Random();
+	private static final Random rnd = new Random();
 
-	private int maxValue;
+	private final int maxValue;
 	
 	public int roll() {
 		return 1 + rnd.nextInt(this.getMaxValue());
