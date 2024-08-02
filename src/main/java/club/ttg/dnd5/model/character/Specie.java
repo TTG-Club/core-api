@@ -5,13 +5,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collection;
+
+/**
+ Виды или разновидности (расы)
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 
-/**
-  Виды или разновидности (расы)
- */
 @Entity
 @Table(name = "species",
         indexes = {@Index(name = "url_index", columnList = "url")}
@@ -31,4 +33,11 @@ public class Specie {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @ManyToOne(cascade = { CascadeType.ALL })
+    @JoinColumn(name = "parent_id")
+    private Specie parent;
+
+    @OneToMany(mappedBy = "parent", orphanRemoval = true)
+    private Collection<Specie> subSpecies;
 }
