@@ -29,7 +29,10 @@ public enum Rarity {
 	private final int baseCost;
 
 	public static Rarity parse(String value) {
-		return Arrays.stream(values()).filter(f -> f.getName().equals(value)).findFirst().orElseThrow(IllegalArgumentException::new);
+		return Arrays.stream(values())
+				.filter(f -> f.getName().equals(value))
+				.findFirst()
+				.orElseThrow(IllegalArgumentException::new);
 	}
 
 	public String getName() {
