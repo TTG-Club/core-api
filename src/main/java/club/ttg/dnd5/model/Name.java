@@ -1,4 +1,4 @@
-package club.ttg.dnd5.model.character;
+package club.ttg.dnd5.model;
 
 import jakarta.persistence.Column;
 import lombok.Getter;

@@ -1,6 +1,5 @@
 package club.ttg.dnd5.model.character;
 
-import club.ttg.dnd5.model.Name;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,9 +9,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 
+
 @Entity
-@Table(name = "classes")
-public class ClassCharacter extends Name {
+@Table(name = "traits")
+public class Trait {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

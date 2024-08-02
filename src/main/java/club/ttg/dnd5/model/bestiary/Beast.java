@@ -1,4 +1,4 @@
-package club.ttg.dnd5.model.character;
+package club.ttg.dnd5.model.bestiary;
 
 import club.ttg.dnd5.model.Name;
 import jakarta.persistence.*;
@@ -11,8 +11,8 @@ import lombok.Setter;
 @NoArgsConstructor
 
 @Entity
-@Table(name = "classes")
-public class ClassCharacter extends Name {
+@Table(name = "bestiary")
+public class Beast extends Name {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
