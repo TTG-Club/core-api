@@ -4,7 +4,6 @@ import club.ttg.dnd5.model.engie.Menu;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,19 +12,18 @@ import java.util.stream.Collectors;
 
 @NoArgsConstructor
 @Getter
-@Setter
-public class MenuRequest {
+public class MenuResponse {
     private String name;
     private String icon;
     private String url;
     private Boolean onlyDev;
     private Boolean external;
-    private List<MenuRequest> children;
+    private List<MenuResponse> children;
     private int order;
     private Boolean onIndex;
     private Integer indexOrder;
 
-    public MenuRequest(Menu menu) {
+    public MenuResponse(Menu menu) {
         name = menu.getName();
         order = menu.getOrder();
 
@@ -56,7 +54,7 @@ public class MenuRequest {
         if (!menu.getChildren().isEmpty()) {
             children = menu.getChildren()
                     .stream()
-                    .map(MenuRequest::new)
+                    .map(MenuResponse::new)
                     .collect(Collectors.toList());
         }
     }

@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,4 +37,9 @@ public class ClassFeature {
     @JoinColumn(name = "source")
     private Source source;
     private Short page;
+
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime created;
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime lastUpdated;
 }
