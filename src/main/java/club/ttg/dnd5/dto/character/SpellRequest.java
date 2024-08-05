@@ -4,8 +4,8 @@ import club.ttg.dnd5.dto.NameDto;
 import lombok.Builder;
 import lombok.Getter;
 
-@Getter
 @Builder
+@Getter
 public class SpellRequest {
     private NameDto name;
 }

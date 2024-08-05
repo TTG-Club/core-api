@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -53,4 +54,9 @@ public class ClassCharacter {
     @JoinColumn(name = "source")
     private Source source;
     private Short page;
+
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime created;
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime lastUpdated;
 }
