@@ -3,6 +3,7 @@ package club.ttg.dnd5.model.bestiary;
 import club.ttg.dnd5.dictionary.Alignment;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,7 +42,13 @@ public class Beast  {
     private Alignment alignment;
 
     private byte AC;
-    private String textAC;
+    private String descriptionAC;
 
     private short hit;
+    private String descriptionHit;
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Source source;
+    private Short page;
 }

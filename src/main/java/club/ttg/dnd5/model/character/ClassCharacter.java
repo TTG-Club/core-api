@@ -1,6 +1,7 @@
 package club.ttg.dnd5.model.character;
 
 import club.ttg.dnd5.dictionary.Dice;
+import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,7 @@ public class ClassCharacter {
     @Column(nullable = false)
     private String english;
     private String alternative;
+    private String genetive;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -46,4 +48,9 @@ public class ClassCharacter {
 
     @OneToMany(mappedBy = "parent", orphanRemoval = true)
     private Collection<ClassCharacter> subClasses;
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Source source;
+    private Short page;
 }
