@@ -1,6 +1,7 @@
 package club.ttg.dnd5.model.character;
 
 import club.ttg.dnd5.dictionary.Ability;
+import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,4 +36,8 @@ public class Background {
     @Enumerated(EnumType.STRING)
     private Set<Ability> abilities;
 
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Source source;
+    private Short page;
 }

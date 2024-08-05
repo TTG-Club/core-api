@@ -1,5 +1,6 @@
 package club.ttg.dnd5.model.character;
 
+import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,4 +41,9 @@ public class Specie {
 
     @OneToMany(mappedBy = "parent", orphanRemoval = true)
     private Collection<Specie> subSpecies;
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Source source;
+    private Short page;
 }
