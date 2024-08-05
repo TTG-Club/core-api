@@ -14,18 +14,18 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @Getter
 @Setter
-public class MenuDto {
+public class MenuRequest {
     private String name;
     private String icon;
     private String url;
     private Boolean onlyDev;
     private Boolean external;
-    private List<MenuDto> children;
+    private List<MenuRequest> children;
     private int order;
     private Boolean onIndex;
     private Integer indexOrder;
 
-    public MenuDto(Menu menu) {
+    public MenuRequest(Menu menu) {
         name = menu.getName();
         order = menu.getOrder();
 
@@ -56,7 +56,7 @@ public class MenuDto {
         if (!menu.getChildren().isEmpty()) {
             children = menu.getChildren()
                     .stream()
-                    .map(MenuDto::new)
+                    .map(MenuRequest::new)
                     .collect(Collectors.toList());
         }
     }

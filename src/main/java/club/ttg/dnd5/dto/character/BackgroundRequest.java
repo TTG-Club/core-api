@@ -1,11 +1,11 @@
 package club.ttg.dnd5.dto.character;
 
 import club.ttg.dnd5.dto.NameDto;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
-@Builder
-public class ClassResponse {
+@Setter
+public class BackgroundRequest {
     private NameDto name;
 }
