@@ -6,6 +6,6 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ClassResponse {
+public class SpellRequest {
     private NameDto name;
 }

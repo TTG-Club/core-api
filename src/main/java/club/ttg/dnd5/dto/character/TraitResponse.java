@@ -6,6 +6,6 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ClassResponse {
+public class TraitResponse {
     private NameDto name;
 }
