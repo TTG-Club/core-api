@@ -14,10 +14,10 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = "traits",
+@Table(name = "feats",
         indexes = {@Index(name = "idx_url", columnList = "url")}
 )
-public class Trait {
+public class Feat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
