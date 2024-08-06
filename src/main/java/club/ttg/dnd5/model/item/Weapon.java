@@ -32,7 +32,6 @@ public class Weapon {
 
     @ManyToOne
     @JoinColumn(name = "source")
-    @Column(nullable = false)
     private Source source;
     private Short page;
 

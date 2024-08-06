@@ -16,8 +16,6 @@ import java.time.LocalDateTime;
 @Table(name = "armors")
 public class Armor {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
     @Column(nullable = false, unique = true)
     private String url;
 

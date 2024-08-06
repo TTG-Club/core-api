@@ -22,8 +22,6 @@ import java.util.List;
 public class ClassCharacter {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    @Column(nullable = false, unique = true)
     private String url;
 
     @Column(nullable = false)
