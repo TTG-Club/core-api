@@ -1,6 +1,8 @@
 package club.ttg.dnd5.model.character;
 
+import club.ttg.dnd5.dictionary.Ability;
 import club.ttg.dnd5.dictionary.Dice;
+import club.ttg.dnd5.dictionary.Skill;
 import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -9,6 +11,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -37,6 +40,24 @@ public class ClassCharacter {
 
     @Enumerated(EnumType.STRING)
     private Dice hitDice;
+
+    @Column(columnDefinition = "TEXT")
+    private String equipment;
+    private String armorMastery;
+    private String weaponMastery;
+    private String toolMastery;
+
+    @ElementCollection(targetClass = Ability.class)
+    @JoinTable(name = "class_saving_throw_abilities", joinColumns = @JoinColumn(name = "class_url"))
+    @Column(name = "ability", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Set<Ability> savingThrowMastery;
+
+    @ElementCollection(targetClass = Skill.class)
+    @JoinTable(name = "class_available_skills", joinColumns = @JoinColumn(name = "class_url"))
+    @Column(name = "skill", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Set<Skill> availableSkills;
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
