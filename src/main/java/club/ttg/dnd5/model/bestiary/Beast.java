@@ -20,8 +20,6 @@ import java.util.Collection;
 @Table(name = "bestiary")
 public class Beast  {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
     @Column(nullable = false, unique = true)
     private String url;
 

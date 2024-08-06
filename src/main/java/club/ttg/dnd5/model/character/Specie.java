@@ -22,8 +22,6 @@ import java.util.Collection;
 )
 public class Specie {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
     @Column(nullable = false, unique = true)
     private String url;
 
