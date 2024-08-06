@@ -58,13 +58,22 @@ public class ClassCharacter {
     @Column(name = "skill", nullable = false)
     @Enumerated(EnumType.STRING)
     private Set<Skill> availableSkills;
+    private short skillAvailable;
+
+    @OneToMany()
+    @JoinColumn(name = "class_url")
+    private Collection<ClassSpellLeves> classSpellLevels;
+
+    @OneToMany()
+    @JoinColumn(name = "class_url")
+    private Collection<ClassFeatureLevels> featureLevels;
 
     @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id")
+    @JoinColumn(name = "class_url")
     private Collection<ClassFeature> features;
 
     @ManyToOne(cascade = { CascadeType.ALL })
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "parent_url")
     private ClassCharacter parent;
 
     @OneToMany(mappedBy = "parent", orphanRemoval = true)

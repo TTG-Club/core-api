@@ -15,8 +15,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SearchDto {
-	@Schema(description = "строка поиска", example = "search")
+	@Schema(description = "строка поиска", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private String value;
-	@Schema(description = "true если нужно точное совпадение", example = "false")
+	@Schema(description = "true если нужно точное совпадение", example = "false", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private Boolean exact;
 }

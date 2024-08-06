@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 @JsonInclude(Include.NON_NULL)
@@ -21,12 +21,13 @@ public class SearchRequest {
     public Integer page;
 	@Schema(description = "размер страницы", defaultValue = "10")
     public Integer size = -1;
-	@Schema(description = "поисковый запрос", defaultValue = "null")
+	@Schema(description = "поисковый запрос")
     public SearchDto search;
-    @Schema(description = "фильтры", defaultValue = "null")
+
+    @Schema(description = "фильтры")
     public Map<String, FilterDto> filters;
 
-	@Schema(description = "сортировка", defaultValue = "null")
+	@Schema(description = "сортировка")
     @JsonProperty("order")
-    public List<OrderDto> orders;
+    public Collection<OrderDto> orders;
 }

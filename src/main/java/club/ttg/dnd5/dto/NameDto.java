@@ -16,6 +16,6 @@ public class NameDto {
     private String rus;
     @Schema(description = "имя по английски", requiredMode = Schema.RequiredMode.REQUIRED)
     private String eng;
-    @Schema(description = "альтернативное имя")
+    @Schema(description = "альтернативное имя", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String alt;
 }
