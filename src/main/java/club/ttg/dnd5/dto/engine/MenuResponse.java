@@ -1,6 +1,6 @@
 package club.ttg.dnd5.dto.engine;
 
-import club.ttg.dnd5.model.engie.Menu;
+import club.ttg.dnd5.model.engine.Menu;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

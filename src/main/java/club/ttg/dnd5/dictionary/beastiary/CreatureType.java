@@ -9,14 +9,14 @@ import java.util.Set;
  * Типы существ из бестиария
  */
 public enum CreatureType {
-	ABERRATION("аберрация"), // 0
-	BEAST("зверь"), // 1
-	CELESTIAL("небожитель"), // 2
-	CONSTRUCT("конструкт"), // 3
-	DRAGON("дракон"), // 4
-	ELEMENTAL("элементаль"), // 5
-	FEY("фея", "фей"), // 6
-	FIEND("исчадие"), // 7
+	ABERRATION("аберрация"),
+	BEAST("зверь"),
+	CELESTIAL("небожитель"),
+	CONSTRUCT("конструкт"),
+	DRAGON("дракон"),
+	ELEMENTAL("элементаль"),
+	FEY("фея", "фей"),
+	FIEND("исчадие"),
 	GIANT("великан", "гигант"),
 	HUMANOID("гуманоид"),
 	MONSTROSITY("монстр", "чудовище"),

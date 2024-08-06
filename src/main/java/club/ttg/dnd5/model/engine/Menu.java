@@ -1,4 +1,4 @@
-package club.ttg.dnd5.model.engie;
+package club.ttg.dnd5.model.engine;
 
 import jakarta.persistence.*;
 import lombok.Getter;
