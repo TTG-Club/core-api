@@ -9,7 +9,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.List;
 
 @Getter
 @Setter
@@ -17,11 +16,13 @@ import java.util.List;
 
 @Entity
 @Table(name = "classes",
-        indexes = {@Index(name = "url_index", columnList = "url")}
+        indexes = {
+            @Index(name = "url_index", columnList = "url")
+        }
 )
 public class ClassCharacter {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false, unique = true)
     private String url;
 
     @Column(nullable = false)

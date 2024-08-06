@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 
-
 @Entity
 @Table(name = "feats",
         indexes = {@Index(name = "idx_url", columnList = "url")}
