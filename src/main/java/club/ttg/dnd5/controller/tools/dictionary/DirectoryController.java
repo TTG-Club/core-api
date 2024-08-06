@@ -7,6 +7,7 @@ import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.Condition;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dictionary.beastiary.Environment;
+import club.ttg.dnd5.dictionary.character.FeatType;
 import club.ttg.dnd5.dto.NameDto;
 import club.ttg.dnd5.dto.ValueDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -113,5 +114,17 @@ public class DirectoryController {
                     .build())
                 .collect(Collectors.toList()
         );
+    }
+
+    @Operation(summary = "Типы черт")
+    @GetMapping("/type_feats")
+    public Collection<NameDto> getFeatTypes() {
+        return Arrays.stream(FeatType.values())
+                .map(type -> NameDto.builder()
+                        .rus(type.getСyrillicName())
+                        .rus(type.name())
+                        .build())
+                .collect(Collectors.toList()
+                );
     }
 }

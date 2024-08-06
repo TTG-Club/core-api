@@ -31,7 +31,7 @@ public class ClassCharacter {
     @Column(nullable = false)
     private String english;
     private String alternative;
-    private String genetive;
+    private String genitive;
 
     @Column(columnDefinition = "TEXT")
     private String description;

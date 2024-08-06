@@ -6,10 +6,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum FeatType {
-    ORIGIN("наследия"),
-    GENERAL("основные"),
+    ORIGIN("черты наследия"),
+    GENERAL("основные черты"),
     EPIC("эпические черты"),
     FIGHTING_STYLE("боевые стили");
 
-    private final String сyrillicNane;
+    private final String сyrillicName;
 }
