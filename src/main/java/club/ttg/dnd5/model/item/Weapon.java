@@ -27,8 +27,12 @@ public class Weapon {
     private String english;
     private String alternative;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @ManyToOne
     @JoinColumn(name = "source")
+    @Column(nullable = false)
     private Source source;
     private Short page;
 

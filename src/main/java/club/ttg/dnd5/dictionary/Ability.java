@@ -20,17 +20,12 @@ public enum Ability {
 		this.names = names;
 	}
 	public String getShortName() {
-		switch (this) {
-			case STRENGTH:
-			case DEXTERITY:
-			case CONSTITUTION:
-			case INTELLIGENCE:
-				return names[0].substring(0,3);
-			case WISDOM:
-				return "Мдр";
-			default:
-				return "";
-		}
+		return switch (this) {
+			case STRENGTH, DEXTERITY, CONSTITUTION, INTELLIGENCE ->
+					names[0].substring(0, 3);
+			case WISDOM -> "Мдр";
+			default -> "";
+		};
 	}
 
 	public static Ability parseShortName(String shortName) {

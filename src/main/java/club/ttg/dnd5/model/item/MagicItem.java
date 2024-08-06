@@ -26,6 +26,10 @@ public class MagicItem {
     @Column(nullable = false)
     private String english;
     private String alternative;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @ManyToOne
     @JoinColumn(name = "source")
     private Source source;
