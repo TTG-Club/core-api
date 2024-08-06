@@ -2,12 +2,15 @@ package club.ttg.dnd5.service.character;
 
 import club.ttg.dnd5.dto.character.ClassRequest;
 import club.ttg.dnd5.dto.character.ClassResponse;
+import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.exception.PageNotFoundException;
 import club.ttg.dnd5.repository.ClassRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collection;
 
 @RequiredArgsConstructor
 @Service
@@ -33,6 +36,11 @@ public class ClassServiceImpl implements ClassService {
     public ClassResponse updateClass(String url, ClassRequest request) {
         var classChar = classRepository.findById(url).orElseThrow(PageNotFoundException::new);
 
+        return null;
+    }
+
+    @Override
+    public Collection<ClassResponse> getClasses(SearchRequest request) {
         return null;
     }
 }
