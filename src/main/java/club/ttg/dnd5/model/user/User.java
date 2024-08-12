@@ -27,6 +27,7 @@ public class User implements UserDetails {
 	private String name;
 	private String username;
 	private String password;
+	@Column(unique = true)
 	private String email;
 	private LocalDateTime createDate;
 

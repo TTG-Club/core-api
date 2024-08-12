@@ -24,15 +24,17 @@ public class AuthenticationService {
     private final AuthenticationManager manager;
 
     //refactor to DTO
-    public RegisterUserResponse signup(RegisterUserRequest input) {
+    public String signup(RegisterUserRequest input) {
         User user = User.builder()
-                .name(input.getFullName())
+                .name(input.getNickName())  // Ensure you use the correct field name
                 .email(input.getEmail())
                 .password(passwordEncoder.encode(input.getPassword()))
                 .build();
         userCredentialRepository.save(user);
-        return new RegisterUserResponse(input.getFullName());
+        // Return a plain text message
+        return "User registered successfully with email: " + input.getEmail();
     }
+
 
     //refactor to DTO
     public RegisterUserResponse authenticate(LoginUserRequest input, HttpHeaders headers) {
@@ -47,7 +49,8 @@ public class AuthenticationService {
         refreshTokenService.createRefreshToken(user, refreshToken);
         var jwt = jwtService.generateAccessTokenFromRefresh(refreshToken);
         headers.add("X-Access-Token", jwt);
-        return new RegisterUserResponse (user.getName());
+        RegisterUserResponse registerUserResponse = new RegisterUserResponse(user.getName());
+        return registerUserResponse;
     }
 
     public String signOut(String email, HttpHeaders headers) {

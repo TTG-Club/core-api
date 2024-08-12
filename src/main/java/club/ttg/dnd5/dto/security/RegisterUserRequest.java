@@ -10,5 +10,5 @@ import lombok.Setter;
 public class RegisterUserRequest {
     private String email;
     private String password;
-    private String fullName;
+    private String nickName;
 }

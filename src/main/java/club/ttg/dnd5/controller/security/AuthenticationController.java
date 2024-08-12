@@ -23,8 +23,11 @@ public class AuthenticationController {
      * @return ResponseEntity containing the authentication response with registration results.
      */
     @PostMapping("/register")
-    public ResponseEntity<RegisterUserResponse> register(@RequestBody RegisterUserRequest request) {
-        return ResponseEntity.ok(service.signup(request));
+    public ResponseEntity<String> register(@RequestBody RegisterUserRequest request) {
+        // Call the signup service method and get the response message
+        String responseMessage = service.signup(request);
+        // Return the response as plain text
+        return ResponseEntity.ok(responseMessage);
     }
 
     /**
