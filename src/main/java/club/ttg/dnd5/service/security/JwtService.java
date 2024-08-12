@@ -29,9 +29,8 @@ public class JwtService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtService.class);
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userCredentialRepository;
-
     @Value("${app.jwt-secret}")
-    private final String SECRET_KEY;
+    private String secretKey;
 
     /**
      * Extracts the username from the provided JWT token.
@@ -205,7 +204,7 @@ public class JwtService {
      * @return the signing key
      */
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
