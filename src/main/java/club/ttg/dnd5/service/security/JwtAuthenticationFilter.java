@@ -1,10 +1,15 @@
 package club.ttg.dnd5.service.security;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.lang.NonNull;
+import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,59 +23,64 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final HandlerExceptionResolver handlerExceptionResolver;
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
+
     private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(
-            JwtService jwtService,
-            UserDetailsService userDetailsService,
-            HandlerExceptionResolver handlerExceptionResolver
-    ) {
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-        this.handlerExceptionResolver = handlerExceptionResolver;
-    }
-
+    /**
+     * Performs the authentication process for each incoming request.
+     * Extracts the JWT token from the Authorization header, validates it, and sets the authentication
+     * in the security context if the token is valid.
+     *
+     * @param httpServletRequest  the incoming HTTP request
+     * @param httpServletResponse the outgoing HTTP response
+     * @param filterChain         the filter chain to continue processing the request
+     * @throws ServletException if there is an error during the filter processing
+     * @throws IOException      if there is an error with the input/output of the filter
+     */
     @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
+    protected void doFilterInternal(@NotNull HttpServletRequest httpServletRequest,
+                                    @NonNull HttpServletResponse httpServletResponse,
+                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
+        final String authHeader = httpServletRequest.getHeader("Authorization"); //here JWT token
+        String jwt;
+        String userEmail = "";
+        if (authHeader == null || !authHeader.startsWith("Bearer")) {
+            filterChain.doFilter(httpServletRequest, httpServletResponse);
             return;
         }
-
+        jwt = authHeader.substring(7); // 7 because word -  bearer
         try {
-            final String jwt = authHeader.substring(7);
-            final String userEmail = jwtService.extractUsername(jwt);
+            userEmail = jwtService.extractUsername(jwt);
+            LOGGER.info("User email extracted from JWT: {}", userEmail);
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (userEmail != null && authentication == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            }
-
-            filterChain.doFilter(request, response);
-        } catch (Exception exception) {
-            handlerExceptionResolver.resolveException(request, response, null, exception);
+        } catch (ExpiredJwtException e) {
+            LOGGER.info("JWT token is expired, generating new token from refresh token.");
+            jwt = jwtService.generateAccessTokenFromRefresh(jwt);
+            userEmail = jwtService.extractUsername(jwt);
         }
+        httpServletResponse.setHeader("X-Access-Token", jwt);
+        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(httpServletRequest)
+                );
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                LOGGER.info("User successfully authenticated.");
+            } else {
+                LOGGER.info("JWT token is not valid for user {}.", userEmail);
+            }
+        }
+        filterChain.doFilter(httpServletRequest, httpServletResponse);
     }
 }
