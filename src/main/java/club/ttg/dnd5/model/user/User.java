@@ -1,5 +1,6 @@
 package club.ttg.dnd5.model.user;
 
+import club.ttg.dnd5.model.security.RefreshToken;
 import club.ttg.dnd5.model.user.party.UserParty;
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,6 +44,8 @@ public class User implements UserDetails {
 	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
 	private List<UserParty> userParties;
 
+	@OneToOne(mappedBy = "userCredential")
+	private RefreshToken refreshToken;
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
