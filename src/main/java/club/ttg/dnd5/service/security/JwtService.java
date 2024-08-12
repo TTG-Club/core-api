@@ -29,7 +29,9 @@ public class JwtService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtService.class);
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userCredentialRepository;
-    private static final String SECRET_KEY = "6E5A7234753778214125432A462D4A614E645267556B58703273357638792F42";
+
+    @Value("${app.jwt-secret}")
+    private final String SECRET_KEY;
 
     /**
      * Extracts the username from the provided JWT token.
