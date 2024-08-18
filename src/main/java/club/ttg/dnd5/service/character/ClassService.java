@@ -14,4 +14,6 @@ public interface ClassService {
     ClassResponse updateClass(String url, ClassRequest request);
 
     Collection<ClassResponse> getClasses(SearchRequest request);
+
+    Collection<ClassResponse> getSubClasses(String url);
 }

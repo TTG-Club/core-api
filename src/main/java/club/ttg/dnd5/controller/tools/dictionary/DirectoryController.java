@@ -122,7 +122,7 @@ public class DirectoryController {
     public Collection<NameDto> getFeatTypes() {
         return Arrays.stream(FeatType.values())
                 .map(type -> NameDto.builder()
-                        .rus(type.getСyrillicName())
+                        .rus(type.getCyrillicName())
                         .eng(type.name())
                         .build())
                 .collect(Collectors.toList()

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.controller.engine;
 
+import club.ttg.dnd5.exception.PageExistException;
 import club.ttg.dnd5.exception.PageNotFoundException;
 import club.ttg.dnd5.exception.StorageException;
 import jakarta.servlet.http.Cookie;
@@ -38,6 +39,13 @@ public class NotHandlerControllerAdvice {
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@ExceptionHandler(NoHandlerFoundException.class)
 	public String handleNoHandlePageException(Exception exception, Model model, HttpServletRequest request) {
+		addAttributes(request, model);
+		return "spa";
+	}
+
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ExceptionHandler(PageExistException.class)
+	public String handleHandlePageExistException(Exception exception, Model model, HttpServletRequest request) {
 		addAttributes(request, model);
 		return "spa";
 	}
