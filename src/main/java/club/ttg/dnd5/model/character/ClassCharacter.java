@@ -1,6 +1,8 @@
 package club.ttg.dnd5.model.character;
 
+import club.ttg.dnd5.dictionary.Ability;
 import club.ttg.dnd5.dictionary.Dice;
+import club.ttg.dnd5.dictionary.Skill;
 import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -9,6 +11,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -17,7 +20,8 @@ import java.util.Collection;
 @Entity
 @Table(name = "classes",
         indexes = {
-            @Index(name = "url_index", columnList = "url")
+            @Index(name = "url_index", columnList = "url"),
+            @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
 public class ClassCharacter {
@@ -38,15 +42,42 @@ public class ClassCharacter {
     @Enumerated(EnumType.STRING)
     private Dice hitDice;
 
+    @Column(columnDefinition = "TEXT")
+    private String equipment;
+    private String armorMastery;
+    private String weaponMastery;
+    private String toolMastery;
+
+    @ElementCollection(targetClass = Ability.class)
+    @JoinTable(name = "class_saving_throw_abilities", joinColumns = @JoinColumn(name = "class_url"))
+    @Column(name = "ability", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Set<Ability> savingThrowMastery;
+
+    @ElementCollection(targetClass = Skill.class)
+    @JoinTable(name = "class_available_skills", joinColumns = @JoinColumn(name = "class_url"))
+    @Column(name = "skill", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Set<Skill> availableSkills;
+    private short skillAvailable;
+
     @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id")
+    @JoinColumn(name = "class_url")
+    private Collection<ClassSpellLeves> classSpellLevels;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "class_url")
+    private Collection<ClassFeatureLevels> featureLevels;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "class_url")
     private Collection<ClassFeature> features;
 
     @ManyToOne(cascade = { CascadeType.ALL })
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "parent_url")
     private ClassCharacter parent;
 
-    @OneToMany(mappedBy = "parent", orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
     private Collection<ClassCharacter> subClasses;
 
     @ManyToOne

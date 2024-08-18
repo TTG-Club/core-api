@@ -33,7 +33,8 @@
 
 		<org.springdoc.version>2.6.0</org.springdoc.version>
 		<jjwt.version>0.12.5</jjwt.version>
-		<modelmapper.version>3.2.1</modelmapper.version>
+		<mapstruct.version>1.6.0.Beta2</mapstruct.version>
+		<mapstruct-processor.version>1.5.5.Final</mapstruct-processor.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -90,9 +91,14 @@
 			<version>${jjwt.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.modelmapper</groupId>
-			<artifactId>modelmapper</artifactId>
-			<version>${modelmapper.version}</version>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct-processor</artifactId>
+			<version>${mapstruct-processor.version}</version>
 		</dependency>
 	</dependencies>
 

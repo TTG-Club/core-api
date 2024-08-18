@@ -9,13 +9,16 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+
 @Getter
 @Setter
 public class NameDto {
-    @Schema(description = "имя по русски", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "имя по русски", defaultValue = "Бард", requiredMode = Schema.RequiredMode.REQUIRED)
     private String rus;
-    @Schema(description = "имя по английски", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "имя по английски", defaultValue = "Bard", requiredMode = Schema.RequiredMode.REQUIRED)
     private String eng;
-    @Schema(description = "альтернативное имя")
+    @Schema(description = "альтернативное имя", defaultValue = "<fhl",  requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String alt;
+    @Schema(description = "имя на руском в родительном падеже", defaultValue = "барда", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String genitive;
 }
