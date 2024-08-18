@@ -8,6 +8,7 @@ import club.ttg.dnd5.dictionary.beastiary.Condition;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dictionary.beastiary.Environment;
 import club.ttg.dnd5.dictionary.character.FeatType;
+import club.ttg.dnd5.dictionary.character.SpellcasterType;
 import club.ttg.dnd5.dto.NameDto;
 import club.ttg.dnd5.dto.ValueDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -110,7 +111,7 @@ public class DirectoryController {
         return Arrays.stream(Environment.values())
                 .map(type -> NameDto.builder()
                     .rus(type.getName())
-                    .rus(type.name())
+                    .eng(type.name())
                     .build())
                 .collect(Collectors.toList()
         );
@@ -121,8 +122,20 @@ public class DirectoryController {
     public Collection<NameDto> getFeatTypes() {
         return Arrays.stream(FeatType.values())
                 .map(type -> NameDto.builder()
-                        .rus(type.getСyrillicName())
-                        .rus(type.name())
+                        .rus(type.getCyrillicName())
+                        .eng(type.name())
+                        .build())
+                .collect(Collectors.toList()
+                );
+    }
+
+    @Operation(summary = "Типы заклинателей")
+    @GetMapping("/spellcaster_types")
+    public Collection<ValueDto> getSpellcasterTypes() {
+        return Arrays.stream(SpellcasterType.values())
+                .map(type -> ValueDto.builder()
+                        .eng(type.name())
+                        .value(type.getMaxSpellLevel())
                         .build())
                 .collect(Collectors.toList()
                 );

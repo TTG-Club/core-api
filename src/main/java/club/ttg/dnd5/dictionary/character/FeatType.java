@@ -11,5 +11,5 @@ public enum FeatType {
     EPIC("эпические черты"),
     FIGHTING_STYLE("боевые стили");
 
-    private final String сyrillicName;
+    private final String cyrillicName;
 }
