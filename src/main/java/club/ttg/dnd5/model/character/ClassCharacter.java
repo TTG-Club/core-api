@@ -20,7 +20,8 @@ import java.util.Set;
 @Entity
 @Table(name = "classes",
         indexes = {
-            @Index(name = "url_index", columnList = "url")
+            @Index(name = "url_index", columnList = "url"),
+            @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
 public class ClassCharacter {
@@ -60,15 +61,15 @@ public class ClassCharacter {
     private Set<Skill> availableSkills;
     private short skillAvailable;
 
-    @OneToMany()
+    @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_url")
     private Collection<ClassSpellLeves> classSpellLevels;
 
-    @OneToMany()
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "class_url")
     private Collection<ClassFeatureLevels> featureLevels;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "class_url")
     private Collection<ClassFeature> features;
 
@@ -76,7 +77,7 @@ public class ClassCharacter {
     @JoinColumn(name = "parent_url")
     private ClassCharacter parent;
 
-    @OneToMany(mappedBy = "parent", orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
     private Collection<ClassCharacter> subClasses;
 
     @ManyToOne

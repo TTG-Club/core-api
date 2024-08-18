@@ -27,6 +27,11 @@ public class ClassController {
     public Collection<ClassResponse> getClasses(@ParameterObject final SearchRequest request) {
         return classService.getClasses(request);
     }
+    @Operation(summary = "Получение краткого списка подклассов")
+    @GetMapping("/{url}/subclasses")
+    public Collection<ClassResponse> getSubclasses(@PathVariable String classUrl) {
+        return classService.getSubClasses(classUrl);
+    }
 
     @Operation(summary = "Получение детального описания класса")
     @GetMapping("/{url}")
