@@ -1,6 +1,7 @@
 package club.ttg.dnd5.service.species;
 
 import club.ttg.dnd5.dto.species.SpeciesDTO;
+import club.ttg.dnd5.exception.StorageException;
 import club.ttg.dnd5.mapper.species.SpeciesMapper;
 import club.ttg.dnd5.model.character.Species;
 import club.ttg.dnd5.repository.SpeciesRepository;
@@ -47,7 +48,7 @@ public class SpeciesService {
             Species updatedSpecies = speciesRepository.save(species);
             return speciesMapper.speciesToSpeciesDTO(updatedSpecies);
         } else {
-            throw new RuntimeException("Species with url " + speciesDTO.getUrl() + " does not exist.");
+            throw new StorageException("Species with url " + speciesDTO.getUrl() + " does not exist.");
         }
     }
 
