@@ -1,7 +1,7 @@
 package club.ttg.dnd5.service.species;
 
 import club.ttg.dnd5.dto.engine.SearchRequest;
-import club.ttg.dnd5.dto.species.SpeciesDTO;
+import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.exception.StorageException;
 import club.ttg.dnd5.mapper.species.SpeciesMapper;
 import club.ttg.dnd5.model.character.Species;
@@ -29,30 +29,30 @@ public class SpeciesService {
         this.speciesRepository = speciesRepository;
     }
 
-    public List<SpeciesDTO> findAll() {
+    public List<SpeciesResponse> findAll() {
         return speciesRepository.findAll().stream()
                 .map(speciesMapper::speciesToSpeciesDTO)
                 .collect(Collectors.toList());
     }
 
-    public Optional<SpeciesDTO> findById(String url) {
+    public Optional<SpeciesResponse> findById(String url) {
         return speciesRepository.findById(url)
                 .map(speciesMapper::speciesToSpeciesDTO);
     }
 
-    public SpeciesDTO save(SpeciesDTO speciesDTO) {
-        Species species = speciesMapper.speciesDTOToSpecies(speciesDTO);
+    public SpeciesResponse save(SpeciesResponse speciesResponse) {
+        Species species = speciesMapper.speciesDTOToSpecies(speciesResponse);
         Species savedSpecies = speciesRepository.save(species);
         return speciesMapper.speciesToSpeciesDTO(savedSpecies);
     }
 
-    public SpeciesDTO update(SpeciesDTO speciesDTO) {
-        if (speciesRepository.existsById(speciesDTO.getUrl())) {
-            Species species = speciesMapper.speciesDTOToSpecies(speciesDTO);
+    public SpeciesResponse update(SpeciesResponse speciesResponse) {
+        if (speciesRepository.existsById(speciesResponse.getUrl())) {
+            Species species = speciesMapper.speciesDTOToSpecies(speciesResponse);
             Species updatedSpecies = speciesRepository.save(species);
             return speciesMapper.speciesToSpeciesDTO(updatedSpecies);
         } else {
-            throw new StorageException("Species with url " + speciesDTO.getUrl() + " does not exist.");
+            throw new StorageException("Species with url " + speciesResponse.getUrl() + " does not exist.");
         }
     }
 
@@ -60,7 +60,7 @@ public class SpeciesService {
         speciesRepository.deleteById(url);
     }
 
-    public List<SpeciesDTO> searchSpecies(SearchRequest request) {
+    public List<SpeciesResponse> searchSpecies(SearchRequest request) {
         Specification<Species> spec = SpeciesSpecification.buildSpecification(request);
 
         Pageable pageable = PageRequest.of(

@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SpeciesDTO {
+public class SpeciesResponse {
     private String url;
     private String name;
     private String english;
