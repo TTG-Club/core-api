@@ -1,10 +1,12 @@
 package club.ttg.dnd5.model.character;
 
+import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 
 /**
@@ -20,8 +22,6 @@ import java.util.Collection;
 )
 public class Specie {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
     @Column(nullable = false, unique = true)
     private String url;
 
@@ -40,4 +40,14 @@ public class Specie {
 
     @OneToMany(mappedBy = "parent", orphanRemoval = true)
     private Collection<Specie> subSpecies;
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Source source;
+    private Short page;
+
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime created;
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime lastUpdated;
 }

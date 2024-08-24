@@ -37,17 +37,10 @@ public enum Size {
 	}
 
 	public String getSizeName(CreatureType type) {
-		switch (type) {
-		case ABERRATION:
-		case FEY:
-		case UNDEAD:
-		case SLIME:
-		case FIEND:
-		case PLANT:
-			return names[2];
-		default:
-			return names[0];
-		}
+		return switch (type) {
+			case ABERRATION, FEY, UNDEAD, SLIME, FIEND, PLANT -> names[2];
+			default -> names[0];
+		};
 	}
 
 	public String getName() {
