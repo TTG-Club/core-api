@@ -1,80 +1,57 @@
 package club.ttg.dnd5.service;
 
 import club.ttg.dnd5.dto.engine.MenuApi;
+import club.ttg.dnd5.exception.StorageException;
+import club.ttg.dnd5.mapper.engine.MenuMapper;
 import club.ttg.dnd5.model.engine.Menu;
 import club.ttg.dnd5.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class MenuService {
     private final MenuRepository menuRepository;
+    private static final MenuMapper menuMapper = MenuMapper.INSTANCE;
 
-    public List<MenuApi> getAllMenus() {
-        return menuRepository.findAll()
-                .stream()
-                .map(this::convertToDto)
+    public List<MenuApi> findAll() {
+        return menuRepository.findAll().stream()
+                .map(menuMapper::menuToMenuApi)
                 .collect(Collectors.toList());
     }
 
-    public MenuApi getMenuById(Long id) {
-        return menuRepository.findById(id)
-                .map(this::convertToDto)
-                .orElseThrow(() -> new RuntimeException("Menu not found"));
+    public Optional<MenuApi> findByUrl(String url) {
+        return menuRepository.findByUrl(url)
+                .map(menuMapper::menuToMenuApi);
     }
 
-    public MenuApi createMenu(MenuApi menuApi) {
-        Menu menu = convertToEntity(menuApi);
+    public MenuApi save(MenuApi menuApi) {
+        Menu menu = menuMapper.menuApiToMenu(menuApi);
         Menu savedMenu = menuRepository.save(menu);
-        return convertToDto(savedMenu);
+        return menuMapper.menuToMenuApi(savedMenu);
     }
 
-    public MenuApi updateMenu(Long id, MenuApi menuApi) {
-        Menu existingMenu = menuRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Menu not found"));
-
-        existingMenu.setName(menuApi.getName());
-        existingMenu.setIcon(menuApi.getIcon());
-        existingMenu.setUrl(menuApi.getUrl());
-        existingMenu.setOnlyDev(menuApi.getOnlyDev());
-        existingMenu.setOrder(menuApi.getOrder());
-        existingMenu.setOnIndex(menuApi.getOnIndex());
-        existingMenu.setIndexOrder(menuApi.getIndexOrder());
-
-        Menu updatedMenu = menuRepository.save(existingMenu);
-        return convertToDto(updatedMenu);
+    public MenuApi update(MenuApi menuApi) {
+        if (menuRepository.existsByUrl(menuApi.getUrl())) {
+            Menu menu = menuMapper.menuApiToMenu(menuApi);
+            Menu updatedMenu = menuRepository.save(menu);
+            return menuMapper.menuToMenuApi(updatedMenu);
+        } else {
+            throw new StorageException("Menu with URL " + menuApi.getUrl() + " does not exist.");
+        }
     }
 
-    public void deleteMenu(Long id) {
-        menuRepository.deleteById(id);
-    }
-
-    private MenuApi convertToDto(Menu menu) {
-        return MenuApi.builder()
-                .name(menu.getName())
-                .icon(menu.getIcon())
-                .url(menu.getUrl())
-                .onlyDev(menu.isOnlyDev())
-                .children(menu.getChildren().stream().map(this::convertToDto).collect(Collectors.toList()))
-                .order(menu.getOrder())
-                .onIndex(menu.isOnIndex())
-                .indexOrder(menu.getIndexOrder())
-                .build();
-    }
-
-    private Menu convertToEntity(MenuApi menuApi) {
-        return Menu.builder()
-                .name(menuApi.getName())
-                .icon(menuApi.getIcon())
-                .url(menuApi.getUrl())
-                .onlyDev(menuApi.getOnlyDev())
-                .order(menuApi.getOrder())
-                .onIndex(menuApi.getOnIndex())
-                .indexOrder(menuApi.getIndexOrder())
-                .build();
+    public void deleteByUrl(String url) {
+        if (menuRepository.existsByUrl(url)) {
+            menuRepository.deleteByUrl(url);
+        } else {
+            throw new StorageException("Menu with URL " + url + " does not exist.");
+        }
     }
 }
