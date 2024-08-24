@@ -1,12 +1,12 @@
 package club.ttg.dnd5.model.character;
 
 import club.ttg.dnd5.model.Source;
+import club.ttg.dnd5.model.base.NamedEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 
 /**
@@ -15,39 +15,17 @@ import java.util.Collection;
 @Getter
 @Setter
 @NoArgsConstructor
-
 @Entity
 @Table(name = "species",
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
-public class Specie {
-    @Id
-    @Column(nullable = false, unique = true)
-    private String url;
-
-    @Column(nullable = false)
-    private String name;
-    @Column(nullable = false)
-    private String english;
-    private String alternative;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
+public class Species extends NamedEntity {
     @ManyToOne(cascade = { CascadeType.ALL })
     @JoinColumn(name = "parent_id")
-    private Specie parent;
-
+    private Species parent;
     @OneToMany(mappedBy = "parent", orphanRemoval = true)
-    private Collection<Specie> subSpecies;
-
+    private Collection<Species> subSpecies;
     @ManyToOne
     @JoinColumn(name = "source")
     private Source source;
-    private Short page;
-
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime created;
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime lastUpdated;
 }

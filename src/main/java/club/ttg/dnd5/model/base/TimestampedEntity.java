@@ -1,4 +1,4 @@
-package club.ttg.dnd5.model;
+package club.ttg.dnd5.model.base;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class WithTimestamps {
+public abstract class TimestampedEntity {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
