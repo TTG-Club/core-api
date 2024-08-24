@@ -1,11 +1,13 @@
 package club.ttg.dnd5.model.character;
 
 import club.ttg.dnd5.dictionary.Ability;
+import club.ttg.dnd5.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -18,9 +20,6 @@ import java.util.Set;
 )
 public class Background {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    @Column(nullable = false, unique = true)
     private String url;
 
     @Column(nullable = false)
@@ -35,4 +34,13 @@ public class Background {
     @Enumerated(EnumType.STRING)
     private Set<Ability> abilities;
 
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Source source;
+    private Short page;
+
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime created;
+    @Column(columnDefinition = "TIMESTAMP")
+    private LocalDateTime lastUpdated;
 }

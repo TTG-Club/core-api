@@ -40,34 +40,31 @@ public enum Dice {
 	}
 	
 	public static Dice parse(int dice) {
-		switch (dice) {
-		case 4:
-			return d4;
-		case 6:
-			return d6;
-		case 8:
-			return d8;
-		case 10:
-			return d10;
-		case 12:
-			return d12;
-		case 20:
-			return d20;
-		case 100:
-			return d100;
-		}
-		return null;
+		return switch (dice) {
+			case 4 -> d4;
+			case 6 -> d6;
+			case 8 -> d8;
+			case 10 -> d10;
+			case 12 -> d12;
+			case 20 -> d20;
+			case 100 -> d100;
+			default -> null;
+		};
 	}
 	
 	public static Dice parse(String dice) {
-		return switch (dice) {
-			case "k4" -> d4;
-			case "k6" -> d6;
-			case "k8" -> d8;
-			case "k10" -> d10;
-			case "k12" -> d12;
-			case "k20" -> d20;
-			case "k100" -> d100;
+		if (dice == null) {
+			return null;
+		}
+		var diceEng = dice.replace("к", "d");
+		return switch (diceEng) {
+			case "d4" -> d4;
+			case "d6" -> d6;
+			case "d8" -> d8;
+			case "d10" -> d10;
+			case "d12" -> d12;
+			case "d20" -> d20;
+			case "d100" -> d100;
 			default -> null;
 		};
 	}
