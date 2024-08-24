@@ -14,12 +14,11 @@ import java.util.List;
 @Table(name = "menu")
 public class Menu {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(nullable = false, unique = true)
+    private String url;
     @Column(nullable = false)
     private String name;
     private String icon;
-    private String url;
     @JoinColumn(name = "only_dev")
     private boolean onlyDev;
     @Column(name = "order_num")  // Переименовал, чтобы избежать конфликта с SQL-зарезервированным словом.
