@@ -23,13 +23,13 @@ public class Menu {
     private boolean onlyDev;
     @Column(name = "order_num")  // Переименовал, чтобы избежать конфликта с SQL-зарезервированным словом.
     private int order;
+    @JoinColumn(name = "on_index")
+    private boolean onIndex;
+    @JoinColumn(name = "index_order")
+    private Integer indexOrder;
     @ManyToOne
     @JoinColumn(name = "parent_id")
     private Menu parent;
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Menu> children;
-    @JoinColumn(name = "on_index")
-    private boolean onIndex;
-    @JoinColumn(name = "index_order")
-    private Integer indexOrder;
 }
