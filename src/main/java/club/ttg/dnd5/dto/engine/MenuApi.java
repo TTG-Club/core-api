@@ -1,4 +1,4 @@
-package club.ttg.dnd5.dto;
+package club.ttg.dnd5.dto.engine;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

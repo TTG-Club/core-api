@@ -1,7 +1,7 @@
 package club.ttg.dnd5.service;
 
-import club.ttg.dnd5.dto.MenuApi;
-import club.ttg.dnd5.model.menu.Menu;
+import club.ttg.dnd5.dto.engine.MenuApi;
+import club.ttg.dnd5.model.engine.Menu;
 import club.ttg.dnd5.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
