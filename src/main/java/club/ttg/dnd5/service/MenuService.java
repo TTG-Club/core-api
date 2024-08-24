@@ -1,6 +1,6 @@
 package club.ttg.dnd5.service;
 
-import club.ttg.dnd5.dto.engine.MenuApi;
+import club.ttg.dnd5.dto.engine.MenuResponse;
 import club.ttg.dnd5.exception.StorageException;
 import club.ttg.dnd5.mapper.engine.MenuMapper;
 import club.ttg.dnd5.model.engine.Menu;
@@ -20,30 +20,30 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private static final MenuMapper menuMapper = MenuMapper.INSTANCE;
 
-    public List<MenuApi> findAll() {
+    public List<MenuResponse> findAll() {
         return menuRepository.findAll().stream()
                 .map(menuMapper::menuToMenuApi)
                 .collect(Collectors.toList());
     }
 
-    public Optional<MenuApi> findByUrl(String url) {
+    public Optional<MenuResponse> findByUrl(String url) {
         return menuRepository.findByUrl(url)
                 .map(menuMapper::menuToMenuApi);
     }
 
-    public MenuApi save(MenuApi menuApi) {
-        Menu menu = menuMapper.menuApiToMenu(menuApi);
+    public MenuResponse save(MenuResponse menuResponse) {
+        Menu menu = menuMapper.menuApiToMenu(menuResponse);
         Menu savedMenu = menuRepository.save(menu);
         return menuMapper.menuToMenuApi(savedMenu);
     }
 
-    public MenuApi update(MenuApi menuApi) {
-        if (menuRepository.existsByUrl(menuApi.getUrl())) {
-            Menu menu = menuMapper.menuApiToMenu(menuApi);
+    public MenuResponse update(MenuResponse menuResponse) {
+        if (menuRepository.existsByUrl(menuResponse.getUrl())) {
+            Menu menu = menuMapper.menuApiToMenu(menuResponse);
             Menu updatedMenu = menuRepository.save(menu);
             return menuMapper.menuToMenuApi(updatedMenu);
         } else {
-            throw new StorageException("Menu with URL " + menuApi.getUrl() + " does not exist.");
+            throw new StorageException("Menu with URL " + menuResponse.getUrl() + " does not exist.");
         }
     }
 

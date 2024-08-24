@@ -13,12 +13,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MenuApi {
+public class MenuResponse {
     private String name;
     private String icon;
     private String url;
     private Boolean onlyDev;
-    private List<MenuApi> children;
+    private List<MenuResponse> children;
     private int order;
     private Boolean onIndex;
     private Integer indexOrder;
