@@ -1,6 +1,6 @@
 package club.ttg.dnd5.model.user;
 
-import club.ttg.dnd5.model.WithTimestamps;
+import club.ttg.dnd5.model.base.TimestampedEntity;
 import club.ttg.dnd5.model.user.party.UserParty;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -12,7 +12,7 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "users")
-public class User extends WithTimestamps {
+public class User extends TimestampedEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
