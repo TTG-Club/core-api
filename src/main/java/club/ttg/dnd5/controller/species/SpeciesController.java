@@ -1,5 +1,6 @@
 package club.ttg.dnd5.controller.species;
 
+import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.dto.species.SpeciesDTO;
 import club.ttg.dnd5.service.species.SpeciesService;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,8 +24,8 @@ public class SpeciesController {
 
     @GetMapping("/{url}")
     public ResponseEntity<SpeciesDTO> getSpeciesByUrl(@PathVariable String url) {
-        Optional<SpeciesDTO> species = speciesService.findById(url);
-        return species.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+        return speciesService.findById(url)
+                .map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
@@ -37,7 +37,7 @@ public class SpeciesController {
 
     @PutMapping("/{url}")
     public ResponseEntity<SpeciesDTO> updateSpecies(@PathVariable String url, @RequestBody SpeciesDTO speciesDTO) {
-        speciesDTO.setUrl(url);
+        speciesDTO.setUrl(url);  // Ensure the URL in the path and the body match
         try {
             SpeciesDTO updatedSpecies = speciesService.update(speciesDTO);
             return new ResponseEntity<>(updatedSpecies, HttpStatus.OK);
@@ -50,5 +50,11 @@ public class SpeciesController {
     public ResponseEntity<Void> deleteSpecies(@PathVariable String url) {
         speciesService.deleteById(url);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<List<SpeciesDTO>> searchSpecies(@RequestBody SearchRequest request) {
+        List<SpeciesDTO> speciesList = speciesService.searchSpecies(request);
+        return new ResponseEntity<>(speciesList, HttpStatus.OK);
     }
 }
