@@ -1,6 +1,6 @@
 package club.ttg.dnd5.controller;
 
-import club.ttg.dnd5.dto.MenuApi;
+import club.ttg.dnd5.dto.engine.MenuApi;
 import club.ttg.dnd5.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,7 +16,6 @@ import java.util.List;
 @RequestMapping("/api/v2/menu")
 public class MenuApiController {
     private final MenuService menuService;
-
     @Operation(summary = "Получение списка элементов меню")
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
