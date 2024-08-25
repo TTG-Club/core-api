@@ -1,7 +1,7 @@
 package club.ttg.dnd5.model.species;
 
 import club.ttg.dnd5.model.Source;
-import club.ttg.dnd5.model.base.NamedEntity;
+import club.ttg.dnd5.model.base.CreatureProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.Collection;
 @Table(name = "species",
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
-public class Species extends NamedEntity {
+public class Species extends CreatureProperties {
     private Short page;
     @ManyToOne(cascade = { CascadeType.ALL })
     @JoinColumn(name = "parent_id")
