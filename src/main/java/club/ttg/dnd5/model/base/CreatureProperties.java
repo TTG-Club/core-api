@@ -1,0 +1,26 @@
+package club.ttg.dnd5.model.base;
+
+import club.ttg.dnd5.dictionary.Size;
+import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.MappedSuperclass;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@MappedSuperclass
+public abstract class CreatureProperties extends NamedEntity {
+    @Enumerated(EnumType.STRING)
+    private Size size;
+    @Enumerated(EnumType.STRING)
+    private CreatureType type;
+    @Column(columnDefinition = "int default 30")
+    private int speed;
+    private int fly;
+    private int climb;
+    private int swim;
+    private int darkVision;
+}

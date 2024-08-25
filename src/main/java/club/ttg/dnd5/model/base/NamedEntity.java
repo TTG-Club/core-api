@@ -20,5 +20,4 @@ public abstract class NamedEntity extends TimestampedEntity {
     private String alternative;
     @Column(columnDefinition = "TEXT")
     private String description;
-    private Short page;
 }
