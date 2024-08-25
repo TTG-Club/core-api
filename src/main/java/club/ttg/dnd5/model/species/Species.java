@@ -1,4 +1,4 @@
-package club.ttg.dnd5.model.character;
+package club.ttg.dnd5.model.species;
 
 import club.ttg.dnd5.model.Source;
 import club.ttg.dnd5.model.base.NamedEntity;
@@ -20,6 +20,7 @@ import java.util.Collection;
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
 public class Species extends NamedEntity {
+    private Short page;
     @ManyToOne(cascade = { CascadeType.ALL })
     @JoinColumn(name = "parent_id")
     private Species parent;
@@ -28,4 +29,7 @@ public class Species extends NamedEntity {
     @ManyToOne
     @JoinColumn(name = "source")
     private Source source;
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "species_url")
+    private Collection<SpeciesFeature> features;
 }
