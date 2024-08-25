@@ -3,7 +3,7 @@ package club.ttg.dnd5.service.species;
 import club.ttg.dnd5.dto.engine.FilterDto;
 import club.ttg.dnd5.dto.engine.SearchDto;
 import club.ttg.dnd5.dto.engine.SearchRequest;
-import club.ttg.dnd5.model.character.Species;
+import club.ttg.dnd5.model.species.Species;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
