@@ -3,9 +3,12 @@ package club.ttg.dnd5.controller.species;
 import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.service.species.SpeciesService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,48 +17,64 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/species")
+@Tag(name = "API для Видов", description = "API для управления видами")
 public class SpeciesController {
     private final SpeciesService speciesService;
 
+    @Operation(summary = "Получить все виды", description = "Получение списка всех видов.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список видов успешно получен")
+    })
     @GetMapping
-    public ResponseEntity<List<SpeciesResponse>> getAllSpecies() {
-        List<SpeciesResponse> speciesList = speciesService.findAll();
-        return new ResponseEntity<>(speciesList, HttpStatus.OK);
+    @ResponseStatus(HttpStatus.OK)
+    public List<SpeciesResponse> getAllSpecies() {
+        return speciesService.findAll();
     }
 
+    @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Вид успешно получен"),
+            @ApiResponse(responseCode = "404", description = "Вид не найден")
+    })
     @GetMapping("/{url}")
-    public ResponseEntity<SpeciesResponse> getSpeciesByUrl(@PathVariable String url) {
-        return speciesService.findById(url)
-                .map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    @ResponseStatus(HttpStatus.OK)
+    public SpeciesResponse getSpeciesByUrl(@PathVariable String url) {
+        return speciesService.findById(url);
     }
 
+    @Operation(summary = "Создать новый вид", description = "Создание нового вида в системе.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Вид успешно создан"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
     @PostMapping
     @Secured("ROLE_ADMIN")
-    public ResponseEntity<SpeciesResponse> createSpecies(@RequestBody SpeciesResponse speciesResponse) {
-        SpeciesResponse createdSpecies = speciesService.save(speciesResponse);
-        return new ResponseEntity<>(createdSpecies, HttpStatus.CREATED);
+    @ResponseStatus(HttpStatus.CREATED)
+    public SpeciesResponse createSpecies(@RequestBody SpeciesResponse speciesResponse) {
+        return speciesService.save(speciesResponse);
     }
 
+    @Operation(summary = "Обновить существующий вид", description = "Обновление данных существующего вида.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Вид успешно обновлен"),
+            @ApiResponse(responseCode = "404", description = "Вид не найден"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
     @PutMapping("/{url}")
     @Secured("ROLE_ADMIN")
-    public ResponseEntity<SpeciesResponse> updateSpecies(@PathVariable String url, @RequestBody SpeciesResponse speciesResponse) {
-        speciesResponse.setUrl(url);  // Ensure the URL in the path and the body match
-        SpeciesResponse updatedSpecies = speciesService.update(speciesResponse);
-        return new ResponseEntity<>(updatedSpecies, HttpStatus.OK);
-
+    @ResponseStatus(HttpStatus.OK)
+    public SpeciesResponse updateSpecies(@PathVariable String url, @RequestBody SpeciesResponse speciesResponse) {
+        speciesResponse.setUrl(url);
+        return speciesService.update(speciesResponse);
     }
 
-    @DeleteMapping("/{url}")
-    @Secured("ROLE_ADMIN")
-    public ResponseEntity<Void> deleteSpecies(@PathVariable String url) {
-        speciesService.deleteById(url);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
+    @Operation(summary = "Поиск видов", description = "Поиск видов по различным фильтрам и критериям.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Результаты поиска успешно получены")
+    })
     @PostMapping("/search")
-    public ResponseEntity<List<SpeciesResponse>> searchSpecies(@RequestBody SearchRequest request) {
-        List<SpeciesResponse> speciesList = speciesService.searchSpecies(request);
-        return new ResponseEntity<>(speciesList, HttpStatus.OK);
+    @ResponseStatus(HttpStatus.OK)
+    public List<SpeciesResponse> searchSpecies(@RequestBody SearchRequest request) {
+        return speciesService.searchSpecies(request);
     }
 }

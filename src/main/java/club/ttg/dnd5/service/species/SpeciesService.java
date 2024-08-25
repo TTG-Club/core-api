@@ -35,10 +35,12 @@ public class SpeciesService {
                 .collect(Collectors.toList());
     }
 
-    public Optional<SpeciesResponse> findById(String url) {
+    public SpeciesResponse findById(String url) {
         return speciesRepository.findById(url)
-                .map(speciesMapper::speciesToSpeciesDTO);
+                .map(speciesMapper::speciesToSpeciesDTO)
+                .orElseThrow(() -> new StorageException("Species not found with url: " + url));
     }
+
 
     public SpeciesResponse save(SpeciesResponse speciesResponse) {
         Species species = speciesMapper.speciesDTOToSpecies(speciesResponse);
@@ -56,10 +58,6 @@ public class SpeciesService {
         }
     }
 
-    public void deleteById(String url) {
-        speciesRepository.deleteById(url);
-    }
-
     public List<SpeciesResponse> searchSpecies(SearchRequest request) {
         Specification<Species> spec = SpeciesSpecification.buildSpecification(request);
 
@@ -72,6 +70,6 @@ public class SpeciesService {
 
         return speciesPage.stream()
                 .map(speciesMapper::speciesToSpeciesDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
