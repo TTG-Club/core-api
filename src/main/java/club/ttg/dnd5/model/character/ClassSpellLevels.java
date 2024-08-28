@@ -12,7 +12,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "class_spell_levels")
-public class ClassSpellLeves {
+public class ClassSpellLevels {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;

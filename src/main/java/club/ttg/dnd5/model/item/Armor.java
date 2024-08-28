@@ -25,8 +25,11 @@ public class Armor {
     private String english;
     private String alternative;
 
+
     @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     @ManyToOne
     @JoinColumn(name = "source")

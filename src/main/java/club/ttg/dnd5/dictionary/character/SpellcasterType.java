@@ -6,10 +6,11 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum SpellcasterType {
-    FULL(9),
-    HALF(5),
-    PARTLY(4),
-    NONE(0);
+    FULL("полный заклинатель", 9),
+    HALF("половинный заклинатель", 5),
+    PARTLY("частичный заклинатель", 4),
+    NONE("не заклинатель", 0);
 
+    private final String name;
     private final int maxSpellLevel;
 }
