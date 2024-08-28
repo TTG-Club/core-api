@@ -2,7 +2,6 @@ package club.ttg.dnd5.dto;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.List;
 
@@ -14,5 +13,5 @@ public class TableDto {
     private String caption;
     private List<String> colLabels;
     private List<String> colStyles;
-    private List<String> rows;
+    private List<Object> rows;
 }

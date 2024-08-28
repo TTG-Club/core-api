@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 
 @Entity
-@Table(name = "items")
-public class Item {
+@Table(name = "/equipments")
+public class Equipment {
     @Id
     @Column(nullable = false, unique = true)
     private String url;
@@ -27,6 +27,8 @@ public class Item {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     @ManyToOne
     @JoinColumn(name = "source")
