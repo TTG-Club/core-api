@@ -6,6 +6,7 @@ import club.ttg.dnd5.exception.StorageException;
 import club.ttg.dnd5.mapper.species.SpeciesMapper;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.repository.SpeciesRepository;
+import club.ttg.dnd5.specification.SpeciesSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
-    private final SpeciesMapper speciesMapper = SpeciesMapper.INSTANCE;
+    private static final SpeciesMapper speciesMapper = SpeciesMapper.INSTANCE;
 
     @Autowired
     public SpeciesService(SpeciesRepository speciesRepository) {
@@ -29,35 +30,36 @@ public class SpeciesService {
 
     public List<SpeciesResponse> findAll() {
         return speciesRepository.findAll().stream()
-                .map(speciesMapper::toEntity)
+                .map(speciesMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     public SpeciesResponse findById(String url) {
         return speciesRepository.findById(url)
-                .map(speciesMapper::toEntity)
+                .map(speciesMapper::toDTO)
                 .orElseThrow(() -> new StorageException("Species not found with url: " + url));
     }
 
 
     public SpeciesResponse save(SpeciesResponse speciesResponse) {
-        Species species = speciesMapper.toDTO(speciesResponse);
+        Species species = speciesMapper.toEntity(speciesResponse);
         Species savedSpecies = speciesRepository.save(species);
-        return speciesMapper.toEntity(savedSpecies);
+        return speciesMapper.toDTO(savedSpecies);
     }
 
     public SpeciesResponse update(SpeciesResponse speciesResponse) {
         if (speciesRepository.existsById(speciesResponse.getUrl())) {
-            Species species = speciesMapper.toDTO(speciesResponse);
+            Species species = speciesMapper.toEntity(speciesResponse);
             Species updatedSpecies = speciesRepository.save(species);
-            return speciesMapper.toEntity(updatedSpecies);
+            return speciesMapper.toDTO(updatedSpecies);
         } else {
             throw new StorageException("Species with url " + speciesResponse.getUrl() + " does not exist.");
         }
     }
 
     public List<SpeciesResponse> searchSpecies(SearchRequest request) {
-        Specification<Species> spec = SpeciesSpecification.buildSpecification(request);
+        SpeciesSpecification speciesSpecification = new SpeciesSpecification();
+        Specification<Species> spec = speciesSpecification.toSpecification(request);
 
         Pageable pageable = PageRequest.of(
                 Optional.ofNullable(request.getPage()).orElse(0),
@@ -67,7 +69,7 @@ public class SpeciesService {
         Page<Species> speciesPage = speciesRepository.findAll(spec, pageable);
 
         return speciesPage.stream()
-                .map(speciesMapper::toEntity)
-                .toList();
+                .map(speciesMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }
