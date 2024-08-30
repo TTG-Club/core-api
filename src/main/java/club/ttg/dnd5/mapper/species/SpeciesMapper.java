@@ -8,7 +8,7 @@ import org.mapstruct.factory.Mappers;
 @Mapper
 public interface SpeciesMapper {
     SpeciesMapper INSTANCE = Mappers.getMapper(SpeciesMapper.class);
-    SpeciesResponse toEntity(Species species);
-    Species toDTO(SpeciesResponse speciesResponse);
+    SpeciesResponse toDTO(Species species);
+    Species toEntity(SpeciesResponse speciesResponse);
 }
 
