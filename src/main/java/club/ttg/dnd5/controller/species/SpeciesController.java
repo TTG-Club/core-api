@@ -21,16 +21,6 @@ import java.util.List;
 public class SpeciesController {
     private final SpeciesService speciesService;
 
-    @Operation(summary = "Получить все виды", description = "Получение списка всех видов.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Список видов успешно получен")
-    })
-    @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<SpeciesResponse> getAllSpecies() {
-        return speciesService.findAll();
-    }
-
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Вид успешно получен"),

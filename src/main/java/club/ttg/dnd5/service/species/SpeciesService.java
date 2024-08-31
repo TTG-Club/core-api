@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class SpeciesService {
@@ -26,12 +25,6 @@ public class SpeciesService {
     @Autowired
     public SpeciesService(SpeciesRepository speciesRepository) {
         this.speciesRepository = speciesRepository;
-    }
-
-    public List<SpeciesResponse> findAll() {
-        return speciesRepository.findAll().stream()
-                .map(speciesMapper::toDTO)
-                .collect(Collectors.toList());
     }
 
     public SpeciesResponse findById(String url) {
@@ -68,8 +61,6 @@ public class SpeciesService {
 
         Page<Species> speciesPage = speciesRepository.findAll(spec, pageable);
 
-        return speciesPage.stream()
-                .map(speciesMapper::toDTO)
-                .collect(Collectors.toList());
+        return speciesMapper.convertNotDetailList(speciesPage.getContent());
     }
 }
