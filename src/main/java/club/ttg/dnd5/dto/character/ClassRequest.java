@@ -1,8 +1,9 @@
 package club.ttg.dnd5.dto.character;
 
 
-import club.ttg.dnd5.dictionary.Dice;
+import club.ttg.dnd5.dto.EntryDto;
 import club.ttg.dnd5.dto.NameDto;
+import club.ttg.dnd5.dto.SourceDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,18 +23,23 @@ public class ClassRequest {
     private String hitDice;
 
     @Schema(description = "Снаряжение", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String equipment;
+    private EntryDto equipment;
     @Schema(description = "Владение доспехами")
-    private String armorMastery;
+    private EntryDto armorMastery;
     @Schema(description = "Владение оружием")
-    private String weaponMastery;
+    private EntryDto weaponMastery;
     @Schema(description = "Владение инструментами")
-    private String toolMastery;
+    private EntryDto toolMastery;
 
     @Schema(description = "умения класса", requiredMode = Schema.RequiredMode.REQUIRED)
     private Collection<ClassFeatureDto> features;
     @Schema(description = "описание класса", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String description;
+    private EntryDto description;
+    @Schema(description = "описание класса на английском", requiredMode = Schema.RequiredMode.REQUIRED)
+    private EntryDto original;
     @Schema(description = "умения класса", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String parentUrl;
+
+    @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
+    private SourceDto source;
 }

@@ -61,9 +61,9 @@ public class ClassCharacter {
     private Set<Skill> availableSkills;
     private short skillAvailable;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "class_url")
-    private Collection<ClassSpellLeves> classSpellLevels;
+    private Collection<ClassSpellLevels> classSpellLevels;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "class_url")
