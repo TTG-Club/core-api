@@ -22,8 +22,6 @@ public class SpeciesResponse {
     private SpeciesResponse parent;
     private Collection<SpeciesResponse> subSpecies;
     private Collection<SpeciesFeatureResponse> features;
-
-    //если коллекция, то тут фалс, в результате не будет такая детализация в дто
     private boolean detail;
 }
 
