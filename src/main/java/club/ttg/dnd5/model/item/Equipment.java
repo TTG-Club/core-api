@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 
 @Entity
-@Table(name = "/equipments")
+@Table(name = "equipments")
 public class Equipment {
     @Id
     @Column(nullable = false, unique = true)
@@ -29,12 +29,10 @@ public class Equipment {
     private String description;
     @Column(columnDefinition = "TEXT")
     private String original;
-
     @ManyToOne
     @JoinColumn(name = "source")
     private Source source;
     private Short page;
-
     @Column(columnDefinition = "TIMESTAMP")
     private LocalDateTime created;
     @Column(columnDefinition = "TIMESTAMP")
