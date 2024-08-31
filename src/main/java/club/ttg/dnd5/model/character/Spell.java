@@ -26,6 +26,8 @@ public class Spell {
     @Column(nullable = false)
     private String english;
     private String alternative;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     @Column(columnDefinition = "TEXT")
     private String description;
