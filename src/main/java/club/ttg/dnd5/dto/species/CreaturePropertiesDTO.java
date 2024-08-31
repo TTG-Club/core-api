@@ -2,12 +2,14 @@ package club.ttg.dnd5.dto.species;
 
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.dto.base.HasSourceResponse;
+import club.ttg.dnd5.dto.base.SourceResponse;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class CreaturePropertiesDTO {
+public class CreaturePropertiesDTO implements HasSourceResponse {
     private Size size;
     private CreatureType type;
     private int speed;
@@ -16,4 +18,14 @@ public class CreaturePropertiesDTO {
     private int swim;
     private int darkVision;
     private SourceResponse sourceResponse;
+
+    @Override
+    public Short getPage() {
+        return sourceResponse.getPage();
+    }
+
+    @Override
+    public String getSource() {
+        return sourceResponse.getSource();
+    }
 }
