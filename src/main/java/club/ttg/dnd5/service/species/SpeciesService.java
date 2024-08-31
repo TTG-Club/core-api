@@ -7,7 +7,7 @@ import club.ttg.dnd5.mapper.species.SpeciesMapper;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.repository.SpeciesRepository;
 import club.ttg.dnd5.specification.SpeciesSpecification;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,14 +18,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
     private static final SpeciesMapper speciesMapper = SpeciesMapper.INSTANCE;
-
-    @Autowired
-    public SpeciesService(SpeciesRepository speciesRepository) {
-        this.speciesRepository = speciesRepository;
-    }
 
     public SpeciesResponse findById(String url) {
         return speciesRepository.findById(url)

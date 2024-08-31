@@ -11,6 +11,5 @@ public class SpeciesFeatureResponse {
     private String english;
     private String alternative;
     private String description;
-    private Short page;
     private SourceResponse source;
 }
