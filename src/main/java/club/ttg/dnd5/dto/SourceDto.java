@@ -12,10 +12,8 @@ import lombok.*;
 @Getter
 @Setter
 public class SourceDto {
-    @Schema(description = "краткое имя источника", requiredMode = Schema.RequiredMode.REQUIRED, example = "PHB")
-    private String shortName;
-    @Schema(description = "имя источника", requiredMode = Schema.RequiredMode.REQUIRED, example = "Книга игрока")
-    private String name;
+    @Schema(description = "имя источника")
+    private NameDto name;
     private NameValueDto group;
     @Schema(description = "страницв источника", example = "99")
     private Short page;

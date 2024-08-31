@@ -26,6 +26,8 @@ public class ClassFeature {
     @Column(nullable = false)
     private String english;
     private String alternative;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     private short level;
     @Column(columnDefinition = "TEXT")

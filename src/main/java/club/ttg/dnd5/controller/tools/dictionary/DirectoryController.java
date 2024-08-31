@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @RequiredArgsConstructor
 @Tag(name = "Справочники", description = "API для различных справочников")
-@RequestMapping("/api/v2/reference/")
+@RequestMapping("/api/v2/directory/")
 @RestController
 public class DirectoryController {
     @Operation(summary = "Дайсы")
@@ -134,8 +134,21 @@ public class DirectoryController {
     public Collection<ValueDto> getSpellcasterTypes() {
         return Arrays.stream(SpellcasterType.values())
                 .map(type -> ValueDto.builder()
+                        .rus(type.getName())
                         .eng(type.name())
                         .value(type.getMaxSpellLevel())
+                        .build())
+                .collect(Collectors.toList()
+                );
+    }
+
+    @Operation(summary = "Типы черт")
+    @GetMapping("/feat_types")
+    public Collection<NameDto> getFeatTypesSpellcasterTypes() {
+        return Arrays.stream(FeatType.values())
+                .map(type -> NameDto.builder()
+                        .rus(type.getCyrillicName())
+                        .eng(type.name())
                         .build())
                 .collect(Collectors.toList()
                 );

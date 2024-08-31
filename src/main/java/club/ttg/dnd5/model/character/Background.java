@@ -30,6 +30,8 @@ public class Background {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     @Enumerated(EnumType.STRING)
     private Set<Ability> abilities;

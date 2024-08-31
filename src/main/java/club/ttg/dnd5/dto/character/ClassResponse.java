@@ -2,6 +2,7 @@ package club.ttg.dnd5.dto.character;
 
 import club.ttg.dnd5.dto.ChangedDto;
 import club.ttg.dnd5.dto.NameDto;
+import club.ttg.dnd5.dto.SourceDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -27,6 +28,8 @@ public class ClassResponse {
     private String armorMastery;
     private String weaponMastery;
     private String toolMastery;
+
+    private SourceDto source;
 
     private String hitDice;
     @Schema(description = "дата создания и последнего обновления")
