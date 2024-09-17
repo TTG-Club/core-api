@@ -50,12 +50,11 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид не найден"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PutMapping("/{url}")
+    @PutMapping("/{oldUrl}")
     @Secured("ROLE_ADMIN")
     @ResponseStatus(HttpStatus.OK)
-    public SpeciesResponse updateSpecies(@PathVariable String url, @RequestBody SpeciesResponse speciesResponse) {
-        speciesResponse.setUrl(url);
-        return speciesService.update(speciesResponse);
+    public SpeciesResponse updateSpecies(@PathVariable String oldUrl, @RequestBody SpeciesResponse speciesResponse) {
+        return speciesService.update(oldUrl, speciesResponse);
     }
 
     @Operation(summary = "Поиск видов", description = "Поиск видов по различным фильтрам и критериям.")
