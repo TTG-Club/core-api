@@ -30,6 +30,7 @@ public class MenuService {
                 .orElseThrow(EntityNotFoundException::new);
     }
 
+    @Transactional
     public MenuResponse save(MenuResponse menuResponse) {
         Menu menu = menuMapper.menuApiToMenu(menuResponse);
         Menu savedMenu = menuRepository.save(menu);

@@ -33,7 +33,7 @@ public class SpeciesService {
                 .orElseThrow(() -> new EntityNotFoundException("Species not found with url: " + url));
     }
 
-
+    @Transactional
     public SpeciesResponse save(SpeciesResponse speciesResponse) {
         Species species = speciesMapper.toEntity(speciesResponse);
         Species savedSpecies = speciesRepository.save(species);
@@ -76,7 +76,6 @@ public class SpeciesService {
             throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
         }
     }
-
 
     public List<SpeciesResponse> searchSpecies(SearchRequest request) {
         SpeciesSpecification speciesSpecification = new SpeciesSpecification();
