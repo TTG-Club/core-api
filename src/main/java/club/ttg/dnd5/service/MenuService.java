@@ -15,8 +15,8 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 public class MenuService {
-    private final MenuRepository menuRepository;
     private static final MenuMapper menuMapper = MenuMapper.INSTANCE;
+    private final MenuRepository menuRepository;
 
     public List<MenuResponse> findAll() {
         return menuRepository.findAll().stream()
@@ -36,22 +36,26 @@ public class MenuService {
         return menuMapper.menuToMenuApi(savedMenu);
     }
 
+    @Transactional
     public MenuResponse update(String oldUrl, MenuResponse menuResponse) {
         if (menuRepository.existsByUrl(oldUrl)) {
-            Menu existingMenu = menuRepository.findByUrl(oldUrl)
-                    .orElseThrow(() -> new EntityNotFoundException("Menu with URL " + oldUrl + " does not exist."));
+            if (!oldUrl.equals(menuResponse.getUrl())) {
+                menuRepository.deleteByUrl(oldUrl);
+            }
 
-            updateExistingMenu(menuResponse, existingMenu);
+            Menu updatedMenu = menuMapper.menuApiToMenu(menuResponse);
 
             if (menuResponse.getChildren() != null && !menuResponse.getChildren().isEmpty()) {
                 List<Menu> updatedChildren = menuResponse.getChildren().stream()
                         .map(menuMapper::menuApiToMenu)
+                        .peek(child -> child.setParent(updatedMenu))
                         .toList();
-                existingMenu.setChildren(updatedChildren);
+                updatedMenu.setChildren(updatedChildren);
             }
 
-            Menu updatedMenu = menuRepository.save(existingMenu);
-            return menuMapper.menuToMenuApi(updatedMenu);
+            Menu savedMenu = menuRepository.save(updatedMenu);
+
+            return menuMapper.menuToMenuApi(savedMenu);
         } else {
             throw new EntityNotFoundException("Menu with URL " + oldUrl + " does not exist.");
         }
@@ -63,15 +67,5 @@ public class MenuService {
         } else {
             throw new EntityNotFoundException("Menu with URL " + url + " does not exist.");
         }
-    }
-
-    private static void updateExistingMenu(MenuResponse menuResponse, Menu existingMenu) {
-        existingMenu.setName(menuResponse.getName());
-        existingMenu.setIcon(menuResponse.getIcon());
-        existingMenu.setUrl(menuResponse.getUrl());
-        existingMenu.setOnlyDev(menuResponse.getOnlyDev() != null ? menuResponse.getOnlyDev() : existingMenu.isOnlyDev());
-        existingMenu.setOrder(menuResponse.getOrder());
-        existingMenu.setOnIndex(menuResponse.getOnIndex() != null ? menuResponse.getOnIndex() : existingMenu.isOnIndex());
-        existingMenu.setIndexOrder(menuResponse.getIndexOrder());
     }
 }
