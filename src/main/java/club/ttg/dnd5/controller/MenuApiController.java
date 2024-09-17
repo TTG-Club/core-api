@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequiredArgsConstructor
 @Tag(name = "Меню сайта", description = "The Menu API")
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v2/menu")
 public class MenuApiController {
@@ -30,9 +30,7 @@ public class MenuApiController {
     @GetMapping("/{url}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<MenuResponse> getMenuByUrl(@PathVariable String url) {
-        return menuService.findByUrl(url)
-                .map(menuApi -> new ResponseEntity<>(menuApi, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return new ResponseEntity<>(menuService.findByUrl(url), HttpStatus.OK);
     }
 
     @Operation(summary = "Создание нового элемента меню")
@@ -43,13 +41,13 @@ public class MenuApiController {
         return menuService.save(menuResponse);
     }
 
-    @Operation(summary = "Обновление элемента меню по URL")
-    @PutMapping("/{url}")
+    @Operation(summary = "Обновление элемента меню. NOTE теле должен быть новый url")
+    @PutMapping("/{oldUrl}")
     @Secured("ROLE_ADMIN")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<MenuResponse> updateMenu(@PathVariable String url, @RequestBody MenuResponse menuResponse) {
-        menuResponse.setUrl(url);
-        MenuResponse updatedMenu = menuService.update(menuResponse);
+    public ResponseEntity<MenuResponse> updateMenu(@PathVariable String oldUrl,
+                                                   @RequestBody MenuResponse menuResponse) {
+        MenuResponse updatedMenu = menuService.update(oldUrl, menuResponse);
         return new ResponseEntity<>(updatedMenu, HttpStatus.OK);
     }
 
