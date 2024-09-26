@@ -1,14 +1,17 @@
 package club.ttg.dnd5.service.species;
 
+import club.ttg.dnd5.dto.EntryDto;
 import club.ttg.dnd5.dto.engine.SearchRequest;
+import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
+import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
 import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.mapper.species.SpeciesMapper;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.repository.SpeciesRepository;
-import club.ttg.dnd5.specification.SpeciesSpecification;
+import club.ttg.dnd5.spec.SpeciesSpecification;
+import club.ttg.dnd5.utills.Converter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,27 +20,64 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
-    private static final SpeciesMapper speciesMapper = SpeciesMapper.INSTANCE;
 
     public SpeciesResponse findById(String url) {
-        return speciesRepository.findById(url)
-                .map(speciesMapper::toDTO)
-                .orElseThrow(() -> new EntityNotFoundException("Species not found with url: " + url));
+        Species species = speciesRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
+        return toDTO(species);
     }
 
     @Transactional
-    public SpeciesResponse save(SpeciesResponse speciesResponse) {
-        Species species = speciesMapper.toEntity(speciesResponse);
-        Species savedSpecies = speciesRepository.save(species);
-        return speciesMapper.toDTO(savedSpecies);
+    public SpeciesResponse save(CreateSpeciesDTO createSpeciesDTO) {
+        Species species = new Species();
+        Converter.fillEntityNameFromBaseDTO(createSpeciesDTO, species);
+        Converter.fillEntityCreaturePropertiesFromDTO(createSpeciesDTO.getCreatureProperties(), species);
+        if (createSpeciesDTO.isParent()) {
+            species.setParent(species);
+        } else {
+            species.setParent(null);
+        }
+        //TODO обработка features
+        Species save = speciesRepository.save(species);
+        return toDTO(save);
+    }
+
+    public SpeciesResponse addParent(String speciesUrl, String speciesParentUrl) {
+        Species species = findByUrl(speciesUrl);
+        Species parent = findByUrl(speciesParentUrl);
+
+        species.setParent(parent);
+
+        if (parent.getSubSpecies() == null) {
+            parent.setSubSpecies(new ArrayList<>());
+        }
+        parent.getSubSpecies().add(species);
+
+        return toDTO(speciesRepository.save(species));
+    }
+
+    public SpeciesResponse addSubSpecies(String speciesUrl, List<String> subSpeciesUrls) {
+        Species species = findByUrl(speciesUrl);
+        List<Species> subSpeciesEntities = new ArrayList<>();
+
+        for (String url : subSpeciesUrls) {
+            Species subSpecies = findByUrl(url);
+            subSpeciesEntities.add(subSpecies);
+
+            // Set this species as a parent for the sub-species
+            subSpecies.setParent(species);
+        }
+
+        // Set the sub-species for the species
+        species.setSubSpecies(subSpeciesEntities);
+
+        return toDTO(speciesRepository.save(species));
     }
 
     @Transactional
@@ -46,34 +86,32 @@ public class SpeciesService {
             if (!oldUrl.equals(speciesResponse.getUrl())) {
                 speciesRepository.deleteById(oldUrl);
             }
-
-            Species species = speciesMapper.toEntity(speciesResponse);
-
-            if (speciesResponse.getParent() != null) {
-                Species parentSpecies = speciesMapper.toEntity(speciesResponse.getParent());
-                species.setParent(parentSpecies);
-            }
-
-            if (speciesResponse.getSubSpecies() != null) {
-                Collection<Species> subSpecies = speciesResponse.getSubSpecies().stream()
-                        .map(speciesMapper::toEntity)
-                        .peek(sub -> sub.setParent(species))  // Set parent for each sub-species
-                        .toList();
-                species.setSubSpecies(subSpecies);
-            }
-
-            if (speciesResponse.getFeatures() != null) {
-                Collection<SpeciesFeature> features = speciesResponse.getFeatures().stream()
-                        .map(this::toEntityFeature)  // Custom conversion method
-                        .toList();
-                species.setFeatures(features);
-            }
-
-            Species updatedSpecies = speciesRepository.save(species);
-
-            return speciesMapper.toDTO(updatedSpecies);
+            return getSpeciesResponse(speciesResponse);
         } else {
             throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
+        }
+    }
+
+    private SpeciesResponse getSpeciesResponse(SpeciesResponse speciesResponse) {
+        Species species = toEntity(speciesResponse);
+        fillSpecies(speciesResponse, species);
+        Species updatedSpecies = speciesRepository.save(species);
+        return toDTO(updatedSpecies);
+    }
+
+    private void fillSpecies(SpeciesResponse speciesResponse, Species species) {
+        if (speciesResponse.getSubSpeciesUrls() != null) {
+            List<Species> subSpecies = speciesResponse.getSubSpeciesUrls().stream()
+                    .map(this::findByUrl)
+                    .toList();
+            species.setSubSpecies(subSpecies);
+        }
+
+        if (speciesResponse.getFeatures() != null) {
+            Collection<SpeciesFeature> features = speciesResponse.getFeatures().stream()
+                    .map(this::toEntityFeature)
+                    .toList();
+            species.setFeatures(features);
         }
     }
 
@@ -87,10 +125,84 @@ public class SpeciesService {
         );
 
         Page<Species> speciesPage = speciesRepository.findAll(spec, pageable);
-
-        return speciesMapper.convertNotDetailList(speciesPage.getContent());
+        return speciesPage.getContent().stream()
+                .map(this::toDTO)
+                .toList();
     }
 
+    private Species findByUrl(String url) {
+        return speciesRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
+    }
+
+    //метод отвечающий за родителя
+    private void fillParent(Species species, SpeciesResponse speciesResponse) {
+        Species parentSpecies = null;
+        //означает, что текущий вид будет будущим родителем, для других видов
+        String parentUrl = speciesResponse.getParentUrl();
+        if (parentUrl.equals(speciesResponse.getUrl())) {
+            species.setParent(null);
+        } else {
+            parentSpecies = findByUrl(parentUrl);
+        }
+        species.setParent(parentSpecies);
+    }
+
+    private Species toEntity(SpeciesResponse dto) {
+        Species species = new Species();
+        species.setUrl(dto.getUrl());
+        Converter.fillEntityNameFromBaseDTO(dto, species);
+        species.setPage(dto.getSource().getPage());
+
+        // Handle parent
+        if (dto.getParentUrl() != null) {
+            fillParent(species, dto);
+        }
+
+        // Handle subSpecies
+        fillSpecies(dto, species);
+
+        return species;
+    }
+
+    //TODO, в будущем можно вынести в конвертер, а тот через дженерики, проворачивает, где будут дто и сущности
+
+    private SpeciesResponse toDTO(Species species) {
+        SpeciesResponse dto = new SpeciesResponse();
+        dto.setUrl(species.getUrl());
+        Converter.fillDTOFromEntity(dto, species);
+        dto.setCreatureProperties(new CreaturePropertiesDTO());
+        Converter.fillDTOCreaturePropertiesFromEntity(dto.getCreatureProperties(), species);
+        if (species.getPage() != null) {
+            dto.getSource().setSource(String.valueOf(species.getPage()));
+        }
+
+        // Handle parent
+        if (species.getParent() != null) {
+            SpeciesResponse parentDTO = new SpeciesResponse();
+            parentDTO.setUrl(species.getParent().getUrl());
+        }
+
+        // Handle subSpecies
+        if (species.getSubSpecies() != null) {
+            List<String> subSpeciesUrls = species.getSubSpecies().stream()
+                    .map(Species::getUrl)
+                    .toList();
+            dto.setSubSpeciesUrls(subSpeciesUrls);
+        }
+
+        // Handle features
+        if (species.getFeatures() != null) {
+            Collection<SpeciesFeatureResponse> features = species.getFeatures().stream()
+                    .map(this::toDTOFeature)
+                    .toList();
+            dto.setFeatures(features);
+        }
+
+        return dto;
+    }
+
+    //TODO Добавить корректную поддержку Feature
     private SpeciesFeature toEntityFeature(SpeciesFeatureResponse response) {
         if (response == null) {
             return null;
@@ -99,12 +211,25 @@ public class SpeciesService {
         SpeciesFeature speciesFeature = new SpeciesFeature();
         speciesFeature.setUrl(response.getUrl());
         speciesFeature.setName(response.getEntries().getName());
-
-        List<String> entries = response.getEntries().getEntries().stream()
+        speciesFeature.setEntries(response.getEntries().getEntries().stream()
                 .map(Object::toString)
-                .toList();
-        speciesFeature.setEntries(entries);
+                .toList());
 
         return speciesFeature;
+    }
+
+    private SpeciesFeatureResponse toDTOFeature(SpeciesFeature feature) {
+        if (feature == null) {
+            return null;
+        }
+
+        SpeciesFeatureResponse dto = new SpeciesFeatureResponse();
+        dto.setUrl(feature.getUrl());
+        EntryDto entries = new EntryDto();
+        entries.setName(feature.getName());
+        entries.setEntries(Collections.singletonList(feature.getEntries()));
+        dto.setEntries(entries);
+
+        return dto;
     }
 }
