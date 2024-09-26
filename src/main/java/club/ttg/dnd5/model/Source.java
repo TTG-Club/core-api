@@ -19,6 +19,7 @@ public class Source {
     @Id
     @Column(unique = true, nullable = false)
     private String source;
+    private short page;
     @Column(nullable = false)
     private String name;
     @Column(nullable = false)

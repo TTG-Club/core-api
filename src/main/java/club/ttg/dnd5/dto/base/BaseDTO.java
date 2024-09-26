@@ -8,37 +8,8 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public abstract class BaseDTO implements HasSourceResponse, HasNameResponse {
+public abstract class BaseDTO {
     private String url;
     private NameBasedDTO nameBasedDTO;
     private SourceResponse source;
-    @Override
-    public String getName() {
-        return nameBasedDTO.getName();
-    }
-
-    @Override
-    public String getEnglish() {
-        return nameBasedDTO.getEnglish();
-    }
-
-    @Override
-    public String getAlternative() {
-        return nameBasedDTO.getAlternative();
-    }
-
-    @Override
-    public String getDescription() {
-        return nameBasedDTO.getDescription();
-    }
-
-    @Override
-    public Short getPage() {
-        return source != null ? source.getPage() : null;
-    }
-
-    @Override
-    public String getSource() {
-        return source != null ? source.getSource() : null;
-    }
 }

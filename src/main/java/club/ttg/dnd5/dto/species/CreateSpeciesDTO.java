@@ -12,13 +12,8 @@ import java.util.Collection;
 @Setter
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class SpeciesResponse extends BaseDTO {
-    // Включаем свойства существа через DTO
+public class CreateSpeciesDTO extends BaseDTO {
     private CreaturePropertiesDTO creatureProperties;
-    // Связанные сущности
-    private String parentUrl;
-    private Collection<String> subSpeciesUrls;
     private Collection<SpeciesFeatureResponse> features;
-    private boolean detail = false;
+    boolean parent;
 }
-
