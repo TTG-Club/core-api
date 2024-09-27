@@ -2,6 +2,7 @@ package club.ttg.dnd5.model.species;
 
 import club.ttg.dnd5.model.Source;
 import club.ttg.dnd5.model.base.CreatureProperties;
+import club.ttg.dnd5.model.base.HasSourceEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,7 @@ import java.util.Collection;
 @Table(name = "species",
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
-public class Species extends CreatureProperties {
+public class Species extends CreatureProperties implements HasSourceEntity {
     private Short page;
     @ManyToOne(cascade = { CascadeType.ALL })
     @JoinColumn(name = "parent_id")
@@ -32,4 +33,10 @@ public class Species extends CreatureProperties {
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "species_url")
     private Collection<SpeciesFeature> features;
+
+    public void setSource(String sourceName) {
+        if (this.source != null) {
+            this.source.setSource(sourceName);
+        }
+    }
 }
