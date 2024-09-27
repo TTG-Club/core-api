@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SourceResponse {
+public class SourceResponse implements HasSourceDTO {
     private Short page;
     private String source;
 }

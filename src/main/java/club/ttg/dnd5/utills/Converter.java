@@ -1,15 +1,17 @@
 package club.ttg.dnd5.utills;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
+import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
 import club.ttg.dnd5.model.base.CreatureProperties;
+import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
 
 public class Converter {
+    // D from DTO, E from Entity
     private Converter() {}
 
-    // D from DTO, E from Entity
     public static <D extends BaseDTO, E extends NamedEntity> E mapBaseDTOToEntityName(D dto, E entity) {
         entity.setUrl(dto.getUrl());
         entity.setName(dto.getNameBasedDTO().getName());
@@ -48,6 +50,18 @@ public class Converter {
         dto.setClimb(entity.getClimb());
         dto.setSwim(entity.getSwim());
         dto.setDarkVision(entity.getDarkVision());
+        return dto;
+    }
+
+    public static <D extends HasSourceDTO, E extends HasSourceEntity> E mapDTOSourceToEntitySource(D dto, E entity) {
+        entity.setPage(dto.getPage());
+        entity.setSource(dto.getSource());
+        return entity;
+    }
+
+    public static <D extends HasSourceDTO, E extends HasSourceEntity> D mapEntitySourceToDTOSource(D dto, E entity) {
+        dto.setPage(entity.getPage());
+        dto.setSource(entity.getSource().getSource());
         return dto;
     }
 }
