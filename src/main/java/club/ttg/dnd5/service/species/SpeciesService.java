@@ -36,8 +36,9 @@ public class SpeciesService {
     @Transactional
     public SpeciesResponse save(CreateSpeciesDTO createSpeciesDTO) {
         Species species = new Species();
-        Converter.fillEntityNameFromBaseDTO(createSpeciesDTO, species);
-        Converter.fillEntityCreaturePropertiesFromDTO(createSpeciesDTO.getCreatureProperties(), species);
+
+        Converter.mapBaseDTOToEntityName(createSpeciesDTO, species);
+        Converter.mapCreaturePropertiesDTOToEntity(createSpeciesDTO.getCreatureProperties(), species);
         if (createSpeciesDTO.isParent()) {
             species.setParent(species);
         } else {
@@ -151,7 +152,7 @@ public class SpeciesService {
     private Species toEntity(SpeciesResponse dto) {
         Species species = new Species();
         species.setUrl(dto.getUrl());
-        Converter.fillEntityNameFromBaseDTO(dto, species);
+        Converter.mapBaseDTOToEntityName(dto, species);
         species.setPage(dto.getSource().getPage());
 
         // Handle parent
@@ -166,13 +167,12 @@ public class SpeciesService {
     }
 
     //TODO, в будущем можно вынести в конвертер, а тот через дженерики, проворачивает, где будут дто и сущности
-
     private SpeciesResponse toDTO(Species species) {
         SpeciesResponse dto = new SpeciesResponse();
         dto.setUrl(species.getUrl());
-        Converter.fillDTOFromEntity(dto, species);
+        Converter.mapEntityToBaseDTO(dto, species);
         dto.setCreatureProperties(new CreaturePropertiesDTO());
-        Converter.fillDTOCreaturePropertiesFromEntity(dto.getCreatureProperties(), species);
+        Converter.mapEntityToCreaturePropertiesDTO(dto.getCreatureProperties(), species);
         if (species.getPage() != null) {
             dto.getSource().setSource(String.valueOf(species.getPage()));
         }
