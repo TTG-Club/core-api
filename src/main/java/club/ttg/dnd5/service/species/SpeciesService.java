@@ -36,7 +36,6 @@ public class SpeciesService {
     @Transactional
     public SpeciesResponse save(CreateSpeciesDTO createSpeciesDTO) {
         Species species = new Species();
-
         Converter.mapBaseDTOToEntityName(createSpeciesDTO, species);
         Converter.mapCreaturePropertiesDTOToEntity(createSpeciesDTO.getCreatureProperties(), species);
         if (createSpeciesDTO.isParent()) {
