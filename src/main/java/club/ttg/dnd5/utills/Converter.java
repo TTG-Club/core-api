@@ -69,11 +69,9 @@ public class Converter {
         return dto;
     }
 
-    public static <D extends BaseDTO & DetailableDTO, E extends NamedEntity> D mapEntityToBaseDTOWithDetail(D dto, E entity, boolean detail) {
+    public static <D extends BaseDTO & DetailableDTO, E extends NamedEntity> D mapEntityToBaseDTOWithHideDetails(D dto, E entity) {
         mapEntityToBaseDTO(dto, entity);
-        if (!detail) {
-            dto.hideDetails();
-        }
+        dto.hideDetails();
         return dto;
     }
 }

@@ -3,7 +3,6 @@ package club.ttg.dnd5.service.species;
 import club.ttg.dnd5.dto.EntryDto;
 import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
-import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
 import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -152,43 +151,24 @@ public class SpeciesService {
         Species species = new Species();
         species.setUrl(dto.getUrl());
         Converter.mapBaseDTOToEntityName(dto, species);
-        species.setPage(dto.getSource().getPage());
-
+        Converter.mapDTOSourceToEntitySource(dto.getSource(), species);
+        Converter.mapCreaturePropertiesDTOToEntity(dto.getCreatureProperties(), species);
         // Handle parent
         if (dto.getParentUrl() != null) {
             fillParent(species, dto);
         }
-
         // Handle subSpecies
         fillSpecies(dto, species);
-
         return species;
     }
 
-    //TODO, в будущем можно вынести в конвертер, а тот через дженерики, проворачивает, где будут дто и сущности
     private SpeciesResponse toDTO(Species species) {
         SpeciesResponse dto = new SpeciesResponse();
-        dto.setUrl(species.getUrl());
         Converter.mapEntityToBaseDTO(dto, species);
-        dto.setCreatureProperties(new CreaturePropertiesDTO());
         Converter.mapEntityToCreaturePropertiesDTO(dto.getCreatureProperties(), species);
-        if (species.getPage() != null) {
-            dto.getSource().setSource(String.valueOf(species.getPage()));
-        }
+        Converter.mapEntitySourceToDTOSource(dto.getSource(), species);
 
-        // Handle parent
-        if (species.getParent() != null) {
-            SpeciesResponse parentDTO = new SpeciesResponse();
-            parentDTO.setUrl(species.getParent().getUrl());
-        }
-
-        // Handle subSpecies
-        if (species.getSubSpecies() != null) {
-            List<String> subSpeciesUrls = species.getSubSpecies().stream()
-                    .map(Species::getUrl)
-                    .toList();
-            dto.setSubSpeciesUrls(subSpeciesUrls);
-        }
+        handleParentAndChild(species, dto);
 
         // Handle features
         if (species.getFeatures() != null) {
@@ -230,5 +210,20 @@ public class SpeciesService {
         dto.setEntries(entries);
 
         return dto;
+    }
+
+    private void handleParentAndChild(Species species, SpeciesResponse dto) {
+        if (species.getParent() != null) {
+            SpeciesResponse parentDTO = new SpeciesResponse();
+            parentDTO.setUrl(species.getParent().getUrl());
+        }
+
+        // Handle subSpecies
+        if (species.getSubSpecies() != null) {
+            List<String> subSpeciesUrls = species.getSubSpecies().stream()
+                    .map(Species::getUrl)
+                    .toList();
+            dto.setSubSpeciesUrls(subSpeciesUrls);
+        }
     }
 }

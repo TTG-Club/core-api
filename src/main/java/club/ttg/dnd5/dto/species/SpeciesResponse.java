@@ -15,7 +15,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class SpeciesResponse extends BaseDTO implements DetailableDTO {
     // Включаем свойства существа через DTO
-    private CreaturePropertiesDTO creatureProperties;
+    private CreaturePropertiesDTO creatureProperties = new CreaturePropertiesDTO();
     // Связанные сущности
     private String parentUrl;
     private Collection<String> subSpeciesUrls;
