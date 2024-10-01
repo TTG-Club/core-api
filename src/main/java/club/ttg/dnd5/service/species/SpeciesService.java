@@ -29,7 +29,7 @@ public class SpeciesService {
     public SpeciesResponse findById(String url) {
         Species species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
-        return toDTO(species);
+        return toDTO(species, false);
     }
 
     @Transactional
@@ -44,7 +44,7 @@ public class SpeciesService {
         }
         //TODO обработка features
         Species save = speciesRepository.save(species);
-        return toDTO(save);
+        return toDTO(save, false);
     }
 
     public SpeciesResponse addParent(String speciesUrl, String speciesParentUrl) {
@@ -58,7 +58,7 @@ public class SpeciesService {
         }
         parent.getSubSpecies().add(species);
 
-        return toDTO(speciesRepository.save(species));
+        return toDTO(speciesRepository.save(species), false);
     }
 
     public SpeciesResponse addSubSpecies(String speciesUrl, List<String> subSpeciesUrls) {
@@ -76,7 +76,7 @@ public class SpeciesService {
         // Set the sub-species for the species
         species.setSubSpecies(subSpeciesEntities);
 
-        return toDTO(speciesRepository.save(species));
+        return toDTO(speciesRepository.save(species), false);
     }
 
     @Transactional
@@ -95,7 +95,7 @@ public class SpeciesService {
         Species species = toEntity(speciesResponse);
         fillSpecies(speciesResponse, species);
         Species updatedSpecies = speciesRepository.save(species);
-        return toDTO(updatedSpecies);
+        return toDTO(updatedSpecies, false);
     }
 
     private void fillSpecies(SpeciesResponse speciesResponse, Species species) {
@@ -125,7 +125,7 @@ public class SpeciesService {
 
         Page<Species> speciesPage = speciesRepository.findAll(spec, pageable);
         return speciesPage.getContent().stream()
-                .map(this::toDTO)
+                .map(species -> toDTO(species, true))
                 .toList();
     }
 
@@ -162,11 +162,15 @@ public class SpeciesService {
         return species;
     }
 
-    private SpeciesResponse toDTO(Species species) {
+    private SpeciesResponse toDTO(Species species, boolean hideDetails) {
         SpeciesResponse dto = new SpeciesResponse();
-        Converter.mapEntityToBaseDTO(dto, species);
-        Converter.mapEntityToCreaturePropertiesDTO(dto.getCreatureProperties(), species);
+        if (hideDetails) {
+            Converter.mapEntityToBaseDTOWithHideDetails(dto, species);
+        } else {
+            Converter.mapEntityToBaseDTO(dto, species);
+        }
         Converter.mapEntitySourceToDTOSource(dto.getSource(), species);
+        Converter.mapEntityToCreaturePropertiesDTO(dto.getCreatureProperties(), species);
 
         handleParentAndChild(species, dto);
 
