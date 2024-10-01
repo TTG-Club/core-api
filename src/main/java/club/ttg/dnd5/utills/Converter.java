@@ -1,6 +1,7 @@
 package club.ttg.dnd5.utills;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
+import club.ttg.dnd5.dto.base.DetailableDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
@@ -10,7 +11,8 @@ import club.ttg.dnd5.model.base.NamedEntity;
 
 public class Converter {
     // D from DTO, E from Entity
-    private Converter() {}
+    private Converter() {
+    }
 
     public static <D extends BaseDTO, E extends NamedEntity> E mapBaseDTOToEntityName(D dto, E entity) {
         entity.setUrl(dto.getUrl());
@@ -63,6 +65,14 @@ public class Converter {
         dto.setPage(entity.getPage());
         if (entity.getSource() != null) {
             dto.setSource(entity.getSource().getSource());
+        }
+        return dto;
+    }
+
+    public static <D extends BaseDTO & DetailableDTO, E extends NamedEntity> D mapEntityToBaseDTOWithDetail(D dto, E entity, boolean detail) {
+        mapEntityToBaseDTO(dto, entity);
+        if (!detail) {
+            dto.hideDetails();
         }
         return dto;
     }
