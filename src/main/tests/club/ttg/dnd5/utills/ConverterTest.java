@@ -20,7 +20,6 @@ import org.junit.Test;
 import static junit.framework.TestCase.assertEquals;
 
 public class ConverterTest {
-
     private BaseDTO baseDTO;
     private NamedEntity namedEntity;
     private CreaturePropertiesDTO creaturePropertiesDTO;
