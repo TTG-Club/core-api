@@ -35,8 +35,15 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     private Collection<SpeciesFeature> features;
 
     public void setSource(String sourceName) {
-        if (this.source != null) {
-            this.source.setSource(sourceName);
+        if (this.source == null) {
+            source = new Source();
         }
+        this.source.setPage(this.page);
+        this.source.setSource(sourceName);
+    }
+
+    @Override
+    public void setSource(Source source) {
+        this.source = source;
     }
 }

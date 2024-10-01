@@ -3,7 +3,7 @@ package club.ttg.dnd5.dto.character;
 import club.ttg.dnd5.dictionary.EntityType;
 import club.ttg.dnd5.dto.EntryDto;
 import club.ttg.dnd5.dto.NameDto;
-import club.ttg.dnd5.dto.SourceDto;
+import club.ttg.dnd5.dto.base.SourceDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;

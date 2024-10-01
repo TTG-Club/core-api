@@ -7,4 +7,5 @@ public interface HasSourceEntity {
     Short getPage();
     void setPage(Short page);
     void setSource(String sourceName);
+    void setSource(Source source);
 }

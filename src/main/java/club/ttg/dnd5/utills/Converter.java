@@ -61,7 +61,9 @@ public class Converter {
 
     public static <D extends HasSourceDTO, E extends HasSourceEntity> D mapEntitySourceToDTOSource(D dto, E entity) {
         dto.setPage(entity.getPage());
-        dto.setSource(entity.getSource().getSource());
+        if (entity.getSource() != null) {
+            dto.setSource(entity.getSource().getSource());
+        }
         return dto;
     }
 }
