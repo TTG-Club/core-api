@@ -16,6 +16,7 @@ public class Converter {
 
     public static <D extends BaseDTO, E extends NamedEntity> E mapBaseDTOToEntityName(D dto, E entity) {
         entity.setUrl(dto.getUrl());
+        entity.setImageUrl(dto.getImageUrl());
         entity.setName(dto.getNameBasedDTO().getName());
         entity.setEnglish(dto.getNameBasedDTO().getEnglish());
         entity.setAlternative(dto.getNameBasedDTO().getAlternative());
@@ -25,6 +26,7 @@ public class Converter {
 
     public static <D extends BaseDTO, E extends NamedEntity> D mapEntityToBaseDTO(D dto, E entity) {
         dto.setUrl(entity.getUrl());
+        dto.setImageUrl(entity.getImageUrl());
         dto.setNameBasedDTO(new NameBasedDTO());
         dto.getNameBasedDTO().setName(entity.getName());
         dto.getNameBasedDTO().setEnglish(entity.getEnglish());
