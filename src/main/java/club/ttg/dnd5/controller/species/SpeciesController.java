@@ -24,6 +24,24 @@ import java.util.List;
 public class SpeciesController {
     private final SpeciesService speciesService;
 
+    @GetMapping("/{parentUrl}/subspecies")
+    @Operation(summary = "Получить подвиды по URL родительского вида",
+            description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
+    public ResponseEntity<List<SpeciesResponse>> getSubSpeciesByParentUrl(
+            @Parameter(description = "URL родительского вида", required = true) @PathVariable String parentUrl) {
+        List<SpeciesResponse> subSpeciesResponses = speciesService.getSubSpeciesByParentUrl(parentUrl);
+        return ResponseEntity.ok(subSpeciesResponses);
+    }
+
+    @GetMapping("/subspecies/{subSpeciesUrl}/related")
+    @Operation(summary = "Получить все связанные виды по URL подвига",
+            description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвига.")
+    public ResponseEntity<List<SpeciesResponse>> getAllRelatedSpeciesBySubSpeciesUrl(
+            @Parameter(description = "URL подвига", required = true) @PathVariable String subSpeciesUrl) {
+        List<SpeciesResponse> relatedSpeciesResponses = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
+        return ResponseEntity.ok(relatedSpeciesResponses);
+    }
+
     /**
      * Метод для добавления родителя к виду.
      *
