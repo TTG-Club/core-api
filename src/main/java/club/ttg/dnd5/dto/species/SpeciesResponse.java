@@ -21,7 +21,6 @@ public class SpeciesResponse extends BaseDTO implements DetailableDTO {
     private Collection<String> subSpeciesUrls;
     private Collection<SpeciesFeatureResponse> features;
     private boolean detail = false;
-
     @Override
     public void hideDetails() {
         if (!detail) {
@@ -31,6 +30,5 @@ public class SpeciesResponse extends BaseDTO implements DetailableDTO {
             this.features = null;
         }
     }
-
 }
 

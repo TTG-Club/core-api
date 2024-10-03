@@ -193,10 +193,7 @@ public class SpeciesService {
 
         SpeciesFeature speciesFeature = new SpeciesFeature();
         speciesFeature.setUrl(response.getUrl());
-        speciesFeature.setName(response.getEntries().getName());
-        speciesFeature.setEntries(response.getEntries().getEntries().stream()
-                .map(Object::toString)
-                .toList());
+
 
         return speciesFeature;
     }
@@ -211,7 +208,6 @@ public class SpeciesService {
         EntryDto entries = new EntryDto();
         entries.setName(feature.getName());
         entries.setEntries(Collections.singletonList(feature.getEntries()));
-        dto.setEntries(entries);
 
         return dto;
     }
