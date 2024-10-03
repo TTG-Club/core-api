@@ -12,7 +12,6 @@ import java.util.Map;
 @Setter
 public abstract class BaseDTO {
     private String url;
-    //TODO test + add in Entity
     private String imageUrl;
     private NameBasedDTO nameBasedDTO;
     private SourceResponse source;

@@ -47,6 +47,38 @@ public class SpeciesService {
         return toDTO(save, false);
     }
 
+    public List<SpeciesResponse> getSubSpeciesByParentUrl(String parentUrl) {
+        Species parentSpecies = speciesRepository.findById(parentUrl)
+                .orElseThrow(() -> new EntityNotFoundException("Parent species not found for URL: " + parentUrl));
+
+        List<Species> subSpeciesList = speciesRepository.findByParent(parentSpecies);
+        return subSpeciesList.stream()
+                .map(species -> toDTO(species, true))
+                .toList();
+    }
+
+    public List<SpeciesResponse> getAllRelatedSpeciesBySubSpeciesUrl(String subSpeciesUrl) {
+        Species subSpecies = speciesRepository.findById(subSpeciesUrl)
+                .orElseThrow(() -> new EntityNotFoundException("Sub-species not found for URL: " + subSpeciesUrl));
+
+        List<Species> relatedSpecies = new ArrayList<>();
+
+        relatedSpecies.add(subSpecies);
+
+        Species parentSpecies = subSpecies.getParent();
+        if (parentSpecies != null) {
+            relatedSpecies.add(parentSpecies);
+        }
+
+        Collection<Species> subSpeciesList = subSpecies.getSubSpecies();
+        if (subSpeciesList != null && !subSpeciesList.isEmpty()) {
+            relatedSpecies.addAll(new ArrayList<>(subSpeciesList)); // Convert Collection to List
+        }
+        return relatedSpecies.stream()
+                .map(species -> toDTO(species, true))
+                .toList();
+    }
+
     public SpeciesResponse addParent(String speciesUrl, String speciesParentUrl) {
         Species species = findByUrl(speciesUrl);
         Species parent = findByUrl(speciesParentUrl);

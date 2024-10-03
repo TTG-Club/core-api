@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -22,11 +23,13 @@ import java.util.Collection;
 )
 public class Species extends CreatureProperties implements HasSourceEntity {
     private Short page;
-    @ManyToOne(cascade = { CascadeType.ALL })
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Species parent;
-    @OneToMany(mappedBy = "parent", orphanRemoval = true)
-    private Collection<Species> subSpecies;
+
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Collection<Species> subSpecies = new ArrayList<>();
+
     @ManyToOne
     @JoinColumn(name = "source")
     private Source source;
