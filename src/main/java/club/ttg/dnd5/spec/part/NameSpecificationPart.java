@@ -1,4 +1,4 @@
-package club.ttg.dnd5.spec;
+package club.ttg.dnd5.spec.part;
 
 import club.ttg.dnd5.dto.engine.SearchDto;
 import club.ttg.dnd5.dto.engine.SearchRequest;

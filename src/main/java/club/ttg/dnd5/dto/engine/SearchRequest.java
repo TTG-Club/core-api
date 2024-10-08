@@ -23,10 +23,8 @@ public class SearchRequest {
     public Integer size = -1;
 	@Schema(description = "поисковый запрос")
     public SearchDto search;
-
     @Schema(description = "фильтры")
     public Map<String, FilterDto> filters;
-
 	@Schema(description = "сортировка")
     @JsonProperty("order")
     public Collection<OrderDto> orders;
