@@ -9,17 +9,15 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.repository.SpeciesRepository;
-import club.ttg.dnd5.spec.SpeciesSpecification;
 import club.ttg.dnd5.utills.Converter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -147,18 +145,19 @@ public class SpeciesService {
     }
 
     public List<SpeciesResponse> searchSpecies(SearchRequest request) {
-        SpeciesSpecification speciesSpecification = new SpeciesSpecification();
-        Specification<Species> spec = speciesSpecification.toSpecification(request);
-
-        Pageable pageable = PageRequest.of(
-                Optional.ofNullable(request.getPage()).orElse(0),
-                Optional.ofNullable(request.getSize()).orElse(10)
-        );
-
-        Page<Species> speciesPage = speciesRepository.findAll(spec, pageable);
-        return speciesPage.getContent().stream()
-                .map(species -> toDTO(species, true))
-                .toList();
+//        SpeciesSpecification speciesSpecification = new SpeciesSpecification();
+//        Specification<Species> spec = speciesSpecification.toSpecification(request);
+//
+//        Pageable pageable = PageRequest.of(
+//                Optional.ofNullable(request.getPage()).orElse(0),
+//                Optional.ofNullable(request.getSize()).orElse(10)
+//        );
+//
+//        Page<Species> speciesPage = speciesRepository.findAll(spec, pageable);
+//        return speciesPage.getContent().stream()
+//                .map(species -> toDTO(species, true))
+//                .toList();
+        return null;
     }
 
     private Species findByUrl(String url) {
