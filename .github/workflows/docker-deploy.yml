@@ -63,7 +63,7 @@ jobs:
             docker pull ${{env.IMAGE_NAME}}
             docker run \
               --network ${{env.NETWORK_NAME}} \
-              --ip ${{secrets.DOCKER_CONTAINER_IP}} \
+              --ip ${{secrets.DOCKER_API_CONTAINER_IP}} \
               --name ${{env.CONTAINER_NAME}} \
               -d \
               -e spring.profiles.active=${{env.ENVIRONMENT_NAME}} \
