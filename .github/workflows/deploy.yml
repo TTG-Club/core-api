@@ -75,6 +75,7 @@ jobs:
               --network ${{needs.env.outputs.NETWORK_NAME}} \
               --ip ${{secrets.DOCKER_API_CONTAINER_IP}} \
               --name ${{needs.env.outputs.CONTAINER_NAME}} \
+              --restart on-failure \
               -d \
               -e spring.profiles.active=${{env.ENVIRONMENT_NAME}} \
               -e dbhost=${{secrets.DOCKER_MYSQL_IP}} \
