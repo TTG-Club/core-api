@@ -5,9 +5,13 @@ import club.ttg.dnd5.dto.base.DetailableDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
+import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
+import club.ttg.dnd5.model.book.Source;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
 
 public class Converter {
     // D from DTO, E from Entity
@@ -57,17 +61,29 @@ public class Converter {
         return dto;
     }
 
-    public static <D extends HasSourceDTO, E extends HasSourceEntity> E mapDTOSourceToEntitySource(D dto, E entity) {
-        entity.setPage(dto.getPage());
-        entity.setSource(dto.getSource());
-        return entity;
+    public static <D extends HasSourceDTO, E extends HasSourceEntity, ID, R extends JpaRepository<?, ID>>
+    E mapDTOSourceToEntitySource(D dto, E entity, R jpaRepository) {
+        try {
+            ID sourceId = (ID) dto.getSource();
+            boolean existsResource = jpaRepository.existsById(sourceId);
+
+            if (!existsResource) {
+                throw new ApiException(HttpStatus.NOT_FOUND, "Source wasn't found: " + sourceId);
+            }
+            Source source = entity.getSource();
+            source.setId(sourceId.toString());
+            source.setPage(dto.getPage());
+            return entity;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public static <D extends HasSourceDTO, E extends HasSourceEntity> D mapEntitySourceToDTOSource(D dto, E entity) {
-        dto.setPage(entity.getPage());
         if (entity.getSource() != null) {
             dto.setSource(entity.getSource().getId());
-            dto.setPage(entity.getPage());
+            dto.setPage(entity.getSource().getPage());
         }
         return dto;
     }

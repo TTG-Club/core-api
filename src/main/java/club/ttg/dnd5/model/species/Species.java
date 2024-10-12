@@ -36,17 +36,4 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "species_url")
     private Collection<SpeciesFeature> features;
-
-    public void setSource(String sourceAcronym) {
-        if (this.source == null) {
-            source = new Source();
-        }
-        this.source.setPage(this.page);
-        this.source.setId(sourceAcronym);
-    }
-
-    @Override
-    public void setSource(Source source) {
-        this.source = source;
-    }
 }
