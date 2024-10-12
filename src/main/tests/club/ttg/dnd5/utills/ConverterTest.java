@@ -9,10 +9,10 @@ import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
-import club.ttg.dnd5.model.Source;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
+import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,9 +74,8 @@ public class ConverterTest {
         hasSourceEntity = new Species();
         hasSourceEntity.setPage((short) 123);
         Source source = new Source();
-        source.setName("PHB");
+        source.setId("PHB");
         source.setPage((short) 123);
-        source.setSource("PHB");
         hasSourceEntity.setSource(source);
     }
 
@@ -138,7 +137,7 @@ public class ConverterTest {
         HasSourceEntity result = Converter.mapDTOSourceToEntitySource(hasSourceDTO, new Species());
 
         assertEquals(hasSourceDTO.getPage(), result.getPage());
-        assertEquals(hasSourceDTO.getSource(), result.getSource().getSource());
+        assertEquals(hasSourceDTO.getSource(), result.getSource().getId());
     }
 
     // Test mapping from HasSourceEntity to HasSourceDTO
@@ -147,6 +146,6 @@ public class ConverterTest {
         HasSourceDTO result = Converter.mapEntitySourceToDTOSource(new SourceResponse(), hasSourceEntity);
 
         assertEquals(hasSourceEntity.getPage(), result.getPage());
-        assertEquals(hasSourceEntity.getSource().getSource(), result.getSource());
+        assertEquals(hasSourceEntity.getSource().getId(), result.getSource());
     }
 }

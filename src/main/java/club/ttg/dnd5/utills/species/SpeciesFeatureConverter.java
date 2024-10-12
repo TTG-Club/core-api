@@ -2,9 +2,11 @@ package club.ttg.dnd5.utills.species;
 
 import club.ttg.dnd5.dto.EntryDto;
 import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
+import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.utills.Converter;
 
+import java.util.Collection;
 import java.util.Collections;
 
 public class SpeciesFeatureConverter {
@@ -26,5 +28,12 @@ public class SpeciesFeatureConverter {
         entries.setName(feature.getName());
         entries.setEntries(Collections.singletonList(feature.getEntries()));
         return dto;
+    }
+
+    public static void convertDTOFeatureIntoEntityFeature(Collection<SpeciesFeatureResponse> dtoFeatures, Species species) {
+        Collection<SpeciesFeature> features = dtoFeatures.stream()
+                .map(SpeciesFeatureConverter::toEntityFeature)
+                .toList();
+        species.setFeatures(features);
     }
 }

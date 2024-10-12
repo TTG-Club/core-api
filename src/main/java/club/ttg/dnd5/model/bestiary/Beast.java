@@ -3,7 +3,7 @@ package club.ttg.dnd5.model.bestiary;
 import club.ttg.dnd5.dictionary.Alignment;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
-import club.ttg.dnd5.model.Source;
+import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.model.base;
 
-import club.ttg.dnd5.model.Source;
+import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
