@@ -5,7 +5,6 @@ import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
 import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.repository.SourceRepository;
 import club.ttg.dnd5.repository.SpeciesRepository;
@@ -44,11 +43,7 @@ public class SpeciesService {
             SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
         }
         //source
-        //TODO находимся полный сорс в бдшке
-        Source source = Converter.mapDTOSourceToEntitySource(createSpeciesDTO, species).getSource();
-        if (source != null) {
-            sourceRepository.save(source);
-        }
+        Converter.mapDTOSourceToEntitySource(createSpeciesDTO, species, sourceRepository).getSource();
 
         if (createSpeciesDTO.isParent()) {
             species.setParent(species);
@@ -181,7 +176,7 @@ public class SpeciesService {
         Species species = new Species();
         species.setUrl(dto.getUrl());
         Converter.mapBaseDTOToEntityName(dto, species);
-        Converter.mapDTOSourceToEntitySource(dto.getSourceDTO(), species);
+//        Converter.mapDTOSourceToEntitySource(dto.getSourceDTO(), species, sourceRepository);
         Converter.mapCreaturePropertiesDTOToEntity(dto.getCreatureProperties(), species);
         // Handle parent
         if (dto.getParentUrl() != null) {

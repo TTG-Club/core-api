@@ -3,16 +3,12 @@ package club.ttg.dnd5.utills;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dto.base.BaseDTO;
-import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
-import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.model.base.CreatureProperties;
-import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
-import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,8 +20,6 @@ public class ConverterTest {
     private NamedEntity namedEntity;
     private CreaturePropertiesDTO creaturePropertiesDTO;
     private CreatureProperties creatureProperties;
-    private HasSourceDTO hasSourceDTO;
-    private HasSourceEntity hasSourceEntity;
 
     @Before
     public void setUp() {
@@ -64,19 +58,6 @@ public class ConverterTest {
         creatureProperties.setClimb(0);
         creatureProperties.setSwim(0);
         creatureProperties.setDarkVision(60);
-
-        // Set up HasSourceDTO and HasSourceEntity
-        hasSourceDTO = new SourceResponse();
-        hasSourceDTO.setPage((short) 123);
-        hasSourceDTO.setSource("PHB");
-
-
-        hasSourceEntity = new Species();
-        hasSourceEntity.setPage((short) 123);
-        Source source = new Source();
-        source.setId("PHB");
-        source.setPage((short) 123);
-        hasSourceEntity.setSource(source);
     }
 
     // Test mapping from DTO to Entity for BaseDTO and NamedEntity
@@ -129,23 +110,5 @@ public class ConverterTest {
         assertEquals(creatureProperties.getClimb(), result.getClimb());
         assertEquals(creatureProperties.getSwim(), result.getSwim());
         assertEquals(creatureProperties.getDarkVision(), result.getDarkVision());
-    }
-
-    // Test mapping from HasSourceDTO to HasSourceEntity
-    @Test
-    public void testMapDTOSourceToEntitySource() {
-        HasSourceEntity result = Converter.mapDTOSourceToEntitySource(hasSourceDTO, new Species());
-
-        assertEquals(hasSourceDTO.getPage(), result.getPage());
-        assertEquals(hasSourceDTO.getSource(), result.getSource().getId());
-    }
-
-    // Test mapping from HasSourceEntity to HasSourceDTO
-    @Test
-    public void testMapEntitySourceToDTOSource() {
-        HasSourceDTO result = Converter.mapEntitySourceToDTOSource(new SourceResponse(), hasSourceEntity);
-
-        assertEquals(hasSourceEntity.getPage(), result.getPage());
-        assertEquals(hasSourceEntity.getSource().getId(), result.getSource());
     }
 }
