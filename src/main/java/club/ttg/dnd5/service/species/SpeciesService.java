@@ -1,6 +1,5 @@
 package club.ttg.dnd5.service.species;
 
-import club.ttg.dnd5.dto.EntryDto;
 import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
 import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
@@ -10,6 +9,7 @@ import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.repository.SpeciesRepository;
 import club.ttg.dnd5.utills.Converter;
+import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +40,6 @@ public class SpeciesService {
         } else {
             species.setParent(null);
         }
-        //TODO обработка features
         Species save = speciesRepository.save(species);
         return toDTO(save, false);
     }
@@ -128,22 +127,6 @@ public class SpeciesService {
         return toDTO(updatedSpecies, false);
     }
 
-    private void fillSpecies(SpeciesResponse speciesResponse, Species species) {
-        if (speciesResponse.getSubSpeciesUrls() != null) {
-            List<Species> subSpecies = speciesResponse.getSubSpeciesUrls().stream()
-                    .map(this::findByUrl)
-                    .toList();
-            species.setSubSpecies(subSpecies);
-        }
-
-        if (speciesResponse.getFeatures() != null) {
-            Collection<SpeciesFeature> features = speciesResponse.getFeatures().stream()
-                    .map(this::toEntityFeature)
-                    .toList();
-            species.setFeatures(features);
-        }
-    }
-
     public List<SpeciesResponse> searchSpecies(SearchRequest request) {
 //        SpeciesSpecification speciesSpecification = new SpeciesSpecification();
 //        Specification<Species> spec = speciesSpecification.toSpecification(request);
@@ -157,7 +140,7 @@ public class SpeciesService {
 //        return speciesPage.getContent().stream()
 //                .map(species -> toDTO(species, true))
 //                .toList();
-        return null;
+        return Collections.emptyList();
     }
 
     private Species findByUrl(String url) {
@@ -208,37 +191,10 @@ public class SpeciesService {
         // Handle features
         if (species.getFeatures() != null) {
             Collection<SpeciesFeatureResponse> features = species.getFeatures().stream()
-                    .map(this::toDTOFeature)
+                    .map(SpeciesFeatureConverter::toDTOFeature)
                     .toList();
             dto.setFeatures(features);
         }
-
-        return dto;
-    }
-
-    //TODO Добавить корректную поддержку Feature
-    private SpeciesFeature toEntityFeature(SpeciesFeatureResponse response) {
-        if (response == null) {
-            return null;
-        }
-
-        SpeciesFeature speciesFeature = new SpeciesFeature();
-        speciesFeature.setUrl(response.getUrl());
-
-
-        return speciesFeature;
-    }
-
-    private SpeciesFeatureResponse toDTOFeature(SpeciesFeature feature) {
-        if (feature == null) {
-            return null;
-        }
-
-        SpeciesFeatureResponse dto = new SpeciesFeatureResponse();
-        dto.setUrl(feature.getUrl());
-        EntryDto entries = new EntryDto();
-        entries.setName(feature.getName());
-        entries.setEntries(Collections.singletonList(feature.getEntries()));
 
         return dto;
     }
@@ -255,6 +211,22 @@ public class SpeciesService {
                     .map(Species::getUrl)
                     .toList();
             dto.setSubSpeciesUrls(subSpeciesUrls);
+        }
+    }
+
+    private void fillSpecies(SpeciesResponse speciesResponse, Species species) {
+        if (speciesResponse.getSubSpeciesUrls() != null) {
+            List<Species> subSpecies = speciesResponse.getSubSpeciesUrls().stream()
+                    .map(this::findByUrl)
+                    .toList();
+            species.setSubSpecies(subSpecies);
+        }
+
+        if (speciesResponse.getFeatures() != null) {
+            Collection<SpeciesFeature> features = speciesResponse.getFeatures().stream()
+                    .map(SpeciesFeatureConverter::toEntityFeature)
+                    .toList();
+            species.setFeatures(features);
         }
     }
 }

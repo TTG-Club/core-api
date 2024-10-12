@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 @Getter
@@ -14,6 +15,6 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class CreateSpeciesDTO extends BaseDTO {
     private CreaturePropertiesDTO creatureProperties;
-    private Collection<SpeciesFeatureResponse> features;
+    private Collection<SpeciesFeatureResponse> features = new ArrayList<>();
     boolean parent;
 }
