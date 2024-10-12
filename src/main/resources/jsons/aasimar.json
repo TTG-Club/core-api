@@ -1,0 +1,106 @@
+{
+  "url": "assimar",
+  "imageUrl": "assimar/picture",
+  "nameBasedDTO": {
+    "name": "Aasimar",
+    "english": "Aasimar",
+    "alternative": "Celestial-blooded",
+    "description": "Aasimars are mortals who carry a spark of the Upper Planes within their souls. Whether they are descendants of angelic beings or individuals bestowed with celestial power, they can ignite this spark to bring light, healing, and heavenly wrath. Aasimars can appear in any mortal settlement. They resemble their parents but live up to 160 years and have features hinting at their celestial origins, such as metallic freckles, glowing eyes, a halo, or skin in angelic colors (silver, opal green, or copper red). These traits gradually manifest, becoming evident as the aasimar learns to fully embrace their divine nature."
+  },
+  "source": {
+    "page": 155,
+    "source": "PHB"
+  },
+  "creatureProperties": {
+    "size": "MEDIUM",
+    "type": "HUMANOID",
+    "speed": 30,
+    "fly": 0,
+    "climb": 0,
+    "swim": 0,
+    "darkVision": 60,
+    "sourceResponse": {
+      "page": 155,
+      "source": "PHB"
+    }
+  },
+  "features": [
+    {
+      "url": "assimar/celestial-resistance",
+      "imageUrl": "assimar/celestial-resistance/picture",
+      "nameBasedDTO": {
+        "name": "Celestial Resistance",
+        "english": "Celestial Resistance",
+        "alternative": "Heavenly Defense",
+        "description": "You have resistance to necrotic damage and radiant damage."
+      },
+      "source": {
+        "page": 155,
+        "source": "PHB"
+      },
+      "description": "Grants resistance to necrotic and radiant damage.",
+      "tags": {
+        "resistance": "Necrotic",
+        "damageType": "Radiant"
+      }
+    },
+    {
+      "url": "assimar/healing-hands",
+      "imageUrl": "assimar/healing-hands/picture",
+      "nameBasedDTO": {
+        "name": "Healing Hands",
+        "english": "Healing Hands",
+        "alternative": "Touch of Life",
+        "description": "As an action, you can touch a creature and roll a number of d4s equal to your proficiency bonus. The creature regains hit points equal to the total rolled. You can’t use this feature again until you finish a long rest."
+      },
+      "source": {
+        "page": 155,
+        "source": "PHB"
+      },
+      "description": "Heal a creature with a touch, rolling d4s equal to your proficiency bonus.",
+      "tags": {
+        "healing": "Touch",
+        "rest": "Long Rest"
+      }
+    },
+    {
+      "url": "assimar/light-bearer",
+      "imageUrl": "assimar/light-bearer/picture",
+      "nameBasedDTO": {
+        "name": "Light Bearer",
+        "english": "Light Bearer",
+        "alternative": "Harbinger of Light",
+        "description": "You know the Light cantrip, and Charisma is your spellcasting ability for it."
+      },
+      "source": {
+        "page": 155,
+        "source": "PHB"
+      },
+      "description": "Know the Light cantrip; Charisma is your spellcasting ability.",
+      "tags": {
+        "spell": "Cantrip",
+        "ability": "Charisma"
+      }
+    },
+    {
+      "url": "assimar/radiant-soul",
+      "imageUrl": "assimar/radiant-soul/picture",
+      "nameBasedDTO": {
+        "name": "Radiant Soul",
+        "english": "Radiant Soul",
+        "alternative": "Heavenly Revelation",
+        "description": "Starting at 3rd level, you can transform as a bonus action using one of the following options. The transformation lasts 1 minute or until you end it (no action required). You can’t use this feature again until you finish a long rest."
+      },
+      "source": {
+        "page": 155,
+        "source": "PHB"
+      },
+      "description": "Transform into one of three forms: Celestial Wings, Radiant Soul, or Death's Shroud.",
+      "tags": {
+        "transformation": "Bonus Action",
+        "limit": "Long Rest"
+      }
+    }
+  ],
+  "parent": true
+}
