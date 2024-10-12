@@ -1,8 +1,8 @@
 package club.ttg.dnd5.model.species;
 
-import club.ttg.dnd5.model.Source;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.HasSourceEntity;
+import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,12 +37,12 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @JoinColumn(name = "species_url")
     private Collection<SpeciesFeature> features;
 
-    public void setSource(String sourceName) {
+    public void setSource(String sourceAcronym) {
         if (this.source == null) {
             source = new Source();
         }
         this.source.setPage(this.page);
-        this.source.setSource(sourceName);
+        this.source.setId(sourceAcronym);
     }
 
     @Override

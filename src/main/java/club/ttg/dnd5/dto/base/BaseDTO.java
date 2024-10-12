@@ -12,5 +12,5 @@ public abstract class BaseDTO {
     private String url;
     private String imageUrl;
     private NameBasedDTO nameBasedDTO;
-    private SourceResponse source;
+    private SourceResponse sourceDTO;
 }
