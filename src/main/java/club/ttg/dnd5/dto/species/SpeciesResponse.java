@@ -20,10 +20,10 @@ public class SpeciesResponse extends BaseDTO implements DetailableDTO {
     private String parentUrl;
     private Collection<String> subSpeciesUrls;
     private Collection<SpeciesFeatureResponse> features;
-    private boolean detail = false;
+    private boolean isDetail = false;
     @Override
     public void hideDetails() {
-        if (!detail) {
+        if (!isDetail) {
             this.creatureProperties = null;
             this.parentUrl = null;
             this.subSpeciesUrls = null;
