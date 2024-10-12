@@ -30,6 +30,7 @@ public class SpeciesFeatureConverter {
         return dto;
     }
 
+    //TODO saving in the database
     public static void convertDTOFeatureIntoEntityFeature(Collection<SpeciesFeatureResponse> dtoFeatures, Species species) {
         Collection<SpeciesFeature> features = dtoFeatures.stream()
                 .map(SpeciesFeatureConverter::toEntityFeature)

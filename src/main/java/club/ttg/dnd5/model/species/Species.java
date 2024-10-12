@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Cascade;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,8 +33,10 @@ public class Species extends CreatureProperties implements HasSourceEntity {
 
     @ManyToOne
     @JoinColumn(name = "source")
-    private Source source;
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    private Source source = new Source();
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "species_url")
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
     private Collection<SpeciesFeature> features;
 }

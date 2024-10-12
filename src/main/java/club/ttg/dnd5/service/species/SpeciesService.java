@@ -5,9 +5,11 @@ import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
 import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.repository.SourceRepository;
 import club.ttg.dnd5.repository.SpeciesRepository;
+import club.ttg.dnd5.repository.book.BookRepository;
 import club.ttg.dnd5.utills.Converter;
 import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import java.util.List;
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
     private final SourceRepository sourceRepository;
+    private final BookRepository bookRepository;
 
     public SpeciesResponse findById(String url) {
         Species species = speciesRepository.findById(url)
@@ -39,11 +42,14 @@ public class SpeciesService {
         Converter.mapCreaturePropertiesDTOToEntity(createSpeciesDTO.getCreatureProperties(), species);
 
         //feature
-        if (species.getFeatures() != null) {
+        if (species.getFeatures() != null && !species.getFeatures().isEmpty()) {
             SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
         }
         //source
-        Converter.mapDTOSourceToEntitySource(createSpeciesDTO, species, sourceRepository).getSource();
+        Source source = Converter.mapDTOSourceToEntitySource(createSpeciesDTO, species, bookRepository).getSource();
+        if (source != null) {
+            sourceRepository.save(source);
+        }
 
         if (createSpeciesDTO.isParent()) {
             species.setParent(species);
@@ -176,7 +182,7 @@ public class SpeciesService {
         Species species = new Species();
         species.setUrl(dto.getUrl());
         Converter.mapBaseDTOToEntityName(dto, species);
-//        Converter.mapDTOSourceToEntitySource(dto.getSourceDTO(), species, sourceRepository);
+        Converter.mapDTOSourceToEntitySource(dto.getSourceDTO(), species, bookRepository);
         Converter.mapCreaturePropertiesDTOToEntity(dto.getCreatureProperties(), species);
         // Handle parent
         if (dto.getParentUrl() != null) {
