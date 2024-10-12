@@ -10,7 +10,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-
 @Entity
 @Table(name = "sources",
         indexes = {@Index(name = "idx_name", columnList = "id")}
@@ -28,4 +27,6 @@ public class Source extends TimestampedEntity implements HasSourceEntity {
     public Source getSource() {
         return this;
     }
+
+
 }
