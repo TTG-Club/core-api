@@ -75,10 +75,11 @@ jobs:
               --network ${{needs.env.outputs.NETWORK_NAME}} \
               --ip ${{secrets.DOCKER_API_CONTAINER_IP}} \
               --name ${{needs.env.outputs.CONTAINER_NAME}} \
+              --network-alias ${{secrets.DOCKER_API_HOST}} \
               --restart on-failure \
               -d \
               -e spring.profiles.active=${{env.ENVIRONMENT_NAME}} \
-              -e dbhost=${{secrets.DOCKER_MYSQL_IP}} \
+              -e dbhost=${{secrets.DOCKER_MYSQL_HOST}} \
               -e dbuser=${{secrets.DOCKER_MYSQL_USER}} \
               -e dbpassword=${{secrets.DOCKER_MYSQL_PASSWORD}} \
               -e emailpassword=${{secrets.EMAIL_PASSWORD}} \
