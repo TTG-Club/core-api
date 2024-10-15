@@ -23,7 +23,6 @@ import java.util.Collection;
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
 public class Species extends CreatureProperties implements HasSourceEntity {
-    private Short page;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Species parent;
