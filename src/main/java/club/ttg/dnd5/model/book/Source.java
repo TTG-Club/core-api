@@ -1,6 +1,5 @@
 package club.ttg.dnd5.model.book;
 
-import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.TimestampedEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -14,19 +13,18 @@ import lombok.Setter;
 @Table(name = "sources",
         indexes = {@Index(name = "idx_name", columnList = "id")}
 )
-public class Source extends TimestampedEntity implements HasSourceEntity {
+public class Source extends TimestampedEntity {
     @Id
-    private String id; // This will be used as the sourceAcronym
-
-    @OneToOne
-    @JoinColumn(name = "book_info_id", referencedColumnName = "sourceAcronym")
-    private Book bookInfo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String sourceAcronym;
     private short page;
 
-    @Override
+    @OneToOne
+    @JoinColumn(name = "book_info_id", referencedColumnName = "sourceAcronym", insertable = false, updatable = false)
+    private Book bookInfo;  // Book relationship via sourceAcronym
+
     public Source getSource() {
         return this;
     }
-
-
 }
