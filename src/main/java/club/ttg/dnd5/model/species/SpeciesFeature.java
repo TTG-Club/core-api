@@ -1,6 +1,7 @@
 package club.ttg.dnd5.model.species;
 
 import club.ttg.dnd5.model.base.FeatureBase;
+import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.HasTags;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SpeciesFeature extends FeatureBase implements HasTags {
+public class SpeciesFeature extends FeatureBase implements HasTags, HasSourceEntity {
     @ElementCollection
     @CollectionTable(name = "species_feature_entries", joinColumns = @JoinColumn(name = "species_feature_id"))
     @Column(name = "entry")

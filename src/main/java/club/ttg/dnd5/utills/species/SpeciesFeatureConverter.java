@@ -17,6 +17,7 @@ public class SpeciesFeatureConverter {
     public static SpeciesFeature toEntityFeature(SpeciesFeatureResponse response) {
         SpeciesFeature speciesFeature = new SpeciesFeature();
         Converter.mapBaseDTOToEntityName(response, speciesFeature);
+        Converter.mapDTOSourceToEntitySource(response, speciesFeature);
         speciesFeature.setTags(response.getTags());
         return speciesFeature;
     }
@@ -30,11 +31,11 @@ public class SpeciesFeatureConverter {
         return dto;
     }
 
-    //TODO saving in the database
     public static void convertDTOFeatureIntoEntityFeature(Collection<SpeciesFeatureResponse> dtoFeatures, Species species) {
         Collection<SpeciesFeature> features = dtoFeatures.stream()
                 .map(SpeciesFeatureConverter::toEntityFeature)
                 .toList();
         species.setFeatures(features);
+
     }
 }
