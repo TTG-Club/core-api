@@ -1,6 +1,7 @@
 package club.ttg.dnd5.model.base;
 
 import club.ttg.dnd5.model.book.Source;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
@@ -11,8 +12,7 @@ import lombok.Setter;
 @Setter
 @MappedSuperclass
 public abstract class FeatureBase extends NamedEntity {
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
     private Source source;
-    private Short page;
 }
