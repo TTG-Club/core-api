@@ -68,8 +68,8 @@ public class Converter {
             source = new Source();
         }
         Book book = new Book(sourceAcronym);
+        book.setSourceAcronym(sourceAcronym);
         source.setBookInfo(book);
-        source.setSourceAcronym(sourceAcronym);
         source.setPage(dto.getPage());
         entity.setSource(source);
         return entity;
