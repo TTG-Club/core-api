@@ -43,8 +43,6 @@ public class SpeciesService {
         return toDTO(species, false);
     }
 
-    //TODO fix in the table Source book_info null column value
-    //TODO fix from entity to DTO,
     @Transactional
     public SpeciesResponse save(CreateSpeciesDTO createSpeciesDTO) {
         Species species = new Species();
@@ -56,20 +54,7 @@ public class SpeciesService {
         validateAndSaveSource(species.getSource());
 
         //feature
-        //page and Source is not correct represent
-        SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
-        Collection<SpeciesFeature> features = species.getFeatures();
-
-        if (features != null && !features.isEmpty()) {
-            // Iterate through the features, validate and save their sources
-            features.stream()
-                    .map(SpeciesFeature::getSource)            // Extract the Source from each SpeciesFeature
-                    .filter(Objects::nonNull)                  // Filter out null Sources
-                    .forEach(this::validateAndSaveSource);     // Validate and save each Source
-
-            // Save all the species features after their sources have been validated and saved
-            speciesFeatureRepository.saveAll(features);
-        }
+        saveSpeciesFeatures(createSpeciesDTO, species);
 
 
         fillParent(createSpeciesDTO, species);
@@ -229,16 +214,19 @@ public class SpeciesService {
             Converter.mapEntityToBaseDTO(dto, species);
         }
         Converter.mapEntitySourceToDTOSource(dto.getSourceDTO(), species);
+
+        //creatureProperties
         Converter.mapEntityToCreaturePropertiesDTO(dto.getCreatureProperties(), species);
+        dto.getCreatureProperties().setSourceResponse((dto.getSourceDTO()));
 
         handleParentAndChild(species, dto);
 
         // Handle features
-        if (species.getFeatures() != null) {
-            Collection<SpeciesFeatureResponse> features = species.getFeatures().stream()
-                    .map(SpeciesFeatureConverter::toDTOFeature)
-                    .toList();
-            dto.setFeatures(features);
+        Collection<SpeciesFeature> features = species.getFeatures();
+        if (features != null) {
+            Collection<SpeciesFeatureResponse> speciesFeatureResponses =
+                    SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(features);
+            dto.setFeatures(speciesFeatureResponses);
         }
 
         return dto;
@@ -265,6 +253,19 @@ public class SpeciesService {
                     .map(this::findByUrl)
                     .toList();
             species.setSubSpecies(subSpecies);
+        }
+    }
+
+    @Transactional
+    public void saveSpeciesFeatures(CreateSpeciesDTO createSpeciesDTO, Species species) {
+        SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
+        Collection<SpeciesFeature> features = species.getFeatures();
+        if (features != null && !features.isEmpty()) {
+            features.stream()
+                    .map(SpeciesFeature::getSource)
+                    .filter(Objects::nonNull)
+                    .forEach(this::validateAndSaveSource);
+            speciesFeatureRepository.saveAll(features);
         }
     }
 }
