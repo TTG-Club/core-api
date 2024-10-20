@@ -26,8 +26,8 @@ class SpeciesControllerTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        // Read the content of the aasimar.json file
-        ClassPathResource resource = new ClassPathResource("jsons/aasimar.json");
+        // Read the content of the create_aasimar_request.json file
+        ClassPathResource resource = new ClassPathResource("json/request/create_aasimar_request.json");
         jsonContent = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
     }
 
