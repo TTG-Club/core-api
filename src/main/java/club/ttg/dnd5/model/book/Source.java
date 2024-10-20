@@ -17,14 +17,20 @@ public class Source extends TimestampedEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String sourceAcronym;
     private short page;
 
-    @OneToOne
-    @JoinColumn(name = "book_info_id", referencedColumnName = "sourceAcronym", insertable = false, updatable = false)
-    private Book bookInfo;  // Book relationship via sourceAcronym
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "book_info_id", referencedColumnName = "sourceAcronym")
+    private Book bookInfo;
 
     public Source getSource() {
         return this;
+    }
+
+    public String getSourceAcronym() {
+        if (bookInfo != null)
+            return bookInfo.getSourceAcronym();
+        else
+            return "";
     }
 }

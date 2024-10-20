@@ -44,6 +44,7 @@ public class SpeciesService {
     }
 
     //TODO fix in the table Source book_info null column value
+    //TODO fix from entity to DTO,
     @Transactional
     public SpeciesResponse save(CreateSpeciesDTO createSpeciesDTO) {
         Species species = new Species();
