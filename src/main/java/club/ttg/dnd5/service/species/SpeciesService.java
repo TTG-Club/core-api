@@ -18,8 +18,10 @@ import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -47,10 +49,10 @@ public class SpeciesService {
     public SpeciesResponse save(CreateSpeciesDTO createSpeciesDTO) {
         Species species = new Species();
         //base
-        Converter.mapBaseDTOToEntityName(createSpeciesDTO, species);
-        Converter.mapCreaturePropertiesDTOToEntity(createSpeciesDTO.getCreatureProperties(), species);
+        Converter.mapBaseDtoToEntityName(createSpeciesDTO, species);
+        Converter.mapCreaturePropertiesDtoToEntity(createSpeciesDTO.getCreatureProperties(), species);
         //source
-        Converter.mapDTOSourceToEntitySource(createSpeciesDTO, species);
+        Converter.mapDtoSourceToEntitySource(createSpeciesDTO, species);
         validateAndSaveSource(species.getSource());
 
         //feature
@@ -64,22 +66,19 @@ public class SpeciesService {
 
     private void validateAndSaveSource(Source source) {
         if (source != null) {
-            Optional<Book> optionalBook = bookRepository.findById(source.getSourceAcronym());
-            if (optionalBook.isPresent()) {
-                source.setBookInfo(optionalBook.get());
-                sourceRepository.save(source);
-            } else {
-                throw new EntityNotFoundException("Book not found with ID: " + source.getId());
-            }
+            Book book = bookRepository.findById(source.getSourceAcronym())
+                    .orElseThrow(() -> new EntityNotFoundException("Book not found with ID: " + source.getId()));
+
+            source.setBookInfo(book);
+            sourceRepository.save(source);
         }
     }
 
     public List<SpeciesResponse> getSubSpeciesByParentUrl(String parentUrl) {
-        Species parentSpecies = speciesRepository.findById(parentUrl)
-                .orElseThrow(() -> new EntityNotFoundException("Parent species not found for URL: " + parentUrl));
-
-        List<Species> subSpeciesList = speciesRepository.findByParent(parentSpecies);
-        return subSpeciesList.stream()
+        return speciesRepository.findById(parentUrl)
+                .map(speciesRepository::findByParent) // Fetch the list of sub-species if parent is found
+                .orElseThrow(() -> new EntityNotFoundException("Parent species not found for URL: " + parentUrl))
+                .stream()
                 .map(species -> toDTO(species, true))
                 .toList();
     }
@@ -88,20 +87,13 @@ public class SpeciesService {
         Species subSpecies = speciesRepository.findById(subSpeciesUrl)
                 .orElseThrow(() -> new EntityNotFoundException("Sub-species not found for URL: " + subSpeciesUrl));
 
-        List<Species> relatedSpecies = new ArrayList<>();
-
-        relatedSpecies.add(subSpecies);
-
-        Species parentSpecies = subSpecies.getParent();
-        if (parentSpecies != null) {
-            relatedSpecies.add(parentSpecies);
-        }
-
-        Collection<Species> subSpeciesList = subSpecies.getSubSpecies();
-        if (subSpeciesList != null && !subSpeciesList.isEmpty()) {
-            relatedSpecies.addAll(new ArrayList<>(subSpeciesList)); // Convert Collection to List
-        }
-        return relatedSpecies.stream()
+        return Stream.concat(
+                        Stream.of(subSpecies), // Add sub-species itself to the stream
+                        Stream.concat(
+                                Stream.ofNullable(subSpecies.getParent()), // Add parent if present
+                                subSpecies.getSubSpecies() != null ? subSpecies.getSubSpecies().stream() : Stream.empty() // Add all sub-species if not null
+                        )
+                )
                 .map(species -> toDTO(species, true))
                 .toList();
     }
@@ -194,9 +186,9 @@ public class SpeciesService {
     private Species toEntity(SpeciesResponse dto) {
         Species species = new Species();
         species.setUrl(dto.getUrl());
-        Converter.mapBaseDTOToEntityName(dto, species);
-        Converter.mapDTOSourceToEntitySource(dto.getSourceDTO(), species);
-        Converter.mapCreaturePropertiesDTOToEntity(dto.getCreatureProperties(), species);
+        Converter.mapBaseDtoToEntityName(dto, species);
+        Converter.mapDtoSourceToEntitySource(dto.getSourceDTO(), species);
+        Converter.mapCreaturePropertiesDtoToEntity(dto.getCreatureProperties(), species);
         // Handle parent
         if (dto.getParentUrl() != null) {
             fillParent(species, dto);
@@ -209,14 +201,14 @@ public class SpeciesService {
     private SpeciesResponse toDTO(Species species, boolean hideDetails) {
         SpeciesResponse dto = new SpeciesResponse();
         if (hideDetails) {
-            Converter.mapEntityToBaseDTOWithHideDetails(dto, species);
+            Converter.mapEntityToBaseDtoWithHideDetails(dto, species);
         } else {
-            Converter.mapEntityToBaseDTO(dto, species);
+            Converter.mapEntityToBaseDto(dto, species);
         }
-        Converter.mapEntitySourceToDTOSource(dto.getSourceDTO(), species);
+        Converter.mapEntitySourceToDtoSource(dto.getSourceDTO(), species);
 
         //creatureProperties
-        Converter.mapEntityToCreaturePropertiesDTO(dto.getCreatureProperties(), species);
+        Converter.mapEntityToCreaturePropertiesDto(dto.getCreatureProperties(), species);
         dto.getCreatureProperties().setSourceResponse((dto.getSourceDTO()));
 
         handleParentAndChild(species, dto);
@@ -228,7 +220,6 @@ public class SpeciesService {
                     SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(features);
             dto.setFeatures(speciesFeatureResponses);
         }
-
         return dto;
     }
 
@@ -248,19 +239,15 @@ public class SpeciesService {
     }
 
     private void fillSpecies(SpeciesResponse speciesResponse, Species species) {
-        if (speciesResponse.getSubSpeciesUrls() != null) {
-            List<Species> subSpecies = speciesResponse.getSubSpeciesUrls().stream()
-                    .map(this::findByUrl)
-                    .toList();
-            species.setSubSpecies(subSpecies);
-        }
+        Optional.ofNullable(speciesResponse.getSubSpeciesUrls())
+                .ifPresent(urls -> species.setSubSpecies(urls.stream().map(this::findByUrl).toList()));
     }
 
     @Transactional
     public void saveSpeciesFeatures(CreateSpeciesDTO createSpeciesDTO, Species species) {
         SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
         Collection<SpeciesFeature> features = species.getFeatures();
-        if (features != null && !features.isEmpty()) {
+        if (!CollectionUtils.isEmpty(features)) {
             features.stream()
                     .map(SpeciesFeature::getSource)
                     .filter(Objects::nonNull)

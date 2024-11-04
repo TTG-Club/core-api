@@ -63,7 +63,7 @@ public class ConverterTest {
     // Test mapping from DTO to Entity for BaseDTO and NamedEntity
     @Test
     public void testMapBaseDTOToEntityName() {
-        NamedEntity result = Converter.mapBaseDTOToEntityName(baseDTO, new Species());
+        NamedEntity result = Converter.mapBaseDtoToEntityName(baseDTO, new Species());
 
         assertEquals(baseDTO.getUrl(), result.getUrl());
         assertEquals(baseDTO.getNameBasedDTO().getName(), result.getName());
@@ -75,7 +75,7 @@ public class ConverterTest {
     // Test mapping from Entity to DTO for NamedEntity and BaseDTO
     @Test
     public void testMapEntityToBaseDTO() {
-        BaseDTO result = Converter.mapEntityToBaseDTO(new SpeciesResponse(), namedEntity);
+        BaseDTO result = Converter.mapEntityToBaseDto(new SpeciesResponse(), namedEntity);
 
         assertEquals(namedEntity.getUrl(), result.getUrl());
         assertEquals(namedEntity.getName(), result.getNameBasedDTO().getName());
@@ -87,7 +87,7 @@ public class ConverterTest {
     // Test mapping from CreaturePropertiesDTO to CreatureProperties Entity
     @Test
     public void testMapCreaturePropertiesDTOToEntity() {
-        CreatureProperties result = Converter.mapCreaturePropertiesDTOToEntity(creaturePropertiesDTO, new Species());
+        CreatureProperties result = Converter.mapCreaturePropertiesDtoToEntity(creaturePropertiesDTO, new Species());
 
         assertEquals(creaturePropertiesDTO.getSize(), result.getSize());
         assertEquals(creaturePropertiesDTO.getType(), result.getType());
@@ -101,7 +101,7 @@ public class ConverterTest {
     // Test mapping from CreatureProperties Entity to CreaturePropertiesDTO
     @Test
     public void testMapEntityToCreaturePropertiesDTO() {
-        CreaturePropertiesDTO result = Converter.mapEntityToCreaturePropertiesDTO(new CreaturePropertiesDTO(), creatureProperties);
+        CreaturePropertiesDTO result = Converter.mapEntityToCreaturePropertiesDto(new CreaturePropertiesDTO(), creatureProperties);
 
         assertEquals(creatureProperties.getSize(), result.getSize());
         assertEquals(creatureProperties.getType(), result.getType());
