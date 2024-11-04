@@ -10,13 +10,14 @@ import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Converter {
     // D from DTO, E from Entity
-    private Converter() {
-    }
 
-    public static <D extends BaseDTO, E extends NamedEntity> E mapBaseDTOToEntityName(D dto, E entity) {
+    public static <D extends BaseDTO, E extends NamedEntity> E mapBaseDtoToEntityName(D dto, E entity) {
         entity.setUrl(dto.getUrl());
         entity.setImageUrl(dto.getImageUrl());
         entity.setName(dto.getNameBasedDTO().getName());
@@ -26,7 +27,7 @@ public class Converter {
         return entity;
     }
 
-    public static <D extends BaseDTO, E extends NamedEntity> D mapEntityToBaseDTO(D dto, E entity) {
+    public static <D extends BaseDTO, E extends NamedEntity> D mapEntityToBaseDto(D dto, E entity) {
         dto.setUrl(entity.getUrl());
         dto.setImageUrl(entity.getImageUrl());
         dto.setNameBasedDTO(new NameBasedDTO());
@@ -37,7 +38,7 @@ public class Converter {
         return dto;
     }
 
-    public static <D extends CreaturePropertiesDTO, E extends CreatureProperties> E mapCreaturePropertiesDTOToEntity(D dto, E entity) {
+    public static <D extends CreaturePropertiesDTO, E extends CreatureProperties> E mapCreaturePropertiesDtoToEntity(D dto, E entity) {
         entity.setSize(dto.getSize());
         entity.setType(dto.getType());
         entity.setSpeed(dto.getSpeed());
@@ -48,7 +49,7 @@ public class Converter {
         return entity;
     }
 
-    public static <D extends CreaturePropertiesDTO, E extends CreatureProperties> D mapEntityToCreaturePropertiesDTO(D dto, E entity) {
+    public static <D extends CreaturePropertiesDTO, E extends CreatureProperties> D mapEntityToCreaturePropertiesDto(D dto, E entity) {
         dto.setSize(entity.getSize());
         dto.setType(entity.getType());
         dto.setSpeed(entity.getSpeed());
@@ -61,7 +62,7 @@ public class Converter {
 
     //D - dto, E - entity, Id - id (acronym), R - repository
     public static <D extends HasSourceDTO, E extends HasSourceEntity>
-    E mapDTOSourceToEntitySource(D dto, E entity) {
+    E mapDtoSourceToEntitySource(D dto, E entity) {
         String sourceAcronym = dto.getSource();
         Source source = entity.getSource();
         if (source == null) {
@@ -75,7 +76,7 @@ public class Converter {
         return entity;
     }
 
-    public static <D extends HasSourceDTO, E extends HasSourceEntity> D mapEntitySourceToDTOSource(D dto, E entity) {
+    public static <D extends HasSourceDTO, E extends HasSourceEntity> D mapEntitySourceToDtoSource(D dto, E entity) {
         if (entity.getSource() != null) {
             dto.setSource(entity.getSource().getSourceAcronym());
             dto.setPage(entity.getSource().getPage());
@@ -83,8 +84,8 @@ public class Converter {
         return dto;
     }
 
-    public static <D extends BaseDTO & DetailableDTO, E extends NamedEntity> D mapEntityToBaseDTOWithHideDetails(D dto, E entity) {
-        mapEntityToBaseDTO(dto, entity);
+    public static <D extends BaseDTO & DetailableDTO, E extends NamedEntity> D mapEntityToBaseDtoWithHideDetails(D dto, E entity) {
+        mapEntityToBaseDto(dto, entity);
         dto.hideDetails();
         return dto;
     }

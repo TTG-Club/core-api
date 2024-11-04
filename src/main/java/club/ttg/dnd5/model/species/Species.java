@@ -30,9 +30,8 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<Species> subSpecies = new ArrayList<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
-    @Cascade(org.hibernate.annotations.CascadeType.ALL)
     private Source source = new Source();
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "species_url")

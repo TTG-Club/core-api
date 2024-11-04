@@ -34,8 +34,8 @@ public class SpeciesController {
     }
 
     @GetMapping("/subspecies/{subSpeciesUrl}/related")
-    @Operation(summary = "Получить все связанные виды по URL подвига",
-            description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвига.")
+    @Operation(summary = "Получить все связанные виды по URL подвида",
+            description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвида.")
     public ResponseEntity<List<SpeciesResponse>> getAllRelatedSpeciesBySubSpeciesUrl(
             @Parameter(description = "URL подвига", required = true) @PathVariable String subSpeciesUrl) {
         List<SpeciesResponse> relatedSpeciesResponses = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);

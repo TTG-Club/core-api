@@ -4,18 +4,18 @@ import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.utills.Converter;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import java.util.Collection;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SpeciesFeatureConverter {
-    private SpeciesFeatureConverter() {
-
-    }
 
     public static SpeciesFeature toEntityFeature(SpeciesFeatureResponse response) {
         SpeciesFeature speciesFeature = new SpeciesFeature();
-        Converter.mapBaseDTOToEntityName(response, speciesFeature);
-        Converter.mapDTOSourceToEntitySource(response, speciesFeature);
+        Converter.mapBaseDtoToEntityName(response, speciesFeature);
+        Converter.mapDtoSourceToEntitySource(response, speciesFeature);
         speciesFeature.setTags(response.getTags());
         speciesFeature.setFeatureDescription(response.getDescription());
         return speciesFeature;
@@ -23,8 +23,8 @@ public class SpeciesFeatureConverter {
 
     public static SpeciesFeatureResponse toDTOFeature(SpeciesFeature feature) {
         SpeciesFeatureResponse dto = new SpeciesFeatureResponse();
-        Converter.mapEntityToBaseDTO(dto, feature);
-        Converter.mapEntitySourceToDTOSource(dto, feature);
+        Converter.mapEntityToBaseDto(dto, feature);
+        Converter.mapEntitySourceToDtoSource(dto, feature);
         dto.setTags(feature.getTags());
         dto.setDescription(feature.getFeatureDescription());
         return dto;

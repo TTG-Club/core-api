@@ -15,17 +15,17 @@ import java.util.Collection;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class CreateSpeciesDTO extends BaseDTO implements HasSourceDTO {
+    boolean parent;
     private CreaturePropertiesDTO creatureProperties;
     private Collection<SpeciesFeatureResponse> features = new ArrayList<>();
-    boolean parent;
 
     @Override
     public Short getPage() {
-        if (this.getSource() != null) {
+        if (this.getSource() != null)
             return this.getSourceDTO().getPage();
-        } else {
+        else
             return -1;
-        }
+
     }
 
     @Override
@@ -34,12 +34,12 @@ public class CreateSpeciesDTO extends BaseDTO implements HasSourceDTO {
     }
 
     @Override
-    public void setSource(String source) {
-        this.getSourceDTO().setSource(source);
+    public String getSource() {
+        return this.getSourceDTO().getSource();
     }
 
     @Override
-    public String getSource() {
-        return this.getSourceDTO().getSource();
+    public void setSource(String source) {
+        this.getSourceDTO().setSource(source);
     }
 }
