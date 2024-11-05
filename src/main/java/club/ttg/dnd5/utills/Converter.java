@@ -91,7 +91,7 @@ public class Converter {
 
     // Function to map Entity to Base DTO with hidden details
     public static final BiFunction<BaseDTO, NamedEntity, BaseDTO> MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS = (dto, entity) -> {
-        MAP_ENTITY_TO_BASE_DTO.apply(dto, entity);
+        dto.setUrl(entity.getUrl());
         ((DetailableDTO) dto).hideDetails();
         return dto;
     };
