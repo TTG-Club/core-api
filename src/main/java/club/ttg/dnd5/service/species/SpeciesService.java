@@ -29,10 +29,6 @@ public class SpeciesService {
     private final BookRepository bookRepository;
     private final SpeciesFeatureRepository speciesFeatureRepository;
 
-    private static void fillParent(CreateSpeciesDTO createSpeciesDTO, Species species) {
-        species.setParent(createSpeciesDTO.isParent() ? species : null);
-    }
-
     public SpeciesResponse findById(String url) {
         return speciesRepository.findById(url)
                 .map(species -> toDTO(species, false))
@@ -50,20 +46,12 @@ public class SpeciesService {
 
         validateAndSaveSource(species.getSource());
         saveSpeciesFeatures(createSpeciesDTO, species);
-        fillParent(createSpeciesDTO, species);
+        species.setParent(createSpeciesDTO.isParent() ? species : null);
 
         Species save = speciesRepository.save(species);
         return toDTO(save, false);
     }
 
-    private void validateAndSaveSource(Source source) {
-        if (source != null) {
-            Book book = bookRepository.findById(source.getSourceAcronym())
-                    .orElseThrow(() -> new EntityNotFoundException("Book not found with ID: " + source.getId()));
-            source.setBookInfo(book);
-            sourceRepository.save(source);
-        }
-    }
 
     public List<SpeciesResponse> getSubSpeciesByParentUrl(String parentUrl) {
         return speciesRepository.findById(parentUrl)
@@ -102,6 +90,23 @@ public class SpeciesService {
         return toDTO(speciesRepository.save(species), false);
     }
 
+    @Transactional
+    public SpeciesResponse update(String oldUrl, SpeciesResponse speciesResponse) {
+        if (speciesRepository.existsById(oldUrl)) {
+            if (!oldUrl.equals(speciesResponse.getUrl())) {
+                speciesRepository.deleteById(oldUrl);
+            }
+            return getSpeciesResponse(speciesResponse);
+        } else {
+            throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
+        }
+    }
+
+    private Species findByUrl(String url) {
+        return speciesRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
+    }
+
     public SpeciesResponse addSubSpecies(String speciesUrl, List<String> subSpeciesUrls) {
         Species species = findByUrl(speciesUrl);
 
@@ -118,32 +123,13 @@ public class SpeciesService {
         return toDTO(speciesRepository.save(species), false);
     }
 
-    @Transactional
-    public SpeciesResponse update(String oldUrl, SpeciesResponse speciesResponse) {
-        if (speciesRepository.existsById(oldUrl)) {
-            if (!oldUrl.equals(speciesResponse.getUrl())) {
-                speciesRepository.deleteById(oldUrl);
-            }
-            return getSpeciesResponse(speciesResponse);
-        } else {
-            throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
+    private void validateAndSaveSource(Source source) {
+        if (source != null) {
+            Book book = bookRepository.findById(source.getSourceAcronym())
+                    .orElseThrow(() -> new EntityNotFoundException("Book not found with ID: " + source.getId()));
+            source.setBookInfo(book);
+            sourceRepository.save(source);
         }
-    }
-
-    private SpeciesResponse getSpeciesResponse(SpeciesResponse speciesResponse) {
-        Species species = toEntity(speciesResponse);
-        fillSpecies(speciesResponse, species);
-        Species updatedSpecies = speciesRepository.save(species);
-        return toDTO(updatedSpecies, false);
-    }
-
-    private Species findByUrl(String url) {
-        return speciesRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
-    }
-
-    private void fillParent(Species species, SpeciesResponse speciesResponse) {
-        species.setParent(speciesResponse.getParentUrl().equals(speciesResponse.getUrl()) ? null : findByUrl(speciesResponse.getParentUrl()));
     }
 
     private Species toEntity(SpeciesResponse dto) {
@@ -155,7 +141,7 @@ public class SpeciesService {
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(dto.getCreatureProperties(), species);
 
         if (dto.getParentUrl() != null) {
-            fillParent(species, dto);
+            species.setParent(dto.getParentUrl().equals(dto.getUrl()) ? null : findByUrl(dto.getParentUrl()));
         }
 
         fillSpecies(dto, species);
@@ -194,6 +180,13 @@ public class SpeciesService {
                     .map(Species::getUrl)
                     .toList());
         }
+    }
+
+    private SpeciesResponse getSpeciesResponse(SpeciesResponse speciesResponse) {
+        Species species = toEntity(speciesResponse);
+        fillSpecies(speciesResponse, species);
+        Species updatedSpecies = speciesRepository.save(species);
+        return toDTO(updatedSpecies, false);
     }
 
     private void fillSpecies(SpeciesResponse speciesResponse, Species species) {
