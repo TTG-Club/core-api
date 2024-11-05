@@ -1,6 +1,5 @@
 package club.ttg.dnd5.controller.species;
 
-import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
 import club.ttg.dnd5.dto.species.SpeciesResponse;
 import club.ttg.dnd5.service.species.SpeciesService;
@@ -116,15 +115,5 @@ public class SpeciesController {
     @ResponseStatus(HttpStatus.OK)
     public SpeciesResponse updateSpecies(@PathVariable String oldUrl, @RequestBody SpeciesResponse speciesResponse) {
         return speciesService.update(oldUrl, speciesResponse);
-    }
-
-    @Operation(summary = "Поиск видов", description = "Поиск видов по различным фильтрам и критериям.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Результаты поиска успешно получены")
-    })
-    @PostMapping("/search")
-    @ResponseStatus(HttpStatus.OK)
-    public List<SpeciesResponse> searchSpecies(@RequestBody SearchRequest request) {
-        return speciesService.searchSpecies(request);
     }
 }
