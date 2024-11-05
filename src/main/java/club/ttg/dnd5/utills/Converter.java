@@ -22,10 +22,12 @@ public class Converter {
     public static final BiFunction<BaseDTO, NamedEntity, NamedEntity> MAP_BASE_DTO_TO_ENTITY_NAME = (dto, entity) -> {
         entity.setUrl(dto.getUrl());
         entity.setImageUrl(dto.getImageUrl());
-        entity.setName(dto.getNameBasedDTO().getName());
-        entity.setEnglish(dto.getNameBasedDTO().getEnglish());
-        entity.setAlternative(dto.getNameBasedDTO().getAlternative());
-        entity.setDescription(dto.getNameBasedDTO().getDescription());
+        if (dto.getNameBasedDTO() != null) {
+            entity.setName(dto.getNameBasedDTO().getName());
+            entity.setEnglish(dto.getNameBasedDTO().getEnglish());
+            entity.setAlternative(dto.getNameBasedDTO().getAlternative());
+            entity.setDescription(dto.getNameBasedDTO().getDescription());
+        }
         return entity;
     };
 
@@ -75,7 +77,9 @@ public class Converter {
         Book book = new Book(sourceAcronym);
         book.setSourceAcronym(sourceAcronym);
         source.setBookInfo(book);
-        source.setPage(dto.getPage());
+        if (dto.getPage() != null) {
+            source.setPage(dto.getPage());
+        }
         entity.setSource(source);
         return entity;
     };
