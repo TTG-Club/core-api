@@ -1,4 +1,4 @@
-package club.ttg.dnd5.spec;
+package club.ttg.dnd5.itg;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -2,6 +2,7 @@ package club.ttg.dnd5.dto.species;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
+import club.ttg.dnd5.dto.base.HasSourceDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import java.util.Collection;
 @Setter
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class SpeciesResponse extends BaseDTO implements DetailableDTO {
+public class SpeciesDTO extends BaseDTO implements DetailableDTO, HasSourceDTO{
     // Включаем свойства существа через DTO
     private CreaturePropertiesDTO creatureProperties = new CreaturePropertiesDTO();
     // Связанные сущности
@@ -29,6 +30,26 @@ public class SpeciesResponse extends BaseDTO implements DetailableDTO {
             this.subSpeciesUrls = null;
             this.features = null;
         }
+    }
+
+    @Override
+    public String getSource() {
+        return this.getSourceDTO().getSource();
+    }
+
+    @Override
+    public Short getPage() {
+        return this.getSourceDTO().getPage();
+    }
+
+    @Override
+    public void setPage(Short page) {
+        this.getSourceDTO().setPage(page);
+    }
+
+    @Override
+    public void setSource(String source) {
+        this.getSourceDTO().setSource(source);
     }
 }
 
