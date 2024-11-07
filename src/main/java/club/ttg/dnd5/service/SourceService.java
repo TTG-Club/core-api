@@ -1,6 +1,6 @@
 package club.ttg.dnd5.service;
 
-import club.ttg.dnd5.model.Source;
+import club.ttg.dnd5.model.book.Source;
 
 import java.util.Optional;
 

@@ -1,13 +1,13 @@
 package club.ttg.dnd5.model.species;
 
 import club.ttg.dnd5.model.base.FeatureBase;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+import club.ttg.dnd5.model.base.HasSourceEntity;
+import club.ttg.dnd5.model.base.HasTags;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.List;
 
 @Entity
 @Table(name = "species_features",
@@ -15,11 +15,5 @@ import java.util.List;
 )
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class SpeciesFeature extends FeatureBase {
-    @ElementCollection
-    @CollectionTable(name = "species_feature_entries", joinColumns = @JoinColumn(name = "species_feature_id"))
-    @Column(name = "entry")
-    private List<String> entries;
+public class SpeciesFeature extends FeatureBase implements HasTags, HasSourceEntity {
 }
