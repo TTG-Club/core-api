@@ -29,6 +29,7 @@ public class SpeciesService {
     private final BookRepository bookRepository;
     private final SpeciesFeatureRepository speciesFeatureRepository;
 
+    // Public methods
     public SpeciesDTO findById(String url) {
         return speciesRepository.findById(url)
                 .map(species -> toDTO(species, false))
@@ -39,7 +40,6 @@ public class SpeciesService {
     public SpeciesDTO save(CreateSpeciesDTO createSpeciesDTO) {
         Species species = new Species();
 
-        // Use BiFunctions for mapping
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getCreatureProperties(), species);
         Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO, species);
@@ -83,10 +83,13 @@ public class SpeciesService {
         Species parent = findByUrl(speciesParentUrl);
 
         species.setParent(parent);
-        if (parent.getSubSpecies() == null) {
-            parent.setSubSpecies(new ArrayList<>());
-        }
-        parent.getSubSpecies().add(species);
+
+        Optional.ofNullable(parent.getSubSpecies())
+                .orElseGet(() -> {
+                    parent.setSubSpecies(new ArrayList<>());
+                    return parent.getSubSpecies();
+                })
+                .add(species);
 
         return toDTO(speciesRepository.save(species), false);
     }
@@ -103,15 +106,10 @@ public class SpeciesService {
         }
     }
 
-    private Species findByUrl(String url) {
-        return speciesRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
-    }
-
     public SpeciesDTO addSubSpecies(String speciesUrl, List<String> subSpeciesUrls) {
         Species species = findByUrl(speciesUrl);
 
-        // Set parent in the map step to avoid using peek
+        // Set parent in the map step
         List<Species> subSpeciesEntities = subSpeciesUrls.stream()
                 .map(url -> {
                     Species subSpecies = findByUrl(url);
@@ -122,6 +120,12 @@ public class SpeciesService {
 
         species.setSubSpecies(subSpeciesEntities);
         return toDTO(speciesRepository.save(species), false);
+    }
+
+    // Private methods
+    private Species findByUrl(String url) {
+        return speciesRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
     }
 
     private void validateAndSaveSource(Source source) {
