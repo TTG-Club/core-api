@@ -28,9 +28,6 @@ public class Source extends TimestampedEntity {
     }
 
     public String getSourceAcronym() {
-        if (bookInfo != null)
-            return bookInfo.getSourceAcronym();
-        else
-            return "";
+        return (bookInfo != null) ? bookInfo.getSourceAcronym() : "";
     }
 }
