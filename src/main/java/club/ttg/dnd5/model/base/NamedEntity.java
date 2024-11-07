@@ -28,5 +28,6 @@ public abstract class NamedEntity extends TimestampedEntity {
      * in responses sent to the frontend. If {@code false}, the entity will be visible to the frontend.
      * </p>
      */
+    @Column(name = "is_hidden_entity")
     private boolean isHiddenEntity = false;
 }
