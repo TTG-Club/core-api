@@ -21,11 +21,7 @@ public class CreateSpeciesDTO extends BaseDTO implements HasSourceDTO {
 
     @Override
     public Short getPage() {
-        if (this.getSource() != null)
-            return this.getSourceDTO().getPage();
-        else
-            return -1;
-
+        return (this.getSource() != null) ? this.getSourceDTO().getPage() : -1;
     }
 
     @Override
