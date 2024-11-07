@@ -52,9 +52,9 @@ public class SpeciesService {
         return toDTO(save, false);
     }
 
-
     public List<SpeciesDTO> getSubSpeciesByParentUrl(String parentUrl) {
         return speciesRepository.findById(parentUrl)
+                .filter(species -> !species.isHiddenEntity())
                 .map(speciesRepository::findByParent)
                 .orElseThrow(() -> new EntityNotFoundException("Parent species not found for URL: " + parentUrl))
                 .stream()
@@ -73,6 +73,7 @@ public class SpeciesService {
                                 subSpecies.getSubSpecies() != null ? subSpecies.getSubSpecies().stream() : Stream.empty()
                         )
                 )
+                .filter(species -> !species.isHiddenEntity())
                 .map(species -> toDTO(species, true))
                 .toList();
     }
