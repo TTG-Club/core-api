@@ -6,9 +6,9 @@ import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.base.SourceResponse;
-import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
-import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
-import club.ttg.dnd5.dto.species.SpeciesDTO;
+import club.ttg.dnd5.dto.species.CreateSpeciesDto;
+import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
+import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.NamedEntity;
 import club.ttg.dnd5.model.book.Book;
@@ -23,14 +23,14 @@ import static junit.framework.TestCase.assertEquals;
 public class ConverterTest {
     private BaseDTO baseDTO;
     private NamedEntity namedEntity;
-    private CreaturePropertiesDTO creaturePropertiesDTO;
+    private CreaturePropertiesDto creaturePropertiesDTO;
     private CreatureProperties creatureProperties;
-    private SpeciesDTO speciesDTO;
+    private SpeciesDto speciesDTO;
     private Source source;
     @Before
     public void setUp() {
         // Set up the BaseDTO and NamedEntity
-        baseDTO = new CreateSpeciesDTO();
+        baseDTO = new CreateSpeciesDto();
         baseDTO.setUrl("http://example.com");
         NameBasedDTO nameBasedDTO = new NameBasedDTO();
         nameBasedDTO.setName("Test Name");
@@ -46,8 +46,8 @@ public class ConverterTest {
         namedEntity.setAlternative("Entity Alternative Name");
         namedEntity.setDescription("Entity Description");
 
-        // Set up CreaturePropertiesDTO and CreatureProperties
-        creaturePropertiesDTO = new CreaturePropertiesDTO();
+        // Set up CreaturePropertiesDto and CreatureProperties
+        creaturePropertiesDTO = new CreaturePropertiesDto();
         creaturePropertiesDTO.setSize(Size.MEDIUM);
         creaturePropertiesDTO.setType(CreatureType.BEAST);
         creaturePropertiesDTO.setSpeed(30);
@@ -68,7 +68,7 @@ public class ConverterTest {
         SourceResponse sourceResponse = new SourceResponse();
         sourceResponse.setSource("PHB");
         sourceResponse.setPage((short) 155);
-        speciesDTO = new SpeciesDTO();
+        speciesDTO = new SpeciesDto();
         speciesDTO.setSourceDTO(sourceResponse);
 
         source = new Source();
@@ -94,7 +94,7 @@ public class ConverterTest {
     // Test mapping from Entity to DTO for NamedEntity and BaseDTO
     @Test
     public void testMapEntityToBaseDTO() {
-        BaseDTO result = Converter.MAP_ENTITY_TO_BASE_DTO.apply(new SpeciesDTO(), namedEntity);
+        BaseDTO result = Converter.MAP_ENTITY_TO_BASE_DTO.apply(new SpeciesDto(), namedEntity);
 
         assertEquals(namedEntity.getUrl(), result.getUrl());
         assertEquals(namedEntity.getName(), result.getNameBasedDTO().getName());
@@ -103,7 +103,7 @@ public class ConverterTest {
         assertEquals(namedEntity.getDescription(), result.getNameBasedDTO().getDescription());
     }
 
-    // Test mapping from CreaturePropertiesDTO to CreatureProperties Entity
+    // Test mapping from CreaturePropertiesDto to CreatureProperties Entity
     @Test
     public void testMapCreaturePropertiesDTOToEntity() {
         CreatureProperties result = Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(creaturePropertiesDTO, new Species());
@@ -117,10 +117,10 @@ public class ConverterTest {
         assertEquals(creaturePropertiesDTO.getDarkVision(), result.getDarkVision());
     }
 
-    // Test mapping from CreatureProperties Entity to CreaturePropertiesDTO
+    // Test mapping from CreatureProperties Entity to CreaturePropertiesDto
     @Test
     public void testMapEntityToCreaturePropertiesDTO() {
-        CreaturePropertiesDTO result = Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(new CreaturePropertiesDTO(), creatureProperties);
+        CreaturePropertiesDto result = Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(new CreaturePropertiesDto(), creatureProperties);
 
         assertEquals(creatureProperties.getSize(), result.getSize());
         assertEquals(creatureProperties.getType(), result.getType());
@@ -157,7 +157,7 @@ public class ConverterTest {
         species.setSwim(0);
         species.setClimb(50);
         species.setSize(Size.HUGE);
-        speciesDTO.setCreatureProperties(new CreaturePropertiesDTO());
+        speciesDTO.setCreatureProperties(new CreaturePropertiesDto());
         Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(speciesDTO.getCreatureProperties(), species);
         BaseDTO apply = Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(speciesDTO, species);
         Assert.isNull(speciesDTO.getCreatureProperties());

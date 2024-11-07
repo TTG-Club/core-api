@@ -1,6 +1,6 @@
 package club.ttg.dnd5.utills;
 
-import club.ttg.dnd5.dto.species.SpeciesFeatureResponse;
+import club.ttg.dnd5.dto.species.SpeciesFeatureDto;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
@@ -17,7 +17,7 @@ public class SpeciesFeatureConverterTest {
     @Test
     public void testToEntityFeature() {
         // Arrange
-        SpeciesFeatureResponse response = new SpeciesFeatureResponse();
+        SpeciesFeatureDto response = new SpeciesFeatureDto();
         response.setTags(Map.of("tag1", "value1", "tag2", "value2"));
         response.setDescription("Feature description");
         response.setUrl("http://example.com/species-feature");
@@ -41,7 +41,7 @@ public class SpeciesFeatureConverterTest {
         feature.setUrl("http://example.com/species-feature");
 
         // Act
-        SpeciesFeatureResponse response = SpeciesFeatureConverter.toDTOFeature(feature);
+        SpeciesFeatureDto response = SpeciesFeatureConverter.toDTOFeature(feature);
 
         // Assert
         assertNotNull(response);
@@ -54,7 +54,7 @@ public class SpeciesFeatureConverterTest {
     public void testConvertDTOFeatureIntoEntityFeature() {
         // Arrange
         Species species = new Species();
-        SpeciesFeatureResponse response = new SpeciesFeatureResponse();
+        SpeciesFeatureDto response = new SpeciesFeatureDto();
         response.setTags(Map.of("tag1", "value1", "tag2", "value2"));
         response.setDescription("Feature description");
 
@@ -77,12 +77,12 @@ public class SpeciesFeatureConverterTest {
         feature.setFeatureDescription("Feature description");
 
         // Act
-        Collection<SpeciesFeatureResponse> response = SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(List.of(feature));
+        Collection<SpeciesFeatureDto> response = SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(List.of(feature));
 
         // Assert
         assertNotNull(response);
         assertEquals(1, response.size());
-        SpeciesFeatureResponse dto = response.iterator().next();
+        SpeciesFeatureDto dto = response.iterator().next();
         assertEquals(feature.getFeatureDescription(), dto.getDescription());
         assertEquals(feature.getTags(), dto.getTags());
     }

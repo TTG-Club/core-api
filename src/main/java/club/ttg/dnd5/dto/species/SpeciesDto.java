@@ -14,13 +14,13 @@ import java.util.Collection;
 @Setter
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class SpeciesDTO extends BaseDTO implements DetailableDTO, HasSourceDTO{
+public class SpeciesDto extends BaseDTO implements DetailableDTO, HasSourceDTO{
     // Включаем свойства существа через DTO
-    private CreaturePropertiesDTO creatureProperties = new CreaturePropertiesDTO();
+    private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();
     // Связанные сущности
     private String parentUrl;
     private Collection<String> subSpeciesUrls;
-    private Collection<SpeciesFeatureResponse> features;
+    private Collection<SpeciesFeatureDto> features;
     private boolean isDetail = false;
     @Override
     public void hideDetails() {
