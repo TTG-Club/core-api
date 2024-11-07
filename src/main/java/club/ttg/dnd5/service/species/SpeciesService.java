@@ -1,7 +1,7 @@
 package club.ttg.dnd5.service.species;
 
-import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
-import club.ttg.dnd5.dto.species.SpeciesDTO;
+import club.ttg.dnd5.dto.species.CreateSpeciesDto;
+import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
@@ -30,14 +30,14 @@ public class SpeciesService {
     private final SpeciesFeatureRepository speciesFeatureRepository;
 
     // Public methods
-    public SpeciesDTO findById(String url) {
+    public SpeciesDto findById(String url) {
         return speciesRepository.findById(url)
                 .map(species -> toDTO(species, false))
                 .orElseThrow(() -> new EntityNotFoundException(url));
     }
 
     @Transactional
-    public SpeciesDTO save(CreateSpeciesDTO createSpeciesDTO) {
+    public SpeciesDto save(CreateSpeciesDto createSpeciesDTO) {
         Species species = new Species();
 
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
@@ -52,7 +52,7 @@ public class SpeciesService {
         return toDTO(save, false);
     }
 
-    public List<SpeciesDTO> getSubSpeciesByParentUrl(String parentUrl) {
+    public List<SpeciesDto> getSubSpeciesByParentUrl(String parentUrl) {
         return speciesRepository.findById(parentUrl)
                 .filter(species -> !species.isHiddenEntity())
                 .map(speciesRepository::findByParent)
@@ -62,7 +62,7 @@ public class SpeciesService {
                 .toList();
     }
 
-    public List<SpeciesDTO> getAllRelatedSpeciesBySubSpeciesUrl(String subSpeciesUrl) {
+    public List<SpeciesDto> getAllRelatedSpeciesBySubSpeciesUrl(String subSpeciesUrl) {
         Species subSpecies = speciesRepository.findById(subSpeciesUrl)
                 .orElseThrow(() -> new EntityNotFoundException("Sub-species not found for URL: " + subSpeciesUrl));
 
@@ -78,7 +78,7 @@ public class SpeciesService {
                 .toList();
     }
 
-    public SpeciesDTO addParent(String speciesUrl, String speciesParentUrl) {
+    public SpeciesDto addParent(String speciesUrl, String speciesParentUrl) {
         Species species = findByUrl(speciesUrl);
         Species parent = findByUrl(speciesParentUrl);
 
@@ -95,7 +95,7 @@ public class SpeciesService {
     }
 
     @Transactional
-    public SpeciesDTO update(String oldUrl, SpeciesDTO speciesDTO) {
+    public SpeciesDto update(String oldUrl, SpeciesDto speciesDTO) {
         if (speciesRepository.existsById(oldUrl)) {
             if (!oldUrl.equals(speciesDTO.getUrl())) {
                 speciesRepository.deleteById(oldUrl);
@@ -106,7 +106,7 @@ public class SpeciesService {
         }
     }
 
-    public SpeciesDTO addSubSpecies(String speciesUrl, List<String> subSpeciesUrls) {
+    public SpeciesDto addSubSpecies(String speciesUrl, List<String> subSpeciesUrls) {
         Species species = findByUrl(speciesUrl);
 
         // Set parent in the map step
@@ -137,7 +137,7 @@ public class SpeciesService {
         }
     }
 
-    private Species toEntity(SpeciesDTO dto) {
+    private Species toEntity(SpeciesDto dto) {
         Species species = new Species();
         species.setUrl(dto.getUrl());
 
@@ -153,8 +153,8 @@ public class SpeciesService {
         return species;
     }
 
-    private SpeciesDTO toDTO(Species species, boolean hideDetails) {
-        SpeciesDTO dto = new SpeciesDTO();
+    private SpeciesDto toDTO(Species species, boolean hideDetails) {
+        SpeciesDto dto = new SpeciesDto();
         if (hideDetails) {
             Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, species);
         } else {
@@ -174,9 +174,9 @@ public class SpeciesService {
         return dto;
     }
 
-    private void handleParentAndChild(Species species, SpeciesDTO dto) {
+    private void handleParentAndChild(Species species, SpeciesDto dto) {
         if (species.getParent() != null) {
-            SpeciesDTO parentDTO = new SpeciesDTO();
+            SpeciesDto parentDTO = new SpeciesDto();
             parentDTO.setUrl(species.getParent().getUrl());
         }
 
@@ -187,19 +187,19 @@ public class SpeciesService {
         }
     }
 
-    private SpeciesDTO getSpeciesResponse(SpeciesDTO speciesDTO) {
+    private SpeciesDto getSpeciesResponse(SpeciesDto speciesDTO) {
         Species species = toEntity(speciesDTO);
         fillSpecies(speciesDTO, species);
         Species updatedSpecies = speciesRepository.save(species);
         return toDTO(updatedSpecies, false);
     }
 
-    private void fillSpecies(SpeciesDTO speciesDTO, Species species) {
+    private void fillSpecies(SpeciesDto speciesDTO, Species species) {
         Optional.ofNullable(speciesDTO.getSubSpeciesUrls())
                 .ifPresent(urls -> species.setSubSpecies(urls.stream().map(this::findByUrl).toList()));
     }
 
-    public void saveSpeciesFeatures(CreateSpeciesDTO createSpeciesDTO, Species species) {
+    public void saveSpeciesFeatures(CreateSpeciesDto createSpeciesDTO, Species species) {
         SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
         Collection<SpeciesFeature> features = species.getFeatures();
         if (!CollectionUtils.isEmpty(features)) {

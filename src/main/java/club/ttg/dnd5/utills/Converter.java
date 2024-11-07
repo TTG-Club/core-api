@@ -4,7 +4,7 @@ import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
-import club.ttg.dnd5.dto.species.CreaturePropertiesDTO;
+import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
@@ -44,7 +44,7 @@ public class Converter {
     };
 
     // Function to map Creature Properties DTO to Entity
-    public static final BiFunction<CreaturePropertiesDTO, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
+    public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
         entity.setSize(dto.getSize());
         entity.setType(dto.getType());
         entity.setSpeed(dto.getSpeed());
@@ -56,7 +56,7 @@ public class Converter {
     };
 
     // Function to map Creature Properties Entity to DTO
-    public static final BiFunction<CreaturePropertiesDTO, CreatureProperties, CreaturePropertiesDTO> MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO = (dto, entity) -> {
+    public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreaturePropertiesDto> MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO = (dto, entity) -> {
         dto.setSize(entity.getSize());
         dto.setType(entity.getType());
         dto.setSpeed(entity.getSpeed());

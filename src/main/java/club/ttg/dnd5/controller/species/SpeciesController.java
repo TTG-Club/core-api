@@ -1,7 +1,7 @@
 package club.ttg.dnd5.controller.species;
 
-import club.ttg.dnd5.dto.species.CreateSpeciesDTO;
-import club.ttg.dnd5.dto.species.SpeciesDTO;
+import club.ttg.dnd5.dto.species.CreateSpeciesDto;
+import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.service.species.SpeciesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,18 +26,18 @@ public class SpeciesController {
     @GetMapping("/{parentUrl}/subspecies")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
-    public ResponseEntity<List<SpeciesDTO>> getSubSpeciesByParentUrl(
+    public ResponseEntity<List<SpeciesDto>> getSubSpeciesByParentUrl(
             @Parameter(description = "URL родительского вида", required = true) @PathVariable String parentUrl) {
-        List<SpeciesDTO> subSpeciesDTO = speciesService.getSubSpeciesByParentUrl(parentUrl);
-        return ResponseEntity.ok(subSpeciesDTO);
+        List<SpeciesDto> subSpeciesDto = speciesService.getSubSpeciesByParentUrl(parentUrl);
+        return ResponseEntity.ok(subSpeciesDto);
     }
 
     @GetMapping("/subspecies/{subSpeciesUrl}/related")
     @Operation(summary = "Получить все связанные виды по URL подвида",
             description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвида.")
-    public ResponseEntity<List<SpeciesDTO>> getAllRelatedSpeciesBySubSpeciesUrl(
+    public ResponseEntity<List<SpeciesDto>> getAllRelatedSpeciesBySubSpeciesUrl(
             @Parameter(description = "URL подвига", required = true) @PathVariable String subSpeciesUrl) {
-        List<SpeciesDTO> relatedSpeciesRespons = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
+        List<SpeciesDto> relatedSpeciesRespons = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
         return ResponseEntity.ok(relatedSpeciesRespons);
     }
 
@@ -54,10 +54,10 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид или родитель не найден")
     })
     @PostMapping("/{speciesUrl}/parent")
-    public ResponseEntity<SpeciesDTO> addParent(
+    public ResponseEntity<SpeciesDto> addParent(
             @Parameter(description = "URL вида, к которому добавляется родитель") @PathVariable String speciesUrl,
             @Parameter(description = "URL родителя, который будет добавлен") @RequestParam String speciesParentUrl) {
-        SpeciesDTO response = speciesService.addParent(speciesUrl, speciesParentUrl);
+        SpeciesDto response = speciesService.addParent(speciesUrl, speciesParentUrl);
         return ResponseEntity.ok(response);
     }
 
@@ -74,10 +74,10 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид не найден")
     })
     @PostMapping("/{speciesUrl}/subspecies")
-    public ResponseEntity<SpeciesDTO> addSubSpecies(
+    public ResponseEntity<SpeciesDto> addSubSpecies(
             @Parameter(description = "URL вида, к которому добавляются подвиды") @PathVariable String speciesUrl,
             @Parameter(description = "Список URL подвидов, которые будут добавлены") @RequestBody List<String> subSpeciesUrls) {
-        SpeciesDTO response = speciesService.addSubSpecies(speciesUrl, subSpeciesUrls);
+        SpeciesDto response = speciesService.addSubSpecies(speciesUrl, subSpeciesUrls);
         return ResponseEntity.ok(response);
     }
 
@@ -88,7 +88,7 @@ public class SpeciesController {
     })
     @GetMapping("/{url}")
     @ResponseStatus(HttpStatus.OK)
-    public SpeciesDTO getSpeciesByUrl(@PathVariable String url) {
+    public SpeciesDto getSpeciesByUrl(@PathVariable String url) {
         return speciesService.findById(url);
     }
 
@@ -100,7 +100,7 @@ public class SpeciesController {
     @PostMapping
     @Secured("ROLE_ADMIN")
     @ResponseStatus(HttpStatus.CREATED)
-    public SpeciesDTO createSpecies(@RequestBody CreateSpeciesDTO createSpeciesDTO) {
+    public SpeciesDto createSpecies(@RequestBody CreateSpeciesDto createSpeciesDTO) {
         return speciesService.save(createSpeciesDTO);
     }
 
@@ -113,7 +113,7 @@ public class SpeciesController {
     @PutMapping("/{oldUrl}")
     @Secured("ROLE_ADMIN")
     @ResponseStatus(HttpStatus.OK)
-    public SpeciesDTO updateSpecies(@PathVariable String oldUrl, @RequestBody SpeciesDTO speciesDTO) {
+    public SpeciesDto updateSpecies(@PathVariable String oldUrl, @RequestBody SpeciesDto speciesDTO) {
         return speciesService.update(oldUrl, speciesDTO);
     }
 }
