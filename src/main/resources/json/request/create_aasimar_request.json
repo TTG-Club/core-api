@@ -1,0 +1,52 @@
+{
+  "url": "assimar",
+  "imageUrl": "assimar/picture",
+  "nameBasedDTO": {
+    "name": "Aasimar",
+    "english": "Aasimar",
+    "alternative": "Angel-blooded",
+    "description": "Aasimar are mortals with celestial heritage. They have traits hinting at their divine ancestry, like glowing eyes or metallic freckles."
+  },
+  "sourceDTO": {
+    "page": 155,
+    "source": "PHB"
+  },
+  "creatureProperties": {
+    "size": "MEDIUM",
+    "type": "HUMANOID",
+    "speed": 30,
+    "fly": 0,
+    "climb": 0,
+    "swim": 0,
+    "darkVision": 60,
+    "sourceResponse": {
+      "page": 155,
+      "source": "PHB"
+    }
+  },
+  "features": [
+    {
+      "url": "assimar/light-bearer",
+      "imageUrl": "assimar/picture",
+      "nameBasedDTO": {
+        "name": "Light Bearer",
+        "english": "Light Bearer",
+        "alternative": "Light Carrier",
+        "description": "You know the Light cantrip, allowing you to emit light to brighten your surroundings."
+      },
+      "sourceDTO": {
+        "page": 156,
+        "source": "PHB"
+      },
+      "description": "This feature allows the aasimar to use the Light cantrip at will.",
+      "tags": {
+        "magic": "cantrip",
+        "light": "illumination",
+        "aasimar": "racial feature"
+      }
+    }
+  ],
+  "parent": true,
+  "source": "PHB",
+  "page": 155
+}
