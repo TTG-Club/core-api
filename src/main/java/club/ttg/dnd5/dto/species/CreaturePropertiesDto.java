@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CreaturePropertiesDTO {
+public class CreaturePropertiesDto {
     private Size size;
     private CreatureType type;
     private int speed;

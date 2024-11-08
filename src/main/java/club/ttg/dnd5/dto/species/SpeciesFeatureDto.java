@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-public class SpeciesFeatureResponse extends BaseDTO implements HasTags, HasSourceDTO {
+public class SpeciesFeatureDto extends BaseDTO implements HasTags, HasSourceDTO {
     private String description;
     private Map<String, String> tags;
 

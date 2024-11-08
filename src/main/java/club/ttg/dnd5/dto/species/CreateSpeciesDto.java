@@ -14,10 +14,10 @@ import java.util.Collection;
 @Setter
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class CreateSpeciesDTO extends BaseDTO implements HasSourceDTO {
+public class CreateSpeciesDto extends BaseDTO implements HasSourceDTO {
     boolean parent;
-    private CreaturePropertiesDTO creatureProperties;
-    private Collection<SpeciesFeatureResponse> features = new ArrayList<>();
+    private CreaturePropertiesDto creatureProperties;
+    private Collection<SpeciesFeatureDto> features = new ArrayList<>();
 
     @Override
     public Short getPage() {
