@@ -36,6 +36,13 @@ public class SpeciesService {
                 .orElseThrow(() -> new EntityNotFoundException(url));
     }
 
+    public List<SpeciesDto> getAllSpecies() {
+        return speciesRepository.findAll()
+                .stream()
+                .map(species -> toDTO(species, true))
+                .toList();
+    }
+
     @Transactional
     public SpeciesDto save(CreateSpeciesDto createSpeciesDTO) {
         Species species = new Species();
