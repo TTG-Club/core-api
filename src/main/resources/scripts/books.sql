@@ -1,2 +1,2 @@
-INSERT INTO books
-VALUES ('PHB', null, null, 'ПХБ', 'S', 'PHB', 'Player Hands Book', 'OFFICIAL', 2024);
+INSERT INTO books (source_acronym, name, alt_name, english_name, description, type, year)
+VALUES ('PHB', 'ПХБ', 'S', 'PHB', 'Player Hands Book', 'OFFICIAL', 2024);
