@@ -2,6 +2,7 @@ package club.ttg.dnd5.service.species;
 
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
 import club.ttg.dnd5.dto.species.SpeciesDto;
+import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
@@ -14,6 +15,7 @@ import club.ttg.dnd5.repository.book.BookRepository;
 import club.ttg.dnd5.utills.Converter;
 import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -46,7 +48,6 @@ public class SpeciesService {
     @Transactional
     public SpeciesDto save(CreateSpeciesDto createSpeciesDTO) {
         Species species = new Species();
-
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getCreatureProperties(), species);
         Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO, species);
@@ -88,17 +89,23 @@ public class SpeciesService {
     public SpeciesDto addParent(String speciesUrl, String speciesParentUrl) {
         Species species = findByUrl(speciesUrl);
         Species parent = findByUrl(speciesParentUrl);
+        //на этапе save, мы делаем ссылку на самого себя, если это родитель
+        //тут же мы проверяем это утверждение.
+        if (parent.getParent().equals(parent)) {
+            species.setParent(parent);
 
-        species.setParent(parent);
+            Optional.ofNullable(parent.getSubSpecies())
+                    .orElseGet(() -> {
+                        parent.setSubSpecies(new ArrayList<>());
+                        return parent.getSubSpecies();
+                    })
+                    .add(species);
 
-        Optional.ofNullable(parent.getSubSpecies())
-                .orElseGet(() -> {
-                    parent.setSubSpecies(new ArrayList<>());
-                    return parent.getSubSpecies();
-                })
-                .add(species);
-
-        return toDTO(speciesRepository.save(species), false);
+            return toDTO(speciesRepository.save(species), false);
+        } else {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "This is not a parent Species");
+        }
     }
 
     @Transactional
@@ -147,7 +154,6 @@ public class SpeciesService {
     private Species toEntity(SpeciesDto dto) {
         Species species = new Species();
         species.setUrl(dto.getUrl());
-
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(dto, species);
         Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(dto.getCreatureProperties(), species);
@@ -166,25 +172,21 @@ public class SpeciesService {
             Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, species);
         } else {
             Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, species);
-        }
-
-        Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), species);
-        Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(dto.getCreatureProperties(), species);
-        dto.getCreatureProperties().setSourceResponse(dto.getSourceDTO());
-
-        handleParentAndChild(species, dto);
-
-        Collection<SpeciesFeature> features = species.getFeatures();
-        if (features != null) {
-            dto.setFeatures(SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(features));
+            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), species);
+            Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(dto.getCreatureProperties(), species);
+            dto.getCreatureProperties().setSourceResponse(dto.getSourceDTO());
+            handleParentAndChild(species, dto);
+            Collection<SpeciesFeature> features = species.getFeatures();
+            if (features != null) {
+                dto.setFeatures(SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(features));
+            }
         }
         return dto;
     }
 
     private void handleParentAndChild(Species species, SpeciesDto dto) {
         if (species.getParent() != null) {
-            SpeciesDto parentDTO = new SpeciesDto();
-            parentDTO.setUrl(species.getParent().getUrl());
+            dto.setParentUrl(species.getParent().getUrl());
         }
 
         if (species.getSubSpecies() != null) {
@@ -206,7 +208,7 @@ public class SpeciesService {
                 .ifPresent(urls -> species.setSubSpecies(urls.stream().map(this::findByUrl).toList()));
     }
 
-    public void saveSpeciesFeatures(CreateSpeciesDto createSpeciesDTO, Species species) {
+    private void saveSpeciesFeatures(CreateSpeciesDto createSpeciesDTO, Species species) {
         SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
         Collection<SpeciesFeature> features = species.getFeatures();
         if (!CollectionUtils.isEmpty(features)) {

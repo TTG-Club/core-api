@@ -1,0 +1,46 @@
+{
+  "url": "forest-gnome",
+  "imageUrl": "gnome/forest/picture",
+  "nameBasedDTO": {
+    "name": "Лесной Гном",
+    "english": "Forest Gnome",
+    "alternative": "Woodland Trickster",
+    "description": "Лесные гномы живут в лесах и наделены магией иллюзий, чтобы защищаться и выживать."
+  },
+  "sourceDTO": {
+    "page": 181,
+    "source": "PHB"
+  },
+  "creatureProperties": {
+    "size": "SMALL",
+    "type": "HUMANOID",
+    "speed": 30,
+    "darkVision": 60,
+    "sourceResponse": {
+      "page": 181,
+      "source": "PHB"
+    }
+  },
+  "features": [
+    {
+      "url": "forest-gnome/natural-illusionist",
+      "nameBasedDTO": {
+        "name": "Природный Иллюзионист",
+        "english": "Natural Illusionist",
+        "description": "Вы знаете заговор Малая Иллюзия."
+      },
+      "sourceDTO": {
+        "page": 181,
+        "source": "PHB"
+      },
+      "description": "Лесные гномы умеют использовать Малую Иллюзию для маскировки и защиты.",
+      "tags": {
+        "magic": "illusion",
+        "gnome": "racial feature"
+      }
+    }
+  ],
+  "parent": false,
+  "source": "PHB",
+  "page": 181
+}
