@@ -1,0 +1,46 @@
+{
+  "url": "gnome",
+  "imageUrl": "gnome/picture",
+  "nameBasedDTO": {
+    "name": "Гном",
+    "english": "Gnome",
+    "alternative": "Little People",
+    "description": "Гномы – волшебные существа, созданные богами изобретений, иллюзий и подземной жизни. Они скрытные и обладают уникальными магическими способностями."
+  },
+  "sourceDTO": {
+    "page": 181,
+    "source": "PHB"
+  },
+  "creatureProperties": {
+    "size": "SMALL",
+    "type": "HUMANOID",
+    "speed": 30,
+    "darkVision": 60,
+    "sourceResponse": {
+      "page": 200,
+      "source": "PHB"
+    }
+  },
+  "features": [
+    {
+      "url": "gnome/gnomish-cunning",
+      "nameBasedDTO": {
+        "name": "Гномья Хитрость",
+        "english": "Gnomish Cunning",
+        "description": "Преимущество на спасброски Интеллекта, Мудрости и Харизмы."
+      },
+      "sourceDTO": {
+        "page": 181,
+        "source": "PHB"
+      },
+      "description": "Гномы обладают хитростью, позволяющей им противостоять ментальным эффектам.",
+      "tags": {
+        "magic": "resistance",
+        "gnome": "racial feature"
+      }
+    }
+  ],
+  "parent": true,
+  "source": "PHB",
+  "page": 181
+}
