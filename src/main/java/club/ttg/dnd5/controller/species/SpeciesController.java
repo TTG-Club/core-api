@@ -23,7 +23,7 @@ import java.util.List;
 public class SpeciesController {
     private final SpeciesService speciesService;
 
-    @GetMapping("species")
+    @PostMapping
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
     public ResponseEntity<List<SpeciesDto>> getAllSpecies() {
         return ResponseEntity.ok(speciesService.getAllSpecies());
