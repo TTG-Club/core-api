@@ -3,6 +3,7 @@ package club.ttg.dnd5.dto.species;
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import lombok.Setter;
 
 import java.util.Collection;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
 @AllArgsConstructor
