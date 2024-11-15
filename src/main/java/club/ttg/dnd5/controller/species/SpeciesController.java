@@ -23,26 +23,37 @@ import java.util.List;
 public class SpeciesController {
     private final SpeciesService speciesService;
 
-    @PostMapping("/all")
+    @PostMapping("/search")
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
     public ResponseEntity<List<SpeciesDto>> getAllSpecies() {
         return ResponseEntity.ok(speciesService.getAllSpecies());
     }
 
-    @GetMapping("/{parentUrl}/subspecies")
+    @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Вид успешно получен"),
+            @ApiResponse(responseCode = "404", description = "Вид не найден")
+    })
+    @GetMapping("/{url}")
+    @ResponseStatus(HttpStatus.OK)
+    public SpeciesDto getSpeciesByUrl(@PathVariable String url) {
+        return speciesService.findById(url);
+    }
+
+    @GetMapping("/subspecies")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
     public ResponseEntity<List<SpeciesDto>> getSubSpeciesByParentUrl(
-            @Parameter(description = "URL родительского вида", required = true) @PathVariable String parentUrl) {
+            @Parameter(description = "URL родительского вида", required = true) @RequestParam String parentUrl) {
         List<SpeciesDto> subSpeciesDto = speciesService.getSubSpeciesByParentUrl(parentUrl);
         return ResponseEntity.ok(subSpeciesDto);
     }
 
-    @GetMapping("/subspecies/{subSpeciesUrl}/related")
+    @GetMapping("/related")
     @Operation(summary = "Получить все связанные виды по URL подвида",
             description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвида.")
     public ResponseEntity<List<SpeciesDto>> getAllRelatedSpeciesBySubSpeciesUrl(
-            @Parameter(description = "URL подвига", required = true) @PathVariable String subSpeciesUrl) {
+            @Parameter(description = "URL подвига", required = true) @RequestParam String subSpeciesUrl) {
         List<SpeciesDto> relatedSpeciesRespons = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
         return ResponseEntity.ok(relatedSpeciesRespons);
     }
@@ -59,10 +70,10 @@ public class SpeciesController {
             @ApiResponse(responseCode = "200", description = "Родитель успешно добавлен к виду"),
             @ApiResponse(responseCode = "404", description = "Вид или родитель не найден")
     })
-    @PostMapping("/{speciesUrl}/parent")
+    @PostMapping("/parent")
     public ResponseEntity<SpeciesDto> addParent(
-            @Parameter(description = "URL вида, к которому добавляется родитель") @PathVariable String speciesUrl,
-            @Parameter(description = "URL родителя, который будет добавлен") @RequestParam String speciesParentUrl) {
+            @Parameter(description = "URL вида, к которому добавляется родитель", required = true) @RequestParam String speciesUrl,
+            @Parameter(description = "URL родителя, который будет добавлен", required = true) @RequestParam String speciesParentUrl) {
         SpeciesDto response = speciesService.addParent(speciesUrl, speciesParentUrl);
         return ResponseEntity.ok(response);
     }
@@ -79,23 +90,12 @@ public class SpeciesController {
             @ApiResponse(responseCode = "200", description = "Подвиды успешно добавлены к виду"),
             @ApiResponse(responseCode = "404", description = "Вид не найден")
     })
-    @PostMapping("/{speciesUrl}/subspecies")
+    @PostMapping("/subspecies")
     public ResponseEntity<SpeciesDto> addSubSpecies(
-            @Parameter(description = "URL вида, к которому добавляются подвиды") @PathVariable String speciesUrl,
-            @Parameter(description = "Список URL подвидов, которые будут добавлены") @RequestBody List<String> subSpeciesUrls) {
+            @Parameter(description = "URL вида, к которому добавляются подвиды", required = true) @RequestParam String speciesUrl,
+            @Parameter(description = "Список URL подвидов, которые будут добавлены", required = true) @RequestBody List<String> subSpeciesUrls) {
         SpeciesDto response = speciesService.addSubSpecies(speciesUrl, subSpeciesUrls);
         return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Вид успешно получен"),
-            @ApiResponse(responseCode = "404", description = "Вид не найден")
-    })
-    @GetMapping("/{url}")
-    @ResponseStatus(HttpStatus.OK)
-    public SpeciesDto getSpeciesByUrl(@PathVariable String url) {
-        return speciesService.findById(url);
     }
 
     @Operation(summary = "Создать новый вид", description = "Создание нового вида в системе.")
@@ -103,7 +103,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "201", description = "Вид успешно создан"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PostMapping
+    @PostMapping("/new")
     @Secured("ROLE_ADMIN")
     @ResponseStatus(HttpStatus.CREATED)
     public SpeciesDto createSpecies(@RequestBody CreateSpeciesDto createSpeciesDTO) {
@@ -116,10 +116,10 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид не найден"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PutMapping("/{oldUrl}")
+    @PutMapping("/{url}")
     @Secured("ROLE_ADMIN")
     @ResponseStatus(HttpStatus.OK)
-    public SpeciesDto updateSpecies(@PathVariable String oldUrl, @RequestBody SpeciesDto speciesDTO) {
-        return speciesService.update(oldUrl, speciesDTO);
+    public SpeciesDto updateSpecies(@PathVariable String url, @RequestBody SpeciesDto speciesDTO) {
+        return speciesService.update(url, speciesDTO);
     }
 }
