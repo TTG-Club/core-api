@@ -32,11 +32,11 @@ public class ConverterTest {
         // Set up the BaseDTO and NamedEntity
         baseDTO = new CreateSpeciesDto();
         baseDTO.setUrl("http://example.com");
+        baseDTO.setDescription("Test Description");
         NameBasedDTO nameBasedDTO = new NameBasedDTO();
         nameBasedDTO.setName("Test Name");
         nameBasedDTO.setEnglish("Test English Name");
         nameBasedDTO.setAlternative("Test Alternative Name");
-        nameBasedDTO.setDescription("Test Description");
         baseDTO.setNameBasedDTO(nameBasedDTO);
 
         namedEntity = new Species();
@@ -88,7 +88,7 @@ public class ConverterTest {
         assertEquals(baseDTO.getNameBasedDTO().getName(), result.getName());
         assertEquals(baseDTO.getNameBasedDTO().getEnglish(), result.getEnglish());
         assertEquals(baseDTO.getNameBasedDTO().getAlternative(), result.getAlternative());
-        assertEquals(baseDTO.getNameBasedDTO().getDescription(), result.getDescription());
+        assertEquals(baseDTO.getDescription(), result.getDescription());
     }
 
     // Test mapping from Entity to DTO for NamedEntity and BaseDTO
@@ -100,7 +100,7 @@ public class ConverterTest {
         assertEquals(namedEntity.getName(), result.getNameBasedDTO().getName());
         assertEquals(namedEntity.getEnglish(), result.getNameBasedDTO().getEnglish());
         assertEquals(namedEntity.getAlternative(), result.getNameBasedDTO().getAlternative());
-        assertEquals(namedEntity.getDescription(), result.getNameBasedDTO().getDescription());
+        assertEquals(namedEntity.getDescription(), result.getDescription());
     }
 
     // Test mapping from CreaturePropertiesDto to CreatureProperties Entity
