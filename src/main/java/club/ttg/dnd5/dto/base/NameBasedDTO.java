@@ -13,5 +13,4 @@ public class NameBasedDTO implements HasNameResponse {
     private String name;
     private String english;
     private String alternative;
-    private String description;
 }

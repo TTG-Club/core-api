@@ -15,6 +15,7 @@ public abstract class BaseDTO {
     private String url;
     private String imageUrl;
     @JsonProperty("name")
-    private NameBasedDTO nameBasedDTO;
+    private NameBasedDTO nameBasedDTO = new NameBasedDTO();
+    private String description;
     private SourceResponse sourceDTO = new SourceResponse();
 }

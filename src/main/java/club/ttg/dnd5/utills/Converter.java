@@ -26,8 +26,8 @@ public class Converter {
             entity.setName(dto.getNameBasedDTO().getName());
             entity.setEnglish(dto.getNameBasedDTO().getEnglish());
             entity.setAlternative(dto.getNameBasedDTO().getAlternative());
-            entity.setDescription(dto.getNameBasedDTO().getDescription());
         }
+        entity.setDescription(dto.getDescription());
         return entity;
     };
 
@@ -39,7 +39,7 @@ public class Converter {
         dto.getNameBasedDTO().setName(entity.getName());
         dto.getNameBasedDTO().setEnglish(entity.getEnglish());
         dto.getNameBasedDTO().setAlternative(entity.getAlternative());
-        dto.getNameBasedDTO().setDescription(entity.getDescription());
+        dto.setDescription(entity.getDescription());
         return dto;
     };
 

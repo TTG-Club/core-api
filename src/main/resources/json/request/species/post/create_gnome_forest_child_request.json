@@ -1,46 +1,54 @@
 {
   "url": "forest-gnome",
   "imageUrl": "gnome/forest/picture",
-  "nameBasedDTO": {
+  "description": "Лесные гномы живут в лесах и наделены магией иллюзий, чтобы защищаться и выживать.",
+  "name": {
     "name": "Лесной Гном",
     "english": "Forest Gnome",
-    "alternative": "Woodland Trickster",
-    "description": "Лесные гномы живут в лесах и наделены магией иллюзий, чтобы защищаться и выживать."
+    "alternative": "Woodland Trickster"
   },
   "sourceDTO": {
-    "page": 181,
-    "source": "PHB"
+    "source": "PHB",
+    "page": 181
   },
   "creatureProperties": {
     "size": "SMALL",
     "type": "HUMANOID",
     "speed": 30,
+    "fly": 0,
+    "climb": 0,
+    "swim": 0,
     "darkVision": 60,
     "sourceResponse": {
-      "page": 181,
-      "source": "PHB"
+      "source": "PHB",
+      "page": 181
     }
   },
+  "parentUrl": "gnome",
+  "subSpeciesUrls": [],
   "features": [
     {
       "url": "forest-gnome/natural-illusionist",
-      "nameBasedDTO": {
+      "imageUrl": null,
+      "description": "Лесные гномы умеют использовать Малую Иллюзию для маскировки и защиты. Вы знаете заговор Малая Иллюзия.",
+      "name": {
         "name": "Природный Иллюзионист",
         "english": "Natural Illusionist",
-        "description": "Вы знаете заговор Малая Иллюзия."
+        "alternative": null
       },
       "sourceDTO": {
-        "page": 181,
-        "source": "PHB"
+        "source": "PHB",
+        "page": 181
       },
-      "description": "Лесные гномы умеют использовать Малую Иллюзию для маскировки и защиты.",
       "tags": {
         "magic": "illusion",
         "gnome": "racial feature"
-      }
+      },
+      "source": "PHB",
+      "page": 181
     }
   ],
-  "parent": false,
   "source": "PHB",
+  "detail": true,
   "page": 181
 }
