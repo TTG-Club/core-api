@@ -52,7 +52,7 @@ public class SpeciesService {
         Species species = new Species();
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getCreatureProperties(), species);
-        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO, species);
+        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO.getSourceDTO(), species);
 
         validateAndSaveSource(species.getSource());
         saveSpeciesFeatures(createSpeciesDTO, species);

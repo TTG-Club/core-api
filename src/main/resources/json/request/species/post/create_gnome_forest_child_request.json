@@ -1,54 +1,67 @@
 {
   "url": "forest-gnome",
-  "imageUrl": "gnome/forest/picture",
+  "imageUrl": "gnome/forest/picture.webp",
   "description": "Лесные гномы живут в лесах и наделены магией иллюзий, чтобы защищаться и выживать.",
-  "name": {
-    "name": "Лесной Гном",
-    "english": "Forest Gnome",
-    "alternative": "Woodland Trickster"
-  },
-  "sourceDTO": {
-    "source": "PHB",
-    "page": 181
-  },
   "creatureProperties": {
-    "size": "SMALL",
+    "size": "MEDIUM",
     "type": "HUMANOID",
-    "speed": 30,
-    "fly": 0,
-    "climb": 0,
-    "swim": 0,
     "darkVision": 60,
-    "sourceResponse": {
-      "source": "PHB",
-      "page": 181
+    "speed": {
+      "base": 30,
+      "fly": 0,
+      "climb": 0,
+      "swim": 0
     }
   },
-  "parentUrl": "gnome",
-  "subSpeciesUrls": [],
   "features": [
     {
       "url": "forest-gnome/natural-illusionist",
-      "imageUrl": null,
+      "imageUrl": "gnome/forest/natural-illusionist.webp",
       "description": "Лесные гномы умеют использовать Малую Иллюзию для маскировки и защиты. Вы знаете заговор Малая Иллюзия.",
       "name": {
-        "name": "Природный Иллюзионист",
-        "english": "Natural Illusionist",
-        "alternative": null
+        "rus": "Природный Иллюзионист",
+        "eng": "Natural Illusionist",
+        "alt": "Woodland Trickster",
+        "short": "PHB"
       },
-      "sourceDTO": {
-        "source": "PHB",
-        "page": 181
+      "source": {
+        "name": {
+          "rus": "Книга игрока",
+          "eng": "Player's Handbook",
+          "alt": "PHB",
+          "short": "PHB"
+        },
+        "page": 181,
+        "homebrew": true,
+        "thirdParty": true
       },
-      "tags": {
-        "magic": "illusion",
-        "gnome": "racial feature"
-      },
-      "source": "PHB",
-      "page": 181
+      "tags": [
+        {
+          "name": "magic",
+          "value": "resistance"
+        },
+        {
+          "name": "gnome",
+          "value": "racial feature"
+        }
+      ]
     }
   ],
-  "source": "PHB",
-  "detail": true,
-  "page": 181
+  "name": {
+    "rus": "Лесной Гном",
+    "eng": "Forest Gnome",
+    "alt": "Woodland Trickster",
+    "short": "PHB"
+  },
+  "source": {
+    "name": {
+      "rus": "Книга игрока",
+      "eng": "Player's Handbook",
+      "alt": "PHB",
+      "short": "PHB"
+    },
+    "page": 181,
+    "homebrew": true,
+    "thirdParty": true
+  }
 }

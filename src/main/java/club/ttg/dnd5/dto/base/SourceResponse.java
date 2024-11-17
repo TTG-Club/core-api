@@ -14,18 +14,9 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonRootName("source")
-public class SourceResponse implements HasSourceDTO {
+public class SourceResponse {
     private NameBasedDTO name = new NameBasedDTO();
     private Short page;
-    @Override
-    public String getSource() {
-        return name.getShortName();
-    }
-
-    @Override
-    public void setSource(String sourceArcronym) {
-        this.name.setShortName(sourceArcronym);
-    }
     private boolean homebrew = false;
     private boolean thirdParty = false;
 }
