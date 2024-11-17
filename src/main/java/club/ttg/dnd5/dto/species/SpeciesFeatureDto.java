@@ -2,19 +2,22 @@ package club.ttg.dnd5.dto.species;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
+import club.ttg.dnd5.dto.base.TagDto;
 import club.ttg.dnd5.model.base.HasTags;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
 public class SpeciesFeatureDto extends BaseDTO implements HasTags, HasSourceDTO {
-    private Map<String, String> tags = new HashMap<>();
+    @JsonProperty("tags")
+    private Collection<TagDto> tags = new ArrayList<>();
 
     @Override
     public String getSource() {
