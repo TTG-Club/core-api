@@ -18,6 +18,7 @@ public abstract class NamedEntity extends TimestampedEntity {
     @Column(nullable = false)
     private String english;
     private String alternative;
+    private String shortName;
     @Column(columnDefinition = "TEXT")
     private String description;
     private String imageUrl;

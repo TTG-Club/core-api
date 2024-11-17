@@ -5,6 +5,7 @@ import club.ttg.dnd5.dto.base.DetailableDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
+import club.ttg.dnd5.dto.species.MovementAttributes;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
@@ -47,10 +48,10 @@ public class Converter {
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
         entity.setSize(dto.getSize());
         entity.setType(dto.getType());
-        entity.setSpeed(dto.getSpeed());
-        entity.setFly(dto.getFly());
-        entity.setClimb(dto.getClimb());
-        entity.setSwim(dto.getSwim());
+        entity.setSpeed(entity.getSpeed());
+        entity.setFly(dto.getMovementAttributes().getFly());
+        entity.setClimb(entity.getClimb());
+        entity.setSwim(entity.getSwim());
         entity.setDarkVision(dto.getDarkVision());
         return entity;
     };
@@ -59,10 +60,13 @@ public class Converter {
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreaturePropertiesDto> MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO = (dto, entity) -> {
         dto.setSize(entity.getSize());
         dto.setType(entity.getType());
-        dto.setSpeed(entity.getSpeed());
-        dto.setFly(entity.getFly());
-        dto.setClimb(entity.getClimb());
-        dto.setSwim(entity.getSwim());
+        MovementAttributes movementAttributes = MovementAttributes.builder()
+                .base(entity.getSpeed())
+                .fly(entity.getFly())
+                .climb(entity.getClimb())
+                .swim(entity.getSwim())
+                .build();
+        dto.setMovementAttributes(movementAttributes);
         dto.setDarkVision(entity.getDarkVision());
         return dto;
     };

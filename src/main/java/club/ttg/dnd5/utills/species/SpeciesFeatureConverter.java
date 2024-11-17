@@ -12,7 +12,6 @@ import java.util.function.BiFunction;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SpeciesFeatureConverter {
-
     // Converter functions
     private static final BiFunction<SpeciesFeatureDto, SpeciesFeature, SpeciesFeature> DTO_TO_ENTITY_CONVERTER =
             (response, speciesFeature) -> {

@@ -13,7 +13,6 @@ import java.util.Map;
 @Getter
 @Setter
 public class SpeciesFeatureDto extends BaseDTO implements HasTags, HasSourceDTO {
-    private String description;
     private Map<String, String> tags;
 
     @Override

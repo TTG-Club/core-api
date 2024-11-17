@@ -1,6 +1,8 @@
 package club.ttg.dnd5.service.species;
 
+import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
+import club.ttg.dnd5.dto.species.LinkedSpeciesDto;
 import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -158,8 +160,9 @@ public class SpeciesService {
         Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(dto.getCreatureProperties(), species);
 
-        if (dto.getParentUrl() != null) {
-            species.setParent(dto.getParentUrl().equals(dto.getUrl()) ? null : findByUrl(dto.getParentUrl()));
+        if (dto.getParent() != null) {
+            String parentUrl = dto.getParent().getUrl();
+            species.setParent(parentUrl.equals(dto.getUrl()) ? null : findByUrl(parentUrl));
         }
 
         fillSpecies(dto, species);
@@ -168,31 +171,78 @@ public class SpeciesService {
 
     private SpeciesDto toDTO(Species species, boolean hideDetails) {
         SpeciesDto dto = new SpeciesDto();
+
+        // Apply basic mapping (including base DTO and potentially hidden details)
         if (hideDetails) {
             Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, species);
         } else {
-            Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, species);
-            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), species);
-            Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(dto.getCreatureProperties(), species);
-            dto.getCreatureProperties().setSourceResponse(dto.getSourceDTO());
+            // Map base DTO and other properties
+            Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, species);  // Base mapping for common properties
+            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), species);  // Source mapping
+
+            // Map CreatureProperties (movement and size related properties)
+            if (species != null) {
+                Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(dto.getCreatureProperties(), species);
+            }
+
+            // Map parent and sub-species relationships
             handleParentAndChild(species, dto);
+
+            // Map features (if any)
             Collection<SpeciesFeature> features = species.getFeatures();
             if (features != null) {
                 dto.setFeatures(SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(features));
             }
         }
+
         return dto;
     }
 
+
     private void handleParentAndChild(Species species, SpeciesDto dto) {
+        //parent
         if (species.getParent() != null) {
-            dto.setParentUrl(species.getParent().getUrl());
+            LinkedSpeciesDto parent = new LinkedSpeciesDto();
+
+            // Set the URL
+            parent.setUrl(species.getParent().getUrl());
+
+            // Build the NameBasedDTO using a builder for better readability
+            NameBasedDTO parentNameBased = NameBasedDTO.builder()
+                    .name(species.getParent().getName())
+                    .shortName(species.getParent().getShortName())
+                    .english(species.getParent().getEnglish())
+                    .build();
+
+            // Set the NameBasedDTO in the parent
+            parent.setName(parentNameBased);
         }
 
         if (species.getSubSpecies() != null) {
-            dto.setSubSpeciesUrls(species.getSubSpecies().stream()
-                    .map(Species::getUrl)
-                    .toList());
+            // Convert each sub-species to a LinkedSpeciesDto
+            List<LinkedSpeciesDto> subSpeciesDtos = species.getSubSpecies().stream()
+                    .map(subSpecies -> {
+                        LinkedSpeciesDto linkedSpeciesDto = new LinkedSpeciesDto();
+
+                        // Set the URL
+                        linkedSpeciesDto.setUrl(subSpecies.getUrl());
+
+                        // Build the NameBasedDTO
+                        NameBasedDTO nameBasedDTO = NameBasedDTO.builder()
+                                .name(subSpecies.getName())
+                                .shortName(subSpecies.getShortName())
+                                .english(subSpecies.getEnglish())
+                                .build();
+
+                        // Set the NameBasedDTO
+                        linkedSpeciesDto.setName(nameBasedDTO);
+
+                        return linkedSpeciesDto;
+                    })
+                    .toList();
+
+            // Set the list of LinkedSpeciesDto objects
+            dto.setSubspecies(subSpeciesDtos);
         }
     }
 
@@ -204,8 +254,12 @@ public class SpeciesService {
     }
 
     private void fillSpecies(SpeciesDto speciesDTO, Species species) {
-        Optional.ofNullable(speciesDTO.getSubSpeciesUrls())
-                .ifPresent(urls -> species.setSubSpecies(urls.stream().map(this::findByUrl).toList()));
+        Optional.ofNullable(speciesDTO.getSubspecies())
+                .ifPresent(subSpeciesDtos -> species.setSubSpecies(
+                        subSpeciesDtos.stream()
+                                .map(this::convertToSpecies) // Convert LinkedSpeciesDto to Species
+                                .toList()
+                ));
     }
 
     private void saveSpeciesFeatures(CreateSpeciesDto createSpeciesDTO, Species species) {
@@ -218,5 +272,28 @@ public class SpeciesService {
                     .forEach(this::validateAndSaveSource);
             speciesFeatureRepository.saveAll(features);
         }
+    }
+
+    /**
+     * Converts a LinkedSpeciesDto to a Species entity.
+     *
+     * @param linkedSpeciesDto the LinkedSpeciesDto to convert
+     * @return the corresponding Species entity
+     */
+    private Species convertToSpecies(LinkedSpeciesDto linkedSpeciesDto) {
+        Species subSpecies = findByUrl(linkedSpeciesDto.getUrl()); // Find existing species by URL
+        if (subSpecies == null) {
+            throw new IllegalArgumentException("No species found for URL: " + linkedSpeciesDto.getUrl());
+        }
+
+        // Update additional fields if needed
+        NameBasedDTO nameBasedDTO = linkedSpeciesDto.getName();
+        if (nameBasedDTO != null) {
+            subSpecies.setName(nameBasedDTO.getName());
+            subSpecies.setShortName(nameBasedDTO.getShortName());
+            subSpecies.setEnglish(nameBasedDTO.getEnglish());
+        }
+
+        return subSpecies;
     }
 }
