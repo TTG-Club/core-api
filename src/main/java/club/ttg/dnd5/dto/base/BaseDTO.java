@@ -11,9 +11,10 @@ public abstract class BaseDTO {
     private String url;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String imageUrl;
-    @JsonProperty("name")
+    @JsonProperty(value = "name")
     private NameBasedDTO nameBasedDTO = new NameBasedDTO();
     private String description;
+    @JsonProperty(value = "source")
     private SourceResponse sourceDTO = new SourceResponse();
 }
 
