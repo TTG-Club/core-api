@@ -3,7 +3,6 @@ package club.ttg.dnd5.utills;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dto.base.BaseDTO;
-import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
@@ -75,9 +74,11 @@ public class ConverterTest {
         creatureProperties.setDarkVision(60);
 
         SourceResponse sourceResponse = new SourceResponse();
-        sourceResponse.setSource("PHB");
+        NameBasedDTO nameBasedDTO1 = new NameBasedDTO("Книга игрока", "Player HandBook", "", "PHB");
+        sourceResponse.setName(nameBasedDTO1);
         sourceResponse.setPage((short) 155);
         speciesDTO = new SpeciesDto();
+        sourceResponse.setName(nameBasedDTO1);
         speciesDTO.setSourceDTO(sourceResponse);
 
         source = new Source();
@@ -143,20 +144,20 @@ public class ConverterTest {
     @Test
     public void testMapDtoSourceToEntitySource() {
         Species species = new Species();
-        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(speciesDTO, species);
+        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(speciesDTO.getSourceDTO(), species);
 
         assertEquals((Short) species.getSource().getPage(), speciesDTO.getSourceDTO().getPage());
-        assertEquals(species.getSource().getBookInfo().getSourceAcronym(), speciesDTO.getSourceDTO().getSource());
+        assertEquals(species.getSource().getBookInfo().getSourceAcronym(), speciesDTO.getSourceDTO().getName().getShortName());
     }
 
     @Test
     public void testMapEntitySourceToDtoSource() {
         Species species = new Species();
         species.setSource(source);
-        HasSourceDTO apply = Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(speciesDTO, species);
+        SourceResponse apply = Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(speciesDTO.getSourceDTO(), species);
 
         assertEquals((Short) species.getSource().getPage(), apply.getPage());
-        assertEquals(species.getSource().getBookInfo().getSourceAcronym(), apply.getSource());
+        assertEquals(species.getSource().getBookInfo().getSourceAcronym(), apply.getName().getShortName());
     }
 
     @Test

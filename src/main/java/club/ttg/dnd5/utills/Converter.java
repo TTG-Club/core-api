@@ -2,8 +2,8 @@ package club.ttg.dnd5.utills;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
-import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
+import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
 import club.ttg.dnd5.dto.species.MovementAttributes;
 import club.ttg.dnd5.model.base.CreatureProperties;
@@ -73,8 +73,8 @@ public class Converter {
     };
 
     // Function to map DTO Source to Entity Source
-    public static final BiFunction<HasSourceDTO, HasSourceEntity, HasSourceEntity> MAP_DTO_SOURCE_TO_ENTITY_SOURCE = (dto, entity) -> {
-        String sourceAcronym = dto.getSource();
+    public static final BiFunction<SourceResponse, HasSourceEntity, HasSourceEntity> MAP_DTO_SOURCE_TO_ENTITY_SOURCE = (dto, entity) -> {
+        String sourceAcronym = dto.getName().getShortName();
         Source source = entity.getSource();
         if (source == null) {
             source = new Source();
@@ -90,10 +90,19 @@ public class Converter {
     };
 
     // Function to map Entity Source to DTO Source
-    public static final BiFunction<HasSourceDTO, HasSourceEntity, HasSourceDTO> MAP_ENTITY_SOURCE_TO_DTO_SOURCE = (dto, entity) -> {
-        if (entity.getSource() != null) {
-            dto.setSource(entity.getSource().getSourceAcronym());
-            dto.setPage(entity.getSource().getPage());
+    public static final BiFunction<SourceResponse, HasSourceEntity, SourceResponse> MAP_ENTITY_SOURCE_TO_DTO_SOURCE = (dto, entity) -> {
+        Source source = entity.getSource();
+        if (source != null) {
+            NameBasedDTO name = new NameBasedDTO();
+            Book bookInfo = source.getBookInfo();
+            if (bookInfo != null) {
+                name.setEnglish(bookInfo.getEnglishName());
+                name.setName(bookInfo.getName());
+                name.setShortName(bookInfo.getSourceAcronym());
+                name.setAlternative(bookInfo.getAltName());
+            }
+            dto.setName(name);
+            dto.setPage(source.getPage());
         }
         return dto;
     };
