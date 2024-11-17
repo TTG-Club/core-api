@@ -7,13 +7,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
 public class SpeciesFeatureDto extends BaseDTO implements HasTags, HasSourceDTO {
-    private Map<String, String> tags;
+    private Map<String, String> tags = new HashMap<>();
 
     @Override
     public String getSource() {

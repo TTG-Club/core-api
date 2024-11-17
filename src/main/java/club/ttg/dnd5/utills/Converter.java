@@ -18,7 +18,6 @@ import java.util.function.BiFunction;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Converter {
-
     // Function to map base DTO to Entity Name
     public static final BiFunction<BaseDTO, NamedEntity, NamedEntity> MAP_BASE_DTO_TO_ENTITY_NAME = (dto, entity) -> {
         entity.setUrl(dto.getUrl());
@@ -27,6 +26,7 @@ public class Converter {
             entity.setName(dto.getNameBasedDTO().getName());
             entity.setEnglish(dto.getNameBasedDTO().getEnglish());
             entity.setAlternative(dto.getNameBasedDTO().getAlternative());
+            entity.setShortName(dto.getNameBasedDTO().getShortName());
         }
         entity.setDescription(dto.getDescription());
         return entity;
@@ -39,6 +39,7 @@ public class Converter {
         dto.setNameBasedDTO(new NameBasedDTO());
         dto.getNameBasedDTO().setName(entity.getName());
         dto.getNameBasedDTO().setEnglish(entity.getEnglish());
+        dto.getNameBasedDTO().setShortName(entity.getShortName());
         dto.getNameBasedDTO().setAlternative(entity.getAlternative());
         dto.setDescription(entity.getDescription());
         return dto;
