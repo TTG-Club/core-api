@@ -1,5 +1,6 @@
 package club.ttg.dnd5.utills.species;
 
+import club.ttg.dnd5.dto.base.TagDto;
 import club.ttg.dnd5.dto.species.SpeciesFeatureDto;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
@@ -8,25 +9,39 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SpeciesFeatureConverter {
-    // Converter functions
+    // Converts SpeciesFeatureDto to SpeciesFeature
     private static final BiFunction<SpeciesFeatureDto, SpeciesFeature, SpeciesFeature> DTO_TO_ENTITY_CONVERTER =
             (response, speciesFeature) -> {
                 Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(response, speciesFeature);
                 Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(response, speciesFeature);
-                speciesFeature.setTags(response.getTags());
+
+                // Convert tags from TagDto to Map<String, String>
+                Map<String, String> tags = response.getTags().stream()
+                        .collect(Collectors.toMap(TagDto::getName, TagDto::getValue));
+                speciesFeature.setTags(tags);
+
                 speciesFeature.setFeatureDescription(response.getDescription());
                 return speciesFeature;
             };
 
+    // Converts SpeciesFeature to SpeciesFeatureDto
     private static final BiFunction<SpeciesFeature, SpeciesFeatureDto, SpeciesFeatureDto> ENTITY_TO_DTO_CONVERTER =
             (feature, dto) -> {
                 Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, feature);
                 Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto, feature);
-                dto.setTags(feature.getTags());
+
+                // Convert tags from Map<String, String> to a collection of TagDto
+                Collection<TagDto> tags = feature.getTags().entrySet().stream()
+                        .map(entry -> new TagDto(entry.getKey(), entry.getValue()))
+                        .collect(Collectors.toList());
+                dto.setTags(tags);
+
                 dto.setDescription(feature.getFeatureDescription());
                 return dto;
             };

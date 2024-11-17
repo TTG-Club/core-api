@@ -26,10 +26,8 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Species parent;
-
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<Species> subSpecies = new ArrayList<>();
-
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
     private Source source = new Source();
