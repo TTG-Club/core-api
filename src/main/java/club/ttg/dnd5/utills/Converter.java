@@ -1,5 +1,7 @@
 package club.ttg.dnd5.utills;
 
+import club.ttg.dnd5.dictionary.Size;
+import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
@@ -47,8 +49,8 @@ public class Converter {
 
     // Function to map Creature Properties DTO to Entity
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
-        entity.setSize(dto.getSize());
-        entity.setType(dto.getType());
+        entity.setSize(Size.valueOf(dto.getSize()));
+        entity.setType(CreatureType.valueOf(dto.getType()));
         entity.setSpeed(entity.getSpeed());
         entity.setFly(dto.getMovementAttributes().getFly());
         entity.setClimb(entity.getClimb());
@@ -59,8 +61,8 @@ public class Converter {
 
     // Function to map Creature Properties Entity to DTO
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreaturePropertiesDto> MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO = (dto, entity) -> {
-        dto.setSize(entity.getSize());
-        dto.setType(entity.getType());
+        dto.setSize(entity.getSize().getName());
+        dto.setType(entity.getType().getCyrillicName());
         MovementAttributes movementAttributes = MovementAttributes.builder()
                 .base(entity.getSpeed())
                 .fly(entity.getFly())

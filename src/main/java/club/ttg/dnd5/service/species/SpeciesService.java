@@ -200,26 +200,28 @@ public class SpeciesService {
 
     private void handleParentAndChild(Species species, SpeciesDto dto) {
         //parent
-        if (species.getParent() != null) {
+        Species speciesParent = species.getParent();
+        if (speciesParent != null) {
             LinkedSpeciesDto parent = new LinkedSpeciesDto();
-
             // Set the URL
-            parent.setUrl(species.getParent().getUrl());
+            parent.setUrl(speciesParent.getUrl());
 
             // Build the NameBasedDTO using a builder for better readability
             NameBasedDTO parentNameBased = NameBasedDTO.builder()
-                    .name(species.getParent().getName())
-                    .shortName(species.getParent().getShortName())
-                    .english(species.getParent().getEnglish())
+                    .name(speciesParent.getName())
+                    .shortName(speciesParent.getShortName())
+                    .english(speciesParent.getEnglish())
                     .build();
 
             // Set the NameBasedDTO in the parent
             parent.setName(parentNameBased);
+            dto.setParent(parent);
         }
 
-        if (species.getSubSpecies() != null) {
+        Collection<Species> speciesSubSpecies = species.getSubSpecies();
+        if (speciesSubSpecies != null) {
             // Convert each sub-species to a LinkedSpeciesDto
-            List<LinkedSpeciesDto> subSpeciesDtos = species.getSubSpecies().stream()
+            List<LinkedSpeciesDto> subSpeciesDtos = speciesSubSpecies.stream()
                     .map(subSpecies -> {
                         LinkedSpeciesDto linkedSpeciesDto = new LinkedSpeciesDto();
 
