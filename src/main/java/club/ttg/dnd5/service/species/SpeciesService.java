@@ -56,7 +56,6 @@ public class SpeciesService {
 
         validateAndSaveSource(species.getSource());
         saveSpeciesFeatures(createSpeciesDTO, species);
-        species.setParent(createSpeciesDTO.isParent() ? species : null);
 
         Species save = speciesRepository.save(species);
         return toDTO(save, false);
