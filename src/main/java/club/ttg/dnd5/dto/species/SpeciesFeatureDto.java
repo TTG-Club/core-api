@@ -3,7 +3,6 @@ package club.ttg.dnd5.dto.species;
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.TagDto;
-import club.ttg.dnd5.model.base.HasTags;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -15,7 +14,7 @@ import java.util.Collection;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
-public class SpeciesFeatureDto extends BaseDTO implements HasTags, HasSourceDTO {
+public class SpeciesFeatureDto extends BaseDTO implements HasSourceDTO {
     @JsonProperty("tags")
     private Collection<TagDto> tags = new ArrayList<>();
 
