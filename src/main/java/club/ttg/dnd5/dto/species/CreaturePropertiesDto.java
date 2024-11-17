@@ -2,8 +2,8 @@ package club.ttg.dnd5.dto.species;
 
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
-import club.ttg.dnd5.dto.base.SourceResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,10 +13,7 @@ import lombok.Setter;
 public class CreaturePropertiesDto {
     private Size size;
     private CreatureType type;
-    private int speed;
-    private int fly;
-    private int climb;
-    private int swim;
+    @JsonProperty(value = "speed")
+    MovementAttributes movementAttributes;
     private int darkVision;
-    private SourceResponse sourceResponse;
 }

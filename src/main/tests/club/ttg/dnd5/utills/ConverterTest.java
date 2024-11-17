@@ -8,6 +8,7 @@ import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
+import club.ttg.dnd5.dto.species.MovementAttributes;
 import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.NamedEntity;
@@ -27,6 +28,7 @@ public class ConverterTest {
     private CreatureProperties creatureProperties;
     private SpeciesDto speciesDTO;
     private Source source;
+
     @Before
     public void setUp() {
         // Set up the BaseDTO and NamedEntity
@@ -50,15 +52,22 @@ public class ConverterTest {
         creaturePropertiesDTO = new CreaturePropertiesDto();
         creaturePropertiesDTO.setSize(Size.MEDIUM);
         creaturePropertiesDTO.setType(CreatureType.BEAST);
-        creaturePropertiesDTO.setSpeed(30);
-        creaturePropertiesDTO.setFly(0);
-        creaturePropertiesDTO.setClimb(0);
-        creaturePropertiesDTO.setSwim(0);
+
+        // Setting MovementAttributes for creaturePropertiesDTO
+        MovementAttributes movementAttributes = MovementAttributes.builder()
+                .base(30)
+                .fly(0)
+                .climb(0)
+                .swim(0)
+                .build();
+        creaturePropertiesDTO.setMovementAttributes(movementAttributes);
         creaturePropertiesDTO.setDarkVision(60);
 
         creatureProperties = new Species();
         creatureProperties.setSize(Size.MEDIUM);
         creatureProperties.setType(CreatureType.BEAST);
+
+        // Setting MovementAttributes for creatureProperties
         creatureProperties.setSpeed(30);
         creatureProperties.setFly(0);
         creatureProperties.setClimb(0);
@@ -110,10 +119,10 @@ public class ConverterTest {
 
         assertEquals(creaturePropertiesDTO.getSize(), result.getSize());
         assertEquals(creaturePropertiesDTO.getType(), result.getType());
-        assertEquals(creaturePropertiesDTO.getSpeed(), result.getSpeed());
-        assertEquals(creaturePropertiesDTO.getFly(), result.getFly());
-        assertEquals(creaturePropertiesDTO.getClimb(), result.getClimb());
-        assertEquals(creaturePropertiesDTO.getSwim(), result.getSwim());
+        assertEquals(creaturePropertiesDTO.getMovementAttributes().getBase(), result.getSpeed());
+        assertEquals(creaturePropertiesDTO.getMovementAttributes().getFly(), result.getFly());
+        assertEquals(creaturePropertiesDTO.getMovementAttributes().getClimb(), result.getClimb());
+        assertEquals(creaturePropertiesDTO.getMovementAttributes().getSwim(), result.getSwim());
         assertEquals(creaturePropertiesDTO.getDarkVision(), result.getDarkVision());
     }
 
@@ -124,10 +133,10 @@ public class ConverterTest {
 
         assertEquals(creatureProperties.getSize(), result.getSize());
         assertEquals(creatureProperties.getType(), result.getType());
-        assertEquals(creatureProperties.getSpeed(), result.getSpeed());
-        assertEquals(creatureProperties.getFly(), result.getFly());
-        assertEquals(creatureProperties.getClimb(), result.getClimb());
-        assertEquals(creatureProperties.getSwim(), result.getSwim());
+        assertEquals(creatureProperties.getSpeed(), result.getMovementAttributes().getBase());
+        assertEquals(creatureProperties.getFly(), result.getMovementAttributes().getFly());
+        assertEquals(creatureProperties.getClimb(), result.getMovementAttributes().getClimb());
+        assertEquals(creatureProperties.getSwim(), result.getMovementAttributes().getSwim());
         assertEquals(creatureProperties.getDarkVision(), result.getDarkVision());
     }
 
@@ -136,8 +145,8 @@ public class ConverterTest {
         Species species = new Species();
         Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(speciesDTO, species);
 
-        assertEquals((Short) species.getSource().getPage(), speciesDTO.getPage());
-        assertEquals(species.getSource().getSourceAcronym(), speciesDTO.getSourceDTO().getSource());
+        assertEquals((Short) species.getSource().getPage(), speciesDTO.getSourceDTO().getPage());
+        assertEquals(species.getSource().getBookInfo().getSourceAcronym(), speciesDTO.getSourceDTO().getSource());
     }
 
     @Test
@@ -147,7 +156,7 @@ public class ConverterTest {
         HasSourceDTO apply = Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(speciesDTO, species);
 
         assertEquals((Short) species.getSource().getPage(), apply.getPage());
-        assertEquals(species.getSource().getSourceAcronym(), apply.getSource());
+        assertEquals(species.getSource().getBookInfo().getSourceAcronym(), apply.getSource());
     }
 
     @Test
