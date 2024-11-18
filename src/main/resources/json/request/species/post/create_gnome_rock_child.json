@@ -1,63 +1,54 @@
 {
-  "url": "rock-gnome",
-  "imageUrl": "gnome/rock/picture",
-  "nameBasedDTO": {
-    "name": "Горный Гном",
-    "english": "Rock Gnome",
-    "alternative": "Tinker Gnome",
-    "description": "Горные гномы – изобретательные создания, способные создавать крошечные механические устройства."
+  "url": "forest-gnome",
+  "imageUrl": "gnome/forest/picture",
+  "description": "Лесные гномы живут в лесах и наделены магией иллюзий, чтобы защищаться и выживать.",
+  "name": {
+    "name": "Лесной Гном",
+    "english": "Forest Gnome",
+    "alternative": "Woodland Trickster"
   },
   "sourceDTO": {
-    "page": 202,
-    "source": "PHB"
+    "source": "PHB",
+    "page": 181
   },
   "creatureProperties": {
     "size": "SMALL",
     "type": "HUMANOID",
     "speed": 30,
+    "fly": 0,
+    "climb": 0,
+    "swim": 0,
     "darkVision": 60,
     "sourceResponse": {
-      "page": 202,
-      "source": "PHB"
+      "source": "PHB",
+      "page": 181
     }
   },
+  "parentUrl": "gnome",
+  "subSpeciesUrls": [],
   "features": [
     {
-      "url": "rock-gnome/artificer-lore",
-      "nameBasedDTO": {
-        "name": "Артифициерские знания",
-        "english": "Artificer's Lore",
-        "description": "Вы получаете удвоенное мастерство при проверке Истории, касающейся магических, алхимических или технологических объектов."
+      "url": "forest-gnome/natural-illusionist",
+      "imageUrl": null,
+      "description": "Лесные гномы умеют использовать Малую Иллюзию для маскировки и защиты. Вы знаете заговор Малая Иллюзия.",
+      "name": {
+        "name": "Природный Иллюзионист",
+        "english": "Natural Illusionist",
+        "alternative": null
       },
       "sourceDTO": {
-        "page": 202,
-        "source": "PHB"
+        "source": "PHB",
+        "page": 181
       },
-      "description": "Горные гномы хорошо разбираются в магических и технологических предметах.",
       "tags": {
-        "gnome": "racial feature",
-        "skill": "lore"
-      }
-    },
-    {
-      "url": "rock-gnome/tinker",
-      "nameBasedDTO": {
-        "name": "Изобретатель",
-        "english": "Tinker",
-        "description": "Вы можете создавать небольшие механические устройства, такие как игрушка или музыкальная шкатулка."
+        "magic": "illusion",
+        "gnome": "racial feature"
       },
-      "sourceDTO": {
-        "page": 202,
-        "source": "PHB"
-      },
-      "description": "Горные гномы могут создавать механические устройства для различных целей.",
-      "tags": {
-        "gnome": "racial feature",
-        "craft": "mechanics"
-      }
+      "source": "PHB",
+      "page": 181
     }
   ],
-  "parent": false,
   "source": "PHB",
-  "page": 202
+  "detail": true,
+  "page": 181
 }

@@ -1,5 +1,7 @@
 package club.ttg.dnd5.utills;
 
+
+import club.ttg.dnd5.dto.base.TagDto;
 import club.ttg.dnd5.dto.species.SpeciesFeatureDto;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
@@ -18,7 +20,12 @@ public class SpeciesFeatureConverterTest {
     public void testToEntityFeature() {
         // Arrange
         SpeciesFeatureDto response = new SpeciesFeatureDto();
-        response.setTags(Map.of("tag1", "value1", "tag2", "value2"));
+        // Create tags using TagDto
+        List<TagDto> tags = List.of(
+                new TagDto("tag1", "value1"),
+                new TagDto("tag2", "value2")
+        );
+        response.setTags(tags);
         response.setDescription("Feature description");
         response.setUrl("http://example.com/species-feature");
 
@@ -28,7 +35,12 @@ public class SpeciesFeatureConverterTest {
         // Assert
         assertNotNull(feature);
         assertEquals(response.getDescription(), feature.getFeatureDescription());
-        assertEquals(response.getTags(), feature.getTags());
+
+        // Compare tags (list of TagDto to Map)
+        assertEquals(tags.stream()
+                        .collect(java.util.stream.Collectors.toMap(TagDto::getName, TagDto::getValue)),
+                feature.getTags());
+
         assertEquals(response.getUrl(), feature.getUrl());
     }
 
@@ -36,6 +48,7 @@ public class SpeciesFeatureConverterTest {
     public void testToDTOFeature() {
         // Arrange
         SpeciesFeature feature = new SpeciesFeature();
+        // Create tags using Map directly in the entity
         feature.setTags(Map.of("tag1", "value1", "tag2", "value2"));
         feature.setFeatureDescription("Feature description");
         feature.setUrl("http://example.com/species-feature");
@@ -46,7 +59,13 @@ public class SpeciesFeatureConverterTest {
         // Assert
         assertNotNull(response);
         assertEquals(feature.getFeatureDescription(), response.getDescription());
-        assertEquals(feature.getTags(), response.getTags());
+
+        // Convert the map back to a list of TagDto
+        List<TagDto> expectedTags = feature.getTags().entrySet().stream()
+                .map(entry -> new TagDto(entry.getKey(), entry.getValue()))
+                .collect(java.util.stream.Collectors.toList());
+
+        assertEquals(expectedTags, response.getTags());
         assertEquals(feature.getUrl(), response.getUrl());
     }
 
@@ -55,7 +74,12 @@ public class SpeciesFeatureConverterTest {
         // Arrange
         Species species = new Species();
         SpeciesFeatureDto response = new SpeciesFeatureDto();
-        response.setTags(Map.of("tag1", "value1", "tag2", "value2"));
+        // Create tags using TagDto
+        List<TagDto> tags = List.of(
+                new TagDto("tag1", "value1"),
+                new TagDto("tag2", "value2")
+        );
+        response.setTags(tags);
         response.setDescription("Feature description");
 
         // Act
@@ -66,13 +90,18 @@ public class SpeciesFeatureConverterTest {
         assertEquals(1, species.getFeatures().size());
         SpeciesFeature feature = species.getFeatures().iterator().next();
         assertEquals(response.getDescription(), feature.getFeatureDescription());
-        assertEquals(response.getTags(), feature.getTags());
+
+        // Convert the list of TagDto to Map for comparison
+        assertEquals(tags.stream()
+                        .collect(java.util.stream.Collectors.toMap(TagDto::getName, TagDto::getValue)),
+                feature.getTags());
     }
 
     @Test
     public void testConvertEntityFeatureIntoDTOFeature() {
         // Arrange
         SpeciesFeature feature = new SpeciesFeature();
+        // Create tags using Map directly in the entity
         feature.setTags(Map.of("tag1", "value1", "tag2", "value2"));
         feature.setFeatureDescription("Feature description");
 
@@ -84,6 +113,12 @@ public class SpeciesFeatureConverterTest {
         assertEquals(1, response.size());
         SpeciesFeatureDto dto = response.iterator().next();
         assertEquals(feature.getFeatureDescription(), dto.getDescription());
-        assertEquals(feature.getTags(), dto.getTags());
+
+        // Convert the map back to a list of TagDto
+        List<TagDto> expectedTags = feature.getTags().entrySet().stream()
+                .map(entry -> new TagDto(entry.getKey(), entry.getValue()))
+                .collect(java.util.stream.Collectors.toList());
+
+        assertEquals(expectedTags, dto.getTags());
     }
 }
