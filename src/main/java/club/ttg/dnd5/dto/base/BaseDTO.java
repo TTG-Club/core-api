@@ -20,6 +20,7 @@ public abstract class BaseDTO  {
     private String description;
     @JsonProperty(value = "source")
     private SourceResponse sourceDTO = new SourceResponse();
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<String> gallery = new ArrayList<>();
     private Instant updatedAt;
 }

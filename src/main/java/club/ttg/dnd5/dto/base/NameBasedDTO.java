@@ -14,13 +14,13 @@ import lombok.*;
 public class NameBasedDTO implements HasNameResponse {
     @JsonProperty(value = "rus")
     private String name;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "eng")
-    private String english;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String english = "";
+    @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "alt")
-    private String alternative;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String alternative = "";
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "short")
-    private String shortName;
+    private String shortName = "";
 }
