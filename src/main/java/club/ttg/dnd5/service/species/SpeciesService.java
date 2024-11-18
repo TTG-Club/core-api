@@ -178,6 +178,8 @@ public class SpeciesService {
 
         // Apply basic mapping (including base DTO and potentially hidden details)
         if (hideDetails) {
+            Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, species);  // Base mapping for common properties
+            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), species);
             Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, species);
         } else {
             // Map base DTO and other properties
