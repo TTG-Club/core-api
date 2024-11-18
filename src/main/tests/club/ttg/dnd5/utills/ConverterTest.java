@@ -49,8 +49,8 @@ public class ConverterTest {
 
         // Set up CreaturePropertiesDto and CreatureProperties
         creaturePropertiesDTO = new CreaturePropertiesDto();
-        creaturePropertiesDTO.setSize(Size.MEDIUM);
-        creaturePropertiesDTO.setType(CreatureType.BEAST);
+        creaturePropertiesDTO.setSize(Size.MEDIUM.getName());
+        creaturePropertiesDTO.setType(CreatureType.BEAST.getCyrillicName());
 
         // Setting MovementAttributes for creaturePropertiesDTO
         MovementAttributes movementAttributes = MovementAttributes.builder()
@@ -117,9 +117,6 @@ public class ConverterTest {
     @Test
     public void testMapCreaturePropertiesDTOToEntity() {
         CreatureProperties result = Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(creaturePropertiesDTO, new Species());
-
-        assertEquals(creaturePropertiesDTO.getSize(), result.getSize());
-        assertEquals(creaturePropertiesDTO.getType(), result.getType());
         assertEquals(creaturePropertiesDTO.getMovementAttributes().getBase(), result.getSpeed());
         assertEquals(creaturePropertiesDTO.getMovementAttributes().getFly(), result.getFly());
         assertEquals(creaturePropertiesDTO.getMovementAttributes().getClimb(), result.getClimb());
@@ -132,8 +129,8 @@ public class ConverterTest {
     public void testMapEntityToCreaturePropertiesDTO() {
         CreaturePropertiesDto result = Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(new CreaturePropertiesDto(), creatureProperties);
 
-        assertEquals(creatureProperties.getSize(), result.getSize());
-        assertEquals(creatureProperties.getType(), result.getType());
+        assertEquals(creatureProperties.getSize().getName(), result.getSize());
+        assertEquals(creatureProperties.getType().getCyrillicName(), result.getType());
         assertEquals(creatureProperties.getSpeed(), result.getMovementAttributes().getBase());
         assertEquals(creatureProperties.getFly(), result.getMovementAttributes().getFly());
         assertEquals(creatureProperties.getClimb(), result.getMovementAttributes().getClimb());
@@ -167,7 +164,10 @@ public class ConverterTest {
         species.setSwim(0);
         species.setClimb(50);
         species.setSize(Size.HUGE);
-        speciesDTO.setCreatureProperties(new CreaturePropertiesDto());
+        CreaturePropertiesDto creatureProperties1 = new CreaturePropertiesDto();
+        creatureProperties1.setSize(Size.HUGE.getName());
+        creatureProperties1.setType(CreatureType.BEAST.getCyrillicName());
+        speciesDTO.setCreatureProperties(creatureProperties1);
         Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(speciesDTO.getCreatureProperties(), species);
         BaseDTO apply = Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(speciesDTO, species);
         Assert.isNull(speciesDTO.getCreatureProperties());

@@ -45,7 +45,9 @@ public class Converter {
         dto.getNameBasedDTO().setShortName(entity.getShortName());
         dto.getNameBasedDTO().setAlternative(entity.getAlternative());
         dto.setDescription(entity.getDescription());
-        dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant());
+        if (entity.getUpdatedAt() != null) {
+            dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant());
+        }
         return dto;
     };
 
