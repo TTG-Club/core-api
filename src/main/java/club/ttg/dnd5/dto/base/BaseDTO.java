@@ -5,6 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 public abstract class BaseDTO {
@@ -16,6 +20,8 @@ public abstract class BaseDTO {
     private String description;
     @JsonProperty(value = "source")
     private SourceResponse sourceDTO = new SourceResponse();
+    private List<String> gallery = new ArrayList<>();
+    private Instant updatedAt;
 }
 
 
