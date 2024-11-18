@@ -44,7 +44,8 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
 
     @Override
     public void determineGroup(Source source) {
-        if (source.getBookInfo() != null) {
+        //хотя и кажется что группа не может быть нулл, есть сценарий когда наступает хайд, и тогда группа становится нулл
+        if (group != null && source.getBookInfo() != null) {
             this.group.setName("Происхождение");
             this.group.setShortName("Basic");
         }
