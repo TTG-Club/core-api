@@ -11,6 +11,7 @@ import org.hibernate.annotations.Cascade;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  Виды или разновидности (расы)
@@ -35,4 +36,7 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @JoinColumn(name = "species_url")
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     private Collection<SpeciesFeature> features;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id"))
+    private List<String> galleryUrl = new ArrayList<>();
 }

@@ -167,6 +167,9 @@ public class SpeciesService {
         }
 
         fillSpecies(dto, species);
+        if (!dto.getGallery().isEmpty()) {
+            species.setGalleryUrl(dto.getGallery());
+        }
         return species;
     }
 
@@ -196,6 +199,7 @@ public class SpeciesService {
             }
         }
         STRATEGY_SOURCE_CONSUMER.accept(dto, species.getSource());
+        dto.setGallery(species.getGalleryUrl());
         return dto;
     }
 
