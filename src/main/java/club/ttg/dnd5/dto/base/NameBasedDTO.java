@@ -14,6 +14,7 @@ import lombok.*;
 public class NameBasedDTO implements HasNameResponse {
     @JsonProperty(value = "rus")
     private String name;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(value = "eng")
     private String english;
     @JsonInclude(JsonInclude.Include.NON_NULL)

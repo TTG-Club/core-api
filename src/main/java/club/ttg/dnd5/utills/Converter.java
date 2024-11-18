@@ -13,7 +13,7 @@ import club.ttg.dnd5.model.book.Source;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.time.ZoneId;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -32,7 +32,6 @@ public class Converter {
             entity.setShortName(dto.getNameBasedDTO().getShortName());
         }
         entity.setDescription(dto.getDescription());
-        entity.setGalleryUrl(dto.getGallery());
         return entity;
     };
 
@@ -46,8 +45,7 @@ public class Converter {
         dto.getNameBasedDTO().setShortName(entity.getShortName());
         dto.getNameBasedDTO().setAlternative(entity.getAlternative());
         dto.setDescription(entity.getDescription());
-        dto.setGallery(entity.getGalleryUrl());
-        dto.setUpdatedAt(Instant.from(entity.getUpdatedAt()));
+        dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant());
         return dto;
     };
 
