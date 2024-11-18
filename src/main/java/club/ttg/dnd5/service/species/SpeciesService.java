@@ -25,6 +25,8 @@ import org.springframework.util.CollectionUtils;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static club.ttg.dnd5.utills.Converter.STRATEGY_SOURCE_CONSUMER;
+
 @Service
 @RequiredArgsConstructor
 public class SpeciesService {
@@ -193,7 +195,7 @@ public class SpeciesService {
                 dto.setFeatures(SpeciesFeatureConverter.convertEntityFeatureIntoDTOFeature(features));
             }
         }
-
+        STRATEGY_SOURCE_CONSUMER.accept(dto, species.getSource());
         return dto;
     }
 
