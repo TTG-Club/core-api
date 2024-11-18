@@ -64,15 +64,10 @@ public class SecurityConfig {
 
     CorsConfiguration getCorsConfigurer(final HttpServletRequest httpServletRequest) {
         var corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(
-                List.of(
-                        "https://ttg.club/",
-                        "https://dev.ttg.club/"
-                )
-        );
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedOrigins(List.of("*"));
+        corsConfiguration.setAllowedMethods(List.of("*"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
-        corsConfiguration.setAllowCredentials(true);
+        corsConfiguration.setAllowCredentials(false);
         return corsConfiguration;
     }
 }
