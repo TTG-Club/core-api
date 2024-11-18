@@ -3,6 +3,7 @@ package club.ttg.dnd5.model.character;
 import club.ttg.dnd5.dictionary.Ability;
 import club.ttg.dnd5.dictionary.Dice;
 import club.ttg.dnd5.dictionary.Skill;
+import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -24,7 +25,7 @@ import java.util.Set;
             @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class ClassCharacter {
+public class ClassCharacter implements HasSourceEntity {
     @Id
     @Column(nullable = false, unique = true)
     private String url;
