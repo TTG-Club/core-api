@@ -2,10 +2,7 @@ package club.ttg.dnd5.utills;
 
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
-import club.ttg.dnd5.dto.base.BaseDTO;
-import club.ttg.dnd5.dto.base.DetailableDTO;
-import club.ttg.dnd5.dto.base.NameBasedDTO;
-import club.ttg.dnd5.dto.base.SourceResponse;
+import club.ttg.dnd5.dto.base.*;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
 import club.ttg.dnd5.dto.species.MovementAttributes;
 import club.ttg.dnd5.model.base.CreatureProperties;
@@ -17,10 +14,13 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Converter {
+    public static final BiConsumer<GroupStrategy, Source> STRATEGY_SOURCE_CONSUMER = GroupStrategy::determineGroup;
+
     // Function to map base DTO to Entity Name
     public static final BiFunction<BaseDTO, NamedEntity, NamedEntity> MAP_BASE_DTO_TO_ENTITY_NAME = (dto, entity) -> {
         entity.setUrl(dto.getUrl());
@@ -107,6 +107,7 @@ public class Converter {
                 name.setShortName(bookInfo.getSourceAcronym());
                 name.setAlternative(bookInfo.getAltName());
             }
+            STRATEGY_SOURCE_CONSUMER.accept(dto, source);
             dto.setName(name);
             dto.setPage(source.getPage());
         }

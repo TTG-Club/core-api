@@ -11,7 +11,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public abstract class BaseDTO {
+public abstract class BaseDTO  {
     private String url;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String imageUrl;
