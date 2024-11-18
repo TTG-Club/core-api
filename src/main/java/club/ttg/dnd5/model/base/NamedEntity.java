@@ -1,10 +1,11 @@
 package club.ttg.dnd5.model.base;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -22,6 +23,8 @@ public abstract class NamedEntity extends TimestampedEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
     private String imageUrl;
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<String> galleryUrl = new ArrayList<>();
     /**
      * Indicates whether this entity should be hidden from the frontend.
      * <p>
