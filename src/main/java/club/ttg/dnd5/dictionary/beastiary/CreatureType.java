@@ -9,21 +9,21 @@ import java.util.Set;
  * Типы существ из бестиария
  */
 public enum CreatureType {
-	ABERRATION("аберрация"),
-	BEAST("зверь"),
-	CELESTIAL("небожитель"),
-	CONSTRUCT("конструкт"),
-	DRAGON("дракон"),
-	ELEMENTAL("элементаль"),
-	FEY("фея", "фей"),
-	FIEND("исчадие"),
-	GIANT("великан", "гигант"),
-	HUMANOID("гуманоид"),
-	MONSTROSITY("монстр", "чудовище"),
-	PLANT("растение"),
-	UNDEAD("нежить"),
-	SLIME("слизь"),
-	SWARM("рой", "стая");
+	ABERRATION("Аберрация"),
+	BEAST("Зверь"),
+	CELESTIAL("Небожитель"),
+	CONSTRUCT("Конструкт"),
+	DRAGON("Дракон"),
+	ELEMENTAL("Элементаль"),
+	FEY("Фея", "Йей"),
+	FIEND("Исчадие"),
+	GIANT("Великан", "Гигант"),
+	HUMANOID("Гуманоид"),
+	MONSTROSITY("Монстр", "Чудовище"),
+	PLANT("Растение"),
+	UNDEAD("Нежить"),
+	SLIME("Слизь"),
+	SWARM("Рой", "Стая");
 
 	private final String displayCyrillicName;
 	private final Set<String> cyrillicNames;
