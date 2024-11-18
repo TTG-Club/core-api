@@ -25,18 +25,24 @@ import java.util.List;
 )
 public class Species extends CreatureProperties implements HasSourceEntity {
     @ManyToOne(fetch = FetchType.LAZY)
+
     @JoinColumn(name = "parent_id")
     private Species parent;
+
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<Species> subSpecies = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
     private Source source = new Source();
+
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "species_url")
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     private Collection<SpeciesFeature> features;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id"))
+    @Column(name = "gallery_url")
     private List<String> galleryUrl = new ArrayList<>();
 }
