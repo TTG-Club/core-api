@@ -1,75 +1,152 @@
 package club.ttg.dnd5.service.character;
 
-//import club.ttg.dnd5.dto.character.ClassRequest;
-//import club.ttg.dnd5.dto.character.ClassResponse;
-//import club.ttg.dnd5.dto.engine.SearchRequest;
-//import club.ttg.dnd5.exception.EntityExistException;
-//import club.ttg.dnd5.exception.EntityNotFoundException;
-//import club.ttg.dnd5.mapper.character.ClassMapper;
-//import club.ttg.dnd5.repository.ClassRepository;
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.stereotype.Service;
-//import org.springframework.transaction.annotation.Transactional;
-//
-//import java.time.LocalDateTime;
-//import java.util.Collection;
+import club.ttg.dnd5.dto.character.ClassDto;
+import club.ttg.dnd5.dto.engine.SearchRequest;
+import club.ttg.dnd5.exception.ApiException;
+import club.ttg.dnd5.exception.EntityExistException;
+import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.model.character.ClassCharacter;
+import club.ttg.dnd5.model.character.ClassFeature;
+import club.ttg.dnd5.repository.character.ClassRepository;
+import club.ttg.dnd5.utills.Converter;
+import club.ttg.dnd5.utills.character.ClassFeatureConverter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-//@RequiredArgsConstructor
-//@Service
-//public class ClassServiceImpl implements ClassService {
-//    private final ClassRepository classRepository;
-//
-//    @Override
-//    public Collection<ClassResponse> getClasses(final SearchRequest request) {
-//
-//        return null;
-//    }
-//
-//    @Override
-//    public Collection<ClassResponse> getSubClasses(final String url) {
-//        return classRepository.findAllSubclasses(url);
-//    }
-//
-//    @Override
-//    public ClassResponse getClass(final String url) {
-//        return ClassMapper.MAPPER.toResponse(
-//                classRepository.findById(url).orElseThrow(EntityNotFoundException::new)
-//        );
-//    }
-//
-//    @Transactional
-//    @Override
-//    public ClassResponse addClass(final ClassRequest request) {
-//        classRepository.findById(request.getUrl()).ifPresent(c -> {
-//            throw new EntityExistException();
-//        });
-//        var classChar = ClassMapper.MAPPER.toEntity(request);
-//        classChar.getFeatures().forEach(f -> {
-//            f.setCreated(LocalDateTime.now());
-//            f.setLastUpdated(LocalDateTime.now());
-//        });
-//        if (request.getParentUrl() != null) {
-//            var parent = classRepository.findById(request.getParentUrl())
-//                    .orElseThrow(() -> new EntityNotFoundException("Parent url not found"));
-//            classChar.setParent(parent);
-//        }
-//        classChar.setCreated(LocalDateTime.now());
-//        classChar.setLastUpdated(LocalDateTime.now());
-//        var saved = classRepository.save(classChar);
-//        return ClassMapper.MAPPER.toResponse(saved);
-//    }
-//
-//    @Transactional
-//    @Override
-//    public ClassResponse updateClass(final String url, final ClassRequest request) {
-//        var classChar = classRepository.findById(url).orElseThrow(EntityNotFoundException::new);
-//        var classForUpdate = ClassMapper.MAPPER.toEntity(request);
-//        classForUpdate.setCreated(classChar.getCreated());
-//        classForUpdate.setLastUpdated(LocalDateTime.now());
-//        var updated = classRepository.save(classForUpdate);
-//        if (url.equals(request.getUrl())) {
-//            classRepository.deleteById(url);
-//        }
-//        return ClassMapper.MAPPER.toResponse(updated);
-//    }
-//}
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Optional;
+
+@RequiredArgsConstructor
+@Service
+public class ClassServiceImpl implements ClassService {
+    private final ClassRepository classRepository;
+
+    @Override
+    public Collection<ClassDto> getClasses(final SearchRequest request) {
+        return classRepository.findAllClasses()
+                .stream()
+                .map(classes -> toDTO(classes, true))
+                .toList();
+    }
+
+    @Override
+    public Collection<ClassDto> getSubClasses(final String url) {
+        return classRepository.findAllSubclasses(url)
+                .stream()
+                .map(classes -> toDTO(classes, true))
+                .toList();
+    }
+
+    @Override
+    public ClassDto addParent(final String classUrl, final String classParentUrl) {
+        var classCharacter = findByUrl(classUrl);
+        var parent = findByUrl(classParentUrl);
+        //на этапе save, мы делаем ссылку на самого себя, если это родитель
+        //тут же мы проверяем это утверждение.
+        if (parent.getParent().equals(parent)) {
+            classCharacter.setParent(parent);
+
+            Optional.ofNullable(parent.getSubClasses())
+                    .orElseGet(() -> {
+                        parent.setSubClasses((new ArrayList<>()));
+                        return parent.getSubClasses();
+                    })
+                    .add(classCharacter);
+
+            return toDTO(classRepository.save(classCharacter), false);
+        } else {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "This is not a parent Class");
+        }
+    }
+
+    @Override
+    public ClassDto getClass(final String url) {
+        return toDTO(classRepository.findById(url)
+                .orElseThrow(EntityNotFoundException::new), false);
+    }
+
+    @Transactional
+    @Override
+    public ClassDto addClass(final ClassDto request) {
+        classRepository.findById(
+                request.getUrl()).ifPresent(c -> {
+                    throw new EntityExistException();
+                });
+        var saved = classRepository.save(toEntity(request));
+        return toDTO(saved, false);
+    }
+
+    @Transactional
+    @Override
+    public ClassDto updateClass(final String url, final ClassDto request) {
+        var entity = findByUrl(url);
+        if (!url.equals(request.getUrl())) {
+            classRepository.deleteById(url);
+        }
+        var updated = classRepository.save(toEntity(entity, request));
+        return toDTO(updated, false);
+    }
+
+    private ClassDto toDTO(ClassCharacter classCharacter, boolean hideDetails) {
+        ClassDto dto = new ClassDto();
+        if (hideDetails) {
+            Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, classCharacter);
+        } else {
+            Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, classCharacter);
+            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), classCharacter);
+            handleParentAndChild(classCharacter, dto);
+            Collection<ClassFeature> features = classCharacter.getFeatures();
+            if (features != null) {
+                dto.setFeatures(ClassFeatureConverter.convertEntityFeatureIntoDTOFeature(features));
+            }
+        }
+        return dto;
+    }
+
+    private void handleParentAndChild(ClassCharacter classCharacter, ClassDto dto) {
+        if (classCharacter.getParent() != null) {
+            dto.setParentUrl(classCharacter.getParent().getUrl());
+        }
+
+        if (classCharacter.getSubClasses() != null) {
+            dto.setSubSpeciesUrls(classCharacter.getSubClasses()
+                    .stream()
+                    .map(ClassCharacter::getUrl)
+                    .toList());
+        }
+    }
+
+    private ClassCharacter toEntity(ClassDto dto) {
+        return toEntity(new ClassCharacter(), dto);
+    }
+
+    private ClassCharacter toEntity(ClassCharacter classCharacter, ClassDto dto) {
+        classCharacter.setUrl(dto.getUrl());
+        Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(dto, classCharacter);
+        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), classCharacter);
+
+        if (dto.getParentUrl() != null) {
+            classCharacter.setParent(dto.getParentUrl().equals(dto.getUrl()) ? null : findByUrl(dto.getParentUrl()));
+        }
+
+        fillClass(dto, classCharacter);
+        return classCharacter;
+    }
+
+    private void fillClass(ClassDto dto, ClassCharacter classCharacter) {
+        Optional.ofNullable(dto.getSubSpeciesUrls())
+                .ifPresent(urls -> classCharacter.setSubClasses(
+                        urls.stream()
+                        .map(this::findByUrl)
+                        .toList()));
+    }
+
+    private ClassCharacter findByUrl(String url) {
+        return classRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Class not found with URL: " + url));
+    }
+}

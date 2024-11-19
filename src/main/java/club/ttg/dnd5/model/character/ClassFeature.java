@@ -17,8 +17,5 @@ import lombok.Setter;
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
 public class ClassFeature extends FeatureBase implements HasTags, HasSourceEntity {
-    @Column(columnDefinition = "TEXT")
-    private String original;
-
     private short level;
 }
