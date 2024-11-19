@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -46,7 +47,7 @@ public class Converter {
         dto.getNameBasedDTO().setAlternative(entity.getAlternative());
         dto.setDescription(entity.getDescription());
         if (entity.getUpdatedAt() != null) {
-            dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant());
+            dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant().truncatedTo(ChronoUnit.MINUTES));
         }
         return dto;
     };

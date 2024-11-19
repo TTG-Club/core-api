@@ -7,6 +7,7 @@ import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.model.book.Source;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.LinkedHashSet;
 @RequiredArgsConstructor
 public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy {
     // Включаем свойства существа через DTO
+    @JsonProperty(value = "properties")
     private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();
     // Связанные сущности
     private LinkedSpeciesDto parent = new LinkedSpeciesDto();
@@ -47,6 +49,7 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
         //хотя и кажется что группа не может быть нулл, есть сценарий когда наступает хайд, и тогда группа становится нулл
         if (group != null && source.getBookInfo() != null) {
             this.group.setName("Происхождение");
+            this.group.setEnglish("Basic");
             this.group.setShortName("Basic");
         }
     }
