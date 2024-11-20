@@ -4,6 +4,6 @@ databaseChangeLog:
       author: ProtectorRTD
       changes:
         - sqlFile:
-            path: db/sql/insert-data.sql
+            path: classpath:liquidbase/db/sql/insert-data.sql
             splitStatements: true
             endDelimiter: ";"
