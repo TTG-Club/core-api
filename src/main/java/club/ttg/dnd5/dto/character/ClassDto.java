@@ -2,7 +2,9 @@ package club.ttg.dnd5.dto.character;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
-import club.ttg.dnd5.dto.base.HasSourceDTO;
+import club.ttg.dnd5.dto.base.GroupStrategy;
+import club.ttg.dnd5.dto.base.NameBasedDTO;
+import club.ttg.dnd5.model.book.Source;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -18,7 +20,7 @@ import java.util.Collection;
 @Setter
 @Builder
 @Schema(description = "Иныормация о классе или подклассе")
-public class ClassDto extends BaseDTO implements DetailableDTO, HasSourceDTO  {
+public class ClassDto extends BaseDTO implements DetailableDTO, GroupStrategy {
     @Schema(description = "основная характеристика")
     private String mainAbility;
     @Schema(description = "хит дайсы")
@@ -35,7 +37,7 @@ public class ClassDto extends BaseDTO implements DetailableDTO, HasSourceDTO  {
     private Collection<String> subSpeciesUrls;
 
     private Collection<ClassFeatureDto> features;
-
+    private NameBasedDTO group = new NameBasedDTO();
     private boolean isDetail = false;
 
     @Override
@@ -49,22 +51,11 @@ public class ClassDto extends BaseDTO implements DetailableDTO, HasSourceDTO  {
     }
 
     @Override
-    public String getSource() {
-        return this.getSourceDTO().getSource();
-    }
-
-    @Override
-    public Short getPage() {
-        return this.getSourceDTO().getPage();
-    }
-
-    @Override
-    public void setPage(Short page) {
-        this.getSourceDTO().setPage(page);
-    }
-
-    @Override
-    public void setSource(String source) {
-        this.getSourceDTO().setSource(source);
+    public void determineGroup(final Source source) {
+        if (group != null && source.getBookInfo() != null) {
+            this.group.setName("Происхождение");
+            this.group.setEnglish("Basic");
+            this.group.setShortName("Basic");
+        }
     }
 }
