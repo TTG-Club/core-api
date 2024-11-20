@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: ProtectorRTD
+      changes:
+        - sqlFile:
+            path: db/sql/insert-data.sql
+            splitStatements: true
+            endDelimiter: ";"
