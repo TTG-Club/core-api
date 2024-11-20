@@ -1,7 +1,6 @@
 package club.ttg.dnd5.dto.species;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
-import club.ttg.dnd5.dto.base.HasSourceDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,28 +13,7 @@ import java.util.Collection;
 @Setter
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class CreateSpeciesDto extends BaseDTO implements HasSourceDTO {
-    boolean parent;
-    private CreaturePropertiesDto creatureProperties;
+public class CreateSpeciesDto extends BaseDTO {
+    private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();
     private Collection<SpeciesFeatureDto> features = new ArrayList<>();
-
-    @Override
-    public Short getPage() {
-        return (this.getSource() != null) ? this.getSourceDTO().getPage() : -1;
-    }
-
-    @Override
-    public void setPage(Short page) {
-        this.getSourceDTO().setPage(page);
-    }
-
-    @Override
-    public String getSource() {
-        return this.getSourceDTO().getSource();
-    }
-
-    @Override
-    public void setSource(String source) {
-        this.getSourceDTO().setSource(source);
-    }
 }

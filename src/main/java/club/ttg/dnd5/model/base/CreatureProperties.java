@@ -18,7 +18,7 @@ public abstract class CreatureProperties extends NamedEntity {
     @Enumerated(EnumType.STRING)
     private CreatureType type;
     @Column(columnDefinition = "int default 30")
-    private int speed;
+    private int speed = 30;
     private int fly;
     private int climb;
     private int swim;
