@@ -9,6 +9,7 @@ import club.ttg.dnd5.model.character.ClassCharacter;
 import club.ttg.dnd5.model.character.ClassFeature;
 import club.ttg.dnd5.repository.character.ClassRepository;
 import club.ttg.dnd5.utills.Converter;
+import club.ttg.dnd5.utills.character.ClassConverter;
 import club.ttg.dnd5.utills.character.ClassFeatureConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -96,6 +97,7 @@ public class ClassServiceImpl implements ClassService {
         if (hideDetails) {
             Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, classCharacter);
         } else {
+            ClassConverter.MAP_ENTITY_TO_DTO_.apply(dto, classCharacter);
             Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, classCharacter);
             Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), classCharacter);
             handleParentAndChild(classCharacter, dto);
@@ -128,11 +130,10 @@ public class ClassServiceImpl implements ClassService {
         classCharacter.setUrl(dto.getUrl());
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(dto, classCharacter);
         Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), classCharacter);
-
+        ClassConverter.MAP_DTO_TO_ENTITY.apply(dto, classCharacter);
         if (dto.getParentUrl() != null) {
             classCharacter.setParent(dto.getParentUrl().equals(dto.getUrl()) ? null : findByUrl(dto.getParentUrl()));
         }
-
         fillClass(dto, classCharacter);
         return classCharacter;
     }
