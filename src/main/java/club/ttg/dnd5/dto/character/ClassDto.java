@@ -17,16 +17,20 @@ import java.util.Collection;
 @Getter
 @Setter
 @Builder
+@Schema(description = "Иныормация о классе или подклассе")
 public class ClassDto extends BaseDTO implements DetailableDTO, HasSourceDTO  {
-    @Schema(description = "снаряжение")
-    private String equipment;
+    @Schema(description = "основная характеристика")
+    private String mainAbility;
+    @Schema(description = "хит дайсы")
+    private String hitDice;
     @Schema(description = "владение и мастерство")
     private ClassMasteryDto mastery;
 
-    @Schema(description = "хит дайсы")
-    private String hitDice;
-    // Связанные сущности
+    @Schema(description = "Стартовое снаряжение")
+    private String startEquipment;
 
+    // Связанные сущности
+    @Schema(description = "Url родительского класса если есть")
     private String parentUrl;
     private Collection<String> subSpeciesUrls;
 
@@ -40,6 +44,7 @@ public class ClassDto extends BaseDTO implements DetailableDTO, HasSourceDTO  {
             this.parentUrl = null;
             this.subSpeciesUrls = null;
             this.features = null;
+            this.startEquipment = null;
         }
     }
 

@@ -2,6 +2,7 @@ package club.ttg.dnd5.utills.character;
 
 import club.ttg.dnd5.dictionary.Ability;
 import club.ttg.dnd5.dictionary.Dice;
+import club.ttg.dnd5.dictionary.Skill;
 import club.ttg.dnd5.dto.character.ClassDto;
 import club.ttg.dnd5.dto.character.ClassMasteryDto;
 import club.ttg.dnd5.model.character.ClassCharacter;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ClassConverter {
     public static final BiFunction<ClassDto, ClassCharacter, ClassCharacter> MAP_DTO_TO_ENTITY = (dto, entity) -> {
+        entity.setMainAbility(Ability.parseName(dto.getMainAbility()));
         if (Objects.nonNull(dto.getMastery())) {
             entity.setArmorMastery(dto.getMastery().getArmor());
             entity.setWeaponMastery(dto.getMastery().getWeapon());
@@ -23,13 +25,20 @@ public class ClassConverter {
                     .stream()
                     .map(Ability::parseShortName)
                     .collect(Collectors.toSet()));
+            entity.setAvailableSkills(dto.getMastery().getAvailableSkills()
+                    .stream()
+                    .map(Skill::parse)
+                    .collect(Collectors.toSet()));
+            entity.setCountSkillAvailable(dto.getMastery().getCountAvailableSkills());
         }
-        entity.setEquipment(dto.getEquipment());
+        entity.setEquipment(dto.getStartEquipment());
         entity.setHitDice(Dice.parse(dto.getHitDice()));
         return entity;
     };
 
     public static final BiFunction<ClassDto, ClassCharacter, ClassDto> MAP_ENTITY_TO_DTO_ = (dto, entity) -> {
+        dto.setMainAbility(entity.getMainAbility().getName());
+        dto.setHitDice(entity.getHitDice().getName());
         var mastery = new ClassMasteryDto();
         mastery.setArmor(entity.getArmorMastery());
         mastery.setWeapon(entity.getWeaponMastery());
@@ -37,10 +46,13 @@ public class ClassConverter {
         mastery.setSavingThrow(entity.getSavingThrowMastery()
                 .stream()
                 .map(Ability::getShortName)
-                .toList());
+                .collect(Collectors.toSet()));
+        mastery.setAvailableSkills(entity.getAvailableSkills()
+                .stream()
+                .map(Skill::getCyrillicName)
+                .collect(Collectors.toSet()));
         dto.setMastery(mastery);
-        dto.setEquipment(entity.getEquipment());
-        dto.setHitDice(entity.getHitDice().getName());
+        dto.setStartEquipment(entity.getEquipment());
         return dto;
     };
 }

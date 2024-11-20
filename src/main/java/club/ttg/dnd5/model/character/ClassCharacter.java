@@ -25,6 +25,9 @@ import java.util.Set;
         }
 )
 public class ClassCharacter extends NamedEntity implements HasSourceEntity {
+    @Enumerated(EnumType.STRING)
+    private Ability mainAbility;
+
     private String genitive;
 
     @Enumerated(EnumType.STRING)
