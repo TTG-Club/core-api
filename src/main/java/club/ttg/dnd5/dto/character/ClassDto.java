@@ -20,12 +20,8 @@ import java.util.Collection;
 public class ClassDto extends BaseDTO implements DetailableDTO, HasSourceDTO  {
     @Schema(description = "снаряжение")
     private String equipment;
-    @Schema(description = "умение владения доспехами")
-    private String armorMastery;
-    @Schema(description = "умение владения оружием")
-    private String weaponMastery;
-    @Schema(description = "умение владения инструментами")
-    private String toolMastery;
+    @Schema(description = "владение и мастерство")
+    private ClassMasteryDto mastery;
 
     @Schema(description = "хит дайсы")
     private String hitDice;
