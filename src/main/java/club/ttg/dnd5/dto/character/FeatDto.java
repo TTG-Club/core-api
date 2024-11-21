@@ -1,7 +1,7 @@
 package club.ttg.dnd5.dto.character;
 
 import club.ttg.dnd5.dto.NameDto;
-import club.ttg.dnd5.dto.base.NameBasedDTO;
+import club.ttg.dnd5.dto.base.BaseDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
@@ -12,6 +12,7 @@ import lombok.*;
 
 @Getter
 @Setter
-public class FeatDto extends NameBasedDTO {
-    private NameDto type;
+public class FeatDto extends BaseDTO {
+    private NameDto category;
+    private String prerequisite;
 }

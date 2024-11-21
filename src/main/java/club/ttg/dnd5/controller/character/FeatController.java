@@ -12,11 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 
-@Tag(name = "Черты ", description = "REST API черты персонажа")
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/trait")
+@Tag(name = "Черты ", description = "REST API черт персонажа")
 public class FeatController {
     private final FeatService featService;
 
@@ -31,24 +30,46 @@ public class FeatController {
         return featService.getFeat(featUrl);
     }
 
+    @Operation(summary = "Получение списка краткого описания черты")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Черты успешно получена")
+    })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
     public Collection<FeatDto> getFeats() {
         return featService.getFeats();
     }
 
+    @Operation(summary = "Добавление черты")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Черта успешно добавлена"),
+            @ApiResponse(responseCode = "400", description = "Черта уже существует"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public FeatDto addFeats(@RequestBody final FeatDto featDto) {
         return featService.addFeat(featDto);
     }
 
+    @Operation(summary = "Обновление черты")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Черта успешно обновлена"),
+            @ApiResponse(responseCode = "200", description = "Черта не найдена"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
     @ResponseStatus(HttpStatus.OK)
-    @PostMapping
-    public FeatDto updateFeats(@RequestBody final FeatDto featDto) {
-        return featService.updateFeat(featDto);
+    @PostMapping("{/featUrl}")
+    public FeatDto updateFeats(@PathVariable final String featUrl,
+                               @RequestBody final FeatDto featDto) {
+        return featService.updateFeat(featUrl, featDto);
     }
 
+    @Operation(summary = "Скрывает черту")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Черта удалена из общего списка"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
     @ResponseStatus(HttpStatus.OK)
     @DeleteMapping("{featUrl}")
     public FeatDto deleteFeats(@PathVariable final String featUrl) {

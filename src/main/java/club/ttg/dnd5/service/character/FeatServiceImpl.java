@@ -1,19 +1,17 @@
 package club.ttg.dnd5.service.character;
 
-import club.ttg.dnd5.dto.character.ClassDto;
 import club.ttg.dnd5.dto.character.FeatDto;
-import club.ttg.dnd5.model.character.ClassCharacter;
-import club.ttg.dnd5.model.character.ClassFeature;
+import club.ttg.dnd5.exception.EntityExistException;
+import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.model.character.Feat;
 import club.ttg.dnd5.repository.character.FeatRepository;
 import club.ttg.dnd5.utills.Converter;
-import club.ttg.dnd5.utills.character.ClassConverter;
-import club.ttg.dnd5.utills.character.ClassFeatureConverter;
+import club.ttg.dnd5.utills.character.FeatConverter;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -22,28 +20,51 @@ public class FeatServiceImpl implements FeatService {
 
     @Override
     public FeatDto getFeat(final String featUrl) {
-        return null;
+        return toDTO(findByUrl(featUrl));
     }
 
     @Override
     public Collection<FeatDto> getFeats() {
-        return List.of();
+        return featRepository.findAll()
+                .stream()
+                .map(f -> toDTO(f, true))
+                .toList();
     }
 
+    @Transactional
     @Override
-    public FeatDto addFeat(final FeatDto featDto) {
-        return null;
+    public FeatDto addFeat(final FeatDto dto) {
+        if (featRepository.existsById(dto.getUrl())) {
+            throw new EntityExistException("Feature exist");
+        }
+        var entity = new Feat();
+        Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(dto, entity);
+        FeatConverter.MAP_DTO_TO_ENTITY.apply(dto, entity);
+        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), entity);
+        return toDTO(entity);
     }
 
+    @Transactional
     @Override
-    public FeatDto updateFeat(final FeatDto featDto) {
-        return null;
+    public FeatDto updateFeat(final String featUrl, final FeatDto dto) {
+        var entity = findByUrl(featUrl);
+        if (!featUrl.equalsIgnoreCase(dto.getUrl())) {
+            featRepository.deleteById(featUrl);
+        }
+        Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(dto, entity);
+        FeatConverter.MAP_DTO_TO_ENTITY.apply(dto, entity);
+        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), entity);
+        return toDTO(featRepository.save(entity));
     }
 
+    @Transactional
     @Override
     public FeatDto delete(final String featUrl) {
-        return null;
+        var entity = findByUrl(featUrl);
+        entity.setHiddenEntity(true);
+        return toDTO(featRepository.save(entity));
     }
+
     private FeatDto toDTO(Feat feat) {
         return toDTO(feat, false);
     }
@@ -53,10 +74,14 @@ public class FeatServiceImpl implements FeatService {
         if (hideDetails) {
             Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, feat);
         } else {
-            ClassConverter.MAP_ENTITY_TO_DTO_.apply(dto, feat);
+            FeatConverter.MAP_ENTITY_TO_DTO_.apply(dto, feat);
             Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, feat);
-            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), feat);
         }
         return dto;
+    }
+
+    private Feat findByUrl(String url) {
+        return featRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Class not found with URL: " + url));
     }
 }

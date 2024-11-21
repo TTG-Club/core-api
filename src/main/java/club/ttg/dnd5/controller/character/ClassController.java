@@ -17,11 +17,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 
-@Tag(name = "Классы", description = "REST API классов персонажа")
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/class")
+@Tag(name = "Классы", description = "REST API классов персонажа")
 public class ClassController {
     private final ClassService classService;
 
