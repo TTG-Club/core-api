@@ -67,11 +67,10 @@ public class ClassServiceImpl implements ClassService {
 
     @Override
     public ClassDto addFeature(final String classUrl, final ClassFeatureDto featureDto) {
-        var clazz =  classRepository.findById(classUrl)
-                .orElseThrow(EntityNotFoundException::new);
+        var classCharacter =  findByUrl(classUrl);
         var feature = ClassFeatureConverter.toEntityFeature(featureDto);
-        clazz.getFeatures().add(feature);
-        return toDTO(classRepository.save(clazz));
+        classCharacter.getFeatures().add(feature);
+        return toDTO(classRepository.save(classCharacter));
     }
 
     @Override
