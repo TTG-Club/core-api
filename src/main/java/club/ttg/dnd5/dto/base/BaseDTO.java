@@ -14,6 +14,7 @@ import java.util.List;
 public abstract class BaseDTO  {
     private String url;
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(value = "image")
     private String imageUrl;
     @JsonProperty(value = "name")
     private NameBasedDTO nameBasedDTO = new NameBasedDTO();
