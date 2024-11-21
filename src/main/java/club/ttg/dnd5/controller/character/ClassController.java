@@ -94,7 +94,7 @@ public class ClassController {
             @ApiResponse(responseCode = "404", description = "Класс не найден")
     })
     @ResponseStatus(HttpStatus.OK)
-    @PostMapping("/{classUrl}/parent")
+    @PostMapping("/{classUrl}/feature")
     public ClassDto addFeature(
             @Parameter(description = "URL класса, к которому добавляется умение") @PathVariable String classUrl,
             @RequestBody ClassFeatureDto featureDto) {
