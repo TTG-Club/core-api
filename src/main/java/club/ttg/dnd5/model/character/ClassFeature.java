@@ -1,12 +1,12 @@
 package club.ttg.dnd5.model.character;
 
-import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.model.base.FeatureBase;
+import club.ttg.dnd5.model.base.HasSourceEntity;
+import club.ttg.dnd5.model.base.HasTags;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -16,30 +16,6 @@ import java.time.LocalDateTime;
 @Table(name = "class_features",
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
-public class ClassFeature {
-    @Id
-    @Column(nullable = false, unique = true)
-    private String url;
-
-    @Column(nullable = false)
-    private String name;
-    @Column(nullable = false)
-    private String english;
-    private String alternative;
-    @Column(columnDefinition = "TEXT")
-    private String original;
-
+public class ClassFeature extends FeatureBase implements HasTags, HasSourceEntity {
     private short level;
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @ManyToOne
-    @JoinColumn(name = "source")
-    private Source source;
-    private Short page;
-
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime created;
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime lastUpdated;
 }

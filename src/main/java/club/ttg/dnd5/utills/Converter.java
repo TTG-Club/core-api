@@ -1,5 +1,10 @@
 package club.ttg.dnd5.utills;
 
+
+import club.ttg.dnd5.dto.base.BaseDTO;
+import club.ttg.dnd5.dto.base.DetailableDTO;
+import club.ttg.dnd5.dto.base.NameBasedDTO;
+import club.ttg.dnd5.dto.character.ClassFeatureDto;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dto.base.*;
@@ -10,6 +15,7 @@ import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.model.character.ClassFeature;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -119,6 +125,11 @@ public class Converter {
     public static final BiFunction<BaseDTO, NamedEntity, BaseDTO> MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS = (dto, entity) -> {
         dto.setUrl(entity.getUrl());
         ((DetailableDTO) dto).hideDetails();
+        return dto;
+    };
+
+    public static final BiFunction<ClassFeatureDto ,ClassFeature, ClassFeatureDto> MAP_ENTITY_TO_DTO_WITH_LEVEL = (dto, entity) -> {
+        dto.setLevel(entity.getLevel());
         return dto;
     };
 }
