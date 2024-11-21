@@ -25,7 +25,7 @@ public class FeatController {
             @ApiResponse(responseCode = "404", description = "Черта не найдена")
     })
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("{/featUrl}")
+    @GetMapping("{featUrl}")
     public FeatDto getFeat(@PathVariable final String featUrl) {
         return featService.getFeat(featUrl);
     }
