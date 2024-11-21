@@ -1,6 +1,7 @@
 package club.ttg.dnd5.controller.character;
 
 import club.ttg.dnd5.dto.character.ClassDto;
+import club.ttg.dnd5.dto.character.ClassFeatureDto;
 import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.service.character.ClassService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -78,6 +79,26 @@ public class ClassController {
             @Parameter(description = "URL класса, к которому добавляется родитель") @PathVariable String classUrl,
             @Parameter(description = "URL родителя, который будет добавлен") @RequestParam String classParentUrl) {
         return classService.addParent(classUrl, classParentUrl);
+    }
+
+    /**
+     * Метод для добавления подкласса к классу.
+     *
+     * @param classUrl      URL класса, к которому добавляется умение.
+     * @param featureDto умение, которое будет добавлено к классу.
+     * @return информацией о виде.
+     */
+    @Operation(summary = "Добавить умение к классу", description = "Добавляет умение к указанному классу по его URL.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Умение успешно добавлен к классу"),
+            @ApiResponse(responseCode = "404", description = "Класс не найден")
+    })
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/{classUrl}/parent")
+    public ClassDto addFeature(
+            @Parameter(description = "URL класса, к которому добавляется умение") @PathVariable String classUrl,
+            @RequestBody ClassFeatureDto featureDto) {
+        return classService.addFeature(classUrl, featureDto);
     }
 
     @ResponseStatus(HttpStatus.OK)

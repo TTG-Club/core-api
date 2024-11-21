@@ -1,6 +1,7 @@
 package club.ttg.dnd5.service.character;
 
 import club.ttg.dnd5.dto.character.ClassDto;
+import club.ttg.dnd5.dto.character.ClassFeatureDto;
 import club.ttg.dnd5.dto.engine.SearchRequest;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
@@ -65,9 +66,18 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
+    public ClassDto addFeature(final String classUrl, final ClassFeatureDto featureDto) {
+        var clazz =  classRepository.findById(classUrl)
+                .orElseThrow(EntityNotFoundException::new);
+        var feature = ClassFeatureConverter.toEntityFeature(featureDto);
+        clazz.getFeatures().add(feature);
+        return toDTO(classRepository.save(clazz));
+    }
+
+    @Override
     public ClassDto getClass(final String url) {
         return toDTO(classRepository.findById(url)
-                .orElseThrow(EntityNotFoundException::new), false);
+                .orElseThrow(EntityNotFoundException::new));
     }
 
     @Transactional
@@ -78,7 +88,7 @@ public class ClassServiceImpl implements ClassService {
                     throw new EntityExistException();
                 });
         var saved = classRepository.save(toEntity(request));
-        return toDTO(saved, false);
+        return toDTO(saved);
     }
 
     @Transactional
@@ -89,7 +99,11 @@ public class ClassServiceImpl implements ClassService {
             classRepository.deleteById(url);
         }
         var updated = classRepository.save(toEntity(entity, request));
-        return toDTO(updated, false);
+        return toDTO(updated);
+    }
+
+    private ClassDto toDTO(ClassCharacter classCharacter) {
+        return toDTO(classCharacter, false);
     }
 
     private ClassDto toDTO(ClassCharacter classCharacter, boolean hideDetails) {
