@@ -1,10 +1,12 @@
 package club.ttg.dnd5.dto.character;
 
+import club.ttg.dnd5.dto.NameDto;
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
 import club.ttg.dnd5.dto.base.GroupStrategy;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.model.book.Source;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -22,7 +24,7 @@ import java.util.Collection;
 @Schema(description = "Иныормация о классе или подклассе")
 public class ClassDto extends BaseDTO implements DetailableDTO, GroupStrategy {
     @Schema(description = "основная характеристика")
-    private String mainAbility;
+    private NameDto mainAbility;
     @Schema(description = "хит дайсы")
     private String hitDice;
     @Schema(description = "владение и мастерство")
@@ -38,6 +40,7 @@ public class ClassDto extends BaseDTO implements DetailableDTO, GroupStrategy {
 
     private Collection<ClassFeatureDto> features;
     private NameBasedDTO group = new NameBasedDTO();
+    @JsonIgnore
     private boolean isDetail = false;
 
     @Override

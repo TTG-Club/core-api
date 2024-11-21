@@ -1,8 +1,10 @@
 package club.ttg.dnd5.dto.character;
 
+import club.ttg.dnd5.dto.NameDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @NoArgsConstructor
@@ -19,9 +21,9 @@ public class ClassMasteryDto {
     @Schema(description = "владения инструментами")
     private String tool;
     @Schema(description = "владения спасбросками")
-    private Set<String> savingThrow;
+    private Set<NameDto> savingThrow = new HashSet<>();
     @Schema(description = "количество доступных навыков для выбора")
     private short countAvailableSkills;
     @Schema(description = "список навыков")
-    private Set<String> availableSkills;
+    private Set<NameDto> availableSkills = new HashSet<>();
 }
