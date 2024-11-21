@@ -8,6 +8,9 @@ import club.ttg.dnd5.utills.Converter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.List;
+
 @RequiredArgsConstructor
 @Service
 public class BackgroundServiceImpl implements BackgroundService {
@@ -17,6 +20,27 @@ public class BackgroundServiceImpl implements BackgroundService {
     public BackgroundDto getBackground(final String backgroundUrl) {
         return toDTO(findByUrl(backgroundUrl));
     }
+
+    @Override
+    public Collection<BackgroundDto> getBackgrounds() {
+        return backgroundRepository.findAll().stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    public BackgroundDto addBackgrounds(final BackgroundDto backgroundDto) {
+        return List.of();
+    }
+
+    @Override
+    public BackgroundDto updateBackgrounds(final String backgroundUrl, final BackgroundDto backgroundDto) {
+        return null;
+    }
+
+    @Override
+    public BackgroundDto deleteBackgrounds(final String backgroundUrl) {
+        return null;
+    }
+
 
     private BackgroundDto toDTO(Background entity) {
         return toDTO(entity, false);
