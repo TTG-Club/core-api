@@ -169,6 +169,6 @@ public class ClassServiceImpl implements ClassService {
 
     private ClassCharacter findByUrl(String url) {
         return classRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException("Class not found with URL: " + url));
+                .orElseThrow(() -> new EntityNotFoundException("Entity not found with URL: " + url));
     }
 }
