@@ -3,7 +3,6 @@ package club.ttg.dnd5.utills;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.DetailableDTO;
-import club.ttg.dnd5.dto.base.HasSourceDTO;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.character.ClassFeatureDto;
 import club.ttg.dnd5.dictionary.Size;
