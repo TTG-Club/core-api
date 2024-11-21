@@ -67,10 +67,10 @@ public class ClassController {
      * @param classParentUrl URL родителя, который будет добавлен.
      * @return информацией о виде.
      */
-    @Operation(summary = "Добавить родителя к виду", description = "Добавляет родителя к указанному виду по его URL.")
+    @Operation(summary = "Добавить родителя к классу", description = "Добавляет родителя к указанному классу по его URL.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Родитель успешно добавлен к виду"),
-            @ApiResponse(responseCode = "404", description = "Вид или родитель не найден")
+            @ApiResponse(responseCode = "200", description = "Родитель успешно добавлен к классу"),
+            @ApiResponse(responseCode = "404", description = "Класс или родитель не найден")
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/{classUrl}/parent")
