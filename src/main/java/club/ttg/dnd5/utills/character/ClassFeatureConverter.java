@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import java.util.Collection;
 import java.util.function.BiFunction;
 
+import static club.ttg.dnd5.utills.Converter.MAP_ENTITY_TO_DTO_WITH_LEVEL;
+
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ClassFeatureConverter {
 
@@ -34,6 +36,13 @@ public class ClassFeatureConverter {
     public static ClassFeatureDto toDtoFeature(ClassFeature feature) {
         var dto = new ClassFeatureDto();
         return ENTITY_TO_DTO_CONVERTER.apply(feature, dto);
+    }
+
+    public static ClassFeature toEntityFeature(ClassFeatureDto response) {
+        ClassFeature feature = new ClassFeature();
+        feature.setLevel(response.getLevel());
+        MAP_ENTITY_TO_DTO_WITH_LEVEL.apply(response, feature);
+        return DTO_TO_ENTITY_CONVERTER.apply(response, feature);
     }
 
     public static Collection<ClassFeatureDto> convertEntityFeatureIntoDTOFeature(Collection<ClassFeature> entityFeatures) {

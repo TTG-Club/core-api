@@ -135,7 +135,15 @@ public class ClassServiceImpl implements ClassService {
             classCharacter.setParent(dto.getParentUrl().equals(dto.getUrl()) ? null : findByUrl(dto.getParentUrl()));
         }
         fillClass(dto, classCharacter);
+        saveClassFeatures(dto, classCharacter);
         return classCharacter;
+    }
+
+    private void saveClassFeatures(final ClassDto dto, final ClassCharacter classCharacter) {
+        Collection<ClassFeature> features = dto.getFeatures().stream()
+                .map(ClassFeatureConverter::toEntityFeature)
+                .toList();
+        classCharacter.setFeatures(features);
     }
 
     private void fillClass(ClassDto dto, ClassCharacter classCharacter) {

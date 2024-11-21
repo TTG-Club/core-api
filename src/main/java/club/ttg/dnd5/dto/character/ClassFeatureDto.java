@@ -15,7 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ClassFeatureDto extends BaseDTO implements HasTags {
     @Schema(description = "С какого уровня доступно", requiredMode = Schema.RequiredMode.REQUIRED)
-    private int level;
+    private short level;
     private Map<String, String> tags;
 
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
