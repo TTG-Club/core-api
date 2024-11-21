@@ -26,6 +26,13 @@ public class ErrorHandlerControllerAdvice {
 	}
 
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<String> handleException(Exception exception) {
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(exception.getMessage());
+	}
+
+	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(NoHandlerFoundException.class)
 	public ResponseEntity<String> handleNoHandlePageException(Exception exception) {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
