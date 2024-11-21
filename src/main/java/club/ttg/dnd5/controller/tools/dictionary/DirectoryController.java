@@ -7,7 +7,7 @@ import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.Condition;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dictionary.beastiary.Environment;
-import club.ttg.dnd5.dictionary.character.FeatType;
+import club.ttg.dnd5.dictionary.character.FeatCategory;
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
 import club.ttg.dnd5.dto.NameDto;
 import club.ttg.dnd5.dto.ValueDto;
@@ -120,9 +120,9 @@ public class DirectoryController {
     @Operation(summary = "Типы черт")
     @GetMapping("/type_feats")
     public Collection<NameDto> getFeatTypes() {
-        return Arrays.stream(FeatType.values())
+        return Arrays.stream(FeatCategory.values())
                 .map(type -> NameDto.builder()
-                        .rus(type.getCyrillicName())
+                        .rus(type.getName())
                         .eng(type.name())
                         .build())
                 .collect(Collectors.toList()
@@ -145,9 +145,9 @@ public class DirectoryController {
     @Operation(summary = "Типы черт")
     @GetMapping("/feat_types")
     public Collection<NameDto> getFeatTypesSpellcasterTypes() {
-        return Arrays.stream(FeatType.values())
+        return Arrays.stream(FeatCategory.values())
                 .map(type -> NameDto.builder()
-                        .rus(type.getCyrillicName())
+                        .rus(type.getName())
                         .eng(type.name())
                         .build())
                 .collect(Collectors.toList()

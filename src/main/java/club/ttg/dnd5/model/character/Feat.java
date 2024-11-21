@@ -1,12 +1,13 @@
 package club.ttg.dnd5.model.character;
 
+import club.ttg.dnd5.dictionary.character.FeatCategory;
+import club.ttg.dnd5.model.base.HasSourceEntity;
+import club.ttg.dnd5.model.base.NamedEntity;
 import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -16,29 +17,12 @@ import java.time.LocalDateTime;
 @Table(name = "feats",
         indexes = {@Index(name = "idx_url", columnList = "url")}
 )
-public class Feat {
-    @Id
-    @Column(nullable = false, unique = true)
-    private String url;
+public class Feat extends NamedEntity implements HasSourceEntity {
+    @Enumerated(EnumType.STRING)
+    private FeatCategory category;
+    private String prerequisite;
 
-    @Column(nullable = false)
-    private String name;
-    @Column(nullable = false)
-    private String english;
-    private String alternative;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-    @Column(columnDefinition = "TEXT")
-    private String original;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
-    private Source source;
-    private Short page;
-
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime created;
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime lastUpdated;
+    private Source source = new Source();
 }
