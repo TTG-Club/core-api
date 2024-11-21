@@ -11,7 +11,7 @@ public interface FeatService {
 
     FeatDto addFeat(FeatDto featDto);
 
-    FeatDto updateFeat(FeatDto featDto);
+    FeatDto updateFeat(final String featUrl, FeatDto featDto);
 
     FeatDto delete(String featUrl);
 }
