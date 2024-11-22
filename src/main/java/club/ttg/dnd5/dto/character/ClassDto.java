@@ -21,7 +21,7 @@ import java.util.Collection;
 @Getter
 @Setter
 @Builder
-@Schema(description = "Иныормация о классе или подклассе")
+@Schema(description = "Информация о классе или подклассе")
 public class ClassDto extends BaseDTO implements DetailableDTO, GroupStrategy {
     @Schema(description = "основная характеристика")
     private NameDto mainAbility;
