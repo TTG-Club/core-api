@@ -8,6 +8,7 @@ import club.ttg.dnd5.repository.character.BackgroundRepository;
 import club.ttg.dnd5.repository.character.FeatRepository;
 import club.ttg.dnd5.utills.Converter;
 import club.ttg.dnd5.utills.character.BackgroundConverter;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class BackgroundServiceImpl implements BackgroundService {
         return backgroundRepository.findAll().stream().map(b -> toDTO(b ,true)).toList();
     }
 
+    @Transactional
     @Override
     public BackgroundDto addBackground(final BackgroundDto backgroundDto) {
         if (backgroundRepository.existsById(backgroundDto.getUrl())) {
@@ -37,6 +39,7 @@ public class BackgroundServiceImpl implements BackgroundService {
         return toDTO(backgroundRepository.save(toEntity(backgroundDto)));
     }
 
+    @Transactional
     @Override
     public BackgroundDto updateBackgrounds(final String url, final BackgroundDto dto) {
         var entity = findByUrl(url);
@@ -49,6 +52,7 @@ public class BackgroundServiceImpl implements BackgroundService {
         return toDTO(backgroundRepository.save(toEntity(dto)));
     }
 
+    @Transactional
     @Override
     public BackgroundDto deleteBackgrounds(final String url) {
         var entity = findByUrl(url);
@@ -65,9 +69,9 @@ public class BackgroundServiceImpl implements BackgroundService {
         var dto = new BackgroundDto();
         if (hideDetails) {
             Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, entity);
+            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), entity);
         } else {
             Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, entity);
-            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), entity);
             BackgroundConverter.MAP_ENTITY_TO_DTO_.apply(dto, entity);
             dto.setFeat(entity.getFeat().getName());
         }
