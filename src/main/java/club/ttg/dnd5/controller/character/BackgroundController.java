@@ -27,7 +27,7 @@ public class BackgroundController {
 
     @PostMapping()
     public BackgroundDto addBackgrounds(@RequestBody final BackgroundDto backgroundDto) {
-        return backgroundService.addBackgrounds(backgroundDto);
+        return backgroundService.addBackground(backgroundDto);
     }
 
     @PutMapping("{backgroundUrl}")
