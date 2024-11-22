@@ -9,7 +9,7 @@ public interface BackgroundService {
 
     Collection<BackgroundDto> getBackgrounds();
 
-    BackgroundDto addBackgrounds(club.ttg.dnd5.dto.character.BackgroundDto backgroundDto);
+    BackgroundDto addBackground(club.ttg.dnd5.dto.character.BackgroundDto backgroundDto);
 
     BackgroundDto updateBackgrounds(String backgroundUrl, BackgroundDto backgroundDto);
 
