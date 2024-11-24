@@ -1,30 +1,22 @@
 package club.ttg.dnd5.dto.character;
 
-import club.ttg.dnd5.dictionary.EntityType;
-import club.ttg.dnd5.dto.EntryDto;
-import club.ttg.dnd5.dto.NameDto;
+import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.SourceDto;
+import club.ttg.dnd5.model.base.HasTags;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.Map;
 
 @Builder
 @Getter
 @Setter
-public class ClassFeatureDto {
-    @Schema(description = "тип")
-    private final String type = EntityType.FEATURE.getName();
-
-    @Schema(description = "utl", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String url;
-
-    @Schema(description = "название", requiredMode = Schema.RequiredMode.REQUIRED)
-    private NameDto name;
+@AllArgsConstructor
+@RequiredArgsConstructor
+public class ClassFeatureDto extends BaseDTO implements HasTags {
     @Schema(description = "С какого уровня доступно", requiredMode = Schema.RequiredMode.REQUIRED)
-    private int level;
-    @Schema(description = "описание", requiredMode = Schema.RequiredMode.REQUIRED)
-    private EntryDto entries;
+    private short level;
+    private Map<String, String> tags;
 
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
     private SourceDto source;
