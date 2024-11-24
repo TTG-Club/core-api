@@ -3,13 +3,14 @@ package club.ttg.dnd5.dictionary.character;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/** Категории черт */
 @Getter
 @AllArgsConstructor
-public enum FeatType {
-    ORIGIN("первоначальные черты"),
-    GENERAL("основные черты"),
+public enum FeatCategory {
+    ORIGIN("черты происхождения"),
+    GENERAL("общие черты"),
     EPIC_BOON("эпические черты"),
     FIGHTING_STYLE("боевые стили") ;
 
-    private final String cyrillicName;
+    private final String name;
 }
