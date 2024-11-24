@@ -1,3 +1,0 @@
-databaseChangeLog:
-  - include:
-      file: classpath:liquidbase/db/changelog/001-insert-data.yaml

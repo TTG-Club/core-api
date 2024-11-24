@@ -1,9 +1,0 @@
-databaseChangeLog:
-  - changeSet:
-      id: 1
-      author: ProtectorRTD
-      changes:
-        - sqlFile:
-            path: classpath:liquidbase/db/sql/insert-data.sql
-            splitStatements: true
-            endDelimiter: ";"
