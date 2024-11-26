@@ -1,5 +1,5 @@
 name: Deploy
-run-name: Deploy ${{github.ref_name == 'main' && 'Production' || 'Development'}} by @${{ github.actor }}
+run-name: Deploy by @${{ github.actor }}
 
 on:
   push:
@@ -7,60 +7,82 @@ on:
       - main
       - dev
 
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - review_requested
+      - auto_merge_enabled
+
   workflow_dispatch:
 
 env:
-  ENVIRONMENT_NAME: ${{github.ref_name == 'main' && 'prod' || 'dev'}}
-
-concurrency:
-  group: deploy-${{github.ref_name}}
-  cancel-in-progress: false
+  REGISTRY: ghcr.io
 
 jobs:
-  env:
-    name: Update env
-    runs-on: ubuntu-latest
-    env:
-      CONTAINER_NAME: ttg-next-api-${{github.ref_name == 'main' && 'prod' || 'dev'}}
-    outputs:
-      CONTAINER_NAME: ${{env.CONTAINER_NAME}}
-      NETWORK_NAME: ttg-next-network-${{env.ENVIRONMENT_NAME}}
-      IMAGE_NAME: magistrus/${{env.CONTAINER_NAME}}
-    steps:
-      - run: echo "env is updated"
-
   build:
-    name: Build to Docker Hub
-    needs: env
+    name: Build docker image
     runs-on: ubuntu-latest
+    if: ${{ github.head_ref != 'main' && github.head_ref != 'dev' }}
+    concurrency:
+      group: build-${{ github.ref_name }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-java@v3
-        with:
-          distribution: adopt
-          java-version: 17
-          cache: maven
-
-      - name: Maven Install
-        run: mvn -B clean install
+      - uses: actions/checkout@v4
 
       - uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKER_HUB_USERNAME}}
-          password: ${{secrets.DOCKER_HUB_TOKEN}}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
-      - uses: docker/build-push-action@v3
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=ref,event=pr,enbled=${{ github.event_name == 'pull_request' }}
+            type=ref,event=branch,enbled=${{ github.event_name != 'pull_request' }}
+            type=raw,value=latest,enabled=${{ github.ref_name == 'main' }}
+          labels: |
+            org.opencontainers.image.title=${{ github.repository }}
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - uses: docker/build-push-action@v6
+        id: push
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{needs.env.outputs.IMAGE_NAME}}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-  ssh:
+      - uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  update:
     name: Update Server
-    needs: [env, build]
+    needs: build
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' || github.ref_name == 'dev' }}
+    concurrency:
+      group: update-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-server
+      cancel-in-progress: false
+    env:
+      CONFIG_FILE: ${{ secrets.TMWEB_SSH_PATH }}/${{ github.ref_name == 'main' && 'prod' || 'dev' }}/core/compose.core.yaml
     steps:
       - uses: appleboy/ssh-action@master
         with:
@@ -69,19 +91,9 @@ jobs:
           key: ${{secrets.TMWEB_SSH_KEY}}
           port: ${{secrets.TMWEB_SSH_PORT}}
           script: |
-            docker stop ${{needs.env.outputs.CONTAINER_NAME}} && docker rm ${{needs.env.outputs.CONTAINER_NAME}}
-            docker pull ${{needs.env.outputs.IMAGE_NAME}}
-            docker run \
-              --network ${{needs.env.outputs.NETWORK_NAME}} \
-              --ip ${{secrets.DOCKER_API_CONTAINER_IP}} \
-              --name ${{needs.env.outputs.CONTAINER_NAME}} \
-              --network-alias ${{secrets.DOCKER_API_HOST}} \
-              --restart on-failure \
-              -d \
-              -e spring.profiles.active=${{env.ENVIRONMENT_NAME}} \
-              -e dbhost=${{secrets.DOCKER_MYSQL_HOST}} \
-              -e dbuser=${{secrets.DOCKER_MYSQL_USER}} \
-              -e dbpassword=${{secrets.DOCKER_MYSQL_PASSWORD}} \
-              -e emailpassword=${{secrets.EMAIL_PASSWORD}} \
-              ${{needs.env.outputs.IMAGE_NAME}}
+            docker compose -f ${{ env.CONFIG_FILE }} pull api && \
+              docker compose -f ${{ env.CONFIG_FILE }} build api && \
+              docker compose -f ${{ env.CONFIG_FILE }} up api \
+                --no-deps \
+                --detach
             docker rmi $(docker images --filter "dangling=true" -q --no-trunc) &
