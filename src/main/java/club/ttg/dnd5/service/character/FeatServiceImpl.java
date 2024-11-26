@@ -65,6 +65,11 @@ public class FeatServiceImpl implements FeatService {
         return toDTO(featRepository.save(entity));
     }
 
+    @Override
+    public boolean existByUrl(final String featUrl) {
+        return featRepository.existsById(featUrl);
+    }
+
     private FeatDto toDTO(Feat feat) {
         return toDTO(feat, false);
     }
