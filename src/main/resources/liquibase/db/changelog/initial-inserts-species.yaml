@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-species-20241124-001
+      author: ProtectorRTD
+      changes:
+        - sqlFile:
+            path: classpath:liquibase/db/sql/insert-species-data.sql
+            relativeToChangelogFile: false

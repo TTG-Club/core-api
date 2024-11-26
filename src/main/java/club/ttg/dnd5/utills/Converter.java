@@ -1,13 +1,10 @@
 package club.ttg.dnd5.utills;
 
 
-import club.ttg.dnd5.dto.base.BaseDTO;
-import club.ttg.dnd5.dto.base.DetailableDTO;
-import club.ttg.dnd5.dto.base.NameBasedDTO;
-import club.ttg.dnd5.dto.character.ClassFeatureDto;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dto.base.*;
+import club.ttg.dnd5.dto.character.ClassFeatureDto;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
 import club.ttg.dnd5.dto.species.MovementAttributes;
 import club.ttg.dnd5.model.base.CreatureProperties;
