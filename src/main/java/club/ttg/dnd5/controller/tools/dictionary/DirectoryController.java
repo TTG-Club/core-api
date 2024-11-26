@@ -9,6 +9,7 @@ import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dictionary.beastiary.Environment;
 import club.ttg.dnd5.dictionary.character.FeatCategory;
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
+import club.ttg.dnd5.dictionary.item.ItemType;
 import club.ttg.dnd5.dto.NameDto;
 import club.ttg.dnd5.dto.ValueDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -142,10 +143,10 @@ public class DirectoryController {
                 );
     }
 
-    @Operation(summary = "Типы черт")
-    @GetMapping("/feat_types")
+    @Operation(summary = "Типы предметов")
+    @GetMapping("/item_types")
     public Collection<NameDto> getFeatTypesSpellcasterTypes() {
-        return Arrays.stream(FeatCategory.values())
+        return Arrays.stream(ItemType.values())
                 .map(type -> NameDto.builder()
                         .rus(type.getName())
                         .eng(type.name())
