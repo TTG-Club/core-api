@@ -60,6 +60,11 @@ public class BackgroundServiceImpl implements BackgroundService {
         return toDTO(backgroundRepository.save(entity));
     }
 
+    @Override
+    public boolean existByUrl(final String backgroundUrl) {
+        return backgroundRepository.existsById(backgroundUrl);
+    }
+
 
     private BackgroundDto toDTO(Background entity) {
         return toDTO(entity, false);
