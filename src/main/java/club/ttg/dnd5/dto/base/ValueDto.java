@@ -1,4 +1,4 @@
-package club.ttg.dnd5.dto;
+package club.ttg.dnd5.dto.base;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,10 +10,8 @@ import lombok.Getter;
 @Builder
 @Getter
 public class ValueDto {
-    @Schema(description = "имя по русски", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String rus;
-    @Schema(description = "имя по английски", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String eng;
+    NameBasedDTO name;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "значение")
     private Object value;
 }
