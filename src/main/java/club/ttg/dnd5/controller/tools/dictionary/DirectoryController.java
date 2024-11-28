@@ -64,19 +64,19 @@ public class DirectoryController {
     }
 
     @Operation(summary = "Типы черт")
-    @GetMapping("/type/feats") // Здесь замена '_' на '/'
+    @GetMapping("/type/feats")
     public Collection<ValueDto> getFeatTypes() {
         return directoryService.getFeatTypes();
     }
 
     @Operation(summary = "Типы заклинателей")
-    @GetMapping("/spellcaster/types") // Здесь замена '_' на '/'
+    @GetMapping("/spellcaster/types")
     public Collection<ValueDto> getSpellcasterTypes() {
         return directoryService.getSpellcasterTypes();
     }
 
     @Operation(summary = "Типы черт")
-    @GetMapping("/feat/types") // Здесь замена '_' на '/'
+    @GetMapping("/feat/types")
     public Collection<ValueDto> getFeatTypesSpellcasterTypes() {
         return directoryService.getFeatTypesSpellcasterTypes();
     }
