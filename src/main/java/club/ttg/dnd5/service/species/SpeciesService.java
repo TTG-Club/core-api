@@ -10,19 +10,21 @@ import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
-import club.ttg.dnd5.repository.SourceRepository;
 import club.ttg.dnd5.repository.SpeciesFeatureRepository;
 import club.ttg.dnd5.repository.SpeciesRepository;
 import club.ttg.dnd5.repository.book.BookRepository;
+import club.ttg.dnd5.repository.book.SourceRepository;
 import club.ttg.dnd5.utills.Converter;
 import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static club.ttg.dnd5.utills.Converter.STRATEGY_SOURCE_CONSUMER;
@@ -272,15 +274,15 @@ public class SpeciesService {
     }
 
     private void saveSpeciesFeatures(CreateSpeciesDto createSpeciesDTO, Species species) {
-        SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
-        Collection<SpeciesFeature> features = species.getFeatures();
-        if (!CollectionUtils.isEmpty(features)) {
-            features.stream()
-                    .map(SpeciesFeature::getSource)
-                    .filter(Objects::nonNull)
-                    .forEach(this::validateAndSaveSource);
-            speciesFeatureRepository.saveAll(features);
-        }
+//        SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
+//        Collection<SpeciesFeature> features = species.getFeatures();
+//        if (!CollectionUtils.isEmpty(features)) {
+//            features.stream()
+//                    .map(SpeciesFeature::getSource)
+//                    .filter(Objects::nonNull)
+//                    .forEach(this::validateAndSaveSource);
+//            speciesFeatureRepository.saveAll(features);
+//        }
     }
 
     /**
