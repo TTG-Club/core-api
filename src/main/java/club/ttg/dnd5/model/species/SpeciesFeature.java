@@ -2,7 +2,7 @@ package club.ttg.dnd5.model.species;
 
 import club.ttg.dnd5.model.base.FeatureBase;
 import club.ttg.dnd5.model.base.HasSourceEntity;
-import club.ttg.dnd5.model.base.HasTags;
+import club.ttg.dnd5.model.base.HasTagEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
@@ -15,5 +15,5 @@ import lombok.Setter;
 )
 @Getter
 @Setter
-public class SpeciesFeature extends FeatureBase implements HasTags, HasSourceEntity {
+public class SpeciesFeature extends FeatureBase implements HasTagEntity, HasSourceEntity {
 }
