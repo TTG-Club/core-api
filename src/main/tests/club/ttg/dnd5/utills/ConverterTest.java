@@ -164,6 +164,7 @@ public class ConverterTest {
         species.setSwim(0);
         species.setClimb(50);
         species.setSize(Size.HUGE);
+        species.setType(CreatureType.HUMANOID);
         CreaturePropertiesDto creatureProperties1 = new CreaturePropertiesDto();
         creatureProperties1.setSize(Size.HUGE.getName());
         creatureProperties1.setType(CreatureType.BEAST.getCyrillicName());

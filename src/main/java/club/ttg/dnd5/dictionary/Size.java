@@ -22,14 +22,20 @@ public enum Size {
 	}
 
 	public static Size parse(String size) {
+		if (size == null) {
+			return null;
+		}
+
+		String normalizedSize = size.trim().toLowerCase();  // Normalize the input size (trim and lowercase)
+
 		for (Size creatureSize : values()) {
 			for (String sizeName : creatureSize.names) {
-				if (sizeName.equalsIgnoreCase(size)) {
+				if (sizeName.toLowerCase().equals(normalizedSize)) {
 					return creatureSize;
 				}
 			}
 		}
-		return null;
+		return null; // Return null if no match is found
 	}
 
 	public static Set<Size> getFilterSizes(){
