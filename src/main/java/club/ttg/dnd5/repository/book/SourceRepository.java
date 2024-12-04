@@ -1,4 +1,4 @@
-package club.ttg.dnd5.repository;
+package club.ttg.dnd5.repository.book;
 
 import club.ttg.dnd5.model.book.Source;
 import org.springframework.data.jpa.repository.JpaRepository;
