@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -16,10 +16,12 @@ public abstract class FeatureBase extends NamedEntity {
     @JoinColumn(name = "source")
     private Source source;
     private String featureDescription;
-    // Храним карту tags как отдельную таблицу с ключами и значениями
-    @ElementCollection
-    @CollectionTable(name = "entity_tags", joinColumns = @JoinColumn(name = "entity_url"))
-    @MapKeyColumn(name = "tag_key")
-    @Column(name = "tag_value")
-    private Map<String, String> tags = new HashMap<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "book_tags",
+            joinColumns = @JoinColumn(name = "book_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 }
