@@ -1,12 +1,12 @@
 package club.ttg.dnd5.model.base;
 
 import club.ttg.dnd5.model.book.Source;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -16,12 +16,4 @@ public abstract class FeatureBase extends NamedEntity {
     @JoinColumn(name = "source")
     private Source source;
     private String featureDescription;
-
-    @ManyToMany
-    @JoinTable(
-            name = "book_tags",
-            joinColumns = @JoinColumn(name = "book_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    private Set<Tag> tags = new HashSet<>();
 }
