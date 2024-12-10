@@ -3,6 +3,7 @@ package club.ttg.dnd5.model.book;
 import club.ttg.dnd5.model.base.HasTagEntity;
 import club.ttg.dnd5.model.base.Tag;
 import club.ttg.dnd5.model.base.TimestampedEntity;
+import club.ttg.dnd5.model.base.Translation;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,19 @@ public class Book extends TimestampedEntity implements HasTagEntity {
     @Enumerated(EnumType.STRING)
     private TypeBook type;
     private Integer year;
+    private String image;
+
+    @Embedded
+    private Translation translation;
+
+    // Collection of authors for the book itself
+    @ElementCollection
+    @CollectionTable(
+            name = "book_authors", // Name of the table for book authors
+            joinColumns = @JoinColumn(name = "book_id") // Foreign key linking to the book
+    )
+    @Column(name = "author_name") // Column for the author names
+    private Set<String> authors = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
