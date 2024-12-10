@@ -22,5 +22,5 @@ public class Translation {
     @Column(name = "author_name") // Column for the author names
     private Set<String> authors = new HashSet<>();
 
-    private int year;
+    private int translationYear;
 }
