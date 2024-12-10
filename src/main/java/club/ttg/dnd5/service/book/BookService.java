@@ -99,7 +99,7 @@ public class BookService {
     private Translation convertingTranslation(TranslationDTO translationDTO) {
         return Translation.
                 builder()
-                .year(translationDTO.getYear())
+                .translationYear(translationDTO.getYear())
                 .authors(translationDTO.getAuthor())
                 .build();
     }
@@ -134,7 +134,7 @@ public class BookService {
         }
 
         return TranslationDTO.builder()
-                .year(translation.getYear())
+                .year(translation.getTranslationYear())
                 .author(new HashSet<>(translation.getAuthors()))
                 .build();
     }
