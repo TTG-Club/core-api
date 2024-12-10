@@ -5,9 +5,7 @@ import club.ttg.dnd5.model.base.Tag;
 import club.ttg.dnd5.model.base.TimestampedEntity;
 import club.ttg.dnd5.model.base.Translation;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -17,6 +15,8 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "books")
+@AllArgsConstructor
+@Builder
 public class Book extends TimestampedEntity implements HasTagEntity {
     @Id
     @Column(unique = true, nullable = false)
@@ -43,7 +43,7 @@ public class Book extends TimestampedEntity implements HasTagEntity {
     @Column(name = "author_name") // Column for the author names
     private Set<String> authors = new HashSet<>();
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.PERSIST)
     @JoinTable(
             name = "book_tags", // name of the join table
             joinColumns = @JoinColumn(name = "book_id"), // foreign key for the book
