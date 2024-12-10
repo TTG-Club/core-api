@@ -25,6 +25,9 @@ public class Tag {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    private TagType tagType;
+
     @ManyToMany(mappedBy = "tags") // This is the inverse side of the relationship
     private Set<Book> books; // Set of books associated with the tag
 
@@ -33,5 +36,10 @@ public class Tag {
 
     public Tag(String name) {
         this.name = name;
+    }
+
+    public Tag(String name, TagType tagType) {
+        this.name = name;
+        this.tagType = tagType;
     }
 }

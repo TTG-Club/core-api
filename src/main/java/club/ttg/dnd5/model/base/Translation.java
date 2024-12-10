@@ -1,15 +1,18 @@
 package club.ttg.dnd5.model.base;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
+
 @Embeddable
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Translation {
     @ElementCollection
     @CollectionTable(

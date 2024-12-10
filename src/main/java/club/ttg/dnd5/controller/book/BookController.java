@@ -1,14 +1,13 @@
 package club.ttg.dnd5.controller.book;
 
-import club.ttg.dnd5.dto.create.CreateSourceDTO;
-import club.ttg.dnd5.model.book.Book;
+import club.ttg.dnd5.dto.book.SourceBookDTO;
 import club.ttg.dnd5.service.book.BookService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v2/")
@@ -18,26 +17,38 @@ public class BookController {
     private final BookService bookService;
 
     // 1. Create Book
-    @PostMapping
-    public Book createBook(@RequestBody CreateSourceDTO createSourceDTO) {
-        return bookService.createBook(createSourceDTO);
+    @PostMapping("/book")
+    public ResponseEntity<SourceBookDTO> createBook(@RequestBody SourceBookDTO sourceBookDTO) {
+        SourceBookDTO createdBook = bookService.createBook(sourceBookDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdBook);
     }
 
-    @GetMapping("book/search/book/type")
-    public ResponseEntity<List<Book>> getBooksByType(@RequestParam String typeName) {
-        List<Book> books = bookService.getBooksByType(typeName);
+    // 2. Get Books by Type
+    @GetMapping("/book/search/type")
+    public ResponseEntity<List<SourceBookDTO>> getBooksByType(@RequestParam String typeName) {
+        List<SourceBookDTO> books = bookService.getBooksByType(typeName);
         return ResponseEntity.ok(books);
     }
 
-    @GetMapping("book/acronym")
-    public ResponseEntity<Book> getBookBySourceAcronym(@RequestParam String sourceAcronym) {
-        Optional<Book> book = bookService.getBookBySourceAcronym(sourceAcronym);
-        return book.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    // 3. Get Book by Source Acronym
+    @GetMapping("/book/acronym")
+    public ResponseEntity<SourceBookDTO> getBookBySourceAcronym(@RequestParam String sourceAcronym) {
+        return bookService.getBookBySourceAcronym(sourceAcronym)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("dictionary/book-types")
+    // 4. Get All Book Types
+    @GetMapping("/dictionary/book-types")
     public ResponseEntity<List<String>> getAllBookTypes() {
         List<String> bookTypes = bookService.getAllBookTypes();
         return ResponseEntity.ok(bookTypes);
+    }
+
+    // 5. Get Books by Tag
+    @GetMapping("/book/search/tag")
+    public ResponseEntity<List<SourceBookDTO>> getBooksByTag(@RequestParam String tagName) {
+        List<SourceBookDTO> books = bookService.getBooksByTag(tagName);
+        return ResponseEntity.ok(books);
     }
 }
