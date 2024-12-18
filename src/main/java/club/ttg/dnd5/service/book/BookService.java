@@ -12,7 +12,6 @@ import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.TypeBook;
 import club.ttg.dnd5.repository.TagRepository;
 import club.ttg.dnd5.repository.book.BookRepository;
-import club.ttg.dnd5.service.TagService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +26,6 @@ import java.util.stream.Collectors;
 public class BookService {
     private final BookRepository bookRepository;
     private final TagRepository tagRepository;
-    private final TagService tagService;
 
     // Создание новой книги
     @Transactional
@@ -66,6 +64,18 @@ public class BookService {
         return bookRepository.findByTags(tag).stream()
                 .map(this::convertingEntityToSourceDTO)
                 .toList();
+    }
+
+    public List<SourceBookDTO> getBooksByBookTagType() {
+        List<Tag> tags = tagRepository.findByTagType(TagType.TAG_BOOK);
+
+        Set<Book> books = tags.stream()
+                .flatMap(tag -> tag.getBooks().stream())
+                .collect(Collectors.toSet());
+
+        return books.stream()
+                .map(this::convertingEntityToSourceDTO)
+                .collect(Collectors.toList());
     }
 
     private Book convertingCreateSourceToEntity(SourceBookDTO sourceBookDTO) {
