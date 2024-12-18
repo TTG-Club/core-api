@@ -23,8 +23,7 @@ import java.util.Set;
 )
 public class ClassFeature extends FeatureBase implements HasSourceEntity, HasTagEntity {
     private short level;
-
-    @ManyToMany(cascade = CascadeType.PERSIST)
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinTable(
             name = "class_feature_tags", // Name of the join table
             joinColumns = @JoinColumn(name = "class_feature_id"), // Foreign key for ClassFeature

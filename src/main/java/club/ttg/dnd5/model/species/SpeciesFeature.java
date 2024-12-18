@@ -20,7 +20,7 @@ import java.util.Set;
 @Setter
 public class SpeciesFeature extends FeatureBase implements HasTagEntity, HasSourceEntity {
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "feature_tags",  // Name of the junction table
             joinColumns = @JoinColumn(name = "feature_id"),  // Foreign key for SpeciesFeature (FeatureBase)

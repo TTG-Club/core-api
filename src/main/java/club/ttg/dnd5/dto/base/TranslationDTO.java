@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,5 +15,5 @@ import java.util.Set;
 @NoArgsConstructor
 public class TranslationDTO {
     private Set<String> author = new HashSet<>();
-    private Integer year;
+    private LocalDate translationDate;
 }
