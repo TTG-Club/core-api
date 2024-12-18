@@ -3,6 +3,7 @@ package club.ttg.dnd5.model.base;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,7 +23,8 @@ public class Tag {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
+    @NotBlank(message = "Tag name cannot be blank")
     private String name;
 
     @Enumerated(EnumType.STRING)

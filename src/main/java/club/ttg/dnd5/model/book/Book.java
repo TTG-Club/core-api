@@ -43,7 +43,7 @@ public class Book extends TimestampedEntity implements HasTagEntity {
     @Column(name = "author_name") // Column for the author names
     private Set<String> authors = new HashSet<>();
 
-    @ManyToMany(cascade = CascadeType.PERSIST)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "book_tags", // name of the join table
             joinColumns = @JoinColumn(name = "book_id"), // foreign key for the book

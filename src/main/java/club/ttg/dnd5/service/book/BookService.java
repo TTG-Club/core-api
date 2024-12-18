@@ -48,7 +48,7 @@ public class BookService {
         TypeBook bookType = TypeBook.valueOf(type.toUpperCase());
         return bookRepository.findByType(bookType).stream()
                 .map(this::convertingEntityToSourceDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // Получение всех типов книг
@@ -65,7 +65,7 @@ public class BookService {
 
         return bookRepository.findByTags(tag).stream()
                 .map(this::convertingEntityToSourceDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Book convertingCreateSourceToEntity(SourceBookDTO sourceBookDTO) {
@@ -83,7 +83,7 @@ public class BookService {
                 .image(sourceBookDTO.getImage())
                 .description(sourceBookDTO.getDescription())
                 .tags(generatingTags(sourceBookDTO.getTags()))
-                .type(TypeBook.valueOf(sourceBookDTO.getType()))
+                .type(TypeBook.parse(sourceBookDTO.getType()))
                 .translation(convertingTranslation(sourceBookDTO.getTranslation()))
                 .build();
     }
@@ -97,11 +97,15 @@ public class BookService {
     }
 
     private Translation convertingTranslation(TranslationDTO translationDTO) {
-        return Translation.
-                builder()
-                .translationYear(translationDTO.getYear())
-                .authors(translationDTO.getAuthor())
-                .build();
+        if (translationDTO != null) {
+            return Translation.
+                    builder()
+                    .translationYear(translationDTO.getYear())
+                    .authors(translationDTO.getAuthor())
+                    .build();
+        } else {
+            return null;
+        }
     }
 
     private SourceBookDTO convertingEntityToSourceDTO(Book book) {
@@ -123,7 +127,7 @@ public class BookService {
                 .tags(book.getTags().stream()
                         .map(Tag::getName)
                         .collect(Collectors.toSet()))
-                .type(book.getType().name())
+                .type(book.getType().getName())
                 .translation(convertingTranslationToDTO(book.getTranslation()))
                 .build();
     }
@@ -132,10 +136,13 @@ public class BookService {
         if (translation == null) {
             return null;
         }
-
-        return TranslationDTO.builder()
-                .year(translation.getTranslationYear())
-                .author(new HashSet<>(translation.getAuthors()))
-                .build();
+        if (translation.getAuthors().isEmpty() && translation.getTranslationYear() == null) {
+            return null;
+        } else {
+            return TranslationDTO.builder()
+                    .year(translation.getTranslationYear())
+                    .author(new HashSet<>(translation.getAuthors()))
+                    .build();
+        }
     }
 }
