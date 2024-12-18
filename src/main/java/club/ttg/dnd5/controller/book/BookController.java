@@ -47,6 +47,13 @@ public class BookController {
         return ResponseEntity.ok(books);
     }
 
+    @GetMapping("/books/by-book-tag-type")
+    @Operation(summary = "Получить книги по типу тега", description = "Возвращает книги, связанные с тегами типа TAG_BOOK")
+    public ResponseEntity<List<SourceBookDTO>> getBooksByBookTagType() {
+        List<SourceBookDTO> books = bookService.getBooksByBookTagType();
+        return ResponseEntity.ok(books);
+    }
+
     /**
      * Получение книги по акрониму источника.
      *
