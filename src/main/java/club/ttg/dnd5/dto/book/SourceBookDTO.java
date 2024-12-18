@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,7 +19,7 @@ import java.util.Set;
 public class SourceBookDTO implements HasTagDTO {
     private NameBasedDTO name;
     private String description;
-    private int year;
+    private LocalDate year;
     private String type;
     private String image;
     private Set<String> author = new HashSet<>();

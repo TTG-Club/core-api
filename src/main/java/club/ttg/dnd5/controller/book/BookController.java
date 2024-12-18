@@ -17,7 +17,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Книги", description = "Контроллер для управления книгами и их поиском")
 public class BookController {
-
     private final BookService bookService;
 
     /**

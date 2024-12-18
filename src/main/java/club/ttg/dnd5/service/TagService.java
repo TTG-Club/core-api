@@ -38,7 +38,6 @@ public class TagService {
                 .orElseThrow(() -> new EntityNotFoundException("Feature not found"));
         Tag tag = tagRepository.findById(tagId)
                 .orElseThrow(() -> new EntityNotFoundException("Tag not found"));
-
         feature.getTags().add(tag);
         return speciesFeatureRepository.save(feature);
     }

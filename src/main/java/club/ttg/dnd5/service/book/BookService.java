@@ -37,122 +37,71 @@ public class BookService {
 
     // Получение книги по её sourceAcronym
     public Optional<SourceBookDTO> getBookBySourceAcronym(String sourceAcronym) {
-        return bookRepository.findBySourceAcronym(sourceAcronym)
-                .map(this::convertingEntityToSourceDTO);
+        return bookRepository.findBySourceAcronym(sourceAcronym).map(this::convertingEntityToSourceDTO);
     }
 
     // Поиск книги по типу
     public List<SourceBookDTO> getBooksByType(String type) {
         TypeBook bookType = TypeBook.valueOf(type.toUpperCase());
-        return bookRepository.findByType(bookType).stream()
-                .map(this::convertingEntityToSourceDTO)
-                .toList();
+        return bookRepository.findByType(bookType).stream().map(this::convertingEntityToSourceDTO).toList();
     }
 
     // Получение всех типов книг
     public List<String> getAllBookTypes() {
-        return Arrays.stream(TypeBook.values())
-                .map(TypeBook::getName)
-                .toList();
+        return Arrays.stream(TypeBook.values()).map(TypeBook::getName).toList();
     }
 
     // Получение всех книг с определённым тегом
     public List<SourceBookDTO> getBooksByTag(String tagName) {
-        Tag tag = tagRepository.findByNameIgnoreCase(tagName)
-                .orElseThrow(() -> new EntityNotFoundException("Tag not found"));
+        Tag tag = tagRepository.findByNameIgnoreCase(tagName).orElseThrow(() -> new EntityNotFoundException("Tag not found"));
 
-        return bookRepository.findByTags(tag).stream()
-                .map(this::convertingEntityToSourceDTO)
-                .toList();
+        return bookRepository.findByTags(tag).stream().map(this::convertingEntityToSourceDTO).toList();
     }
 
     public List<SourceBookDTO> getBooksByBookTagType() {
         List<Tag> tags = tagRepository.findByTagType(TagType.TAG_BOOK);
 
-        Set<Book> books = tags.stream()
-                .flatMap(tag -> tag.getBooks().stream())
-                .collect(Collectors.toSet());
+        Set<Book> books = tags.stream().flatMap(tag -> tag.getBooks().stream()).collect(Collectors.toSet());
 
-        return books.stream()
-                .map(this::convertingEntityToSourceDTO)
-                .collect(Collectors.toList());
+        return books.stream().map(this::convertingEntityToSourceDTO).toList();
     }
 
     private Book convertingCreateSourceToEntity(SourceBookDTO sourceBookDTO) {
         NameBasedDTO name = sourceBookDTO.getName();
         if (StringUtils.isBlank(name.getShortName())) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Акроним у книги должен быть, это является ID, в бдшке");
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Акроним у книги должен быть, это является ID, в бдшке");
         }
-        return Book.builder()
-                .year(sourceBookDTO.getYear())
-                .sourceAcronym(name.getShortName())
-                .name(name.getName())
-                .englishName(name.getEnglish())
-                .authors(sourceBookDTO.getAuthor())
-                .image(sourceBookDTO.getImage())
-                .description(sourceBookDTO.getDescription())
-                .tags(generatingTags(sourceBookDTO.getTags()))
-                .type(TypeBook.parse(sourceBookDTO.getType()))
-                .translation(convertingTranslation(sourceBookDTO.getTranslation()))
-                .build();
+        return Book.builder().bookDate(sourceBookDTO.getYear()).sourceAcronym(name.getShortName()).name(name.getName()).englishName(name.getEnglish()).authors(sourceBookDTO.getAuthor()).image(sourceBookDTO.getImage()).description(sourceBookDTO.getDescription()).tags(generatingTags(sourceBookDTO.getTags())).type(TypeBook.parse(sourceBookDTO.getType())).translation(convertingTranslation(sourceBookDTO.getTranslation())).build();
     }
 
     private Set<Tag> generatingTags(Set<String> tags) {
-        return tags
-                .stream()
-                .map(tagName ->
-                        new Tag(tagName, TagType.TAG_BOOK))
-                .collect(Collectors.toSet());
-    }
-
-    private Translation convertingTranslation(TranslationDTO translationDTO) {
-        if (translationDTO != null) {
-            return Translation.
-                    builder()
-                    .translationYear(translationDTO.getYear())
-                    .authors(translationDTO.getAuthor())
-                    .build();
-        } else {
-            return null;
-        }
+        return tags.stream().map(tagName -> new Tag(tagName, TagType.TAG_BOOK)).collect(Collectors.toSet());
     }
 
     private SourceBookDTO convertingEntityToSourceDTO(Book book) {
         if (book == null || StringUtils.isBlank(book.getSourceAcronym())) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Сущность книги невалидная");
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Сущность книги невалидная");
         }
 
-        return SourceBookDTO.builder()
-                .year(book.getYear())
-                .name(NameBasedDTO.builder()
-                        .shortName(book.getSourceAcronym())
-                        .name(book.getName())
-                        .english(book.getEnglishName())
-                        .build())
-                .author(new HashSet<>(book.getAuthors()))
-                .image(book.getImage())
-                .description(book.getDescription())
-                .tags(book.getTags().stream()
-                        .map(Tag::getName)
-                        .collect(Collectors.toSet()))
-                .type(book.getType().getName())
-                .translation(convertingTranslationToDTO(book.getTranslation()))
-                .build();
+        return SourceBookDTO.builder().year(book.getBookDate()).name(NameBasedDTO.builder().shortName(book.getSourceAcronym()).name(book.getName()).english(book.getEnglishName()).build()).author(new HashSet<>(book.getAuthors())).image(book.getImage()).description(book.getDescription()).tags(book.getTags().stream().map(Tag::getName).collect(Collectors.toSet())).type(book.getType().getName()).translation(convertingTranslationToDTO(book.getTranslation())).build();
+    }
+
+    private Translation convertingTranslation(TranslationDTO translationDTO) {
+        if (translationDTO != null) {
+            return Translation.builder().translationDate(translationDTO.getTranslationDate()).authors(translationDTO.getAuthor()).build();
+        } else {
+            return null;
+        }
     }
 
     private TranslationDTO convertingTranslationToDTO(Translation translation) {
         if (translation == null) {
             return null;
         }
-        if (translation.getAuthors().isEmpty() && translation.getTranslationYear() == null) {
+        if (translation.getAuthors().isEmpty() && translation.getTranslationDate() == null) {
             return null;
         } else {
-            return TranslationDTO.builder()
-                    .year(translation.getTranslationYear())
-                    .author(new HashSet<>(translation.getAuthors()))
-                    .build();
+            return TranslationDTO.builder().translationDate(translation.getTranslationDate()).author(new HashSet<>(translation.getAuthors())).build();
         }
     }
 }

@@ -8,6 +8,7 @@ import java.util.Set;
 
 @Getter
 public enum Size {
+	UNDEFINED("Неопределенный", "Неопределенная", "Неопределенное"),
 	TINY("Крошечный","Крошечная", "Крошечное"),
 	SMALL("Маленький", "Маленькая", "Маленькое"),
 	MEDIUM("Средний", "Средняя", "Среднее"),
@@ -23,7 +24,7 @@ public enum Size {
 
 	public static Size parse(String size) {
 		if (size == null) {
-			return null;
+			return UNDEFINED;
 		}
 
 		String normalizedSize = size.trim().toLowerCase();  // Normalize the input size (trim and lowercase)
@@ -35,7 +36,7 @@ public enum Size {
 				}
 			}
 		}
-		return null; // Return null if no match is found
+		return UNDEFINED;
 	}
 
 	public static Set<Size> getFilterSizes(){

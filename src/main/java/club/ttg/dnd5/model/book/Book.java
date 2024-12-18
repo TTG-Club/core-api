@@ -7,6 +7,7 @@ import club.ttg.dnd5.model.base.Translation;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ public class Book extends TimestampedEntity implements HasTagEntity {
     private String description;
     @Enumerated(EnumType.STRING)
     private TypeBook type;
-    private Integer year;
+    private LocalDate bookDate;
     private String image;
 
     @Embedded
