@@ -11,4 +11,6 @@ databaseChangeLog:
   # Начальные данные (инициализация таблиц)
   - include:
       file: classpath:liquibase/db/changelog/initial-inserts-species.yaml
+  - include:
+      file: liquibase/db/changelog/18-01-changelog.yaml
 

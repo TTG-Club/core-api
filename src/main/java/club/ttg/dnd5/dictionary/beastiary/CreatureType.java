@@ -38,9 +38,19 @@ public enum CreatureType {
 	}
 
 	public static CreatureType parse(final String type) {
-		return Arrays.stream(values()).filter(t -> t.cyrillicNames.contains(type)).findFirst()
-				.orElseThrow(() -> new IllegalArgumentException(type));
+		if (type == null) {
+			throw new IllegalArgumentException("Type cannot be null");
+		}
+
+		String normalizedType = type.trim().toLowerCase();
+
+		// Try to find the matching CreatureType by checking against normalized Cyrillic names
+		return Arrays.stream(values())
+				.filter(t -> t.cyrillicNames.stream().anyMatch(name -> name.toLowerCase().equals(normalizedType)))
+				.findFirst()
+				.orElseThrow(() -> new IllegalArgumentException("Invalid type: " + type));
 	}
+
 
 	public static Set<CreatureType> getFilterTypes() {
 		return EnumSet.of(ABERRATION, BEAST, CELESTIAL, CONSTRUCT, DRAGON, ELEMENTAL, FEY, FIEND, GIANT, HUMANOID,

@@ -1,7 +1,7 @@
 package club.ttg.dnd5.utills.species;
 
-import club.ttg.dnd5.dto.base.TagDto;
 import club.ttg.dnd5.dto.species.SpeciesFeatureDto;
+import club.ttg.dnd5.model.base.Tag;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.utills.Converter;
@@ -9,7 +9,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.util.Collection;
-import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -21,9 +21,9 @@ public class SpeciesFeatureConverter {
                 Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(response, speciesFeature);
                 Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(response.getSourceDTO(), speciesFeature);
 
-                // Convert tags from TagDto to Map<String, String>
-                Map<String, String> tags = response.getTags().stream()
-                        .collect(Collectors.toMap(TagDto::getName, TagDto::getValue));
+                Set<Tag> tags = response.getTags().stream()
+                        .map(Tag::new)
+                        .collect(Collectors.toSet());
                 speciesFeature.setTags(tags);
 
                 speciesFeature.setFeatureDescription(response.getDescription());
@@ -36,15 +36,16 @@ public class SpeciesFeatureConverter {
                 Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, feature);
                 Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), feature);
 
-                // Convert tags from Map<String, String> to a collection of TagDto
-                Collection<TagDto> tags = feature.getTags().entrySet().stream()
-                        .map(entry -> new TagDto(entry.getKey(), entry.getValue()))
-                        .collect(Collectors.toList());
+                // Convert entity tags (Set<Tag>) to DTO tags (Set<String>)
+                Set<String> tags = feature.getTags().stream()
+                        .map(Tag::getName)
+                        .collect(Collectors.toSet());
                 dto.setTags(tags);
 
                 dto.setDescription(feature.getFeatureDescription());
                 return dto;
             };
+
 
     // Converts SpeciesFeatureDto to SpeciesFeature
     public static SpeciesFeature toEntityFeature(SpeciesFeatureDto response) {
