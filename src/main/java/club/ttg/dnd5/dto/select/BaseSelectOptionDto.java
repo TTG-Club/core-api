@@ -1,17 +1,15 @@
 package club.ttg.dnd5.dto.select;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * Описывает один пункт в выпадающем списке.
+ * Абстрактный класс одного пункта в выпадающем списке.
  */
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class SelectOptionDto extends BaseSelectOptionDto {
+public abstract class BaseSelectOptionDto {
 
     @Schema(
             example = "Средний",

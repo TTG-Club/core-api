@@ -1,8 +1,8 @@
 package club.ttg.dnd5.controller.tools.dictionary;
 
-import club.ttg.dnd5.dto.select.DiceSelectOptionDto;
+import club.ttg.dnd5.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.select.SelectOptionDto;
-import club.ttg.dnd5.dto.select.SpellcasterSelectOptionDto;
+import club.ttg.dnd5.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.service.base.DictionariesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -57,7 +57,7 @@ public class DictionariesController {
                     )
             }
     )
-    public Collection<DiceSelectOptionDto> getDices() {
+    public Collection<DiceOptionDto> getDices() {
         return dictionariesService.getDices();
     }
 
@@ -309,7 +309,7 @@ public class DictionariesController {
                     )
             }
     )
-    public Collection<SpellcasterSelectOptionDto> getSpellcasterTypes() {
+    public Collection<SpellcasterOptionDto> getSpellcasterTypes() {
         return dictionariesService.getSpellcasterTypes();
     }
 }
