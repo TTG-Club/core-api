@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 @Service
-public class DirectoryService {
+public class DictionariesService {
     private SelectOptionDto createSelectOptionDTO(String label, String value) {
         return SelectOptionDto.builder()
                 .label(label)
