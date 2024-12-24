@@ -3,7 +3,7 @@ package club.ttg.dnd5.controller.tools.dictionary;
 import club.ttg.dnd5.dto.select.DiceSelectOptionDto;
 import club.ttg.dnd5.dto.select.SelectOptionDto;
 import club.ttg.dnd5.dto.select.SpellcasterSelectOptionDto;
-import club.ttg.dnd5.service.base.DirectoryService;
+import club.ttg.dnd5.service.base.DictionariesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -22,10 +22,10 @@ import java.util.Collection;
  */
 @RequiredArgsConstructor
 @Tag(name = "Справочники", description = "API для различных справочников")
-@RequestMapping("/api/v2/directory")
+@RequestMapping("/api/v2/dictionaries")
 @RestController
-public class DirectoryController {
-    private final DirectoryService directoryService;
+public class DictionariesController {
+    private final DictionariesService dictionariesService;
 
     @Operation(summary = "Дайсы")
     @GetMapping("/dices")
@@ -58,7 +58,7 @@ public class DirectoryController {
             }
     )
     public Collection<DiceSelectOptionDto> getDices() {
-        return directoryService.getDices();
+        return dictionariesService.getDices();
     }
 
     @Operation(summary = "Типы существ")
@@ -89,7 +89,7 @@ public class DirectoryController {
             }
     )
     public Collection<SelectOptionDto> getCreatureCategories() {
-        return directoryService.getCreatureCategories();
+        return dictionariesService.getCreatureCategories();
     }
 
 
@@ -121,7 +121,7 @@ public class DirectoryController {
             }
     )
     public Collection<SelectOptionDto> getCreatureSizes() {
-        return directoryService.getCreatureSizes();
+        return dictionariesService.getCreatureSizes();
     }
 
     @Operation(summary = "Типы урона")
@@ -152,7 +152,7 @@ public class DirectoryController {
             }
     )
     public Collection<SelectOptionDto> getDamageTypes() {
-        return directoryService.getDamageTypes();
+        return dictionariesService.getDamageTypes();
     }
 
     @Operation(summary = "Состояния")
@@ -183,7 +183,7 @@ public class DirectoryController {
             }
     )
     public Collection<SelectOptionDto> getConditions() {
-        return directoryService.getConditions();
+        return dictionariesService.getConditions();
     }
 
     @Operation(summary = "Мировоззрение")
@@ -214,7 +214,7 @@ public class DirectoryController {
             }
     )
     public Collection<SelectOptionDto> getAlignments() {
-        return directoryService.getAlignments();
+        return dictionariesService.getAlignments();
     }
 
     @Operation(summary = "Места обитания существ")
@@ -245,7 +245,7 @@ public class DirectoryController {
             }
     )
     public Collection<SelectOptionDto> getEnvironments() {
-        return directoryService.getEnvironments();
+        return dictionariesService.getEnvironments();
     }
 
     @Operation(summary = "Типы черт")
@@ -276,7 +276,7 @@ public class DirectoryController {
             }
     )
     public Collection<SelectOptionDto> getFeatTypes() {
-        return directoryService.getFeatTypes();
+        return dictionariesService.getFeatTypes();
     }
 
     @Operation(summary = "Типы заклинателей")
@@ -310,6 +310,6 @@ public class DirectoryController {
             }
     )
     public Collection<SpellcasterSelectOptionDto> getSpellcasterTypes() {
-        return directoryService.getSpellcasterTypes();
+        return dictionariesService.getSpellcasterTypes();
     }
 }
