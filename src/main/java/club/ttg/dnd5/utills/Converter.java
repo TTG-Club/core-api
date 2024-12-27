@@ -59,10 +59,10 @@ public class Converter {
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
         entity.setSize(Size.parse(dto.getSize()));
         entity.setType(CreatureType.parse(dto.getType()));
-        entity.setSpeed(entity.getSpeed());
+        entity.setSpeed(dto.getMovementAttributes().getBase());
         entity.setFly(dto.getMovementAttributes().getFly());
-        entity.setClimb(entity.getClimb());
-        entity.setSwim(entity.getSwim());
+        entity.setClimb(dto.getMovementAttributes().getClimb());
+        entity.setSwim(dto.getMovementAttributes().getSwim());
         entity.setDarkVision(dto.getDarkVision());
         return entity;
     };

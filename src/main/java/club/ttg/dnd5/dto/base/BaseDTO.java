@@ -24,6 +24,7 @@ public abstract class BaseDTO  {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<String> gallery = new ArrayList<>();
     private Instant updatedAt;
+    private String userId;
 }
 
 

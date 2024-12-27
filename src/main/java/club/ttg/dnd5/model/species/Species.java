@@ -2,6 +2,7 @@ package club.ttg.dnd5.model.species;
 
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.HasSourceEntity;
+import club.ttg.dnd5.model.base.Tag;
 import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -9,9 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Cascade;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  Виды или разновидности (расы)
@@ -24,8 +23,9 @@ import java.util.List;
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
 public class Species extends CreatureProperties implements HasSourceEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
+    private String linkImageUrl; //для бэкграунда
 
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Species parent;
 
@@ -35,6 +35,14 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
     private Source source = new Source();
+
+    @ManyToMany(cascade = CascadeType.PERSIST)
+    @JoinTable(
+            name = "species_tags",
+            joinColumns = @JoinColumn(name = "species_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "species_url")

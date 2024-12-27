@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 public class CreaturePropertiesDto {
     @JsonProperty(value = "speed")
-    MovementAttributes movementAttributes;
+    MovementAttributes movementAttributes = new MovementAttributes();
     private String size;
     private String type;
     private int darkVision;

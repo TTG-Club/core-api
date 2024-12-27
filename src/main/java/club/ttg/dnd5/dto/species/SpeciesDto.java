@@ -25,6 +25,7 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
     // Включаем свойства существа через DTO
     @JsonProperty(value = "properties")
     private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();
+    private String linkImageUrl;
     // Связанные сущности
     private LinkedSpeciesDto parent = new LinkedSpeciesDto();
     private Collection<LinkedSpeciesDto> subspecies = new LinkedHashSet<>();
@@ -36,6 +37,7 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
     @Override
     public void hideDetails() {
         if (!isDetail) {
+            linkImageUrl = null;
             this.creatureProperties = null;
             this.parent = null;
             this.subspecies = null;

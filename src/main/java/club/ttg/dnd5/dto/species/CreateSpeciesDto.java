@@ -2,6 +2,7 @@ package club.ttg.dnd5.dto.species;
 
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.base.HasTagDTO;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +18,10 @@ import java.util.Set;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class CreateSpeciesDto extends BaseDTO implements HasTagDTO {
+    private String linkImageUrl;
     private String parent;
+    @JsonProperty(namespace = "properties")
     private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();
-    private Collection<String> features = new ArrayList<>();
+    private Collection<SpeciesCreateFeatureDto> features = new ArrayList<>();
     private Set<String> tags = new HashSet<>();
 }

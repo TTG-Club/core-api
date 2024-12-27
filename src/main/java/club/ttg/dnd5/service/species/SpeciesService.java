@@ -6,12 +6,15 @@ import club.ttg.dnd5.dto.species.LinkedSpeciesDto;
 import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.model.base.Tag;
+import club.ttg.dnd5.model.base.TagType;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import club.ttg.dnd5.repository.SpeciesFeatureRepository;
 import club.ttg.dnd5.repository.SpeciesRepository;
+import club.ttg.dnd5.repository.TagRepository;
 import club.ttg.dnd5.repository.book.BookRepository;
 import club.ttg.dnd5.repository.book.SourceRepository;
 import club.ttg.dnd5.utills.Converter;
@@ -21,10 +24,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static club.ttg.dnd5.utills.Converter.STRATEGY_SOURCE_CONSUMER;
@@ -36,7 +37,7 @@ public class SpeciesService {
     private final SourceRepository sourceRepository;
     private final BookRepository bookRepository;
     private final SpeciesFeatureRepository speciesFeatureRepository;
-
+    private final TagRepository tagRepository;
     // Public methods
     public SpeciesDto findById(String url) {
         return speciesRepository.findById(url)
@@ -54,13 +55,21 @@ public class SpeciesService {
     @Transactional
     public SpeciesDto save(CreateSpeciesDto createSpeciesDTO) {
         Species species = new Species();
+        createSpeciesDTO.setLinkImageUrl(createSpeciesDTO.getLinkImageUrl());
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getCreatureProperties(), species);
-        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO.getSourceDTO(), species);
-
-        validateAndSaveSource(species.getSource());
-        saveSpeciesFeatures(createSpeciesDTO, species);
-
+        if (createSpeciesDTO.getSourceDTO() != null) {
+            Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO.getSourceDTO(), species);
+            validateAndSaveSource(species.getSource());
+        } else {
+            //Тут хб, выступает игрок, а не какая-та книга
+            Source source = new Source();
+            source.setUserId(createSpeciesDTO.getUserId());
+            species.setSource(source);
+            sourceRepository.save(source);
+        }
+        //TODO feature save
+        saveSpeciesTags(createSpeciesDTO, species);
         Species save = speciesRepository.save(species);
         return toDTO(save, false);
     }
@@ -273,16 +282,18 @@ public class SpeciesService {
                 ));
     }
 
-    private void saveSpeciesFeatures(CreateSpeciesDto createSpeciesDTO, Species species) {
-//        SpeciesFeatureConverter.convertDTOFeatureIntoEntityFeature(createSpeciesDTO.getFeatures(), species);
-//        Collection<SpeciesFeature> features = species.getFeatures();
-//        if (!CollectionUtils.isEmpty(features)) {
-//            features.stream()
-//                    .map(SpeciesFeature::getSource)
-//                    .filter(Objects::nonNull)
-//                    .forEach(this::validateAndSaveSource);
-//            speciesFeatureRepository.saveAll(features);
-//        }
+    private void saveSpeciesTags(CreateSpeciesDto createSpeciesDTO, Species species) {
+        Set<String> tagNames = createSpeciesDTO.getTags(); // DTO возвращает имена тегов
+        if (tagNames != null && !tagNames.isEmpty()) {
+            Set<Tag> tags = tagNames.stream()
+                    .map(tagName -> {
+                        // Проверяем наличие в текущей сессии или в базе
+                        return tagRepository.findByNameIgnoreCase(tagName)
+                                .orElseGet(() -> new Tag(tagName, TagType.TAG_SPECIES));
+                    })
+                    .collect(Collectors.toSet());
+            species.setTags(tags); // Устанавливаем теги
+        }
     }
 
     /**
