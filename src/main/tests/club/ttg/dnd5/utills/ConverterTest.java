@@ -18,6 +18,8 @@ import io.jsonwebtoken.lang.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+
 import static junit.framework.TestCase.assertEquals;
 
 public class ConverterTest {
@@ -37,7 +39,9 @@ public class ConverterTest {
         NameBasedDTO nameBasedDTO = new NameBasedDTO();
         nameBasedDTO.setName("Test Name");
         nameBasedDTO.setEnglish("Test English Name");
-        nameBasedDTO.setAlternative("Test Alternative Name");
+        ArrayList<String> alternative = new ArrayList<>();
+        alternative.add("Test Alternative Name");
+        nameBasedDTO.setAlternative(alternative);
         baseDTO.setNameBasedDTO(nameBasedDTO);
 
         namedEntity = new Species();
@@ -74,7 +78,7 @@ public class ConverterTest {
         creatureProperties.setDarkVision(60);
 
         SourceResponse sourceResponse = new SourceResponse();
-        NameBasedDTO nameBasedDTO1 = new NameBasedDTO("Книга игрока", "Player HandBook", "", "PHB");
+        NameBasedDTO nameBasedDTO1 = new NameBasedDTO("Книга игрока", "Player HandBook", alternative, "PHB");
         sourceResponse.setName(nameBasedDTO1);
         sourceResponse.setPage((short) 155);
         speciesDTO = new SpeciesDto();
