@@ -33,12 +33,25 @@ public class BookController {
     }
 
     /**
+     * Получение всех книг.
+     *
+     *
+     * @return список книг
+     */
+    @PostMapping("/book/search")
+    @Operation(summary = "Получить книги", description = "Возвращает список книги")
+    public ResponseEntity<List<SourceBookDTO>> getBooksByType() {
+        List<SourceBookDTO> books = bookService.getAllBooks();
+        return ResponseEntity.ok(books);
+    }
+
+    /**
      * Поиск книг по типу.
      *
      * @param typeName имя типа книги
      * @return список книг соответствующего типа
      */
-    @GetMapping("/book/search/type")
+    @PostMapping("/book/search/type")
     @Operation(summary = "Получить книги по типу", description = "Возвращает список книг определённого типа.")
     public ResponseEntity<List<SourceBookDTO>> getBooksByType(
             @Parameter(description = "Имя типа книги для поиска", example = "Базовые") @RequestParam String typeName) {
@@ -46,7 +59,7 @@ public class BookController {
         return ResponseEntity.ok(books);
     }
 
-    @GetMapping("/books/by-book-tag-type")
+    @PostMapping("/books/by-book-tag-type")
     @Operation(summary = "Получить книги по типу тега", description = "Возвращает книги, связанные с тегами типа TAG_BOOK")
     public ResponseEntity<List<SourceBookDTO>> getBooksByBookTagType() {
         List<SourceBookDTO> books = bookService.getBooksByBookTagType();
