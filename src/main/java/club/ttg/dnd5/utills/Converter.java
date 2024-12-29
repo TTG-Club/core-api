@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -32,7 +34,7 @@ public class Converter {
         if (dto.getNameBasedDTO() != null) {
             entity.setName(dto.getNameBasedDTO().getName());
             entity.setEnglish(dto.getNameBasedDTO().getEnglish());
-            entity.setAlternative(dto.getNameBasedDTO().getAlternative());
+            entity.setAlternative(String.join(",", dto.getNameBasedDTO().getAlternative()));
             entity.setShortName(dto.getNameBasedDTO().getShortName());
         }
         entity.setDescription(dto.getDescription());
@@ -47,7 +49,10 @@ public class Converter {
         dto.getNameBasedDTO().setName(entity.getName());
         dto.getNameBasedDTO().setEnglish(entity.getEnglish());
         dto.getNameBasedDTO().setShortName(entity.getShortName());
-        dto.getNameBasedDTO().setAlternative(entity.getAlternative());
+        dto.getNameBasedDTO().setAlternative(
+                new ArrayList<>(Arrays.stream(entity.getAlternative().split(",")).toList())
+        );
+
         dto.setDescription(entity.getDescription());
         if (entity.getUpdatedAt() != null) {
             dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant().truncatedTo(ChronoUnit.MINUTES));
@@ -109,7 +114,10 @@ public class Converter {
                 name.setEnglish(bookInfo.getEnglishName());
                 name.setName(bookInfo.getName());
                 name.setShortName(bookInfo.getSourceAcronym());
-                name.setAlternative(bookInfo.getAltName());
+                name.setAlternative(
+                        new ArrayList<>(Arrays.stream(bookInfo.getAltName().split(",")).toList())
+                );
+
             }
             STRATEGY_SOURCE_CONSUMER.accept(dto, source);
             dto.setName(name);

@@ -21,7 +21,7 @@ public class CreateSpeciesDto extends BaseDTO implements HasTagDTO {
     private String linkImageUrl;
     private String parent;
     @JsonProperty(namespace = "properties")
-    private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();
+    private CreaturePropertiesDto properties = new CreaturePropertiesDto();
     private Collection<SpeciesCreateFeatureDto> features = new ArrayList<>();
     private Set<String> tags = new HashSet<>();
 }

@@ -58,7 +58,7 @@ public class SpeciesService {
         Species species = new Species();
         createSpeciesDTO.setLinkImageUrl(createSpeciesDTO.getLinkImageUrl());
         Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
-        Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getCreatureProperties(), species);
+        Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getProperties(), species);
         if (createSpeciesDTO.getSourceDTO() != null) {
             Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO.getSourceDTO(), species);
             validateAndSaveSource(species.getSource());
@@ -320,7 +320,7 @@ public class SpeciesService {
             speciesFeature.setName(nameBasedDTO.getName());
             speciesFeature.setShortName(nameBasedDTO.getShortName());
             speciesFeature.setEnglish(nameBasedDTO.getEnglish());
-            speciesFeature.setAlternative(nameBasedDTO.getAlternative());
+            speciesFeature.setAlternative(String.join(",", nameBasedDTO.getAlternative()));
         }
         speciesFeature.setFeatureDescription(featureDto.getDescription());
         //хороший вопрос, может стоит сюда впихивать теги из вида, тип наследует теги вида
