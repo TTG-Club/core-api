@@ -3,6 +3,7 @@ package club.ttg.dnd5.service.species;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
 import club.ttg.dnd5.dto.species.LinkedSpeciesDto;
+import club.ttg.dnd5.dto.species.SpeciesCreateFeatureDto;
 import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -68,8 +69,8 @@ public class SpeciesService {
             species.setSource(source);
             sourceRepository.save(source);
         }
-        //TODO feature save
-        saveSpeciesTags(createSpeciesDTO, species);
+        collectTagsFromDTOtoEntity(createSpeciesDTO, species);
+        collectCreateFeatureDTOtoEntity(createSpeciesDTO, species);
         Species save = speciesRepository.save(species);
         return toDTO(save, false);
     }
@@ -282,7 +283,7 @@ public class SpeciesService {
                 ));
     }
 
-    private void saveSpeciesTags(CreateSpeciesDto createSpeciesDTO, Species species) {
+    private void collectTagsFromDTOtoEntity(CreateSpeciesDto createSpeciesDTO, Species species) {
         Set<String> tagNames = createSpeciesDTO.getTags(); // DTO возвращает имена тегов
         if (tagNames != null && !tagNames.isEmpty()) {
             Set<Tag> tags = tagNames.stream()
@@ -294,6 +295,38 @@ public class SpeciesService {
                     .collect(Collectors.toSet());
             species.setTags(tags); // Устанавливаем теги
         }
+    }
+
+    private void collectCreateFeatureDTOtoEntity(CreateSpeciesDto createSpeciesDto, Species species) {
+        Collection<SpeciesCreateFeatureDto> features = createSpeciesDto.getFeatures();
+
+        if (features != null && !features.isEmpty()) {
+            Set<SpeciesFeature> speciesFeatures = new HashSet<>();
+
+            for (SpeciesCreateFeatureDto featureDto : features) {
+                SpeciesFeature speciesFeature = convertingSpeciesCreateFeatureToSpeciesFeature(featureDto);
+                speciesFeatures.add(speciesFeature);
+            }
+            species.setFeatures(speciesFeatures);
+        }
+    }
+
+
+    private SpeciesFeature convertingSpeciesCreateFeatureToSpeciesFeature(SpeciesCreateFeatureDto featureDto) {
+        SpeciesFeature speciesFeature = new SpeciesFeature();
+        Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(featureDto.getSource(), speciesFeature);
+        if (featureDto.getName() != null) {
+            NameBasedDTO nameBasedDTO = featureDto.getName();
+            speciesFeature.setName(nameBasedDTO.getName());
+            speciesFeature.setShortName(nameBasedDTO.getShortName());
+            speciesFeature.setEnglish(nameBasedDTO.getEnglish());
+            speciesFeature.setAlternative(nameBasedDTO.getAlternative());
+        }
+        speciesFeature.setFeatureDescription(featureDto.getDescription());
+        //хороший вопрос, может стоит сюда впихивать теги из вида, тип наследует теги вида
+        speciesFeature.setTags(null);
+        //вопрос ещё над imageUrl, стоит ли пихать сюда урл вида
+        return speciesFeature;
     }
 
     /**
