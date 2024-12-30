@@ -3,8 +3,8 @@ package club.ttg.dnd5.dictionary;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import lombok.Getter;
 
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 public enum Size {
@@ -37,6 +37,23 @@ public enum Size {
 			}
 		}
 		return UNDEFINED;
+	}
+
+	public static String convertSizeToEntityFormat(Collection<String> sizes) {
+		List<Size> list = sizes.stream()
+				.map(size -> parse(size))
+				.toList();
+		return list.stream()
+				.map(Size::getName)
+				.collect(Collectors.joining(", "));
+	}
+
+	public static List<String> convertEntityFormatToDtoFormat(String entityFormat) {
+		return Arrays.stream(entityFormat.split(","))
+				.map(String::trim)
+				.map(Size::parse)
+				.map(Size::getName)
+				.toList();
 	}
 
 	public static Set<Size> getFilterSizes(){

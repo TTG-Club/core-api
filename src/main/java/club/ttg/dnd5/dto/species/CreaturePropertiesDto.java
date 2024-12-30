@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @JsonRootName(value = "properties")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
@@ -13,7 +15,7 @@ import lombok.Setter;
 public class CreaturePropertiesDto {
     @JsonProperty(value = "speed")
     MovementAttributes movementAttributes = new MovementAttributes();
-    private String size;
+    private List<String> sizes;
     private String type;
     private int darkVision;
 }

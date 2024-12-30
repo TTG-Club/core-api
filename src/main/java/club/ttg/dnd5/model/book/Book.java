@@ -22,6 +22,7 @@ public class Book extends TimestampedEntity implements HasTagEntity {
     @Id
     @Column(unique = true, nullable = false)
     private String sourceAcronym;
+    private String url;
     private String name;
     private String altName;
     private String englishName;
