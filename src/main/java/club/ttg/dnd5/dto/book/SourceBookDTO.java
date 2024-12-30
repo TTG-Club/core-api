@@ -18,6 +18,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SourceBookDTO implements HasTagDTO {
+    private String url;
     private NameBasedDTO name;
     private String description;
     private LocalDate year;
