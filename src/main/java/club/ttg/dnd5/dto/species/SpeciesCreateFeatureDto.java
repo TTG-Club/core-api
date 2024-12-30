@@ -1,7 +1,7 @@
 package club.ttg.dnd5.dto.species;
 
 import club.ttg.dnd5.dto.base.NameBasedDTO;
-import club.ttg.dnd5.dto.base.SourceResponse;
+import club.ttg.dnd5.dto.base.create.SourceReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,5 +10,5 @@ import lombok.Setter;
 public class SpeciesCreateFeatureDto {
     private NameBasedDTO name = new NameBasedDTO();
     private String description;
-    private SourceResponse source = new SourceResponse();
+    private SourceReference source = new SourceReference();
 }

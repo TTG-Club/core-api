@@ -1,6 +1,7 @@
 package club.ttg.dnd5.service.species;
 
 import club.ttg.dnd5.dto.base.NameBasedDTO;
+import club.ttg.dnd5.dto.base.create.SourceReference;
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
 import club.ttg.dnd5.dto.species.LinkedSpeciesDto;
 import club.ttg.dnd5.dto.species.SpeciesCreateFeatureDto;
@@ -19,6 +20,7 @@ import club.ttg.dnd5.repository.TagRepository;
 import club.ttg.dnd5.repository.book.BookRepository;
 import club.ttg.dnd5.repository.book.SourceRepository;
 import club.ttg.dnd5.utills.Converter;
+import club.ttg.dnd5.utills.CreateConverter;
 import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,6 +36,7 @@ import static club.ttg.dnd5.utills.Converter.STRATEGY_SOURCE_CONSUMER;
 @Service
 @RequiredArgsConstructor
 public class SpeciesService {
+    private static final String BOOK_NOT_FOUND_FOR_URL = "Book not found for URL: ";
     private final SpeciesRepository speciesRepository;
     private final SourceRepository sourceRepository;
     private final BookRepository bookRepository;
@@ -57,11 +60,18 @@ public class SpeciesService {
     public SpeciesDto save(CreateSpeciesDto createSpeciesDTO) {
         Species species = new Species();
         createSpeciesDTO.setLinkImageUrl(createSpeciesDTO.getLinkImageUrl());
-        Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
+        CreateConverter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getProperties(), species);
-        if (createSpeciesDTO.getSourceDTO() != null) {
-            Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(createSpeciesDTO.getSourceDTO(), species);
-            validateAndSaveSource(species.getSource());
+        SourceReference sourceDTO = createSpeciesDTO.getSourceDTO();
+        if (sourceDTO != null) {
+            Book book = bookRepository.findByUrl(sourceDTO.getUrl())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, BOOK_NOT_FOUND_FOR_URL
+                            + sourceDTO.getUrl()));
+            Source source = new Source();
+            source.setBookInfo(book);
+            source.setPage(sourceDTO.getPage());
+            species.setSource(source);
+            validateSource(species.getSource());
         } else {
             //Тут хб, выступает игрок, а не какая-та книга
             Source source = new Source();
@@ -157,12 +167,11 @@ public class SpeciesService {
                 .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
     }
 
-    private void validateAndSaveSource(Source source) {
+    private void validateSource(Source source) {
         if (source != null) {
             Book book = bookRepository.findById(source.getSourceAcronym())
                     .orElseThrow(() -> new EntityNotFoundException("Book not found with ID: " + source.getId()));
             source.setBookInfo(book);
-            sourceRepository.save(source);
         }
     }
 
@@ -304,17 +313,33 @@ public class SpeciesService {
             Set<SpeciesFeature> speciesFeatures = new HashSet<>();
 
             for (SpeciesCreateFeatureDto featureDto : features) {
-                SpeciesFeature speciesFeature = convertingSpeciesCreateFeatureToSpeciesFeature(featureDto);
+                SpeciesFeature speciesFeature = convertingSpeciesCreateFeatureToSpeciesFeature(featureDto, createSpeciesDto.getSourceDTO());
+                speciesFeature.setUrl(createSpeciesDto.getUrl() + "/" + Arrays.toString(featureDto.getName().getEnglish().toLowerCase().split(" ")));
                 speciesFeatures.add(speciesFeature);
             }
             species.setFeatures(speciesFeatures);
         }
     }
 
-
-    private SpeciesFeature convertingSpeciesCreateFeatureToSpeciesFeature(SpeciesCreateFeatureDto featureDto) {
+    //советую обратить внимание на соурс, в случае, если у фичы она нулл, то берем соурс вида
+    private SpeciesFeature convertingSpeciesCreateFeatureToSpeciesFeature(SpeciesCreateFeatureDto featureDto,
+                                                                          SourceReference speciesSource) {
         SpeciesFeature speciesFeature = new SpeciesFeature();
-        Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(featureDto.getSource(), speciesFeature);
+        Source source = new Source();
+        SourceReference featureSource = featureDto.getSource();
+        if (featureSource != null) {
+            Book book = bookRepository.findByUrl(featureSource.getUrl())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, BOOK_NOT_FOUND_FOR_URL
+                            + featureSource.getUrl()));
+            source.setBookInfo(book);
+            source.setPage(featureSource.getPage());
+        } else {
+            Book book = bookRepository.findByUrl(speciesSource.getUrl())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, BOOK_NOT_FOUND_FOR_URL
+                            + speciesSource.getUrl()));
+            source.setBookInfo(book);
+            source.setPage(speciesSource.getPage());
+        }
         if (featureDto.getName() != null) {
             NameBasedDTO nameBasedDTO = featureDto.getName();
             speciesFeature.setName(nameBasedDTO.getName());
@@ -323,6 +348,7 @@ public class SpeciesService {
             speciesFeature.setAlternative(String.join(",", nameBasedDTO.getAlternative()));
         }
         speciesFeature.setFeatureDescription(featureDto.getDescription());
+        speciesFeature.setSource(source);
         //хороший вопрос, может стоит сюда впихивать теги из вида, тип наследует теги вида
         speciesFeature.setTags(null);
         //вопрос ещё над imageUrl, стоит ли пихать сюда урл вида
@@ -350,5 +376,10 @@ public class SpeciesService {
         }
 
         return subSpecies;
+    }
+
+    public boolean speciesExistsByUrl(String url) {
+        Optional<Species> byId = speciesRepository.findById(url);
+        return byId.isPresent();
     }
 }

@@ -23,6 +23,30 @@ import java.util.List;
 public class SpeciesController {
     private final SpeciesService speciesService;
 
+    /**
+     * Проверка существования вида по URL.
+     *
+     * @param url URL вида.
+     * @return 204, если вида с таким URL не существует; 409, если вид существует.
+     */
+    @Operation(
+            summary = "Проверка существования вида",
+            description = "Возвращает 204 (No Content), если вида с указанным URL не существует, или 409 (Conflict), если вид существует."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Вид с указанным URL не найден."),
+            @ApiResponse(responseCode = "409", description = "Вид с указанным URL уже существует.")
+    })
+    @RequestMapping(value = "/{url}", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> handleOptions(@PathVariable("url") String url) {
+        boolean exists = speciesService.speciesExistsByUrl(url);
+        if (exists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+    }
+
     @PostMapping("/search")
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
     public ResponseEntity<List<SpeciesDto>> getAllSpecies() {

@@ -17,7 +17,7 @@ public class Source extends TimestampedEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private short page;
+    private int page;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_info_id", referencedColumnName = "sourceAcronym")
