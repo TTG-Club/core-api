@@ -44,6 +44,10 @@ public class SpeciesService {
                 .orElseThrow(() -> new EntityNotFoundException(url));
     }
 
+    public Boolean isExist(String url) {
+        return speciesRepository.existsById(url);
+    }
+
     public List<SpeciesDto> getAllSpecies() {
         return speciesRepository.findAll()
                 .stream()

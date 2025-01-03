@@ -35,6 +35,10 @@ public class BookService {
         return convertingEntityToSourceDTO(savedBook);
     }
 
+    public List<SourceBookDTO> getBooks() {
+        return bookRepository.findAll().stream().map(this::convertingEntityToSourceDTO).collect(Collectors.toList());
+    }
+
     // Получение книги по её sourceAcronym
     public Optional<SourceBookDTO> getBookBySourceAcronym(String sourceAcronym) {
         return bookRepository.findBySourceAcronym(sourceAcronym).map(this::convertingEntityToSourceDTO);
