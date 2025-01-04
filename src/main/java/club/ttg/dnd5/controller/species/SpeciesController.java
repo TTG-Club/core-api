@@ -40,6 +40,22 @@ public class SpeciesController {
         return speciesService.findById(url);
     }
 
+    @Operation(summary = "Проверить вид по URL", description = "Проверка вида по его уникальному URL.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Вид успешно получен"),
+            @ApiResponse(responseCode = "409", description = "Вид не найден")
+    })
+    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    public ResponseEntity<?> isSpecieExist(@PathVariable String url) {
+        Boolean exist = speciesService.isExist(url);
+
+        if (exist.equals(Boolean.TRUE)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/subspecies")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
