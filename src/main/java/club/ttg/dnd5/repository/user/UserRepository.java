@@ -10,14 +10,14 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-	Optional<User> findByName(String name);
 	Optional<User> findByEmail(String email);
+    Optional<User> findByUsername(String username);
 	Optional<User> findByEmailOrUsername(String email, String username);
 
 	@Query("SELECT count(u) FROM User u LEFT JOIN u.roles r WHERE r.name = :role")
 	long countByRoles(@Param("role") String role);
 
-	boolean existsByName(String name);
-	boolean existsByUsername(String username);
 	boolean existsByEmail(String email);
+	boolean existsByUsername(String username);
+
 }
