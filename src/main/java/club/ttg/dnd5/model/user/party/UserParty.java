@@ -29,14 +29,14 @@ public class UserParty extends TimestampedEntity {
 	@JoinTable(
 		name = "user_membership",
 		joinColumns = @JoinColumn(name = "user_party_id"),
-		inverseJoinColumns = @JoinColumn(name = "user_id")
+		inverseJoinColumns = @JoinColumn(name = "user_uuid")
 	)
 	private List<User> userList = new ArrayList<>();
 	@ManyToMany
 	@JoinTable(
 		name = "user_wait_list",
 		joinColumns = @JoinColumn(name = "user_party_id"),
-		inverseJoinColumns = @JoinColumn(name = "user_id")
+		inverseJoinColumns = @JoinColumn(name = "user_uuid")
 	)
 	private List<User> userWaitList = new ArrayList<>();
 	@OneToOne(mappedBy = "userParty", cascade = CascadeType.REMOVE)

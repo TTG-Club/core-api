@@ -18,7 +18,7 @@ public class YoutubeVideo {
 	private String id;
 	private String name;
 	@ManyToOne
-	@JoinColumn(name = "user_id")
+	@JoinColumn(name = "user_uuid")
 	private User user;
 	private boolean active;
 	@Column(name = "`order`")
