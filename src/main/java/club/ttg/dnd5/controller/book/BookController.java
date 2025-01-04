@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v2/")
+@RequestMapping("/api/v2/books")
 @RequiredArgsConstructor
 @Tag(name = "Книги", description = "Контроллер для управления книгами и их поиском")
 public class BookController {
@@ -25,11 +25,22 @@ public class BookController {
      * @param sourceBookDTO данные новой книги
      * @return созданная книга
      */
-    @PostMapping("/book")
+    @PostMapping("/create")
     @Operation(summary = "Создать книгу", description = "Позволяет создать новую книгу.")
     public ResponseEntity<SourceBookDTO> createBook(@RequestBody SourceBookDTO sourceBookDTO) {
         SourceBookDTO createdBook = bookService.createBook(sourceBookDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdBook);
+    }
+
+    /**
+     * Создание новой книги.
+     *
+     * @return список книг
+     */
+    @PostMapping("/search")
+    @Operation(summary = "Создать книгу", description = "Позволяет создать новую книгу.")
+    public ResponseEntity<List<SourceBookDTO>> createBook() {
+        return ResponseEntity.ok().body(bookService.getBooks());
     }
 
     /**
@@ -38,7 +49,7 @@ public class BookController {
      * @param typeName имя типа книги
      * @return список книг соответствующего типа
      */
-    @GetMapping("/book/search/type")
+    @GetMapping("/search/type")
     @Operation(summary = "Получить книги по типу", description = "Возвращает список книг определённого типа.")
     public ResponseEntity<List<SourceBookDTO>> getBooksByType(
             @Parameter(description = "Имя типа книги для поиска", example = "Базовые") @RequestParam String typeName) {
@@ -46,7 +57,7 @@ public class BookController {
         return ResponseEntity.ok(books);
     }
 
-    @GetMapping("/books/by-book-tag-type")
+    @GetMapping("/search/by-book-tag-type")
     @Operation(summary = "Получить книги по типу тега", description = "Возвращает книги, связанные с тегами типа TAG_BOOK")
     public ResponseEntity<List<SourceBookDTO>> getBooksByBookTagType() {
         List<SourceBookDTO> books = bookService.getBooksByBookTagType();
@@ -56,14 +67,14 @@ public class BookController {
     /**
      * Получение книги по акрониму источника.
      *
-     * @param sourceAcronym акроним источника книги
+     * @param acronym акроним источника книги
      * @return данные книги или 404, если книга не найдена
      */
-    @GetMapping("/book/acronym")
+    @GetMapping("/{acronym}")
     @Operation(summary = "Получить книгу по акрониму источника", description = "Возвращает книгу по указанному акрониму источника.")
     public ResponseEntity<SourceBookDTO> getBookBySourceAcronym(
-            @Parameter(description = "Акроним источника книги", example = "PHB") @RequestParam String sourceAcronym) {
-        return bookService.getBookBySourceAcronym(sourceAcronym)
+            @Parameter(description = "Акроним источника книги", example = "PHB") @PathVariable String acronym) {
+        return bookService.getBookBySourceAcronym(acronym)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -86,7 +97,7 @@ public class BookController {
      * @param tagName имя тега
      * @return список книг с указанным тегом
      */
-    @GetMapping("/book/search/tag")
+    @GetMapping("/search/by-tag")
     @Operation(summary = "Получить книги по тегу", description = "Возвращает список книг, связанных с указанным тегом.")
     public ResponseEntity<List<SourceBookDTO>> getBooksByTag(
             @Parameter(description = "Имя тега для поиска", example = "Официальные") @RequestParam String tagName) {
