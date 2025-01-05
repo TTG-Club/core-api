@@ -62,7 +62,6 @@ public final class SecurityUtils {
                 .roles(user.getAuthorities()
                         .stream()
                         .map(GrantedAuthority::getAuthority)
-                        .filter(role -> !role.isBlank())
                         .collect(Collectors.toList()))
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())

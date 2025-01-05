@@ -46,7 +46,6 @@ public class User extends TimestampedEntity implements UserDetails {
 	public Collection<GrantedAuthority> getAuthorities() {
 		String[] userRoles = this.getRoles().stream()
 				.map(Role::getName)
-				.map(s -> "ROLE_" + s)
 				.toArray(String[]::new);
 
 		return AuthorityUtils.createAuthorityList(userRoles);
