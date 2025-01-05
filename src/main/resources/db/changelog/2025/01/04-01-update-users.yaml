@@ -31,7 +31,7 @@ databaseChangeLog:
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addDefaultValue:
-            columnDataType: datetime
+            columnDataType: timestamp
             columnName: created_at
             defaultValueComputed: CURRENT_TIMESTAMP
             tableName: users
@@ -71,7 +71,7 @@ databaseChangeLog:
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addDefaultValue:
-            columnDataType: datetime
+            columnDataType: timestamp
             columnName: updated_at
             defaultValueComputed: CURRENT_TIMESTAMP
             tableName: users
