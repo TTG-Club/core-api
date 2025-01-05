@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +26,12 @@ public class ExceptionController {
                         ex.getStatus().getReasonPhrase(),
                         ex.getMessage()));
     }
+
+    @ExceptionHandler({SecurityException.class, AuthorizationDeniedException.class})
+    public ResponseEntity<ResponseDto> handleSecurityException() {
+        return convertToResponseEntity(HttpStatus.FORBIDDEN, "Доступ запрещен");
+    }
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ResponseDto> handleRequestParamException(MissingServletRequestParameterException ex, HttpServletRequest request, HttpServletResponse response) {
         String message = String.format("Отсутствует необходимый параметр \"%s\"", ex.getParameterName());

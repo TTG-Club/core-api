@@ -35,7 +35,7 @@ public class MenuApiController {
 
     @Operation(summary = "Создание нового элемента меню")
     @PostMapping
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @ResponseStatus(HttpStatus.CREATED)
     public MenuResponse createMenu(@RequestBody MenuResponse menuResponse) {
         return menuService.save(menuResponse);
@@ -43,7 +43,7 @@ public class MenuApiController {
 
     @Operation(summary = "Обновление элемента меню. NOTE теле должен быть новый url")
     @PutMapping("/{oldUrl}")
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<MenuResponse> updateMenu(@PathVariable String oldUrl,
                                                    @RequestBody MenuResponse menuResponse) {
@@ -53,7 +53,7 @@ public class MenuApiController {
 
     @Operation(summary = "Удаление элемента меню по URL")
     @DeleteMapping("/{url}")
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMenu(@PathVariable String url) {
         menuService.deleteByUrl(url);

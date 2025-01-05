@@ -34,8 +34,8 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 )
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 @RequiredArgsConstructor
+@EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
     private final UserService userService;
     private final JwtAuthFilter jwtAuthFilter;
