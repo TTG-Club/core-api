@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
@@ -27,13 +28,14 @@ public class AuthController {
     @PostMapping("/sign-in")
     public void signIn(@RequestBody SignInDto request, HttpServletResponse response) {
         String jwt = authService.signIn(request.getUsernameOrEmail(), request.getPassword(), request.isRemember());
-        long expiration = jwtUtils.extractExpiration(jwt).getTime() / 1000;
+        long expiration = jwtUtils.extractExpiration(jwt).getTime();
+        long maxAge = (expiration - Instant.now().toEpochMilli()) / 1000;
 
         Cookie cookie = new Cookie("ttg-user-token", jwt);
         cookie.setSecure(true);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
-        cookie.setMaxAge((int) expiration);
+        cookie.setMaxAge((int) maxAge);
 
         response.addCookie(cookie);
     }
