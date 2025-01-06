@@ -2,6 +2,8 @@ package club.ttg.dnd5.controller.engine;
 
 import club.ttg.dnd5.dto.ResponseDto;
 import club.ttg.dnd5.exception.ApiException;
+import club.ttg.dnd5.exception.EntityExistException;
+import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.io.IOException;
 
@@ -56,11 +59,21 @@ public class ExceptionController {
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, message);
     }
 
-    @ExceptionHandler({IOException.class, Exception.class})
+    @ExceptionHandler({NoHandlerFoundException.class, IOException.class, Exception.class})
     public ResponseEntity<ResponseDto> handleOtherExceptions(Exception ex, HttpServletRequest request, HttpServletResponse response) {
         log.error(ExceptionUtils.getStackTrace(ex));
 
         return convertToResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ResponseDto> handlePageNotFound(Exception exception) {
+        return convertToResponseEntity(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(EntityExistException.class)
+    public ResponseEntity<ResponseDto> handleHandlePageExistException(Exception exception) {
+        return convertToResponseEntity(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     private ResponseEntity<ResponseDto> convertToResponseEntity(HttpStatus status, String message) {
