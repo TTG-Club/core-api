@@ -46,7 +46,8 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/swagger-ui/**",
                     "/scalar-ui.html",
-                    "/api/v2/auth/**"
+                    "/api/auth/**",
+                    "/api/v2/**"
             )
             .toArray(String[]::new);
 

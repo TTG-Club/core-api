@@ -17,7 +17,7 @@ import java.io.IOException;
 @RestController
 @Tag(name = "S3")
 @RequiredArgsConstructor
-@RequestMapping("/api/v2/s3")
+@RequestMapping("/api/s3")
 @Secured("ADMIN")
 public class S3Controller {
     private final S3Service s3Service;
