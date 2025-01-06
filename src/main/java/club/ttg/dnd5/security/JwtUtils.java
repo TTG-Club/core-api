@@ -1,9 +1,12 @@
 package club.ttg.dnd5.security;
 
+import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.model.user.User;
+import club.ttg.dnd5.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,9 +18,12 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtils {
     @Value("${token.api.secret}")
     private String SECRET_KEY;
+
+    private final UserService userService;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -40,10 +46,29 @@ public class JwtUtils {
         return createToken(user, expiration);
     }
 
-    public Boolean isTokenValid(String token, User user) {
-        final String username = extractUsername(token);
+    public Boolean isTokenValid(String token) {
+        try {
+            final String username = extractUsername(token);
+            User user = userService.getByUsername(username);
 
-        return (username.equals(user.getUsername()) && !isTokenExpired(token));
+            return (username.equals(user.getUsername()) && !isTokenExpired(token));
+        } catch (ApiException e) {
+            return false;
+        }
+    }
+
+    public long getExpirationInMilliseconds(Boolean remember) {
+        long expiration = 24 * 60 * 60 * 1000L;
+
+        if (remember != null && remember) {
+            expiration = expiration * 30;
+        }
+
+        return expiration;
+    }
+
+    public Boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
     }
 
     private String createToken(User user, long expiration) {
@@ -59,20 +84,6 @@ public class JwtUtils {
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(this.getSigningKey())
                 .compact();
-    }
-
-    public long getExpirationInMilliseconds(Boolean remember) {
-        long expiration = 24 * 60 * 60 * 1000L;
-
-        if (remember != null && remember) {
-            expiration = expiration * 30;
-        }
-
-        return expiration;
-    }
-
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
     }
 
     private Claims extractAllClaims(String token) {
