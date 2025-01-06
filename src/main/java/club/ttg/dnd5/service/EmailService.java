@@ -19,6 +19,8 @@ import java.util.UUID;
 public class EmailService {
     @Value("${app.url}")
     private String APP_URL;
+    @Value("${spring.mail.username}")
+    private String MAIL_USERNAME;
 
     private final JavaMailSender mailSender;
     private final OneTimeTokenService oneTimeTokenService;
@@ -27,7 +29,7 @@ public class EmailService {
         SimpleMailMessage email = new SimpleMailMessage();
 
         email.setTo(recipientAddress);
-        email.setFrom("TTG Club <support@ttg.club>");
+        email.setFrom(String.format("TTG Club <%s>", MAIL_USERNAME));
         email.setSubject(subject);
         email.setText(message);
 
