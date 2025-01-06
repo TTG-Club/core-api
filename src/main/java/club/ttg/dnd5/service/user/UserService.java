@@ -1,4 +1,4 @@
-package club.ttg.dnd5.service;
+package club.ttg.dnd5.service.user;
 
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.model.user.User;

@@ -1,4 +1,4 @@
-package club.ttg.dnd5.service;
+package club.ttg.dnd5.service.engine;
 
 import club.ttg.dnd5.dto.engine.MenuResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;

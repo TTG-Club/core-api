@@ -1,4 +1,4 @@
-package club.ttg.dnd5.service;
+package club.ttg.dnd5.service.engine;
 
 import club.ttg.dnd5.dto.s3.S3UploadedFile;
 import club.ttg.dnd5.exception.ApiException;

@@ -1,9 +1,9 @@
-package club.ttg.dnd5.controller.engine;
+package club.ttg.dnd5.controller.user;
 
 import club.ttg.dnd5.dto.user.SignInDto;
 import club.ttg.dnd5.dto.user.SignUpDto;
 import club.ttg.dnd5.security.JwtUtils;
-import club.ttg.dnd5.service.AuthService;
+import club.ttg.dnd5.service.user.AuthService;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

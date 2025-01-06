@@ -1,7 +1,7 @@
 package club.ttg.dnd5.controller.engine;
 
 import club.ttg.dnd5.dto.engine.MenuResponse;
-import club.ttg.dnd5.service.MenuService;
+import club.ttg.dnd5.service.engine.MenuService;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

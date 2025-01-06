@@ -2,7 +2,7 @@ package club.ttg.dnd5.security;
 
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.model.user.User;
-import club.ttg.dnd5.service.UserService;
+import club.ttg.dnd5.service.user.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
