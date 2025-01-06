@@ -1,4 +1,4 @@
-package club.ttg.dnd5.controller.engine;
+package club.ttg.dnd5.controller.user;
 
 import club.ttg.dnd5.dto.user.UserDto;
 import club.ttg.dnd5.security.SecurityUtils;

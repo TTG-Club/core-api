@@ -1,4 +1,4 @@
-package club.ttg.dnd5.service;
+package club.ttg.dnd5.service.engine;
 
 import club.ttg.dnd5.model.user.OneTimeToken;
 import club.ttg.dnd5.model.user.User;

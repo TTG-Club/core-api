@@ -1,4 +1,4 @@
-package club.ttg.dnd5.service;
+package club.ttg.dnd5.service.user;
 
 import club.ttg.dnd5.dto.user.SignUpDto;
 import club.ttg.dnd5.exception.ApiException;
@@ -9,6 +9,7 @@ import club.ttg.dnd5.repository.user.OneTimeTokenRepository;
 import club.ttg.dnd5.repository.user.RoleRepository;
 import club.ttg.dnd5.repository.user.UserRepository;
 import club.ttg.dnd5.security.JwtUtils;
+import club.ttg.dnd5.service.engine.EmailService;
 import io.jsonwebtoken.lang.Strings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
