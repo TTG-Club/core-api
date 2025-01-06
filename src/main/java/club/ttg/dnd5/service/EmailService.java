@@ -52,7 +52,7 @@ public class EmailService {
 
         String subject = "Подтверждение электронной почты";
         String message = "Подтвердите ваш e-mail адрес, перейдя по ссылке:";
-        String confirmationUrl = String.format("%s/confirm/email?token=%s", APP_URL, token);
+        String confirmationUrl = String.format("%s/auth/verify?token=%s", APP_URL, token);
 
         sendEmail(user.getEmail(), subject, String.format("%s %s", message, confirmationUrl));
     }
