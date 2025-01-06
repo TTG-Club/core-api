@@ -5,6 +5,7 @@ import club.ttg.dnd5.model.user.User;
 import club.ttg.dnd5.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
@@ -46,9 +47,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String jwt = authHeader.substring(BEARER_PREFIX.length());
+
+        if (jwtService.isTokenExpired(jwt)) {
+            response.addCookie(getResetTokenCookie());
+            filterChain.doFilter(request, response);
+
+            return;
+        }
+
         String username = jwtService.extractUsername(jwt);
 
         if (!StringUtils.hasLength(username)) {
+            response.addCookie(getResetTokenCookie());
             filterChain.doFilter(request, response);
 
             return;
@@ -60,10 +70,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        User user = userService.getByUsername(username);
 
-        if (jwtService.isTokenValid(jwt, user)) {
+        if (jwtService.isTokenValid(jwt)) {
             SecurityContext context = SecurityContextHolder.createEmptyContext();
+            User user = userService.getByUsername(username);
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     user,
@@ -74,8 +84,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             context.setAuthentication(authToken);
             SecurityContextHolder.setContext(context);
+
+            return;
+        } else {
+            response.addCookie(getResetTokenCookie());
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private Cookie getResetTokenCookie() {
+        Cookie cookie = new Cookie("ttg-user-token", "");
+
+        cookie.setMaxAge(-1);
+        cookie.setPath("/");
+
+        return cookie;
     }
 }
