@@ -1,4 +1,4 @@
-package club.ttg.dnd5.controller;
+package club.ttg.dnd5.controller.engine;
 
 import club.ttg.dnd5.dto.ResponseDto;
 import club.ttg.dnd5.exception.ApiException;

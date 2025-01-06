@@ -1,10 +1,12 @@
-package club.ttg.dnd5.controller;
+package club.ttg.dnd5.controller.engine;
 
 import club.ttg.dnd5.dto.user.SignInDto;
 import club.ttg.dnd5.dto.user.SignUpDto;
 import club.ttg.dnd5.security.JwtUtils;
 import club.ttg.dnd5.service.AuthService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -15,7 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.UUID;
 
+@Tag(name = "Аутентификация пользователя")
+
 @Slf4j
+@Hidden
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -25,6 +30,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Operation(summary = "Аутентификация")
     @PostMapping("/sign-in")
     public void signIn(@RequestBody SignInDto request, HttpServletResponse response) {
         String jwt = authService.signIn(request.getUsernameOrEmail(), request.getPassword(), request.isRemember());
@@ -40,12 +46,13 @@ public class AuthController {
         response.addCookie(cookie);
     }
 
+    @Operation(summary = "Регистрация пользователя")
     @PostMapping("/sign-up")
     public void signUp(@RequestBody SignUpDto user) {
         authService.signUp(user);
     }
 
-    @Operation(summary = "Log out user current session")
+    @Operation(summary = "Выход из пользователя")
     @GetMapping("/logout")
     public void logout(HttpSession session, HttpServletResponse response) {
         session.invalidate();
@@ -57,7 +64,7 @@ public class AuthController {
         response.addCookie(cookie);
     }
 
-    @Operation(summary = "Nickname and mailing address check")
+    @Operation(summary = "Проверка существования пользователя", description = "Проверяет существование пользователя по e-mail или логину")
     @GetMapping("/exist")
     public void isUserNotExist(
             @RequestParam(required = false) String username,
@@ -66,6 +73,7 @@ public class AuthController {
         authService.isUserNotExist(username, email);
     }
 
+    @Operation(summary = "Подтверждение почты")
     @PutMapping("/confirm/email")
     public void confirmEmail(@RequestParam UUID token) {
         authService.confirmEmail(token);
