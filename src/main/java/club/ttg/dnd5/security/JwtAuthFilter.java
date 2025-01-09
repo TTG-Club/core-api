@@ -37,10 +37,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ApiException, ServletException, IOException {
-
         String authHeader = request.getHeader(HEADER_NAME);
 
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+        if (isInvalidAuthHeader(authHeader)) {
             filterChain.doFilter(request, response);
 
             return;
@@ -48,17 +47,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String jwt = authHeader.substring(BEARER_PREFIX.length());
 
-        if (jwtService.isTokenExpired(jwt)) {
-            response.addCookie(getResetTokenCookie());
-            filterChain.doFilter(request, response);
-
-            return;
-        }
-
-        String username = jwtService.extractUsername(jwt);
-
-        if (!StringUtils.hasLength(username)) {
-            response.addCookie(getResetTokenCookie());
+        if (isInvalidToken(jwt, response)) {
             filterChain.doFilter(request, response);
 
             return;
@@ -70,33 +59,57 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-
         if (jwtService.isTokenValid(jwt)) {
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            User user = userService.getByUsername(username);
-
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    user,
-                    null,
-                    user.getAuthorities()
-            );
-
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            context.setAuthentication(authToken);
-            SecurityContextHolder.setContext(context);
+            authenticateUser(jwt, request);
         } else {
-            response.addCookie(getResetTokenCookie());
+            resetTokenCookie(response);
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private Cookie getResetTokenCookie() {
-        Cookie cookie = new Cookie("ttg-user-token", "");
+    private boolean isInvalidAuthHeader(String authHeader) {
+        return authHeader == null || !authHeader.startsWith(BEARER_PREFIX);
+    }
 
+    private boolean isInvalidToken(String jwt, HttpServletResponse response) {
+        if (jwtService.isTokenExpired(jwt)) {
+            resetTokenCookie(response);
+
+            return true;
+        }
+
+        String username = jwtService.extractUsername(jwt);
+
+        if (!StringUtils.hasLength(username)) {
+            resetTokenCookie(response);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void authenticateUser(String jwt, HttpServletRequest request) {
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        String username = jwtService.extractUsername(jwt);
+        User user = userService.getByUsername(username);
+
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                user,
+                null,
+                user.getAuthorities()
+        );
+
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        context.setAuthentication(authToken);
+        SecurityContextHolder.setContext(context);
+    }
+
+    private void resetTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("ttg-user-token", "");
         cookie.setMaxAge(-1);
         cookie.setPath("/");
-
-        return cookie;
+        response.addCookie(cookie);
     }
 }

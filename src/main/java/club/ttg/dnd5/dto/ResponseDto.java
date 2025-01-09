@@ -7,9 +7,9 @@ import org.springframework.http.HttpStatus;
 @Data
 @AllArgsConstructor
 public class ResponseDto {
-    Integer status;
-    String error;
-    String message;
+    private Integer status;
+    private String error;
+    private String message;
 
     public ResponseDto(HttpStatus status, String message) {
         this.status = status.value();
