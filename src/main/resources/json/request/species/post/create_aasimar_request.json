@@ -1,52 +1,100 @@
 {
-  "url": "assimar",
-  "imageUrl": "assimar/picture",
-  "nameBasedDTO": {
-    "name": "Aasimar",
-    "english": "Aasimar",
-    "alternative": "Angel-blooded",
-    "description": "Aasimar are mortals with celestial heritage. They have traits hinting at their divine ancestry, like glowing eyes or metallic freckles."
-  },
-  "sourceDTO": {
-    "page": 155,
-    "source": "PHB"
-  },
-  "creatureProperties": {
-    "size": "MEDIUM",
-    "type": "HUMANOID",
-    "speed": 30,
-    "fly": 0,
-    "climb": 0,
-    "swim": 0,
+  "url": "aasimar",
+  "gallery": [
+    "link_to_image_1",
+    "link_to_image_2"
+  ],
+  "description": "Аасимары — это смертные, которые несут искру Верхних Планов в своих душах. Будь то потомки ангельских существ или те, кто был наделён небесной силой, они могут разжечь эту искру, чтобы принести свет, исцеление и ярость небес. Аасимары могут появляться в любом поселении смертных. Они похожи на своих родителей, но живут до 160 лет и имеют черты, намекающие на их небесное происхождение, такие как металлические веснушки, светящиеся глаза, нимб или цвет кожи, как у ангелов (серебряный, опалово-зелёный или медно-красный). Эти черты начинают проявляться постепенно, становясь очевидными, когда аасимар учится полностью раскрывать свою небесную природу.",
+  "userId": "string",
+  "linkImageUrl": "link_to_main_image",
+  "parent": "aasimar",
+  "properties": {
+    "sizes": [
+      "Medium",
+      "Small"
+    ],
+    "type": "Гуманоид",
     "darkVision": 60,
-    "sourceResponse": {
-      "page": 155,
-      "source": "PHB"
+    "speed": {
+      "base": 30,
+      "fly": 0,
+      "climb": 0,
+      "swim": 0
     }
   },
   "features": [
     {
-      "url": "assimar/light-bearer",
-      "imageUrl": "assimar/picture",
-      "nameBasedDTO": {
-        "name": "Light Bearer",
-        "english": "Light Bearer",
-        "alternative": "Light Carrier",
-        "description": "You know the Light cantrip, allowing you to emit light to brighten your surroundings."
+      "name": {
+        "rus": "Небесное Сопротивление",
+        "eng": "Celestial Resistance",
+        "alt": ["Resistance"]
       },
-      "sourceDTO": {
-        "page": 156,
-        "source": "PHB"
+      "description": "У Вас есть сопротивление урону некротической энергией и урону излучением.",
+      "source": {
+        "url": "player-hand-s-book",
+        "page": 154
+      }
+    },
+    {
+      "name": {
+        "rus": "Тёмное Зрение",
+        "eng": "Darkvision",
+        "alt": []
       },
-      "description": "This feature allows the aasimar to use the Light cantrip at will.",
-      "tags": {
-        "magic": "cantrip",
-        "light": "illumination",
-        "aasimar": "racial feature"
+      "description": "У вас есть тёмное зрение в пределах 60 футов.",
+      "source": {
+        "url": "player-hand-s-book",
+        "page": 154
+      }
+    },
+    {
+      "name": {
+        "rus": "Исцеляющие Руки",
+        "eng": "Healing Hands",
+        "alt": []
+      },
+      "description": "Действием вы можете коснуться существа и бросить к4 в количестве, равном вашему бонусу мастерства. Существо восстанавливает хиты, равные сумме броска. Эта способность доступна только после продолжительного отдыха.",
+      "source": {
+        "url": "player-hand-s-book",
+        "page": 154
+      }
+    },
+    {
+      "name": {
+        "rus": "Носитель Света",
+        "eng": "Light Bearer",
+        "alt": []
+      },
+      "description": "Вы знаете заговор Свет. Для него вашей заклинательной характеристикой является Харизма.",
+      "source": {
+        "url": "player-hand-s-book",
+        "page": 154
+      }
+    },
+    {
+      "name": {
+        "rus": "Откровение Небес",
+        "eng": "Radiant Soul",
+        "alt": []
+      },
+      "description": "Вы можете трансформироваться бонусным действием, используя одну из опций: Небесные Крылья, Сияющая Душа или Саван Смерти.",
+      "source": {
+        "url": "player-hand-s-book",
+        "page": 154
       }
     }
   ],
-  "parent": true,
-  "source": "PHB",
-  "page": 155
+  "tags": [
+    "PHB"
+  ],
+  "image": "link_to_main_image",
+  "name": {
+    "rus": "Аасимар",
+    "eng": "Aasimar",
+    "alt": ["Celestial"]
+  },
+  "source": {
+    "url": "player-hand-s-book",
+    "page": 154
+  }
 }

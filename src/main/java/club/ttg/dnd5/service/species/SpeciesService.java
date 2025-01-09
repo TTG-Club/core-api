@@ -81,8 +81,28 @@ public class SpeciesService {
         }
         collectTagsFromDTOtoEntity(createSpeciesDTO, species);
         collectCreateFeatureDTOtoEntity(createSpeciesDTO, species);
+        handlingParentWhenCreateSpecies(species, createSpeciesDTO.getParent());
         Species save = speciesRepository.save(species);
         return toDTO(save, false);
+    }
+
+    private void handlingParentWhenCreateSpecies(Species species, String parentName) {
+        if (parentName == null || parentName.isBlank()) {
+            throw new IllegalArgumentException("Parent name cannot be null or blank");
+        }
+
+        if (species.getEnglish().equalsIgnoreCase(parentName) || species.getName().equalsIgnoreCase(parentName)) {
+            // If the species is its own parent, save it as the parent
+            speciesRepository.save(species); // Save to the database as a parent
+            species.setParent(species); // Set itself as its parent
+        } else {
+            // Find the parent species by name in the database
+            Species parent = speciesRepository.findByNameIgnoreCase(parentName)
+                    .orElseThrow(() -> new IllegalArgumentException("Parent species not found: " + parentName));
+
+            // Set the parent for the species
+            species.setParent(parent);
+        }
     }
 
     public List<SpeciesDto> getSubSpeciesByParentUrl(String parentUrl) {
@@ -196,7 +216,7 @@ public class SpeciesService {
 
     private SpeciesDto toDTO(Species species, boolean hideDetails) {
         SpeciesDto dto = new SpeciesDto();
-
+        dto.setTags(species.getTags().stream().map(Tag::getName).collect(Collectors.toSet()));
         // Apply basic mapping (including base DTO and potentially hidden details)
         if (hideDetails) {
             Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, species);  // Base mapping for common properties
@@ -208,9 +228,7 @@ public class SpeciesService {
             Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), species);  // Source mapping
 
             // Map CreatureProperties (movement and size related properties)
-            if (species != null) {
-                Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(dto.getCreatureProperties(), species);
-            }
+            Converter.MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO.apply(dto.getCreatureProperties(), species);
 
             // Map parent and sub-species relationships
             handleParentAndChild(species, dto);
@@ -293,16 +311,21 @@ public class SpeciesService {
     }
 
     private void collectTagsFromDTOtoEntity(CreateSpeciesDto createSpeciesDTO, Species species) {
-        Set<String> tagNames = createSpeciesDTO.getTags(); // DTO возвращает имена тегов
+        Set<String> tagNames = createSpeciesDTO.getTags(); // DTO returns tag names
         if (tagNames != null && !tagNames.isEmpty()) {
             Set<Tag> tags = tagNames.stream()
                     .map(tagName -> {
-                        // Проверяем наличие в текущей сессии или в базе
-                        return tagRepository.findByNameIgnoreCase(tagName)
+                        // Check if the tag exists in the database
+                        Tag tag = tagRepository.findByNameIgnoreCase(tagName)
                                 .orElseGet(() -> new Tag(tagName, TagType.TAG_SPECIES));
+                        tag.getSpecies().add(species);
+                        tagRepository.save(tag);
+                        return tag;
                     })
                     .collect(Collectors.toSet());
-            species.setTags(tags); // Устанавливаем теги
+
+            // Set the tags for the species
+            species.setTags(tags);
         }
     }
 
