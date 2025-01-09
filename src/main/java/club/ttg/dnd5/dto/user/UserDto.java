@@ -1,19 +1,18 @@
 package club.ttg.dnd5.dto.user;
 
+import club.ttg.dnd5.dto.base.TimestampDto;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.util.List;
 
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class UserDto extends TimestampDto {
     private String username;
     private String email;
     private List<String> roles;
-    private Instant createdAt;
-    private Instant updatedAt;
 }
