@@ -12,5 +12,8 @@ databaseChangeLog:
   - include:
       file: classpath:liquibase/db/changelog/initial-inserts-species.yaml
   - include:
+      #я точно не помню почему там такой нейминг)
       file: liquibase/db/changelog/18-01-changelog.yaml
+  - include:
+      file: liquibase/db/changelog/09-01-2015-changelog.yaml
 
