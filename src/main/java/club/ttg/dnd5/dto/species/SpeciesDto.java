@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
@@ -33,6 +35,7 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
     private NameBasedDTO group = new NameBasedDTO();
     @JsonIgnore
     private boolean isDetail = false;
+    private Set<String> tags = new HashSet<>();
 
     @Override
     public void hideDetails() {

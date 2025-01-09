@@ -42,7 +42,7 @@ public class SpeciesFeatureConverter {
             };
 
     // Converts SpeciesFeature to SpeciesFeatureDto
-// Converts SpeciesFeature to SpeciesFeatureDto
+    // Converts SpeciesFeature to SpeciesFeatureDto
     private static final BiFunction<SpeciesFeature, SpeciesFeatureDto, SpeciesFeatureDto> ENTITY_TO_DTO_CONVERTER =
             (feature, dto) -> {
                 if (feature == null || dto == null) {
@@ -100,4 +100,3 @@ public class SpeciesFeatureConverter {
                 .toList();
     }
 }
-

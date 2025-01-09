@@ -36,7 +36,7 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @JoinColumn(name = "source")
     private Source source = new Source();
 
-    @ManyToMany(cascade = CascadeType.PERSIST)
+    @ManyToMany
     @JoinTable(
             name = "species_tags",
             joinColumns = @JoinColumn(name = "species_id"),
