@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface BookRepository extends JpaRepository<Book, String> {
     // Метод для поиска книги по sourceAcronym
     Optional<Book> findBySourceAcronym(String sourceAcronym);
-
+    Optional<Book> findByUrl(String url);
     // Метод для поиска книг по типу
     List<Book> findByType(TypeBook type);
 

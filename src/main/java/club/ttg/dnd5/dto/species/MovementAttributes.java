@@ -1,15 +1,22 @@
 package club.ttg.dnd5.dto.species;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Builder
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class MovementAttributes{
-    private int base = 30;
+    private final int base;
     private int fly;
     private int climb;
     private int swim;
+
+    public MovementAttributes() {
+        this.base = 30;
+        fly = -1;
+        climb = -1;
+        swim = -1;
+    }
 }

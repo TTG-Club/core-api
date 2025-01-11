@@ -18,34 +18,60 @@ public class SpeciesFeatureConverter {
     // Converts SpeciesFeatureDto to SpeciesFeature
     private static final BiFunction<SpeciesFeatureDto, SpeciesFeature, SpeciesFeature> DTO_TO_ENTITY_CONVERTER =
             (response, speciesFeature) -> {
+                if (response == null || speciesFeature == null) {
+                    return null;
+                }
+
+                if (response.getSourceDTO() != null) {
+                    Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(response.getSourceDTO(), speciesFeature);
+                }
+
+                if (response.getTags() != null) {
+                    Set<Tag> tags = response.getTags().stream()
+                            .map(Tag::new)
+                            .collect(Collectors.toSet());
+                    speciesFeature.setTags(tags);
+                }
+
+                if (response.getDescription() != null) {
+                    speciesFeature.setFeatureDescription(response.getDescription());
+                }
                 Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(response, speciesFeature);
-                Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(response.getSourceDTO(), speciesFeature);
 
-                Set<Tag> tags = response.getTags().stream()
-                        .map(Tag::new)
-                        .collect(Collectors.toSet());
-                speciesFeature.setTags(tags);
-
-                speciesFeature.setFeatureDescription(response.getDescription());
                 return speciesFeature;
             };
 
     // Converts SpeciesFeature to SpeciesFeatureDto
+    // Converts SpeciesFeature to SpeciesFeatureDto
     private static final BiFunction<SpeciesFeature, SpeciesFeatureDto, SpeciesFeatureDto> ENTITY_TO_DTO_CONVERTER =
             (feature, dto) -> {
-                Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, feature);
-                Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), feature);
+                if (feature == null || dto == null) {
+                    return null; // Or throw an exception if you prefer
+                }
+
+                // Ensure sourceDTO is not null before mapping
+                if (dto.getSourceDTO() != null) {
+                    Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), feature);
+                }
 
                 // Convert entity tags (Set<Tag>) to DTO tags (Set<String>)
-                Set<String> tags = feature.getTags().stream()
-                        .map(Tag::getName)
-                        .collect(Collectors.toSet());
-                dto.setTags(tags);
+                if (feature.getTags() != null) {
+                    Set<String> tags = feature.getTags().stream()
+                            .map(Tag::getName)
+                            .collect(Collectors.toSet());
+                    dto.setTags(tags);
+                }
 
-                dto.setDescription(feature.getFeatureDescription());
+                // Ensure description is not null before setting
+                if (feature.getFeatureDescription() != null) {
+                    dto.setDescription(feature.getFeatureDescription());
+                }
+
+                // Apply name mapping (assuming this method also handles null safety)
+                Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, feature);
+
                 return dto;
             };
-
 
     // Converts SpeciesFeatureDto to SpeciesFeature
     public static SpeciesFeature toEntityFeature(SpeciesFeatureDto response) {
@@ -74,4 +100,3 @@ public class SpeciesFeatureConverter {
                 .toList();
     }
 }
-

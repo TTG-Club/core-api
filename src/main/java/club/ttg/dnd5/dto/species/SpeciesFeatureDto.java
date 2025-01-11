@@ -10,10 +10,10 @@ import lombok.Setter;
 import java.util.HashSet;
 import java.util.Set;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
 public class SpeciesFeatureDto extends BaseDTO implements HasTagDTO {
     @JsonProperty("tags")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> tags = new HashSet<>();
 }
