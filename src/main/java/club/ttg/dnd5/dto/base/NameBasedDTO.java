@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import lombok.*;
 
+import java.util.ArrayList;
+
 @Getter
 @Setter
 @RequiredArgsConstructor
@@ -19,7 +21,7 @@ public class NameBasedDTO implements HasNameResponse {
     private String english = "";
     @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "alt")
-    private String alternative = "";
+    private ArrayList<String> alternative = new ArrayList<>();
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "short")
     private String shortName = "";

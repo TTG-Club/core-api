@@ -1,6 +1,7 @@
 package club.ttg.dnd5.model.base;
 
 import club.ttg.dnd5.model.book.Book;
+import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -35,6 +36,9 @@ public class Tag {
 
     @ManyToMany(mappedBy = "tags")  // The "tags" field in SpeciesFeature will manage the relationship
     private Set<SpeciesFeature> speciesFeatures = new HashSet<>();
+
+    @ManyToMany(mappedBy = "tags")
+    private Set<Species> species = new HashSet<>();
 
     public Tag(String name) {
         this.name = name;

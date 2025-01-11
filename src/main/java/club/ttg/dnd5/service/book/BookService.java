@@ -35,7 +35,8 @@ public class BookService {
         return convertingEntityToSourceDTO(savedBook);
     }
 
-    public List<SourceBookDTO> getBooks() {
+
+    public List<SourceBookDTO> getAllBooks() {
         return bookRepository.findAll().stream().map(this::convertingEntityToSourceDTO).collect(Collectors.toList());
     }
 
@@ -75,7 +76,19 @@ public class BookService {
         if (StringUtils.isBlank(name.getShortName())) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Акроним у книги должен быть, это является ID, в бдшке");
         }
-        return Book.builder().bookDate(sourceBookDTO.getYear()).sourceAcronym(name.getShortName()).name(name.getName()).englishName(name.getEnglish()).authors(sourceBookDTO.getAuthor()).image(sourceBookDTO.getImage()).description(sourceBookDTO.getDescription()).tags(generatingTags(sourceBookDTO.getTags())).type(TypeBook.parse(sourceBookDTO.getType())).translation(convertingTranslation(sourceBookDTO.getTranslation())).build();
+        return Book.builder()
+                .bookDate(sourceBookDTO.getYear())
+                .sourceAcronym(name.getShortName())
+                .name(name.getName())
+                .englishName(name.getEnglish())
+                .authors(sourceBookDTO.getAuthor())
+                .image(sourceBookDTO.getImage())
+                .description(sourceBookDTO.getDescription())
+                .tags(generatingTags(sourceBookDTO.getTags()))
+                .type(TypeBook.parse(sourceBookDTO.getType()))
+                .translation(convertingTranslation(sourceBookDTO.getTranslation()))
+                .url(sourceBookDTO.getUrl())
+                .build();
     }
 
     private Set<Tag> generatingTags(Set<String> tags) {
@@ -87,7 +100,20 @@ public class BookService {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Сущность книги невалидная");
         }
 
-        return SourceBookDTO.builder().year(book.getBookDate()).name(NameBasedDTO.builder().shortName(book.getSourceAcronym()).name(book.getName()).english(book.getEnglishName()).build()).author(new HashSet<>(book.getAuthors())).image(book.getImage()).description(book.getDescription()).tags(book.getTags().stream().map(Tag::getName).collect(Collectors.toSet())).type(book.getType().getName()).translation(convertingTranslationToDTO(book.getTranslation())).build();
+        return SourceBookDTO.builder()
+                .year(book.getBookDate())
+                .name(NameBasedDTO.builder()
+                        .shortName(book.getSourceAcronym())
+                        .name(book.getName())
+                        .english(book.getEnglishName())
+                        .build())
+                .author(new HashSet<>(book.getAuthors()))
+                .image(book.getImage())
+                .url(book.getUrl())
+                .description(book.getDescription())
+                .tags(book.getTags().stream().map(Tag::getName).collect(Collectors.toSet()))
+                .type(book.getType().getName())
+                .translation(convertingTranslationToDTO(book.getTranslation())).build();
     }
 
     private Translation convertingTranslation(TranslationDTO translationDTO) {

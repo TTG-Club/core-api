@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -32,7 +34,7 @@ public class Converter {
         if (dto.getNameBasedDTO() != null) {
             entity.setName(dto.getNameBasedDTO().getName());
             entity.setEnglish(dto.getNameBasedDTO().getEnglish());
-            entity.setAlternative(dto.getNameBasedDTO().getAlternative());
+            entity.setAlternative(String.join(",", dto.getNameBasedDTO().getAlternative()));
             entity.setShortName(dto.getNameBasedDTO().getShortName());
         }
         entity.setDescription(dto.getDescription());
@@ -47,7 +49,16 @@ public class Converter {
         dto.getNameBasedDTO().setName(entity.getName());
         dto.getNameBasedDTO().setEnglish(entity.getEnglish());
         dto.getNameBasedDTO().setShortName(entity.getShortName());
-        dto.getNameBasedDTO().setAlternative(entity.getAlternative());
+        if (entity.getAlternative() != null && !entity.getAlternative().isEmpty()) {
+            dto.getNameBasedDTO().setAlternative(
+                    new ArrayList<>(Arrays.stream(entity.getAlternative().split(","))
+                            .map(String::trim)
+                            .filter(name -> !name.isEmpty())
+                            .toList())
+            );
+        } else {
+            dto.getNameBasedDTO().setAlternative(new ArrayList<>()); // Set an empty list if alternative is null or empty
+        }
         dto.setDescription(entity.getDescription());
         if (entity.getUpdatedAt() != null) {
             dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant().truncatedTo(ChronoUnit.MINUTES));
@@ -57,19 +68,19 @@ public class Converter {
 
     // Function to map Creature Properties DTO to Entity
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
-        entity.setSize(Size.parse(dto.getSize()));
+        entity.setSizes(Size.convertSizeToEntityFormat(dto.getSizes()));
         entity.setType(CreatureType.parse(dto.getType()));
-        entity.setSpeed(entity.getSpeed());
+        entity.setSpeed(dto.getMovementAttributes().getBase());
         entity.setFly(dto.getMovementAttributes().getFly());
-        entity.setClimb(entity.getClimb());
-        entity.setSwim(entity.getSwim());
+        entity.setClimb(dto.getMovementAttributes().getClimb());
+        entity.setSwim(dto.getMovementAttributes().getSwim());
         entity.setDarkVision(dto.getDarkVision());
         return entity;
     };
 
     // Function to map Creature Properties Entity to DTO
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreaturePropertiesDto> MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO = (dto, entity) -> {
-        dto.setSize(entity.getSize().getName());
+        dto.setSizes(Size.convertEntityFormatToDtoFormat(entity.getSizes()));
         dto.setType(entity.getType().getCyrillicName());
         MovementAttributes movementAttributes = MovementAttributes.builder()
                 .base(entity.getSpeed())
@@ -92,9 +103,7 @@ public class Converter {
         Book book = new Book(sourceAcronym);
         book.setSourceAcronym(sourceAcronym);
         source.setBookInfo(book);
-        if (dto.getPage() != null) {
-            source.setPage(dto.getPage());
-        }
+        source.setPage(dto.getPage());
         entity.setSource(source);
         return entity;
     };
@@ -109,7 +118,16 @@ public class Converter {
                 name.setEnglish(bookInfo.getEnglishName());
                 name.setName(bookInfo.getName());
                 name.setShortName(bookInfo.getSourceAcronym());
-                name.setAlternative(bookInfo.getAltName());
+                if (bookInfo.getAltName() != null && !bookInfo.getAltName().isEmpty()) {
+                    name.setAlternative(
+                            new ArrayList<>(Arrays.stream(bookInfo.getAltName().split(","))
+                                    .map(String::trim)
+                                    .filter(nameAlt -> !nameAlt.isEmpty())
+                                    .toList())
+                    );
+                } else {
+                    name.setAlternative(new ArrayList<>()); // Set an empty list if altName is null or empty
+                }
             }
             STRATEGY_SOURCE_CONSUMER.accept(dto, source);
             dto.setName(name);
