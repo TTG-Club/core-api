@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: 1736450098391-55
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - createTable:
@@ -23,7 +23,7 @@ databaseChangeLog:
             tableName: species_tags
   - changeSet:
       id: 1736450098391-56
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addColumn:
@@ -37,7 +37,7 @@ databaseChangeLog:
             tableName: species
   - changeSet:
       id: 1736450098391-58
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addColumn:
@@ -48,7 +48,7 @@ databaseChangeLog:
             tableName: books
   - changeSet:
       id: 1736450098391-59
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addColumn:
@@ -59,7 +59,7 @@ databaseChangeLog:
             tableName: sources
   - changeSet:
       id: 1736450098391-60
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addPrimaryKey:
@@ -68,7 +68,7 @@ databaseChangeLog:
             tableName: background_abilities
   - changeSet:
       id: 1736450098391-61
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addPrimaryKey:
@@ -77,7 +77,7 @@ databaseChangeLog:
             tableName: background_available_skills
   - changeSet:
       id: 1736450098391-62
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addPrimaryKey:
@@ -86,7 +86,7 @@ databaseChangeLog:
             tableName: class_available_skills
   - changeSet:
       id: 1736450098391-63
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addPrimaryKey:
@@ -95,7 +95,7 @@ databaseChangeLog:
             tableName: class_saving_throw_abilities
   - changeSet:
       id: 1736450098391-65
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - createIndex:
@@ -106,7 +106,7 @@ databaseChangeLog:
             tableName: class_feature_tags
   - changeSet:
       id: 1736450098391-66
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - createIndex:
@@ -117,7 +117,7 @@ databaseChangeLog:
             tableName: feature_tags
   - changeSet:
       id: 1736450098391-67
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - createIndex:
@@ -128,7 +128,7 @@ databaseChangeLog:
             tableName: book_tags
   - changeSet:
       id: 1736450098391-68
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addForeignKeyConstraint:
@@ -146,7 +146,7 @@ databaseChangeLog:
             tableName: species_tags
   - changeSet:
       id: 1736450098391-69
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addForeignKeyConstraint:
@@ -158,7 +158,7 @@ databaseChangeLog:
             referencedTableName: tags
   - changeSet:
       id: 1736450098391-70
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - dropColumn:
@@ -166,7 +166,7 @@ databaseChangeLog:
             tableName: species
   - changeSet:
       id: 1736450098391-5
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -175,7 +175,7 @@ databaseChangeLog:
             tableName: feats
   - changeSet:
       id: 1736450098391-6
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -184,7 +184,7 @@ databaseChangeLog:
             tableName: youtube_videos
   - changeSet:
       id: 1736450098391-7
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -193,7 +193,7 @@ databaseChangeLog:
             tableName: backgrounds
   - changeSet:
       id: 1736450098391-8
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -202,7 +202,7 @@ databaseChangeLog:
             tableName: books
   - changeSet:
       id: 1736450098391-9
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -211,7 +211,7 @@ databaseChangeLog:
             tableName: class_features
   - changeSet:
       id: 1736450098391-10
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -220,7 +220,7 @@ databaseChangeLog:
             tableName: classes
   - changeSet:
       id: 1736450098391-11
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -229,7 +229,7 @@ databaseChangeLog:
             tableName: feats
   - changeSet:
       id: 1736450098391-12
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -238,7 +238,7 @@ databaseChangeLog:
             tableName: sources
   - changeSet:
       id: 1736450098391-13
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -247,7 +247,7 @@ databaseChangeLog:
             tableName: species
   - changeSet:
       id: 1736450098391-14
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -256,7 +256,7 @@ databaseChangeLog:
             tableName: species_features
   - changeSet:
       id: 1736450098391-15
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -265,7 +265,7 @@ databaseChangeLog:
             tableName: user_party
   - changeSet:
       id: 1736450098391-16
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -274,7 +274,7 @@ databaseChangeLog:
             tableName: users
   - changeSet:
       id: 1736450098391-17
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -283,7 +283,7 @@ databaseChangeLog:
             tableName: users
   - changeSet:
       id: 1736450098391-18
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -292,7 +292,7 @@ databaseChangeLog:
             tableName: invitation
   - changeSet:
       id: 1736450098391-20
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -301,7 +301,7 @@ databaseChangeLog:
             tableName: backgrounds
   - changeSet:
       id: 1736450098391-21
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -310,7 +310,7 @@ databaseChangeLog:
             tableName: class_features
   - changeSet:
       id: 1736450098391-22
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -319,7 +319,7 @@ databaseChangeLog:
             tableName: classes
   - changeSet:
       id: 1736450098391-23
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -328,7 +328,7 @@ databaseChangeLog:
             tableName: feats
   - changeSet:
       id: 1736450098391-24
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -337,7 +337,7 @@ databaseChangeLog:
             tableName: species
   - changeSet:
       id: 1736450098391-25
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -346,7 +346,7 @@ databaseChangeLog:
             tableName: species_features
   - changeSet:
       id: 1736450098391-27
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -355,7 +355,7 @@ databaseChangeLog:
             tableName: menu
   - changeSet:
       id: 1736450098391-28
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addNotNullConstraint:
@@ -365,7 +365,7 @@ databaseChangeLog:
             validate: true
   - changeSet:
       id: 1736450098391-29
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -374,7 +374,7 @@ databaseChangeLog:
             tableName: menu
   - changeSet:
       id: 1736450098391-30
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - addNotNullConstraint:
@@ -384,7 +384,7 @@ databaseChangeLog:
             validate: true
   - changeSet:
       id: 1736450098391-31
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -393,7 +393,7 @@ databaseChangeLog:
             tableName: sources
   - changeSet:
       id: 1736450098391-35
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -402,7 +402,7 @@ databaseChangeLog:
             tableName: tags
   - changeSet:
       id: 1736450098391-37
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -411,7 +411,7 @@ databaseChangeLog:
             tableName: books
   - changeSet:
       id: 1736450098391-38
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -420,7 +420,7 @@ databaseChangeLog:
             tableName: species
   - changeSet:
       id: 1736450098391-39
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -429,7 +429,7 @@ databaseChangeLog:
             tableName: backgrounds
   - changeSet:
       id: 1736450098391-40
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -438,7 +438,7 @@ databaseChangeLog:
             tableName: books
   - changeSet:
       id: 1736450098391-41
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -447,7 +447,7 @@ databaseChangeLog:
             tableName: class_features
   - changeSet:
       id: 1736450098391-42
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -456,7 +456,7 @@ databaseChangeLog:
             tableName: classes
   - changeSet:
       id: 1736450098391-43
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -465,7 +465,7 @@ databaseChangeLog:
             tableName: feats
   - changeSet:
       id: 1736450098391-44
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -474,7 +474,7 @@ databaseChangeLog:
             tableName: sources
   - changeSet:
       id: 1736450098391-45
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -483,7 +483,7 @@ databaseChangeLog:
             tableName: species
   - changeSet:
       id: 1736450098391-46
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -492,7 +492,7 @@ databaseChangeLog:
             tableName: species_features
   - changeSet:
       id: 1736450098391-47
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -501,7 +501,7 @@ databaseChangeLog:
             tableName: user_party
   - changeSet:
       id: 1736450098391-48
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - modifyDataType:
@@ -510,7 +510,7 @@ databaseChangeLog:
             tableName: users
   - changeSet:
       id: 1736450098391-50
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - dropPrimaryKey:
@@ -521,7 +521,7 @@ databaseChangeLog:
             tableName: book_tags
   - changeSet:
       id: 1736450098391-52
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - dropPrimaryKey:
@@ -532,7 +532,7 @@ databaseChangeLog:
             tableName: class_feature_tags
   - changeSet:
       id: 1736450098391-54
-      author: 'ProtectorRTD'
+      author: '1'
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - dropPrimaryKey:
