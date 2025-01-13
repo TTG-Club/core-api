@@ -23,7 +23,6 @@ import java.util.List;
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
-
     @Operation(summary = "Получение профиля пользователя")
     @GetMapping("/profile")
     public UserDto getUser() {
@@ -34,8 +33,6 @@ public class UserController {
     @GetMapping("/roles")
     public List<String> getRoles() {
         UserDto userDto = SecurityUtils.getUserDto();
-
         return userDto.getRoles();
     }
-
 }

@@ -6,7 +6,7 @@ import org.apache.commons.io.FilenameUtils;
 /**
  * Утилита для преобразования текста в url-friendly строки
  */
-public class SlugifyUtil {
+public final class SlugifyUtil {
     private final static Slugify slugify = Slugify.builder()
             .transliterator(true)
             .build();

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.controller.engine;
 
-import club.ttg.dnd5.dto.ResponseDto;
+import club.ttg.dnd5.dto.ErrorResponseDto;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -25,58 +25,53 @@ import java.io.IOException;
 @ControllerAdvice
 @RequiredArgsConstructor
 public class ExceptionController {
-
     @Value("${spring.servlet.multipart.max-file-size}")
     private String MAX_FILE_SIZE;
 
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ResponseDto> handleAuthenticationException(ApiException ex, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ErrorResponseDto> handleApiException(ApiException ex, HttpServletRequest request, HttpServletResponse response) {
         log.error(ExceptionUtils.getStackTrace(ex));
 
-        return ResponseEntity.status(ex.getStatus())
-                .body(new ResponseDto(
-                        ex.getStatus().value(),
-                        ex.getStatus().getReasonPhrase(),
-                        ex.getMessage()));
+        return convertToResponseEntity(ex.getStatus(), ex.getMessage());
     }
 
     @ExceptionHandler({SecurityException.class, AuthorizationDeniedException.class})
-    public ResponseEntity<ResponseDto> handleSecurityException() {
+    public ResponseEntity<ErrorResponseDto> handleSecurityException() {
         return convertToResponseEntity(HttpStatus.FORBIDDEN, "Доступ запрещен");
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ResponseDto> handleRequestParamException(MissingServletRequestParameterException ex, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ErrorResponseDto> handleRequestParamException(MissingServletRequestParameterException ex, HttpServletRequest request, HttpServletResponse response) {
         String message = String.format("Отсутствует необходимый параметр \"%s\"", ex.getParameterName());
 
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ResponseDto> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ErrorResponseDto> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex, HttpServletRequest request, HttpServletResponse response) {
         String message = String.format("Максимальный размер загружаемых файлов – %s", MAX_FILE_SIZE);
 
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler({NoHandlerFoundException.class, IOException.class, Exception.class})
-    public ResponseEntity<ResponseDto> handleOtherExceptions(Exception ex, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ErrorResponseDto> handleOtherExceptions(Exception ex, HttpServletRequest request, HttpServletResponse response) {
         log.error(ExceptionUtils.getStackTrace(ex));
 
         return convertToResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ResponseDto> handlePageNotFound(Exception exception) {
+    public ResponseEntity<ErrorResponseDto> handleEntityNotFound(Exception exception) {
         return convertToResponseEntity(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
     @ExceptionHandler(EntityExistException.class)
-    public ResponseEntity<ResponseDto> handleHandlePageExistException(Exception exception) {
+    public ResponseEntity<ErrorResponseDto> handleHandleEntityExistException(Exception exception) {
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
-    private ResponseEntity<ResponseDto> convertToResponseEntity(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(new ResponseDto(status, message));
+    private ResponseEntity<ErrorResponseDto> convertToResponseEntity(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body(new ErrorResponseDto(status, message));
     }
 }

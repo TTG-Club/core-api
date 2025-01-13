@@ -25,7 +25,6 @@ import java.util.UUID;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
     private final JwtUtils jwtUtils;
 
     private final AuthService authService;
@@ -52,7 +51,7 @@ public class AuthController {
         authService.signUp(user);
     }
 
-    @Operation(summary = "Выход из пользователя")
+    @Operation(summary = "Выход пользователя")
     @GetMapping("/logout")
     public void logout(HttpSession session, HttpServletResponse response) {
         session.invalidate();
@@ -78,5 +77,4 @@ public class AuthController {
     public void confirmEmail(@RequestParam UUID token) {
         authService.confirmEmail(token);
     }
-
 }

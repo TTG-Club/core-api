@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +30,8 @@ public class MenuController {
     @Operation(summary = "Получение элемента меню по URL")
     @GetMapping("/{url}")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<MenuResponse> getMenuByUrl(@PathVariable String url) {
-        return new ResponseEntity<>(menuService.findByUrl(url), HttpStatus.OK);
+    public MenuResponse getMenuByUrl(@PathVariable String url) {
+        return menuService.findByUrl(url);
     }
 
     @Operation(summary = "Создание нового элемента меню")
@@ -47,10 +46,8 @@ public class MenuController {
     @PutMapping("/{oldUrl}")
     @Secured("ADMIN")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<MenuResponse> updateMenu(@PathVariable String oldUrl,
-                                                   @RequestBody MenuResponse menuResponse) {
-        MenuResponse updatedMenu = menuService.update(oldUrl, menuResponse);
-        return new ResponseEntity<>(updatedMenu, HttpStatus.OK);
+    public MenuResponse updateMenu(@PathVariable String oldUrl, @RequestBody MenuResponse menuResponse) {
+        return menuService.update(oldUrl, menuResponse);
     }
 
     @Operation(summary = "Удаление элемента меню по URL")

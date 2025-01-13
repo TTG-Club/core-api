@@ -19,7 +19,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Table(name = "one_time_tokens")
 public class OneTimeToken {
-
     @Id
     @UuidGenerator
     @GeneratedValue(strategy = GenerationType.UUID)

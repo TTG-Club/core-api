@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
  * Класс утилита для работы с аутентифицированным пользователем
  */
 public final class SecurityUtils {
-
     private SecurityUtils() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }

@@ -6,12 +6,12 @@ import org.springframework.http.HttpStatus;
 
 @Data
 @AllArgsConstructor
-public class ResponseDto {
+public class ErrorResponseDto {
     private Integer status;
     private String error;
     private String message;
 
-    public ResponseDto(HttpStatus status, String message) {
+    public ErrorResponseDto(HttpStatus status, String message) {
         this.status = status.value();
         this.error = status.getReasonPhrase();
         this.message = message;

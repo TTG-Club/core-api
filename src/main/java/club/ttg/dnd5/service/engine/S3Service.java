@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class S3Service {
-
     @Value("${spring.cloud.aws.s3.endpoint}")
     private String ENDPOINT;
 

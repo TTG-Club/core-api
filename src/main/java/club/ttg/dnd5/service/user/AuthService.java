@@ -32,7 +32,6 @@ import java.util.UUID;
 @Transactional
 @RequiredArgsConstructor
 public class AuthService {
-
     private final JwtUtils jwtUtils;
     private final UserService userService;
     private final EmailService emailService;
@@ -105,5 +104,4 @@ public class AuthService {
         userRepository.save(user);
         oneTimeTokenRepository.delete(oneTimeToken);
     }
-
 }
