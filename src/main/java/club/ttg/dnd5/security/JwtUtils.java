@@ -20,7 +20,7 @@ import java.util.function.Function;
 @Component
 @RequiredArgsConstructor
 public class JwtUtils {
-    @Value("${token.api.secret}")
+    @Value("${api.secret}")
     private String SECRET_KEY;
 
     private final UserService userService;
