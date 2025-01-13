@@ -28,6 +28,4 @@ public class UserService {
     public UserDetailsService userDetailsService() {
         return this::getByUsername;
     }
-
-
 }
