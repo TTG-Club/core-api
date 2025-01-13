@@ -144,7 +144,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @PostMapping("/new")
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @ResponseStatus(HttpStatus.CREATED)
     public SpeciesDto createSpecies(@RequestBody CreateSpeciesDto createSpeciesDTO) {
         return speciesService.save(createSpeciesDTO);
@@ -157,7 +157,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @PutMapping("/{url}")
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @ResponseStatus(HttpStatus.OK)
     public SpeciesDto updateSpecies(@PathVariable String url, @RequestBody SpeciesDto speciesDTO) {
         return speciesService.update(url, speciesDTO);
