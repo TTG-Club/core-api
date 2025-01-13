@@ -26,6 +26,17 @@
 		<tag/>
 		<url/>
 	</scm>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.awspring.cloud</groupId>
+				<artifactId>spring-cloud-aws-dependencies</artifactId>
+				<version>3.0.0-RC2</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<properties>
 		<java.version>17</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -36,6 +47,9 @@
 		<mapstruct.version>1.6.0.Beta2</mapstruct.version>
 		<mapstruct-processor.version>1.5.5.Final</mapstruct-processor.version>
 		<liqui-base.version>4.24.0</liqui-base.version>
+		<slugify.version>3.0.7</slugify.version>
+		<icu4j.version>76.1</icu4j.version>
+		<commons-io.version>2.18.0</commons-io.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -116,6 +130,25 @@
 			<artifactId>mockito-core</artifactId>
 			<version>5.12.0</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.awspring.cloud</groupId>
+			<artifactId>spring-cloud-aws-starter-s3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.slugify</groupId>
+			<artifactId>slugify</artifactId>
+			<version>${slugify.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ibm.icu</groupId>
+			<artifactId>icu4j</artifactId>
+			<version>${icu4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${commons-io.version}</version>
 		</dependency>
 	</dependencies>
 
