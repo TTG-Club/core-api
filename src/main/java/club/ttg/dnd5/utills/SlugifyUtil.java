@@ -1,11 +1,16 @@
 package club.ttg.dnd5.utills;
 
 import com.github.slugify.Slugify;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
+
 
 /**
  * Утилита для преобразования текста в url-friendly строки
  */
+
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SlugifyUtil {
     private final static Slugify slugify = Slugify.builder()
             .transliterator(true)
