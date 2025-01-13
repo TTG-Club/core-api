@@ -4,14 +4,12 @@ import club.ttg.dnd5.dto.user.SignInDto;
 import club.ttg.dnd5.dto.user.SignUpDto;
 import club.ttg.dnd5.security.JwtUtils;
 import club.ttg.dnd5.service.user.AuthService;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -19,8 +17,6 @@ import java.util.UUID;
 
 @Tag(name = "Аутентификация пользователя")
 
-@Slf4j
-@Hidden
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

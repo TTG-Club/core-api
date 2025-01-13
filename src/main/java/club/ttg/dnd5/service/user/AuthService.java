@@ -12,7 +12,6 @@ import club.ttg.dnd5.security.JwtUtils;
 import club.ttg.dnd5.service.engine.EmailService;
 import io.jsonwebtoken.lang.Strings;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -27,7 +26,6 @@ import java.util.Collections;
 import java.util.UUID;
 
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
