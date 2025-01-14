@@ -47,7 +47,7 @@ public class AuthService {
         } catch (DisabledException e) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Учетная запись не активирована");
         } catch (Exception e) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Неизвестная ошибка");
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
         User user = userService.getByUsernameOrEmail(usernameOrEmail);
