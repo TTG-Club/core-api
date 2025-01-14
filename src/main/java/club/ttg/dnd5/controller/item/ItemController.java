@@ -2,21 +2,41 @@ package club.ttg.dnd5.controller.item;
 
 import club.ttg.dnd5.dto.item.ItemDto;
 import club.ttg.dnd5.service.item.ItemService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/item")
-@Tag(name = "Снаряжение", description = "REST API снаряжение и прочие предметы")
+@Tag(name = "Снаряжение и предметы", description = "REST API снаряжение и прочие предметы")
 public class ItemController {
     private final ItemService itemService;
 
-    @GetMapping("/{url}")
-    public ItemDto getItem() {
-        return null;
+    @Operation(summary = "Получение детального описания предмета")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Предмет успешно получена"),
+            @ApiResponse(responseCode = "404", description = "Предмет не найден")
+    })
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/{itemUtl}")
+    public ItemDto getItem(@PathVariable final String itemUtl) {
+        return itemService.getItem(itemUtl);
+    }
+
+    @Operation(summary = "Получение списка краткого описания предметов")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
+    })
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/search")
+    public Collection<ItemDto> getFeats() {
+        return itemService.getItems();
     }
 }
