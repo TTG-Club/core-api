@@ -41,10 +41,10 @@ public enum Size {
 
 	public static String convertSizeToEntityFormat(Collection<String> sizes) {
 		List<Size> list = sizes.stream()
-				.map(size -> parse(size))
+				.map(Size::parse)
 				.toList();
 		return list.stream()
-				.map(Size::getName)
+				.map(Size::name)
 				.collect(Collectors.joining(", "));
 	}
 
@@ -52,7 +52,7 @@ public enum Size {
 		return Arrays.stream(entityFormat.split(","))
 				.map(String::trim)
 				.map(Size::parse)
-				.map(Size::getName)
+				.map(Size::name)
 				.toList();
 	}
 

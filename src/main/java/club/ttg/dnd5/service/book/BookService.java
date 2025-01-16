@@ -76,6 +76,9 @@ public class BookService {
         if (StringUtils.isBlank(name.getShortName())) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Акроним у книги должен быть, это является ID, в бдшке");
         }
+        if (StringUtils.isBlank(sourceBookDTO.getUrl())) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Должен быть указан url");
+        }
         return Book.builder()
                 .bookDate(sourceBookDTO.getYear())
                 .sourceAcronym(name.getShortName())
