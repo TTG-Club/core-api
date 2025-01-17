@@ -74,10 +74,10 @@ public class BookService {
     private Book convertingCreateSourceToEntity(SourceBookDTO sourceBookDTO) {
         NameBasedDTO name = sourceBookDTO.getName();
         if (StringUtils.isBlank(name.getShortName())) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Отсутствует обязательно поле `shortName`");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Отсутствует обязательно поле `shortName`");
         }
         if (StringUtils.isBlank(sourceBookDTO.getUrl())) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Отсутствует обязательное поле `url`");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Отсутствует обязательное поле `url`");
         }
         return Book.builder()
                 .bookDate(sourceBookDTO.getYear())
