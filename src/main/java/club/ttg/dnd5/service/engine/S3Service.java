@@ -47,6 +47,10 @@ public class S3Service {
                 .build();
     }
 
+    public void delete(String s3url) {
+        s3Template.deleteObject(s3url);
+    }
+
     private String getFileKey(String filename, String path) {
         User user = SecurityUtils.getUser();
 
