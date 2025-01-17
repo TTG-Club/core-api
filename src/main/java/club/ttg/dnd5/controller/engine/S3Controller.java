@@ -4,12 +4,10 @@ import club.ttg.dnd5.dto.s3.S3UploadedFile;
 import club.ttg.dnd5.service.engine.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -30,5 +28,11 @@ public class S3Controller {
             @RequestParam(required = false) String path
     ) throws IOException {
         return s3Service.upload(file, path);
+    }
+
+    @Operation(summary = "Удаление файла из S3")
+    @DeleteMapping
+    public void delete(@Valid @RequestParam String s3url) {
+        s3Service.delete(s3url);
     }
 }
