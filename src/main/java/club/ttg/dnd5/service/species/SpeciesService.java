@@ -68,6 +68,9 @@ public class SpeciesService {
         CreateConverter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getProperties(), species);
         SourceReference sourceDTO = createSpeciesDTO.getSourceDTO();
+        if (createSpeciesDTO.getGallery() != null && !createSpeciesDTO.getGallery().isEmpty()) {
+            species.setGalleryUrl(createSpeciesDTO.getGallery());
+        }
         if (sourceDTO != null) {
             Book book = bookRepository.findByUrl(sourceDTO.getUrl())
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, BOOK_NOT_FOUND_FOR_URL
