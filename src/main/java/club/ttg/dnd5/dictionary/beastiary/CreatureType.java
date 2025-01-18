@@ -41,12 +41,8 @@ public enum CreatureType {
 		if (type == null) {
 			throw new IllegalArgumentException("Type cannot be null");
 		}
-
-		String normalizedType = type.trim().toLowerCase();
-
-		// Try to find the matching CreatureType by checking against normalized Cyrillic names
 		return Arrays.stream(values())
-				.filter(t -> t.cyrillicNames.stream().anyMatch(name -> name.toLowerCase().equals(normalizedType)))
+				.filter(t -> t.name().equalsIgnoreCase(type))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("Invalid type: " + type));
 	}
