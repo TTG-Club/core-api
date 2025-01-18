@@ -46,7 +46,7 @@ public enum Size {
 		return Arrays.stream(entityFormat.split(","))
 				.map(String::trim)
 				.map(Size::parse)
-				.map(Size::name)
+				.map(s -> s.getNames()[0])
 				.toList();
 	}
 
