@@ -45,6 +45,11 @@ public class BookService {
         return bookRepository.findBySourceAcronym(sourceAcronym).map(this::convertingEntityToSourceDTO);
     }
 
+    // Получение книги по её url
+    public Optional<SourceBookDTO> getBookByUrl(String url) {
+        return bookRepository.findByUrl(url).map(this::convertingEntityToSourceDTO);
+    }
+
     // Поиск книги по типу
     public List<SourceBookDTO> getBooksByType(String type) {
         TypeBook bookType = TypeBook.valueOf(type.toUpperCase());

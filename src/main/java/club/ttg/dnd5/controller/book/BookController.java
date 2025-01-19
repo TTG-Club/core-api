@@ -68,16 +68,16 @@ public class BookController {
     }
 
     /**
-     * Получение книги по акрониму источника.
+     * Получение книги по URL.
      *
-     * @param acronym акроним источника книги
+     * @param url акроним источника книги
      * @return данные книги или 404, если книга не найдена
      */
-    @GetMapping("/{acronym}")
-    @Operation(summary = "Получить книгу по акрониму источника", description = "Возвращает книгу по указанному акрониму источника.")
-    public ResponseEntity<SourceBookDTO> getBookBySourceAcronym(
-            @Parameter(description = "Акроним источника книги", example = "PHB") @PathVariable String acronym) {
-        return bookService.getBookBySourceAcronym(acronym)
+    @GetMapping("/{url}")
+    @Operation(summary = "Получить книгу по акрониму источника", description = "Возвращает книгу по указанному url.")
+    public ResponseEntity<SourceBookDTO> getBookByUrl(
+            @Parameter(description = "URL книги", example = "players-handbook") @PathVariable String url) {
+        return bookService.getBookByUrl(url)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
