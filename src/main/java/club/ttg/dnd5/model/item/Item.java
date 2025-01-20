@@ -25,11 +25,19 @@ public class Item extends NamedEntity implements HasSourceEntity {
     private String cost;
     /** Вес предмета */
     private String weight;
-
+    /**
+     * True если предмет магический.
+     */
     @Column(columnDefinition = "SMALLINT")
     private boolean magic;
+    /**
+     * Редкость (только для магических предметов).
+     */
     @Enumerated(EnumType.STRING)
     private Rarity rarity;
+    /**
+     * True если требуется настройка на магический предмет.
+     */
     private String attunement;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
