@@ -27,16 +27,10 @@ public enum Size {
 			return UNDEFINED;
 		}
 
-		String normalizedSize = size.trim().toLowerCase();  // Normalize the input size (trim and lowercase)
-
-		for (Size creatureSize : values()) {
-			for (String sizeName : creatureSize.names) {
-				if (sizeName.toLowerCase().equals(normalizedSize)) {
-					return creatureSize;
-				}
-			}
-		}
-		return UNDEFINED;
+		return Arrays.stream(values())
+				.filter(s -> s.name().equalsIgnoreCase(size))
+				.findFirst()
+				.orElse(UNDEFINED);
 	}
 
 	public static String convertSizeToEntityFormat(Collection<String> sizes) {
@@ -52,7 +46,7 @@ public enum Size {
 		return Arrays.stream(entityFormat.split(","))
 				.map(String::trim)
 				.map(Size::parse)
-				.map(Size::name)
+				.map(s -> s.getNames()[0])
 				.toList();
 	}
 

@@ -21,6 +21,7 @@ import club.ttg.dnd5.repository.book.BookRepository;
 import club.ttg.dnd5.repository.book.SourceRepository;
 import club.ttg.dnd5.utills.Converter;
 import club.ttg.dnd5.utills.CreateConverter;
+import club.ttg.dnd5.utills.SlugifyUtil;
 import club.ttg.dnd5.utills.species.SpeciesFeatureConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -67,6 +68,9 @@ public class SpeciesService {
         CreateConverter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(createSpeciesDTO, species);
         Converter.MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY.apply(createSpeciesDTO.getProperties(), species);
         SourceReference sourceDTO = createSpeciesDTO.getSourceDTO();
+        if (createSpeciesDTO.getGallery() != null && !createSpeciesDTO.getGallery().isEmpty()) {
+            species.setGalleryUrl(createSpeciesDTO.getGallery());
+        }
         if (sourceDTO != null) {
             Book book = bookRepository.findByUrl(sourceDTO.getUrl())
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, BOOK_NOT_FOUND_FOR_URL
@@ -92,7 +96,7 @@ public class SpeciesService {
 
     private void handlingParentWhenCreateSpecies(Species species, String parentName) {
         if (parentName == null || parentName.isBlank()) {
-            throw new IllegalArgumentException("Parent name cannot be null or blank");
+            return;
         }
 
         if (species.getEnglish().equalsIgnoreCase(parentName) || species.getName().equalsIgnoreCase(parentName)) {
@@ -341,7 +345,7 @@ public class SpeciesService {
 
             for (SpeciesCreateFeatureDto featureDto : features) {
                 SpeciesFeature speciesFeature = convertingSpeciesCreateFeatureToSpeciesFeature(featureDto, createSpeciesDto.getSourceDTO());
-                speciesFeature.setUrl(createSpeciesDto.getUrl() + "/" + Arrays.toString(featureDto.getName().getEnglish().toLowerCase().split(" ")));
+                speciesFeature.setUrl(createSpeciesDto.getUrl() + "/" + SlugifyUtil.getSlug(speciesFeature.getEnglish()));
                 speciesFeatures.add(speciesFeature);
             }
             species.setFeatures(speciesFeatures);
@@ -374,7 +378,7 @@ public class SpeciesService {
             speciesFeature.setEnglish(nameBasedDTO.getEnglish());
             speciesFeature.setAlternative(String.join(",", nameBasedDTO.getAlternative()));
         }
-        speciesFeature.setFeatureDescription(featureDto.getDescription());
+        speciesFeature.setDescription(featureDto.getDescription());
         speciesFeature.setSource(source);
         //хороший вопрос, может стоит сюда впихивать теги из вида, тип наследует теги вида
         speciesFeature.setTags(null);
