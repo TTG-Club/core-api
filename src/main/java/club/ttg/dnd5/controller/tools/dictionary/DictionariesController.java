@@ -11,11 +11,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Различные справочники
@@ -311,5 +313,64 @@ public class DictionariesController {
     )
     public Collection<SpellcasterOptionDto> getSpellcasterTypes() {
         return dictionariesService.getSpellcasterTypes();
+    }
+
+    @Operation(summary = "Единицы времени")
+    @GetMapping("/time-units")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "бонусное действие", "value": "BONUS" },
+                              { "label": "реакция", "value": "REACTION" },
+                              { "label": "действие", "value": "ACTION" },
+                              { "label": "ход", "value": "ROUND" },
+                              { "label": "минута", "value": "MINUTE" },
+                              { "label": "час", "value": "HOUR" }
+                            ]
+                            """)
+            )
+    )
+    public ResponseEntity<List<SelectOptionDto>> getTimeUnits() {
+        return ResponseEntity.ok(dictionariesService.getTimeUnits());
+    }
+
+
+    @Operation(summary = "Школы магии")
+    @GetMapping("/magic-schools")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "вызов", "value": "CONJURATION" },
+                              { "label": "воплощение", "value": "EVOCATION" },
+                              { "label": "иллюзия", "value": "ILLUSION" },
+                              { "label": "некромантия", "value": "NECROMANCY" }
+                            ]
+                            """)
+            )
+    )
+    public ResponseEntity<List<SelectOptionDto>> getMagicSchools() {
+        return ResponseEntity.ok(dictionariesService.getMagicSchools());
+    }
+
+    @Operation(summary = "Операторы сравнения")
+    @GetMapping("/comparison-operators")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "<", "value": "LESS" },
+                              { "label": ">", "value": "GREATER" },
+                              { "label": "=", "value": "EQUAL" }
+                            ]
+                            """)
+            )
+    )
+    public ResponseEntity<List<SelectOptionDto>> getComparisonOperators() {
+        return ResponseEntity.ok(dictionariesService.getComparisonOperators());
     }
 }
