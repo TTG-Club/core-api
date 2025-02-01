@@ -1,6 +1,5 @@
 package club.ttg.dnd5.model.base;
 
-import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
@@ -13,8 +12,7 @@ import lombok.Setter;
 @Setter
 @MappedSuperclass
 public abstract class CreatureProperties extends NamedEntity {
-    @Enumerated(EnumType.STRING)
-    private Size size;
+    private String sizes;
     @Enumerated(EnumType.STRING)
     private CreatureType type;
     @Column(columnDefinition = "int default 30")

@@ -17,11 +17,12 @@ public class Source extends TimestampedEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private short page;
+    private int page;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_info_id", referencedColumnName = "sourceAcronym")
-    private Book bookInfo;
+    private Book bookInfo; //null -> userId made book by userId
+    private String userId;
 
     public Source getSource() {
         return this;

@@ -54,7 +54,7 @@ public class ClassController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @ResponseStatus(HttpStatus.CREATED)
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @PostMapping
     public ClassDto addClass(@RequestBody final ClassDto request) {
         return classService.addClass(request);
@@ -106,7 +106,7 @@ public class ClassController {
             @ApiResponse(responseCode = "404", description = "Класс не найден"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @PutMapping("/{url}")
     public ClassDto updateClass(
             @PathVariable final String url,

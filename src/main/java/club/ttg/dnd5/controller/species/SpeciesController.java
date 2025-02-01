@@ -23,6 +23,30 @@ import java.util.List;
 public class SpeciesController {
     private final SpeciesService speciesService;
 
+    /**
+     * Проверка существования вида по URL.
+     *
+     * @param url URL вида.
+     * @return 204, если вида с таким URL не существует; 409, если вид существует.
+     */
+    @Operation(
+            summary = "Проверка существования вида",
+            description = "Возвращает 204 (No Content), если вида с указанным URL не существует, или 409 (Conflict), если вид существует."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Вид с указанным URL не найден."),
+            @ApiResponse(responseCode = "409", description = "Вид с указанным URL уже существует.")
+    })
+    @RequestMapping(value = "/{url}", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> handleOptions(@PathVariable("url") String url) {
+        boolean exists = speciesService.speciesExistsByUrl(url);
+        if (exists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+    }
+
     @PostMapping("/search")
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
     public ResponseEntity<List<SpeciesDto>> getAllSpecies() {
@@ -38,6 +62,22 @@ public class SpeciesController {
     @ResponseStatus(HttpStatus.OK)
     public SpeciesDto getSpeciesByUrl(@PathVariable String url) {
         return speciesService.findById(url);
+    }
+
+    @Operation(summary = "Проверить вид по URL", description = "Проверка вида по его уникальному URL.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Вид успешно получен"),
+            @ApiResponse(responseCode = "409", description = "Вид не найден")
+    })
+    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    public ResponseEntity<?> isSpecieExist(@PathVariable String url) {
+        Boolean exist = speciesService.isExist(url);
+
+        if (exist.equals(Boolean.TRUE)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/subspecies")
@@ -104,7 +144,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @PostMapping("/new")
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @ResponseStatus(HttpStatus.CREATED)
     public SpeciesDto createSpecies(@RequestBody CreateSpeciesDto createSpeciesDTO) {
         return speciesService.save(createSpeciesDTO);
@@ -117,7 +157,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @PutMapping("/{url}")
-    @Secured("ROLE_ADMIN")
+    @Secured("ADMIN")
     @ResponseStatus(HttpStatus.OK)
     public SpeciesDto updateSpecies(@PathVariable String url, @RequestBody SpeciesDto speciesDTO) {
         return speciesService.update(url, speciesDTO);

@@ -1,13 +1,16 @@
 package club.ttg.dnd5.utills.character;
 
 import club.ttg.dnd5.dto.character.ClassFeatureDto;
+import club.ttg.dnd5.model.base.Tag;
 import club.ttg.dnd5.model.character.ClassFeature;
 import club.ttg.dnd5.utills.Converter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static club.ttg.dnd5.utills.Converter.MAP_ENTITY_TO_DTO_WITH_LEVEL;
 
@@ -19,8 +22,14 @@ public class ClassFeatureConverter {
             (dto, feature) -> {
                 Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(dto, feature);
                 Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), feature);
-                feature.setTags(dto.getTags());
-                feature.setDescription(dto.getDescription());
+
+                // Convert DTO tags (Set<String>) to entity tags (Set<Tag>)
+                Set<Tag> tags = dto.getTags().stream()
+                        .map(Tag::new)
+                        .collect(Collectors.toSet());
+                feature.setTags(tags);
+
+                feature.setFeatureDescription(dto.getDescription());
                 return feature;
             };
 
@@ -28,7 +37,13 @@ public class ClassFeatureConverter {
             (feature, dto) -> {
                 Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, feature);
                 Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), feature);
-                dto.setTags(feature.getTags());
+
+                // Convert entity tags (Set<Tag>) to DTO tags (Set<String>)
+                Set<String> tags = feature.getTags().stream()
+                        .map(Tag::getName)
+                        .collect(Collectors.toSet());
+                dto.setTags(tags);
+
                 dto.setDescription(feature.getFeatureDescription());
                 return dto;
             };

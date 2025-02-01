@@ -3,11 +3,12 @@ package club.ttg.dnd5.dictionary;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import lombok.Getter;
 
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 public enum Size {
+	UNDEFINED("Неопределенный", "Неопределенная", "Неопределенное"),
 	TINY("Крошечный","Крошечная", "Крошечное"),
 	SMALL("Маленький", "Маленькая", "Маленькое"),
 	MEDIUM("Средний", "Средняя", "Среднее"),
@@ -22,14 +23,31 @@ public enum Size {
 	}
 
 	public static Size parse(String size) {
-		for (Size creatureSize : values()) {
-			for (String sizeName : creatureSize.names) {
-				if (sizeName.equalsIgnoreCase(size)) {
-					return creatureSize;
-				}
-			}
+		if (size == null) {
+			return UNDEFINED;
 		}
-		return null;
+
+		return Arrays.stream(values())
+				.filter(s -> s.name().equalsIgnoreCase(size))
+				.findFirst()
+				.orElse(UNDEFINED);
+	}
+
+	public static String convertSizeToEntityFormat(Collection<String> sizes) {
+		List<Size> list = sizes.stream()
+				.map(Size::parse)
+				.toList();
+		return list.stream()
+				.map(Size::name)
+				.collect(Collectors.joining(", "));
+	}
+
+	public static List<String> convertEntityFormatToDtoFormat(String entityFormat) {
+		return Arrays.stream(entityFormat.split(","))
+				.map(String::trim)
+				.map(Size::parse)
+				.map(s -> s.getNames()[0])
+				.toList();
 	}
 
 	public static Set<Size> getFilterSizes(){

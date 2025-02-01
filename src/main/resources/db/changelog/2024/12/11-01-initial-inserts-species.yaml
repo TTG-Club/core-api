@@ -1,0 +1,546 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: 'ProtectorRTD'
+      changes:
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: source_acronym
+                  value: 'PHB'
+              - column:
+                  name: name
+                  value: 'ПХБ'
+              - column:
+                  name: alt_name
+                  value: ''
+              - column:
+                  name: english_name
+                  value: 'PHB'
+              - column:
+                  name: description
+                  value: 'Player Hands Book'
+              - column:
+                  name: type
+                  value: 'OFFICIAL'
+              - column:
+                  name: year
+                  value: '2024'
+
+  - changeSet:
+      id: 2
+      author: 'ProtectorRTD'
+      changes:
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '155'
+              - column:
+                  name: created_at
+                  value: '2024-11-07 20:10:00.731818'
+              - column:
+                  name: id
+                  value: '1'
+              - column:
+                  name: updated_at
+                  value: '2024-11-07 20:10:00.731818'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '156'
+              - column:
+                  name: created_at
+                  value: '2024-11-07 20:10:00.808714'
+              - column:
+                  name: id
+                  value: '2'
+              - column:
+                  name: updated_at
+                  value: '2024-11-07 20:10:00.808714'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '181'
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:17:31.755532'
+              - column:
+                  name: id
+                  value: '3'
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:17:31.755532'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '181'
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:17:31.796086'
+              - column:
+                  name: id
+                  value: '4'
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:17:31.796086'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '181'
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:17:41.462760'
+              - column:
+                  name: id
+                  value: '5'
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:17:41.462760'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '181'
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:17:41.464760'
+              - column:
+                  name: id
+                  value: '6'
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:17:41.464760'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '202'
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:22:20.761617'
+              - column:
+                  name: id
+                  value: '7'
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:22:20.761617'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '202'
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:22:20.764618'
+              - column:
+                  name: id
+                  value: '8'
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:22:20.764618'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+        - insert:
+            tableName: sources
+            columns:
+              - column:
+                  name: page
+                  value: '202'
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:22:20.766620'
+              - column:
+                  name: id
+                  value: '9'
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:22:20.767619'
+              - column:
+                  name: book_info_id
+                  value: 'PHB'
+
+  - changeSet:
+      id: 3
+      author: 'ProtectorRTD'
+      changes:
+        - sql:
+            dbms: mysql
+            sql: |
+              SET foreign_key_checks = 0;  # Отключить проверку внешних ключей
+
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'aasimar'
+              - column:
+                  name: gallery_url
+                  value: 'https://img.ttg.club/races/Aasimar.webp'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'aasimar'
+              - column:
+                  name: gallery_url
+                  value: 'https://i.pinimg.com/originals/2c/4e/ed/2c4eed0d3017600ae4cd05babbada000.png'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'aasimar'
+              - column:
+                  name: gallery_url
+                  value: 'https://www.worldanvil.com/uploads/images/1e9bea922bdf306b2b6857d9fee6208c.png'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://img.ttg.club/races/Gnome.webp'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://i.pinimg.com/originals/2c/4e/ed/2c4eed0d3017600ae4cd05babbada000.png'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://www.worldanvil.com/uploads/images/1e9bea922bdf306b2b6857d9fee6208c.png'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'forest-gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://img.ttg.club/races/ForestGnome.webp'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'forest-gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://i.pinimg.com/originals/2c/4e/ed/2c4eed0d3017600ae4cd05babbada000.png'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'forest-gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://www.worldanvil.com/uploads/images/1e9bea922bdf306b2b6857d9fee6208c.png'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'rock-gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://img.ttg.club/races/RockGnome.webp'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'rock-gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://i.pinimg.com/originals/2c/4e/ed/2c4eed0d3017600ae4cd05babbada000.png'
+        - insert:
+            tableName: species_gallery
+            columns:
+              - column:
+                  name: species_id
+                  value: 'rock-gnome'
+              - column:
+                  name: gallery_url
+                  value: 'https://www.worldanvil.com/uploads/images/1e9bea922bdf306b2b6857d9fee6208c.png'
+        - insert:
+            tableName: species
+            columns:
+              - column:
+                  name: climb
+                  value: 0
+              - column:
+                  name: dark_vision
+                  value: 60
+              - column:
+                  name: fly
+                  value: 0
+              - column:
+                  name: is_hidden_entity
+                  value: 0
+              - column:
+                  name: speed
+                  value: 30
+              - column:
+                  name: swim
+                  value: 0
+              - column:
+                  name: created_at
+                  value: '2024-11-07 20:10:00.839712'
+              - column:
+                  name: source
+                  value: 1
+              - column:
+                  name: updated_at
+                  value: '2024-11-07 20:10:00.850710'
+              - column:
+                  name: alternative
+                  value: 'Angel-blooded'
+              - column:
+                  name: description
+                  value: 'Aasimar are mortals with celestial heritage. They have traits hinting at their divine ancestry, like glowing eyes or metallic freckles.'
+              - column:
+                  name: english
+                  value: 'Aasimar'
+              - column:
+                  name: image_url
+                  value: 'https://img.ttg.club/races/Aasimar.webp'
+              - column:
+                  name: name
+                  value: 'Aasimar'
+              - column:
+                  name: parent_id
+                  value: 'aasimar'
+              - column:
+                  name: url
+                  value: 'aasimar'
+              - column:
+                  name: size
+                  value: 'MEDIUM'
+              - column:
+                  name: type
+                  value: 'HUMANOID'
+        - insert:
+            tableName: species
+            columns:
+              - column:
+                  name: climb
+                  value: 0
+              - column:
+                  name: dark_vision
+                  value: 60
+              - column:
+                  name: fly
+                  value: 0
+              - column:
+                  name: is_hidden_entity
+                  value: 0
+              - column:
+                  name: speed
+                  value: 30
+              - column:
+                  name: swim
+                  value: 0
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:17:31.827950'
+              - column:
+                  name: source
+                  value: 3
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:17:31.841945'
+              - column:
+                  name: alternative
+                  value: 'Little People'
+              - column:
+                  name: description
+                  value: 'Гномы – волшебные существа, созданные богами изобретений, иллюзий и подземной жизни. Они скрытные и обладают уникальными магическими способностями.'
+              - column:
+                  name: english
+                  value: 'Gnome'
+              - column:
+                  name: image_url
+                  value: 'https://img.ttg.club/races/Gnome.webp'
+              - column:
+                  name: name
+                  value: 'Гном'
+              - column:
+                  name: parent_id
+                  value: 'gnome'
+              - column:
+                  name: url
+                  value: 'gnome'
+              - column:
+                  name: size
+                  value: 'SMALL'
+              - column:
+                  name: type
+                  value: 'HUMANOID'
+        - insert:
+            tableName: species
+            columns:
+              - column:
+                  name: climb
+                  value: 0
+              - column:
+                  name: dark_vision
+                  value: 60
+              - column:
+                  name: fly
+                  value: 0
+              - column:
+                  name: is_hidden_entity
+                  value: 0
+              - column:
+                  name: speed
+                  value: 30
+              - column:
+                  name: swim
+                  value: 0
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:17:41.470760'
+              - column:
+                  name: source
+                  value: 5
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:17:45.808278'
+              - column:
+                  name: alternative
+                  value: 'Woodland Trickster'
+              - column:
+                  name: description
+                  value: 'Лесные гномы живут в лесах и наделены магией иллюзий, чтобы защищаться и выживать.'
+              - column:
+                  name: english
+                  value: 'Forest Gnome'
+              - column:
+                  name: image_url
+                  value: 'https://img.ttg.club/races/ForestGnome.webp'
+              - column:
+                  name: name
+                  value: 'Лесной Гном'
+              - column:
+                  name: parent_id
+                  value: 'gnome'
+              - column:
+                  name: url
+                  value: 'forest-gnome'
+              - column:
+                  name: size
+                  value: 'SMALL'
+              - column:
+                  name: type
+                  value: 'HUMANOID'
+        - insert:
+            tableName: species
+            columns:
+              - column:
+                  name: climb
+                  value: 0
+              - column:
+                  name: dark_vision
+                  value: 60
+              - column:
+                  name: fly
+                  value: 0
+              - column:
+                  name: is_hidden_entity
+                  value: 0
+              - column:
+                  name: speed
+                  value: 30
+              - column:
+                  name: swim
+                  value: 0
+              - column:
+                  name: created_at
+                  value: '2024-11-11 22:22:20.776619'
+              - column:
+                  name: source
+                  value: 7
+              - column:
+                  name: updated_at
+                  value: '2024-11-11 22:22:40.628185'
+              - column:
+                  name: alternative
+                  value: 'Tinker Gnome'
+              - column:
+                  name: description
+                  value: 'Горные гномы – изобретательные создания, способные создавать крошечные механические устройства.'
+              - column:
+                  name: english
+                  value: 'Rock Gnome'
+              - column:
+                  name: image_url
+                  value: 'https://img.ttg.club/races/RockGnome.webp'
+              - column:
+                  name: name
+                  value: 'Горный Гном'
+              - column:
+                  name: parent_id
+                  value: 'gnome'
+              - column:
+                  name: url
+                  value: 'rock-gnome'
+              - column:
+                  name: size
+                  value: 'SMALL'
+              - column:
+                  name: type
+                  value: 'HUMANOID'
+        - sql:
+            dbms: mysql
+            sql: |
+              SET foreign_key_checks = 1;  # Включаем проверку внешних ключей
