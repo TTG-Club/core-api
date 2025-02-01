@@ -1,0 +1,521 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1734529422955-53
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: entity_tags
+            constraintName: fk_entity_tags_on_species_feature
+  - changeSet:
+      id: 1734529422955-1
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: background_url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: ability
+                  type: VARCHAR(255)
+            tableName: background_abilities
+  - changeSet:
+      id: 1734529422955-2
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: background_url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: skill
+                  type: VARCHAR(255)
+            tableName: background_available_skills
+  - changeSet:
+      id: 1734529422955-3
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: book_id
+                  type: VARCHAR(255)
+              - column:
+                  name: author_name
+                  type: VARCHAR(255)
+            tableName: book_authors
+  - changeSet:
+      id: 1734529422955-4
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_book_tags
+                  name: book_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_book_tags
+                  name: tag_id
+                  type: BIGINT
+            tableName: book_tags
+  - changeSet:
+      id: 1734529422955-5
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_class_feature_tags
+                  name: class_feature_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_class_feature_tags
+                  name: tag_id
+                  type: BIGINT
+            tableName: class_feature_tags
+  - changeSet:
+      id: 1734529422955-6
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_feature_tags
+                  name: feature_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_feature_tags
+                  name: tag_id
+                  type: BIGINT
+            tableName: feature_tags
+  - changeSet:
+      id: 1734529422955-7
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_tags
+                  name: id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: tag_type
+                  type: VARCHAR(255)
+            tableName: tags
+  - changeSet:
+      id: 1734529422955-8
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: translation_id
+                  type: VARCHAR(255)
+              - column:
+                  name: author_name
+                  type: VARCHAR(255)
+            tableName: translation_authors
+  - changeSet:
+      id: 1734529422955-9
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: book_date
+                  type: DATE
+              - column:
+                  name: image
+                  type: VARCHAR(255)
+              - column:
+                  name: translation_date
+                  type: DATE
+            tableName: books
+  - changeSet:
+      id: 1734529422955-10
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: category
+                  type: VARCHAR(255)
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: prerequisite
+                  type: VARCHAR(255)
+              - column:
+                  name: short_name
+                  type: VARCHAR(255)
+              - column:
+                  name: updated_at
+                  type: DATETIME
+            tableName: feats
+  - changeSet:
+      id: 1734529422955-11
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: count_skill_available
+                  type: SMALLINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: main_ability
+                  type: VARCHAR(255)
+              - column:
+                  name: short_name
+                  type: VARCHAR(255)
+              - column:
+                  name: updated_at
+                  type: DATETIME
+            tableName: classes
+  - changeSet:
+      id: 1734529422955-12
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addNotNullConstraint:
+            columnDataType: SMALLINT
+            columnName: count_skill_available
+            tableName: classes
+  - changeSet:
+      id: 1734529422955-13
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: equipment
+                  type: VARCHAR(255)
+              - column:
+                  name: feat_url
+                  type: VARCHAR(255)
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: propose_classes
+                  type: VARCHAR(255)
+              - column:
+                  name: short_name
+                  type: VARCHAR(255)
+              - column:
+                  name: tool_proficiency
+                  type: VARCHAR(255)
+              - column:
+                  name: updated_at
+                  type: DATETIME
+            tableName: backgrounds
+  - changeSet:
+      id: 1734529422955-14
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: feature_description
+                  type: VARCHAR(255)
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: short_name
+                  type: VARCHAR(255)
+              - column:
+                  name: updated_at
+                  type: DATETIME
+            tableName: class_features
+  - changeSet:
+      id: 1734529422955-42
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: feat_url
+            baseTableName: backgrounds
+            constraintName: FK_BACKGROUNDS_ON_FEAT_URL
+            referencedColumnNames: url
+            referencedTableName: feats
+  - changeSet:
+      id: 1734529422955-43
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: background_url
+            baseTableName: background_abilities
+            constraintName: fk_background_abilities_on_background
+            referencedColumnNames: url
+            referencedTableName: backgrounds
+  - changeSet:
+      id: 1734529422955-44
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: background_url
+            baseTableName: background_available_skills
+            constraintName: fk_background_available_skills_on_background
+            referencedColumnNames: url
+            referencedTableName: backgrounds
+  - changeSet:
+      id: 1734529422955-45
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: book_id
+            baseTableName: book_authors
+            constraintName: fk_book_authors_on_book
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+  - changeSet:
+      id: 1734529422955-46
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: book_id
+            baseTableName: book_tags
+            constraintName: fk_book_tags_on_book
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+  - changeSet:
+      id: 1734529422955-47
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tag_id
+            baseTableName: book_tags
+            constraintName: fk_book_tags_on_tag
+            referencedColumnNames: id
+            referencedTableName: tags
+  - changeSet:
+      id: 1734529422955-48
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: class_feature_id
+            baseTableName: class_feature_tags
+            constraintName: fk_clafeatag_on_class_feature
+            referencedColumnNames: url
+            referencedTableName: class_features
+  - changeSet:
+      id: 1734529422955-49
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tag_id
+            baseTableName: class_feature_tags
+            constraintName: fk_clafeatag_on_tag
+            referencedColumnNames: id
+            referencedTableName: tags
+  - changeSet:
+      id: 1734529422955-50
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: feature_id
+            baseTableName: feature_tags
+            constraintName: fk_featag_on_species_feature
+            referencedColumnNames: url
+            referencedTableName: species_features
+  - changeSet:
+      id: 1734529422955-51
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tag_id
+            baseTableName: feature_tags
+            constraintName: fk_featag_on_tag
+            referencedColumnNames: id
+            referencedTableName: tags
+  - changeSet:
+      id: 1734529422955-52
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: translation_id
+            baseTableName: translation_authors
+            constraintName: fk_translation_authors_on_book
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+  - changeSet:
+      id: 1734529422955-54
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropTable:
+            cascadeConstraints: true
+            tableName: entity_tags
+  - changeSet:
+      id: 1734529422955-55
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: abilities
+            tableName: backgrounds
+        - dropColumn:
+            columnName: created
+            tableName: backgrounds
+        - dropColumn:
+            columnName: last_updated
+            tableName: backgrounds
+        - dropColumn:
+            columnName: original
+            tableName: backgrounds
+        - dropColumn:
+            columnName: page
+            tableName: backgrounds
+  - changeSet:
+      id: 1734529422955-57
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: created
+            tableName: class_features
+        - dropColumn:
+            columnName: last_updated
+            tableName: class_features
+        - dropColumn:
+            columnName: original
+            tableName: class_features
+        - dropColumn:
+            columnName: page
+            tableName: class_features
+  - changeSet:
+      id: 1734529422955-58
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: created
+            tableName: classes
+        - dropColumn:
+            columnName: last_updated
+            tableName: classes
+        - dropColumn:
+            columnName: page
+            tableName: classes
+        - dropColumn:
+            columnName: skill_available
+            tableName: classes
+  - changeSet:
+      id: 1734529422955-59
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: created
+            tableName: feats
+        - dropColumn:
+            columnName: last_updated
+            tableName: feats
+        - dropColumn:
+            columnName: original
+            tableName: feats
+        - dropColumn:
+            columnName: page
+            tableName: feats
+  - changeSet:
+      id: 1734529422955-72
+      author: '1'
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: year
+            tableName: books
+

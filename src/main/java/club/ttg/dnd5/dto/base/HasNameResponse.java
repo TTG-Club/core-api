@@ -1,7 +1,9 @@
 package club.ttg.dnd5.dto.base;
 
+import java.util.ArrayList;
+
 public interface HasNameResponse {
     String getName();
     String getEnglish();
-    String getAlternative();
+    ArrayList<String> getAlternative();
 }

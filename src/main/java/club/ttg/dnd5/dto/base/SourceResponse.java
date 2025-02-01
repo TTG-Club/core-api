@@ -19,7 +19,7 @@ import lombok.Setter;
 public class SourceResponse implements GroupStrategy {
     private NameBasedDTO name = new NameBasedDTO();
     private NameBasedDTO group = new NameBasedDTO();
-    private Short page;
+    private int page;
     private boolean homebrew = false;
     private boolean thirdParty = false;
 

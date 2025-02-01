@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: svifty7
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: USER
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: SUBSCRIBER
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: WRITER
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: MODERATOR
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: ADMIN

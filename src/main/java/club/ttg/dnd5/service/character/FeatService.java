@@ -14,4 +14,6 @@ public interface FeatService {
     FeatDto updateFeat(final String featUrl, FeatDto featDto);
 
     FeatDto delete(String featUrl);
+
+    boolean existByUrl(String featUrl);
 }
