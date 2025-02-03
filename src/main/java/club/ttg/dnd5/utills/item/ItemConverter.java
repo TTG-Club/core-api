@@ -1,6 +1,7 @@
-package club.ttg.dnd5.utills.character;
+package club.ttg.dnd5.utills.item;
 
 import club.ttg.dnd5.dictionary.item.ItemType;
+import club.ttg.dnd5.dictionary.item.magic.Rarity;
 import club.ttg.dnd5.dto.NameDto;
 import club.ttg.dnd5.dto.item.ItemDto;
 import club.ttg.dnd5.model.item.Item;
@@ -19,7 +20,13 @@ public class ItemConverter {
                 .collect(Collectors.toSet()));
         entity.setCost(dto.getCost());
         entity.setWeight(dto.getWeight());
-        entity.setAttunement(dto.getAttunement());
+
+        entity.setMagic(dto.isMagic());
+        if (dto.isMagic()) {
+            entity.setAttunement(dto.getAttunement());
+            entity.setRarity(Rarity.parse(dto.getRarity().getEng()));
+
+        }
         return entity;
     };
 
@@ -28,12 +35,17 @@ public class ItemConverter {
                 .stream().map(t -> NameDto.builder()
                         .rus(t.getName())
                         .eng(t.name())
-
                         .build())
                 .collect(Collectors.toSet()));
-        dto.setAttunement(entity.getAttunement());
         dto.setCost(entity.getCost());
         dto.setWeight(dto.getWeight());
+        if (entity.isMagic()) {
+            dto.setRarity(NameDto.builder()
+                    .rus(entity.getRarity().getName())
+                    .eng(entity.getRarity().name())
+                    .build());
+            dto.setAttunement(entity.getAttunement());
+        }
         return dto;
     };
 }

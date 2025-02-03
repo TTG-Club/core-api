@@ -36,11 +36,17 @@ public class Item extends NamedEntity implements HasSourceEntity {
     @Enumerated(EnumType.STRING)
     private Rarity rarity;
     /**
-     * True если требуется настройка на магический предмет.
+     * True если требуется настройка на магический предмет или текст для выборочной настройки.
      */
     private String attunement;
-
+    /**
+     * True если предмет проклят.
+     */
+    private boolean curse;
+    /**
+     * Источник
+     */
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
-    private Source source;
+    private Source source = new Source();
 }
