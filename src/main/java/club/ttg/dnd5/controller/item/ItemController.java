@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -18,6 +19,29 @@ import java.util.Collection;
 @Tag(name = "Снаряжение и предметы", description = "REST API снаряжение и прочие предметы")
 public class ItemController {
     private final ItemService itemService;
+    /**
+     * Проверка существования вида по URL.
+     *
+     * @param url URL вида.
+     * @return 204, если вида с таким URL не существует; 409, если вид существует.
+     */
+    @Operation(
+            summary = "Проверка существования вида",
+            description = "Возвращает 204 (No Content), если предмет с указанным URL не существует, или 409 (Conflict), если существует."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Предмет с указанным URL не найден."),
+            @ApiResponse(responseCode = "409", description = "Предмет с указанным URL уже существует.")
+    })
+    @RequestMapping(value = "/{url}", method = RequestMethod.HEAD)
+    public ResponseEntity<Void> handleOptions(@PathVariable("url") String url) {
+        boolean exists = itemService.existsByUrl(url);
+        if (exists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+    }
 
     @Operation(summary = "Получение детального описания предмета")
     @ApiResponses(value = {

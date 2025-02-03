@@ -52,6 +52,11 @@ public class ItemServiceImpl implements ItemService {
         return toDTO(itemRepository.save(item));
     }
 
+    @Override
+    public boolean existsByUrl(final String url) {
+        return itemRepository.existsById(url);
+    }
+
     private ItemDto toDTO(Item item) {
         return toDTO(item, false);
     }

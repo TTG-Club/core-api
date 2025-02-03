@@ -14,4 +14,6 @@ public interface ItemService {
     ItemDto updateItem(String itemUrl, ItemDto itemDto);
 
     ItemDto delete(String itemUrl);
+
+    boolean existsByUrl(String url);
 }
