@@ -36,7 +36,43 @@ public class ItemController {
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
-    public Collection<ItemDto> getFeats() {
+    public Collection<ItemDto> getItems() {
         return itemService.getItems();
+    }
+
+    @Operation(summary = "Добавление предмета")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Предмет успешно добавлен"),
+            @ApiResponse(responseCode = "400", description = "Предмет уже существует"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping
+    public ItemDto addItem(@RequestBody final ItemDto itemDto) {
+        return itemService.addItem(itemDto);
+    }
+
+    @Operation(summary = "Обновление предмета")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Предмет успешно обновлен"),
+            @ApiResponse(responseCode = "404", description = "Предмет не существует"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("{itemUrl}")
+    public ItemDto updateItem(@PathVariable final String itemUrl,
+            @RequestBody final ItemDto itemDto) {
+        return itemService.updateItem(itemUrl, itemDto);
+    }
+
+    @Operation(summary = "Скрывает предмет")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Предмет удалена из общего списка"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
+    @ResponseStatus(HttpStatus.OK)
+    @DeleteMapping("{itemUrl}")
+    public ItemDto deleteItem(@PathVariable final String itemUrl) {
+        return itemService.delete(itemUrl);
     }
 }

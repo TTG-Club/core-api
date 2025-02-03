@@ -9,8 +9,11 @@ import club.ttg.dnd5.dictionary.beastiary.CreatureType;
 import club.ttg.dnd5.dictionary.beastiary.Environment;
 import club.ttg.dnd5.dictionary.character.FeatCategory;
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
+import club.ttg.dnd5.dictionary.item.ItemType;
+import club.ttg.dnd5.dictionary.item.magic.Rarity;
 import club.ttg.dnd5.dto.NameDto;
-import club.ttg.dnd5.dto.ValueDto;
+import club.ttg.dnd5.dto.base.NameBasedDTO;
+import club.ttg.dnd5.dto.base.ValueDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +38,10 @@ public class DirectoryController {
     public Collection<ValueDto> getDices() {
         return Arrays.stream(Dice.values())
                 .map(type -> ValueDto.builder()
-                    .rus(type.getName())
-                    .eng(type.name())
+                    .name(NameBasedDTO.builder()
+                            .name(type.getName())
+                            .english(type.name())
+                            .build())
                     .value(type.getMaxValue())
                     .build())
                 .collect(Collectors.toList()
@@ -134,8 +139,10 @@ public class DirectoryController {
     public Collection<ValueDto> getSpellcasterTypes() {
         return Arrays.stream(SpellcasterType.values())
                 .map(type -> ValueDto.builder()
-                        .rus(type.getName())
-                        .eng(type.name())
+                        .name(NameBasedDTO.builder()
+                                .name(type.getName())
+                                .english(type.name())
+                                .build())
                         .value(type.getMaxSpellLevel())
                         .build())
                 .collect(Collectors.toList()
@@ -146,6 +153,30 @@ public class DirectoryController {
     @GetMapping("/feat_types")
     public Collection<NameDto> getFeatTypesSpellcasterTypes() {
         return Arrays.stream(FeatCategory.values())
+                .map(type -> NameDto.builder()
+                        .rus(type.getName())
+                        .eng(type.name())
+                        .build())
+                .collect(Collectors.toList()
+                );
+    }
+
+    @Operation(summary = "Типы предметов")
+    @GetMapping("/item_types")
+    public Collection<NameDto> getItemTypes() {
+        return Arrays.stream(ItemType.values())
+                .map(type -> NameDto.builder()
+                        .rus(type.getName())
+                        .eng(type.name())
+                        .build())
+                .collect(Collectors.toList()
+                );
+    }
+
+    @Operation(summary = "Редкость магических предметов")
+    @GetMapping("/rarities")
+    public Collection<NameDto> getRarities() {
+        return Arrays.stream(Rarity.values())
                 .map(type -> NameDto.builder()
                         .rus(type.getName())
                         .eng(type.name())

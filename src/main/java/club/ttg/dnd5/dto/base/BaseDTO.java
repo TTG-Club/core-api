@@ -17,5 +17,3 @@ public abstract class BaseDTO extends BaseUrl {
     private Instant updatedAt;
     private String userId;
 }
-
-

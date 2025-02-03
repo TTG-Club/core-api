@@ -8,4 +8,10 @@ public interface ItemService {
     ItemDto getItem(String itemUtl);
 
     Collection<ItemDto> getItems();
+
+    ItemDto addItem(ItemDto itemDto);
+
+    ItemDto updateItem(String itemUrl, ItemDto itemDto);
+
+    ItemDto delete(String itemUrl);
 }
