@@ -3,6 +3,7 @@ package club.ttg.dnd5.model.base;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
+import club.ttg.dnd5.model.spell.Spell;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.EqualsAndHashCode;
@@ -39,6 +40,9 @@ public class Tag {
 
     @ManyToMany(mappedBy = "tags")
     private Set<Species> species = new HashSet<>();
+
+    @ManyToMany(mappedBy = "tags")
+    private Set<Spell> spells = new HashSet<>();
 
     public Tag(String name) {
         this.name = name;
