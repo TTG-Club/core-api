@@ -29,6 +29,28 @@ import java.util.List;
 public class DictionariesController {
     private final DictionariesService dictionariesService;
 
+    @Operation(summary = "Дистанции заклинаний")
+    @GetMapping("/spell-distances")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                        [
+                          { "label": "на себя", "value": "SELF" },
+                          { "label": "касание", "value": "TOUCH" },
+                          { "label": "10 футов", "value": "TEN_FEET" },
+                          { "label": "30 футов", "value": "THIRTY_FEET" },
+                          { "label": "120 футов", "value": "ONE_HUNDRED_TWENTY_FEET" },
+                          { "label": "неограниченно", "value": "UNLIMITED" }
+                        ]
+                        """)
+            )
+    )
+    public ResponseEntity<List<SelectOptionDto>> getSpellDistances() {
+        return ResponseEntity.ok(dictionariesService.getSpellDistances());
+    }
+
+
     @Operation(summary = "Дайсы")
     @GetMapping("/dices")
     @ApiResponses(
