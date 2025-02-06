@@ -1,0 +1,57 @@
+package club.ttg.dnd5.model.spell;
+
+import club.ttg.dnd5.model.base.HasTagEntity;
+import club.ttg.dnd5.model.base.NamedEntity;
+import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.model.spell.component.*;
+import club.ttg.dnd5.model.spell.enums.SpellDistance;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@Entity
+@Table(name = "spells")
+public class Spell extends NamedEntity implements HasTagEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_id", nullable = false)
+    private Source source; // Источник заклинания
+
+    @Column(nullable = false)
+    private int level; // Уровень заклинания (0 - заговор)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "school_id", nullable = false)
+    private MagicSchool school; // Школа магии
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SpellDistance distance; // Дистанция заклинания
+
+    @Embedded
+    private SpellDuration duration; // Длительность
+
+    @Embedded
+    private SpellCastingTime castingTime; // Время накладывания
+
+    @Embedded
+    private SpellComponents components; // Компоненты
+
+    @ElementCollection
+    @CollectionTable(name = "spell_tags", joinColumns = @JoinColumn(name = "spell_id"))
+    @Column(name = "tag")
+    private Set<String> tags = new HashSet<>(); // Теги
+
+    @Embedded
+    private SpellAffiliation affiliation; // Связь с классами, расами и т.д.
+
+    @Column(columnDefinition = "TEXT")
+    private String upper; // "На более высоких уровнях"
+}

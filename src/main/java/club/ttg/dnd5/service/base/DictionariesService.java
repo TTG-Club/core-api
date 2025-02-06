@@ -13,7 +13,7 @@ import club.ttg.dnd5.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.select.SelectOptionDto;
 import club.ttg.dnd5.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.model.spell.enums.ComparisonOperator;
-import club.ttg.dnd5.model.spell.enums.MagicSchool;
+import club.ttg.dnd5.model.spell.enums.MagicSchoolEnum;
 import club.ttg.dnd5.model.spell.enums.SpellDistance;
 import club.ttg.dnd5.model.spell.enums.TimeUnit;
 import org.springframework.stereotype.Service;
@@ -44,7 +44,7 @@ public class DictionariesService {
     }
 
     public List<SelectOptionDto> getMagicSchools() {
-        return Arrays.stream(MagicSchool.values())
+        return Arrays.stream(MagicSchoolEnum.values())
                 .map(school -> SelectOptionDto.builder()
                         .label(school.getName())
                         .value(school.name())
