@@ -14,6 +14,7 @@ import club.ttg.dnd5.dto.select.SelectOptionDto;
 import club.ttg.dnd5.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.model.spell.enums.ComparisonOperator;
 import club.ttg.dnd5.model.spell.enums.MagicSchool;
+import club.ttg.dnd5.model.spell.enums.SpellDistance;
 import club.ttg.dnd5.model.spell.enums.TimeUnit;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,15 @@ import java.util.stream.Collectors;
 
 @Service
 public class DictionariesService {
+    public List<SelectOptionDto> getSpellDistances() {
+        return Arrays.stream(SpellDistance.values())
+                .map(distance -> SelectOptionDto.builder()
+                        .label(distance.getName())  // Читаемое название
+                        .value(distance.name())    // Значение enum
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public List<SelectOptionDto> getTimeUnits() {
         return Arrays.stream(TimeUnit.values())
                 .map(unit -> SelectOptionDto.builder()
