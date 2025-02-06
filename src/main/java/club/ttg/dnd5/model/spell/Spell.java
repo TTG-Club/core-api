@@ -2,6 +2,7 @@ package club.ttg.dnd5.model.spell;
 
 import club.ttg.dnd5.model.base.HasTagEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
+import club.ttg.dnd5.model.base.Tag;
 import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.spell.component.*;
 import club.ttg.dnd5.model.spell.enums.SpellDistance;
@@ -44,10 +45,13 @@ public class Spell extends NamedEntity implements HasTagEntity {
     @Embedded
     private SpellComponents components; // Компоненты
 
-    @ElementCollection
-    @CollectionTable(name = "spell_tags", joinColumns = @JoinColumn(name = "spell_id"))
-    @Column(name = "tag")
-    private Set<String> tags = new HashSet<>(); // Теги
+    @ManyToMany
+    @JoinTable(
+            name = "spell_tags",
+            joinColumns = @JoinColumn(name = "spell_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 
     @Embedded
     private SpellAffiliation affiliation; // Связь с классами, расами и т.д.
