@@ -21,13 +21,13 @@ public class MagicSchool {
     private MagicSchoolEnum id; // Используем ENUM как ID
 
     @Column(nullable = false)
-    private String name; // Название на русском
+    private String magicSchooName; // Название на русском
 
     @Column(nullable = false)
     private String englishName; // Название на английском
 
     @Column(columnDefinition = "TEXT")
-    private String description; // Описание школы магии
+    private String magicSchoolDescription; // Описание школы магии
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id", referencedColumnName = "sourceAcronym")

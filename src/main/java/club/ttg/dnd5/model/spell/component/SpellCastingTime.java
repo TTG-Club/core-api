@@ -12,8 +12,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SpellCastingTime {
-    private Integer value;
-    private String type; // действие, минута, реакция
+    private Integer castingValue;
+    private String castingType; // действие, минута, реакция
     private String custom;
     private boolean ritual;
 }

@@ -32,12 +32,17 @@ public class Spell extends NamedEntity implements HasTagEntity {
     @JoinColumn(name = "school_id", nullable = false)
     private MagicSchool school; // Школа магии
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private SpellDistance distance; // Дистанция заклинания
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "custom", column = @Column(name = "distance_custom"))
+    })
+    private SpellDistance distance;
 
     @Embedded
-    private SpellDuration duration; // Длительность
+    @AttributeOverrides({
+            @AttributeOverride(name = "custom", column = @Column(name = "duration_custom"))
+    })
+    private SpellDuration duration;
 
     @Embedded
     private SpellCastingTime castingTime; // Время накладывания
