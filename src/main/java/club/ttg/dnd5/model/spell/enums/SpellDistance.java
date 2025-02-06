@@ -21,10 +21,10 @@ public enum SpellDistance {
     SIGHT("в пределах видимости", "в пределах видимости"),
     UNLIMITED_PLANE("неограниченно в пределах плана", "в любом месте плана");
 
-    private final String name;         // Название дистанции (для вывода)
-    private final String description;  // Описание в контексте
+    private final String distance;         // Название дистанции (для вывода)
+    private final String context;  // Описание в контексте
 
     public String getFormattedName(int number) {
-        return number == 1 ? name : description;
+        return number == 1 ? distance : context;
     }
 }

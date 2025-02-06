@@ -28,7 +28,7 @@ public class DictionariesService {
     public List<SelectOptionDto> getSpellDistances() {
         return Arrays.stream(SpellDistance.values())
                 .map(distance -> SelectOptionDto.builder()
-                        .label(distance.getName())  // Читаемое название
+                        .label(distance.getDistance())  // Читаемое название
                         .value(distance.name())    // Значение enum
                         .build())
                 .collect(Collectors.toList());

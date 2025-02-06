@@ -12,8 +12,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SpellDuration {
-    private Integer value;
-    private String type; // минута, час, день
+    private Integer durationValue;
+    private String durationType; // минута, час, день
     private String custom;
     private boolean concentration;
 }
