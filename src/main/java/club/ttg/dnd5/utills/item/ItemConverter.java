@@ -25,7 +25,8 @@ public class ItemConverter {
         if (dto.isMagic()) {
             entity.setAttunement(dto.getAttunement());
             entity.setRarity(Rarity.parse(dto.getRarity().getEng()));
-
+            entity.setCharges(dto.getCharges());
+            entity.setTypeClarification(dto.getTypeClarification());
         }
         return entity;
     };
@@ -45,6 +46,8 @@ public class ItemConverter {
                     .eng(entity.getRarity().name())
                     .build());
             dto.setAttunement(entity.getAttunement());
+            dto.setCharges(entity.getCharges());
+            dto.setTypeClarification(entity.getTypeClarification());
         }
         return dto;
     };
