@@ -16,6 +16,7 @@ import java.util.Set;
 
 @Getter
 @Setter
+@Schema(name = "Предметы, снаряжение и прочие объекты")
 public class ItemDto extends BaseDTO {
     private Set<NameDto> types;
     /** Стоимость предмета */
@@ -29,6 +30,12 @@ public class ItemDto extends BaseDTO {
     private boolean magic = false;
     @Schema(name = "редкость магического предмета")
     private NameDto rarity;
+    @Schema(name = "уточнение типа магического предмета (например любой меч)")
+    private String typeClarification;
     @Schema(name = "настройка магического предмета")
     private String attunement;
+    @Schema(name = "количество зарядов магического предмета")
+    private Byte charges;
+    @Schema(name = "true если магический предмет - проклят")
+    private Boolean curse;
 }

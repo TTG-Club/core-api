@@ -31,6 +31,10 @@ public class Item extends NamedEntity implements HasSourceEntity {
     @Column(columnDefinition = "SMALLINT")
     private boolean magic;
     /**
+     * Уточнение типа магического предмета, например (любой меч)
+     */
+    private String typeClarification;
+    /**
      * Редкость (только для магических предметов).
      */
     @Enumerated(EnumType.STRING)
@@ -39,6 +43,10 @@ public class Item extends NamedEntity implements HasSourceEntity {
      * True если требуется настройка на магический предмет или текст для выборочной настройки.
      */
     private String attunement;
+    /**
+     * Количество зарядов магического предмета.
+     */
+    private Byte charges;
     /**
      * True если предмет проклят.
      */
