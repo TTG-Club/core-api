@@ -13,7 +13,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonRootName("affiliation")
-public class SpellAffiliationDTO {
+public class SpellAffiliationDto {
     @JsonProperty("classes")
     private Set<String> classes = new HashSet<>(); // Классы
 

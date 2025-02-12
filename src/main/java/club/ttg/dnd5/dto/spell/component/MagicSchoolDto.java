@@ -12,7 +12,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonRootName("magic_school")
-public class MagicSchoolDTO {
+public class MagicSchoolDto {
 
     @JsonProperty("name")
     private NameBasedDTO name; // Название школы

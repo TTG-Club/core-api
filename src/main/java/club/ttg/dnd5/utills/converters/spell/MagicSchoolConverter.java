@@ -1,19 +1,19 @@
-package club.ttg.dnd5.utills.сonverters.spell;
+package club.ttg.dnd5.utills.converters.spell;
 
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.book.SourceBookDTO;
-import club.ttg.dnd5.dto.spell.component.MagicSchoolDTO;
+import club.ttg.dnd5.dto.spell.component.MagicSchoolDto;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.TypeBook;
 import club.ttg.dnd5.model.spell.component.MagicSchool;
-import club.ttg.dnd5.utills.сonverters.EntityToDTOConverter;
+import club.ttg.dnd5.utills.converters.EntityToDtoConverter;
 
 import java.util.ArrayList;
 
-public class MagicSchoolConverter implements EntityToDTOConverter<MagicSchool, MagicSchoolDTO> {
+public class MagicSchoolConverter implements EntityToDtoConverter<MagicSchool, MagicSchoolDto> {
 
     @Override
-    public MagicSchoolDTO convertToDTO(MagicSchool entity) {
+    public MagicSchoolDto convertToDTO(MagicSchool entity) {
         // Create SourceBookDTO if Book is not null
         SourceBookDTO sourceBookDTO = new SourceBookDTO();
         if (entity.getBook() != null) {
@@ -25,7 +25,7 @@ public class MagicSchoolConverter implements EntityToDTOConverter<MagicSchool, M
         }
 
         // Return MagicSchoolDTO with the transformed fields
-        return MagicSchoolDTO.builder()
+        return MagicSchoolDto.builder()
                 .name(new NameBasedDTO(entity.getMagicSchooName(), entity.getEnglishName(), new ArrayList<>(), ""))
                 .description(entity.getMagicSchoolDescription())
                 .source(sourceBookDTO)
@@ -33,7 +33,7 @@ public class MagicSchoolConverter implements EntityToDTOConverter<MagicSchool, M
     }
 
     @Override
-    public MagicSchool convertToEntity(MagicSchoolDTO dto) {
+    public MagicSchool convertToEntity(MagicSchoolDto dto) {
         MagicSchool school = new MagicSchool();
 
         // Handle name field (MagicSchoolDTO -> MagicSchool entity)
@@ -58,7 +58,6 @@ public class MagicSchoolConverter implements EntityToDTOConverter<MagicSchool, M
             }
             school.setBook(book);
         }
-
         return school;
     }
 }
