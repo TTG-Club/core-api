@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonRootName("duration")
-public class SpellDurationDTO {
+public class SpellDurationDto {
 
     @JsonProperty("value")
     private Integer value; // Значение (например, 10 минут)

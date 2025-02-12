@@ -45,7 +45,7 @@ public class Spell extends NamedEntity implements HasTagEntity {
     private SpellDuration duration;
 
     @Embedded
-    private SpellCastingTime castingTime; // Время накладывания
+    private SpellcastingTime castingTime; // Время накладывания
 
     @Embedded
     private SpellComponents components; // Компоненты

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.dto.spell;
 
-import club.ttg.dnd5.dto.base.BaseDTO;
+import club.ttg.dnd5.dto.base.create.CreateBaseDTO;
 import club.ttg.dnd5.dto.spell.component.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -14,28 +14,29 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonRootName("spell")
-public class SpellDTO extends BaseDTO {
+@JsonRootName("create_spell")
+public class CreateSpellDto extends CreateBaseDTO {
+
     @JsonProperty("level")
     private int level; // Уровень заклинания
 
     @JsonProperty("school")
-    private MagicSchoolDTO school; // Школа магии
+    private MagicSchoolDto school; // Школа магии
 
     @JsonProperty("distance")
-    private SpellDistanceDTO distance; // Дистанция заклинания
+    private SpellDistanceDto distance; // Дистанция заклинания
 
     @JsonProperty("duration")
-    private SpellDurationDTO duration; // Длительность
+    private SpellDurationDto duration; // Длительность
 
     @JsonProperty("time")
-    private SpellCastingTimeDTO time; // Время накладывания
+    private SpellCastingTimeDto time; // Время накладывания
 
     @JsonProperty("components")
-    private SpellComponentsDTO components; // Компоненты заклинания
+    private SpellComponentsDto components; // Компоненты заклинания
 
     @JsonProperty("affiliation")
-    private SpellAffiliationDTO affiliation; // Привязка к классам
+    private SpellAffiliationDto affiliation; // Привязка к классам
 
     @JsonProperty("tags")
     private Set<String> tags = new HashSet<>(); // Теги заклинания

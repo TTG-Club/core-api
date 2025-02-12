@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonRootName("components")
-public class SpellComponentsDTO {
+public class SpellComponentsDto {
 
     @JsonProperty("v")
     private boolean verbal; // Вербальный компонент
@@ -21,6 +21,6 @@ public class SpellComponentsDTO {
     private boolean somatic; // Соматический компонент
 
     @JsonProperty("m")
-    private List<SpellMaterialComponentDTO> material; // Материальные компоненты
+    private List<SpellMaterialComponentDto> material; // Материальные компоненты
 }
 

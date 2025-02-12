@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonRootName("material_component")
-public class SpellMaterialComponentDTO {
+public class SpellMaterialComponentDto {
 
     @JsonProperty("name")
     private String name; // Название компонента

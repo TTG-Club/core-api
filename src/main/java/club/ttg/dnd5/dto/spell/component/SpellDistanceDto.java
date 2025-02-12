@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonRootName("distance")
-public class SpellDistanceDTO {
+public class SpellDistanceDto {
 
     @JsonProperty("type")
     private String type; // Тип дистанции (точная, радиус и т.д.)
