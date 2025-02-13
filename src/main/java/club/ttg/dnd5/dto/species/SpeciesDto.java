@@ -46,6 +46,7 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
             this.subspecies = null;
             this.features = null;
             this.group = null;
+            setDescription(null);
         }
     }
 
