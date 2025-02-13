@@ -55,6 +55,7 @@ public class SpeciesService {
     }
 
     public List<SpeciesDto> getAllSpecies() {
+        // только parent и убрать лишнюю детальную информацию
         return speciesRepository.findAll()
                 .stream()
                 .map(species -> toDTO(species, true))
