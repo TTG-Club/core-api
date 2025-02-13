@@ -26,7 +26,7 @@ public class Spell extends NamedEntity implements HasTagEntity {
     private Source source; // Источник заклинания
 
     @Column(nullable = false)
-    private int level; // Уровень заклинания (0 - заговор)
+    private short level; // Уровень заклинания (0 - заговор)
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id", nullable = false)
