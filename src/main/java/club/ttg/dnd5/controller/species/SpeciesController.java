@@ -94,8 +94,8 @@ public class SpeciesController {
             description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвида.")
     public ResponseEntity<List<SpeciesDto>> getAllRelatedSpeciesBySubSpeciesUrl(
             @Parameter(description = "URL подвига", required = true) @RequestParam String subSpeciesUrl) {
-        List<SpeciesDto> relatedSpeciesRespons = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
-        return ResponseEntity.ok(relatedSpeciesRespons);
+        List<SpeciesDto> relatedSpeciesResponse = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
+        return ResponseEntity.ok(relatedSpeciesResponse);
     }
 
     /**
