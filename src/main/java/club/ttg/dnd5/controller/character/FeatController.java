@@ -1,7 +1,6 @@
 package club.ttg.dnd5.controller.character;
 
 import club.ttg.dnd5.dto.character.FeatDto;
-import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.service.character.FeatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,25 +20,40 @@ import java.util.Collection;
 public class FeatController {
     private final FeatService featService;
 
+    /**
+     * Проверка существования черта по URL.
+     *
+     * @param url URL черты.
+     * @return 204, если черта с таким URL не существует; 409, если существует.
+     */
+    @Operation(
+            summary = "Проверка существования черты",
+            description = "Возвращает 204 (No Content), если черта с указанным URL не существует, или 409 (Conflict), если существует."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Черта с указанным URL не найден."),
+            @ApiResponse(responseCode = "409", description = "Черта с указанным URL уже существует.")
+    })
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    public ResponseEntity<Boolean> existByUrl(@PathVariable final String url) {
+        boolean exists = featService.existByUrl(url);
+        if (exists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+    }
+
     @Operation(summary = "Получение детального описания черты")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черта успешно получена"),
             @ApiResponse(responseCode = "404", description = "Черта не найдена")
     })
-
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/{featUrl}")
-    public FeatDto getFeat(@PathVariable final String featUrl) {
-        return featService.getFeat(featUrl);
-    }
-
-    @ResponseStatus(HttpStatus.OK)
-    @RequestMapping(path = "/{featUrl}", method = RequestMethod.OPTIONS)
-    public ResponseEntity<Boolean> existByUrl(@PathVariable final String featUrl) {
-        if (featService.existByUrl(featUrl)) {
-            throw new EntityExistException();
-        }
-        return ResponseEntity.ok(false);
+    @GetMapping("/{url}")
+    public FeatDto getFeat(@PathVariable final String url) {
+        return featService.getFeat(url);
     }
 
     @Operation(summary = "Получение списка краткого описания черты")

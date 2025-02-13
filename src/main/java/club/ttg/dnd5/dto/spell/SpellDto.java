@@ -1,5 +1,6 @@
 package club.ttg.dnd5.dto.spell;
 
+import club.ttg.dnd5.dto.NameValueDto;
 import club.ttg.dnd5.dto.base.BaseDTO;
 import club.ttg.dnd5.dto.spell.component.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,7 +18,7 @@ import java.util.Set;
 @JsonRootName("spell")
 public class SpellDto extends BaseDTO {
     @JsonProperty("level")
-    private int level; // Уровень заклинания
+    private NameValueDto level; // Уровень заклинания
 
     @JsonProperty("school")
     private MagicSchoolDto school; // Школа магии

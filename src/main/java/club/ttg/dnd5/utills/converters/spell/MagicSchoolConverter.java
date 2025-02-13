@@ -13,7 +13,7 @@ import java.util.ArrayList;
 public class MagicSchoolConverter implements EntityToDtoConverter<MagicSchool, MagicSchoolDto> {
 
     @Override
-    public MagicSchoolDto convertToDTO(MagicSchool entity) {
+    public MagicSchoolDto convertToDto(MagicSchool entity) {
         // Create SourceBookDTO if Book is not null
         SourceBookDTO sourceBookDTO = new SourceBookDTO();
         if (entity.getBook() != null) {
