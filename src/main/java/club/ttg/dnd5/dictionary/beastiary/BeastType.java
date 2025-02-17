@@ -8,14 +8,14 @@ import java.util.Set;
 /**
  * Типы существ из бестиария
  */
-public enum CreatureType {
+public enum BeastType {
 	ABERRATION("Аберрация"),
 	BEAST("Зверь"),
 	CELESTIAL("Небожитель"),
 	CONSTRUCT("Конструкт"),
 	DRAGON("Дракон"),
 	ELEMENTAL("Элементаль"),
-	FEY("Фея", "Йей"),
+	FEY("Фея", "Фей"),
 	FIEND("Исчадие"),
 	GIANT("Великан", "Гигант"),
 	HUMANOID("Гуманоид"),
@@ -25,19 +25,19 @@ public enum CreatureType {
 	SLIME("Слизь"),
 	SWARM("Рой", "Стая");
 
-	private final String displayCyrillicName;
-	private final Set<String> cyrillicNames;
+	private final String name;
+	private final Set<String> names;
 
-	CreatureType(String... cyrillicNames) {
-		this.displayCyrillicName = cyrillicNames[0];
-		this.cyrillicNames = new HashSet<>(Arrays.asList(cyrillicNames));
+	BeastType(String... cyrillicNames) {
+		this.name = cyrillicNames[0];
+		this.names = new HashSet<>(Arrays.asList(cyrillicNames));
 	}
 
 	public String getCyrillicName() {
-		return this.displayCyrillicName;
+		return this.name;
 	}
 
-	public static CreatureType parse(final String type) {
+	public static BeastType parse(final String type) {
 		if (type == null) {
 			throw new IllegalArgumentException("Type cannot be null");
 		}
@@ -48,7 +48,7 @@ public enum CreatureType {
 	}
 
 
-	public static Set<CreatureType> getFilterTypes() {
+	public static Set<BeastType> getFilterTypes() {
 		return EnumSet.of(ABERRATION, BEAST, CELESTIAL, CONSTRUCT, DRAGON, ELEMENTAL, FEY, FIEND, GIANT, HUMANOID,
 				MONSTROSITY, PLANT, UNDEAD, SLIME);
 	}

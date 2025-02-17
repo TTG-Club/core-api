@@ -5,7 +5,7 @@ import club.ttg.dnd5.dictionary.DamageType;
 import club.ttg.dnd5.dictionary.Dice;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.Condition;
-import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.dictionary.beastiary.BeastType;
 import club.ttg.dnd5.dictionary.beastiary.Environment;
 import club.ttg.dnd5.dictionary.character.FeatCategory;
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
@@ -69,7 +69,7 @@ public class DictionariesService {
     }
 
     public Collection<SelectOptionDto> getCreatureCategories() {
-        return Arrays.stream(CreatureType.values())
+        return Arrays.stream(BeastType.values())
                 .map(type -> createBaseOptionDTO(type.getCyrillicName(), type.name()))
                 .collect(Collectors.toList());
     }
