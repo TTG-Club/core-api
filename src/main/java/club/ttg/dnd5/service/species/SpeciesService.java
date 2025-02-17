@@ -14,7 +14,7 @@ import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
-import club.ttg.dnd5.repository.SpeciesFeatureRepository;
+//import club.ttg.dnd5.repository.SpeciesFeatureRepository;
 import club.ttg.dnd5.repository.SpeciesRepository;
 import club.ttg.dnd5.repository.TagRepository;
 import club.ttg.dnd5.repository.book.BookRepository;
@@ -41,7 +41,7 @@ public class SpeciesService {
     private final SpeciesRepository speciesRepository;
     private final SourceRepository sourceRepository;
     private final BookRepository bookRepository;
-    private final SpeciesFeatureRepository speciesFeatureRepository;
+    //private final SpeciesFeatureRepository speciesFeatureRepository;
     private final TagRepository tagRepository;
     // Public methods
     public SpeciesDto findById(String url) {
@@ -55,7 +55,8 @@ public class SpeciesService {
     }
 
     public List<SpeciesDto> getAllSpecies() {
-        return speciesRepository.findAll()
+        // только parent и убрать лишнюю детальную информацию
+        return speciesRepository.findAllByParentIsNull()
                 .stream()
                 .map(species -> toDTO(species, true))
                 .toList();
