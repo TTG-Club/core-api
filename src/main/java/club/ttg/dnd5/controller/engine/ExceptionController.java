@@ -2,12 +2,11 @@ package club.ttg.dnd5.controller.engine;
 
 import club.ttg.dnd5.dto.ErrorResponseDto;
 import club.ttg.dnd5.exception.ApiException;
+import club.ttg.dnd5.exception.ContentNotFoundException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -21,7 +20,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.io.IOException;
 
-@Log4j2
+@Slf4j
 @ControllerAdvice
 @RequiredArgsConstructor
 public class ExceptionController {
@@ -29,9 +28,8 @@ public class ExceptionController {
     private String MAX_FILE_SIZE;
 
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ErrorResponseDto> handleApiException(ApiException ex, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ErrorResponseDto> handleApiException(ApiException ex) {
         log.error(ExceptionUtils.getStackTrace(ex));
-
         return convertToResponseEntity(ex.getStatus(), ex.getMessage());
     }
 
@@ -41,24 +39,24 @@ public class ExceptionController {
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponseDto> handleRequestParamException(MissingServletRequestParameterException ex, HttpServletRequest request, HttpServletResponse response) {
-        String message = String.format("Отсутствует необходимый параметр \"%s\"", ex.getParameterName());
+    public ResponseEntity<ErrorResponseDto> handleRequestParamException(MissingServletRequestParameterException exception) {
+        String message = String.format("Отсутствует необходимый параметр \"%s\"", exception.getParameterName());
 
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponseDto> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ErrorResponseDto> handleMaxUploadSizeExceededException() {
         String message = String.format("Максимальный размер загружаемых файлов – %s", MAX_FILE_SIZE);
 
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler({NoHandlerFoundException.class, IOException.class, Exception.class})
-    public ResponseEntity<ErrorResponseDto> handleOtherExceptions(Exception ex, HttpServletRequest request, HttpServletResponse response) {
-        log.error(ExceptionUtils.getStackTrace(ex));
+    public ResponseEntity<ErrorResponseDto> handleOtherExceptions(Exception exception) {
+        log.error(ExceptionUtils.getStackTrace(exception));
 
-        return convertToResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+        return convertToResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
@@ -69,6 +67,11 @@ public class ExceptionController {
     @ExceptionHandler(EntityExistException.class)
     public ResponseEntity<ErrorResponseDto> handleHandleEntityExistException(Exception exception) {
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(ContentNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleContentNotFoundException(Exception exception) {
+        return convertToResponseEntity(HttpStatus.NO_CONTENT, exception.getMessage());
     }
 
     private ResponseEntity<ErrorResponseDto> convertToResponseEntity(HttpStatus status, String message) {
