@@ -26,7 +26,7 @@ public class ItemController {
      * @return 204, если вида с таким URL не существует; 409, если вид существует.
      */
     @Operation(
-            summary = "Проверка существования вида",
+            summary = "Проверка существования предмета",
             description = "Возвращает 204 (No Content), если предмет с указанным URL не существует, или 409 (Conflict), если существует."
     )
     @ApiResponses(value = {
@@ -45,7 +45,7 @@ public class ItemController {
 
     @Operation(summary = "Получение детального описания предмета")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Предмет успешно получена"),
+            @ApiResponse(responseCode = "200", description = "Предмет успешно получен"),
             @ApiResponse(responseCode = "404", description = "Предмет не найден")
     })
     @ResponseStatus(HttpStatus.OK)
@@ -91,7 +91,7 @@ public class ItemController {
 
     @Operation(summary = "Скрывает предмет")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Предмет удалена из общего списка"),
+            @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @ResponseStatus(HttpStatus.OK)

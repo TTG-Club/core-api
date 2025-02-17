@@ -54,7 +54,7 @@ public class Item extends NamedEntity implements HasSourceEntity {
     /**
      * Источник
      */
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
     private Source source = new Source();
 }
