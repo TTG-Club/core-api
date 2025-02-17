@@ -1,6 +1,6 @@
 package club.ttg.dnd5.model.base;
 
-import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.dictionary.beastiary.BeastType;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,7 +14,7 @@ import lombok.Setter;
 public abstract class CreatureProperties extends NamedEntity {
     private String sizes;
     @Enumerated(EnumType.STRING)
-    private CreatureType type;
+    private BeastType type;
     @Column(columnDefinition = "int default 30")
     private int speed = 30;
     private int fly;

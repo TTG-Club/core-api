@@ -1,6 +1,6 @@
 package club.ttg.dnd5.dictionary;
 
-import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.dictionary.beastiary.BeastType;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -8,16 +8,16 @@ import java.util.List;
 
 @Getter
 public enum Alignment {
-	LAWFUL_GOOD("ЗД", "законно-добрый", "законно-добрая", "законно-доброе"), //0 
-	LAWFUL_NEUTRAL("ЗН", "законно-нейтральный", "законно-нейтральная", "законно-нейтральное"), // 1
-	LAWFUL_EVIL("ЗЗ", "законно-злой","законно-злая", "законно-злое"), //2 
-	TRUE_NEUTRAL("Н", "нейтральный", "нейтральная","нейтральное"), //3
-	NEUTRAL_GOOD("НД", "нейтрально-добрый", "нейтрально-добрая", "нейтрально-доброе"), // 4
-	NEUTRAL_EVIL("НЗ", "нейтрально-злой", "нейтрально-злая", "нейтрально-злое"), //5 
-	CHAOTIC_GOOD("ХД", "хаотично-добрый", "хаотично-добрая","хаотично-доброе"), //6
-	CHAOTIC_NEUTRAL("ХН", "хаотично-нейтральный",  "хаотично-нейтральная",  "хаотично-нейтральное"), //7
-	CHAOTIC_EVIL("ХЗ", "хаотично-злой", "хаотично-злая", "хаотично-злое"), // 8
-	NEUTRAL("Н", "нейтральный",  "нейтральная", "нейтральное"), //9
+	LAWFUL_GOOD("ЗД", "законно-добрый", "законно-добрая", "законно-доброе"),
+	LAWFUL_NEUTRAL("ЗН", "законно-нейтральный", "законно-нейтральная", "законно-нейтральное"),
+	LAWFUL_EVIL("ЗЗ", "законно-злой","законно-злая", "законно-злое"),
+	TRUE_NEUTRAL("Н", "нейтральный", "нейтральная","нейтральное"),
+	NEUTRAL_GOOD("НД", "нейтрально-добрый", "нейтрально-добрая", "нейтрально-доброе"),
+	NEUTRAL_EVIL("НЗ", "нейтрально-злой", "нейтрально-злая", "нейтрально-злое"),
+	CHAOTIC_GOOD("ХД", "хаотично-добрый", "хаотично-добрая","хаотично-доброе"),
+	CHAOTIC_NEUTRAL("ХН", "хаотично-нейтральный",  "хаотично-нейтральная",  "хаотично-нейтральное"),
+	CHAOTIC_EVIL("ХЗ", "хаотично-злой", "хаотично-злая", "хаотично-злое"),
+	NEUTRAL("Н", "нейтральный",  "нейтральная", "нейтральное"),
 	WITHOUT("", "без мировоззрения", "без мировоззрения", "без мировоззрения");
 
 	private final String shortName;
@@ -67,7 +67,7 @@ public enum Alignment {
 		return WITHOUT;
 	}
 
-	public String getName(CreatureType type) {
+	public String getName(BeastType type) {
 		return switch (type) {
 			case ABERRATION, FEY, UNDEAD, SLIME, MONSTROSITY -> names[1];
 			case FIEND, PLANT -> names[2];

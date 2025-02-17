@@ -1,6 +1,6 @@
 package club.ttg.dnd5.dictionary;
 
-import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.dictionary.beastiary.BeastType;
 import lombok.Getter;
 
 import java.util.*;
@@ -54,7 +54,7 @@ public enum Size {
 		return EnumSet.of(TINY, SMALL, MEDIUM, LARGE, HUGE, GARGANTUAN);
 	}
 
-	public String getSizeName(CreatureType type) {
+	public String getSizeName(BeastType type) {
 		return switch (type) {
 			case ABERRATION, FEY, UNDEAD, SLIME, FIEND, PLANT -> names[2];
 			default -> names[0];

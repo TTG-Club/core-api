@@ -2,7 +2,7 @@ package club.ttg.dnd5.utills;
 
 
 import club.ttg.dnd5.dictionary.Size;
-import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.dictionary.beastiary.BeastType;
 import club.ttg.dnd5.dto.base.*;
 import club.ttg.dnd5.dto.character.ClassFeatureDto;
 import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
@@ -69,7 +69,7 @@ public class Converter {
     // Function to map Creature Properties DTO to Entity
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
         entity.setSizes(Size.convertSizeToEntityFormat(dto.getSizes()));
-        entity.setType(CreatureType.parse(dto.getType()));
+        entity.setType(BeastType.parse(dto.getType()));
         entity.setSpeed(dto.getMovementAttributes().getBase());
         entity.setFly(dto.getMovementAttributes().getFly());
         entity.setClimb(dto.getMovementAttributes().getClimb());

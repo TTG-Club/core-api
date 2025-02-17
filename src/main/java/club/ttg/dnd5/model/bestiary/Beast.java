@@ -2,14 +2,14 @@ package club.ttg.dnd5.model.bestiary;
 
 import club.ttg.dnd5.dictionary.Alignment;
 import club.ttg.dnd5.dictionary.Size;
-import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.dictionary.beastiary.BeastType;
+import club.ttg.dnd5.model.base.HasSourceEntity;
+import club.ttg.dnd5.model.base.NamedEntity;
 import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -17,26 +17,16 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bestiary")
-public class Beast  {
-    @Id
-    @Column(nullable = false, unique = true)
-    private String url;
-
-    @Column(nullable = false)
-    private String name;
-    @Column(nullable = false)
-    private String english;
-    private String alternative;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-    @Column(columnDefinition = "TEXT")
-    private String original;
-
+public class Beast extends NamedEntity implements HasSourceEntity {
+    /**
+     * Размер существа.
+     */
     @Enumerated(EnumType.STRING)
     private Size size;
+
     @Enumerated(EnumType.STRING)
-    private CreatureType type;
+    private BeastType type;
+
     private String tags;
     @Enumerated(EnumType.STRING)
     private Alignment alignment;
@@ -47,13 +37,7 @@ public class Beast  {
     private short hit;
     private String descriptionHit;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
-    private Source source;
-    private Short page;
-
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime created;
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime lastUpdated;
+    private Source source = new Source();
 }
