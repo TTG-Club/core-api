@@ -12,14 +12,45 @@ import club.ttg.dnd5.dictionary.character.SpellcasterType;
 import club.ttg.dnd5.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.select.SelectOptionDto;
 import club.ttg.dnd5.dto.select.SpellcasterOptionDto;
+import club.ttg.dnd5.model.spell.enums.ComparisonOperator;
+import club.ttg.dnd5.model.spell.enums.MagicSchool;
+import club.ttg.dnd5.model.spell.enums.TimeUnit;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class DictionariesService {
+    public List<SelectOptionDto> getTimeUnits() {
+        return Arrays.stream(TimeUnit.values())
+                .map(unit -> SelectOptionDto.builder()
+                        .label(unit.getName())
+                        .value(unit.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public List<SelectOptionDto> getMagicSchools() {
+        return Arrays.stream(MagicSchool.values())
+                .map(school -> SelectOptionDto.builder()
+                        .label(school.getName())
+                        .value(school.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public List<SelectOptionDto> getComparisonOperators() {
+        return Arrays.stream(ComparisonOperator.values())
+                .map(op -> SelectOptionDto.builder()
+                        .label(op.getSymbol())
+                        .value(op.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     private SelectOptionDto createBaseOptionDTO(String label, String value) {
         return SelectOptionDto.builder()
                 .label(label)
