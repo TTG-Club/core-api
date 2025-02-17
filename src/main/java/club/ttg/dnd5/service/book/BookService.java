@@ -84,6 +84,9 @@ public class BookService {
         if (StringUtils.isBlank(sourceBookDTO.getUrl())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Отсутствует обязательное поле `url`");
         }
+        if (StringUtils.isBlank(sourceBookDTO.getUrl())) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Должен быть указан url");
+        }
         return Book.builder()
                 .bookDate(sourceBookDTO.getYear())
                 .sourceAcronym(name.getShortName())
