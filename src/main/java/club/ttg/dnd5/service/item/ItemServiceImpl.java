@@ -1,6 +1,7 @@
 package club.ttg.dnd5.service.item;
 
 import club.ttg.dnd5.dto.item.ItemDto;
+import club.ttg.dnd5.exception.ContentNotFoundException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.model.item.Item;
@@ -16,6 +17,15 @@ import java.util.Collection;
 @Service
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
+
+    @Override
+    public boolean existsByUrl(final String url) {
+        var exists = itemRepository.existsById(url);
+        if (!exists) {
+            throw new ContentNotFoundException("Item not found by uls: " + url);
+        }
+        return true;
+    }
 
     @Override
     public ItemDto getItem(final String itemUrl) {
@@ -50,11 +60,6 @@ public class ItemServiceImpl implements ItemService {
         Item item = findByUrl(itemUrl);
         item.setHiddenEntity(true);
         return toDTO(itemRepository.save(item));
-    }
-
-    @Override
-    public boolean existsByUrl(final String url) {
-        return itemRepository.existsById(url);
     }
 
     private ItemDto toDTO(Item item) {

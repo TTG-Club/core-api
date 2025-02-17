@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -34,13 +33,9 @@ public class ItemController {
             @ApiResponse(responseCode = "409", description = "Предмет с указанным URL уже существует.")
     })
     @RequestMapping(value = "/{url}", method = RequestMethod.HEAD)
-    public ResponseEntity<Void> handleOptions(@PathVariable("url") String url) {
-        boolean exists = itemService.existsByUrl(url);
-        if (exists) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        } else {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public boolean exists(@PathVariable("url") String url) {
+        return itemService.existsByUrl(url);
     }
 
     @Operation(summary = "Получение детального описания предмета")
@@ -48,7 +43,6 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предмет успешно получен"),
             @ApiResponse(responseCode = "404", description = "Предмет не найден")
     })
-    @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{itemUtl}")
     public ItemDto getItem(@PathVariable final String itemUtl) {
         return itemService.getItem(itemUtl);
@@ -58,7 +52,6 @@ public class ItemController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
     })
-    @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
     public Collection<ItemDto> getItems() {
         return itemService.getItems();
@@ -82,7 +75,6 @@ public class ItemController {
             @ApiResponse(responseCode = "404", description = "Предмет не существует"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @ResponseStatus(HttpStatus.OK)
     @PostMapping("{itemUrl}")
     public ItemDto updateItem(@PathVariable final String itemUrl,
             @RequestBody final ItemDto itemDto) {
@@ -94,7 +86,6 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @ResponseStatus(HttpStatus.OK)
     @DeleteMapping("{itemUrl}")
     public ItemDto deleteItem(@PathVariable final String itemUrl) {
         return itemService.delete(itemUrl);
