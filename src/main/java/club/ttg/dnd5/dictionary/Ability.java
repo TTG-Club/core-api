@@ -60,7 +60,7 @@ public enum Ability {
      * @param ability значение характеристики
      * @return модификатор характеристики
      */
-    public static byte getModifier(byte ability) {
+    public static byte getMod(byte ability) {
         return (byte) ((ability - 10) < 0 ? (ability - 11) / 2 : (ability - 10) / 2);
     }
 }

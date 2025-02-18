@@ -19,7 +19,7 @@ public class NameDto {
     private String eng;
     @Schema(description = "альтернативное имя", defaultValue = "<fhl",  requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String alt;
-    @Schema(description = "имя на руском в родительном падеже", defaultValue = "барда", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(description = "имя на русском языке в родительном падеже", defaultValue = "барда", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String genitive;
     @Schema(description = "краткое имя", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String shortName;
