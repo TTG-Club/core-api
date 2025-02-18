@@ -8,17 +8,23 @@ import java.util.stream.Collectors;
 
 @Getter
 public enum Size {
-	UNDEFINED("Неопределенный", "Неопределенная", "Неопределенное"),
-	TINY("Крошечный","Крошечная", "Крошечное"),
-	SMALL("Маленький", "Маленькая", "Маленькое"),
-	MEDIUM("Средний", "Средняя", "Среднее"),
-	LARGE("Большой", "Большая", "Большое"),
-	HUGE("Огромный", "Огромная", "Огромное"),
-	GARGANTUAN("Громадный", "Громадная", "Громадное");
+	UNDEFINED(null, 2.5f,"Неопределенный", "Неопределенная", "Неопределенное"),
+	TINY(Dice.d4,2.5f, "Крошечный","Крошечная", "Крошечное"),
+	SMALL(Dice.d6,3.5f,"Маленький", "Маленькая", "Маленькое"),
+	MEDIUM(Dice.d8,4.5f,"Средний", "Средняя", "Среднее"),
+	LARGE(Dice.d10,5.5f,"Большой", "Большая", "Большое"),
+	HUGE(Dice.d12,6.5f,"Огромный", "Огромная", "Огромное"),
+	GARGANTUAN(Dice.d20,10.5f,"Громадный", "Громадная", "Громадное");
+
+	private final Dice hitDice;
+
+	private final float hitAverageDice;
 
 	private final String [] names;
 
-	Size(String... names){
+	Size(Dice hitDice, float hitAverageDice, String... names) {
+		this.hitDice = hitDice;
+		this.hitAverageDice = hitAverageDice;
 		this.names = names;
 	}
 

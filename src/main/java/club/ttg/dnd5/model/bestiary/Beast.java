@@ -11,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collection;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,20 +26,24 @@ public class Beast extends NamedEntity implements HasSourceEntity {
     @Enumerated(EnumType.STRING)
     private Size size;
 
-    @Enumerated(EnumType.STRING)
-    private BeastType type;
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "beast_id")
+    private Collection<BeastCategory> categories;
 
-    private String tags;
     @Enumerated(EnumType.STRING)
     private Alignment alignment;
 
     private byte AC;
-    private String descriptionAC;
 
-    private short hit;
+    private short countHitDice;
+
     private String descriptionHit;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "beast_id")
+    private Collection<BeastAbility> abilities;
+
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "source")
     private Source source = new Source();
 }
