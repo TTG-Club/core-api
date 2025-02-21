@@ -374,6 +374,25 @@ public class DictionariesController {
         return dictionariesService.getSpellDistanceUnits();
     }
 
+    @Operation(summary = "Область действия заклинания")
+    @GetMapping("/spell-area")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "цилиндр", "value": "CYLINDER" },
+                              { "label": "конус", "value": "CONE" },
+                              { "label": "куб", "value": "CUBE" },
+                              { "label": "эманация", "value": "EMANATION" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSpellAreaOfEffect() {
+        return dictionariesService.getSpellAreaOfEffect();
+    }
+
     @Operation(summary = "Операторы сравнения")
     @GetMapping("/comparison-operators")
     @ApiResponse(
