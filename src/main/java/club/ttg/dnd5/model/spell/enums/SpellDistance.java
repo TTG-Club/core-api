@@ -3,6 +3,7 @@ package club.ttg.dnd5.model.spell.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@Deprecated
 @Getter
 @AllArgsConstructor
 public enum SpellDistance {
