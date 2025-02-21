@@ -1,6 +1,6 @@
 package club.ttg.dnd5.model.item;
 
-import club.ttg.dnd5.model.Source;
+import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,6 +27,8 @@ public class MagicItem {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     @ManyToOne
     @JoinColumn(name = "source")

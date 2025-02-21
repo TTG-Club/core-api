@@ -1,6 +1,6 @@
 package club.ttg.dnd5.model.character;
 
-import club.ttg.dnd5.model.Source;
+import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,6 +26,8 @@ public class Spell {
     @Column(nullable = false)
     private String english;
     private String alternative;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     @Column(columnDefinition = "TEXT")
     private String description;

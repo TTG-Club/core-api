@@ -3,14 +3,13 @@ package club.ttg.dnd5.model.bestiary;
 import club.ttg.dnd5.dictionary.Alignment;
 import club.ttg.dnd5.dictionary.Size;
 import club.ttg.dnd5.dictionary.beastiary.CreatureType;
-import club.ttg.dnd5.model.Source;
+import club.ttg.dnd5.model.book.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 
 @Getter
 @Setter
@@ -31,6 +30,8 @@ public class Beast  {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(columnDefinition = "TEXT")
+    private String original;
 
     @Enumerated(EnumType.STRING)
     private Size size;

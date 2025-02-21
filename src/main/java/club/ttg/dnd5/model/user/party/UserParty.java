@@ -1,6 +1,6 @@
 package club.ttg.dnd5.model.user.party;
 
-import club.ttg.dnd5.model.WithTimestamps;
+import club.ttg.dnd5.model.base.TimestampedEntity;
 import club.ttg.dnd5.model.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Table(name = "user_party")
-public class UserParty extends WithTimestamps {
+public class UserParty extends TimestampedEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -29,14 +29,14 @@ public class UserParty extends WithTimestamps {
 	@JoinTable(
 		name = "user_membership",
 		joinColumns = @JoinColumn(name = "user_party_id"),
-		inverseJoinColumns = @JoinColumn(name = "user_id")
+		inverseJoinColumns = @JoinColumn(name = "user_uuid")
 	)
 	private List<User> userList = new ArrayList<>();
 	@ManyToMany
 	@JoinTable(
 		name = "user_wait_list",
 		joinColumns = @JoinColumn(name = "user_party_id"),
-		inverseJoinColumns = @JoinColumn(name = "user_id")
+		inverseJoinColumns = @JoinColumn(name = "user_uuid")
 	)
 	private List<User> userWaitList = new ArrayList<>();
 	@OneToOne(mappedBy = "userParty", cascade = CascadeType.REMOVE)
