@@ -22,7 +22,7 @@ public class BackgroundConverter {
 
     public static final BiFunction<BackgroundDto, Background, BackgroundDto> MAP_ENTITY_TO_DTO_ = (dto, entity) -> {
         dto.setAbilityScores(entity.getAbilities().stream().map(a -> NameDto.builder().rus(a.getName()).eng(a.name()).build()).toList());
-        dto.setSkillProficiencies(entity.getSkillProficiencies().stream().map(a -> NameDto.builder().rus(a.getCyrillicName()).eng(a.name()).build()).toList());
+        dto.setSkillProficiencies(entity.getSkillProficiencies().stream().map(a -> NameDto.builder().rus(a.getName()).eng(a.name()).build()).toList());
         dto.setToolProficiency(entity.getToolProficiency());
         return dto;
     };

@@ -52,7 +52,7 @@ public class ClassConverter {
                 .collect(Collectors.toSet()));
         mastery.setAvailableSkills(entity.getAvailableSkills()
                 .stream()
-                .map(t -> NameDto.builder().rus(t.getCyrillicName()).eng(t.name()).build())
+                .map(t -> NameDto.builder().rus(t.getName()).eng(t.name()).build())
                 .collect(Collectors.toSet()));
         dto.setMastery(mastery);
         dto.setStartEquipment(entity.getEquipment());
