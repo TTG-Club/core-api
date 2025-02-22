@@ -1,35 +1,26 @@
 package club.ttg.dnd5.model.spell.enums;
 
 import club.ttg.dnd5.exception.ApiException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
+@AllArgsConstructor
 public enum MagicSchool {
-    CONJURATION("вызов", 0),
-    EVOCATION("воплощение",  1),
-    ILLUSION("иллюзия", 2),
-    NECROMANCY("некромантия", 3),
-    ABJURATION("ограждение", 4),
-    ENCHANTMENT("очарование", 5),
-    TRANSMUTATION("преобразование", 6),
-    DIVINATION("прорицание", 7);
+    ABJURATION("ограждения"),
+    CONJURATION("вызова"),
+    DIVINATION("прорицания"),
+    ENCHANTMENT("очарования"),
+    EVOCATION("воплощения"),
+    ILLUSION("иллюзии"),
+    NECROMANCY("некромантии"),
+    TRANSMUTATION("преобразования")
+    ;
 
-    private String name;
-    private int code;
+    private final String name;
 
-    MagicSchool(String name, int code) {
-        this.name = name;
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public static MagicSchool getMagicSchool(String name) {
+    public static MagicSchool parse(String name) {
         for (MagicSchool school : values()) {
             if (school.name.equalsIgnoreCase(name)) {
                 return school;
