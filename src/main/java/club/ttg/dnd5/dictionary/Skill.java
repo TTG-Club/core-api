@@ -1,5 +1,6 @@
 package club.ttg.dnd5.dictionary;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.*;
@@ -12,53 +13,33 @@ import static club.ttg.dnd5.dictionary.Ability.*;
 /**
  * Навыки
  */
+@AllArgsConstructor
+@Getter
 public enum Skill {
 	ATHLETICS (STRENGTH, "Атлетика"),
 	ACROBATICS (DEXTERITY, "Акробатика"),
-	SLEIGHT_OF_HAND (DEXTERITY, "Лoвкость рук", "Ловкость Рук"),
+	SLEIGHT_OF_HAND (DEXTERITY, "Лoвкость рук"),
 	STEALTH (DEXTERITY, "Скрытность"),
 	ARCANA (INTELLIGENCE, "Магия"),
 	HISTORY (INTELLIGENCE, "История"),
-	INVESTIGATION (INTELLIGENCE, "Анализ", "Расследование"),
-	NATURE (INTELLIGENCE, "Природа", "Естествознание"),
+	INVESTIGATION (INTELLIGENCE, "Анализ"),
+	NATURE (INTELLIGENCE, "Природа"),
 	RELIGION (INTELLIGENCE, "Религия"),
-	ANIMAL_HANDLING (WISDOM, "Уход за животными", "Обращение с животными"),
+	ANIMAL_HANDLING (WISDOM, "Уход за животными"),
 	INSIGHT (WISDOM,"Проницательность"),
 	MEDICINE (WISDOM, "Медицина"),
-	PERCEPTION (WISDOM, "Внимательность", "Восприятие"),
+	PERCEPTION (WISDOM, "Внимательность"),
 	SURVIVAL (WISDOM, "Выживание"), //13
 	DECEPTION (CHARISMA, "Обман"), //14
-	INTIMIDATION (CHARISMA, "Запугивание", "Устрашение"),
+	INTIMIDATION (CHARISMA, "Запугивание"),
 	PERFORMANCE (CHARISMA, "Выступление"),
 	PERSUASION (CHARISMA, "Убеждение");
 
-	@Getter()
 	private final Ability ability;
-	@Getter()
-	private final String cyrillicName;
 
-	private final Set<String> cyrillicNames;
+	private final String name;
 
 
-	Skill(Ability ability, String ... cyrilicNames){
-		this.ability = ability;
-		this.cyrillicName = cyrilicNames[0];
-		this.cyrillicNames = Arrays.stream(cyrilicNames).collect(Collectors.toSet());
-	}
-
-	public static Skill parse(String cyrilicName) {
-		for (Skill type : values()) {
-			if (type.cyrillicNames.contains(cyrilicName)) {
-				return type;
-			}
-		}
-		return null;
-	}
-	
-	public static Map<Ability, List<Skill>> getSkillsToAbbility() {
-		return Arrays.stream(values()).collect(sortedGroupingBy(Skill::getAbility));
-	}
-	
 	public static <T, K extends Comparable<K>> Collector<T, ?, TreeMap<K, List<T>>> sortedGroupingBy(
 			Function<T, K> function) {
 		return Collectors.groupingBy(function, TreeMap::new, Collectors.toList());

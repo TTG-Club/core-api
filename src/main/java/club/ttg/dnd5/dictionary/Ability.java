@@ -54,13 +54,4 @@ public enum Ability {
             default -> null;
         };
     }
-
-    /**
-     * Получение модификатора характеристики
-     * @param ability значение характеристики
-     * @return модификатор характеристики
-     */
-    public static byte getMod(byte ability) {
-        return (byte) ((ability - 10) < 0 ? (ability - 11) / 2 : (ability - 10) / 2);
-    }
 }
