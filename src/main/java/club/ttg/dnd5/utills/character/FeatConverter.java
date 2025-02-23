@@ -18,8 +18,10 @@ public class FeatConverter {
     };
 
     public static final BiFunction<FeatDto, Feat, FeatDto> MAP_ENTITY_TO_DTO_ = (dto, entity) -> {
-        dto.setCategory(NameDto.builder().rus(entity.getCategory().getName()).eng(entity.getCategory().name()).build());
-
+        dto.setCategory(NameDto.builder()
+                .rus(entity.getCategory().getName())
+                .eng(entity.getCategory().name())
+                .build());
         return dto;
     };
 }

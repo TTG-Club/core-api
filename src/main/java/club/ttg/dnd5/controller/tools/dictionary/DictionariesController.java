@@ -336,7 +336,6 @@ public class DictionariesController {
         return ResponseEntity.ok(dictionariesService.getTimeUnits());
     }
 
-
     @Operation(summary = "Школы магии")
     @GetMapping("/magic-schools")
     @ApiResponse(
@@ -354,6 +353,25 @@ public class DictionariesController {
     )
     public ResponseEntity<List<SelectOptionDto>> getMagicSchools() {
         return ResponseEntity.ok(dictionariesService.getMagicSchools());
+    }
+
+    @Operation(summary = "Типы дистанций для заклинания")
+    @GetMapping("/distance/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "на себя", "value": "SELF" },
+                              { "label": "касание", "value": "TOUCH" },
+                              { "label": "футов", "value": "FEET" },
+                              { "label": "в пределах видимости", "value": "SIGHT" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getDistanceUnits() {
+        return dictionariesService.getSpellDistanceUnits();
     }
 
     @Operation(summary = "Операторы сравнения")
