@@ -29,8 +29,13 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
     private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();
     private String linkImageUrl;
     // Связанные сущности
-    private LinkedSpeciesDto parent = new LinkedSpeciesDto();
-    private Collection<LinkedSpeciesDto> subspecies = new LinkedHashSet<>();
+    private SpeciesDto parent;
+    /**
+     * Происхождения.
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private Collection<SpeciesDto> lineages = new LinkedHashSet<>();
+
     private Collection<SpeciesFeatureDto> features;
     private NameBasedDTO group = new NameBasedDTO();
     @JsonIgnore
@@ -43,7 +48,7 @@ public class SpeciesDto extends BaseDTO implements DetailableDTO, GroupStrategy 
             linkImageUrl = null;
             this.creatureProperties = null;
             this.parent = null;
-            this.subspecies = null;
+            this.lineages = null;
             this.features = null;
             this.group = null;
             setDescription(null);
