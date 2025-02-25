@@ -15,5 +15,5 @@ public interface FeatService {
 
     FeatDto delete(String featUrl);
 
-    boolean existByUrl(String featUrl);
+    boolean exists(String featUrl);
 }

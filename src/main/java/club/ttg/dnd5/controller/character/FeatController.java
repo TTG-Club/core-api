@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -20,6 +21,15 @@ import java.util.Collection;
 @Tag(name = "Черты ", description = "REST API черт персонажа")
 public class FeatController {
     private final FeatService featService;
+
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping(path = "/{featUrl}", method = RequestMethod.HEAD)
+    public ResponseEntity<Boolean> existByUrl(@PathVariable final String featUrl) {
+        if (featService.exists(featUrl)) {
+            throw new EntityExistException();
+        }
+        return ResponseEntity.ok(false);
+    }
 
     @Operation(summary = "Получение детального описания черты")
     @ApiResponses(value = {
@@ -33,15 +43,7 @@ public class FeatController {
         return featService.getFeat(featUrl);
     }
 
-    @ResponseStatus(HttpStatus.OK)
-    @RequestMapping(path = "/{featUrl}", method = RequestMethod.OPTIONS)
-    public ResponseEntity<Boolean> existByUrl(@PathVariable final String featUrl) {
-        if (featService.existByUrl(featUrl)) {
-            throw new EntityExistException();
-        }
-        return ResponseEntity.ok(false);
-    }
-
+    @Secured("ADMIN")
     @Operation(summary = "Получение списка краткого описания черты")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черты успешно получена")
@@ -52,6 +54,7 @@ public class FeatController {
         return featService.getFeats();
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Добавление черты")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Черта успешно добавлена"),
@@ -64,6 +67,7 @@ public class FeatController {
         return featService.addFeat(featDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Обновление черты")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черта успешно обновлена"),
@@ -77,6 +81,7 @@ public class FeatController {
         return featService.updateFeat(featUrl, featDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Скрывает черту")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черта удалена из общего списка"),
