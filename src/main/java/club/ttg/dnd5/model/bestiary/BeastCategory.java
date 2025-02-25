@@ -24,7 +24,7 @@ public class BeastCategory {
     @Enumerated(EnumType.STRING)
     private BeastType type;
     /**
-     * Тэги категории например (титан)
+     * Тэги типа например (титан)
      */
     private Set<String> tags;
 }

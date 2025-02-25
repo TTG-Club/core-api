@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "best_sizes")
+@Table(name = "beast_sizes")
 public class BeastSize {
     @Id
     private Long id;

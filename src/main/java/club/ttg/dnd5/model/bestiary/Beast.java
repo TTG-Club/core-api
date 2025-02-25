@@ -11,6 +11,9 @@ import lombok.Setter;
 
 import java.util.Collection;
 
+/**
+ * Существо из бестиария
+ */
 @Getter
 @Setter
 @NoArgsConstructor
