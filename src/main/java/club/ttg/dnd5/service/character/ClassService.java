@@ -20,4 +20,6 @@ public interface ClassService {
     ClassDto addParent(String classUrl, String classParentUrl);
 
     ClassDto addFeature(String classUrl, ClassFeatureDto featureDto);
+
+    boolean exist(String url);
 }
