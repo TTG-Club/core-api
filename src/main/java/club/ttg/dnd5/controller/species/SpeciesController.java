@@ -2,6 +2,7 @@ package club.ttg.dnd5.controller.species;
 
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
 import club.ttg.dnd5.dto.species.SpeciesDto;
+import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.service.species.SpeciesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,34 +23,26 @@ import java.util.List;
 public class SpeciesController {
     private final SpeciesService speciesService;
 
-    /**
-     * Проверка существования вида по URL.
-     *
-     * @param url URL вида.
-     * @return 204, если вида с таким URL не существует; 409, если вид существует.
-     */
-    @Operation(
-            summary = "Проверка существования вида",
-            description = "Возвращает 204 (No Content), если вида с указанным URL не существует, или 409 (Conflict), если вид существует."
-    )
+    @Operation(summary = "Проверить вид по URL", description = "Проверка вида по его уникальному URL.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Вид с указанным URL не найден."),
-            @ApiResponse(responseCode = "409", description = "Вид с указанным URL уже существует.")
+            @ApiResponse(responseCode = "200", description = "Вид существует"),
+            @ApiResponse(responseCode = "404", description = "Вид не существует")
     })
-    @RequestMapping(value = "/{url}", method = RequestMethod.OPTIONS)
-    public ResponseEntity<Void> handleOptions(@PathVariable("url") String url) {
-        boolean exists = speciesService.speciesExistsByUrl(url);
-        if (exists) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        } else {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    public Boolean isSpecieExist(@PathVariable String url) {
+        var exist = speciesService.exists(url);
+        if(!exist) {
+            throw new EntityNotFoundException("URL вида не существует");
+        }
+        else {
+            return true;
         }
     }
 
     @PostMapping("/search")
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
-    public ResponseEntity<List<SpeciesDto>> getAllSpecies() {
-        return ResponseEntity.ok(speciesService.getAllSpecies());
+    public List<SpeciesDto> getAllSpecies() {
+        return speciesService.getAllSpecies();
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
@@ -64,38 +56,20 @@ public class SpeciesController {
         return speciesService.findById(url);
     }
 
-    @Operation(summary = "Проверить вид по URL", description = "Проверка вида по его уникальному URL.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Вид успешно получен"),
-            @ApiResponse(responseCode = "409", description = "Вид не найден")
-    })
-    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
-    public ResponseEntity<?> isSpecieExist(@PathVariable String url) {
-        Boolean exist = speciesService.isExist(url);
-
-        if (exist.equals(Boolean.TRUE)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/subspecies")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
-    public ResponseEntity<List<SpeciesDto>> getSubSpeciesByParentUrl(
+    public List<SpeciesDto> getSubSpeciesByParentUrl(
             @Parameter(description = "URL родительского вида", required = true) @RequestParam String parentUrl) {
-        List<SpeciesDto> subSpeciesDto = speciesService.getSubSpeciesByParentUrl(parentUrl);
-        return ResponseEntity.ok(subSpeciesDto);
+        return speciesService.getSubSpeciesByParentUrl(parentUrl);
     }
 
     @GetMapping("/related")
     @Operation(summary = "Получить все связанные виды по URL подвида",
             description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвида.")
-    public ResponseEntity<List<SpeciesDto>> getAllRelatedSpeciesBySubSpeciesUrl(
+    public List<SpeciesDto> getAllRelatedSpeciesBySubSpeciesUrl(
             @Parameter(description = "URL подвига", required = true) @RequestParam String subSpeciesUrl) {
-        List<SpeciesDto> relatedSpeciesRespons = speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
-        return ResponseEntity.ok(relatedSpeciesRespons);
+        return speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
     }
 
     /**
@@ -111,11 +85,10 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид или родитель не найден")
     })
     @PostMapping("/parent")
-    public ResponseEntity<SpeciesDto> addParent(
+    public SpeciesDto addParent(
             @Parameter(description = "URL вида, к которому добавляется родитель", required = true) @RequestParam String speciesUrl,
             @Parameter(description = "URL родителя, который будет добавлен", required = true) @RequestParam String speciesParentUrl) {
-        SpeciesDto response = speciesService.addParent(speciesUrl, speciesParentUrl);
-        return ResponseEntity.ok(response);
+        return speciesService.addParent(speciesUrl, speciesParentUrl);
     }
 
     /**
@@ -131,20 +104,19 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид не найден")
     })
     @PostMapping("/subspecies")
-    public ResponseEntity<SpeciesDto> addSubSpecies(
+    public SpeciesDto addSubSpecies(
             @Parameter(description = "URL вида, к которому добавляются подвиды", required = true) @RequestParam String speciesUrl,
             @Parameter(description = "Список URL подвидов, которые будут добавлены", required = true) @RequestBody List<String> subSpeciesUrls) {
-        SpeciesDto response = speciesService.addSubSpecies(speciesUrl, subSpeciesUrls);
-        return ResponseEntity.ok(response);
+        return speciesService.addSubSpecies(speciesUrl, subSpeciesUrls);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Создать новый вид", description = "Создание нового вида в системе.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Вид успешно создан"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PostMapping("/new")
-    @Secured("ADMIN")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public SpeciesDto createSpecies(@RequestBody CreateSpeciesDto createSpeciesDTO) {
         return speciesService.save(createSpeciesDTO);
