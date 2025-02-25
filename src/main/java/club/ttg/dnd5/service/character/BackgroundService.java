@@ -15,5 +15,5 @@ public interface BackgroundService {
 
     BackgroundDto deleteBackgrounds(String backgroundUrl);
 
-    boolean existByUrl(String backgroundUrl);
+    boolean exists(String backgroundUrl);
 }

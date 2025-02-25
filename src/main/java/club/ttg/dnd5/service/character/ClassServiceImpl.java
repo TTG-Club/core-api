@@ -27,6 +27,11 @@ public class ClassServiceImpl implements ClassService {
     private final ClassRepository classRepository;
 
     @Override
+    public boolean exist(final String url) {
+        return classRepository.existsById(url);
+    }
+
+    @Override
     public Collection<ClassDto> getClasses(final SearchRequest request) {
         return classRepository.findAllClasses()
                 .stream()

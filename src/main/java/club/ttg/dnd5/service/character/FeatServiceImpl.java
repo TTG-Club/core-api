@@ -66,7 +66,7 @@ public class FeatServiceImpl implements FeatService {
     }
 
     @Override
-    public boolean existByUrl(final String featUrl) {
+    public boolean exists(final String featUrl) {
         return featRepository.existsById(featUrl);
     }
 

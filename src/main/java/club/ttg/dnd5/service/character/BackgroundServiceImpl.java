@@ -61,7 +61,7 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     @Override
-    public boolean existByUrl(final String backgroundUrl) {
+    public boolean exists(final String backgroundUrl) {
         return backgroundRepository.existsById(backgroundUrl);
     }
 
