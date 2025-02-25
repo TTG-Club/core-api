@@ -48,7 +48,7 @@ public class SpeciesService {
                 .orElseThrow(() -> new EntityNotFoundException(url));
     }
 
-    public Boolean isExist(String url) {
+    public boolean exists(String url) {
         return speciesRepository.existsById(url);
     }
 

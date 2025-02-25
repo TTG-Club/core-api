@@ -1,12 +1,14 @@
 package club.ttg.dnd5.controller.character;
 
 import club.ttg.dnd5.dto.character.BackgroundDto;
-import club.ttg.dnd5.exception.EntityExistException;
+import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.service.character.BackgroundService;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -23,13 +25,13 @@ public class BackgroundController {
         return backgroundService.getBackground(backgroundUrl);
     }
 
-    @ResponseStatus(HttpStatus.OK)
-    @RequestMapping(path = "/{backgroundUrl}", method = RequestMethod.OPTIONS)
-    public ResponseEntity<Boolean> existByUrl(@PathVariable final String backgroundUrl) {
-        if (backgroundService.existByUrl(backgroundUrl)) {
-            throw new EntityExistException();
+    @RequestMapping(path = "/{backgroundUrl}", method = RequestMethod.HEAD)
+    public boolean existByUrl(@PathVariable final String backgroundUrl) {
+        var exist = backgroundService.exists(backgroundUrl);
+        if (!exist) {
+            throw new EntityNotFoundException("URL предыстории не найден");
         }
-        return ResponseEntity.ok(false);
+        return true;
     }
 
     @PostMapping("/search")
@@ -37,11 +39,19 @@ public class BackgroundController {
         return backgroundService.getBackgrounds();
     }
 
-    @PostMapping()
+    @Secured("ADMIN")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping
     public BackgroundDto addBackgrounds(@RequestBody final BackgroundDto backgroundDto) {
         return backgroundService.addBackground(backgroundDto);
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Предыстория успешно обновлена"),
+            @ApiResponse(responseCode = "404", description = "Предыстория не найден"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+    })
+    @Secured("ADMIN")
     @PutMapping("{backgroundUrl}")
     public BackgroundDto updateBackgrounds(
             @PathVariable final String backgroundUrl,
@@ -49,6 +59,7 @@ public class BackgroundController {
         return backgroundService.updateBackgrounds(backgroundUrl, backgroundDto);
     }
 
+    @Secured("ADMIN")
     @DeleteMapping("{backgroundUrl}")
     public BackgroundDto deleteBackgrounds(
             @PathVariable final String backgroundUrl) {
