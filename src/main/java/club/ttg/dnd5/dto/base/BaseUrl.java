@@ -15,7 +15,6 @@ import java.util.List;
 public abstract class BaseUrl {
     @Schema(description = "unique URL", requiredMode = Schema.RequiredMode.REQUIRED)
     private String url;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(value = "image")
     @Schema(description = "image URL")
     private String imageUrl;

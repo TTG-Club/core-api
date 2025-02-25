@@ -3,7 +3,6 @@ package club.ttg.dnd5.service.species;
 import club.ttg.dnd5.dto.base.NameBasedDTO;
 import club.ttg.dnd5.dto.base.create.SourceReference;
 import club.ttg.dnd5.dto.species.CreateSpeciesDto;
-import club.ttg.dnd5.dto.species.LinkedSpeciesDto;
 import club.ttg.dnd5.dto.species.SpeciesCreateFeatureDto;
 import club.ttg.dnd5.dto.species.SpeciesDto;
 import club.ttg.dnd5.exception.ApiException;
@@ -14,7 +13,6 @@ import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
 import club.ttg.dnd5.model.species.Species;
 import club.ttg.dnd5.model.species.SpeciesFeature;
-//import club.ttg.dnd5.repository.SpeciesFeatureRepository;
 import club.ttg.dnd5.repository.SpeciesRepository;
 import club.ttg.dnd5.repository.TagRepository;
 import club.ttg.dnd5.repository.book.BookRepository;
@@ -41,7 +39,7 @@ public class SpeciesService {
     private final SpeciesRepository speciesRepository;
     private final SourceRepository sourceRepository;
     private final BookRepository bookRepository;
-    //private final SpeciesFeatureRepository speciesFeatureRepository;
+
     private final TagRepository tagRepository;
     // Public methods
     public SpeciesDto findById(String url) {
@@ -253,12 +251,11 @@ public class SpeciesService {
         return dto;
     }
 
-
     private void handleParentAndChild(Species species, SpeciesDto dto) {
         //parent
         Species speciesParent = species.getParent();
         if (speciesParent != null) {
-            LinkedSpeciesDto parent = new LinkedSpeciesDto();
+            SpeciesDto parent = new SpeciesDto();
             // Set the URL
             parent.setUrl(speciesParent.getUrl());
 
@@ -270,16 +267,16 @@ public class SpeciesService {
                     .build();
 
             // Set the NameBasedDTO in the parent
-            parent.setName(parentNameBased);
+            parent.setNameBasedDTO(parentNameBased);
             dto.setParent(parent);
         }
 
         Collection<Species> speciesSubSpecies = species.getSubSpecies();
         if (speciesSubSpecies != null) {
             // Convert each sub-species to a LinkedSpeciesDto
-            List<LinkedSpeciesDto> subSpeciesDtos = speciesSubSpecies.stream()
+            List<SpeciesDto> lineages = speciesSubSpecies.stream()
                     .map(subSpecies -> {
-                        LinkedSpeciesDto linkedSpeciesDto = new LinkedSpeciesDto();
+                        SpeciesDto linkedSpeciesDto = new SpeciesDto();
 
                         // Set the URL
                         linkedSpeciesDto.setUrl(subSpecies.getUrl());
@@ -292,14 +289,14 @@ public class SpeciesService {
                                 .build();
 
                         // Set the NameBasedDTO
-                        linkedSpeciesDto.setName(nameBasedDTO);
+                        linkedSpeciesDto.setNameBasedDTO(nameBasedDTO);
 
                         return linkedSpeciesDto;
                     })
                     .toList();
 
             // Set the list of LinkedSpeciesDto objects
-            dto.setSubspecies(subSpeciesDtos);
+            dto.setLineages(lineages);
         }
     }
 
@@ -311,7 +308,7 @@ public class SpeciesService {
     }
 
     private void fillSpecies(SpeciesDto speciesDTO, Species species) {
-        Optional.ofNullable(speciesDTO.getSubspecies())
+        Optional.ofNullable(speciesDTO.getLineages())
                 .ifPresent(subSpeciesDtos -> species.setSubSpecies(
                         subSpeciesDtos.stream()
                                 .map(this::convertToSpecies) // Convert LinkedSpeciesDto to Species
@@ -393,14 +390,14 @@ public class SpeciesService {
      * @param linkedSpeciesDto the LinkedSpeciesDto to convert
      * @return the corresponding Species entity
      */
-    private Species convertToSpecies(LinkedSpeciesDto linkedSpeciesDto) {
+    private Species convertToSpecies(SpeciesDto linkedSpeciesDto) {
         Species subSpecies = findByUrl(linkedSpeciesDto.getUrl()); // Find existing species by URL
         if (subSpecies == null) {
             throw new IllegalArgumentException("No species found for URL: " + linkedSpeciesDto.getUrl());
         }
 
         // Update additional fields if needed
-        NameBasedDTO nameBasedDTO = linkedSpeciesDto.getName();
+        NameBasedDTO nameBasedDTO = linkedSpeciesDto.getNameBasedDTO();
         if (nameBasedDTO != null) {
             subSpecies.setName(nameBasedDTO.getName());
             subSpecies.setShortName(nameBasedDTO.getShortName());
