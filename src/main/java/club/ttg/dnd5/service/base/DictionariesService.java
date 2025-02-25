@@ -12,10 +12,7 @@ import club.ttg.dnd5.dictionary.character.SpellcasterType;
 import club.ttg.dnd5.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.select.SelectOptionDto;
 import club.ttg.dnd5.dto.select.SpellcasterOptionDto;
-import club.ttg.dnd5.model.spell.enums.ComparisonOperator;
-import club.ttg.dnd5.model.spell.enums.DistanceUnit;
-import club.ttg.dnd5.model.spell.enums.MagicSchool;
-import club.ttg.dnd5.model.spell.enums.TimeUnit;
+import club.ttg.dnd5.model.spell.enums.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -126,6 +123,15 @@ public class DictionariesService {
                         .label(type.getName())
                         .value(type.name())
                         .levels(type.getMaxSpellLevel())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getSpellAreaOfEffect() {
+        return Arrays.stream(SpellAreaOfEffect.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
                         .build())
                 .collect(Collectors.toList());
     }
