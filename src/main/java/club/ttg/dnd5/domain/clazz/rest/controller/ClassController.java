@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.clazz.rest.controller;
 
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
-import club.ttg.dnd5.dto.engine.SearchRequest;
+import club.ttg.dnd5.domain.common.rest.dto.engine.SearchRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.clazz.service.ClassService;
 import io.swagger.v3.oas.annotations.Operation;

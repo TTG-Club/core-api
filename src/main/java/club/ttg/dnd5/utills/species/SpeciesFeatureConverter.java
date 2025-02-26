@@ -1,7 +1,7 @@
 package club.ttg.dnd5.utills.species;
 
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesFeatureDto;
-import club.ttg.dnd5.model.base.Tag;
+import club.ttg.dnd5.domain.common.model.Tag;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import club.ttg.dnd5.utills.Converter;

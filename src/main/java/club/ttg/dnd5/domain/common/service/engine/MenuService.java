@@ -1,10 +1,10 @@
 package club.ttg.dnd5.domain.common.service.engine;
 
-import club.ttg.dnd5.dto.engine.MenuResponse;
+import club.ttg.dnd5.domain.menu.rest.dto.MenuResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.mapper.engine.MenuMapper;
-import club.ttg.dnd5.model.engine.Menu;
-import club.ttg.dnd5.repository.MenuRepository;
+import club.ttg.dnd5.domain.menu.rest.mapper.MenuMapper;
+import club.ttg.dnd5.domain.menu.model.Menu;
+import club.ttg.dnd5.domain.menu.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

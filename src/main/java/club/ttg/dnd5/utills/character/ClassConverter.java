@@ -6,7 +6,7 @@ import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassMasteryDto;
 import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
-import club.ttg.dnd5.domain.common.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

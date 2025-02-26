@@ -9,10 +9,10 @@ import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.Environment;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
-import club.ttg.dnd5.dto.select.DiceOptionDto;
-import club.ttg.dnd5.dto.select.SelectOptionDto;
-import club.ttg.dnd5.dto.select.SpellcasterOptionDto;
-import club.ttg.dnd5.model.spell.enums.*;
+import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
+import club.ttg.dnd5.domain.spell.model.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;

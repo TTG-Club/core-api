@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.species.rest.controller;
 import club.ttg.dnd5.domain.species.rest.dto.CreateSpeciesDto;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDto;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.service.species.SpeciesService;
+import club.ttg.dnd5.domain.species.service.SpeciesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

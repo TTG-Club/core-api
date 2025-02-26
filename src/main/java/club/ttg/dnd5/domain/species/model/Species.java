@@ -1,9 +1,8 @@
 package club.ttg.dnd5.domain.species.model;
 
-import club.ttg.dnd5.model.base.CreatureProperties;
-import club.ttg.dnd5.model.base.HasSourceEntity;
-import club.ttg.dnd5.model.base.Tag;
-import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.domain.common.model.HasSourceEntity;
+import club.ttg.dnd5.domain.common.model.Tag;
+import club.ttg.dnd5.domain.book.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.clazz.service;
 
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
-import club.ttg.dnd5.dto.engine.SearchRequest;
+import club.ttg.dnd5.domain.common.rest.dto.engine.SearchRequest;
 
 import java.util.Collection;
 

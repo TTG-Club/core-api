@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.background.service;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
-import club.ttg.dnd5.domain.common.dto.ShortResponse;
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.model.Background;

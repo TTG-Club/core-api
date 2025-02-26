@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.clazz.rest.dto;
 
-import club.ttg.dnd5.domain.common.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 

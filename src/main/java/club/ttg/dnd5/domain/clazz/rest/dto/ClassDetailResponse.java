@@ -1,10 +1,10 @@
 package club.ttg.dnd5.domain.clazz.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
-import club.ttg.dnd5.domain.common.dto.BaseDto;
-import club.ttg.dnd5.dto.base.GroupStrategy;
-import club.ttg.dnd5.domain.common.dto.NameDto;
-import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
+import club.ttg.dnd5.domain.common.GroupStrategy;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.book.model.Source;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;

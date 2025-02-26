@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.common.service.engine;
 
 import club.ttg.dnd5.exception.ApiException;
-import club.ttg.dnd5.model.user.User;
+import club.ttg.dnd5.domain.user.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;

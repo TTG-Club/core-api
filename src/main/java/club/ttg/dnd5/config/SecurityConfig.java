@@ -1,7 +1,7 @@
 package club.ttg.dnd5.config;
 
 import club.ttg.dnd5.security.JwtAuthFilter;
-import club.ttg.dnd5.service.user.UserService;
+import club.ttg.dnd5.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import jakarta.servlet.http.HttpServletRequest;

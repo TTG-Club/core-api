@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
 import club.ttg.dnd5.domain.spell.rest.dto.SpellRequest;
-import club.ttg.dnd5.service.character.SpellService;
+import club.ttg.dnd5.domain.spell.service.SpellService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
