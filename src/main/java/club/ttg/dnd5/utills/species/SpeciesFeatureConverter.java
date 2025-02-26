@@ -1,9 +1,9 @@
 package club.ttg.dnd5.utills.species;
 
-import club.ttg.dnd5.dto.species.SpeciesFeatureDto;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesFeatureDto;
 import club.ttg.dnd5.model.base.Tag;
-import club.ttg.dnd5.model.species.Species;
-import club.ttg.dnd5.model.species.SpeciesFeature;
+import club.ttg.dnd5.domain.species.model.Species;
+import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import club.ttg.dnd5.utills.Converter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -34,7 +34,7 @@ public class SpeciesFeatureConverter {
                 }
 
                 if (response.getDescription() != null) {
-                    speciesFeature.setFeatureDescription(response.getDescription());
+                    speciesFeature.setDescription(response.getDescription());
                 }
                 Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(response, speciesFeature);
 
@@ -63,8 +63,8 @@ public class SpeciesFeatureConverter {
                 }
 
                 // Ensure description is not null before setting
-                if (feature.getFeatureDescription() != null) {
-                    dto.setDescription(feature.getFeatureDescription());
+                if (feature.getDescription() != null) {
+                    dto.setDescription(feature.getDescription());
                 }
 
                 // Apply name mapping (assuming this method also handles null safety)

@@ -1,8 +1,8 @@
 package club.ttg.dnd5.utills.character;
 
-import club.ttg.dnd5.dto.character.ClassFeatureDto;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.model.base.Tag;
-import club.ttg.dnd5.model.character.ClassFeature;
+import club.ttg.dnd5.domain.clazz.model.ClassFeature;
 import club.ttg.dnd5.utills.Converter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -29,7 +29,7 @@ public class ClassFeatureConverter {
                         .collect(Collectors.toSet());
                 feature.setTags(tags);
 
-                feature.setFeatureDescription(dto.getDescription());
+                feature.setDescription(dto.getDescription());
                 return feature;
             };
 
@@ -44,7 +44,7 @@ public class ClassFeatureConverter {
                         .collect(Collectors.toSet());
                 dto.setTags(tags);
 
-                dto.setDescription(feature.getFeatureDescription());
+                dto.setDescription(feature.getDescription());
                 return dto;
             };
 

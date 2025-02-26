@@ -1,8 +1,8 @@
 package club.ttg.dnd5.model.base;
 
 import club.ttg.dnd5.model.book.Book;
-import club.ttg.dnd5.model.species.Species;
-import club.ttg.dnd5.model.species.SpeciesFeature;
+import club.ttg.dnd5.domain.species.model.Species;
+import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.EqualsAndHashCode;

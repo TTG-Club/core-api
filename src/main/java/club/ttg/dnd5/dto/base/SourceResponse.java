@@ -1,6 +1,7 @@
 package club.ttg.dnd5.dto.base;
 
 
+import club.ttg.dnd5.domain.common.dto.NameDto;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -17,8 +18,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonRootName("source")
 public class SourceResponse implements GroupStrategy {
-    private NameBasedDTO name = new NameBasedDTO();
-    private NameBasedDTO group = new NameBasedDTO();
+    private NameDto name = new NameDto();
+    private NameDto group = new NameDto();
     private int page;
     private boolean homebrew = false;
     private boolean thirdParty = false;

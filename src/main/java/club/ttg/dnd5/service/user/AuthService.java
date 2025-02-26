@@ -9,7 +9,7 @@ import club.ttg.dnd5.repository.user.OneTimeTokenRepository;
 import club.ttg.dnd5.repository.user.RoleRepository;
 import club.ttg.dnd5.repository.user.UserRepository;
 import club.ttg.dnd5.security.JwtUtils;
-import club.ttg.dnd5.service.engine.EmailService;
+import club.ttg.dnd5.domain.common.service.engine.EmailService;
 import io.jsonwebtoken.lang.Strings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

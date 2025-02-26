@@ -2,8 +2,8 @@ package club.ttg.dnd5.service;
 
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.model.base.Tag;
-import club.ttg.dnd5.model.species.SpeciesFeature;
-import club.ttg.dnd5.repository.SpeciesFeatureRepository;
+import club.ttg.dnd5.domain.species.model.SpeciesFeature;
+import club.ttg.dnd5.domain.species.repository.SpeciesFeatureRepository;
 import club.ttg.dnd5.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

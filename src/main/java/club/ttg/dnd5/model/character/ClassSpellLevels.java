@@ -1,5 +1,6 @@
 package club.ttg.dnd5.model.character;
 
+import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
