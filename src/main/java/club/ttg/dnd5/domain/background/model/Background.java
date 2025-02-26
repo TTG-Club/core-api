@@ -2,9 +2,9 @@ package club.ttg.dnd5.domain.background.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
-import club.ttg.dnd5.model.base.HasSourceEntity;
-import club.ttg.dnd5.model.base.NamedEntity;
-import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.domain.common.model.HasSourceEntity;
+import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.book.model.Source;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -36,7 +36,8 @@ public class Background extends NamedEntity implements HasSourceEntity {
     @Enumerated(EnumType.STRING)
     private Set<Skill> skillProficiencies;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.DETACH)
+    @JoinColumn(name = "feat_id")
     private Feat feat;
 
     /** Владение инструментами */

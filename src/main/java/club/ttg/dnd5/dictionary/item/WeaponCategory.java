@@ -6,12 +6,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum WeaponCategory {
-	SIMPLE_MELE("Простое рукопашное"),
+	SIMPLE_MELEE("Простое рукопашное"),
 	SIMPLE_RANGED("Простое дальнобойное"),
-	WAR_MELE("Воинское рукопашное"),
-	WAR_RANGED("Воинское дальнобойное"),
-	EXOTIC_MELE("Экзотическое рукопашное оружие"),
-	EXOTIC_RANGED("Экзотическое дальнобойное оружие");
+	MATERIAL_MELEE("Воинское рукопашное"),
+	MATERIAL_RANGED("Воинское дальнобойное");
 
 	private final String name;
 }

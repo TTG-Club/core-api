@@ -1,10 +1,10 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
-import club.ttg.dnd5.domain.common.dto.BaseDto;
-import club.ttg.dnd5.dto.base.DetailableDTO;
-import club.ttg.dnd5.dto.base.GroupStrategy;
-import club.ttg.dnd5.domain.common.dto.NameDto;
-import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
+import club.ttg.dnd5.dto.base.DetailableDto;
+import club.ttg.dnd5.domain.common.GroupStrategy;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.book.model.Source;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,7 +23,7 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class SpeciesDto extends BaseDto implements DetailableDTO, GroupStrategy {
+public class SpeciesDto extends BaseDto implements DetailableDto, GroupStrategy {
     // Включаем свойства существа через DTO
     @JsonProperty(value = "properties")
     private CreaturePropertiesDto creatureProperties = new CreaturePropertiesDto();

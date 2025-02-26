@@ -1,7 +1,7 @@
 package club.ttg.dnd5.utills.character;
 
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
-import club.ttg.dnd5.model.base.Tag;
+import club.ttg.dnd5.domain.common.model.Tag;
 import club.ttg.dnd5.domain.clazz.model.ClassFeature;
 import club.ttg.dnd5.utills.Converter;
 import lombok.AccessLevel;

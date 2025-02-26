@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.background.service;
 
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
-import club.ttg.dnd5.domain.common.dto.ShortResponse;
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 
 import java.util.Collection;
 

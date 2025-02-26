@@ -1,8 +1,8 @@
 package club.ttg.dnd5.domain.common.service.engine;
 
-import club.ttg.dnd5.model.user.OneTimeToken;
-import club.ttg.dnd5.model.user.User;
-import club.ttg.dnd5.repository.user.OneTimeTokenRepository;
+import club.ttg.dnd5.domain.user.model.OneTimeToken;
+import club.ttg.dnd5.domain.user.model.User;
+import club.ttg.dnd5.domain.user.repository.OneTimeTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

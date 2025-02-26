@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.common.model;
 
-import club.ttg.dnd5.model.base.NamedEntity;
-import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.domain.book.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

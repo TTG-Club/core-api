@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.feat.rest.dto;
 
-import club.ttg.dnd5.domain.common.dto.BaseDto;
-import club.ttg.dnd5.domain.common.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

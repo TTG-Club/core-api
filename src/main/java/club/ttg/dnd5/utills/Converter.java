@@ -1,27 +1,26 @@
 package club.ttg.dnd5.utills;
 
 
-import club.ttg.dnd5.domain.common.dto.NameDto;
+import club.ttg.dnd5.domain.common.GroupStrategy;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
-import club.ttg.dnd5.domain.common.dto.BaseDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
 import club.ttg.dnd5.dto.base.*;
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.domain.species.rest.dto.CreaturePropertiesDto;
 import club.ttg.dnd5.domain.species.rest.dto.MovementAttributes;
-import club.ttg.dnd5.model.base.CreatureProperties;
-import club.ttg.dnd5.model.base.HasSourceEntity;
-import club.ttg.dnd5.model.base.NamedEntity;
-import club.ttg.dnd5.model.book.Book;
-import club.ttg.dnd5.model.book.Source;
+import club.ttg.dnd5.domain.species.model.CreatureProperties;
+import club.ttg.dnd5.domain.common.model.HasSourceEntity;
+import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.book.model.Source;
 import club.ttg.dnd5.domain.clazz.model.ClassFeature;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -37,7 +36,6 @@ public class Converter {
             entity.setName(dto.getName().getName());
             entity.setEnglish(dto.getName().getEnglish());
             entity.setAlternative(String.join(",", dto.getName().getAlternative()));
-            entity.setShortName(dto.getName().getShortName());
         }
         entity.setDescription(dto.getDescription());
         return entity;
@@ -50,17 +48,6 @@ public class Converter {
         dto.setName(new NameDto());
         dto.getName().setName(entity.getName());
         dto.getName().setEnglish(entity.getEnglish());
-        dto.getName().setShortName(entity.getShortName());
-        if (entity.getAlternative() != null && !entity.getAlternative().isEmpty()) {
-            dto.getName().setAlternative(
-                    new ArrayList<>(Arrays.stream(entity.getAlternative().split(","))
-                            .map(String::trim)
-                            .filter(name -> !name.isEmpty())
-                            .toList())
-            );
-        } else {
-            dto.getName().setAlternative(new ArrayList<>()); // Set an empty list if alternative is null or empty
-        }
         dto.setDescription(entity.getDescription());
         if (entity.getUpdatedAt() != null) {
             dto.setUpdatedAt(entity.getUpdatedAt().atZone(ZoneId.of("UTC")).toInstant().truncatedTo(ChronoUnit.MINUTES));
@@ -97,7 +84,7 @@ public class Converter {
 
     // Function to map DTO Source to Entity Source
     public static final BiFunction<SourceResponse, HasSourceEntity, HasSourceEntity> MAP_DTO_SOURCE_TO_ENTITY_SOURCE = (dto, entity) -> {
-        String sourceAcronym = dto.getName().getShortName();
+        String sourceAcronym = dto.getName().getName();
         Source source = entity.getSource();
         if (source == null) {
             source = new Source();
@@ -119,17 +106,6 @@ public class Converter {
             if (bookInfo != null) {
                 name.setEnglish(bookInfo.getEnglishName());
                 name.setName(bookInfo.getName());
-                name.setShortName(bookInfo.getSourceAcronym());
-                if (bookInfo.getAltName() != null && !bookInfo.getAltName().isEmpty()) {
-                    name.setAlternative(
-                            new ArrayList<>(Arrays.stream(bookInfo.getAltName().split(","))
-                                    .map(String::trim)
-                                    .filter(nameAlt -> !nameAlt.isEmpty())
-                                    .toList())
-                    );
-                } else {
-                    name.setAlternative(new ArrayList<>()); // Set an empty list if altName is null or empty
-                }
             }
             STRATEGY_SOURCE_CONSUMER.accept(dto, source);
             dto.setName(name);
@@ -141,7 +117,7 @@ public class Converter {
     // Function to map Entity to Base DTO with hidden details
     public static final BiFunction<BaseDto, NamedEntity, BaseDto> MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS = (dto, entity) -> {
         dto.setUrl(entity.getUrl());
-        ((DetailableDTO) dto).hideDetails();
+        ((DetailableDto) dto).hideDetails();
         return dto;
     };
 

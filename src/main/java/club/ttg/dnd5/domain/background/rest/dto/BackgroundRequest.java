@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.background.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Skill;
-import club.ttg.dnd5.domain.common.dto.BaseDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 

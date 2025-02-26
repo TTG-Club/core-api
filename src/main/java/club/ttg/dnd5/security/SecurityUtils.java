@@ -1,8 +1,8 @@
 package club.ttg.dnd5.security;
 
-import club.ttg.dnd5.dto.user.UserDto;
+import club.ttg.dnd5.domain.user.rest.dto.UserDto;
 import club.ttg.dnd5.exception.ApiException;
-import club.ttg.dnd5.model.user.User;
+import club.ttg.dnd5.domain.user.model.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;

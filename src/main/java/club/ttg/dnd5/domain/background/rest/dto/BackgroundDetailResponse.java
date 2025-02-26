@@ -1,10 +1,9 @@
 package club.ttg.dnd5.domain.background.rest.dto;
 
-import club.ttg.dnd5.domain.common.dto.BaseDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 

@@ -1,7 +1,7 @@
 package club.ttg.dnd5.dto.base;
 
-import club.ttg.dnd5.domain.common.dto.NameDto;
-import club.ttg.dnd5.dto.NameValueDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameValueDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;

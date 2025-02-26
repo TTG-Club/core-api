@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
-import club.ttg.dnd5.domain.common.dto.ShortResponse;
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

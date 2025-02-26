@@ -1,7 +1,7 @@
 package club.ttg.dnd5.utills;
 
 import club.ttg.dnd5.dto.base.create.CreateBaseDTO;
-import club.ttg.dnd5.model.base.NamedEntity;
+import club.ttg.dnd5.domain.common.model.NamedEntity;
 
 import java.util.function.BiFunction;
 

@@ -1,16 +1,16 @@
 package club.ttg.dnd5.domain.book.service;
 
-import club.ttg.dnd5.domain.common.dto.NameDto;
-import club.ttg.dnd5.dto.base.TranslationDTO;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.dto.base.TranslationDto;
 import club.ttg.dnd5.domain.book.rest.dto.BookDetailResponse;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.model.base.Tag;
-import club.ttg.dnd5.model.base.TagType;
-import club.ttg.dnd5.model.base.Translation;
-import club.ttg.dnd5.model.book.Book;
-import club.ttg.dnd5.model.book.TypeBook;
-import club.ttg.dnd5.repository.TagRepository;
+import club.ttg.dnd5.domain.common.model.Tag;
+import club.ttg.dnd5.domain.common.model.TagType;
+import club.ttg.dnd5.domain.common.model.Translation;
+import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.book.model.TypeBook;
+import club.ttg.dnd5.domain.common.repository.TagRepository;
 import club.ttg.dnd5.domain.book.repository.BookRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -128,7 +128,7 @@ public class BookService {
                 .translation(convertingTranslationToDTO(book.getTranslation())).build();
     }
 
-    private Translation convertingTranslation(TranslationDTO translationDTO) {
+    private Translation convertingTranslation(TranslationDto translationDTO) {
         if (translationDTO != null) {
             return Translation.builder().translationDate(translationDTO.getTranslationDate()).authors(translationDTO.getAuthor()).build();
         } else {
@@ -136,14 +136,14 @@ public class BookService {
         }
     }
 
-    private TranslationDTO convertingTranslationToDTO(Translation translation) {
+    private TranslationDto convertingTranslationToDTO(Translation translation) {
         if (translation == null) {
             return null;
         }
         if (translation.getAuthors().isEmpty() && translation.getTranslationDate() == null) {
             return null;
         } else {
-            return TranslationDTO.builder().translationDate(translation.getTranslationDate()).author(new HashSet<>(translation.getAuthors())).build();
+            return TranslationDto.builder().translationDate(translation.getTranslationDate()).author(new HashSet<>(translation.getAuthors())).build();
         }
     }
 }

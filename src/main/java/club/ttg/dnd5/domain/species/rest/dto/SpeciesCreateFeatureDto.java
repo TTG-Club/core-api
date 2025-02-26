@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
-import club.ttg.dnd5.domain.common.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameDto;
 import club.ttg.dnd5.dto.base.create.SourceReference;
 import lombok.Getter;
 import lombok.Setter;
