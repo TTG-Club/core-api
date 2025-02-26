@@ -1,58 +1,79 @@
-package club.ttg.dnd5.domain.beastiary.model;
+package club.ttg.dnd5.model.bestiary;
 
+
+import club.ttg.dnd5.domain.beastiary.model.BeastSize;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
-import club.ttg.dnd5.domain.common.dictionary.Size;
-import club.ttg.dnd5.domain.book.model.Source;
+import club.ttg.dnd5.domain.common.model.HasSourceEntity;
+import club.ttg.dnd5.domain.common.model.NamedEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.util.Collection;
 
+/**
+ * Существо из бестиария
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 
 @Entity
 @Table(name = "bestiary")
-public class Beast  {
-    @Id
-    @Column(nullable = false, unique = true)
-    private String url;
+public class Beast extends NamedEntity implements HasSourceEntity {
+    /**
+     * Размеры существа.
+     */
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "beast_id")
+    private Collection<BeastSize> sizes;
 
-    @Column(nullable = false)
-    private String name;
-    @Column(nullable = false)
-    private String english;
-    private String alternative;
+    /**
+     * Типы существа.
+     */
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "beast_id")
+    private Collection<BeastCategory> categories;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-    @Column(columnDefinition = "TEXT")
-    private String original;
-
-    @Enumerated(EnumType.STRING)
-    private Size size;
-    @Enumerated(EnumType.STRING)
-    private BeastType type;
-    private String tags;
     @Enumerated(EnumType.STRING)
     private Alignment alignment;
 
-    private byte AC;
-    private String descriptionAC;
+    /**
+     * Класс доспеха
+     */
+    private byte armorClass;
+    /**
+     * Дополнительное описание класса доспеха (для призванных существ)
+     */
+    private String armorClassText;
 
-    private short hit;
-    private String descriptionHit;
+    /**
+     * Количество хит дайсов
+     */
+    @Column(name ="hit_deces")
+    private Short countHitDice;
+    /**
+     * Описание хитов если хит дайсы отсутствуют (например у призванных существ или созданных заклинанием)
+     */
+    @Column(name ="hit")
+    private String hitText;
 
-    @ManyToOne
+    /**
+     * Характеристики существа
+     */
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "beast_id")
+    private Collection<BeastAbility> abilities;
+
+    /**
+     * Особенности существа
+     */
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "beast_id")
+    private Collection<BeastTrait> traits;
+
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "source")
-    private Source source;
-    private Short page;
-
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime created;
-    @Column(columnDefinition = "TIMESTAMP")
-    private LocalDateTime lastUpdated;
+    private Source source = new Source();
 }

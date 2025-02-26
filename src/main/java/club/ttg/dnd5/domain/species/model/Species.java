@@ -24,6 +24,7 @@ import java.util.*;
 public class Species extends CreatureProperties implements HasSourceEntity {
     private String linkImageUrl; //для изоброжения бэкграунда
 
+    /** Родительский вид */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Species parent;
