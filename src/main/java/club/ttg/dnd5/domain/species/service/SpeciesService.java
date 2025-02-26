@@ -262,7 +262,6 @@ public class SpeciesService {
             // Build the NameBasedDTO using a builder for better readability
             NameDto parentNameBased = NameDto.builder()
                     .name(speciesParent.getName())
-                    .shortName(speciesParent.getShortName())
                     .english(speciesParent.getEnglish())
                     .build();
 
@@ -284,7 +283,6 @@ public class SpeciesService {
                         // Build the NameBasedDTO
                         NameDto nameBasedDTO = NameDto.builder()
                                 .name(subSpecies.getName())
-                                .shortName(subSpecies.getShortName())
                                 .english(subSpecies.getEnglish())
                                 .build();
 
@@ -372,7 +370,6 @@ public class SpeciesService {
         if (featureDto.getName() != null) {
             NameDto nameBasedDTO = featureDto.getName();
             speciesFeature.setName(nameBasedDTO.getName());
-            speciesFeature.setShortName(nameBasedDTO.getShortName());
             speciesFeature.setEnglish(nameBasedDTO.getEnglish());
             speciesFeature.setAlternative(String.join(",", nameBasedDTO.getAlternative()));
         }
@@ -400,7 +397,6 @@ public class SpeciesService {
         NameDto nameBasedDTO = linkedSpeciesDto.getName();
         if (nameBasedDTO != null) {
             subSpecies.setName(nameBasedDTO.getName());
-            subSpecies.setShortName(nameBasedDTO.getShortName());
             subSpecies.setEnglish(nameBasedDTO.getEnglish());
         }
 

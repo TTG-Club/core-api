@@ -30,7 +30,7 @@ public class SourceResponse implements GroupStrategy {
         Book bookInfo = source.getBookInfo();
         if (bookInfo != null) {
             group.setName("Официальные источники");
-            group.setShortName("Basic");
+            group.setEnglish("Basic");
         }
     }
 }

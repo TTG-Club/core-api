@@ -40,13 +40,11 @@ public class ClassDetailResponse extends BaseDto implements GroupStrategy {
 
     private NameDto group = new NameDto();
 
-
     @Override
     public void determineGroup(final Source source) {
         if (group != null && source.getBookInfo() != null) {
             this.group.setName("Происхождение");
             this.group.setEnglish("Basic");
-            this.group.setShortName("Basic");
         }
     }
 }
