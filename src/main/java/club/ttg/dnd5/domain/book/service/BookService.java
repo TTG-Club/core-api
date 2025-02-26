@@ -79,9 +79,6 @@ public class BookService {
 
     private Book convertingCreateSourceToEntity(BookDetailResponse sourceBookDto) {
         NameDto name = sourceBookDto.getName();
-        if (StringUtils.isBlank(name.getShortName())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Отсутствует обязательно поле `shortName`");
-        }
         if (StringUtils.isBlank(sourceBookDto.getUrl())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Отсутствует обязательное поле `url`");
         }
@@ -90,7 +87,6 @@ public class BookService {
         }
         return Book.builder()
                 .bookDate(LocalDate.ofYearDay(sourceBookDto.getYear(), 1))
-                .sourceAcronym(name.getShortName())
                 .name(name.getName())
                 .englishName(name.getEnglish())
                 .authors(sourceBookDto.getAuthor())
@@ -115,7 +111,6 @@ public class BookService {
         return BookDetailResponse.builder()
                 .year(book.getBookDate().getYear())
                 .name(NameDto.builder()
-                        .shortName(book.getSourceAcronym())
                         .name(book.getName())
                         .english(book.getEnglishName())
                         .build())

@@ -14,7 +14,6 @@ public class CreateConverter {
             entity.setName(dto.getNameBasedDTO().getName());
             entity.setEnglish(dto.getNameBasedDTO().getEnglish());
             entity.setAlternative(String.join(",", dto.getNameBasedDTO().getAlternative()));
-            entity.setShortName(dto.getNameBasedDTO().getShortName());
         }
         entity.setDescription(dto.getDescription());
         return entity;

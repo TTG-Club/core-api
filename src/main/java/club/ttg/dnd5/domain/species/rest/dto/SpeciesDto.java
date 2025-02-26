@@ -61,7 +61,6 @@ public class SpeciesDto extends BaseDto implements DetailableDto, GroupStrategy 
         if (group != null && source.getBookInfo() != null) {
             this.group.setName("Происхождение");
             this.group.setEnglish("Basic");
-            this.group.setShortName("Basic");
         }
     }
 }

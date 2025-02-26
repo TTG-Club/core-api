@@ -1,7 +1,7 @@
-package club.ttg.dnd5.model.bestiary;
+package club.ttg.dnd5.domain.beastiary.model;
 
 
-import club.ttg.dnd5.domain.beastiary.model.BeastSize;
+import club.ttg.dnd5.domain.book.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.model.HasSourceEntity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
@@ -20,7 +20,9 @@ import java.util.Collection;
 @NoArgsConstructor
 
 @Entity
-@Table(name = "bestiary")
+@Table(name = "bestiary",
+        indexes = {@Index(name = "idx_name", columnList = "id")}
+)
 public class Beast extends NamedEntity implements HasSourceEntity {
     /**
      * Размеры существа.
@@ -62,15 +64,13 @@ public class Beast extends NamedEntity implements HasSourceEntity {
     /**
      * Характеристики существа
      */
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "beast_id")
+    @OneToMany(cascade = {CascadeType.ALL})
     private Collection<BeastAbility> abilities;
 
     /**
      * Особенности существа
      */
     @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "beast_id")
     private Collection<BeastTrait> traits;
 
     @ManyToOne(cascade = CascadeType.MERGE)

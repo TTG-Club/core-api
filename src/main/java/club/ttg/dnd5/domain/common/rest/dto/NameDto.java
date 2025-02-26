@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.common.rest.dto;
 
-import club.ttg.dnd5.dto.base.HasNameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -16,7 +15,7 @@ import java.util.ArrayList;
 @AllArgsConstructor
 @JsonRootName("name")
 @Builder
-public class NameDto implements HasNameResponse {
+public class NameDto {
     @JsonProperty(value = "rus")
     @Schema(description = "русское название", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
