@@ -1,18 +1,20 @@
 package club.ttg.dnd5.utills;
 
 
-import club.ttg.dnd5.dictionary.Size;
-import club.ttg.dnd5.dictionary.beastiary.CreatureType;
+import club.ttg.dnd5.domain.common.dto.NameDto;
+import club.ttg.dnd5.domain.common.dictionary.Size;
+import club.ttg.dnd5.domain.beastiary.model.BeastType;
+import club.ttg.dnd5.domain.common.dto.BaseDto;
 import club.ttg.dnd5.dto.base.*;
-import club.ttg.dnd5.dto.character.ClassFeatureDto;
-import club.ttg.dnd5.dto.species.CreaturePropertiesDto;
-import club.ttg.dnd5.dto.species.MovementAttributes;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.species.rest.dto.CreaturePropertiesDto;
+import club.ttg.dnd5.domain.species.rest.dto.MovementAttributes;
 import club.ttg.dnd5.model.base.CreatureProperties;
 import club.ttg.dnd5.model.base.HasSourceEntity;
 import club.ttg.dnd5.model.base.NamedEntity;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
-import club.ttg.dnd5.model.character.ClassFeature;
+import club.ttg.dnd5.domain.clazz.model.ClassFeature;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -28,36 +30,36 @@ public class Converter {
     public static final BiConsumer<GroupStrategy, Source> STRATEGY_SOURCE_CONSUMER = GroupStrategy::determineGroup;
 
     // Function to map base DTO to Entity Name
-    public static final BiFunction<BaseDTO, NamedEntity, NamedEntity> MAP_BASE_DTO_TO_ENTITY_NAME = (dto, entity) -> {
+    public static final BiFunction<BaseDto, NamedEntity, NamedEntity> MAP_BASE_DTO_TO_ENTITY_NAME = (dto, entity) -> {
         entity.setUrl(dto.getUrl());
         entity.setImageUrl(dto.getImageUrl());
-        if (dto.getNameBasedDTO() != null) {
-            entity.setName(dto.getNameBasedDTO().getName());
-            entity.setEnglish(dto.getNameBasedDTO().getEnglish());
-            entity.setAlternative(String.join(",", dto.getNameBasedDTO().getAlternative()));
-            entity.setShortName(dto.getNameBasedDTO().getShortName());
+        if (dto.getName() != null) {
+            entity.setName(dto.getName().getName());
+            entity.setEnglish(dto.getName().getEnglish());
+            entity.setAlternative(String.join(",", dto.getName().getAlternative()));
+            entity.setShortName(dto.getName().getShortName());
         }
         entity.setDescription(dto.getDescription());
         return entity;
     };
 
     // Function to map Entity Name to Base DTO
-    public static final BiFunction<BaseDTO, NamedEntity, BaseDTO> MAP_ENTITY_TO_BASE_DTO = (dto, entity) -> {
+    public static final BiFunction<BaseDto, NamedEntity, BaseDto> MAP_ENTITY_TO_BASE_DTO = (dto, entity) -> {
         dto.setUrl(entity.getUrl());
         dto.setImageUrl(entity.getImageUrl());
-        dto.setNameBasedDTO(new NameBasedDTO());
-        dto.getNameBasedDTO().setName(entity.getName());
-        dto.getNameBasedDTO().setEnglish(entity.getEnglish());
-        dto.getNameBasedDTO().setShortName(entity.getShortName());
+        dto.setName(new NameDto());
+        dto.getName().setName(entity.getName());
+        dto.getName().setEnglish(entity.getEnglish());
+        dto.getName().setShortName(entity.getShortName());
         if (entity.getAlternative() != null && !entity.getAlternative().isEmpty()) {
-            dto.getNameBasedDTO().setAlternative(
+            dto.getName().setAlternative(
                     new ArrayList<>(Arrays.stream(entity.getAlternative().split(","))
                             .map(String::trim)
                             .filter(name -> !name.isEmpty())
                             .toList())
             );
         } else {
-            dto.getNameBasedDTO().setAlternative(new ArrayList<>()); // Set an empty list if alternative is null or empty
+            dto.getName().setAlternative(new ArrayList<>()); // Set an empty list if alternative is null or empty
         }
         dto.setDescription(entity.getDescription());
         if (entity.getUpdatedAt() != null) {
@@ -69,7 +71,7 @@ public class Converter {
     // Function to map Creature Properties DTO to Entity
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreatureProperties> MAP_CREATURE_PROPERTIES_DTO_TO_ENTITY = (dto, entity) -> {
         entity.setSizes(Size.convertSizeToEntityFormat(dto.getSizes()));
-        entity.setType(CreatureType.parse(dto.getType()));
+        entity.setType(BeastType.parse(dto.getType()));
         entity.setSpeed(dto.getMovementAttributes().getBase());
         entity.setFly(dto.getMovementAttributes().getFly());
         entity.setClimb(dto.getMovementAttributes().getClimb());
@@ -81,7 +83,7 @@ public class Converter {
     // Function to map Creature Properties Entity to DTO
     public static final BiFunction<CreaturePropertiesDto, CreatureProperties, CreaturePropertiesDto> MAP_ENTITY_TO_CREATURE_PROPERTIES_DTO = (dto, entity) -> {
         dto.setSizes(Size.convertEntityFormatToDtoFormat(entity.getSizes()));
-        dto.setType(entity.getType().getCyrillicName());
+        dto.setType(entity.getType().getName());
         MovementAttributes movementAttributes = MovementAttributes.builder()
                 .base(entity.getSpeed())
                 .fly(entity.getFly())
@@ -112,7 +114,7 @@ public class Converter {
     public static final BiFunction<SourceResponse, HasSourceEntity, SourceResponse> MAP_ENTITY_SOURCE_TO_DTO_SOURCE = (dto, entity) -> {
         Source source = entity.getSource();
         if (source != null) {
-            NameBasedDTO name = new NameBasedDTO();
+            NameDto name = new NameDto();
             Book bookInfo = source.getBookInfo();
             if (bookInfo != null) {
                 name.setEnglish(bookInfo.getEnglishName());
@@ -137,7 +139,7 @@ public class Converter {
     };
 
     // Function to map Entity to Base DTO with hidden details
-    public static final BiFunction<BaseDTO, NamedEntity, BaseDTO> MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS = (dto, entity) -> {
+    public static final BiFunction<BaseDto, NamedEntity, BaseDto> MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS = (dto, entity) -> {
         dto.setUrl(entity.getUrl());
         ((DetailableDTO) dto).hideDetails();
         return dto;

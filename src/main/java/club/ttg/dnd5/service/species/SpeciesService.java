@@ -1,22 +1,22 @@
 package club.ttg.dnd5.service.species;
 
-import club.ttg.dnd5.dto.base.NameBasedDTO;
+import club.ttg.dnd5.domain.common.dto.NameDto;
 import club.ttg.dnd5.dto.base.create.SourceReference;
-import club.ttg.dnd5.dto.species.CreateSpeciesDto;
-import club.ttg.dnd5.dto.species.SpeciesCreateFeatureDto;
-import club.ttg.dnd5.dto.species.SpeciesDto;
+import club.ttg.dnd5.domain.species.rest.dto.CreateSpeciesDto;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesCreateFeatureDto;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesDto;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.model.base.Tag;
 import club.ttg.dnd5.model.base.TagType;
 import club.ttg.dnd5.model.book.Book;
 import club.ttg.dnd5.model.book.Source;
-import club.ttg.dnd5.model.species.Species;
-import club.ttg.dnd5.model.species.SpeciesFeature;
-import club.ttg.dnd5.repository.SpeciesRepository;
+import club.ttg.dnd5.domain.species.model.Species;
+import club.ttg.dnd5.domain.species.model.SpeciesFeature;
+import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.repository.TagRepository;
-import club.ttg.dnd5.repository.book.BookRepository;
-import club.ttg.dnd5.repository.book.SourceRepository;
+import club.ttg.dnd5.domain.book.repository.BookRepository;
+import club.ttg.dnd5.domain.book.SourceRepository;
 import club.ttg.dnd5.utills.Converter;
 import club.ttg.dnd5.utills.CreateConverter;
 import club.ttg.dnd5.utills.SlugifyUtil;
@@ -260,14 +260,14 @@ public class SpeciesService {
             parent.setUrl(speciesParent.getUrl());
 
             // Build the NameBasedDTO using a builder for better readability
-            NameBasedDTO parentNameBased = NameBasedDTO.builder()
+            NameDto parentNameBased = NameDto.builder()
                     .name(speciesParent.getName())
                     .shortName(speciesParent.getShortName())
                     .english(speciesParent.getEnglish())
                     .build();
 
             // Set the NameBasedDTO in the parent
-            parent.setNameBasedDTO(parentNameBased);
+            parent.setName(parentNameBased);
             dto.setParent(parent);
         }
 
@@ -282,14 +282,14 @@ public class SpeciesService {
                         linkedSpeciesDto.setUrl(subSpecies.getUrl());
 
                         // Build the NameBasedDTO
-                        NameBasedDTO nameBasedDTO = NameBasedDTO.builder()
+                        NameDto nameBasedDTO = NameDto.builder()
                                 .name(subSpecies.getName())
                                 .shortName(subSpecies.getShortName())
                                 .english(subSpecies.getEnglish())
                                 .build();
 
                         // Set the NameBasedDTO
-                        linkedSpeciesDto.setNameBasedDTO(nameBasedDTO);
+                        linkedSpeciesDto.setName(nameBasedDTO);
 
                         return linkedSpeciesDto;
                     })
@@ -370,7 +370,7 @@ public class SpeciesService {
             source.setPage(speciesSource.getPage());
         }
         if (featureDto.getName() != null) {
-            NameBasedDTO nameBasedDTO = featureDto.getName();
+            NameDto nameBasedDTO = featureDto.getName();
             speciesFeature.setName(nameBasedDTO.getName());
             speciesFeature.setShortName(nameBasedDTO.getShortName());
             speciesFeature.setEnglish(nameBasedDTO.getEnglish());
@@ -397,7 +397,7 @@ public class SpeciesService {
         }
 
         // Update additional fields if needed
-        NameBasedDTO nameBasedDTO = linkedSpeciesDto.getNameBasedDTO();
+        NameDto nameBasedDTO = linkedSpeciesDto.getName();
         if (nameBasedDTO != null) {
             subSpecies.setName(nameBasedDTO.getName());
             subSpecies.setShortName(nameBasedDTO.getShortName());

@@ -1,0 +1,16 @@
+package club.ttg.dnd5.domain.common.model;
+
+import club.ttg.dnd5.model.base.NamedEntity;
+import club.ttg.dnd5.model.book.Source;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@MappedSuperclass
+public abstract class FeatureBase extends NamedEntity {
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "source")
+    private Source source;
+}
