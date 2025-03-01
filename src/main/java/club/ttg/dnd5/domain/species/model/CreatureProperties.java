@@ -13,15 +13,23 @@ import java.util.Collection;
 @Setter
 @MappedSuperclass
 public abstract class CreatureProperties extends NamedEntity {
+    /** Размеры */
     @Embedded
     private SpeciesSize size;
 
+    /** Тип существа */
     @Enumerated(EnumType.STRING)
     private BeastType type;
+
+    /** Скорость пешком */
     @Column(columnDefinition = "int default 30")
     private int speed = 30;
+    /** Полет */
     private Integer fly;
+    /** лазание */
     private Integer climb;
+    /** плавание */
     private Integer swim;
+    /** темное зрение */
     private Integer darkVision;
 }
