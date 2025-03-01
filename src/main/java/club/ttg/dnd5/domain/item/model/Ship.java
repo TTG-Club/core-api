@@ -20,5 +20,4 @@ public class Ship extends Item {
     @JsonProperty(value = "hp")
     private String hitPoints;
     private String damageThreshold;
-
 }
