@@ -32,13 +32,16 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     @JoinColumn(name = "parent_id")
     private Species parent;
 
+    /** Происхождения */
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Collection<Species> subSpecies = new ArrayList<>();
+    private Collection<Species> lineages = new ArrayList<>();
 
+    /** источник */
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
     private Source source = new Source();
 
+    /** Тэги */
     @ManyToMany
     @JoinTable(
             name = "species_tags",
@@ -47,11 +50,13 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     )
     private Set<Tag> tags = new HashSet<>();
 
+    /** Умения */
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "species_url")
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     private Collection<SpeciesFeature> features;
 
+    /** Ссылки на изображения для галереи */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id"))
     @Column(name = "gallery_url")
