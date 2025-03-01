@@ -13,6 +13,7 @@ public abstract class NamedEntity extends Timestamped {
     @Id
     @Column(nullable = false, unique = true)
     private String url;
+
     @Column(nullable = false)
     private String name;
     @Column(nullable = false)
