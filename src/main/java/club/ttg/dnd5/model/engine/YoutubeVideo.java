@@ -1,6 +1,6 @@
 package club.ttg.dnd5.model.engine;
 
-import club.ttg.dnd5.model.user.User;
+import club.ttg.dnd5.domain.user.model.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

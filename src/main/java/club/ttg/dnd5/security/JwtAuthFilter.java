@@ -1,8 +1,8 @@
 package club.ttg.dnd5.security;
 
 import club.ttg.dnd5.exception.ApiException;
-import club.ttg.dnd5.model.user.User;
-import club.ttg.dnd5.service.user.UserService;
+import club.ttg.dnd5.domain.user.model.User;
+import club.ttg.dnd5.domain.user.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
