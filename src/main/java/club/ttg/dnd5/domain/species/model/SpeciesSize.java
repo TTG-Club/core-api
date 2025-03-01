@@ -11,8 +11,9 @@ import java.util.Collection;
 @Setter
 @Embeddable
 public class SpeciesSize {
-    @ElementCollection(targetClass = Size.class)
+    /** Размер */
     @Enumerated(EnumType.STRING)
     private Collection<Size> size;
+    /** Размер текстом */
     private String text;
 }
