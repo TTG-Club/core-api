@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.species.rest.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +14,10 @@ import lombok.Setter;
 public class SpeciesPropertiesDto {
     @JsonProperty(value = "speed")
     MovementAttributes movementAttributes = new MovementAttributes();
+    @Schema(description = "Размеры")
     private String size;
+    @Schema(description = "Тип существа")
     private String type;
+    @Schema(description = "Дальность темного зрение если есть")
     private int darkVision;
 }

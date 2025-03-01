@@ -7,6 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Schema(description = "Умение вида или происхождения")
 public class SpeciesFeatureResponse {
     @Schema(description = "название", requiredMode = Schema.RequiredMode.REQUIRED)
     private NameDto name = new NameDto();
