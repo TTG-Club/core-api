@@ -20,5 +20,8 @@ public class SpeciesRequest extends BaseDto {
     private Collection<SizeDto> sizes;
     @Schema(description = "Скорость существа")
     private MovementAttributes movementAttributes = new MovementAttributes();
+    @Schema(description = "Умения")
     private Collection<FeatureRequest> features;
+    @Schema(description = "URL на вид", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String parentUrl;
 }

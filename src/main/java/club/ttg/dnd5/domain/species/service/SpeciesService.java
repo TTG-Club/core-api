@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 public class SpeciesService {
-    private static final String BOOK_NOT_FOUND_FOR_URL = "Book not found for URL: ";
     private final SpeciesRepository speciesRepository;
     private final SourceRepository sourceRepository;
     private final BookRepository bookRepository;
@@ -44,7 +43,6 @@ public class SpeciesService {
     }
 
     public List<SpeciesShortResponse> getSpecies() {
-        // только parent и убрать лишнюю детальную информацию
         return speciesRepository.findAllByParentIsNull()
                 .stream()
                 .map(speciesMapper::toShortDto)
@@ -79,7 +77,7 @@ public class SpeciesService {
                         Stream.of(subSpecies),
                         Stream.concat(
                                 Stream.ofNullable(subSpecies.getParent()),
-                                subSpecies.getSubSpecies() != null ? subSpecies.getSubSpecies().stream() : Stream.empty()
+                                subSpecies.getLineages() != null ? subSpecies.getLineages().stream() : Stream.empty()
                         )
                 )
                 .filter(species -> !species.isHiddenEntity())
@@ -95,10 +93,10 @@ public class SpeciesService {
         if (parent.getParent().equals(parent)) {
             species.setParent(parent);
 
-            Optional.ofNullable(parent.getSubSpecies())
+            Optional.ofNullable(parent.getLineages())
                     .orElseGet(() -> {
-                        parent.setSubSpecies(new ArrayList<>());
-                        return parent.getSubSpecies();
+                        parent.setLineages(new ArrayList<>());
+                        return parent.getLineages();
                     })
                     .add(species);
 
@@ -121,11 +119,10 @@ public class SpeciesService {
         }
     }
 
-    public SpeciesDetailResponse addSubSpecies(String speciesUrl, List<String> subSpeciesUrls) {
+    public SpeciesDetailResponse addSubSpecies(String speciesUrl, List<String> lineagesUrls) {
         Species species = findByUrl(speciesUrl);
 
-        // Set parent in the map step
-        List<Species> subSpeciesEntities = subSpeciesUrls.stream()
+        List<Species> subSpeciesEntities = lineagesUrls.stream()
                 .map(url -> {
                     Species subSpecies = findByUrl(url);
                     subSpecies.setParent(species);
@@ -133,7 +130,7 @@ public class SpeciesService {
                 })
                 .toList();
 
-        species.setSubSpecies(subSpeciesEntities);
+        species.setLineages(subSpeciesEntities);
         return speciesMapper.toDetailDto(speciesRepository.save(species));
     }
 
@@ -170,7 +167,7 @@ public class SpeciesService {
             dto.setParent(parent);
         }
 
-        Collection<Species> speciesSubSpecies = species.getSubSpecies();
+        Collection<Species> speciesSubSpecies = species.getLineages();
         if (speciesSubSpecies != null) {
             // Convert each sub-species to a LinkedSpeciesDto
             List<SpeciesDetailResponse> lineages = speciesSubSpecies.stream()
@@ -206,7 +203,7 @@ public class SpeciesService {
 
     private void fillSpecies(SpeciesDetailResponse speciesDTO, Species species) {
         Optional.ofNullable(speciesDTO.getLineages())
-                .ifPresent(subSpeciesDtos -> species.setSubSpecies(
+                .ifPresent(subSpeciesDtos -> species.setLineages(
                         subSpeciesDtos.stream()
                                 .map(this::convertToSpecies) // Convert LinkedSpeciesDto to Species
                                 .toList()
