@@ -10,10 +10,6 @@ import java.util.Set;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-
 @Getter
 @Setter
 @Schema(name = "Предметы, снаряжение и прочие объекты")
