@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.item.service;
 
-import club.ttg.dnd5.domain.item.model.Armor;
-import club.ttg.dnd5.domain.item.model.Weapon;
+import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
@@ -9,7 +8,6 @@ import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
 import club.ttg.dnd5.exception.ContentNotFoundException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,12 +32,13 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDetailResponse getItem(final String itemUrl) {
         var item = findByUrl(itemUrl);
-        if (item instanceof Armor) {
-            return itemMapper.toDetailDto((Armor) item);
-        } else if (item instanceof Weapon) {
-            return itemMapper.toDetailDto((Weapon) item);
-        }
-        return itemMapper.toDetailDto(item);
+        return switch (item) {
+            case Armor armor -> itemMapper.toDetailDto(armor);
+            case Weapon weapon -> itemMapper.toDetailDto(weapon);
+            case Ship ship -> itemMapper.toDetailDto(ship);
+            case Mount mount -> itemMapper.toDetailDto(mount);
+            case Item object -> itemMapper.toDetailDto(object);
+        };
     }
 
     @Override
@@ -60,7 +59,6 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDetailResponse updateItem(final String itemUrl, final ItemRequest itemDto) {
         Item item = findByUrl(itemUrl);
-
         return itemMapper.toDetailDto(itemRepository.save(item));
     }
 

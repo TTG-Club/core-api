@@ -1,8 +1,6 @@
 package club.ttg.dnd5.domain.item.rest.mapper;
 
-import club.ttg.dnd5.domain.item.model.Armor;
-import club.ttg.dnd5.domain.item.model.Item;
-import club.ttg.dnd5.domain.item.model.Weapon;
+import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
@@ -16,10 +14,17 @@ public interface ItemMapper {
     ItemDetailResponse toDetailDto(final Item item);
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
-    ItemDetailResponse toDetailDto(final Armor item);
+    ItemDetailResponse toDetailDto(final Armor armor);
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
-    ItemDetailResponse toDetailDto(final Weapon item);
+    ItemDetailResponse toDetailDto(final Weapon weapon);
+    @Mapping(source = "name", target = "name.name")
+    @Mapping(source = "english", target = "name.english")
+    ItemDetailResponse toDetailDto(final Ship ship);
+    @Mapping(source = "name", target = "name.name")
+    @Mapping(source = "english", target = "name.english")
+    ItemDetailResponse toDetailDto(final Mount mount);
+
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
     ItemShortResponse toShortDto(Item item);
