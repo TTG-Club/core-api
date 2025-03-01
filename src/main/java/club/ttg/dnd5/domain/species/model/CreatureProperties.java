@@ -12,11 +12,10 @@ import java.util.Collection;
 @Getter
 @Setter
 @MappedSuperclass
-
 public abstract class CreatureProperties extends NamedEntity {
-    @OneToMany
-    @JoinColumn(name = "species_id")
-    private Collection<SpeciesSize> sizes;
+    @Embedded
+    private SpeciesSize size;
+
     @Enumerated(EnumType.STRING)
     private BeastType type;
     @Column(columnDefinition = "int default 30")

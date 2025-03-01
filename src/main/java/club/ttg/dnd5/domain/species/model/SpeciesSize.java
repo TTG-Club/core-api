@@ -5,23 +5,14 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
+
 @Getter
 @Setter
-@Entity
-@Table(name = "species_sizes")
+@Embeddable
 public class SpeciesSize {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @ElementCollection(targetClass = Size.class)
     @Enumerated(EnumType.STRING)
-    private Size size;
+    private Collection<Size> size;
     private String text;
-
-    public String getSizeString () {
-        if (text == null) {
-            return size.getName();
-        } else {
-            return String.format("%s (%s)", size.getName(), text);
-        }
-    }
 }
