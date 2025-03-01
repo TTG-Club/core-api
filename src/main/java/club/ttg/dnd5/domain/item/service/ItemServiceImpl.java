@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.item.service;
 
+import club.ttg.dnd5.domain.item.model.Armor;
+import club.ttg.dnd5.domain.item.model.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
@@ -18,7 +20,7 @@ import java.util.Collection;
 @Service
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
-    private ItemMapper itemMapper;
+    private final ItemMapper itemMapper;
 
     @Override
     public boolean existsByUrl(final String url) {
@@ -31,7 +33,13 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDetailResponse getItem(final String itemUrl) {
-        return itemMapper.toDetailDto(findByUrl(itemUrl));
+        var item = findByUrl(itemUrl);
+        if (item instanceof Armor) {
+            return itemMapper.toDetailDto((Armor) item);
+        } else if (item instanceof Weapon) {
+            return itemMapper.toDetailDto((Weapon) item);
+        }
+        return itemMapper.toDetailDto(item);
     }
 
     @Override
@@ -71,6 +79,6 @@ public class ItemServiceImpl implements ItemService {
 
     private Item findByUrl(String url) {
         return itemRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException("Item not found with URL: " + url));
+                .orElseThrow(() -> new EntityNotFoundException("Предмет не найден по URL: " + url));
     }
 }

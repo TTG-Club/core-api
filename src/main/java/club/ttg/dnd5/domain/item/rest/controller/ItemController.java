@@ -45,9 +45,9 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предмет успешно получен"),
             @ApiResponse(responseCode = "404", description = "Предмет не найден")
     })
-    @GetMapping("/{itemUtl}")
-    public ItemDetailResponse getItem(@PathVariable final String itemUtl) {
-        return itemService.getItem(itemUtl);
+    @GetMapping("/{url}")
+    public ItemDetailResponse getItem(@PathVariable final String url) {
+        return itemService.getItem(url);
     }
 
     @Operation(summary = "Получение списка краткого описания предметов")
