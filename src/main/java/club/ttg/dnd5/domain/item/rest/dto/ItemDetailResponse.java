@@ -18,6 +18,8 @@ import java.util.Set;
 @Setter
 @Schema(name = "Предметы, снаряжение и прочие объекты")
 public class ItemDetailResponse extends BaseDto {
+    private String type;
+
     private Set<NameDto> types;
     /** Стоимость предмета */
     @Schema(name = "Стоимость")

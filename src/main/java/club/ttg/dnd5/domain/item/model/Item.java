@@ -21,6 +21,7 @@ import java.util.Set;
         @Index(name = "name_index", columnList = "name, english, alternative")
 })
 public class Item extends NamedEntity implements HasSourceEntity {
+    @ElementCollection(targetClass = ItemType.class)
     @Enumerated(EnumType.STRING)
     private Set<ItemType> types;
     /** Стоимость предмета */
