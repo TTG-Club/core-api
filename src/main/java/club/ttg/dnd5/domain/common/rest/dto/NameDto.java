@@ -18,7 +18,7 @@ import java.util.ArrayList;
 public class NameDto {
     @JsonProperty(value = "rus")
     @Schema(description = "русское название", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String name;
+    private String name = "";
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "eng")
     @Schema(description = "английское название", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -27,4 +27,6 @@ public class NameDto {
     @JsonProperty(value = "alt")
     @Schema(description = "альтернативные названия")
     private String alternative;
+    @Schema(description = "Короткая метка")
+    private String label;
 }

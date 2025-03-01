@@ -21,7 +21,10 @@ import java.util.Collection;
 
 @Entity
 @Table(name = "bestiary",
-        indexes = {@Index(name = "idx_name", columnList = "id")}
+        indexes = {
+                @Index(name = "url_index", columnList = "url"),
+                @Index(name = "name_index", columnList = "name, english, alternative")
+        }
 )
 public class Beast extends NamedEntity implements HasSourceEntity {
     /**

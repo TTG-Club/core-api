@@ -4,6 +4,8 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
+import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.model.Background;
@@ -18,6 +20,7 @@ import java.util.Collection;
 @Service
 public class BackgroundServiceImpl implements BackgroundService {
     private final BackgroundRepository backgroundRepository;
+    private final FeatRepository featRepository;
     private final BackgroundMapper backgroundMapper;
 
     @Override
@@ -37,7 +40,8 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Override
     public BackgroundDetailResponse addBackground(final BackgroundRequest dto) {
         checkUrlExist(dto.getUrl());
-        var background = backgroundRepository.save(backgroundMapper.toEntity(dto));
+        var feat = getFeat(dto.getFeatUrl());
+        var background = backgroundRepository.save(backgroundMapper.toEntity(dto, feat));
         return backgroundMapper.toDetailDto(background);
     }
 
@@ -48,7 +52,8 @@ public class BackgroundServiceImpl implements BackgroundService {
         if (!url.equals(dto.getUrl())) {
             backgroundRepository.deleteById(url);
         }
-        var background = backgroundRepository.save(backgroundMapper.toEntity(dto));
+        var feat = getFeat(dto.getFeatUrl());
+        var background = backgroundRepository.save(backgroundMapper.toEntity(dto, feat));
         return backgroundMapper.toDetailDto(background);
     }
 
@@ -65,14 +70,19 @@ public class BackgroundServiceImpl implements BackgroundService {
         return backgroundRepository.existsById(backgroundUrl);
     }
 
+    private Feat getFeat(String url) {
+        return featRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
+    }
+
     private void checkUrlExist(String url) {
         if (backgroundRepository.existsById(url)) {
-            throw new EntityExistException("Background exist by url");
+            throw new EntityExistException("Предыстория существует с url: " + url);
         }
     }
 
     private Background findByUrl(String url) {
         return backgroundRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException("Entity not found with URL: " + url));
+                .orElseThrow(() -> new EntityNotFoundException("Предыстория не найден по URL: " + url));
     }
 }

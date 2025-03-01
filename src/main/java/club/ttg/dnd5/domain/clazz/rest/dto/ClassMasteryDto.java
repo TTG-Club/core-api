@@ -14,16 +14,14 @@ import java.util.Set;
 @Setter
 @Builder
 public class ClassMasteryDto {
-    @Schema(description = "владения доспехами")
-    private String armor;
-    @Schema(description = "владения оружием")
+    @Schema(description = "Владения спасбросками")
+    private String savingThrow;
+    @Schema(description = "Владения навыками")
+    private String skills;
+    @Schema(description = "Владения оружием")
     private String weapon;
-    @Schema(description = "владения инструментами")
+    @Schema(description = "Владения доспехами")
+    private String armor;
+    @Schema(description = "Владения инструментами")
     private String tool;
-    @Schema(description = "владения спасбросками")
-    private Set<NameDto> savingThrow = new HashSet<>();
-    @Schema(description = "количество доступных навыков для выбора")
-    private short countAvailableSkills;
-    @Schema(description = "список навыков")
-    private Set<NameDto> availableSkills = new HashSet<>();
 }

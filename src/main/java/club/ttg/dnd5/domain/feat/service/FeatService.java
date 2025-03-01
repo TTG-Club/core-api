@@ -1,19 +1,21 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
 import java.util.Collection;
 
 public interface FeatService {
     FeatDetailResponse getFeat(String featUrl);
 
-    Collection<FeatDetailResponse> getFeats();
+    Collection<ShortResponse> getFeats();
 
-    FeatDetailResponse addFeat(FeatDetailResponse featDto);
+    FeatDetailResponse addFeat(FeatRequest featDto);
 
-    FeatDetailResponse updateFeat(final String featUrl, FeatDetailResponse featDto);
+    FeatDetailResponse updateFeat(final String featUrl, FeatRequest featDto);
 
-    FeatDetailResponse delete(String featUrl);
+    ShortResponse delete(String featUrl);
 
     boolean exists(String featUrl);
 }

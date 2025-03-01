@@ -16,7 +16,10 @@ import java.util.Set;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "item_type", discriminatorType = DiscriminatorType.STRING)
 @Entity
-@Table(name = "items")
+@Table(name = "items", indexes = {
+        @Index(name = "url_index", columnList = "url"),
+        @Index(name = "name_index", columnList = "name, english, alternative")
+})
 public class Item extends NamedEntity implements HasSourceEntity {
     @Enumerated(EnumType.STRING)
     private Set<ItemType> types;

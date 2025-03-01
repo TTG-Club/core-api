@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.beastiary.model;
+package club.ttg.dnd5.domain.species.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import jakarta.persistence.*;
@@ -8,9 +8,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "best_sizes")
-public class BeastSize {
+@Table(name = "species_sizes")
+public class SpeciesSize {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Enumerated(EnumType.STRING)
     private Size size;

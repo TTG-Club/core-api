@@ -1,7 +1,8 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
-import club.ttg.dnd5.domain.species.rest.dto.CreateSpeciesDto;
-import club.ttg.dnd5.domain.species.rest.dto.SpeciesDto;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
+import club.ttg.dnd5.domain.species.rest.mapper.SpeciesRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,8 +42,8 @@ public class SpeciesController {
 
     @PostMapping("/search")
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
-    public List<SpeciesDto> getAllSpecies() {
-        return speciesService.getAllSpecies();
+    public List<SpeciesShortResponse> getAllSpecies() {
+        return speciesService.getSpecies();
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
@@ -52,24 +53,25 @@ public class SpeciesController {
     })
     @GetMapping("/{url}")
     @ResponseStatus(HttpStatus.OK)
-    public SpeciesDto getSpeciesByUrl(@PathVariable String url) {
+    public SpeciesDetailResponse getSpeciesByUrl(@PathVariable String url) {
         return speciesService.findById(url);
     }
 
-    @GetMapping("/subspecies")
+    @GetMapping("/lineages")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
-    public List<SpeciesDto> getSubSpeciesByParentUrl(
-            @Parameter(description = "URL родительского вида", required = true) @RequestParam String parentUrl) {
-        return speciesService.getSubSpeciesByParentUrl(parentUrl);
+    public List<SpeciesDetailResponse> getSubSpeciesByParentUrl(
+            @Parameter(description = "URL родительского вида", required = true) @RequestParam String url) {
+        return speciesService.getLineages(url);
     }
 
     @GetMapping("/related")
-    @Operation(summary = "Получить все связанные виды по URL подвида",
-            description = "Возвращает список всех связанных видов, включая родительский вид и подвиды по указанному URL подвида.")
-    public List<SpeciesDto> getAllRelatedSpeciesBySubSpeciesUrl(
-            @Parameter(description = "URL подвига", required = true) @RequestParam String subSpeciesUrl) {
-        return speciesService.getAllRelatedSpeciesBySubSpeciesUrl(subSpeciesUrl);
+    @Operation(summary = "Получить все происхождения по URL",
+            description = "Возвращает список всех происхождений, включая родительский вид и подвиды по указанному URL подвида.")
+    public List<SpeciesDetailResponse> getAllRelatedSpeciesBySubSpeciesUrl(
+            @Parameter(description = "URL происхождения", required = true)
+            @RequestParam String url) {
+        return speciesService.getAllLineages(url);
     }
 
     /**
@@ -85,7 +87,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид или родитель не найден")
     })
     @PostMapping("/parent")
-    public SpeciesDto addParent(
+    public SpeciesDetailResponse addParent(
             @Parameter(description = "URL вида, к которому добавляется родитель", required = true) @RequestParam String speciesUrl,
             @Parameter(description = "URL родителя, который будет добавлен", required = true) @RequestParam String speciesParentUrl) {
         return speciesService.addParent(speciesUrl, speciesParentUrl);
@@ -104,7 +106,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид не найден")
     })
     @PostMapping("/subspecies")
-    public SpeciesDto addSubSpecies(
+    public SpeciesDetailResponse addSubSpecies(
             @Parameter(description = "URL вида, к которому добавляются подвиды", required = true) @RequestParam String speciesUrl,
             @Parameter(description = "Список URL подвидов, которые будут добавлены", required = true) @RequestBody List<String> subSpeciesUrls) {
         return speciesService.addSubSpecies(speciesUrl, subSpeciesUrls);
@@ -118,8 +120,8 @@ public class SpeciesController {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SpeciesDto createSpecies(@RequestBody CreateSpeciesDto createSpeciesDTO) {
-        return speciesService.save(createSpeciesDTO);
+    public SpeciesDetailResponse createSpecies(@RequestBody SpeciesRequest request) {
+        return speciesService.save(request);
     }
 
     @Operation(summary = "Обновить существующий вид", description = "Обновление данных существующего вида.")
@@ -131,7 +133,7 @@ public class SpeciesController {
     @PutMapping("/{url}")
     @Secured("ADMIN")
     @ResponseStatus(HttpStatus.OK)
-    public SpeciesDto updateSpecies(@PathVariable String url, @RequestBody SpeciesDto speciesDTO) {
-        return speciesService.update(url, speciesDTO);
+    public SpeciesDetailResponse updateSpecies(@PathVariable String url, @RequestBody SpeciesRequest request) {
+        return speciesService.update(url, request);
     }
 }

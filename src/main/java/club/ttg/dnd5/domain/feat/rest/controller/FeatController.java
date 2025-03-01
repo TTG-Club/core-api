@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.feat.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
-import club.ttg.dnd5.exception.EntityExistException;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
+
 import club.ttg.dnd5.domain.feat.service.FeatService;
+import club.ttg.dnd5.exception.EntityExistException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -26,7 +29,7 @@ public class FeatController {
     @RequestMapping(path = "/{featUrl}", method = RequestMethod.HEAD)
     public ResponseEntity<Boolean> existByUrl(@PathVariable final String featUrl) {
         if (featService.exists(featUrl)) {
-            throw new EntityExistException();
+            throw new EntityExistException("Черта существуют с URL: " + featUrl);
         }
         return ResponseEntity.ok(false);
     }
@@ -50,7 +53,7 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
-    public Collection<FeatDetailResponse> getFeats() {
+    public Collection<ShortResponse> getFeats() {
         return featService.getFeats();
     }
 
@@ -63,7 +66,7 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public FeatDetailResponse addFeats(@RequestBody final FeatDetailResponse featDto) {
+    public FeatDetailResponse addFeats(@RequestBody final FeatRequest featDto) {
         return featService.addFeat(featDto);
     }
 
@@ -77,7 +80,7 @@ public class FeatController {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("{featUrl}")
     public FeatDetailResponse updateFeats(@PathVariable final String featUrl,
-                                          @RequestBody final FeatDetailResponse featDto) {
+                                          @RequestBody final FeatRequest featDto) {
         return featService.updateFeat(featUrl, featDto);
     }
 
@@ -89,7 +92,7 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.OK)
     @DeleteMapping("{featUrl}")
-    public FeatDetailResponse deleteFeats(@PathVariable final String featUrl) {
+    public ShortResponse deleteFeats(@PathVariable final String featUrl) {
         return featService.delete(featUrl);
     }
 }

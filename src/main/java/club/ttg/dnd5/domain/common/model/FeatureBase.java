@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @MappedSuperclass
 public abstract class FeatureBase extends NamedEntity {
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "source")
     private Source source;
 }

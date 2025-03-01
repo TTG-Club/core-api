@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.clazz.rest.controller;
 
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.clazz.rest.dto.*;
 import club.ttg.dnd5.domain.common.rest.dto.engine.SearchRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.clazz.service.ClassService;
@@ -41,13 +40,13 @@ public class ClassController {
     @Operation(summary = "Получение краткого списка классов")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
-    public Collection<ClassDetailResponse> getAllClasses(final SearchRequest request) {
+    public Collection<ClassShortResponse> getAllClasses(final SearchRequest request) {
         return classService.getClasses(request);
     }
 
     @Operation(summary = "Получение краткого списка подклассов для класса")
     @GetMapping("/{parentUrl}/subclasses")
-    public Collection<ClassDetailResponse> getSubclasses(@PathVariable String parentUrl) {
+    public Collection<ClassShortResponse> getSubclasses(@PathVariable String parentUrl) {
         return classService.getSubClasses(parentUrl);
     }
 
@@ -69,7 +68,7 @@ public class ClassController {
     })
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public ClassDetailResponse addClass(@RequestBody final ClassDetailResponse request) {
+    public ClassDetailResponse addClass(@RequestBody final ClassRequest request) {
         return classService.addClass(request);
     }
 
@@ -109,7 +108,7 @@ public class ClassController {
     @PostMapping("/{classUrl}/feature")
     public ClassDetailResponse addFeature(
             @Parameter(description = "URL класса, к которому добавляется умение") @PathVariable String classUrl,
-            @RequestBody ClassFeatureDto featureDto) {
+            @RequestBody ClassFeatureRequest featureDto) {
         return classService.addFeature(classUrl, featureDto);
     }
 
@@ -122,7 +121,7 @@ public class ClassController {
     @PutMapping("/{url}")
     public ClassDetailResponse updateClass(
             @PathVariable final String url,
-            @RequestBody final ClassDetailResponse request) {
+            @RequestBody final ClassRequest request) {
         return classService.updateClass(url, request);
     }
 }

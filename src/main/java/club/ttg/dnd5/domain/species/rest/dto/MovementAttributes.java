@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 @Getter
@@ -7,16 +8,11 @@ import lombok.*;
 @Builder
 @RequiredArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MovementAttributes{
-    private final int base;
-    private int fly;
-    private int climb;
-    private int swim;
-
-    public MovementAttributes() {
-        this.base = 30;
-        fly = -1;
-        climb = -1;
-        swim = -1;
-    }
+    private final int base = 30;
+    private Integer fly;
+    private Integer climb;
+    private Integer swim;
+    private Boolean hover;
 }

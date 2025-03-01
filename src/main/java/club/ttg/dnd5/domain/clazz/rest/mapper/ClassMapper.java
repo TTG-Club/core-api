@@ -1,29 +1,52 @@
 package club.ttg.dnd5.domain.clazz.rest.mapper;
 
-//@Mapper(uses = ClassFeatureMapper.class)
-//public interface ClassMapper {
-//    ClassMapper MAPPER = Mappers.getMapper(ClassMapper.class);
-//    @Mapping(source = "name.rus", target = "name")
-//    @Mapping(source = "name.eng", target = "english")
-//    @Mapping(source = "name.alt", target = "alternative")
-//    @Mapping(source = "name.genitive", target = "genitive")
-//    @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "toDice")
-//    ClassCharacter toEntity(ClassRequest request);
-//
-//    @Mapping(source = "name", target = "name.rus")
-//    @Mapping(source = "english", target = "name.eng")
-//    @Mapping(source = "alternative", target = "name.alt")
-//    @Mapping(source = "genitive", target = "name.genitive")
-//    @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "diceToSting")
-//    ClassResponse toResponse(ClassCharacter entity);
-//
-//    @Named("toDice")
-//    default Dice toDice(final String dice) {
-//        return Dice.parse(dice);
-//    }
-//
-//    @Named("diceToSting")
-//    default String diceToSting(final Dice dice) {
-//        return dice.getName();
-//    }
-//}
+import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassRequest;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassShortResponse;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Dice;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Mapper(componentModel = "spring", uses = ClassFeatureMapper.class)
+public interface ClassMapper {
+    @Mapping(source = "name", target = "name.name")
+    @Mapping(source = "english", target = "name.english")
+    @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "diceToString")
+    ClassShortResponse toShortDto(ClassCharacter entity);
+
+    @Mapping(source = "name", target = "name.name")
+    @Mapping(source = "english", target = "name.english")
+    @Mapping(source = "mainAbility", target = "mainAbility", qualifiedByName = "abilityToString")
+    @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "diceToString")
+    ClassDetailResponse toDetailDto(ClassCharacter entity);
+
+    @Mapping(source = "name.name", target = "name")
+    @Mapping(source = "name.english", target = "english")
+    @Mapping(source = "name.alternative", target = "alternative")
+    @Mapping(source = "genitive", target = "genitive")
+    @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "toDice")
+    ClassCharacter toEntity(ClassRequest request);
+
+    @Named("toDice")
+    default Dice toDice(final String dice) {
+        return Dice.parse(dice);
+    }
+
+    @Named("abilityToString")
+    default String abilityToString(Set<Ability> abilities) {
+        return abilities.stream()
+                .map(Ability::getName)
+                .collect(Collectors.joining(" и "));
+    }
+
+    @Named("diceToString")
+    default String diceToString(final Dice dice) {
+        return dice.getName();
+    }
+}
