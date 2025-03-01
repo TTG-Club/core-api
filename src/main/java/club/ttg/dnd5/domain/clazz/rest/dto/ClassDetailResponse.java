@@ -18,14 +18,13 @@ import java.util.Collection;
 
 @Getter
 @Setter
-@Builder
 @Schema(description = "Информация о классе или подклассе")
 public class ClassDetailResponse extends BaseDto implements GroupStrategy {
-    @Schema(description = "основная характеристика")
-    private Ability mainAbility;
-    @Schema(description = "хит дайсы")
+    @Schema(description = "Основная характеристика")
+    private String mainAbility;
+    @Schema(description = "Хиты")
     private String hitDice;
-    @Schema(description = "владение и мастерство")
+    @Schema(description = "Владение и мастерство")
     private ClassMasteryDto mastery;
 
     @Schema(description = "Стартовое снаряжение")
@@ -34,6 +33,7 @@ public class ClassDetailResponse extends BaseDto implements GroupStrategy {
     // Связанные сущности
     @Schema(description = "Url родительского класса если есть")
     private String parentUrl;
+    @Schema(description = "URLs суб классов если есть")
     private Collection<String> subClassUrls;
     @Schema(description = "Умения класса")
     private Collection<ClassFeatureDto> features;

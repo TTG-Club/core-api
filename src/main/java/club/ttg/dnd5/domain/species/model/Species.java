@@ -19,7 +19,10 @@ import java.util.*;
 @NoArgsConstructor
 @Entity
 @Table(name = "species",
-        indexes = {@Index(name = "url_index", columnList = "url")}
+        indexes = {
+                @Index(name = "url_index", columnList = "url"),
+                @Index(name = "name_index", columnList = "name, english, alternative")
+        }
 )
 public class Species extends CreatureProperties implements HasSourceEntity {
     private String linkImageUrl; //для изоброжения бэкграунда

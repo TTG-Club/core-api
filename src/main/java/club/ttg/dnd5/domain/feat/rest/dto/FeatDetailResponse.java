@@ -14,6 +14,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class FeatDetailResponse extends BaseDto {
-    private NameDto category;
+    private String category;
     private String prerequisite;
 }

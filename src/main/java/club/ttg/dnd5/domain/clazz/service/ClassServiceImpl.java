@@ -1,17 +1,17 @@
 package club.ttg.dnd5.domain.clazz.service;
 
 import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureRequest;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassRequest;
+import club.ttg.dnd5.domain.clazz.rest.dto.ClassShortResponse;
+import club.ttg.dnd5.domain.clazz.rest.mapper.ClassFeatureMapper;
+import club.ttg.dnd5.domain.clazz.rest.mapper.ClassMapper;
 import club.ttg.dnd5.domain.common.rest.dto.engine.SearchRequest;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
-import club.ttg.dnd5.domain.clazz.model.ClassFeature;
 import club.ttg.dnd5.domain.clazz.repository.ClassRepository;
-import club.ttg.dnd5.utills.Converter;
-import club.ttg.dnd5.utills.character.ClassConverter;
-import club.ttg.dnd5.utills.character.ClassFeatureConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +25,8 @@ import java.util.Optional;
 @Service
 public class ClassServiceImpl implements ClassService {
     private final ClassRepository classRepository;
+    private final ClassMapper classMapper;
+    private final ClassFeatureMapper classFeatureMapper;
 
     @Override
     public boolean exist(final String url) {
@@ -32,18 +34,18 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
-    public Collection<ClassDetailResponse> getClasses(final SearchRequest request) {
+    public Collection<ClassShortResponse> getClasses(final SearchRequest request) {
         return classRepository.findAllClasses()
                 .stream()
-                .map(classes -> toDTO(classes, true))
+                .map(classMapper::toShortDto)
                 .toList();
     }
 
     @Override
-    public Collection<ClassDetailResponse> getSubClasses(final String url) {
+    public Collection<ClassShortResponse> getSubClasses(final String url) {
         return classRepository.findAllSubclasses(url)
                 .stream()
-                .map(classes -> toDTO(classes, true))
+                .map(classMapper::toShortDto)
                 .toList();
     }
 
@@ -63,7 +65,7 @@ public class ClassServiceImpl implements ClassService {
                     })
                     .add(classCharacter);
 
-            return toDTO(classRepository.save(classCharacter), false);
+            return classMapper.toDetailDto(classRepository.save(classCharacter));
         } else {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "This is not a parent Class");
@@ -71,60 +73,38 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
-    public ClassDetailResponse addFeature(final String classUrl, final ClassFeatureDto featureDto) {
+    public ClassDetailResponse addFeature(final String classUrl, final ClassFeatureRequest featureDto) {
         var classCharacter =  findByUrl(classUrl);
-        var feature = ClassFeatureConverter.toEntityFeature(featureDto);
-        classCharacter.getFeatures().add(feature);
-        return toDTO(classRepository.save(classCharacter));
+        classCharacter.getFeatures().add(classFeatureMapper.toEntity(featureDto));
+        return classMapper.toDetailDto((classRepository.save(classCharacter)));
     }
 
     @Override
     public ClassDetailResponse getClass(final String url) {
-        return toDTO(classRepository.findById(url)
+        return classMapper.toDetailDto(classRepository.findById(url)
                 .orElseThrow(EntityNotFoundException::new));
     }
 
     @Transactional
     @Override
-    public ClassDetailResponse addClass(final ClassDetailResponse request) {
+    public ClassDetailResponse addClass(final ClassRequest request) {
         classRepository.findById(
                 request.getUrl()).ifPresent(c -> {
                     throw new EntityExistException();
                 });
-        var saved = classRepository.save(toEntity(request));
-        return toDTO(saved);
+        var saved = classRepository.save(classMapper.toEntity(request));
+        return classMapper.toDetailDto(saved);
     }
 
     @Transactional
     @Override
-    public ClassDetailResponse updateClass(final String url, final ClassDetailResponse request) {
-        var entity = findByUrl(url);
+    public ClassDetailResponse updateClass(final String url, final ClassRequest request) {
+        findByUrl(url);
         if (!url.equals(request.getUrl())) {
             classRepository.deleteById(url);
         }
-        var updated = classRepository.save(toEntity(entity, request));
-        return toDTO(updated);
-    }
-
-    private ClassDetailResponse toDTO(ClassCharacter classCharacter) {
-        return toDTO(classCharacter, false);
-    }
-
-    private ClassDetailResponse toDTO(ClassCharacter classCharacter, boolean hideDetails) {
-        ClassDetailResponse dto = new ClassDetailResponse();
-        if (hideDetails) {
-            Converter.MAP_ENTITY_TO_BASE_DTO_WITH_HIDE_DETAILS.apply(dto, classCharacter);
-        } else {
-            ClassConverter.MAP_ENTITY_TO_DTO_.apply(dto, classCharacter);
-            Converter.MAP_ENTITY_TO_BASE_DTO.apply(dto, classCharacter);
-            Converter.MAP_ENTITY_SOURCE_TO_DTO_SOURCE.apply(dto.getSourceDTO(), classCharacter);
-            handleParentAndChild(classCharacter, dto);
-            Collection<ClassFeature> features = classCharacter.getFeatures();
-            if (features != null) {
-                dto.setFeatures(ClassFeatureConverter.convertEntityFeatureIntoDTOFeature(features));
-            }
-        }
-        return dto;
+        var updated = classRepository.save(classMapper.toEntity(request));
+        return classMapper.toDetailDto(updated);
     }
 
     private void handleParentAndChild(ClassCharacter classCharacter, ClassDetailResponse dto) {
@@ -138,30 +118,6 @@ public class ClassServiceImpl implements ClassService {
                     .map(ClassCharacter::getUrl)
                     .toList());
         }
-    }
-
-    private ClassCharacter toEntity(ClassDetailResponse dto) {
-        return toEntity(new ClassCharacter(), dto);
-    }
-
-    private ClassCharacter toEntity(ClassCharacter classCharacter, ClassDetailResponse dto) {
-        classCharacter.setUrl(dto.getUrl());
-        Converter.MAP_BASE_DTO_TO_ENTITY_NAME.apply(dto, classCharacter);
-        Converter.MAP_DTO_SOURCE_TO_ENTITY_SOURCE.apply(dto.getSourceDTO(), classCharacter);
-        ClassConverter.MAP_DTO_TO_ENTITY.apply(dto, classCharacter);
-        if (dto.getParentUrl() != null) {
-            classCharacter.setParent(dto.getParentUrl().equals(dto.getUrl()) ? null : findByUrl(dto.getParentUrl()));
-        }
-        fillClass(dto, classCharacter);
-        saveClassFeatures(dto, classCharacter);
-        return classCharacter;
-    }
-
-    private void saveClassFeatures(final ClassDetailResponse dto, final ClassCharacter classCharacter) {
-        Collection<ClassFeature> features = dto.getFeatures().stream()
-                .map(ClassFeatureConverter::toEntityFeature)
-                .toList();
-        classCharacter.setFeatures(features);
     }
 
     private void fillClass(ClassDetailResponse dto, ClassCharacter classCharacter) {

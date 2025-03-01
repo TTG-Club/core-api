@@ -8,13 +8,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Черты.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
-
 @Entity
 @Table(name = "feats",
-        indexes = {@Index(name = "idx_url", columnList = "url")}
+        indexes = {
+                @Index(name = "url_index", columnList = "url"),
+                @Index(name = "name_index", columnList = "name, english, alternative")
+        }
 )
 public class Feat extends NamedEntity implements HasSourceEntity {
     @Enumerated(EnumType.STRING)

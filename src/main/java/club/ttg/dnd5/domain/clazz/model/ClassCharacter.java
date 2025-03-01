@@ -25,10 +25,9 @@ import java.util.Set;
         }
 )
 public class ClassCharacter extends NamedEntity implements HasSourceEntity {
-    @Enumerated(EnumType.STRING)
-    private Ability mainAbility;
-
     private String genitive;
+    @Enumerated(EnumType.STRING)
+    private Set<Ability> mainAbility;
 
     @Enumerated(EnumType.STRING)
     private Dice hitDice;
@@ -41,7 +40,8 @@ public class ClassCharacter extends NamedEntity implements HasSourceEntity {
 
     @ElementCollection(targetClass = Ability.class, fetch = FetchType.LAZY)
     @JoinTable(name = "class_saving_throw_abilities",
-               joinColumns = @JoinColumn(name = "class_url"))
+               joinColumns = @JoinColumn(name = "class_url")
+    )
     @Column(name = "ability", nullable = false)
     @Enumerated(EnumType.STRING)
     private Set<Ability> savingThrowMastery;

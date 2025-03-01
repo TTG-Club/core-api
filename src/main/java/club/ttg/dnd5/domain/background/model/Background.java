@@ -19,7 +19,10 @@ import java.util.Set;
 
 @Entity
 @Table(name = "backgrounds",
-        indexes = {@Index(name = "url_index", columnList = "url")}
+        indexes = {
+                @Index(name = "url_index", columnList = "url"),
+                @Index(name = "name_index", columnList = "name, english, alternative")
+        }
 )
 public class Background extends NamedEntity implements HasSourceEntity {
     @ElementCollection(targetClass = Ability.class, fetch = FetchType.LAZY)

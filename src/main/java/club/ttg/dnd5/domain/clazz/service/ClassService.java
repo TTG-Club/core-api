@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.clazz.service;
 
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.clazz.rest.dto.*;
 import club.ttg.dnd5.domain.common.rest.dto.engine.SearchRequest;
 
 import java.util.Collection;
@@ -9,17 +8,17 @@ import java.util.Collection;
 public interface ClassService {
     ClassDetailResponse getClass(String url);
 
-    ClassDetailResponse addClass(ClassDetailResponse request);
+    ClassDetailResponse addClass(ClassRequest request);
 
-    ClassDetailResponse updateClass(String url, ClassDetailResponse request);
+    ClassDetailResponse updateClass(String url, ClassRequest request);
 
-    Collection<ClassDetailResponse> getClasses(SearchRequest request);
+    Collection<ClassShortResponse> getClasses(SearchRequest request);
 
-    Collection<ClassDetailResponse> getSubClasses(String url);
+    Collection<ClassShortResponse> getSubClasses(String url);
 
     ClassDetailResponse addParent(String classUrl, String classParentUrl);
 
-    ClassDetailResponse addFeature(String classUrl, ClassFeatureDto featureDto);
+    ClassDetailResponse addFeature(String classUrl, ClassFeatureRequest featureDto);
 
     boolean exist(String url);
 }

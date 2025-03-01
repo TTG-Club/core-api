@@ -14,7 +14,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "spells",
-        indexes = {@Index(name = "url_index", columnList = "url")}
+        indexes = {
+                @Index(name = "url_index", columnList = "url"),
+                @Index(name = "name_index", columnList = "name, english, alternative")
+        }
 )
 public class Spell {
     @Id
