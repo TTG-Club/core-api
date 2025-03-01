@@ -66,13 +66,16 @@ public class BookService {
     public List<BookDetailResponse> getBooksByTag(String tagName) {
         Tag tag = tagRepository.findByNameIgnoreCase(tagName).orElseThrow(() -> new EntityNotFoundException("Tag not found"));
 
-        return bookRepository.findByTags(tag).stream().map(this::convertingEntityToSourceDTO).toList();
+//        return bookRepository.findByTags(tag).stream().map(this::convertingEntityToSourceDTO).toList();
+        return List.of();
     }
+
 
     public List<BookDetailResponse> getBooksByBookTagType() {
         List<Tag> tags = tagRepository.findByTagType(TagType.TAG_BOOK);
 
-        Set<Book> books = tags.stream().flatMap(tag -> tag.getBooks().stream()).collect(Collectors.toSet());
+        Set<Book> books = Set.of();
+//                tags.stream().flatMap(tag -> tag.getBooks().stream()).collect(Collectors.toSet());
 
         return books.stream().map(this::convertingEntityToSourceDTO).toList();
     }
@@ -92,7 +95,6 @@ public class BookService {
                 .authors(sourceBookDto.getAuthor())
                 .image(sourceBookDto.getImage())
                 .description(sourceBookDto.getDescription())
-                .tags(generatingTags(sourceBookDto.getTags()))
                 .type(TypeBook.parse(sourceBookDto.getType()))
                 .translation(convertingTranslation(sourceBookDto.getTranslation()))
                 .url(sourceBookDto.getUrl())
@@ -118,7 +120,6 @@ public class BookService {
                 .image(book.getImage())
                 .url(book.getUrl())
                 .description(book.getDescription())
-                .tags(book.getTags().stream().map(Tag::getName).collect(Collectors.toSet()))
                 .type(book.getType().getName())
                 .translation(convertingTranslationToDTO(book.getTranslation())).build();
     }
