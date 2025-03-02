@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.util.Collection;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
@@ -24,7 +26,7 @@ public class NameRequest {
     @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "alt")
     @Schema(description = "альтернативные названия")
-    private String alternative;
+    private Collection<String> alternative;
     @Schema(description = "Короткая метка")
     private String label;
 }

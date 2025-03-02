@@ -1,10 +1,8 @@
-package club.ttg.dnd5.domain.species.rest.mapper;
+package club.ttg.dnd5.domain.species.rest.dto;
 
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.common.rest.dto.SizeDto;
-import club.ttg.dnd5.domain.species.rest.dto.FeatureRequest;
-import club.ttg.dnd5.domain.species.rest.dto.MovementAttributes;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
