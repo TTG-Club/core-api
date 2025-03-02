@@ -26,9 +26,6 @@ import java.util.List;
         }
 )
 public class Species extends CreatureProperties implements HasSourceEntity {
-    /** Размеры */
-    @Embedded
-    private SpeciesSize size;
 
     /** Умения */
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)

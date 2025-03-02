@@ -40,6 +40,7 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.fly", target = "fly")
     @Mapping(source = "properties.movementAttributes.climb", target = "climb")
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
+    @Mapping(source = "properties.darkVision", target = "darkVision")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     Species toEntity(SpeciesRequest request);
 
