@@ -1,7 +1,5 @@
 package club.ttg.dnd5.domain.book.model;
 
-import club.ttg.dnd5.domain.common.model.HasTagEntity;
-import club.ttg.dnd5.domain.common.model.Tag;
 import club.ttg.dnd5.domain.common.model.Timestamped;
 import club.ttg.dnd5.domain.common.model.Translation;
 import jakarta.persistence.*;
@@ -18,7 +16,7 @@ import java.util.Set;
 @Table(name = "books")
 @AllArgsConstructor
 @Builder
-public class Book extends Timestamped implements HasTagEntity {
+public class Book extends Timestamped {
     @Id
     @Column(unique = true, nullable = false)
     private String sourceAcronym;
@@ -45,14 +43,6 @@ public class Book extends Timestamped implements HasTagEntity {
     )
     @Column(name = "author_name") // Column for the author names
     private Set<String> authors = new HashSet<>();
-
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "book_tags", // name of the join table
-            joinColumns = @JoinColumn(name = "book_id"), // foreign key for the book
-            inverseJoinColumns = @JoinColumn(name = "tag_id") // foreign key for the tag
-    )
-    private Set<Tag> tags = new HashSet<>(); // Set of tags associated with the book
 
     public Book(String source) {
         this.sourceAcronym = source;
