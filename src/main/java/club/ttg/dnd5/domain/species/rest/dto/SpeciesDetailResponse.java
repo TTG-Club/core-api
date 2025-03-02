@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
-import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +15,7 @@ import java.util.LinkedHashSet;
 @Getter
 @Setter
 @Schema(description = "Виды и происхождения")
-public class SpeciesDetailResponse extends BaseDto {
+public class SpeciesDetailResponse extends BaseResponse {
     @JsonProperty(value = "properties")
     private SpeciesPropertiesDto properties = new SpeciesPropertiesDto();
     private String linkImageUrl;
@@ -31,6 +31,6 @@ public class SpeciesDetailResponse extends BaseDto {
 
     @Schema(description = "Умения")
     private Collection<SpeciesFeatureResponse> features;
-    private NameDto group = new NameDto();
+    private NameResponse group = new NameResponse();
 }
 

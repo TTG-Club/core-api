@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
-import java.util.ArrayList;
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
@@ -15,7 +13,7 @@ import java.util.ArrayList;
 @AllArgsConstructor
 @JsonRootName("name")
 @Builder
-public class NameDto {
+public class NameRequest {
     @JsonProperty(value = "rus")
     @Schema(description = "русское название", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name = "";
