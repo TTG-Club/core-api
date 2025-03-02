@@ -1,17 +1,11 @@
 package club.ttg.dnd5.domain.common.model;
 
-import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.species.model.Species;
-import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "tags")
@@ -31,14 +25,14 @@ public class Tag {
     @Enumerated(EnumType.STRING)
     private TagType tagType;
 
-    @ManyToMany(mappedBy = "tags") // This is the inverse side of the relationship
-    private Set<Book> books; // Set of books associated with the tag
-
-    @ManyToMany(mappedBy = "tags")  // The "tags" field in SpeciesFeature will manage the relationship
-    private Set<SpeciesFeature> speciesFeatures = new HashSet<>();
-
-    @ManyToMany(mappedBy = "tags")
-    private Set<Species> species = new HashSet<>();
+//    @ManyToMany(mappedBy = "tags") // This is the inverse side of the relationship
+//    private Set<Book> books; // Set of books associated with the tag
+//
+//    @ManyToMany(mappedBy = "tags")  // The "tags" field in SpeciesFeature will manage the relationship
+//    private Set<SpeciesFeature> speciesFeatures = new HashSet<>();
+//
+//    @ManyToMany(mappedBy = "tags")
+//    private Set<Species> species = new HashSet<>();
 
     public Tag(String name) {
         this.name = name;
