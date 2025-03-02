@@ -13,9 +13,6 @@ import java.util.Collection;
 @Setter
 @MappedSuperclass
 public abstract class CreatureProperties extends NamedEntity {
-    /** Размеры */
-    @Embedded
-    private SpeciesSize size;
 
     /** Тип существа */
     @Enumerated(EnumType.STRING)

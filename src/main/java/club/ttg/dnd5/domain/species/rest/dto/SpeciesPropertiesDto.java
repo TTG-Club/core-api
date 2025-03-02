@@ -7,15 +7,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
+
 @JsonRootName(value = "properties")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
 public class SpeciesPropertiesDto {
     @JsonProperty(value = "speed")
-    MovementAttributes movementAttributes = new MovementAttributes();
+    private MovementAttributes movementAttributes = new MovementAttributes();
     @Schema(description = "Размеры")
-    private String size;
+    private Collection<String> sizes;
     @Schema(description = "Тип существа")
     private String type;
     @Schema(description = "Дальность темного зрение если есть")

@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -29,7 +30,7 @@ public class SpeciesSize {
             name = "species_size",
             columnDefinition = "species_size[]"
     )
-    private List<Size> size;
+    private List<Size> size = new ArrayList<>(0);
     /** Размер текстом */
     private String text;
 }
