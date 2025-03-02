@@ -15,7 +15,6 @@ public interface ClassFeatureMapper {
 
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")
-    @Mapping(source = "name.alternative", target = "alternative")
     ClassFeature toEntity(ClassFeatureRequest classFeatureDto);
 
 }

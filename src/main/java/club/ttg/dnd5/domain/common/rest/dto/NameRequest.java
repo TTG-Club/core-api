@@ -11,8 +11,6 @@ import java.util.Collection;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
-@RequiredArgsConstructor
-@AllArgsConstructor
 @JsonRootName("name")
 @Builder
 public class NameRequest {
