@@ -1,0 +1,408 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1740869618667-0
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - sql:
+            sql: CREATE TYPE species_size AS ENUM ('UNDEFINED','TINY','SMALL','MEDIUM', 'LARGE','HUGE','GARGANTUAN')
+  - changeSet:
+      id: 1740869618667-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: book_id
+                  type: VARCHAR(255)
+              - column:
+                  name: author_name
+                  type: VARCHAR(255)
+            tableName: book_authors
+  - changeSet:
+      id: 1740869618667-2
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_book_tags
+                  name: book_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_book_tags
+                  name: tag_id
+                  type: BIGINT
+            tableName: book_tags
+  - changeSet:
+      id: 1740869618667-3
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_books
+                  name: source_acronym
+                  type: VARCHAR(255)
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  constraints:
+                    nullable: false
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: english_name
+                  type: VARCHAR(255)
+              - column:
+                  name: alt_name
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: type
+                  type: VARCHAR(255)
+              - column:
+                  name: book_date
+                  type: DATE
+              - column:
+                  name: image
+                  type: VARCHAR(255)
+              - column:
+                  name: translation_date
+                  type: DATE
+            tableName: books
+  - changeSet:
+      id: 1740869618667-4
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_sources
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  constraints:
+                    nullable: false
+                  name: page
+                  type: INT
+              - column:
+                  name: book_info_id
+                  type: VARCHAR(255)
+              - column:
+                  name: user_id
+                  type: VARCHAR(255)
+            tableName: sources
+  - changeSet:
+      id: 1740869618667-5
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_species
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  name: type
+                  type: VARCHAR(255)
+              - column:
+                  defaultValueNumeric: !!float '30'
+                  name: speed
+                  type: int
+              - column:
+                  name: fly
+                  type: INT
+              - column:
+                  name: climb
+                  type: INT
+              - column:
+                  name: swim
+                  type: INT
+              - column:
+                  name: dark_vision
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: english
+                  type: VARCHAR(255)
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: short_name
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: link_image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: parent_id
+                  type: VARCHAR(255)
+              - column:
+                  name: source
+                  type: BIGINT
+              - column:
+                  name: species_size
+                  type: species_size[]
+              - column:
+                  name: text
+                  type: VARCHAR(255)
+            tableName: species
+  - changeSet:
+      id: 1740869618667-6
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_species_features
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  name: source
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: english
+                  type: VARCHAR(255)
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: short_name
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: species_url
+                  type: VARCHAR(255)
+            tableName: species_features
+  - changeSet:
+      id: 1740869618667-7
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: species_id
+                  type: VARCHAR(255)
+              - column:
+                  name: gallery_url
+                  type: VARCHAR(255)
+            tableName: species_gallery
+  - changeSet:
+      id: 1740869618667-8
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: translation_id
+                  type: VARCHAR(255)
+              - column:
+                  name: author_name
+                  type: VARCHAR(255)
+            tableName: translation_authors
+  - changeSet:
+      id: 1740869618667-9
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+            indexName: name_index
+            tableName: species
+  - changeSet:
+      id: 1740869618667-10
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: book_info_id
+            baseTableName: sources
+            constraintName: FK_SOURCES_ON_BOOK_INFO
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+  - changeSet:
+      id: 1740869618667-11
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: source
+            baseTableName: species_features
+            constraintName: FK_SPECIES_FEATURES_ON_SOURCE
+            referencedColumnNames: id
+            referencedTableName: sources
+  - changeSet:
+      id: 1740869618667-12
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: species_url
+            baseTableName: species_features
+            constraintName: FK_SPECIES_FEATURES_ON_SPECIES_URL
+            referencedColumnNames: url
+            referencedTableName: species
+  - changeSet:
+      id: 1740869618667-13
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: parent_id
+            baseTableName: species
+            constraintName: FK_SPECIES_ON_PARENT
+            referencedColumnNames: url
+            referencedTableName: species
+  - changeSet:
+      id: 1740869618667-14
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: source
+            baseTableName: species
+            constraintName: FK_SPECIES_ON_SOURCE
+            referencedColumnNames: id
+            referencedTableName: sources
+  - changeSet:
+      id: 1740869618667-15
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: book_id
+            baseTableName: book_authors
+            constraintName: fk_book_authors_on_book
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+  - changeSet:
+      id: 1740869618667-16
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: book_id
+            baseTableName: book_tags
+            constraintName: fk_book_tags_on_book
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+  - changeSet:
+      id: 1740869618667-18
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: species_id
+            baseTableName: species_gallery
+            constraintName: fk_species_gallery_on_species
+            referencedColumnNames: url
+            referencedTableName: species
+  - changeSet:
+      id: 1740869618667-19
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: translation_id
+            baseTableName: translation_authors
+            constraintName: fk_translation_authors_on_book
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+
