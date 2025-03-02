@@ -35,6 +35,7 @@ public class ItemServiceImpl implements ItemService {
         return switch (item) {
             case Armor armor -> itemMapper.toDetailDto(armor);
             case Weapon weapon -> itemMapper.toDetailDto(weapon);
+            case Tool tool -> itemMapper.toDetailDto(tool);
             case Ship ship -> itemMapper.toDetailDto(ship);
             case Mount mount -> itemMapper.toDetailDto(mount);
             case Item object -> itemMapper.toDetailDto(object);

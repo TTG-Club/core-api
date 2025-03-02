@@ -11,18 +11,23 @@ import org.mapstruct.Mapping;
 public interface ItemMapper {
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
+    @Mapping(target = "type", constant = "ITEM")
     ItemDetailResponse toDetailDto(final Item item);
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
+    @Mapping(target = "type", constant = "ARMOR")
     ItemDetailResponse toDetailDto(final Armor armor);
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
+    @Mapping(target = "type", constant = "WEAPON")
     ItemDetailResponse toDetailDto(final Weapon weapon);
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
+    @Mapping(target = "type", constant = "SHIP")
     ItemDetailResponse toDetailDto(final Ship ship);
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
+    @Mapping(target = "type", constant = "MOUNT")
     ItemDetailResponse toDetailDto(final Mount mount);
 
     @Mapping(source = "name", target = "name.name")
