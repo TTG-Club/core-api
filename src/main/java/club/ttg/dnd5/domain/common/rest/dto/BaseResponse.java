@@ -16,7 +16,7 @@ import java.time.Instant;
 public abstract class BaseResponse extends TagType.BaseUrl {
     @JsonProperty(value = "name")
     @Schema(description = "название", requiredMode = Schema.RequiredMode.REQUIRED)
-    private NameResponse name = new NameResponse();
+    private NameResponse name;
     @Schema(description = "описание", requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
     @JsonProperty(value = "source")
