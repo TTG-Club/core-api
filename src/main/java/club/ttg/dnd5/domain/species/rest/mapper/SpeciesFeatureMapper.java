@@ -12,7 +12,7 @@ import org.mapstruct.Named;
 public interface SpeciesFeatureMapper {
     SpeciesFeatureResponse toDto(SpeciesFeature speciesFeature);
     @Mapping(target = "url", source = "name", qualifiedByName = "generateUrl")
-    @Mapping(target = "english", defaultValue = "")
+    @Mapping(target = "english", qualifiedByName = "generateUrl")
     SpeciesFeature toEntity(FeatureRequest request);
 
     @Named("generateUrl")
