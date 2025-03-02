@@ -26,6 +26,15 @@ import java.util.List;
         }
 )
 public class Species extends CreatureProperties implements HasSourceEntity {
+    /** Размеры */
+    @Embedded
+    private SpeciesSize size;
+
+    /** Умения */
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "species_url")
+    private Collection<SpeciesFeature> features;
+
     private String linkImageUrl; //для изоброжения бэкграунда
 
     /** Родительский вид */
@@ -35,23 +44,17 @@ public class Species extends CreatureProperties implements HasSourceEntity {
 
     /** Происхождения */
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Collection<Species> lineages = new ArrayList<>();
+    private Collection<Species> lineages;
 
     /** источник */
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "source")
     private Source source = new Source();
-
-
-    /** Умения */
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "species_url")
-    @Cascade(org.hibernate.annotations.CascadeType.ALL)
-    private Collection<SpeciesFeature> features;
 
     /** Ссылки на изображения для галереи */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id"))
     @Column(name = "gallery_url")
     private List<String> galleryUrl = new ArrayList<>();
+
 }

@@ -21,7 +21,7 @@ import java.util.Set;
 @Table(name = "class_features",
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
-public class ClassFeature extends FeatureBase implements HasSourceEntity, HasTagEntity {
+public class ClassFeature extends FeatureBase implements HasTagEntity {
     private short level;
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinTable(

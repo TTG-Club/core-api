@@ -52,6 +52,10 @@ public class SpeciesService {
     @Transactional
     public SpeciesDetailResponse save(SpeciesRequest request) {
         Species species = speciesMapper.toEntity(request);
+        var source = sourceRepository.findSourceByBookInfo_Url(request.getSource().getUrl())
+                .orElseThrow();
+        //species.setSource(source);
+        //species.getFeatures().forEach(f -> f.setSource(source));
         if (speciesRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
