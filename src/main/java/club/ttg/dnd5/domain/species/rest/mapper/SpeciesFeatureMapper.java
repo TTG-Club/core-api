@@ -8,8 +8,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface SpeciesFeatureMapper {
-    @Mapping(source = "name", target = "name.name")
-    @Mapping(source = "english", target = "name.english")
     SpeciesFeatureResponse toDto(SpeciesFeature speciesFeature);
 
     SpeciesFeature toEntity(FeatureRequest request);

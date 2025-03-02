@@ -13,10 +13,10 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
-public abstract class BaseDto extends TagType.BaseUrl {
+public abstract class BaseResponse extends TagType.BaseUrl {
     @JsonProperty(value = "name")
     @Schema(description = "название", requiredMode = Schema.RequiredMode.REQUIRED)
-    private NameDto name = new NameDto();
+    private NameResponse name;
     @Schema(description = "описание", requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
     @JsonProperty(value = "source")

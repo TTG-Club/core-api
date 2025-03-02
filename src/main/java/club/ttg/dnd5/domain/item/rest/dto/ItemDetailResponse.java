@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
-import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -13,10 +13,10 @@ import java.util.Set;
 @Getter
 @Setter
 @Schema(name = "Предметы, снаряжение и прочие объекты")
-public class ItemDetailResponse extends BaseDto {
+public class ItemDetailResponse extends BaseResponse {
     private String type;
 
-    private Set<NameDto> types;
+    private Set<NameResponse> types;
     /** Стоимость предмета */
     @Schema(name = "Стоимость")
     private String cost;
