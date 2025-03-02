@@ -10,6 +10,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,9 +29,9 @@ public interface ClassMapper {
 
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")
-    @Mapping(source = "name.alternative", target = "alternative")
     @Mapping(source = "genitive", target = "genitive")
     @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "toDice")
+    @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     ClassCharacter toEntity(ClassRequest request);
 
     @Named("toDice")
@@ -48,5 +49,10 @@ public interface ClassMapper {
     @Named("diceToString")
     default String diceToString(final Dice dice) {
         return dice.getName();
+    }
+
+    @Named("collectToString")
+    default String collectToString(Collection<String> names) {
+        return String.join(" ", names);
     }
 }
