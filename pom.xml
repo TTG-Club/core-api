@@ -30,7 +30,7 @@
 		<java.version>17</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
+		<hypersistence-utils.version>3.9.2</hypersistence-utils.version>
 		<org.springdoc.version>2.6.0</org.springdoc.version>
 		<jjwt.version>0.12.5</jjwt.version>
 		<mapstruct.version>1.6.0.Beta2</mapstruct.version>
@@ -134,6 +134,11 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>${commons-io.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.hypersistence</groupId>
+			<artifactId>hypersistence-utils-hibernate-63</artifactId>
+			<version>${hypersistence-utils.version}</version>
 		</dependency>
 	</dependencies>
 
