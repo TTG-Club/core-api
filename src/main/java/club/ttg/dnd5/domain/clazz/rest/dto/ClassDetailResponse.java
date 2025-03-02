@@ -1,9 +1,8 @@
 package club.ttg.dnd5.domain.clazz.rest.dto;
 
-import club.ttg.dnd5.domain.common.dictionary.Ability;
-import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.common.GroupStrategy;
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.book.model.Source;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,7 +18,7 @@ import java.util.Collection;
 @Getter
 @Setter
 @Schema(description = "Информация о классе или подклассе")
-public class ClassDetailResponse extends BaseDto implements GroupStrategy {
+public class ClassDetailResponse extends BaseResponse implements GroupStrategy {
     @Schema(description = "Основная характеристика")
     private String mainAbility;
     @Schema(description = "Хиты")
@@ -38,7 +37,7 @@ public class ClassDetailResponse extends BaseDto implements GroupStrategy {
     @Schema(description = "Умения класса")
     private Collection<ClassFeatureDto> features;
 
-    private NameDto group = new NameDto();
+    private NameResponse group = new NameResponse();
 
     @Override
     public void determineGroup(final Source source) {

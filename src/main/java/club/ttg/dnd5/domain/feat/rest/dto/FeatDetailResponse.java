@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.dto;
 
-import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,7 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class FeatDetailResponse extends BaseDto {
+public class FeatDetailResponse extends BaseResponse {
     private String category;
     private String prerequisite;
 }

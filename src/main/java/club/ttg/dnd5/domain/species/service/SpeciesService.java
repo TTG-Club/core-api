@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.service;
 
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesRequest;
@@ -157,7 +157,7 @@ public class SpeciesService {
             parent.setUrl(speciesParent.getUrl());
 
             // Build the NameBasedDTO using a builder for better readability
-            NameDto parentNameBased = NameDto.builder()
+            NameResponse parentNameBased = NameResponse.builder()
                     .name(speciesParent.getName())
                     .english(speciesParent.getEnglish())
                     .build();
@@ -178,7 +178,7 @@ public class SpeciesService {
                         linkedSpeciesDto.setUrl(subSpecies.getUrl());
 
                         // Build the NameBasedDTO
-                        NameDto nameBasedDTO = NameDto.builder()
+                        NameResponse nameBasedDTO = NameResponse.builder()
                                 .name(subSpecies.getName())
                                 .english(subSpecies.getEnglish())
                                 .build();
@@ -224,7 +224,7 @@ public class SpeciesService {
         }
 
         // Update additional fields if needed
-        NameDto nameBasedDTO = linkedSpeciesDto.getName();
+        NameResponse nameBasedDTO = linkedSpeciesDto.getName();
         if (nameBasedDTO != null) {
             subSpecies.setName(nameBasedDTO.getName());
             subSpecies.setEnglish(nameBasedDTO.getEnglish());

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.background.rest.dto;
 
-import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -10,7 +10,7 @@ import lombok.*;
 @Getter
 @Setter
 @Schema(description = "Информация о происхождении")
-public class BackgroundDetailResponse extends BaseDto {
+public class BackgroundDetailResponse extends BaseResponse {
     @Schema(description = "Характеристики:")
     private String abilityScores;
     @Schema(description = "Черта")

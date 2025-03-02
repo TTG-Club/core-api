@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.book.service;
 
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.dto.base.TranslationDto;
 import club.ttg.dnd5.domain.book.rest.dto.BookDetailResponse;
 import club.ttg.dnd5.exception.ApiException;
@@ -81,7 +81,7 @@ public class BookService {
     }
 
     private Book convertingCreateSourceToEntity(BookDetailResponse sourceBookDto) {
-        NameDto name = sourceBookDto.getName();
+        NameResponse name = sourceBookDto.getName();
         if (StringUtils.isBlank(sourceBookDto.getUrl())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Отсутствует обязательное поле `url`");
         }
@@ -112,7 +112,7 @@ public class BookService {
 
         return BookDetailResponse.builder()
                 .year(book.getBookDate().getYear())
-                .name(NameDto.builder()
+                .name(NameResponse.builder()
                         .name(book.getName())
                         .english(book.getEnglishName())
                         .build())
