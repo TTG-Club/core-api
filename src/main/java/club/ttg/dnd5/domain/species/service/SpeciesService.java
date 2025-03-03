@@ -55,10 +55,12 @@ public class SpeciesService {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
         Species species = speciesMapper.toEntity(request);
-        var source = sourceRepository.findSourceByBookInfo_Url(request.getSource().getUrl())
-                .orElseThrow();
-        species.setSource(source);
-        //species.getFeatures().forEach(f -> f.setSource(source));
+        var book = bookRepository.findByUrl(request.getSource().getUrl())
+                .orElseThrow(() -> new EntityNotFoundException("Книга не найдена: "
+                        + request.getSource().getUrl()));
+
+        species.setSource(book);
+        species.getFeatures().forEach(f -> f.setSource(book));
 
         Species save = speciesRepository.save(species);
         return speciesMapper.toDetailDto(save);
