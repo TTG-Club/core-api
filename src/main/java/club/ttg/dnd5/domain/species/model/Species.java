@@ -1,12 +1,10 @@
 package club.ttg.dnd5.domain.species.model;
 
-import club.ttg.dnd5.domain.book.model.Source;
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
+import club.ttg.dnd5.domain.book.model.Book;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,7 +23,7 @@ import java.util.List;
                 @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class Species extends CreatureProperties implements HasSourceEntity {
+public class Species extends CreatureProperties {
 
     /** Умения */
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -45,8 +43,9 @@ public class Species extends CreatureProperties implements HasSourceEntity {
 
     /** источник */
     @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "source")
-    private Source source = new Source();
+    @JoinColumn(name = "book")
+    private Book source = new Book();
+    private String user;
 
     /** Ссылки на изображения для галереи */
     @ElementCollection(fetch = FetchType.EAGER)
