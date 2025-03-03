@@ -18,7 +18,7 @@ import java.util.Collection;
 @Getter
 @Setter
 @Schema(description = "Информация о классе или подклассе")
-public class ClassDetailResponse extends BaseResponse implements GroupStrategy {
+public class ClassDetailResponse extends BaseResponse {
     @Schema(description = "Основная характеристика")
     private String mainAbility;
     @Schema(description = "Хиты")
@@ -39,11 +39,4 @@ public class ClassDetailResponse extends BaseResponse implements GroupStrategy {
 
     private NameResponse group = new NameResponse();
 
-    @Override
-    public void determineGroup(final Source source) {
-        if (group != null && source.getBookInfo() != null) {
-            this.group.setName("Происхождение");
-            this.group.setEnglish("Basic");
-        }
-    }
 }
