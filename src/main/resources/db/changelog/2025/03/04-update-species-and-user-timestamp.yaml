@@ -1,13 +1,5 @@
 databaseChangeLog:
   - changeSet:
-      id: 1741035749924-4
-      author: svifty7
-      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
-      changes:
-        - dropForeignKeyConstraint:
-            baseTableName: book_tags
-            constraintName: fk_book_tags_on_book
-  - changeSet:
       id: 1741035749924-5
       author: svifty7
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
@@ -40,14 +32,6 @@ databaseChangeLog:
             constraintName: FK_SPECIES_ON_BOOK
             referencedColumnNames: source_acronym
             referencedTableName: books
-  - changeSet:
-      id: 1741035749924-7
-      author: svifty7
-      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
-      changes:
-        - dropTable:
-            cascadeConstraints: true
-            tableName: book_tags
   - changeSet:
       id: 1741035749924-9
       author: svifty7
