@@ -1,13 +1,5 @@
 databaseChangeLog:
   - changeSet:
-      id: 1741035749924-5
-      author: svifty7
-      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
-      changes:
-        - dropForeignKeyConstraint:
-            baseTableName: species
-            constraintName: fk_species_on_source
-  - changeSet:
       id: 1741035749924-1
       author: svifty7
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
