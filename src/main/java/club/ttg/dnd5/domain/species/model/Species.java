@@ -45,7 +45,6 @@ public class Species extends CreatureProperties {
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "book")
     private Book source = new Book();
-    private String user;
 
     /** Ссылки на изображения для галереи */
     @ElementCollection(fetch = FetchType.EAGER)
