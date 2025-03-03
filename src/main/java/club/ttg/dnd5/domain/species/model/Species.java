@@ -44,7 +44,7 @@ public class Species extends CreatureProperties implements HasSourceEntity {
     private Collection<Species> lineages;
 
     /** источник */
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "source")
     private Source source = new Source();
 

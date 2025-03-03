@@ -15,13 +15,13 @@ import lombok.Setter;
 )
 public class Source extends Timestamped {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sources_id_seq")
-    @SequenceGenerator(name = "sources_id_seq", sequenceName = "sources_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sources_seq")
+    @SequenceGenerator(name = "sources_seq", sequenceName = "sources_id_seq")
     private Long id;
 
     private int page;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @ManyToOne
     @JoinColumn(name = "book_info_id", referencedColumnName = "sourceAcronym")
     private Book bookInfo; //null -> userId made book by userId
     private String userId;

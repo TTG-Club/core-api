@@ -18,19 +18,11 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonRootName("source")
-public class SourceResponse implements GroupStrategy {
+public class SourceResponse {
     private NameResponse name = new NameResponse();
     private NameResponse group = new NameResponse();
     private int page;
     private boolean homebrew = false;
     private boolean thirdParty = false;
 
-    @Override
-    public void determineGroup(Source source) {
-        Book bookInfo = source.getBookInfo();
-        if (bookInfo != null) {
-            group.setName("Официальные источники");
-            group.setEnglish("Basic");
-        }
-    }
 }
