@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.awt.print.Book;
 import java.util.Set;
 
 @Getter
@@ -20,7 +21,7 @@ import java.util.Set;
         @Index(name = "url_index", columnList = "url"),
         @Index(name = "name_index", columnList = "name, english, alternative")
 })
-public class Item extends NamedEntity implements HasSourceEntity {
+public class Item extends NamedEntity {
     @ElementCollection(targetClass = ItemType.class)
     @Enumerated(EnumType.STRING)
     private Set<ItemType> types;
