@@ -1,0 +1,125 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1741038123215-93
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: book_tags
+            constraintName: fk_book_tags_on_book
+  - changeSet:
+      id: 1741038123215-94
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: species_features
+            constraintName: fk_species_features_on_source
+  - changeSet:
+      id: 1741038123215-95
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: species
+            constraintName: fk_species_on_source
+  - changeSet:
+      id: 1741038123215-36
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: book
+                  type: VARCHAR(255)
+              - column:
+                  name: user
+                  type: VARCHAR(255)
+            tableName: species
+  - changeSet:
+      id: 1741038123215-37
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: user
+                  type: VARCHAR(255)
+            tableName: books
+  - changeSet:
+      id: 1741038123215-38
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: user
+                  type: VARCHAR(255)
+            tableName: sources
+  - changeSet:
+      id: 1741038123215-40
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: user
+                  type: VARCHAR(255)
+            tableName: species_features
+  - changeSet:
+      id: 1741038123215-96
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropTable:
+            cascadeConstraints: true
+            tableName: book_tags
+  - changeSet:
+      id: 1741038123215-97
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: short_name
+            tableName: species
+        - dropColumn:
+            columnName: source
+            tableName: species
+  - changeSet:
+      id: 1741038123215-98
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: short_name
+            tableName: species_features
+        - dropColumn:
+            columnName: source
+            tableName: species_features
+  - changeSet:
+      id: 1741038123215-1
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - alterSequence:
+            incrementBy: 50
+            sequenceName: sources_id_seq
+  - changeSet:
+      id: 1741038123215-3
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    foreignKeyName: FK_SPECIES_FEATURES_ON_SOURCE
+                    references: books(source_acronym)
+                  name: source
+                  type: VARCHAR(255)
+            tableName: species_features
+
