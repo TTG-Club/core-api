@@ -19,12 +19,16 @@ public interface ClassMapper {
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
     @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "diceToString")
+    @Mapping(source = "source.name", target = "source.group.name")
+    @Mapping(source = "source.sourceAcronym", target = "source.name.name")
     ClassShortResponse toShortDto(ClassCharacter entity);
 
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
     @Mapping(source = "mainAbility", target = "mainAbility", qualifiedByName = "abilityToString")
     @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "diceToString")
+    @Mapping(source = "source.name", target = "source.group.name")
+    @Mapping(source = "source.sourceAcronym", target = "source.name.name")
     ClassDetailResponse toDetailDto(ClassCharacter entity);
 
     @Mapping(source = "name.name", target = "name")
