@@ -13,10 +13,16 @@ import lombok.Setter;
 @Entity
 @DiscriminatorValue("TOOL")
 public class Tool extends Item {
-
+    /**
+     * Хапактеристика
+     */
     public String ability;
-
+    /**
+     * Использование
+     */
     public String uses;
-
+    /**
+     * Создание
+     */
     public String creation;
 }
