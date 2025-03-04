@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
-import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,6 +30,5 @@ public class SpeciesDetailResponse extends BaseResponse {
 
     @Schema(description = "Умения")
     private Collection<SpeciesFeatureResponse> features;
-    private NameResponse group = new NameResponse();
 }
 
