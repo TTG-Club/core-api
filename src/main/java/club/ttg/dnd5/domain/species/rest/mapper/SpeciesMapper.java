@@ -22,8 +22,9 @@ public interface SpeciesMapper {
     //@Mapping(source = "speed", target = "properties.movementAttributes.base")
     @Mapping(source = "fly", target = "properties.movementAttributes.fly")
     //@Mapping(source = "size.text", target = "sizes.")
-    @Mapping(source = "source.name", target = "source.group.name")
-    @Mapping(source = "source.sourceAcronym", target = "source.name.name")
+    @Mapping(source = "source.name", target = "source.name.name")
+    @Mapping(source = "source.englishName", target = "source.name.english")
+    @Mapping(source = "source.sourceAcronym", target = "source.name.label")
     SpeciesDetailResponse toDetailDto(Species species);
 
     @Mapping(source = "name", target = "name.name")
