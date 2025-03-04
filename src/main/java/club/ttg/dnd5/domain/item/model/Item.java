@@ -1,14 +1,11 @@
 package club.ttg.dnd5.domain.item.model;
 
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
-import club.ttg.dnd5.domain.book.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.awt.print.Book;
 import java.util.Set;
 
 @Getter
@@ -29,11 +26,4 @@ public class Item extends NamedEntity {
     private String cost;
     /** Вес предмета */
     private String weight;
-
-    /**
-     * Источник
-     */
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "source")
-    private Source source = new Source();
 }

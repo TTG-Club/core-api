@@ -14,7 +14,8 @@ import lombok.Setter;
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
 public class SpeciesFeature extends NamedEntity {
-    @ManyToOne
-    @JoinColumn(name = "source")
-    private Book source;
+    @Column(nullable = false)
+    private String name;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }

@@ -1,9 +1,7 @@
 package club.ttg.dnd5.domain.clazz.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
-import club.ttg.dnd5.domain.common.GroupStrategy;
 import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
-import club.ttg.dnd5.domain.book.model.Source;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;

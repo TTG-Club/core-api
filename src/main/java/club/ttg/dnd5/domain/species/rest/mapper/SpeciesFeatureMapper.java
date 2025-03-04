@@ -15,7 +15,6 @@ public interface SpeciesFeatureMapper {
 
     @Mapping(target = "url", source = "name", qualifiedByName = "generateUrl")
     @Mapping(target = "english", source = "name", qualifiedByName = "generateUrl")
-    @Mapping(source = "source.name.name", target = "source.name")
     SpeciesFeature toEntity(FeatureRequest request);
 
     @Named("generateUrl")
