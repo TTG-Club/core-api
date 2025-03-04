@@ -3,19 +3,16 @@ package club.ttg.dnd5.domain.species.model;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-@Entity
-@Table(
-        name = "species_features",
-        indexes = {@Index(name = "url_index", columnList = "url")}
-)
-public class SpeciesFeature extends NamedEntity {
-    @Column(nullable = false)
+@AllArgsConstructor
+@NoArgsConstructor
+public class SpeciesFeature {
     private String name;
-    @Column(columnDefinition = "TEXT")
     private String description;
 }
