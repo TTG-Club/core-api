@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -13,13 +14,11 @@ import java.util.Collection;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
-public class SpeciesPropertiesDto {
+public class SpeciesPropertiesRequest {
     @JsonProperty(value = "speed")
     private MovementAttributes movementAttributes = new MovementAttributes();
     @Schema(description = "Размеры")
-    private Collection<String> sizes;
+    private Collection<Size> size;
     @Schema(description = "Тип существа")
     private String type;
-    @Schema(description = "Дальность темного зрение если есть")
-    private int darkVision;
 }
