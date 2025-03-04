@@ -49,8 +49,8 @@ public class SpeciesService {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
         Species species = speciesMapper.toEntity(request);
-        if (StringUtils.hasText(request.getParentUrl())) {
-            var parent = findByUrl(request.getParentUrl());
+        if (StringUtils.hasText(request.getParent())) {
+            var parent = findByUrl(request.getParent());
             species.setParent(parent);
         }
         var book = bookRepository.findByUrl(request.getSource().getUrl())

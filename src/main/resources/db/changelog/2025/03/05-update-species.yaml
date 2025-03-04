@@ -1,0 +1,9 @@
+databaseChangeLog:
+ - changeSet:
+      id: change-parent-id-to-parent-url-in-species
+      author: Magistrus
+      changes:
+        - renameColumn:
+            tableName: species
+            oldColumnName: parent_id
+            newColumnName: parent_url
