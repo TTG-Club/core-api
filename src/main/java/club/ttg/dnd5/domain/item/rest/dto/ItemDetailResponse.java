@@ -1,8 +1,6 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
-import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
-import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,7 +15,6 @@ public class ItemDetailResponse extends BaseResponse {
     @Schema(name = "Типы объекта разделенные запятой")
     private String type;
 
-    private Set<NameResponse> types;
     @Schema(name = "Категория доспеха")
     private String category;
     @JsonProperty(value = "ac")

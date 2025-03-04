@@ -11,9 +11,21 @@ import lombok.Setter;
 @Entity
 @DiscriminatorValue("SHIP")
 public class Ship extends Item {
+    /**
+     * Скорость.
+     */
     private String speed;
+    /**
+     * Команда
+     */
     private String crew;
+    /**
+     * Пассажиры
+     */
     private String passengers;
+    /**
+     * Тонаж
+     */
     private String cargo;
     @JsonProperty(value = "ac")
     private String armorClass;
