@@ -11,7 +11,7 @@ import java.util.Collection;
 @Setter
 @Schema(description = "Вид")
 public class SpeciesRequest extends BaseRequest {
-    private SpeciesPropertiesDto properties;
+    private SpeciesPropertiesRequest properties;
 
     @Schema(description = "Умения")
     private Collection<FeatureRequest> features;
