@@ -8,11 +8,8 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.book.model.Source;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
-import club.ttg.dnd5.domain.common.repository.TagRepository;
 import club.ttg.dnd5.domain.book.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +24,6 @@ import java.util.stream.Stream;
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
     private final BookRepository bookRepository;
-    private final TagRepository tagRepository;
     private final SpeciesMapper speciesMapper;
 
     public boolean exists(String url) {
@@ -58,7 +54,6 @@ public class SpeciesService {
                         + request.getSource().getUrl()));
 
         species.setSource(book);
-        species.getFeatures().forEach(f -> f.setSource(book));
 
         Species save = speciesRepository.save(species);
         return speciesMapper.toDetailDto(save);
@@ -145,13 +140,6 @@ public class SpeciesService {
                 .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
     }
 
-    private void validateSource(Source source) {
-        if (source != null) {
-            Book book = bookRepository.findById(source.getSourceAcronym())
-                    .orElseThrow(() -> new EntityNotFoundException("Book not found with ID: " + source.getId()));
-            source.setBookInfo(book);
-        }
-    }
 
     private void handleParentAndChild(Species species, SpeciesDetailResponse dto) {
         //parent
@@ -204,36 +192,5 @@ public class SpeciesService {
         Species species = speciesMapper.toEntity(request);
         Species updatedSpecies = speciesRepository.save(species);
         return speciesMapper.toDetailDto(updatedSpecies);
-    }
-
-    private void fillSpecies(SpeciesDetailResponse speciesDTO, Species species) {
-        Optional.ofNullable(speciesDTO.getLineages())
-                .ifPresent(subSpeciesDtos -> species.setLineages(
-                        subSpeciesDtos.stream()
-                                .map(this::convertToSpecies) // Convert LinkedSpeciesDto to Species
-                                .toList()
-                ));
-    }
-
-
-    /**
-     * Converts a LinkedSpeciesDto to a Species entity.
-     *
-     * @param linkedSpeciesDto the LinkedSpeciesDto to convert
-     * @return the corresponding Species entity
-     */
-    private Species convertToSpecies(SpeciesDetailResponse linkedSpeciesDto) {
-        Species subSpecies = findByUrl(linkedSpeciesDto.getUrl()); // Find existing species by URL
-        if (subSpecies == null) {
-            throw new IllegalArgumentException("No species found for URL: " + linkedSpeciesDto.getUrl());
-        }
-
-        // Update additional fields if needed
-        NameResponse nameBasedDTO = linkedSpeciesDto.getName();
-        if (nameBasedDTO != null) {
-            subSpecies.setName(nameBasedDTO.getName());
-            subSpecies.setEnglish(nameBasedDTO.getEnglish());
-        }
-        return subSpecies;
     }
 }

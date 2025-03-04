@@ -1,12 +1,13 @@
 package club.ttg.dnd5.domain.species.model;
 
 import club.ttg.dnd5.domain.book.model.Book;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -26,8 +27,8 @@ import java.util.List;
 public class Species extends CreatureProperties {
 
     /** Умения */
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "species_url")
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private Collection<SpeciesFeature> features;
 
     private String linkImageUrl; //для изоброжения бэкграунда
