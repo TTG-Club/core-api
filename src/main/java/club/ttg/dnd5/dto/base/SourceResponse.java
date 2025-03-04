@@ -1,10 +1,6 @@
 package club.ttg.dnd5.dto.base;
 
-
-import club.ttg.dnd5.domain.common.GroupStrategy;
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
-import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.book.model.Source;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import lombok.AllArgsConstructor;
@@ -18,19 +14,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonRootName("source")
-public class SourceResponse implements GroupStrategy {
-    private NameDto name = new NameDto();
-    private NameDto group = new NameDto();
+public class SourceResponse {
+    private NameResponse name = new NameResponse();
+    private NameResponse group = new NameResponse();
     private int page;
-    private boolean homebrew = false;
-    private boolean thirdParty = false;
-
-    @Override
-    public void determineGroup(Source source) {
-        Book bookInfo = source.getBookInfo();
-        if (bookInfo != null) {
-            group.setName("Официальные источники");
-            group.setEnglish("Basic");
-        }
-    }
 }

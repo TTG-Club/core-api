@@ -1,9 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.model;
 
-
-import club.ttg.dnd5.domain.book.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -26,7 +23,7 @@ import java.util.Collection;
                 @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class Beast extends NamedEntity implements HasSourceEntity {
+public class Beast extends NamedEntity {
     /**
      * Размеры существа.
      */
@@ -75,8 +72,4 @@ public class Beast extends NamedEntity implements HasSourceEntity {
      */
     @OneToMany(cascade = CascadeType.ALL)
     private Collection<BeastTrait> traits;
-
-    @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "source")
-    private Source source = new Source();
 }

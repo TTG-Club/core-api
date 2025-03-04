@@ -1,6 +1,6 @@
 package club.ttg.dnd5.dto.base;
 
-import club.ttg.dnd5.domain.common.rest.dto.NameDto;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import lombok.Getter;
 @Builder
 @Getter
 public class ValueDto {
-    NameDto name;
+    NameResponse name;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "значение")
     private Object value;
