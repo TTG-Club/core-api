@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.species.service;
 
-import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
@@ -15,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -49,6 +49,10 @@ public class SpeciesService {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
         Species species = speciesMapper.toEntity(request);
+        if (StringUtils.hasText(request.getParentUrl())) {
+            var parent = findByUrl(request.getParentUrl());
+            species.setParent(parent);
+        }
         var book = bookRepository.findByUrl(request.getSource().getUrl())
                 .orElseThrow(() -> new EntityNotFoundException("Книга не найдена: "
                         + request.getSource().getUrl()));
@@ -138,54 +142,6 @@ public class SpeciesService {
     private Species findByUrl(String url) {
         return speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
-    }
-
-
-    private void handleParentAndChild(Species species, SpeciesDetailResponse dto) {
-        //parent
-        Species speciesParent = species.getParent();
-        if (speciesParent != null) {
-            SpeciesDetailResponse parent = new SpeciesDetailResponse();
-            // Set the URL
-            parent.setUrl(speciesParent.getUrl());
-
-            // Build the NameBasedDTO using a builder for better readability
-            NameResponse parentNameBased = NameResponse.builder()
-                    .name(speciesParent.getName())
-                    .english(speciesParent.getEnglish())
-                    .build();
-
-            // Set the NameBasedDTO in the parent
-            parent.setName(parentNameBased);
-            dto.setParent(parent);
-        }
-
-        Collection<Species> speciesSubSpecies = species.getLineages();
-        if (speciesSubSpecies != null) {
-            // Convert each sub-species to a LinkedSpeciesDto
-            List<SpeciesDetailResponse> lineages = speciesSubSpecies.stream()
-                    .map(subSpecies -> {
-                        SpeciesDetailResponse linkedSpeciesDto = new SpeciesDetailResponse();
-
-                        // Set the URL
-                        linkedSpeciesDto.setUrl(subSpecies.getUrl());
-
-                        // Build the NameBasedDTO
-                        NameResponse nameBasedDTO = NameResponse.builder()
-                                .name(subSpecies.getName())
-                                .english(subSpecies.getEnglish())
-                                .build();
-
-                        // Set the NameBasedDTO
-                        linkedSpeciesDto.setName(nameBasedDTO);
-
-                        return linkedSpeciesDto;
-                    })
-                    .toList();
-
-            // Set the list of LinkedSpeciesDto objects
-            dto.setLineages(lineages);
-        }
     }
 
     private SpeciesDetailResponse getSpeciesResponse(SpeciesRequest request) {
