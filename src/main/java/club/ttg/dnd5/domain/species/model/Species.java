@@ -33,23 +33,23 @@ public class Species extends CreatureProperties {
     private String linkImageUrl; //для изоброжения бэкграунда
 
     /** Родительский вид */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "parent_id")
     private Species parent;
 
     /** Происхождения */
-    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, orphanRemoval = true)
     private Collection<Species> lineages;
 
     /** источник */
-    @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "book")
-    private Book source = new Book();
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Book source;
 
     /** Ссылки на изображения для галереи */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id"))
     @Column(name = "gallery_url")
-    private List<String> galleryUrl = new ArrayList<>();
+    private List<String> galleryUrl;
 
 }

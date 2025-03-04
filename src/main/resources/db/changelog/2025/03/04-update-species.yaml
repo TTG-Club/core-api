@@ -122,4 +122,35 @@ databaseChangeLog:
                   name: source
                   type: VARCHAR(255)
             tableName: species_features
-
+  - changeSet:
+      id: change-user-to-username
+      author: Magistrus
+      changes:
+        - renameColumn:
+            tableName: species
+            oldColumnName: user
+            newColumnName: username
+  - changeSet:
+      id: change-user-to-username-in-book
+      author: Magistrus
+      changes:
+        - renameColumn:
+            tableName: books
+            oldColumnName: user
+            newColumnName: username
+  - changeSet:
+      id: change-user-to-username-in-species-features
+      author: Magistrus
+      changes:
+        - renameColumn:
+            tableName: species_features
+            oldColumnName: user
+            newColumnName: username
+  - changeSet:
+      id: change-user-to-username-in-species-book
+      author: Magistrus
+      changes:
+        - renameColumn:
+            tableName: species
+            oldColumnName: book
+            newColumnName: source
