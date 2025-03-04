@@ -24,9 +24,9 @@ public interface SpeciesMapper {
 
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "source.bookInfo.type.name", target = "source.group.name")
+//    @Mapping(source = "source.bookInfo.type.name", target = "source.group.name")
     @Mapping(source = "imageUrl", target = "image")
-    @Mapping(source = "source.bookInfo.sourceAcronym", target = "source.name.name")
+//    @Mapping(source = "source.bookInfo.sourceAcronym", target = "source.name.name")
     @Mapping(source = "updatedAt", target = "updatedAt")
     SpeciesShortResponse toShortDto(Species species);
 
