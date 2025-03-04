@@ -14,7 +14,6 @@ import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.common.repository.TagRepository;
 import club.ttg.dnd5.domain.book.repository.BookRepository;
-import club.ttg.dnd5.domain.book.SourceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,6 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
-    private final SourceRepository sourceRepository;
     private final BookRepository bookRepository;
     private final TagRepository tagRepository;
     private final SpeciesMapper speciesMapper;
@@ -70,7 +68,7 @@ public class SpeciesService {
         return speciesRepository.findById(parentUrl)
                 .filter(species -> !species.isHiddenEntity())
                 .map(speciesRepository::findByParent)
-                .orElseThrow(() -> new EntityNotFoundException("Parent species not found for URL: " + parentUrl))
+                .orElseThrow(() -> new EntityNotFoundException("Вид не найден для URL: " + parentUrl))
                 .stream()
                 .map(speciesMapper::toDetailDto)
                 .toList();

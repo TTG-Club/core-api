@@ -29,8 +29,11 @@ public interface SpeciesMapper {
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
     @Mapping(source = "imageUrl", target = "image")
-    @Mapping(source = "source.name", target = "source.group.name")
-    @Mapping(source = "source.sourceAcronym", target = "source.name.name")
+    @Mapping(source = "source.type.group", target = "source.group.name")
+    @Mapping(source = "source.type.label", target = "source.group.label")
+    @Mapping(source = "source.name", target = "source.name.name")
+    @Mapping(source = "source.englishName", target = "source.name.english")
+    @Mapping(source = "source.sourceAcronym", target = "source.name.label")
     @Mapping(source = "updatedAt", target = "updatedAt")
     SpeciesShortResponse toShortDto(Species species);
 
@@ -43,6 +46,7 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.climb", target = "climb")
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
     @Mapping(source = "properties.darkVision", target = "darkVision")
+    @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     Species toEntity(SpeciesRequest request);
 

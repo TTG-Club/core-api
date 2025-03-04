@@ -22,7 +22,4 @@ public class SourceResponse {
     private NameResponse name = new NameResponse();
     private NameResponse group = new NameResponse();
     private int page;
-    private boolean homebrew = false;
-    private boolean thirdParty = false;
-
 }

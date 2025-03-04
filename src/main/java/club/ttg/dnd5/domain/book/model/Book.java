@@ -9,13 +9,12 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-@NoArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "books")
-@AllArgsConstructor
-@Builder
 public class Book extends Timestamped {
     @Id
     @Column(unique = true, nullable = false)
@@ -33,8 +32,8 @@ public class Book extends Timestamped {
     private LocalDate bookDate;
     private String image;
 
-    @Embedded
-    private Translation translation;
+    //@Embedded
+    //private Translation translation;
 
     // Collection of authors for the book itself
     @ElementCollection
@@ -44,8 +43,4 @@ public class Book extends Timestamped {
     )
     @Column(name = "author_name") // Column for the author names
     private Set<String> authors = new HashSet<>();
-
-    public Book(String source) {
-        this.sourceAcronym = source;
-    }
 }

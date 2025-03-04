@@ -1,8 +1,8 @@
 package club.ttg.dnd5.domain.clazz.model;
 
-import club.ttg.dnd5.domain.common.model.FeatureBase;
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
+import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.model.HasTagEntity;
+import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.common.model.Tag;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -21,7 +21,7 @@ import java.util.Set;
 @Table(name = "class_features",
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
-public class ClassFeature extends FeatureBase implements HasTagEntity {
+public class ClassFeature extends NamedEntity implements HasTagEntity {
     private short level;
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinTable(
@@ -30,4 +30,8 @@ public class ClassFeature extends FeatureBase implements HasTagEntity {
             inverseJoinColumns = @JoinColumn(name = "tag_id") // Foreign key for Tag
     )
     private Set<Tag> tags = new HashSet<>();
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Book source;
 }

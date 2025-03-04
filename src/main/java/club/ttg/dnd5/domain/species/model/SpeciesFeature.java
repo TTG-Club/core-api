@@ -1,19 +1,20 @@
 package club.ttg.dnd5.domain.species.model;
 
-import club.ttg.dnd5.domain.common.model.FeatureBase;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.common.model.NamedEntity;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(
         name = "species_features",
         indexes = {@Index(name = "url_index", columnList = "url")}
 )
-@Getter
-@Setter
-public class SpeciesFeature extends FeatureBase {
-
+public class SpeciesFeature extends NamedEntity {
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Book source;
 }
