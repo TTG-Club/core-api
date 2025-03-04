@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.common.rest.dto;
 
-import club.ttg.dnd5.dto.base.SourceResponse;
+import club.ttg.dnd5.dto.base.source.SourceResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,4 +17,5 @@ public class ShortResponse {
     private SourceResponse source = new SourceResponse();
     @Schema(description = "дата обновления")
     private String updatedAt;
+
 }

@@ -13,6 +13,8 @@ import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.spell.model.*;
+import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
+import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
