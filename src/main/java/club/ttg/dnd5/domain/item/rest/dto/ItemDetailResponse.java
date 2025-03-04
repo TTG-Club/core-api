@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,10 +13,11 @@ import lombok.*;
 @Getter
 @Setter
 @Schema(name = "Предметы, снаряжение и прочие объекты")
-public class ItemDetailResponse extends BaseDto {
+public class ItemDetailResponse extends BaseResponse {
     @Schema(name = "Типы объекта разделенные запятой")
     private String type;
 
+    private Set<NameResponse> types;
     @Schema(name = "Категория доспеха")
     private String category;
     @JsonProperty(value = "ac")
@@ -39,28 +42,8 @@ public class ItemDetailResponse extends BaseDto {
     private String typeClarification;
     @Schema(name = "настройка магического предмета")
     private String attunement;
-    // Верховой животное
-    @Schema(name = "Максимальная нагрузка верхового животного")
-    private String carryingCapacity;
-    // Транспортное средство
-    @Schema(name = "Скорость перемещения транспорта")
-    private String speed;
-    @Schema(name = "Команда")
-    private String crew;
-    @Schema(name = "Максимальное количество пассажиров")
-    private String passengers;
-    @Schema(name = "Груз")
-    private String cargo;
-    @Schema(name = "Количество хитов")
-    @JsonProperty(value = "hp")
-    private String hitPoints;
-    @Schema(name = "Порог урона")
-    private String damageThreshold;
-    // Инструмент
-    @Schema(name = "Характеристика")
-    public String ability;
-    @Schema(name = "Использование")
-    public String uses;
-    @Schema(name = "Создания")
-    public String creation;
+    @Schema(name = "количество зарядов магического предмета")
+    private Byte charges;
+    @Schema(name = "true если магический предмет - проклят")
+    private Boolean curse;
 }

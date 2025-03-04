@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.species.service;
 
 import club.ttg.dnd5.domain.common.repository.TagRepository;
-import club.ttg.dnd5.domain.species.repository.SpeciesFeatureRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TagService {
     private final TagRepository tagRepository;
-    private final SpeciesFeatureRepository speciesFeatureRepository;
 
 //    public Tag createTag(String tagName) {
 //        Tag tag = new Tag(tagName);

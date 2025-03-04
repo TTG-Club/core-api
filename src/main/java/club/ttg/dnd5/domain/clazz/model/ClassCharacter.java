@@ -1,11 +1,10 @@
 package club.ttg.dnd5.domain.clazz.model;
 
+import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
-import club.ttg.dnd5.domain.book.model.Source;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +23,7 @@ import java.util.Set;
             @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class ClassCharacter extends NamedEntity implements HasSourceEntity {
+public class ClassCharacter extends NamedEntity {
     private String genitive;
     @Enumerated(EnumType.STRING)
     private Set<Ability> mainAbility;
@@ -77,5 +76,7 @@ public class ClassCharacter extends NamedEntity implements HasSourceEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "source")
-    private Source source = new Source();
+    private Book source;
+
+    private Short page;
 }

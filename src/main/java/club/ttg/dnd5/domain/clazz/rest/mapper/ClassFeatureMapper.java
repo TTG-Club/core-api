@@ -11,12 +11,12 @@ public interface ClassFeatureMapper {
 
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "alternative", target = "name.alternative")
+    @Mapping(source = "source.name", target = "source.name.name")
     ClassFeatureDto toShortDto(ClassFeature classFeature);
+
 
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")
-    @Mapping(source = "name.alternative", target = "alternative")
     ClassFeature toEntity(ClassFeatureRequest classFeatureDto);
 
 }

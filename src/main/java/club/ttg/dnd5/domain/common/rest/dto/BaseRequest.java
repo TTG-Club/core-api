@@ -13,15 +13,15 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
-public abstract class BaseDto extends TagType.BaseUrl {
+public abstract class BaseRequest extends TagType.BaseUrl {
     @JsonProperty(value = "name")
     @Schema(description = "название", requiredMode = Schema.RequiredMode.REQUIRED)
-    private NameDto name = new NameDto();
+    private NameRequest name;
     @Schema(description = "описание", requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
     @JsonProperty(value = "source")
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
-    private SourceResponse source = new SourceResponse();
+    private SourceRequest source;
     @Schema(description = "дата обновления")
     private Instant updatedAt;
     private String userId;

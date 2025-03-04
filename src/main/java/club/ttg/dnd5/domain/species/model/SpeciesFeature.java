@@ -1,20 +1,17 @@
 package club.ttg.dnd5.domain.species.model;
 
-import club.ttg.dnd5.domain.common.model.FeatureBase;
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
-@Table(
-        name = "species_features",
-        indexes = {@Index(name = "url_index", columnList = "url")}
-)
 @Getter
 @Setter
-public class SpeciesFeature extends FeatureBase implements HasSourceEntity {
-
+@AllArgsConstructor
+@NoArgsConstructor
+public class SpeciesFeature {
+    private String url;
+    private String name;
+    private String english;
+    private String description;
 }

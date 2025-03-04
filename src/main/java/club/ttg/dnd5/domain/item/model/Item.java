@@ -1,9 +1,6 @@
 package club.ttg.dnd5.domain.item.model;
 
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
-import club.ttg.dnd5.domain.book.model.Source;
-import io.hypersistence.utils.hibernate.type.array.ListArrayType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,11 +38,4 @@ public class Item extends NamedEntity implements HasSourceEntity {
     private String cost;
     /** Вес предмета */
     private String weight;
-
-    /**
-     * Источник
-     */
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "source")
-    private Source source = new Source();
 }

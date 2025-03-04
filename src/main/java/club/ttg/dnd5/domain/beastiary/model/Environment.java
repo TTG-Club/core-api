@@ -6,22 +6,20 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum Environment {
-    ARCTIC("полярная тундра", "arctic"),
-    COAST("побережье", "coastal"),
-    WATERS("под водой", "underwater"),
-    GRASSLAND("равнина/луг", "grassland"),
-    UNDERGROUND("подземье", "underdark"),
-    CITY("город", "urban"),
-    VILLAGE("деревня", null),
-    RUINS("руины", null),
-    DUNGEON("подземелья", null),
-    FOREST("лес", "forest"),
-    HILL("холмы", "hill"),
-    MOUNTAIN("горы", "mountain"),
-    SWAMP("болото", "swamp"),
-    DESERT("пустыня", "desert"),
-    TROPICS("тропики", null);
+    ARCTIC("полярная тундра"),
+    COAST("побережье"),
+    WATERS("под водой"),
+    GRASSLAND("равнина/луг"),
+    UNDERGROUND("подземье"),
+    CITY("город"),
+    VILLAGE("деревня"),
+    RUINS("руины"),
+    DUNGEON("подземелья"),
+    FOREST("лес"),
+    HILL("холмы"),
+    MOUNTAIN("горы"),
+    SWAMP("болото"),
+    DESERT("пустыня");
 
-    private String name;
-    private String xmlName;
+    private final String name;
 }
