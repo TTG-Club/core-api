@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.service.SpellService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -27,7 +28,7 @@ public class SpellController {
 
     @GetMapping("/{url}")
     public SpellDetailedResponse getSpellsByUrl(@PathVariable String url) {
-        return spellService.findByUrl(url);
+        return spellService.findDetailedByUrl(url);
     }
 
     @Secured("ADMIN")
@@ -35,6 +36,20 @@ public class SpellController {
     @ResponseStatus(HttpStatus.CREATED)
     public SpellDetailedResponse createSpell(@RequestBody SpellRequest request) {
         return spellService.save(request);
+    }
+
+    @Secured("ADMIN")
+    @PutMapping("/{url}")
+    public SpellDetailedResponse updateSpell(@PathVariable String url,
+                                             @Valid
+                                             @RequestBody SpellRequest request) {
+        return spellService.update(url, request);
+    }
+
+    @Secured("ADMIN")
+    @DeleteMapping("/{url}")
+    public void deleteSpell(@PathVariable String url) {
+        spellService.delete(url);
     }
 
 }
