@@ -5,11 +5,15 @@ import club.ttg.dnd5.domain.user.model.party.UserParty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -18,7 +22,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "users")
-public class User extends Timestamped implements UserDetails {
+public class User implements UserDetails {
 	@Id
 	@UuidGenerator
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -42,6 +46,13 @@ public class User extends Timestamped implements UserDetails {
 	@ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
 	private List<UserParty> userParties;
 
+	@Column(name = "created_at", updatable = false)
+	@CreationTimestamp(source = SourceType.DB)
+	private Instant createdAt;
+	@Column(name = "updated_at")
+	@UpdateTimestamp(source = SourceType.DB)
+	private Instant updatedAt;
+
 	@Override
 	public Collection<GrantedAuthority> getAuthorities() {
 		String[] userRoles = this.getRoles().stream()
@@ -50,4 +61,5 @@ public class User extends Timestamped implements UserDetails {
 
 		return AuthorityUtils.createAuthorityList(userRoles);
 	}
+
 }

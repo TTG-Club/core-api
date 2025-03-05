@@ -4,10 +4,7 @@ import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Collection;
 
@@ -39,4 +36,5 @@ public class ClassDetailResponse extends BaseResponse {
     private Collection<ClassFeatureDto> features;
 
     private NameResponse group = new NameResponse();
+
 }

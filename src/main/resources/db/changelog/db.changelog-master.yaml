@@ -1,5 +1,9 @@
 databaseChangeLog:
-
-  - includeAll:
-      path: /2025
-      relativeToChangelogFile: true
+  - include:
+      file: db/changelog/2025/03/01-init_users_and_tokens_tables.yaml
+  - include:
+      file: db/changelog/2025/03/02-add_species_table.yaml.yaml
+  - include:
+      file: db/changelog/2025/03/04-update-species.yaml
+  - include:
+      file: db/changelog/2025/03/04-02-update-species.yaml
