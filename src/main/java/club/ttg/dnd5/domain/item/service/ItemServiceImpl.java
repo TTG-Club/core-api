@@ -54,6 +54,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDetailResponse addItem(final ItemRequest itemDto) {
         exist(itemDto.getUrl());
         var item = itemMapper.toEntity(itemDto);
+
         return itemMapper.toDetailDto(itemRepository.save(item));
     }
 
