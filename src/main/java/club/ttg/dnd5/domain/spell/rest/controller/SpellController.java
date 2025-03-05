@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v2/spell")
+@RequestMapping("/api/v2/spells")
 public class SpellController {
     private final SpellService spellService;
 
