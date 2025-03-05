@@ -7,3 +7,9 @@ databaseChangeLog:
       file: db/changelog/2025/03/04-update-species.yaml
   - include:
       file: db/changelog/2025/03/04-02-update-species.yaml
+  - include:
+      file: db/changelog/2025/03/05-01-init-spells.yaml
+  - include:
+      file: db/changelog/2025/03/05-update-species.yaml
+  - include:
+      file: db/changelog/2025/03/05-02-update-spells.yaml

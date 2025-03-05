@@ -36,6 +36,10 @@ public class SpeciesService {
                 .orElseThrow(() -> new EntityNotFoundException(url));
     }
 
+    public List<Species> findAllById(Collection<String> urls) {
+        return speciesRepository.findAllById(urls);
+    }
+
     public List<SpeciesShortResponse> getSpecies() {
         return speciesRepository.findAllByParentIsNull()
                 .stream()
