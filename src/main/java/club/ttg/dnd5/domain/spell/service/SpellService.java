@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,9 +40,12 @@ public class SpellService {
                 .collect(Collectors.toList());
     }
 
-    public SpellDetailedResponse findByUrl(String url) {
+    public SpellDetailedResponse findDetailedByUrl(String url) {
+        return  spellMapper.toSpellDetailedResponse(findByUrl(url));
+    }
+
+    public Spell findByUrl(String url) {
         return spellRepository.findById(url)
-                .map(spellMapper::toSpellDetailedResponse)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Заклинание с url %s не существует", url)));
     }
 
@@ -73,5 +77,33 @@ public class SpellService {
 
         return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
 
+    }
+
+    @Transactional
+    public SpellDetailedResponse update(String oldUrl, @Valid SpellRequest request) {
+        Spell existingSpell = findByUrl(oldUrl);
+        List<Species> species = Optional.ofNullable(request.getAffiliations())
+                .map(CreateAffiliationRequest::getSpecies)
+                .map(speciesService::findAllById)
+                .orElseGet(Collections::emptyList);
+        List<Species> lineages = Optional.ofNullable(request.getAffiliations())
+                .map(CreateAffiliationRequest::getLineages)
+                .map(speciesService::findAllById)
+                .orElseGet(Collections::emptyList);
+        //TODO долить связи с классами и происхождениями
+
+        Book book = Optional.ofNullable(request.getSource())
+                .map(SourceRequest::getUrl)
+                .map(bookService::findByUrl)
+                .orElse(null);
+        Spell spell = spellMapper.updateEntity(existingSpell, request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
+        return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
+    }
+
+    @Transactional
+    public void delete(String url) {
+        Spell existingSpell = findByUrl(url);
+        existingSpell.setHiddenEntity(true);
+        spellRepository.save(existingSpell);
     }
 }
