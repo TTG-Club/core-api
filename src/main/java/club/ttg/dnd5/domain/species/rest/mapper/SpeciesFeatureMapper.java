@@ -15,6 +15,8 @@ public interface SpeciesFeatureMapper {
     @Mapping(target = "url", source = "name", defaultValue = "generateUrl")
     SpeciesFeatureResponse toDto(SpeciesFeature speciesFeature);
 
+    @Mapping(target = "name", source = "name.name")
+    @Mapping(target = "english", source = "name.english")
     SpeciesFeature toEntity(FeatureRequest request);
 
     @Named("generateUrl")
