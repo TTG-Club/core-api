@@ -1,10 +1,11 @@
 package club.ttg.dnd5.domain.common.rest.dto;
 
-import club.ttg.dnd5.dto.base.source.SourceResponse;
+import club.ttg.dnd5.dto.base.SourceResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
