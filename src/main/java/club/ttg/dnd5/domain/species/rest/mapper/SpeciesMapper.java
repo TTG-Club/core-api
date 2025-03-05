@@ -30,6 +30,7 @@ public interface SpeciesMapper {
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.englishName", target = "source.name.english")
     @Mapping(source = "source.sourceAcronym", target = "source.name.label")
+    @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
     SpeciesDetailResponse toDetailDto(Species species);
 
     @Mapping(source = "name", target = "name.name")
@@ -41,8 +42,8 @@ public interface SpeciesMapper {
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.englishName", target = "source.name.english")
     @Mapping(source = "source.sourceAcronym", target = "source.name.label")
-
     @Mapping(source = "updatedAt", target = "updatedAt")
+    @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
     SpeciesShortResponse toShortDto(Species species);
 
     @Mapping(source = "name.name", target = "name")
@@ -57,6 +58,11 @@ public interface SpeciesMapper {
     @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     Species toEntity(SpeciesRequest request);
+
+    @Named("hasLineages")
+    default boolean hasLineages(Collection<Species> lineages) {
+        return !lineages.isEmpty();
+    }
 
     @Named("collectSizes")
     default SpeciesSize toSizeString(Collection<SpeciesSizeDto> sizes) {
