@@ -55,6 +55,7 @@ public class SpeciesService {
         if (StringUtils.hasText(request.getParent())) {
             var parent = findByUrl(request.getParent());
             species.setParent(parent);
+            species.getFeatures().addAll(parent.getFeatures());
         }
         var book = bookRepository.findByUrl(request.getSource().getUrl())
                 .orElseThrow(() -> new EntityNotFoundException("Книга не найдена: "
