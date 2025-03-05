@@ -20,7 +20,7 @@ import java.util.List;
 public class SpellController {
     private final SpellService spellService;
 
-    @GetMapping
+    @GetMapping("/search")
     public List<SpellShortResponse> getSpells() {
         return spellService.findAll();
     }
