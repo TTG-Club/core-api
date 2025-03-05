@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -77,19 +76,11 @@ public class SpeciesService {
                 .toList();
     }
 
-    public List<SpeciesDetailResponse> getAllLineages(String subSpeciesUrl) {
-        Species subSpecies = speciesRepository.findById(subSpeciesUrl)
-                .orElseThrow(() -> new EntityNotFoundException("Sub-species not found for URL: " + subSpeciesUrl));
-
-        return Stream.concat(
-                        Stream.of(subSpecies),
-                        Stream.concat(
-                                Stream.ofNullable(subSpecies.getParent()),
-                                subSpecies.getLineages() != null ? subSpecies.getLineages().stream() : Stream.empty()
-                        )
-                )
-                .filter(species -> !species.isHiddenEntity())
-                .map(speciesMapper::toDetailDto)
+    public Collection<SpeciesShortResponse> getAllLineages(String url) {
+        Species species = speciesRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Вид не найден URL: " + url));
+        return species.getLineages().stream()
+            .map(speciesMapper::toShortDto)
                 .toList();
     }
 

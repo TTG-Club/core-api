@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -65,12 +66,12 @@ public class SpeciesController {
         return speciesService.getLineages(url);
     }
 
-    @GetMapping("/related")
+    @GetMapping("/lineages/{url}")
     @Operation(summary = "Получить все происхождения по URL",
             description = "Возвращает список всех происхождений, включая родительский вид и подвиды по указанному URL подвида.")
-    public List<SpeciesDetailResponse> getAllRelatedSpeciesBySubSpeciesUrl(
+    public Collection<SpeciesShortResponse> getAllRelatedSpeciesBySubSpeciesUrl(
             @Parameter(description = "URL происхождения", required = true)
-            @RequestParam String url) {
+            @PathVariable String url) {
         return speciesService.getAllLineages(url);
     }
 
