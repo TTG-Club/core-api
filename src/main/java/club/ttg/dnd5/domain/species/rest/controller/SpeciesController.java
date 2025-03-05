@@ -57,11 +57,11 @@ public class SpeciesController {
         return speciesService.findById(url);
     }
 
-    @GetMapping("/lineages")
+    @GetMapping("/lineages/{url}")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
     public List<SpeciesDetailResponse> getSubSpeciesByParentUrl(
-            @Parameter(description = "URL родительского вида", required = true) @RequestParam String url) {
+            @Parameter(description = "URL родительского вида", required = true) @PathVariable String url) {
         return speciesService.getLineages(url);
     }
 
