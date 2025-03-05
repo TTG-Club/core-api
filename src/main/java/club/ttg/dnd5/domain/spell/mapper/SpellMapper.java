@@ -7,32 +7,35 @@ import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
-import jdk.jfr.Name;
+import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Mapper(uses = {SpellComponentsMapper.class}, componentModel = "spring")
+@Mapper(uses = {SpellComponentsMapper.class, SpellAffiliationMapper.class}, componentModel = "spring")
 public interface SpellMapper {
 
-    @Mapping(target = "school", source = "spell.school.school.name")
-    @Mapping(target = "additionalType", source = "spell.school.additionalType")
-    @Mapping(target = "name", source = "spell")
+    @Mapping(target = "school", source = "school.school.name")
+    @Mapping(target = "additionalType", source = "school.additionalType")
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
     SpellShortResponse toSpeciesShortResponse(Spell spell);
 
-    @Mapping(target = "school", source = "spell.school.school.name")
-    @Mapping(target = "additionalType", source = "spell.school.additionalType")
-    @Mapping(target = "name", source = "spell")
-    @Mapping(target = "castingTime", source = "spell", qualifiedByName = "castingTimeToString")
-    @Mapping(target = "duration", source = "spell", qualifiedByName = "durationToString")
-    @Mapping(target = "range", source = "spell", qualifiedByName = "distanceToString")
+
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
+
+    @Mapping(target = "school", source = "school.school.name")
+    @Mapping(target = "additionalType", source = "school.additionalType")
+    @Mapping(target = "castingTime", source = ".", qualifiedByName = "castingTimeToString")
+    @Mapping(target = "duration", source = ".", qualifiedByName = "durationToString")
+    @Mapping(target = "range", source = ".", qualifiedByName = "distanceToString")
+    @Mapping(target = "affiliation", source = ".")
     SpellDetailedResponse toSpellDetailedResponse(Spell spell);
 
-    NameResponse toNameResponse(Spell spell);
 
     @Named("castingTimeToString")
     default String castingTimeToString(Spell spell) {

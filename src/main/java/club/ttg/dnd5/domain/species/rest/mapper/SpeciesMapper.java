@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
+import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -25,11 +26,7 @@ public interface SpeciesMapper {
     @Mapping(source = ".", target = "properties.speed",  qualifiedByName = "toSpeed")
     @Mapping(source = "size.size", target = "properties.size", qualifiedByName = "sizeToString")
 
-    @Mapping(source = "source.type.group", target = "source.group.name")
-    @Mapping(source = "source.type.label", target = "source.group.label")
-    @Mapping(source = "source.name", target = "source.name.name")
-    @Mapping(source = "source.englishName", target = "source.name.english")
-    @Mapping(source = "source.sourceAcronym", target = "source.name.label")
+    @BaseMapping.BaseSourceMapping
     SpeciesDetailResponse toDetailDto(Species species);
 
     @Mapping(source = "name", target = "name.name")
@@ -54,6 +51,7 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.climb", target = "climb")
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
     @Mapping(source = "features", target = "features")
+    @Mapping(target = "parent", ignore = true)
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     Species toEntity(SpeciesRequest request);
 
