@@ -44,6 +44,7 @@ public interface SpeciesMapper {
 
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")
+    @Mapping(source = "parent", target = "parent.url")
     @Mapping(source = "properties.size", target = "size.size")
     @Mapping(source = "properties.type", target = "type")
     @Mapping(source = "properties.movementAttributes.base", target = "speed")
