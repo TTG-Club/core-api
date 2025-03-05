@@ -94,7 +94,6 @@ public class DictionariesController {
         return dictionariesService.getCreatureCategories();
     }
 
-
     @Operation(summary = "Размеры существ")
     @GetMapping("/sizes")
     @ApiResponses(
