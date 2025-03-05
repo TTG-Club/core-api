@@ -21,4 +21,7 @@ public class NameResponse {
     @JsonProperty(value = "eng")
     @Schema(description = "английское название", requiredMode = Schema.RequiredMode.REQUIRED)
     private String english = "";
+    @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "Короткая метка")
+    private String label;
 }

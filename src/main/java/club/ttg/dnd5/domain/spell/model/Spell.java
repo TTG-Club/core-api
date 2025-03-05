@@ -54,11 +54,14 @@ public class Spell extends NamedEntity {
 
     private String upper;
 
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Book source;
     private Long sourcePage;
 
-    @ManyToOne
-    private Book bookInfo;
-
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     private List<Species> speciesAffiliation;
+    //TODO раскомментить после рождения классов
+//    @ManyToMany(fetch = FetchType.LAZY)
+//    private List<ClassCharacter> classAffiliation;
 }

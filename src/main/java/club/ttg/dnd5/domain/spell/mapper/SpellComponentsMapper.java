@@ -25,7 +25,7 @@ public interface SpellComponentsMapper {
     default Boolean stringNotEmpty(MaterialComponent material) {
         return Optional.ofNullable(material)
                 .map(MaterialComponent::getComponent)
-                .map(StringUtils::isEmpty)
+                .map(StringUtils::isNotEmpty)
                 .orElse(false);
     }
 

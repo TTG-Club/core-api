@@ -1,6 +1,7 @@
 package club.ttg.dnd5.dto.base.source;
 
 
+import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonRootName("source")
 public class SourceResponse  {
-    private SourceNameDto name;
-    private SourceGroupDto group;
+    private NameResponse  name;
+    private NameResponse  group;
 }
