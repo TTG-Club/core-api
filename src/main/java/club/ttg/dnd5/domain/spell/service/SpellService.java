@@ -79,6 +79,7 @@ public class SpellService {
 
     }
 
+    @Transactional
     public SpellDetailedResponse update(String oldUrl, @Valid SpellRequest request) {
         Spell existingSpell = findByUrl(oldUrl);
         List<Species> species = Optional.ofNullable(request.getAffiliations())
@@ -99,6 +100,7 @@ public class SpellService {
         return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
     }
 
+    @Transactional
     public void delete(String url) {
         Spell existingSpell = findByUrl(url);
         existingSpell.setHiddenEntity(true);
