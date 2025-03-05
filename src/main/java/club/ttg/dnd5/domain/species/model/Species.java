@@ -35,7 +35,7 @@ public class Species extends CreatureProperties {
 
     /** Родительский вид */
     @ManyToOne
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "parent_url")
     private Species parent;
 
     /** Происхождения */

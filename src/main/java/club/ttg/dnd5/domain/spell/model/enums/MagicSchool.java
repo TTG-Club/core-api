@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.spell.model;
+package club.ttg.dnd5.domain.spell.model.enums;
 
 import club.ttg.dnd5.exception.ApiException;
 import lombok.AllArgsConstructor;
@@ -8,15 +8,14 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum MagicSchool {
-    ABJURATION("ограждения"),
-    CONJURATION("вызова"),
-    DIVINATION("прорицания"),
-    ENCHANTMENT("очарования"),
-    EVOCATION("воплощения"),
-    ILLUSION("иллюзии"),
-    NECROMANCY("некромантии"),
-    TRANSMUTATION("преобразования")
-    ;
+    ABJURATION("ограждение"),
+    CONJURATION("вызов"),
+    DIVINATION("прорицание"),
+    ENCHANTMENT("очарование"),
+    EVOCATION("воплощение"),
+    ILLUSION("иллюзия"),
+    NECROMANCY("некромантия"),
+    TRANSMUTATION("преобразование");
 
     private final String name;
 

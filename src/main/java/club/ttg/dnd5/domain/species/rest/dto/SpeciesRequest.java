@@ -16,5 +16,5 @@ public class SpeciesRequest extends BaseRequest {
     @Schema(description = "Умения")
     private Collection<FeatureRequest> features;
     @Schema(description = "URL на вид", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private String parentUrl;
+    private String parent;
 }
