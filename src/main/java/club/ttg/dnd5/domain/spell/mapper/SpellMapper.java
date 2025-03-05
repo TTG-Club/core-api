@@ -3,10 +3,7 @@ package club.ttg.dnd5.domain.spell.mapper;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
 import club.ttg.dnd5.domain.species.model.Species;
-import club.ttg.dnd5.domain.spell.model.Spell;
-import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
-import club.ttg.dnd5.domain.spell.model.SpellDistance;
-import club.ttg.dnd5.domain.spell.model.SpellDuration;
+import club.ttg.dnd5.domain.spell.model.*;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
@@ -19,6 +16,7 @@ import org.mapstruct.Named;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Mapper(uses = {SpellComponentsMapper.class, SpellAffiliationMapper.class, BaseMapping.class}, componentModel = "spring")
@@ -40,7 +38,6 @@ public interface SpellMapper {
     @BaseMapping.BaseShortResponseNameMapping
     SpellShortResponse toSpeciesShortResponse(Spell spell);
 
-
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
 
@@ -51,7 +48,6 @@ public interface SpellMapper {
     @Mapping(target = "range", source = ".", qualifiedByName = "distanceToString")
     @Mapping(target = "affiliation", source = ".")
     SpellDetailedResponse toSpellDetailedResponse(Spell spell);
-
 
     @Named("castingTimeToString")
     default String castingTimeToString(Spell spell) {
@@ -82,7 +78,7 @@ public interface SpellMapper {
     @Mapping(target = "school.school", source = "request.school")
     @Mapping(target = "ritual", source = "request.ritual")
     @Mapping(target = "concentration", source = "request.concentration")
-    @Mapping(target = "components", source = "request.components")
+    @Mapping(target = "components", source = "request.components", qualifiedByName = "setNull")
     @Mapping(target = "range", source = "request.range")
     @Mapping(target = "castingTime", source = "request.castingTime")
     @Mapping(target = "duration", source = "request.duration")
@@ -93,4 +89,13 @@ public interface SpellMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @interface ToEntityMapping {}
 
+    @Named("setNull")
+    default SpellComponents setNull(SpellComponents components) {
+        if (Optional.ofNullable(components.getM())
+                .map(MaterialComponent::getText)
+                .orElse("").isEmpty()) {
+            components.setM(null);
+        }
+        return components;
+    }
 }
