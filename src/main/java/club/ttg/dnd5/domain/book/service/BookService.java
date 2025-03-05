@@ -1,20 +1,14 @@
 package club.ttg.dnd5.domain.book.service;
 
-import club.ttg.dnd5.domain.book.rest.mapper.BookMapper;
 import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.book.model.TypeBook;
 import club.ttg.dnd5.domain.book.repository.BookRepository;
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
-import club.ttg.dnd5.domain.book.rest.dto.BookDetailResponse;
 import club.ttg.dnd5.domain.book.rest.mapper.BookMapper;
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -27,9 +21,9 @@ public class BookService {
                 .stream()
                 .map(bookMapper::toShortResponse)
                 .toList();
+    }
 
-
-    public Book findByUrl(String  url) {
+    public Book findByUrl(String url) {
         return bookRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Книга с url %s не существует" , url)));
 
