@@ -13,31 +13,24 @@ import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Mapper(uses = {SpellComponentsMapper.class, SpellAffiliationMapper.class, BaseMapping.class}, componentModel = "spring")
 public interface SpellMapper {
 
-    @BaseMapping.BaseEntityNameMapping
-    @Mapping(target = "url", source = "request.url")
-    @Mapping(target = "description", source = "request.description")
-    @Mapping(target = "sourcePage", source = "request.source.page")
-    @Mapping(target = "school.school", source = "request.school")
-    @Mapping(target = "ritual", source = "request.ritual")
-    @Mapping(target = "concentration", source = "request.concentration")
-    @Mapping(target = "components", source = "request.components")
-    @Mapping(target = "range", source = "request.range")
-    @Mapping(target = "castingTime", source = "request.castingTime")
-    @Mapping(target = "duration", source = "request.duration")
-    @Mapping(target = "upper", source = "request.upper")
-
-    @Mapping(target = "source", source = "source")
-    @Mapping(target = "speciesAffiliation", source = "species")
-    @Mapping(target = "updatedAt", ignore = true)
+    @ToEntityMapping
     Spell toEntity(SpellRequest request, Book source,
+                   List<ClassCharacter> classes, List<ClassCharacter> subclasses,
+                   List<Species> species, List<Species> lineages);
+
+    @ToEntityMapping
+    Spell updateEntity(@MappingTarget Spell target, SpellRequest request, Book source,
                    List<ClassCharacter> classes, List<ClassCharacter> subclasses,
                    List<Species> species, List<Species> lineages);
 
@@ -80,4 +73,24 @@ public interface SpellMapper {
                 .map(SpellDistance::toString)
                 .collect(Collectors.joining(", "));
     }
+
+    @Retention(RetentionPolicy.SOURCE)
+    @BaseMapping.BaseEntityNameMapping
+    @Mapping(target = "url", source = "request.url")
+    @Mapping(target = "description", source = "request.description")
+    @Mapping(target = "sourcePage", source = "request.source.page")
+    @Mapping(target = "school.school", source = "request.school")
+    @Mapping(target = "ritual", source = "request.ritual")
+    @Mapping(target = "concentration", source = "request.concentration")
+    @Mapping(target = "components", source = "request.components")
+    @Mapping(target = "range", source = "request.range")
+    @Mapping(target = "castingTime", source = "request.castingTime")
+    @Mapping(target = "duration", source = "request.duration")
+    @Mapping(target = "upper", source = "request.upper")
+
+    @Mapping(target = "source", source = "source")
+    @Mapping(target = "speciesAffiliation", source = "species")
+    @Mapping(target = "updatedAt", ignore = true)
+    @interface ToEntityMapping {}
+
 }
