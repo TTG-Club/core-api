@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.common.service.DictionariesService;
@@ -332,8 +333,29 @@ public class DictionariesController {
                             """)
             )
     )
-    public ResponseEntity<List<SelectOptionDto>> getTimeUnits() {
+    public ResponseEntity<List<MeasurableSelectOptionDto>> getTimeUnits() {
         return ResponseEntity.ok(dictionariesService.getTimeUnits());
+    }
+
+    @Operation(summary = "Единицы времени")
+    @GetMapping("/duration-units")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "бонусное действие", "value": "BONUS" },
+                              { "label": "реакция", "value": "REACTION" },
+                              { "label": "действие", "value": "ACTION" },
+                              { "label": "ход", "value": "ROUND" },
+                              { "label": "минута", "value": "MINUTE" },
+                              { "label": "час", "value": "HOUR" }
+                            ]
+                            """)
+            )
+    )
+    public ResponseEntity<List<MeasurableSelectOptionDto>> getSpellDurationUnits() {
+        return ResponseEntity.ok(dictionariesService.getSpellDurationUnits());
     }
 
     @Operation(summary = "Школы магии")
@@ -370,7 +392,7 @@ public class DictionariesController {
                             """)
             )
     )
-    public Collection<SelectOptionDto> getDistanceUnits() {
+    public Collection<MeasurableSelectOptionDto> getDistanceUnits() {
         return dictionariesService.getSpellDistanceUnits();
     }
 

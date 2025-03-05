@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1741200565249-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: range
+                  type: jsonb
+            tableName: spell
+  - changeSet:
+      id: 1741200565249-7
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: custom_casting_time
+            tableName: spell
+        - dropColumn:
+            columnName: custom_distance
+            tableName: spell
+        - dropColumn:
+            columnName: custom_duration
+            tableName: spell
+        - dropColumn:
+            columnName: distance
+            tableName: spell
+

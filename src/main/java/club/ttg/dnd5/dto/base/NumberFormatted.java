@@ -7,6 +7,11 @@ public interface NumberFormatted<T> {
     Long GREATER_THAN_FOUR = 5L;
     Map<T, Map<Long, String>> getConjugated();
     String getName();
+
+    default Boolean getMeasurable() {
+        return getConjugated().containsKey(this);
+    }
+
     default String getFormattedName(Long number){
         if(getConjugated().containsKey(this)){
             long lastDigit = number % 10;
