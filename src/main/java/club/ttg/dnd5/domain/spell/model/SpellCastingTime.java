@@ -16,6 +16,9 @@ public class SpellCastingTime {
     private String custom;
     @Override
     public String toString() {
+        if (custom != null) {
+            return custom;
+        }
         return Objects.nonNull(value)
                 ? String.format("%s %s", value, unit.getFormattedName(value))
                 : String.format( "%s", unit.getName());
