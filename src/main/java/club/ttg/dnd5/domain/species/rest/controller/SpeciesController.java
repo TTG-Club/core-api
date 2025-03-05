@@ -66,7 +66,7 @@ public class SpeciesController {
         return speciesService.getLineages(url);
     }
 
-    @GetMapping("/lineages/{url}")
+    @GetMapping("/lineages/{url}/search")
     @Operation(summary = "Получить все происхождения по URL",
             description = "Возвращает список всех происхождений, включая родительский вид и подвиды по указанному URL подвида.")
     public Collection<SpeciesShortResponse> getAllRelatedSpeciesBySubSpeciesUrl(
