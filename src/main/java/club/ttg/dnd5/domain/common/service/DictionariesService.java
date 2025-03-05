@@ -1,21 +1,19 @@
 package club.ttg.dnd5.domain.common.service;
 
-import club.ttg.dnd5.domain.common.dictionary.Alignment;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Dice;
-import club.ttg.dnd5.domain.common.dictionary.Size;
-import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.dictionary.character.SpellcasterType;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.Environment;
-import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
-import club.ttg.dnd5.domain.feat.model.FeatCategory;
-import club.ttg.dnd5.dictionary.character.SpellcasterType;
+import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
-import club.ttg.dnd5.domain.spell.model.*;
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
+import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
+import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +35,7 @@ public class DictionariesService {
     }
 
     public List<MeasurableSelectOptionDto> getSpellDurationUnits() {
-        return Arrays.stream(CastingUnit.values())
+        return Arrays.stream(DurationUnit.values())
                 .map(unit -> MeasurableSelectOptionDto.builder()
                         .label(unit.getName())
                         .value(unit.name())
