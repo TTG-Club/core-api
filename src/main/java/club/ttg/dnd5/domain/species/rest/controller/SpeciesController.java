@@ -58,7 +58,7 @@ public class SpeciesController {
         return speciesService.findById(url);
     }
 
-    @GetMapping("/lineages/{url}")
+    @GetMapping("/{url}/lineages")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
     public List<SpeciesDetailResponse> getSubSpeciesByParentUrl(
@@ -66,7 +66,7 @@ public class SpeciesController {
         return speciesService.getLineages(url);
     }
 
-    @GetMapping("/lineages/{url}/search")
+    @GetMapping("/{url}/lineages/search")
     @Operation(summary = "Получить все происхождения по URL",
             description = "Возвращает список всех происхождений, включая родительский вид и подвиды по указанному URL подвида.")
     public Collection<SpeciesShortResponse> getAllRelatedSpeciesBySubSpeciesUrl(
