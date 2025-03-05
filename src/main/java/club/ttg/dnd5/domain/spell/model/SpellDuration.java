@@ -11,13 +11,13 @@ import java.util.Objects;
 @Setter
 @Builder
 public class SpellDuration {
-    private Long duration;
-    private DurationUnit durationUnit;
-
+    private Long value;
+    private DurationUnit unit;
+    private String custom;
     @Override
     public String toString() {
-        return Objects.nonNull(duration)
-                ? String.format("%s %s", duration, durationUnit.getFormattedName(duration))
-                : String.format( "%s", durationUnit.getName());
+        return Objects.nonNull(value)
+                ? String.format("%s %s", value, unit.getFormattedName(value))
+                : String.format( "%s", unit.getName());
     }
 }

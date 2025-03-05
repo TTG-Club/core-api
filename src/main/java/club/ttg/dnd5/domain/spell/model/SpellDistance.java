@@ -11,13 +11,13 @@ import java.util.Objects;
 @Getter
 @Builder
 public class SpellDistance {
-    private Long distance;
-    private DistanceUnit distanceUnit;
-
+    private Long value;
+    private DistanceUnit unit;
+    private String custom;
     @Override
     public String toString() {
-        return Objects.nonNull(distance)
-                ? String.format("%s %s", distance, distanceUnit.getFormattedName(distance))
-                : String.format( "%s", distanceUnit.getName());
+        return Objects.nonNull(value)
+                ? String.format("%s %s", value, unit.getFormattedName(value))
+                : String.format( "%s", unit.getName());
     }
 }

@@ -8,6 +8,7 @@ import lombok.*;
 @Setter
 @Builder
 public class MaterialComponent {
-    String component;
+    String text;
+    Boolean withCost;
     Boolean consumable;
 }

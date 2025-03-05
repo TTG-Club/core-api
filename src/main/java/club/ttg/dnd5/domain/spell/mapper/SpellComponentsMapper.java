@@ -16,18 +16,14 @@ public interface SpellComponentsMapper {
     @Mapping(target = "m", source = "m", qualifiedByName = "stringNotEmpty")
     SpellShortComponents toSpellShortComponents(SpellComponents components);
 
-    @Mapping(target = "m", source = "m.component")
+    @Mapping(target = "m", source = "m.text")
     SpellDetailedComponents toSpellDetailedComponents(SpellComponents components);
-
-
 
     @Named("stringNotEmpty")
     default Boolean stringNotEmpty(MaterialComponent material) {
         return Optional.ofNullable(material)
-                .map(MaterialComponent::getComponent)
+                .map(MaterialComponent::getText)
                 .map(StringUtils::isNotEmpty)
                 .orElse(false);
     }
-
-
 }

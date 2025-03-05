@@ -39,18 +39,15 @@ public class Spell extends NamedEntity {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private List<SpellDistance> distance;
-    private String customDistance;
+    private List<SpellDistance> range;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private List<SpellCastingTime> castingTime;
-    private String customCastingTime;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private List<SpellDuration> duration;
-    private String customDuration;
 
     private String upper;
 

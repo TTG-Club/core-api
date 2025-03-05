@@ -2,15 +2,16 @@ package club.ttg.dnd5.domain.common.rest.dto.select;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Описывает один пункт в выпадающем списке.
  */
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 public class SelectOptionDto extends BaseSelectOptionDto {
 
     @Schema(
