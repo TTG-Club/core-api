@@ -7,12 +7,16 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.Environment;
+import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.spell.model.*;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
+import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
+import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -22,11 +26,22 @@ import java.util.stream.Collectors;
 
 @Service
 public class DictionariesService {
-    public List<SelectOptionDto> getTimeUnits() {
-        return Arrays.stream(TimeUnit.values())
-                .map(unit -> SelectOptionDto.builder()
+    public List<MeasurableSelectOptionDto> getTimeUnits() {
+        return Arrays.stream(CastingUnit.values())
+                .map(unit -> MeasurableSelectOptionDto.builder()
                         .label(unit.getName())
                         .value(unit.name())
+                        .measurable(unit.getMeasurable())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public List<MeasurableSelectOptionDto> getSpellDurationUnits() {
+        return Arrays.stream(CastingUnit.values())
+                .map(unit -> MeasurableSelectOptionDto.builder()
+                        .label(unit.getName())
+                        .value(unit.name())
+                        .measurable(unit.getMeasurable())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -40,11 +55,12 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getSpellDistanceUnits() {
+    public Collection<MeasurableSelectOptionDto> getSpellDistanceUnits() {
         return Arrays.stream(DistanceUnit.values())
-                .map(unit -> SelectOptionDto.builder()
+                .map(unit -> MeasurableSelectOptionDto.builder()
                         .label(unit.getName())
                         .value(unit.name())
+                        .measurable(unit.getMeasurable())
                         .build())
                 .collect(Collectors.toList());
     }

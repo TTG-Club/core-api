@@ -1,14 +1,20 @@
 package club.ttg.dnd5.domain.common.rest.dto.select;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Абстрактный класс одного пункта в выпадающем списке.
  */
 @Getter
 @Setter
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 public abstract class BaseSelectOptionDto {
 
     @Schema(
