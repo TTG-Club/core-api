@@ -34,6 +34,13 @@ public class SpellService {
 
     private final SpellMapper spellMapper;
 
+    public boolean existOrThrow(String url) {
+        if (!spellRepository.existsById(url)) {
+            throw new EntityNotFoundException(String.format("Заклинание с url %s не существует", url));
+        }
+        return true;
+    }
+
     public List<SpellShortResponse> findAll() {
         return spellRepository.findAll().stream()
                 .map(spellMapper::toSpeciesShortResponse)
@@ -41,7 +48,7 @@ public class SpellService {
     }
 
     public SpellDetailedResponse findDetailedByUrl(String url) {
-        return  spellMapper.toSpellDetailedResponse(findByUrl(url));
+        return spellMapper.toSpellDetailedResponse(findByUrl(url));
     }
 
     public Spell findByUrl(String url) {
