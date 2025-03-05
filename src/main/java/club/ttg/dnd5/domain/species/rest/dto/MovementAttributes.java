@@ -6,11 +6,9 @@ import lombok.*;
 
 @Getter
 @Setter
-@Builder
-@RequiredArgsConstructor
-@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class MovementAttributes{
+public class MovementAttributes {
+    @Schema(description = "Скорость")
     private final int base = 30;
     @Schema(description = "Скорость полета")
     private Integer fly;

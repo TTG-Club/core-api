@@ -20,4 +20,5 @@ public abstract class Timestamped {
     @Column(name = "updated_at")
     @UpdateTimestamp(source = SourceType.DB)
     private Instant updatedAt;
+    private String username;
 }

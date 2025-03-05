@@ -10,9 +10,11 @@ import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface SpeciesFeatureMapper {
+    @Mapping(target = "name.name", source = "name")
+    @Mapping(target = "name.english", source = "english")
+    @Mapping(target = "url", source = "name", defaultValue = "generateUrl")
     SpeciesFeatureResponse toDto(SpeciesFeature speciesFeature);
-    @Mapping(target = "url", source = "name", qualifiedByName = "generateUrl")
-    @Mapping(target = "english", source = "name", qualifiedByName = "generateUrl")
+
     SpeciesFeature toEntity(FeatureRequest request);
 
     @Named("generateUrl")

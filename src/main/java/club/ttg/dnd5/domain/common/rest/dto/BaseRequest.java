@@ -21,7 +21,7 @@ public abstract class BaseRequest extends TagType.BaseUrl {
     private String description;
     @JsonProperty(value = "source")
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
-    private SourceResponse source;
+    private SourceRequest source;
     @Schema(description = "дата обновления")
     private Instant updatedAt;
     private String userId;

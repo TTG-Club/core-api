@@ -2,9 +2,7 @@ package club.ttg.dnd5.domain.background.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
-import club.ttg.dnd5.domain.common.model.HasSourceEntity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
-import club.ttg.dnd5.domain.book.model.Source;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -24,7 +22,7 @@ import java.util.Set;
                 @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class Background extends NamedEntity implements HasSourceEntity {
+public class Background extends NamedEntity {
     @ElementCollection(targetClass = Ability.class, fetch = FetchType.LAZY)
     @JoinTable(name = "background_abilities",
             joinColumns = @JoinColumn(name = "background_url"))
@@ -49,8 +47,4 @@ public class Background extends NamedEntity implements HasSourceEntity {
     private String equipment;
     /** Предлагаемый класс */
     private String proposeClasses;
-
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "source")
-    private Source source = new Source();
 }
