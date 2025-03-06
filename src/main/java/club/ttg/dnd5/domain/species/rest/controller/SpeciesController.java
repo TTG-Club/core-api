@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -42,9 +44,17 @@ public class SpeciesController {
     }
 
     @PostMapping("/search")
-    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
-    public List<SpeciesShortResponse> getAllSpecies() {
-        return speciesService.getSpecies();
+    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
+    public List<SpeciesShortResponse> getAllSpecies(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Size(min = 3)
+            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine,
+            @Parameter(description = "Сортировка")
+            @RequestParam(required = false, defaultValue = "name")
+            String[] sort) {
+        return speciesService.getSpecies(searchLine, sort);
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
