@@ -21,5 +21,6 @@ public class SpellDetailedResponse extends ShortResponse {
     private String duration;
     private SpellDetailedComponents components;
     private String description;
+    private String upper;
     private SpellAffiliationResponse affiliation;
 }
