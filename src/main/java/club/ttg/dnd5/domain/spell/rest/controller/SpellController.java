@@ -5,10 +5,12 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.service.SpellService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -34,9 +36,14 @@ public class SpellController {
         return spellService.existOrThrow(url);
     }
 
+    @Operation(summary = "Поиск заклинаний", description = "Поиск заклинания по именам")
     @PostMapping("/search")
-    public List<SpellShortResponse> getSpells() {
-        return spellService.findAll();
+    public List<SpellShortResponse> getSpells(@RequestParam(required = false)
+                                              @Valid
+                                              @Size(min = 3)
+                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                              String searchLine) {
+        return spellService.search(searchLine);
     }
 
     @GetMapping("/{url}")

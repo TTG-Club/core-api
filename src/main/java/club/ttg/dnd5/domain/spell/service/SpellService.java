@@ -14,12 +14,15 @@ import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,10 +44,22 @@ public class SpellService {
         return true;
     }
 
-    public List<SpellShortResponse> findAll() {
-        return spellRepository.findAll().stream()
+    public List<SpellShortResponse> search(String searchLine) {
+        return Optional.ofNullable(searchLine)
+                .filter(StringUtils::isNotBlank)
+                .map(line -> {
+                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
+                    return spellRepository.findBySearchLine(line, invertedSearchLine);
+                })
+                .orElseGet(this::findAll)
+                .stream()
+                .sorted(Comparator.comparing(Spell::getLevel, Comparator.naturalOrder()).thenComparing(Spell::getName, Comparator.naturalOrder()))
                 .map(spellMapper::toSpeciesShortResponse)
                 .collect(Collectors.toList());
+    }
+
+    public List<Spell> findAll() {
+        return spellRepository.findAll();
     }
 
     public SpellDetailedResponse findDetailedByUrl(String url) {
