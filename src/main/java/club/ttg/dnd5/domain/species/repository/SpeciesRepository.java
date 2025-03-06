@@ -7,12 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
-import java.util.Optional;
 
 @Repository
 public interface SpeciesRepository extends JpaRepository<Species, String> {
     Collection<Species> findByParent(Species parent);
-    Optional<Species> findByNameIgnoreCase(String name);
 
     Collection<Species> findAllByParentIsNull(final Sort by);
     @Query(value = """
