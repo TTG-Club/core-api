@@ -1,0 +1,64 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1741079793151-3
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: sources
+            constraintName: fk_sources_on_book_info
+  - changeSet:
+      id: 1741079793151-4
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: species_features
+            constraintName: fk_species_features_on_source
+  - changeSet:
+      id: 1741079793151-5
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: species_features
+            constraintName: fk_species_features_on_species_url
+  - changeSet:
+      id: 1741079793151-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: features
+                  type: jsonb
+            tableName: species
+  - changeSet:
+      id: 1741079793151-2
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: source
+            baseTableName: species
+            constraintName: FK_SPECIES_ON_SOURCE
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+  - changeSet:
+      id: 1741079793151-9
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropTable:
+            cascadeConstraints: true
+            tableName: sources
+  - changeSet:
+      id: 1741079793151-10
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropTable:
+            cascadeConstraints: true
+            tableName: species_features
+
