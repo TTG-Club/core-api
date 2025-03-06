@@ -70,7 +70,7 @@ public interface SpeciesMapper {
         var size = new SpeciesSize();
         size.setSize(size.getSize());
         var sizeString = sizes.stream()
-                .map(s -> String.format("%s (%d-%d футов)", s.getType().getName(), s.getFrom(), s.getTo()))
+                .map(s -> String.format("%s (около %d-%d футов в высоту)", s.getType().getName(), s.getFrom(), s.getTo()))
                 .collect(Collectors.joining(" или "));
         if (sizes.size() > 1) {
             sizeString += ", выбирается при выборе этого вида";
