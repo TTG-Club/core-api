@@ -17,7 +17,7 @@ public interface NumberFormatted<T> {
     }
 
     default String getFormattedName(Long number) {
-        if(Objects.isNull(number)) {
+        if (Objects.isNull(number)) {
             return getName();
         }
         if (getConjugated().containsKey(this)) {
@@ -30,6 +30,20 @@ public interface NumberFormatted<T> {
             } else {
                 return String.format(NUMBER_FORMATTED_TEMPLATE, number, getConjugated().get(this).get(GREATER_THAN_FOUR));
             }
+        }
+        return getName();
+    }
+
+    default String getGenetiveFormattedName(Long number) {
+        if (Objects.isNull(number)) {
+            return getName();
+        }
+        if (getConjugated().containsKey(this)) {
+            long lastDigit = number % 10;
+            if (lastDigit == 1) {
+                return String.format(NUMBER_FORMATTED_TEMPLATE, number, getConjugated().get(this).get(BETWEEN_TWO_AND_FOUR));
+            }
+             return String.format(NUMBER_FORMATTED_TEMPLATE, number, getConjugated().get(this).get(GREATER_THAN_FOUR));
         }
         return getName();
     }

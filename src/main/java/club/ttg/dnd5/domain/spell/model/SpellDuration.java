@@ -21,16 +21,22 @@ public class SpellDuration {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if(Objects.nonNull(unit)) {
-            sb.append(unit.getFormattedName(value));
-            sb.append(" ");
+        if(concentration) {
+            sb.append("Концентрация, ");
+            if(Objects.nonNull(unit)) {
+                sb.append("до ");
+                sb.append(unit.getGenetiveFormattedName(value));
+                sb.append(" ");
+            }
+        } else {
+            if(Objects.nonNull(unit)) {
+                sb.append(unit.getFormattedName(value));
+                sb.append(" ");
+            }
         }
         if(StringUtils.isNotBlank(custom)) {
             sb.append(custom);
         }
-        if(concentration) {
-            sb.append(" (концентрация)");
-        }
-        return sb.toString();
+        return sb.toString().trim();
     }
 }
