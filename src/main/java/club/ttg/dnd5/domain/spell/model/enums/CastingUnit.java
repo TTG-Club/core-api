@@ -14,6 +14,7 @@ public enum CastingUnit implements NumberFormatted<CastingUnit> {
     ACTION("действие"),
     ROUND("ход"),
     MINUTE("минута"),
+    RITUAL("ритуал"),
     HOUR("час");
 
     private final String name;
