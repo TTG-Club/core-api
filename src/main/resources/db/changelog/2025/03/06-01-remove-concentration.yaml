@@ -7,4 +7,11 @@ databaseChangeLog:
         - dropColumn:
             columnName: concentration
             tableName: spell
-
+  - changeSet:
+      id: 1741269315653-7
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: ritual
+            tableName: spell

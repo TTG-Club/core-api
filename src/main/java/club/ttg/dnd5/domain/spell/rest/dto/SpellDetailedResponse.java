@@ -14,8 +14,6 @@ public class SpellDetailedResponse extends ShortResponse {
     private Long level;
     private String school;
     private String additionalType;
-    private Boolean concentration;
-    private Boolean ritual;
     private String castingTime;
     private String range;
     private String duration;
