@@ -30,9 +30,12 @@ public class SpeciesService {
     }
 
     public SpeciesDetailResponse findById(String url) {
-        return speciesRepository.findById(url)
-                .map(speciesMapper::toDetailDto)
+        var species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
+        if (species.getParent() != null) {
+            species.getFeatures().addAll(species.getParent().getFeatures());
+        }
+        return speciesMapper.toDetailDto(species);
     }
 
     public List<Species> findAllById(Collection<String> urls) {
@@ -55,7 +58,6 @@ public class SpeciesService {
         if (StringUtils.hasText(request.getParent())) {
             var parent = findByUrl(request.getParent());
             species.setParent(parent);
-            species.getFeatures().addAll(parent.getFeatures());
         }
         var book = bookRepository.findByUrl(request.getSource().getUrl())
                 .orElseThrow(() -> new EntityNotFoundException("Книга не найдена: "
