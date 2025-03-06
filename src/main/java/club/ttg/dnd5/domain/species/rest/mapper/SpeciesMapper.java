@@ -69,10 +69,13 @@ public interface SpeciesMapper {
     default SpeciesSize toSizeString(Collection<SpeciesSizeDto> sizes) {
         var size = new SpeciesSize();
         size.setSize(size.getSize());
-        size.setText(sizes.stream()
+        var sizeString = sizes.stream()
                 .map(s -> String.format("%s (%d-%d футов)", s.getType().getName(), s.getFrom(), s.getTo()))
-                .collect(Collectors.joining(" или "))
-                + ", выбирается при выборе этого вида");
+                .collect(Collectors.joining(" или "));
+        if (sizes.size() > 1) {
+            sizeString += ", выбирается при выборе этого вида";
+        }
+        size.setText(sizeString);
         return size;
     }
 
