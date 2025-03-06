@@ -53,21 +53,21 @@ public interface SpellMapper {
     default String castingTimeToString(Spell spell) {
         return  spell.getCastingTime().stream()
                 .map(SpellCastingTime::toString)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(" или "));
          }
 
     @Named("durationToString")
     default String durationToString(Spell spell) {
          return spell.getDuration().stream()
                 .map(SpellDuration::toString)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(" или "));
     }
 
     @Named("distanceToString")
     default String distanceToString(Spell spell) {
         return spell.getRange().stream()
                 .map(SpellDistance::toString)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(" или "));
     }
 
     @Retention(RetentionPolicy.SOURCE)
