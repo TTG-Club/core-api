@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.util.CollectionUtils;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -61,7 +62,7 @@ public interface SpeciesMapper {
 
     @Named("hasLineages")
     default boolean hasLineages(Collection<Species> lineages) {
-        return !lineages.isEmpty();
+        return !CollectionUtils.isEmpty(lineages);
     }
 
     @Named("collectSizes")
