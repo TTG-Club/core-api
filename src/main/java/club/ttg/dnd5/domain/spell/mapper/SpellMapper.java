@@ -15,8 +15,10 @@ import org.mapstruct.Named;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Mapper(uses = {SpellComponentsMapper.class, SpellAffiliationMapper.class, BaseMapping.class}, componentModel = "spring")
@@ -29,11 +31,12 @@ public interface SpellMapper {
 
     @ToEntityMapping
     Spell updateEntity(@MappingTarget Spell target, SpellRequest request, Book source,
-                   List<ClassCharacter> classes, List<ClassCharacter> subclasses,
-                   List<Species> species, List<Species> lineages);
+                       List<ClassCharacter> classes, List<ClassCharacter> subclasses,
+                       List<Species> species, List<Species> lineages);
 
     @Mapping(target = "school", source = "school.school.name")
     @Mapping(target = "additionalType", source = "school.additionalType")
+    @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     SpellShortResponse toSpeciesShortResponse(Spell spell);
@@ -49,16 +52,23 @@ public interface SpellMapper {
     @Mapping(target = "affiliation", source = ".")
     SpellDetailedResponse toSpellDetailedResponse(Spell spell);
 
+    @Named("isConcentration")
+    default Boolean isConcentration(Collection<SpellDuration> durations) {
+        return durations.stream()
+                .map(SpellDuration::getConcentration)
+                .anyMatch(Predicate.isEqual(true));
+    }
+
     @Named("castingTimeToString")
     default String castingTimeToString(Spell spell) {
-        return  spell.getCastingTime().stream()
+        return spell.getCastingTime().stream()
                 .map(SpellCastingTime::toString)
                 .collect(Collectors.joining(" или "));
-         }
+    }
 
     @Named("durationToString")
     default String durationToString(Spell spell) {
-         return spell.getDuration().stream()
+        return spell.getDuration().stream()
                 .map(SpellDuration::toString)
                 .collect(Collectors.joining(" или "));
     }
@@ -76,8 +86,6 @@ public interface SpellMapper {
     @Mapping(target = "description", source = "request.description")
     @Mapping(target = "sourcePage", source = "request.source.page")
     @Mapping(target = "school.school", source = "request.school")
-    @Mapping(target = "ritual", source = "request.ritual")
-    @Mapping(target = "concentration", source = "request.concentration")
     @Mapping(target = "components", source = "request.components", qualifiedByName = "setNull")
     @Mapping(target = "range", source = "request.range")
     @Mapping(target = "castingTime", source = "request.castingTime")
@@ -87,7 +95,8 @@ public interface SpellMapper {
     @Mapping(target = "source", source = "source")
     @Mapping(target = "speciesAffiliation", source = "species")
     @Mapping(target = "updatedAt", ignore = true)
-    @interface ToEntityMapping {}
+    @interface ToEntityMapping {
+    }
 
     @Named("setNull")
     default SpellComponents setNull(SpellComponents components) {
