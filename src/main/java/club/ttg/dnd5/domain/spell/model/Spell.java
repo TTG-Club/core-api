@@ -31,8 +31,6 @@ public class Spell extends NamedEntity {
 
     @Column(nullable = false)
     private Boolean ritual;
-    @Column(nullable = false)
-    private Boolean concentration;
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private SpellComponents components;

@@ -77,7 +77,6 @@ public interface SpellMapper {
     @Mapping(target = "sourcePage", source = "request.source.page")
     @Mapping(target = "school.school", source = "request.school")
     @Mapping(target = "ritual", source = "request.ritual")
-    @Mapping(target = "concentration", source = "request.concentration")
     @Mapping(target = "components", source = "request.components", qualifiedByName = "setNull")
     @Mapping(target = "range", source = "request.range")
     @Mapping(target = "castingTime", source = "request.castingTime")
