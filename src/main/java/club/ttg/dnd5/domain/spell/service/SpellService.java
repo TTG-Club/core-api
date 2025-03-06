@@ -50,15 +50,14 @@ public class SpellService {
                     String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
                     return spellRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SPELL_SORT);
                 })
-                .orElseGet(() -> spellRepository.findAll(DEFAULT_SPELL_SORT))
+                .orElseGet(() -> findAll(DEFAULT_SPELL_SORT))
                 .stream()
-//                .sorted(Comparator.comparing(Spell::getLevel, Comparator.naturalOrder()).thenComparing(Spell::getName, Comparator.naturalOrder()))
                 .map(spellMapper::toSpeciesShortResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<Spell> findAll() {
-        return spellRepository.findAll();
+    public List<Spell> findAll(Sort sort) {
+        return spellRepository.findAll(sort);
     }
 
     public SpellDetailedResponse findDetailedByUrl(String url) {
