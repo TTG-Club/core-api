@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.spell.model;
 
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import lombok.*;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
@@ -15,13 +15,17 @@ public class SpellCastingTime {
     private Long value;
     private CastingUnit unit;
     private String custom;
+
     @Override
     public String toString() {
-        if (StringUtils.hasText(custom)) {
-            return custom;
+        StringBuilder sb = new StringBuilder();
+        if(Objects.nonNull(unit)) {
+            sb.append(unit.getFormattedName(value));
+            sb.append(" ");
         }
-        return Objects.nonNull(value)
-                ? String.format("%s %s", value, unit.getFormattedName(value))
-                : String.format( "%s", unit.getName());
+        if(StringUtils.isNotBlank(custom)) {
+            sb.append(custom);
+        }
+        return sb.toString();
     }
 }

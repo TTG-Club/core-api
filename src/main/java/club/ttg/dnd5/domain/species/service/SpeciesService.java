@@ -10,7 +10,9 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.book.repository.BookRepository;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +35,11 @@ public class SpeciesService {
         var species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
         if (species.getParent() != null) {
-            species.getFeatures().addAll(species.getParent().getFeatures());
+            if (species.getFeatures() != null) {
+                species.getFeatures().addAll(species.getParent().getFeatures());
+            } else {
+                species.setFeatures(species.getParent().getFeatures());
+            }
         }
         return speciesMapper.toDetailDto(species);
     }
@@ -42,9 +48,15 @@ public class SpeciesService {
         return speciesRepository.findAllById(urls);
     }
 
-    public List<SpeciesShortResponse> getSpecies() {
-        return speciesRepository.findAllByParentIsNull()
-                .stream()
+    public List<SpeciesShortResponse> getSpecies(String searchLine, String[] sort) {
+        Collection<Species> specieses;
+        if (StringUtils.hasText(searchLine)) {
+            String invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
+            specieses =  speciesRepository.findAllSearch(searchLine, invertedSearchLine, Sort.by(sort));
+        } else {
+            specieses = speciesRepository.findAllByParentIsNull(Sort.by(sort));
+        }
+        return specieses.stream()
                 .map(speciesMapper::toShortDto)
                 .toList();
     }

@@ -20,7 +20,7 @@ public class SpeciesRequest extends BaseRequest {
     @Schema(description = "URL на вид", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String parent;
 
-    @JsonProperty("image")
+    @JsonProperty("linkImage")
     private String linkImageUrl;
     @Schema(description = "Галерея изображений")
     private List<String> galleryUrl;
