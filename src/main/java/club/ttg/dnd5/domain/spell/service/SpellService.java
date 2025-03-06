@@ -18,11 +18,11 @@ import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,10 +32,9 @@ import java.util.stream.Collectors;
 public class SpellService {
     private final SpeciesService speciesService;
     private final BookService bookService;
-
     private final SpellRepository spellRepository;
-
     private final SpellMapper spellMapper;
+    private static final Sort DEFAULT_SPELL_SORT = Sort.by("level", "name");
 
     public boolean existOrThrow(String url) {
         if (!spellRepository.existsById(url)) {
@@ -49,11 +48,11 @@ public class SpellService {
                 .filter(StringUtils::isNotBlank)
                 .map(line -> {
                     String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return spellRepository.findBySearchLine(line, invertedSearchLine);
+                    return spellRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SPELL_SORT);
                 })
-                .orElseGet(this::findAll)
+                .orElseGet(() -> spellRepository.findAll(DEFAULT_SPELL_SORT))
                 .stream()
-                .sorted(Comparator.comparing(Spell::getLevel, Comparator.naturalOrder()).thenComparing(Spell::getName, Comparator.naturalOrder()))
+//                .sorted(Comparator.comparing(Spell::getLevel, Comparator.naturalOrder()).thenComparing(Spell::getName, Comparator.naturalOrder()))
                 .map(spellMapper::toSpeciesShortResponse)
                 .collect(Collectors.toList());
     }

@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.repository;
 
 import club.ttg.dnd5.domain.spell.model.Spell;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -18,6 +19,6 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
                or s.alternative ilike concat('%', :invertedSearchLine, '%')
             """
     )
-    List<Spell> findBySearchLine(String searchLine, String invertedSearchLine);
+    List<Spell> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
 }

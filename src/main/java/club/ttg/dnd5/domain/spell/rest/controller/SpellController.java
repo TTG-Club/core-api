@@ -38,10 +38,10 @@ public class SpellController {
 
     @Operation(summary = "Поиск заклинаний", description = "Поиск заклинания по именам")
     @PostMapping("/search")
-    public List<SpellShortResponse> getSpells(@RequestParam(required = false)
+    public List<SpellShortResponse> getSpells(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 3)
-                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine) {
         return spellService.search(searchLine);
     }
