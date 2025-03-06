@@ -33,7 +33,11 @@ public class SpeciesService {
         var species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
         if (species.getParent() != null) {
-            species.getFeatures().addAll(species.getParent().getFeatures());
+            if (species.getFeatures() != null) {
+                species.getFeatures().addAll(species.getParent().getFeatures());
+            } else {
+                species.setFeatures(species.getParent().getFeatures());
+            }
         }
         return speciesMapper.toDetailDto(species);
     }
