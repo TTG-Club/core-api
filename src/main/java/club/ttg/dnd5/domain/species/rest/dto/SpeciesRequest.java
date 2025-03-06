@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,4 +18,6 @@ public class SpeciesRequest extends BaseRequest {
     private Collection<FeatureRequest> features;
     @Schema(description = "URL на вид", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String parent;
+    @Schema(description = "Галерея изображений")
+    private List<String> galleryUrl;
 }
