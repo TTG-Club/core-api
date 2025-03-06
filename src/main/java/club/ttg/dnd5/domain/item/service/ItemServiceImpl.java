@@ -36,8 +36,9 @@ public class ItemServiceImpl implements ItemService {
             case Armor armor -> itemMapper.toDetailDto(armor);
             case Weapon weapon -> itemMapper.toDetailDto(weapon);
             case Tool tool -> itemMapper.toDetailDto(tool);
-            case Ship ship -> itemMapper.toDetailDto(ship);
+            case Vehicle ship -> itemMapper.toDetailDto(ship);
             case Mount mount -> itemMapper.toDetailDto(mount);
+            case MagicItem magicItem -> itemMapper.toDetailDto(magicItem);
             case Item object -> itemMapper.toDetailDto(object);
         };
     }
@@ -51,9 +52,17 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDetailResponse addItem(final ItemRequest itemDto) {
-        exist(itemDto.getUrl());
-        var item = itemMapper.toEntity(itemDto);
+    public ItemDetailResponse addItem(final ItemRequest itemRequest) {
+        exist(itemRequest.getUrl());
+        var item = switch(itemRequest.getCategory()) {
+            case ITEM -> itemMapper.toItemEntity(itemRequest);
+            case ARMOR -> itemMapper.toArmorEntity(itemRequest);
+            case WEAPON -> itemMapper.toWeaponEntity(itemRequest);
+            case MAGIC -> itemMapper.toMagicEntity(itemRequest);
+            case VEHICLE -> itemMapper.toVehicleEntity(itemRequest);
+            case MOUNT -> itemMapper.toMountEntity(itemRequest);
+            case TOOL -> itemMapper.toToolEntity(itemRequest);
+        };
 
         return itemMapper.toDetailDto(itemRepository.save(item));
     }
