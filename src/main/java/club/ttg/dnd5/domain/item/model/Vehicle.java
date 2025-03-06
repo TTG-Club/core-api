@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @DiscriminatorValue("SHIP")
-public class Ship extends Item {
+public class Vehicle extends Item {
     /**
      * Скорость.
      */
