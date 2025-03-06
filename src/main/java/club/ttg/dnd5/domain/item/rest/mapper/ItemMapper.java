@@ -8,7 +8,7 @@ import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {BaseMapping.class})
 public interface ItemMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "type", constant = "ITEM")
