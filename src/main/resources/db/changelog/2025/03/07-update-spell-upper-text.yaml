@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: update-spell-upper-text
+      author: Magistrus
+      changes:
+        - modifyDataType:
+            tableName: spell
+            columnName: upper
+            newDataType: text
