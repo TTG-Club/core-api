@@ -45,6 +45,7 @@ public class Spell extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private List<SpellDuration> duration;
 
+    @Column(columnDefinition = "TEXT")
     private String upper;
 
     @ManyToOne
