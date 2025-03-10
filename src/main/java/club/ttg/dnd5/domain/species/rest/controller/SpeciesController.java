@@ -10,11 +10,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -41,9 +44,17 @@ public class SpeciesController {
     }
 
     @PostMapping("/search")
-    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и урл")
-    public List<SpeciesShortResponse> getAllSpecies() {
-        return speciesService.getSpecies();
+    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
+    public List<SpeciesShortResponse> getAllSpecies(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Size(min = 3)
+            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine,
+            @Parameter(description = "Сортировка")
+            @RequestParam(required = false, defaultValue = "name")
+            String[] sort) {
+        return speciesService.getSpecies(searchLine, sort);
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
@@ -57,20 +68,20 @@ public class SpeciesController {
         return speciesService.findById(url);
     }
 
-    @GetMapping("/lineages")
+    @GetMapping("/{url}/lineages")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
     public List<SpeciesDetailResponse> getSubSpeciesByParentUrl(
-            @Parameter(description = "URL родительского вида", required = true) @RequestParam String url) {
+            @Parameter(description = "URL родительского вида", required = true) @PathVariable String url) {
         return speciesService.getLineages(url);
     }
 
-    @GetMapping("/related")
+    @GetMapping("/{url}/lineages/search")
     @Operation(summary = "Получить все происхождения по URL",
             description = "Возвращает список всех происхождений, включая родительский вид и подвиды по указанному URL подвида.")
-    public List<SpeciesDetailResponse> getAllRelatedSpeciesBySubSpeciesUrl(
+    public Collection<SpeciesShortResponse> getAllRelatedSpeciesBySubSpeciesUrl(
             @Parameter(description = "URL происхождения", required = true)
-            @RequestParam String url) {
+            @PathVariable String url) {
         return speciesService.getAllLineages(url);
     }
 
