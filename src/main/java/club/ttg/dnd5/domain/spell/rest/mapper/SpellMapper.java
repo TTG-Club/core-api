@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.spell.mapper;
+package club.ttg.dnd5.domain.spell.rest.mapper;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
