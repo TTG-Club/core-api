@@ -46,6 +46,7 @@ public class SpellService {
     public List<SpellShortResponse> search(String searchLine) {
         return Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
+                .map(String::trim)
                 .map(line -> {
                     String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
                     return spellRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SPELL_SORT);
