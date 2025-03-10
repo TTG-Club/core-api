@@ -23,7 +23,8 @@ public enum DurationUnit implements NumberFormatted<DurationUnit> {
             MINUTE, Map.of(BETWEEN_TWO_AND_FOUR, "минуты", GREATER_THAN_FOUR, "минут"),
             HOUR, Map.of(BETWEEN_TWO_AND_FOUR, "часа", GREATER_THAN_FOUR, "часов"),
             DAY, Map.of(BETWEEN_TWO_AND_FOUR, "дня", GREATER_THAN_FOUR, "дней"),
-            YEAR, Map.of(BETWEEN_TWO_AND_FOUR, "года", GREATER_THAN_FOUR, "лет"));
+            YEAR, Map.of(BETWEEN_TWO_AND_FOUR, "года", GREATER_THAN_FOUR, "лет"),
+            ROUND, Map.of(BETWEEN_TWO_AND_FOUR, "раунда", GREATER_THAN_FOUR, "раундов"));
 
     private final String name;
 

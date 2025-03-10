@@ -22,5 +22,6 @@ public class SpeciesDetailResponse extends BaseResponse {
 
     @Schema(description = "Умения")
     private Collection<SpeciesFeatureResponse> features;
+    private boolean hasLineages;
 }
 
