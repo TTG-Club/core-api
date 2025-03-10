@@ -4,7 +4,6 @@ import club.ttg.dnd5.dto.base.NumberFormatted;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -18,7 +17,8 @@ public enum DistanceUnit implements NumberFormatted<DistanceUnit> {
     FEET("фут"),
     SIGHT("в пределах видимости"),
     MILE("миля"),
-    UNLIMITED("неограниченная");
+    UNLIMITED("неограниченная"),
+    SPECIAL("особая");
 
     private final String name;
 
