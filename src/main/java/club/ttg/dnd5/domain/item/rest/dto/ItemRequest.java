@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
 import club.ttg.dnd5.dictionary.item.ArmorCategory;
+import club.ttg.dnd5.dictionary.item.WeaponCategory;
 import club.ttg.dnd5.dictionary.item.magic.Rarity;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.ItemType;
@@ -27,6 +30,20 @@ public class ItemRequest extends BaseRequest {
     private String weight;
 
     /**
+     * Оружие
+     */
+    @Schema(name = "Категория оружия", examples = {"SIMPLE_MELEE", "SIMPLE_RANGED", "MATERIAL_MELEE", "MATERIAL_RANGED"})
+    private WeaponCategory weaponCategory;
+    @Schema(name = "Количество костей урона", examples = {"1", "2"})
+    private byte diceCount;
+    @Schema(name = "Кость урона", examples = "d6")
+    private Dice diceDamage;
+    @Schema(name = "Тип урона", examples = {"BLUDGEONING", "PIERCING", "SLASHING"})
+    private DamageType damageType;
+    @Schema(name = "Дистанция")
+    private Range range;
+
+    /**
      * Доспех
      */
     @Schema(name = "Категория доспеха", examples = "LIGHT")
@@ -38,20 +55,6 @@ public class ItemRequest extends BaseRequest {
     private String strength;
     @Schema(name = "Помеха на проверку Ловкости (Скрытность)", examples = "Есть")
     private String stealth;
-
-    /**
-     *  Магический предмет
-     */
-    @Schema(name = "редкость магического предмета", examples = "RARE")
-    private Rarity rarity;
-    @Schema(name = "уточнение типа магического предмета", examples = "любой меч")
-    private String typeClarification;
-    @Schema(name = "настройка магического предмета", examples = "Требуется настройка (волшебник)")
-    private String attunement;
-    @Schema(name = "количество зарядов магического предмета")
-    private Byte charges;
-    @Schema(name = "true если магический предмет - проклят")
-    private Boolean curse;
 
     /**
      * Верховое животное

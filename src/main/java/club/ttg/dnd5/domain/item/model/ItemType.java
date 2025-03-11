@@ -10,6 +10,8 @@ public enum ItemType {
 
     ADVENTURING_GEAR("Снаряжение приключенца", ItemCategory.ITEM),
     ARTISAN_S_TOOLS("Инструменты ремесленников", ItemCategory.ITEM),
+    TOOL("Инструменты", ItemCategory.TOOL),
+    INSTRUMENT("Музыкальные инструменты", ItemCategory.TOOL),
     FOOD_AND_DRINK("Еда и питье", ItemCategory.ITEM),
     GAMING_SET("Игровой набор", ItemCategory.ITEM),
 
@@ -24,10 +26,8 @@ public enum ItemType {
     LIGHT_ARMOR("Легкий доспех", ItemCategory.ARMOR),
     MEDIUM_ARMOR("Средний доспех", ItemCategory.ARMOR),
     HEAVY_ARMOR("Тяжелый доспех", ItemCategory.ARMOR),
-    SHIELD("щит", ItemCategory.ARMOR),  // 10
+    SHIELD("Щит", ItemCategory.ARMOR),  // 10
 
-    TOOL("Инструменты", ItemCategory.TOOL),
-    INSTRUMENT("Музыкальные инструменты", ItemCategory.TOOL),
     SPELLCASTING_FOCUS("Магическая фокусировка", ItemCategory.ITEM),
     POISON("Яды", ItemCategory.ITEM),
     MOUNT("Верховое животное", ItemCategory.MOUNT),
@@ -35,15 +35,7 @@ public enum ItemType {
     VEHICLE("Транспорт", ItemCategory.VEHICLE),
     VEHICLE_AIR("Транспорт (воздушный)", ItemCategory.VEHICLE),
     VEHICLE_LAND("Транспорт (наземный)", ItemCategory.VEHICLE),
-    VEHICLE_WATER("Транспорт (водный)", ItemCategory.VEHICLE),
-
-    WAND("волшебная палочка", ItemCategory.MAGIC), // 2
-    ROD("жезл", ItemCategory.MAGIC),  // 3
-    STAFF("посох", ItemCategory.MAGIC), //4
-    POTION("зелье", ItemCategory.MAGIC), //5
-    RING("кольцо", ItemCategory.MAGIC),  //6
-    SCROLL("свиток", ItemCategory.MAGIC), // 7
-    SUBJECT("чудесный предмет", ItemCategory.MAGIC);
+    VEHICLE_WATER("Транспорт (водный)", ItemCategory.VEHICLE);
 
     private final String name;
     private final ItemCategory category;

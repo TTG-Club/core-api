@@ -11,11 +11,11 @@ public interface ItemService {
 
     Collection<ItemShortResponse> getItems();
 
-    ItemDetailResponse addItem(ItemRequest itemDto);
+    String addItem(ItemRequest itemDto);
 
-    ItemDetailResponse updateItem(String itemUrl, ItemRequest itemDto);
+    String updateItem(String itemUrl, ItemRequest itemDto);
 
-    ItemShortResponse delete(String itemUrl);
+    String delete(String itemUrl);
 
     boolean existsByUrl(String url);
 }

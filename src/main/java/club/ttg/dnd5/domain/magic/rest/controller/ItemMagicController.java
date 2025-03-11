@@ -1,9 +1,12 @@
-package club.ttg.dnd5.domain.item.rest.controller;
+package club.ttg.dnd5.domain.magic.rest.controller;
 
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
-import club.ttg.dnd5.domain.item.service.ItemService;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
+import club.ttg.dnd5.domain.magic.service.MagicItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -16,10 +19,10 @@ import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v2/item")
-@Tag(name = "Снаряжение и предметы", description = "REST API снаряжение и прочие предметы")
-public class ItemController {
-    private final ItemService itemService;
+@RequestMapping("/api/v2/magic-item")
+@Tag(name = "Магически предметы", description = "REST API магические предметы и артефакты")
+public class ItemMagicController {
+    private final MagicItemService magicItemService;
     /**
      * Проверка существования вида по URL.
      *
@@ -37,7 +40,7 @@ public class ItemController {
     @RequestMapping(value = "/{url}", method = RequestMethod.HEAD)
     @ResponseStatus(HttpStatus.CONFLICT)
     public boolean exists(@PathVariable("url") String url) {
-        return itemService.existsByUrl(url);
+        return magicItemService.existsByUrl(url);
     }
 
     @Operation(summary = "Получение детального описания предмета")
@@ -46,8 +49,8 @@ public class ItemController {
             @ApiResponse(responseCode = "404", description = "Предмет не найден")
     })
     @GetMapping("/{url}")
-    public ItemDetailResponse getItem(@PathVariable final String url) {
-        return itemService.getItem(url);
+    public MagicItemDetailResponse getItem(@PathVariable final String url) {
+        return magicItemService.getItem(url);
     }
 
     @Operation(summary = "Получение списка краткого описания предметов")
@@ -55,8 +58,8 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
     })
     @PostMapping("/search")
-    public Collection<ItemShortResponse> getItems() {
-        return itemService.getItems();
+    public Collection<MagicItemShortResponse> getItems() {
+        return magicItemService.getItems();
     }
 
     @Operation(summary = "Добавление предмета")
@@ -67,8 +70,8 @@ public class ItemController {
     })
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public String addItem(@RequestBody final ItemRequest itemDto) {
-        return itemService.addItem(itemDto);
+    public String addItem(@RequestBody final MagicItemRequest itemDto) {
+        return magicItemService.addItem(itemDto);
     }
 
     @Operation(summary = "Обновление предмета")
@@ -77,10 +80,10 @@ public class ItemController {
             @ApiResponse(responseCode = "404", description = "Предмет не существует"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PutMapping("{itemUrl}")
-    public String updateItem(@PathVariable final String itemUrl,
-                                         @RequestBody final ItemRequest itemDto) {
-        return itemService.updateItem(itemUrl, itemDto);
+    @PutMapping("{url}")
+    public String updateItem(@PathVariable final String url,
+                                         @RequestBody final MagicItemRequest itemDto) {
+        return magicItemService.updateItem(url, itemDto);
     }
 
     @Operation(summary = "Скрывает предмет")
@@ -90,6 +93,6 @@ public class ItemController {
     })
     @DeleteMapping("{itemUrl}")
     public String deleteItem(@PathVariable final String itemUrl) {
-        return itemService.delete(itemUrl);
+        return magicItemService.delete(itemUrl);
     }
 }

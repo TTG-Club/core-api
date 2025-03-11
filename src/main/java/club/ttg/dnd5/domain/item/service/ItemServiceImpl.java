@@ -38,7 +38,6 @@ public class ItemServiceImpl implements ItemService {
             case Tool tool -> itemMapper.toDetailDto(tool);
             case Vehicle ship -> itemMapper.toDetailDto(ship);
             case Mount mount -> itemMapper.toDetailDto(mount);
-            case MagicItem magicItem -> itemMapper.toDetailDto(magicItem);
             case Item object -> itemMapper.toDetailDto(object);
         };
     }
@@ -52,32 +51,31 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDetailResponse addItem(final ItemRequest itemRequest) {
+    public String addItem(final ItemRequest itemRequest) {
         exist(itemRequest.getUrl());
         var item = switch(itemRequest.getCategory()) {
             case ITEM -> itemMapper.toItemEntity(itemRequest);
             case ARMOR -> itemMapper.toArmorEntity(itemRequest);
             case WEAPON -> itemMapper.toWeaponEntity(itemRequest);
-            case MAGIC -> itemMapper.toMagicEntity(itemRequest);
             case VEHICLE -> itemMapper.toVehicleEntity(itemRequest);
             case MOUNT -> itemMapper.toMountEntity(itemRequest);
             case TOOL -> itemMapper.toToolEntity(itemRequest);
         };
 
-        return itemMapper.toDetailDto(itemRepository.save(item));
+        return itemRepository.save(item).getUrl();
     }
 
     @Override
-    public ItemDetailResponse updateItem(final String itemUrl, final ItemRequest itemDto) {
+    public String updateItem(final String itemUrl, final ItemRequest itemDto) {
         Item item = findByUrl(itemUrl);
-        return itemMapper.toDetailDto(itemRepository.save(item));
+        return itemRepository.save(item).getUrl();
     }
 
     @Override
-    public ItemShortResponse delete(final String itemUrl) {
+    public String delete(final String itemUrl) {
         Item item = findByUrl(itemUrl);
         item.setHiddenEntity(true);
-        return itemMapper.toShortDto(itemRepository.save(item));
+        return itemRepository.save(item).getUrl();
     }
 
     private void exist(String url) {
