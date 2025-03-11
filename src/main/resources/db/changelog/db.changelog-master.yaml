@@ -13,3 +13,7 @@ databaseChangeLog:
       file: db/changelog/2025/03/05-update-species.yaml
   - include:
       file: db/changelog/2025/03/05-02-update-spells.yaml
+  - include:
+      file: db/changelog/2025/03/06-01-remove-concentration.yaml
+  - include:
+      file: db/changelog/2025/03/07-update-spell-upper-text.yaml
