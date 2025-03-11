@@ -12,15 +12,18 @@ public enum CastingUnit implements NumberFormatted<CastingUnit> {
     BONUS("бонусное действие"),
     REACTION("реакция"),
     ACTION("действие"),
-    ROUND("ход"),
+    ROUND("раунд"),
     MINUTE("минута"),
     RITUAL("ритуал"),
     HOUR("час");
 
     private final String name;
+
     private static final Map<CastingUnit, Map<Long, String>> CONJUGATED_UNITS = Map.of(
             MINUTE, Map.of(BETWEEN_TWO_AND_FOUR, "минуты", GREATER_THAN_FOUR, "минут"),
-            HOUR, Map.of(BETWEEN_TWO_AND_FOUR, "часа", GREATER_THAN_FOUR, "часов"));
+            HOUR, Map.of(BETWEEN_TWO_AND_FOUR, "часа", GREATER_THAN_FOUR, "часов"),
+            ROUND, Map.of(BETWEEN_TWO_AND_FOUR, "раунда", GREATER_THAN_FOUR, "раундов")
+    );
 
     @Override
     public Map<CastingUnit, Map<Long, String>> getConjugated() {
