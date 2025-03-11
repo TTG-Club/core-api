@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.util.CollectionUtils;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -30,6 +31,7 @@ public interface SpeciesMapper {
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.englishName", target = "source.name.english")
     @Mapping(source = "source.sourceAcronym", target = "source.name.label")
+    @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
     SpeciesDetailResponse toDetailDto(Species species);
 
     @Mapping(source = "name", target = "name.name")
@@ -41,8 +43,8 @@ public interface SpeciesMapper {
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.englishName", target = "source.name.english")
     @Mapping(source = "source.sourceAcronym", target = "source.name.label")
-
     @Mapping(source = "updatedAt", target = "updatedAt")
+    @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
     SpeciesShortResponse toShortDto(Species species);
 
     @Mapping(source = "name.name", target = "name")
@@ -58,14 +60,22 @@ public interface SpeciesMapper {
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     Species toEntity(SpeciesRequest request);
 
+    @Named("hasLineages")
+    default boolean hasLineages(Collection<Species> lineages) {
+        return !CollectionUtils.isEmpty(lineages);
+    }
+
     @Named("collectSizes")
     default SpeciesSize toSizeString(Collection<SpeciesSizeDto> sizes) {
         var size = new SpeciesSize();
         size.setSize(size.getSize());
-        size.setText(sizes.stream()
-                .map(s -> String.format("%s (%d-%d футов)", s.getType().getName(), s.getFrom(), s.getTo()))
-                .collect(Collectors.joining(" или "))
-                + ", выбирается при выборе этого вида");
+        var sizeString = sizes.stream()
+                .map(s -> String.format("%s (около %d-%d футов в высоту)", s.getType().getName(), s.getFrom(), s.getTo()))
+                .collect(Collectors.joining(" или "));
+        if (sizes.size() > 1) {
+            sizeString += ", выбирается при выборе этого вида";
+        }
+        size.setText(sizeString);
         return size;
     }
 

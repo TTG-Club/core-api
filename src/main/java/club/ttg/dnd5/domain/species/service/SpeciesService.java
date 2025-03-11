@@ -10,14 +10,15 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.book.repository.BookRepository;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -31,18 +32,31 @@ public class SpeciesService {
     }
 
     public SpeciesDetailResponse findById(String url) {
-        return speciesRepository.findById(url)
-                .map(speciesMapper::toDetailDto)
+        var species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
+        if (species.getParent() != null) {
+            if (species.getFeatures() != null) {
+                species.getFeatures().addAll(species.getParent().getFeatures());
+            } else {
+                species.setFeatures(species.getParent().getFeatures());
+            }
+        }
+        return speciesMapper.toDetailDto(species);
     }
 
     public List<Species> findAllById(Collection<String> urls) {
         return speciesRepository.findAllById(urls);
     }
 
-    public List<SpeciesShortResponse> getSpecies() {
-        return speciesRepository.findAllByParentIsNull()
-                .stream()
+    public List<SpeciesShortResponse> getSpecies(String searchLine, String[] sort) {
+        Collection<Species> specieses;
+        if (StringUtils.hasText(searchLine)) {
+            String invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
+            specieses =  speciesRepository.findAllSearch(searchLine, invertedSearchLine, Sort.by(sort));
+        } else {
+            specieses = speciesRepository.findAllByParentIsNull(Sort.by(sort));
+        }
+        return specieses.stream()
                 .map(speciesMapper::toShortDto)
                 .toList();
     }
@@ -77,19 +91,11 @@ public class SpeciesService {
                 .toList();
     }
 
-    public List<SpeciesDetailResponse> getAllLineages(String subSpeciesUrl) {
-        Species subSpecies = speciesRepository.findById(subSpeciesUrl)
-                .orElseThrow(() -> new EntityNotFoundException("Sub-species not found for URL: " + subSpeciesUrl));
-
-        return Stream.concat(
-                        Stream.of(subSpecies),
-                        Stream.concat(
-                                Stream.ofNullable(subSpecies.getParent()),
-                                subSpecies.getLineages() != null ? subSpecies.getLineages().stream() : Stream.empty()
-                        )
-                )
-                .filter(species -> !species.isHiddenEntity())
-                .map(speciesMapper::toDetailDto)
+    public Collection<SpeciesShortResponse> getAllLineages(String url) {
+        Species species = speciesRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Вид не найден URL: " + url));
+        return species.getLineages().stream()
+            .map(speciesMapper::toShortDto)
                 .toList();
     }
 

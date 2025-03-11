@@ -29,10 +29,6 @@ public class Spell extends NamedEntity {
     @Embedded
     private SpellSchool school;
 
-    @Column(nullable = false)
-    private Boolean ritual;
-    @Column(nullable = false)
-    private Boolean concentration;
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private SpellComponents components;
@@ -49,6 +45,7 @@ public class Spell extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private List<SpellDuration> duration;
 
+    @Column(columnDefinition = "TEXT")
     private String upper;
 
     @ManyToOne

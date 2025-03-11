@@ -1,1 +1,0 @@
-# TTG club REST API

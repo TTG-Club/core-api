@@ -11,4 +11,5 @@ import lombok.Setter;
 public class SpeciesShortResponse extends ShortResponse {
     @Schema(description = "Ссылка на изображение бэкграунда")
     private String image;
+    private boolean hasLineages = false;
 }

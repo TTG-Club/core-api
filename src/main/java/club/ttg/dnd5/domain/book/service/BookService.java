@@ -24,8 +24,9 @@ public class BookService {
     }
 
     public Book findByUrl(String url) {
-        return bookRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException(String.format("Книга с url %s не существует" , url)));
+        return bookRepository.findByUrl(url)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Книга с url %s не существует" , url)));
 
     }
 
