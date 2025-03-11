@@ -9,7 +9,6 @@ public enum ItemCategory {
     ITEM("Снаряжение"),
     ARMOR("Доспех"),
     WEAPON("Оружие"),
-    MAGIC("Магический предмет"),
     VEHICLE("Транспортное средство"),
     MOUNT("Верховое животное"),
     TOOL("Инструмент");

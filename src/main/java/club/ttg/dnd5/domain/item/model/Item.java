@@ -16,7 +16,7 @@ import java.util.Set;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "item_type", discriminatorType = DiscriminatorType.STRING)
 @Entity
-@Table(name = "items", indexes = {
+@Table(name = "item", indexes = {
         @Index(name = "url_index", columnList = "url"),
         @Index(name = "name_index", columnList = "name, english, alternative")
 })

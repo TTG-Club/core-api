@@ -24,19 +24,20 @@ public interface ItemMapper {
     @BaseItem
     ItemDetailResponse toDetailDto(final Armor armor);
 
+    @BaseItem
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "WEAPON")
-    @BaseItem
+    @Mapping(source = "category", target = "weaponCategory")
     ItemDetailResponse toDetailDto(final Weapon weapon);
 
+    @BaseItem
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "SHIP")
-    @BaseItem
     ItemDetailResponse toDetailDto(final Vehicle ship);
 
+    @BaseItem
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "MOUNT")
-    @BaseItem
     ItemDetailResponse toDetailDto(final Mount mount);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -50,11 +51,10 @@ public interface ItemMapper {
     Armor toArmorEntity(ItemRequest request);
 
     @BaseMapping.BaseEntityNameMapping
-    @Mapping(source = "waponCategory.name", target = "category")
+    @Mapping(source = "weaponCategory.name", target = "category")
+    @Mapping(source = "range.normal", target = "rangeNormal")
+    @Mapping(source = "range.max", target = "rangeMax")
     Weapon toWeaponEntity(ItemRequest request);
-
-    @BaseMapping.BaseEntityNameMapping
-    MagicItem toMagicEntity(ItemRequest request);
 
     @BaseMapping.BaseEntityNameMapping
     Vehicle toVehicleEntity(ItemRequest request);
