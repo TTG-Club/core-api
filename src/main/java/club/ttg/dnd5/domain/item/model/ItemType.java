@@ -15,12 +15,15 @@ public enum ItemType {
     FOOD_AND_DRINK("Еда и питье", ItemCategory.ITEM),
     GAMING_SET("Игровой набор", ItemCategory.ITEM),
 
+    AMMO("Боеприпас", ItemCategory.WEAPON),
     WEAPON("Оружие", ItemCategory.WEAPON),
     MARTIAL_WEAPON("Воинское оружие", ItemCategory.WEAPON),
     SIMPLE_WEAPON("Простое оружие", ItemCategory.WEAPON),
     MELEE_WEAPON("Рукопашное оружие", ItemCategory.WEAPON),
     RANGED_WEAPON("Дальнобойное оружие", ItemCategory.WEAPON),
     FIREARM("Огнестрельное оружие", ItemCategory.WEAPON),
+    FUTURISTIC("Футуристическое оружие", ItemCategory.WEAPON),
+    EXPLOSIVE("Взрывчатка", ItemCategory.WEAPON),
 
     ARMOR("Доспехи", ItemCategory.ARMOR),
     LIGHT_ARMOR("Легкий доспех", ItemCategory.ARMOR),

@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Schema(description = "Дистанция")
+@Schema(description = "Дистанция и дальность")
 public class Range {
     @Schema(description = "Нормальная")
     private short normal;

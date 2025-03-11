@@ -1,18 +1,10 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
-import club.ttg.dnd5.dictionary.item.WeaponCategory;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
-import club.ttg.dnd5.domain.item.model.WeaponMastery;
-import club.ttg.dnd5.domain.item.model.WeaponProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.*;
 import lombok.*;
-
-import java.util.Collection;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 

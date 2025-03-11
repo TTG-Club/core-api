@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.item.model.*;
+import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
