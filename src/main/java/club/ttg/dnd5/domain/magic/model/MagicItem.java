@@ -46,4 +46,8 @@ public class MagicItem extends NamedEntity {
      * True если предмет проклят.
      */
     private boolean curse;
+    /**
+     * True если расходуемый
+     */
+    private boolean consumable;
 }
