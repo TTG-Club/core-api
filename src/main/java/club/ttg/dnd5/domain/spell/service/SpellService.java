@@ -5,7 +5,7 @@ import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
-import club.ttg.dnd5.domain.spell.mapper.SpellMapper;
+import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
@@ -46,6 +46,7 @@ public class SpellService {
     public List<SpellShortResponse> search(String searchLine) {
         return Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
+                .map(String::trim)
                 .map(line -> {
                     String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
                     return spellRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SPELL_SORT);
