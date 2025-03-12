@@ -8,7 +8,7 @@ import java.util.Objects;
 public interface NumberFormatted<T> {
     Long BETWEEN_TWO_AND_FOUR = 2L;
     Long GREATER_THAN_FOUR = 5L;
-    String NUMBER_FORMATTED_TEMPLATE = "%s %s";
+    String NUMBER_FORMATTED_TEMPLATE = "%d %s";
 
     Map<T, Map<Long, String>> getConjugated();
 
@@ -22,6 +22,11 @@ public interface NumberFormatted<T> {
         return getConjugated().containsKey(this);
     }
 
+    /**
+     * Возвращает отформатированное значение (число наименование или просто капитализированное наименование)
+     * @param number количество, если есть
+     * @return отформатированное значение (число наименование или просто капитализированное наименование)
+     */
     default String getFormattedName(Long number) {
         if (Objects.isNull(number) || !getMeasurable()) {
             return StringUtils.capitalize(getName());
@@ -43,7 +48,7 @@ public interface NumberFormatted<T> {
     }
 
     default String getGenitiveFormattedName(Long number) {
-        if (number == null) {
+        if (Objects.isNull(number)) {
             return getName();
         }
 
