@@ -6,14 +6,15 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum TimeUnit {
-	BONUS("бонусное действие"), 
-	REACTION("реакция"),
-	ACTION("действие"), 
-	ROUND("ход"),
-	MINUTE("минута"),
-	HOUR("час");
+	BONUS("бонусное действие", false),
+	REACTION("реакция", false),
+	ACTION("действие",  false),
+	ROUND("ход", false),
+	MINUTE("минута", true),
+	HOUR("час", true);
 
 	private final String name;
+	private boolean hasValue;
 
 	public String getName(int number) {
 		switch (this) {
