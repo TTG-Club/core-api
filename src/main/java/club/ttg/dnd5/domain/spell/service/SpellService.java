@@ -65,6 +65,10 @@ public class SpellService {
         return spellMapper.toSpellDetailedResponse(findByUrl(url));
     }
 
+    public SpellRequest findFormByUrl(final String url) {
+        return spellMapper.toRequest(findByUrl(url));
+    }
+
     public Spell findByUrl(String url) {
         return spellRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Заклинание с url %s не существует", url)));
