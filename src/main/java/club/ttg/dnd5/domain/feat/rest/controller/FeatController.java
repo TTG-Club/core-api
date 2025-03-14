@@ -4,12 +4,16 @@ import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
+import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.service.FeatService;
 import club.ttg.dnd5.exception.EntityExistException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,14 +51,18 @@ public class FeatController {
     }
 
     @Secured("ADMIN")
-    @Operation(summary = "Получение списка краткого описания черты")
+    @Operation(summary = "Получение списка черт")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черты успешно получена")
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
-    public Collection<ShortResponse> getFeats() {
-        return featService.getFeats();
+    public Collection<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
+                                                  @Valid
+                                                  @Size(min = 3)
+                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                                  String searchLine) {
+        return featService.getFeats(searchLine);
     }
 
     @Secured("ADMIN")
