@@ -1,23 +1,35 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.rest.mapper.FeatMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class FeatServiceImpl implements FeatService {
+    private static final Sort DEFAULT_SORT = Sort.by("name");
     private final FeatRepository featRepository;
+    private final BookService bookService;
     private final FeatMapper featMapper;
 
     @Override
@@ -26,23 +38,33 @@ public class FeatServiceImpl implements FeatService {
     }
 
     @Override
-    public Collection<ShortResponse> getFeats() {
-        return featRepository.findAll()
+    public Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine) {
+        return Optional.ofNullable(searchLine)
+                .filter(StringUtils::isNotBlank)
+                .map(String::trim)
+                .map(line -> {
+                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
+                    return featRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
+                })
+                .orElseGet(() -> featRepository.findAll(DEFAULT_SORT))
                 .stream()
                 .map(featMapper::toShortDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
+    @Secured("ADMIN")
     @Transactional
     @Override
     public FeatDetailResponse addFeat(final FeatRequest dto) {
         if (featRepository.existsById(dto.getUrl())) {
-            throw new EntityExistException("Feature exist");
+            throw new EntityExistException("Feat exist by URL: " + dto.getUrl());
         }
-        var feat = featMapper.toEntity(dto);
+        var book = bookService.findByUrl(dto.getSource().getUrl());
+        var feat = featMapper.toEntity(dto, book);
         return featMapper.toDetailDto(featRepository.save(feat));
     }
 
+    @Secured("ADMIN")
     @Transactional
     @Override
     public FeatDetailResponse updateFeat(final String featUrl, final FeatRequest dto) {
@@ -50,10 +72,12 @@ public class FeatServiceImpl implements FeatService {
         if (!featUrl.equalsIgnoreCase(dto.getUrl())) {
             featRepository.deleteById(featUrl);
         }
-        var feat = featMapper.toEntity(dto);
-        return featMapper.toDetailDto(featRepository.save(entity));
+        var book = bookService.findByUrl(dto.getSource().getUrl());
+        var feat = featMapper.toEntity(dto, book);
+        return featMapper.toDetailDto(featRepository.save(feat));
     }
 
+    @Secured("ADMIN")
     @Transactional
     @Override
     public ShortResponse delete(final String featUrl) {
@@ -69,6 +93,6 @@ public class FeatServiceImpl implements FeatService {
 
     private Feat findByUrl(String url) {
         return featRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException("Class not found with URL: " + url));
+                .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
     }
 }
