@@ -1,13 +1,10 @@
 package club.ttg.dnd5.domain.species.model;
 
-import club.ttg.dnd5.domain.beastiary.model.BeastSize;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.Collection;
 
 @Getter
 @Setter
@@ -23,7 +20,7 @@ public abstract class CreatureProperties extends NamedEntity {
 
     /** Скорость пешком */
     @Column(columnDefinition = "int default 30")
-    private int speed = 30;
+    private int speed;
     /** Полет */
     private Integer fly;
     /** лазание */
