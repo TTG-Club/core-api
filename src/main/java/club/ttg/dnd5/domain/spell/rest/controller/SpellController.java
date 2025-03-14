@@ -47,8 +47,13 @@ public class SpellController {
     }
 
     @GetMapping("/{url}")
-    public SpellDetailedResponse getSpellsByUrl(@PathVariable String url) {
+    public SpellDetailedResponse getSpellByUrl(@PathVariable String url) {
         return spellService.findDetailedByUrl(url);
+    }
+
+    @GetMapping("/{url}/update")
+    public SpellRequest getSpellFormByUrl(@PathVariable String url) {
+        return spellService.findFormByUrl(url);
     }
 
     @Secured("ADMIN")
