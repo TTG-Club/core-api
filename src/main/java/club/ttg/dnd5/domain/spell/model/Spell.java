@@ -48,6 +48,9 @@ public class Spell extends NamedEntity {
     @Column(columnDefinition = "TEXT")
     private String upper;
 
+    @Column(columnDefinition = "TEXT")
+    private String markupDescription;
+
     @ManyToOne
     @JoinColumn(name = "source")
     private Book source;
