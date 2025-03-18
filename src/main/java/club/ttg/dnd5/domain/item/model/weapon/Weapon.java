@@ -25,18 +25,18 @@ public class Weapon extends Item {
      * Урон
      */
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "weapon_damage", columnDefinition = "jsonb")
     private Damage damage;
 
     /**
      * Свойства оружия
      */
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "weapon_properties", columnDefinition = "jsonb")
     private Collection<Property> properties;
 
     /** Приёам */
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "weapon_mastery", columnDefinition = "jsonb")
     private Mastery mastery;
 }
