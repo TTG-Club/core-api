@@ -36,13 +36,11 @@ public class ItemDetailResponse extends BaseResponse {
     /** Оружие */
     @Schema(name = "Категория оружия", examples = "Простое рукопашное")
     private String weaponCategory;
-    @Schema(name = "Урон", examples = "1к6 дробящий")
-    private Short damage;
-
+    @Schema(name = "Урон оружия", examples = "1к6 дробящий")
+    private String damage;
+    @Schema(name = "Свойства оружия", examples = "Фехтовальное, Лёгкое, Метательное (дистанция 20/60)")
     private String weaponProperties;
-    private Short range;
-    private Short versatileDiceCount;
-    private String versatileDice;
+    @Schema(name = "Приём оружия", examples = "Подавление")
     private String mastery;
 
     /**

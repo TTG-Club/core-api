@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.item.rest.mapper;
 
 import club.ttg.dnd5.domain.item.model.*;
+import club.ttg.dnd5.domain.item.model.weapon.Damage;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -29,6 +30,8 @@ public interface ItemMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "WEAPON")
     @Mapping(source = "category", target = "weaponCategory")
+    @Mapping(source = "damage", target = "damage", qualifiedByName = "damageToString")
+    @Mapping(source = "mastery.name", target = "mastery")
     ItemDetailResponse toDetailDto(final Weapon weapon);
 
     @BaseItem
@@ -53,8 +56,6 @@ public interface ItemMapper {
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "weaponCategory.name", target = "category")
-    @Mapping(source = "range.normal", target = "rangeNormal")
-    @Mapping(source = "range.max", target = "rangeMax")
     Weapon toWeaponEntity(ItemRequest request);
 
     @BaseMapping.BaseEntityNameMapping
@@ -65,6 +66,11 @@ public interface ItemMapper {
 
     @BaseMapping.BaseEntityNameMapping
     Tool toToolEntity(ItemRequest request);
+
+    @Named("damageToString")
+    default String damageToString(Damage damage) {
+        return damage.toString();
+    }
 
     @Named("typeToSting")
     default String typeToSting(Set<ItemType> types) {
