@@ -1,8 +1,5 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
-import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
-import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
-import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
@@ -13,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -62,6 +60,7 @@ public class ItemMagicController {
         return magicItemService.getItems();
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Добавление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно добавлен"),
@@ -74,6 +73,7 @@ public class ItemMagicController {
         return magicItemService.addItem(itemDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Обновление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно обновлен"),
@@ -86,6 +86,7 @@ public class ItemMagicController {
         return magicItemService.updateItem(url, itemDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Скрывает предмет")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),
