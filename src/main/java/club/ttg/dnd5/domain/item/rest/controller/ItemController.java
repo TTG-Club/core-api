@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -59,6 +60,7 @@ public class ItemController {
         return itemService.getItems();
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Добавление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно добавлен"),
@@ -71,6 +73,7 @@ public class ItemController {
         return itemService.addItem(itemDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Обновление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно обновлен"),
@@ -83,6 +86,7 @@ public class ItemController {
         return itemService.updateItem(itemUrl, itemDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Скрывает предмет")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),
