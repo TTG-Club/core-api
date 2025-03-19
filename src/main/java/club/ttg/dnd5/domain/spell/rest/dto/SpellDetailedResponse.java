@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.spell.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
+import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,9 +22,9 @@ public class SpellDetailedResponse extends ShortResponse {
     private String range;
     private String duration;
     private SpellDetailedComponents components;
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;
-    @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    private String markupDescription;
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String upper;
     private SpellAffiliationResponse affiliation;
 }
