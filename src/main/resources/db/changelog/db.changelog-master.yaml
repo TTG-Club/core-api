@@ -19,3 +19,5 @@ databaseChangeLog:
       file: db/changelog/2025/03/07-update-spell-upper-text.yaml
   - include:
       file: db/changelog/2025/03/17-01-add-markup-description.yaml
+  - include:
+      file: db/changelog/2025/03/20-03-init-glossary.yaml
