@@ -9,21 +9,6 @@ databaseChangeLog:
               - column:
                   name: markup_description
             tableName: spell
-        - sql:
-            sql: UPDATE species set description = to_jsonb(string_to_array(description, '\n'));
-        - sql:
-            sql: UPDATE spell SET description = to_jsonb(string_to_array(description, '\n'));
-        - sql:
-            sql: UPDATE spell SET upper = to_jsonb(string_to_array(upper, '\n'));
-        - sql:
-            sql: UPDATE species spec SET features  = s.new_features FROM (select url, jsonb_agg(jsonb_build_object(
-              'url', feature_elem -> 'url',
-              'name', feature_elem -> 'name',
-              'english', feature_elem -> 'english',
-              'description', (SELECT to_jsonb(array_agg(trim(elem)))::text
-                FROM unnest(string_to_array(replace((feature_elem -> 'description')::text, '"', ''),
-                '\n')) AS elem)
-                )) AS new_features
-              FROM species,
-              jsonb_array_elements(features) AS feature_elem GROUP BY url) s
-              WHERE features IS NOT NULL AND spec.url = s.url;
+        - sqlFile:
+            path: sql/update_markup_description_spells_and_species.sql
+            relativeToChangelogFile: true
