@@ -9,7 +9,7 @@ import lombok.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MovementAttributes {
     @Schema(description = "Скорость")
-    private final int base = 30;
+    private int base;
     @Schema(description = "Скорость полета")
     private Integer fly;
     @Schema(description = "Скорость лазания")
