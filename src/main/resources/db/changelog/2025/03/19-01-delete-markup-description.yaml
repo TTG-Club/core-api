@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: delete-markup-description-update-to-markup
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columns:
+              - column:
+                  name: markup_description
+            tableName: spell
+        - sqlFile:
+            path: sql/update_markup_description_spells_and_species.sql
+            relativeToChangelogFile: true
