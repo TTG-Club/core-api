@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.spell.mapper;
+package club.ttg.dnd5.domain.spell.rest.mapper;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
@@ -15,6 +15,7 @@ import org.mapstruct.Named;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +81,14 @@ public interface SpellMapper {
                 .collect(Collectors.joining(" или "));
     }
 
+    @Mapping(source = "name", target = "name.name")
+    @Mapping(source = "english", target = "name.english")
+    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    @Mapping(source = "source.url", target = "source.url")
+    @Mapping(source = "sourcePage", target = "source.page")
+    @Mapping(source = "school.school", target = "school")
+    SpellRequest toRequest(Spell spell);
+
     @Retention(RetentionPolicy.SOURCE)
     @BaseMapping.BaseEntityNameMapping
     @Mapping(target = "url", source = "request.url")
@@ -106,5 +115,9 @@ public interface SpellMapper {
             components.setM(null);
         }
         return components;
+    }
+    @Named("altToCollection")
+    default Collection<String> altToCollection(String string) {
+        return Arrays.asList(string.split(";"));
     }
 }

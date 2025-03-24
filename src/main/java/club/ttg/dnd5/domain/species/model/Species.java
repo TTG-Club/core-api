@@ -51,6 +51,6 @@ public class Species extends CreatureProperties {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id"))
     @Column(name = "gallery_url")
-    private List<String> galleryUrl;
+    private Collection<String> galleryUrl;
 
 }

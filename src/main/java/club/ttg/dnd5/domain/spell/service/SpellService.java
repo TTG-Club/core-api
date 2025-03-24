@@ -5,7 +5,7 @@ import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
-import club.ttg.dnd5.domain.spell.mapper.SpellMapper;
+import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
@@ -63,6 +63,10 @@ public class SpellService {
 
     public SpellDetailedResponse findDetailedByUrl(String url) {
         return spellMapper.toSpellDetailedResponse(findByUrl(url));
+    }
+
+    public SpellRequest findFormByUrl(final String url) {
+        return spellMapper.toRequest(findByUrl(url));
     }
 
     public Spell findByUrl(String url) {
