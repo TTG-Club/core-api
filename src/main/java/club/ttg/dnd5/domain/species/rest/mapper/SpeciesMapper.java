@@ -31,6 +31,7 @@ public interface SpeciesMapper {
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.englishName", target = "source.name.english")
     @Mapping(source = "source.sourceAcronym", target = "source.name.label")
+    @Mapping(source = "galleryUrl", target = "gallery")
     @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
     SpeciesDetailResponse toDetailDto(Species species);
 
@@ -58,6 +59,7 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
     @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
+    @Mapping(source = "galleryUrl", target = "galleryUrl")
     Species toEntity(SpeciesRequest request);
 
     @Named("hasLineages")

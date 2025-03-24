@@ -99,8 +99,8 @@ public class SpeciesController {
     })
     @PostMapping("/parent")
     public SpeciesDetailResponse addParent(
-            @Parameter(description = "URL вида, к которому добавляется родитель", required = true) @RequestParam String speciesUrl,
-            @Parameter(description = "URL родителя, который будет добавлен", required = true) @RequestParam String speciesParentUrl) {
+            @Parameter(description = "URL происхождения, к которому добавляется родитель", required = true) @RequestParam String speciesUrl,
+            @Parameter(description = "URL вида, который будет добавлен", required = true) @RequestParam String speciesParentUrl) {
         return speciesService.addParent(speciesUrl, speciesParentUrl);
     }
 

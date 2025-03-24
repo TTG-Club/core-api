@@ -25,7 +25,7 @@ public class SpellDuration {
             sb.append("Концентрация, ");
             if(Objects.nonNull(unit)) {
                 sb.append("до ");
-                sb.append(unit.getGenetiveFormattedName(value));
+                sb.append(unit.getGenitiveFormattedName(value));
                 sb.append(" ");
             }
         } else {
