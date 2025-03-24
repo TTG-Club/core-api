@@ -59,13 +59,12 @@ public class GlossaryService {
         Glossary existingGlossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
-        glossaryMapper.updateEntity(existingGlossary, request);
+        Glossary updatedGlossary = glossaryMapper.toEntity(request);
+        updatedGlossary.setUrl(url);
+        glossaryRepository.delete(existingGlossary);
+        glossaryRepository.save(updatedGlossary);
 
-        existingGlossary.setUrl(url);
-
-        glossaryRepository.save(existingGlossary);
-
-        return glossaryMapper.toGlossaryDetailedResponse(existingGlossary);
+        return glossaryMapper.toGlossaryDetailedResponse(updatedGlossary);
     }
 
     @Transactional
