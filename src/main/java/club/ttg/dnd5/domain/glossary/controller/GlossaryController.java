@@ -63,9 +63,7 @@ public class GlossaryController {
 
     @Secured("ADMIN")
     @PutMapping("/{url}")
-    public GlossaryDetailedResponse updateGlossary(@PathVariable String url,
-                                                @Valid
-                                             @RequestBody GlossaryRequest request) {
+    public GlossaryDetailedResponse updateGlossary(@PathVariable String url, @Valid @RequestBody GlossaryRequest request) {
         return glossaryService.update(url, request);
     }
 
