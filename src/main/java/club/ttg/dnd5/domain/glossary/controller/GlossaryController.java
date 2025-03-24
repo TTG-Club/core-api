@@ -1,14 +1,14 @@
 package club.ttg.dnd5.domain.glossary.controller;
 
-import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryResponse;
-import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryRequest;
+import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
+import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
+import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.service.GlossaryService;
-import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
-import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Глоссарий", description = "REST API глоссарий")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/glossary")
@@ -36,7 +37,7 @@ public class GlossaryController {
 
     @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
     @PostMapping("/search")
-    public List<GlossaryResponse> getGlossary(@RequestParam(name = "query", required = false)
+    public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 3)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
@@ -45,7 +46,7 @@ public class GlossaryController {
     }
 
     @GetMapping("/{url}")
-    public GlossaryResponse getGlossaryByUrl(@PathVariable String url) {
+    public GlossaryDetailedResponse getGlossaryByUrl(@PathVariable String url) {
         return glossaryService.findDetailedByUrl(url);
     }
 
@@ -56,14 +57,14 @@ public class GlossaryController {
     @Secured("ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public GlossaryResponse createGlossary(@RequestBody GlossaryRequest request) {
+    public GlossaryDetailedResponse createGlossary(@RequestBody GlossaryRequest request) {
         return glossaryService.save(request);
     }
 
     @Secured("ADMIN")
     @PutMapping("/{url}")
-    public GlossaryResponse updateGlossary(@PathVariable String url,
-                                             @Valid
+    public GlossaryDetailedResponse updateGlossary(@PathVariable String url,
+                                                @Valid
                                              @RequestBody GlossaryRequest request) {
         return glossaryService.update(url, request);
     }
