@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.glossary.repository;
 
 import club.ttg.dnd5.domain.glossary.model.Glossary;
+import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,5 +16,5 @@ public interface GlossaryRepository extends JpaRepository<Glossary, String> {
                or g.alternative ilike concat('%', :searchLine, '%')
             """
     )
-    List<Glossary> findBySearchLine(String searchLine, Sort sort);
+    List<GlossaryShortResponse> findBySearchLine(String searchLine, Sort sort);
 }

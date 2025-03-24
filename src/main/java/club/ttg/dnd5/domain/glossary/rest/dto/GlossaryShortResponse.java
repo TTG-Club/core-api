@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.glossary.rest.dto;
 
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,12 +11,11 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class GlossaryRequest {
+public class GlossaryShortResponse extends ShortResponse {
+    @NotNull
     private String url;
-    private String name;
+    @NotNull
     private String english;
-    private String alternative;
-    private String description;
+    @NotNull
     private String tags;
-    private String imageUrl;
 }
