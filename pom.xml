@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>club.ttg</groupId>
 	<artifactId>dnd5</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<name>DnD 5E portal</name>
 	<description>TTG club REST API</description>
 	<url/>
