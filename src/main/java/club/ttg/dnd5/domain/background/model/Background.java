@@ -16,7 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 
 @Entity
-@Table(name = "backgrounds",
+@Table(name = "background",
         indexes = {
                 @Index(name = "url_index", columnList = "url"),
                 @Index(name = "name_index", columnList = "name, english, alternative")

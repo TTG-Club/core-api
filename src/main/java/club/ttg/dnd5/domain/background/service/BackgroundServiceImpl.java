@@ -10,15 +10,21 @@ import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class BackgroundServiceImpl implements BackgroundService {
+    private static final Sort DEFAULT_SORT = Sort.by("name");
     private final BackgroundRepository backgroundRepository;
     private final FeatRepository featRepository;
     private final BackgroundMapper backgroundMapper;
@@ -29,40 +35,45 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     @Override
-    public Collection<ShortResponse> getBackgrounds() {
-        return backgroundRepository.findAll()
+    public Collection<ShortResponse> getBackgrounds(String searchLine) {
+        return Optional.ofNullable(searchLine)
+                .filter(StringUtils::isNotBlank)
+                .map(String::trim)
+                .map(line -> {
+                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
+                    return backgroundRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
+                })
+                .orElseGet(() -> backgroundRepository.findAll(DEFAULT_SORT))
                 .stream()
                 .map(backgroundMapper::toShortDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional
     @Override
-    public BackgroundDetailResponse addBackground(final BackgroundRequest dto) {
+    public String addBackground(final BackgroundRequest dto) {
         checkUrlExist(dto.getUrl());
         var feat = getFeat(dto.getFeatUrl());
-        var background = backgroundRepository.save(backgroundMapper.toEntity(dto, feat));
-        return backgroundMapper.toDetailDto(background);
+        return backgroundRepository.save(backgroundMapper.toEntity(dto, feat)).getUrl();
     }
 
     @Transactional
     @Override
-    public BackgroundDetailResponse updateBackgrounds(final String url, final BackgroundRequest dto) {
+    public String updateBackgrounds(final String url, final BackgroundRequest dto) {
         checkUrlExist(dto.getUrl());
         if (!url.equals(dto.getUrl())) {
             backgroundRepository.deleteById(url);
         }
         var feat = getFeat(dto.getFeatUrl());
-        var background = backgroundRepository.save(backgroundMapper.toEntity(dto, feat));
-        return backgroundMapper.toDetailDto(background);
+        return backgroundRepository.save(backgroundMapper.toEntity(dto, feat)).getUrl();
     }
 
     @Transactional
     @Override
-    public ShortResponse deleteBackgrounds(final String url) {
+    public String deleteBackgrounds(final String url) {
         var entity = findByUrl(url);
         entity.setHiddenEntity(true);
-        return backgroundMapper.toShortDto(backgroundRepository.save(entity));
+        return backgroundRepository.save(entity).getUrl();
     }
 
     @Override
