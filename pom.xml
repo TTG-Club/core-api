@@ -28,8 +28,6 @@
 	</scm>
 	<properties>
 		<java.version>23</java.version>
-		<maven.compiler.source>23</maven.compiler.source>
-		<maven.compiler.target>23</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<hypersistence-utils.version>3.9.2</hypersistence-utils.version>
@@ -41,6 +39,7 @@
 		<slugify.version>3.0.7</slugify.version>
 		<icu4j.version>76.1</icu4j.version>
 		<commons-io.version>2.18.0</commons-io.version>
+		<lombok.version>1.18.36</lombok.version>
 	</properties>
 	<dependencies>
 
@@ -80,7 +79,8 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<optional>true</optional>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -125,7 +125,7 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>5.12.0</version>
+			<version>5.14.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -168,9 +168,18 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.13.0</version>
+				<version>3.14.0</version>
 				<configuration>
 					<release>23</release>
+					<source>23</source>
+					<target>23</target>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
 		</plugins>
