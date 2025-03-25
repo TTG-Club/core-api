@@ -21,3 +21,5 @@ databaseChangeLog:
       file: db/changelog/2025/03/17-01-add-markup-description.yaml
   - include:
       file: db/changelog/2025/03/19-01-delete-markup-description.yaml
+  - include:
+      file: db/changelog/2025/03/25-01-changelog.yaml
