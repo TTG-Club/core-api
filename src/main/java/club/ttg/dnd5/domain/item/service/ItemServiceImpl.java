@@ -10,14 +10,20 @@ import club.ttg.dnd5.exception.ContentNotFoundException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class ItemServiceImpl implements ItemService {
+    private static final Sort DEFAULT_SORT = Sort.by("name");
     private final ItemRepository itemRepository;
     private final ItemMapper itemMapper;
 
@@ -34,21 +40,28 @@ public class ItemServiceImpl implements ItemService {
     public ItemDetailResponse getItem(final String itemUrl) {
         var item = findByUrl(itemUrl);
         return switch (item) {
-            case Armor armor -> itemMapper.toDetailDto(armor);
-            case Weapon weapon -> itemMapper.toDetailDto(weapon);
-            case Tool tool -> itemMapper.toDetailDto(tool);
-            case Vehicle ship -> itemMapper.toDetailDto(ship);
-            case Mount mount -> itemMapper.toDetailDto(mount);
-            case Item object -> itemMapper.toDetailDto(object);
+            case Armor armor -> itemMapper.toDetailResponse(armor);
+            case Weapon weapon -> itemMapper.toDetailResponse(weapon);
+            case Tool tool -> itemMapper.toDetailResponse(tool);
+            case Vehicle ship -> itemMapper.toDetailResponse(ship);
+            case Mount mount -> itemMapper.toDetailResponse(mount);
+            case Item object -> itemMapper.toDetailResponse(object);
         };
     }
 
     @Override
-    public Collection<ItemShortResponse> getItems() {
-        return itemRepository.findAll()
+    public Collection<ItemShortResponse> getItems(String searchLine) {
+        return Optional.ofNullable(searchLine)
+                .filter(StringUtils::isNotBlank)
+                .map(String::trim)
+                .map(line -> {
+                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
+                    return itemRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
+                })
+                .orElseGet(() -> itemRepository.findAll(DEFAULT_SORT))
                 .stream()
-                .map(itemMapper::toShortDto)
-                .toList();
+                .map(itemMapper::toShortResponse)
+                .collect(Collectors.toList());
     }
 
     @Override

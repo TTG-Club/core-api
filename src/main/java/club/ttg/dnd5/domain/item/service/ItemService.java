@@ -9,7 +9,7 @@ import java.util.Collection;
 public interface ItemService {
     ItemDetailResponse getItem(String itemUtl);
 
-    Collection<ItemShortResponse> getItems();
+    Collection<ItemShortResponse> getItems(String searchLine);
 
     String addItem(ItemRequest itemDto);
 

@@ -11,7 +11,7 @@ public interface MagicItemService {
 
     MagicItemDetailResponse getItem(String url);
 
-    Collection<MagicItemShortResponse> getItems();
+    Collection<MagicItemShortResponse> getItems(String searchLine);
 
     String addItem(MagicItemRequest itemDto);
 
