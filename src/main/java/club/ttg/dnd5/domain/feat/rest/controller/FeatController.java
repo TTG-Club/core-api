@@ -74,7 +74,7 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public FeatDetailResponse addFeats(@RequestBody final FeatRequest featDto) {
+    public String addFeats(@RequestBody final FeatRequest featDto) {
         return featService.addFeat(featDto);
     }
 
@@ -87,7 +87,7 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("{featUrl}")
-    public FeatDetailResponse updateFeats(@PathVariable final String featUrl,
+    public String updateFeats(@PathVariable final String featUrl,
                                           @RequestBody final FeatRequest featDto) {
         return featService.updateFeat(featUrl, featDto);
     }
@@ -100,7 +100,7 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.OK)
     @DeleteMapping("{featUrl}")
-    public ShortResponse deleteFeats(@PathVariable final String featUrl) {
+    public String deleteFeats(@PathVariable final String featUrl) {
         return featService.delete(featUrl);
     }
 }

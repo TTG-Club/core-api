@@ -14,11 +14,11 @@ public interface FeatService {
 
     Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine);
 
-    FeatDetailResponse addFeat(FeatRequest featDto);
+    String addFeat(FeatRequest featDto);
 
-    FeatDetailResponse updateFeat(final String featUrl, FeatRequest featDto);
+    String updateFeat(final String featUrl, FeatRequest featDto);
 
-    ShortResponse delete(String featUrl);
+    String delete(String featUrl);
 
     boolean exists(String featUrl);
 }
