@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.glossary.rest.dto;
 
-import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,9 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class GlossaryDetailedResponse extends GlossaryShortResponse{
-    @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    private String description;
-
+public class GlossaryDetailedResponse extends BaseResponse {
     private String alternative;
 }

@@ -57,13 +57,13 @@ public class GlossaryController {
     @Secured("ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public GlossaryDetailedResponse createGlossary(@RequestBody GlossaryRequest request) {
+    public String createGlossary(@RequestBody GlossaryRequest request) {
         return glossaryService.save(request);
     }
 
     @Secured("ADMIN")
     @PutMapping("/{url}")
-    public GlossaryDetailedResponse updateGlossary(@PathVariable String url, @Valid @RequestBody GlossaryRequest request) {
+    public String updateGlossary(@PathVariable String url, @Valid @RequestBody GlossaryRequest request) {
         return glossaryService.update(url, request);
     }
 
