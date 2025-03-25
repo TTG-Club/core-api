@@ -13,7 +13,7 @@ import lombok.*;
 public class BackgroundDetailResponse extends BaseResponse {
     @Schema(description = "Характеристики:")
     private String abilityScores;
-    @Schema(description = "Черта")
+    @Schema(description = "Название черты")
     private String feat;
     @Schema(description = "Владение инструментом")
     private String skillProficiencies;
