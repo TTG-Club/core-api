@@ -40,9 +40,9 @@ public class BackgroundController {
     }
 
     @Operation(summary = "Детальная информация о предыстории", description = "Возвращает объект с детальной информацией о предыстории")
-    @GetMapping("{backgroundUrl}")
-    public BackgroundDetailResponse findBackground(@PathVariable final String backgroundUrl) {
-        return backgroundService.getBackground(backgroundUrl);
+    @GetMapping("{url}")
+    public BackgroundDetailResponse findBackground(@PathVariable final String url) {
+        return backgroundService.getBackground(url);
     }
 
     @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")
@@ -74,18 +74,18 @@ public class BackgroundController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @Secured("ADMIN")
-    @PutMapping("{backgroundUrl}")
+    @PutMapping("{url}")
     public String updateBackgrounds(
-            @PathVariable final String backgroundUrl,
-            @RequestBody final BackgroundRequest backgroundDto) {
-        return backgroundService.updateBackgrounds(backgroundUrl, backgroundDto);
+            @PathVariable final String url,
+            @RequestBody final BackgroundRequest request) {
+        return backgroundService.updateBackgrounds(url, request);
     }
 
     @Operation(summary = "Помечает предысторию как скрытую для списков")
     @Secured("ADMIN")
-    @DeleteMapping("{backgroundUrl}")
+    @DeleteMapping("{url}")
     public String deleteBackgrounds(
-            @PathVariable final String backgroundUrl) {
-        return backgroundService.deleteBackgrounds(backgroundUrl);
+            @PathVariable final String url) {
+        return backgroundService.deleteBackgrounds(url);
     }
 }

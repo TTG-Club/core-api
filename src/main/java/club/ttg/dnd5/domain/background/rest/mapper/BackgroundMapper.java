@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -16,10 +17,10 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface BackgroundMapper {
-    @Mapping(source = "name", target = "name.name")
-    @Mapping(source = "english", target = "name.english")
+    @BaseMapping.BaseShortResponseNameMapping
     ShortResponse toShortDto(Background background);
-    @Mapping(source = "name", target = "name.name")
+
+    @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = "feat.name", target = "feat")
     @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
     @Mapping(source = "skillProficiencies", target = "skillProficiencies", qualifiedByName = "skillsToString")

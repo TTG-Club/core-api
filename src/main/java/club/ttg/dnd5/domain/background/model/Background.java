@@ -4,10 +4,12 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.feat.model.Feat;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 import java.util.Set;
 
@@ -23,18 +25,12 @@ import java.util.Set;
         }
 )
 public class Background extends NamedEntity {
-    @ElementCollection(targetClass = Ability.class, fetch = FetchType.LAZY)
-    @JoinTable(name = "background_abilities",
-            joinColumns = @JoinColumn(name = "background_url"))
-    @Column(name = "ability", nullable = false)
-    @Enumerated(EnumType.STRING)
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private Set<Ability> abilities;
     /** Доступные умения. */
-    @ElementCollection(targetClass = Skill.class, fetch = FetchType.LAZY)
-    @JoinTable(name = "background_available_skills",
-            joinColumns = @JoinColumn(name = "background_url"))
-    @Column(name = "skill", nullable = false)
-    @Enumerated(EnumType.STRING)
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private Set<Skill> skillProficiencies;
 
     @ManyToOne(cascade = CascadeType.DETACH)
