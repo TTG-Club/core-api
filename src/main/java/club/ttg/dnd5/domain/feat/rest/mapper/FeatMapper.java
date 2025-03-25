@@ -9,9 +9,6 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-
-import java.util.Collection;
 
 @Mapper(componentModel = "spring")
 public interface FeatMapper {
@@ -25,13 +22,7 @@ public interface FeatMapper {
     @BaseMapping.BaseSourceMapping
     FeatDetailResponse toDetailDto(Feat feat);
 
-    @Mapping(source = "name.name", target = "name")
-    @Mapping(source = "name.english", target = "english")
-    @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
-    Feat toEntity(FeatRequest request, Book source);
+    @BaseMapping.BaseEntityNameMapping
 
-    @Named("collectToString")
-    default String collectToString(Collection<String> names) {
-        return String.join(";", names);
-    }
+    Feat toEntity(FeatRequest request, Book source);
 }

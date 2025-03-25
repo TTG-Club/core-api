@@ -14,5 +14,8 @@ import lombok.Setter;
 public class FeatRequest extends BaseRequest {
     @Schema(description = "Категория черты", examples = {"ORIGIN", "GENERAL", "EPIC_BOON", "FIGHTING_STYLE"})
     private FeatCategory category;
+    @Schema(description = "Предварительное условие")
     private String prerequisite;
+    @Schema(description = "Повторяемость")
+    private Boolean repeatability;
 }
