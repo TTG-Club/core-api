@@ -19,5 +19,6 @@ public interface MagicItemMapper
     MagicItemDetailResponse toDetailResponse(MagicItem magicItem);
 
     @BaseMapping.BaseEntityNameMapping
-    MagicItem toShortResponse(MagicItemRequest request);
+    MagicItem toEntity(MagicItemRequest request);
+
 }

@@ -5,9 +5,12 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.service.MagicItemService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -56,8 +59,12 @@ public class ItemMagicController {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
     })
     @PostMapping("/search")
-    public Collection<MagicItemShortResponse> getItems() {
-        return magicItemService.getItems();
+    public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "query", required = false)
+                                                       @Valid
+                                                       @Size(min = 3)
+                                                       @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                                       String searchLine) {
+        return magicItemService.getItems(searchLine);
     }
 
     @Secured("ADMIN")

@@ -19,12 +19,12 @@ public interface ItemMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "ITEM")
     @BaseItem
-    ItemDetailResponse toDetailDto(final Item item);
+    ItemDetailResponse toDetailResponse(final Item item);
 
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "ARMOR")
     @BaseItem
-    ItemDetailResponse toDetailDto(final Armor armor);
+    ItemDetailResponse toDetailResponse(final Armor armor);
 
     @BaseItem
     @BaseMapping.BaseShortResponseNameMapping
@@ -32,20 +32,20 @@ public interface ItemMapper {
     @Mapping(source = "category", target = "weaponCategory")
     @Mapping(source = "damage", target = "damage", qualifiedByName = "damageToString")
     @Mapping(source = "mastery.name", target = "mastery")
-    ItemDetailResponse toDetailDto(final Weapon weapon);
+    ItemDetailResponse toDetailResponse(final Weapon weapon);
 
     @BaseItem
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "SHIP")
-    ItemDetailResponse toDetailDto(final Vehicle ship);
+    ItemDetailResponse toDetailResponse(final Vehicle ship);
 
     @BaseItem
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "category", constant = "MOUNT")
-    ItemDetailResponse toDetailDto(final Mount mount);
+    ItemDetailResponse toDetailResponse(final Mount mount);
 
     @BaseMapping.BaseShortResponseNameMapping
-    ItemShortResponse toShortDto(Item item);
+    ItemShortResponse toShortResponse(Item item);
 
     @BaseMapping.BaseEntityNameMapping
     Item toItemEntity(ItemRequest request);
