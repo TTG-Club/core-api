@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
@@ -55,35 +54,35 @@ public class FeatServiceImpl implements FeatService {
     @Secured("ADMIN")
     @Transactional
     @Override
-    public FeatDetailResponse addFeat(final FeatRequest dto) {
+    public String addFeat(final FeatRequest dto) {
         if (featRepository.existsById(dto.getUrl())) {
             throw new EntityExistException("Feat exist by URL: " + dto.getUrl());
         }
         var book = bookService.findByUrl(dto.getSource().getUrl());
         var feat = featMapper.toEntity(dto, book);
-        return featMapper.toDetailDto(featRepository.save(feat));
+        return featRepository.save(feat).getUrl();
     }
 
     @Secured("ADMIN")
     @Transactional
     @Override
-    public FeatDetailResponse updateFeat(final String featUrl, final FeatRequest dto) {
+    public String updateFeat(final String featUrl, final FeatRequest dto) {
         var entity = findByUrl(featUrl);
         if (!featUrl.equalsIgnoreCase(dto.getUrl())) {
             featRepository.deleteById(featUrl);
         }
         var book = bookService.findByUrl(dto.getSource().getUrl());
         var feat = featMapper.toEntity(dto, book);
-        return featMapper.toDetailDto(featRepository.save(feat));
+        return featRepository.save(feat).getUrl();
     }
 
     @Secured("ADMIN")
     @Transactional
     @Override
-    public ShortResponse delete(final String featUrl) {
+    public String delete(final String featUrl) {
         var entity = findByUrl(featUrl);
         entity.setHiddenEntity(true);
-        return featMapper.toShortDto(featRepository.save(entity));
+        return featRepository.save(entity).getUrl();
     }
 
     @Override
