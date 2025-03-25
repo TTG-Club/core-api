@@ -44,18 +44,19 @@ public class GlossaryService {
     }
 
     @Transactional
-    public GlossaryDetailedResponse save(GlossaryRequest glossaryRequest) {
+    public String save(GlossaryRequest glossaryRequest) {
         if (glossaryRepository.existsById(glossaryRequest.getUrl())) {
             throw new EntityExistException(String.format("Glossary with url %s already exists", glossaryRequest.getUrl()));
         }
-        Glossary glossary = glossaryMapper.toEntity(glossaryRequest);
 
+        Glossary glossary = glossaryMapper.toEntity(glossaryRequest);
         glossary = glossaryRepository.save(glossary);
-        return glossaryMapper.toGlossaryDetailedResponse(glossary);
+
+        return glossary.getUrl();
     }
 
     @Transactional
-    public GlossaryDetailedResponse update(String url, GlossaryRequest request) {
+    public String update(String url, GlossaryRequest request) {
         Glossary existingGlossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
@@ -64,7 +65,7 @@ public class GlossaryService {
         glossaryRepository.delete(existingGlossary);
         glossaryRepository.save(updatedGlossary);
 
-        return glossaryMapper.toGlossaryDetailedResponse(updatedGlossary);
+        return updatedGlossary.getUrl();
     }
 
     @Transactional
