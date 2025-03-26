@@ -13,9 +13,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class GlossaryShortResponse extends ShortResponse {
     @NotNull
-    private String url;
-    @NotNull
-    private String english;
-    @NotNull
     private String tags;
 }

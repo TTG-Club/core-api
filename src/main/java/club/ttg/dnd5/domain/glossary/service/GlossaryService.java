@@ -26,7 +26,7 @@ public class GlossaryService {
 
     private final GlossaryMapper glossaryMapper;
 
-    private static final Sort DEFAULT_GLOSSARY_SORT = Sort.by("name", "tags");
+    private static final Sort DEFAULT_GLOSSARY_SORT = Sort.by("name");
 
     public List<GlossaryShortResponse> search(String searchLine) {
         return Optional.ofNullable(searchLine)
