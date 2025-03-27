@@ -37,14 +37,7 @@ public class GlossaryService {
                 })
                 .orElseGet(() -> glossaryRepository.findAll(DEFAULT_GLOSSARY_SORT))
                 .stream()
-                .map(glossaryMapper::toShortResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<GlossaryShortResponse> findAll(Sort sort) {
-        List<Glossary> glossaries = glossaryRepository.findAll(sort);
-        return glossaries.stream()
-                .map(glossaryMapper::toShortResponse)
+                .map(glossaryMapper::toShort)
                 .collect(Collectors.toList());
     }
 
@@ -86,7 +79,7 @@ public class GlossaryService {
         Glossary glossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
-        return glossaryMapper.toGlossaryDetailedResponse(glossary);
+        return glossaryMapper.toDetail(glossary);
     }
 
     public boolean existOrThrow(String url) {
@@ -100,13 +93,13 @@ public class GlossaryService {
         Glossary glossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
-        return glossaryMapper.toGlossaryDetailedResponse(glossary);
+        return glossaryMapper.toDetail(glossary);
     }
 
     public GlossaryRequest findFormByUrl(String url) {
         Glossary glossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
-        return glossaryMapper.toGlossaryRequest(glossary);
+        return glossaryMapper.toRequest(glossary);
     }
 }

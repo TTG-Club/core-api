@@ -19,17 +19,17 @@ import java.util.Collection;
 public interface GlossaryMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
-    GlossaryDetailedResponse toGlossaryDetailedResponse(Glossary glossary);
+    GlossaryDetailedResponse toDetail(Glossary glossary);
 
     @Mapping(source = "name", target = "name.name")
-    GlossaryRequest toGlossaryRequest(Glossary glossary);
+    GlossaryRequest toRequest(Glossary glossary);
 
     @ToEntityMapping
     Glossary toEntity(GlossaryRequest request);
 
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "tags", source = "tags")
-    GlossaryShortResponse toShortResponse(Glossary glossary);
+    GlossaryShortResponse toShort(Glossary glossary);
 
     @ToEntityMapping
     void updateEntity(@MappingTarget Glossary glossary, GlossaryRequest request);
