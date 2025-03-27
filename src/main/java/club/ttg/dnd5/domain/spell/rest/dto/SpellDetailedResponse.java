@@ -20,9 +20,9 @@ public class SpellDetailedResponse extends ShortResponse {
     private String range;
     private String duration;
     private SpellDetailedComponents components;
+    @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    private String markupDescription;
     private String upper;
     private SpellAffiliationResponse affiliation;
 }
