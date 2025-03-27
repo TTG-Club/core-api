@@ -1,5 +1,8 @@
 package club.ttg.dnd5.domain.glossary.service;
 
+import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.glossary.repository.GlossaryRepository;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GlossaryService {
     private final GlossaryRepository glossaryRepository;
+
+    private final BookService bookService;
 
     private final GlossaryMapper glossaryMapper;
 
@@ -47,7 +52,12 @@ public class GlossaryService {
             throw new EntityExistException(String.format("Glossary with url %s already exists", glossaryRequest.getUrl()));
         }
 
-        Glossary glossary = glossaryMapper.toEntity(glossaryRequest);
+        Book book = Optional.ofNullable(glossaryRequest.getSource())
+                .map(SourceRequest::getUrl)
+                .map(bookService::findByUrl)
+                .orElse(null);
+
+        Glossary glossary = glossaryMapper.toEntity(glossaryRequest, book);
         glossary = glossaryRepository.save(glossary);
 
         return glossary.getUrl();
@@ -58,7 +68,12 @@ public class GlossaryService {
         Glossary existingGlossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
-        Glossary updatedGlossary = glossaryMapper.toEntity(request);
+        Book book = Optional.ofNullable(request.getSource())
+                .map(SourceRequest::getUrl)
+                .map(bookService::findByUrl)
+                .orElse(null);
+
+        Glossary updatedGlossary = glossaryMapper.toEntity(request, book);
         updatedGlossary.setUrl(url);
         glossaryRepository.delete(existingGlossary);
         glossaryRepository.save(updatedGlossary);
