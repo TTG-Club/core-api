@@ -8,12 +8,12 @@ import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.rest.mapper.GlossaryMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,8 +31,14 @@ public class GlossaryService {
         return Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
-                .map(line -> glossaryRepository.findBySearchLine(line, Sort.by(Sort.Order.asc("name"))))
-                .orElseGet(() -> findAll(DEFAULT_GLOSSARY_SORT));
+                .map(line -> {
+                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
+                    return glossaryRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_GLOSSARY_SORT);
+                })
+                .orElseGet(() -> glossaryRepository.findAll(DEFAULT_GLOSSARY_SORT))
+                .stream()
+                .map(glossaryMapper::toShortResponse)
+                .collect(Collectors.toList());
     }
 
     public List<GlossaryShortResponse> findAll(Sort sort) {

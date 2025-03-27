@@ -14,7 +14,9 @@ public interface GlossaryRepository extends JpaRepository<Glossary, String> {
             where g.name ilike concat('%', :searchLine, '%')
                or g.english ilike concat('%', :searchLine, '%')
                or g.alternative ilike concat('%', :searchLine, '%')
+               or g.english ilike concat('%', :invertedSearchLine, '%')
+               or g.alternative ilike concat('%', :invertedSearchLine, '%')
             """
     )
-    List<GlossaryShortResponse> findBySearchLine(String searchLine, Sort sort);
+    List<Glossary> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 }
