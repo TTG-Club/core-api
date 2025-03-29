@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.service.SpellService;
+import club.ttg.dnd5.dto.base.filters.FilterDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,6 +27,11 @@ import java.util.List;
 public class SpellController {
     private final SpellService spellService;
 
+    @GetMapping("/filters")
+    public FilterDto getFilterDto() {
+        return spellService.getFilters();
+    }
+
     @Operation(summary = "Проверить заклинание по URL", description = "Проверка заклинание по его уникальному URL.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Заклинание существует"),
@@ -42,8 +48,10 @@ public class SpellController {
                                               @Valid
                                               @Size(min = 3)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine) {
-        return spellService.search(searchLine);
+                                              String searchLine,
+                                              @RequestBody
+                                              FilterDto filterDto) {
+        return spellService.search(searchLine, filterDto);
     }
 
     @GetMapping("/{url}")

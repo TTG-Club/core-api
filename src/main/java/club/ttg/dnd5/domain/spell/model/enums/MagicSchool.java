@@ -5,6 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Set;
+
 @Getter
 @AllArgsConstructor
 public enum MagicSchool {
@@ -18,6 +22,8 @@ public enum MagicSchool {
     TRANSMUTATION("преобразование");
 
     private final String name;
+    @Getter
+    private static final Set<MagicSchool> VALUES = EnumSet.allOf(MagicSchool.class);
 
     public static MagicSchool parse(String name) {
         for (MagicSchool school : values()) {

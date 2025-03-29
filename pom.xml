@@ -146,6 +146,21 @@
 			<artifactId>hypersistence-utils-hibernate-63</artifactId>
 			<version>${hypersistence-utils.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq</artifactId>
+			<version>3.20.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq-meta</artifactId>
+			<version>3.20.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq-codegen</artifactId>
+			<version>3.20.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
