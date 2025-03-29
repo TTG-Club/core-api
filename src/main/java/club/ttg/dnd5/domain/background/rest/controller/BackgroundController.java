@@ -6,9 +6,12 @@ import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -37,15 +40,20 @@ public class BackgroundController {
     }
 
     @Operation(summary = "Детальная информация о предыстории", description = "Возвращает объект с детальной информацией о предыстории")
-    @GetMapping("{backgroundUrl}")
-    public BackgroundDetailResponse findBackground(@PathVariable final String backgroundUrl) {
-        return backgroundService.getBackground(backgroundUrl);
+    @GetMapping("{url}")
+    public BackgroundDetailResponse findBackground(@PathVariable final String url) {
+        return backgroundService.getBackground(url);
     }
 
     @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")
     @PostMapping("/search")
-    public Collection<ShortResponse> findBackgrounds() {
-        return backgroundService.getBackgrounds();
+    public Collection<ShortResponse> findBackgrounds(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Size(min = 3)
+            @Schema( description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine) {
+        return backgroundService.getBackgrounds(searchLine);
     }
 
     @ApiResponses(value = {
@@ -56,7 +64,7 @@ public class BackgroundController {
     @Secured("ADMIN")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public BackgroundDetailResponse addBackgrounds(@RequestBody final BackgroundRequest backgroundDto) {
+    public String addBackgrounds(@RequestBody final BackgroundRequest backgroundDto) {
         return backgroundService.addBackground(backgroundDto);
     }
 
@@ -66,18 +74,18 @@ public class BackgroundController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @Secured("ADMIN")
-    @PutMapping("{backgroundUrl}")
-    public BackgroundDetailResponse updateBackgrounds(
-            @PathVariable final String backgroundUrl,
-            @RequestBody final BackgroundRequest backgroundDto) {
-        return backgroundService.updateBackgrounds(backgroundUrl, backgroundDto);
+    @PutMapping("{url}")
+    public String updateBackgrounds(
+            @PathVariable final String url,
+            @RequestBody final BackgroundRequest request) {
+        return backgroundService.updateBackgrounds(url, request);
     }
 
     @Operation(summary = "Помечает предысторию как скрытую для списков")
     @Secured("ADMIN")
-    @DeleteMapping("{backgroundUrl}")
-    public ShortResponse deleteBackgrounds(
-            @PathVariable final String backgroundUrl) {
-        return backgroundService.deleteBackgrounds(backgroundUrl);
+    @DeleteMapping("{url}")
+    public String deleteBackgrounds(
+            @PathVariable final String url) {
+        return backgroundService.deleteBackgrounds(url);
     }
 }
