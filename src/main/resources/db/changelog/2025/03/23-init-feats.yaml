@@ -57,3 +57,18 @@ databaseChangeLog:
                   name: repeatability
                   type: BOOLEAN
             tableName: feat
+  - changeSet:
+      id: 1741183862433-2
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+            indexName: feat_name_index
+            tableName: feat
