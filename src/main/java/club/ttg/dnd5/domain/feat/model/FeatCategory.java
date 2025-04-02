@@ -7,10 +7,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum FeatCategory {
-    ORIGIN("черты происхождения"),
-    GENERAL("общие черты"),
-    EPIC_BOON("эпические черты"),
-    FIGHTING_STYLE("боевые стили") ;
+    ORIGIN("черта происхождения"),
+    GENERAL("общая черта"),
+    EPIC_BOON("эпическая черта"),
+    FIGHTING_STYLE("боевой стиль") ;
 
     private final String name;
 }

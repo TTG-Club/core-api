@@ -1,0 +1,74 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1741183862433-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_spell
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: english
+                  type: VARCHAR(255)
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+              - column:
+                  name: source_page
+                  type: BIGINT
+              - column:
+                  name: category
+                  type: VARCHAR(255)
+              - column:
+                  name: prerequisite
+                  type: VARCHAR(255)
+              - column:
+                  name: repeatability
+                  type: BOOLEAN
+            tableName: feat
+  - changeSet:
+      id: 1741183862433-2
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+            indexName: feat_name_index
+            tableName: feat

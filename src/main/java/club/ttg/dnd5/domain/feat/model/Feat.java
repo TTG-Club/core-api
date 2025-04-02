@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.model;
 
+import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,7 +21,23 @@ import lombok.Setter;
         }
 )
 public class Feat extends NamedEntity {
+    /**
+     * Категория.
+     */
     @Enumerated(EnumType.STRING)
     private FeatCategory category;
+    /**
+     * Предварительное условие
+     */
     private String prerequisite;
+    /**
+     * Можно брать черту больше чем один раз
+     */
+    private Boolean repeatability;
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Book source;
+    @Column(name = "source_page")
+    private Long sourcePage;
 }
