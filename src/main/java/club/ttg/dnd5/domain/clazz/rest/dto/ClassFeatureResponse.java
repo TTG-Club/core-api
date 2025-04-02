@@ -6,7 +6,10 @@ import lombok.*;
 
 @Getter
 @Setter
-public class ClassFeatureDto extends BaseResponse {
+public class ClassFeatureResponse extends BaseResponse {
     @Schema(description = "С какого уровня доступно", requiredMode = Schema.RequiredMode.REQUIRED)
     private short level;
+
+    @Schema(description = "Красивая фраза из книги", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String quote;
 }
