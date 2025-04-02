@@ -10,7 +10,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     primaryKey: true
-                    primaryKeyName: pk_spell
+                    primaryKeyName: pk_feat
                   name: url
                   type: VARCHAR(255)
               - column:

@@ -3,15 +3,13 @@ package club.ttg.dnd5.domain.feat.repository;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 
 @Repository
-public interface FeatRepository extends JpaRepository<Feat, String>,
-        JpaSpecificationExecutor<Feat> {
+public interface FeatRepository extends JpaRepository<Feat, String> {
     @Query(value = """
             select f from Feat f
             where f.name ilike concat('%', :searchLine, '%')
@@ -22,5 +20,5 @@ public interface FeatRepository extends JpaRepository<Feat, String>,
                or f.alternative ilike concat('%', :invertedSearchLine, '%')
             """
     )
-    Collection<Feat> findBySearchLine(String line, String invertedSearchLine, Sort defaultSort);
+    Collection<Feat> findBySearchLine(String searchLine, String invertedSearchLine, Sort defaultSort);
 }
