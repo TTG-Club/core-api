@@ -7,8 +7,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Entity
-@Table(name = "beast_ability")
 public class BeastAbility {
   @Id
   private Long id;

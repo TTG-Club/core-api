@@ -6,19 +6,25 @@ import lombok.Getter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static club.ttg.dnd5.domain.common.dictionary.Dice.*;
+
 @Getter
 public enum Size {
-	UNDEFINED("Неопределенный", "Неопределенная", "Неопределенное"),
-	TINY("Крошечный","Крошечная", "Крошечное"),
-	SMALL("Маленький", "Маленькая", "Маленькое"),
-	MEDIUM("Средний", "Средняя", "Среднее"),
-	LARGE("Большой", "Большая", "Большое"),
-	HUGE("Огромный", "Огромная", "Огромное"),
-	GARGANTUAN("Громадный", "Громадная", "Громадное");
+	UNDEFINED(null, 0f, "Неопределенный", "Неопределенная", "Неопределенное"),
+	TINY(d4, 2.5f,"Крошечный","Крошечная", "Крошечное"),
+	SMALL(d6,3.5f, "Маленький", "Маленькая", "Маленькое"),
+	MEDIUM(d8, 4.5f, "Средний", "Средняя", "Среднее"),
+	LARGE(d10, 5.5f, "Большой", "Большая", "Большое"),
+	HUGE(d12, 6.5f, "Огромный", "Огромная", "Огромное"),
+	GARGANTUAN(d20, 10.5f, "Громадный", "Громадная", "Громадное");
 
 	private final String [] names;
+	private final Dice hitDice;
+	private final float hitAverage;
 
-	Size(String... names){
+	Size(Dice hitDace, float hitAverage, String... names){
+		this.hitDice = hitDace;
+		this.hitAverage = hitAverage;
 		this.names = names;
 	}
 
@@ -26,7 +32,6 @@ public enum Size {
 		if (size == null) {
 			return UNDEFINED;
 		}
-
 		return Arrays.stream(values())
 				.filter(s -> s.name().equalsIgnoreCase(size))
 				.findFirst()
