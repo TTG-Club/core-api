@@ -1,8 +1,9 @@
 package club.ttg.dnd5.domain.feat.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
-import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,7 @@ public class FeatRequest extends BaseRequest {
     @Schema(description = "Категория черты", examples = {"ORIGIN", "GENERAL", "EPIC_BOON", "FIGHTING_STYLE"})
     private FeatCategory category;
     @Schema(description = "Предварительное условие")
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String prerequisite;
     @Schema(description = "Повторяемость")
     private Boolean repeatability;
