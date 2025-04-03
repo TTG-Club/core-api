@@ -8,4 +8,5 @@ databaseChangeLog:
             columns:
               - column:
                   name: image_url
+                  type: VARCHAR(255)
             tableName: feat
