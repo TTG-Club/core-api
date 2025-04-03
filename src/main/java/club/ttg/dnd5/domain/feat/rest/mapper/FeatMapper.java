@@ -22,6 +22,7 @@ public interface FeatMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
+    @Mapping(source = "category.name", target = "category")
     FeatDetailResponse toDetailDto(Feat feat);
 
     @BaseMapping.BaseEntityNameMapping
