@@ -38,6 +38,5 @@ public class Feat extends NamedEntity {
     @ManyToOne
     @JoinColumn(name = "source")
     private Book source;
-    @Column(name = "source_page")
     private Long sourcePage;
 }

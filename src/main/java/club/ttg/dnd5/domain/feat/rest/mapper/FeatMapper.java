@@ -28,6 +28,8 @@ public interface FeatMapper {
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.updatedAt", target = "updatedAt")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Book source);
 
     @Named("collectToString")
