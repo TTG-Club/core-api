@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.feat.rest.controller;
 
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
@@ -24,16 +23,16 @@ import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v2/feat")
+@RequestMapping("/api/v2/feats")
 @Tag(name = "Черты ", description = "REST API черт персонажа")
 public class FeatController {
     private final FeatService featService;
 
     @ResponseStatus(HttpStatus.OK)
-    @RequestMapping(path = "/{featUrl}", method = RequestMethod.HEAD)
-    public ResponseEntity<Boolean> existByUrl(@PathVariable final String featUrl) {
-        if (featService.exists(featUrl)) {
-            throw new EntityExistException("Черта существуют с URL: " + featUrl);
+    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    public ResponseEntity<Boolean> existByUrl(@PathVariable final String url) {
+        if (featService.exists(url)) {
+            throw new EntityExistException("Черта существуют с URL: " + url);
         }
         return ResponseEntity.ok(false);
     }
@@ -45,9 +44,9 @@ public class FeatController {
     })
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/{featUrl}")
-    public FeatDetailResponse getFeat(@PathVariable final String featUrl) {
-        return featService.getFeat(featUrl);
+    @GetMapping("/{url}")
+    public FeatDetailResponse getFeat(@PathVariable final String url) {
+        return featService.getFeat(url);
     }
 
     @Secured("ADMIN")
@@ -86,10 +85,10 @@ public class FeatController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @ResponseStatus(HttpStatus.OK)
-    @PostMapping("{featUrl}")
-    public String updateFeats(@PathVariable final String featUrl,
+    @PostMapping("{url}")
+    public String updateFeats(@PathVariable final String url,
                                           @RequestBody final FeatRequest featDto) {
-        return featService.updateFeat(featUrl, featDto);
+        return featService.updateFeat(url, featDto);
     }
 
     @Secured("ADMIN")
@@ -99,8 +98,8 @@ public class FeatController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @ResponseStatus(HttpStatus.OK)
-    @DeleteMapping("{featUrl}")
-    public String deleteFeats(@PathVariable final String featUrl) {
-        return featService.delete(featUrl);
+    @DeleteMapping("{url}")
+    public String deleteFeats(@PathVariable final String url) {
+        return featService.delete(url);
     }
 }
