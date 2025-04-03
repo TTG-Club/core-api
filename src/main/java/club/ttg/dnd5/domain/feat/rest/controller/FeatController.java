@@ -5,7 +5,6 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.service.FeatService;
-import club.ttg.dnd5.exception.EntityExistException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,7 +14,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,11 +28,8 @@ public class FeatController {
 
     @ResponseStatus(HttpStatus.OK)
     @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
-    public ResponseEntity<Boolean> existByUrl(@PathVariable final String url) {
-        if (featService.exists(url)) {
-            throw new EntityExistException("Черта существуют с URL: " + url);
-        }
-        return ResponseEntity.ok(false);
+    public boolean existByUrl(@PathVariable final String url) {
+        return featService.existOrThrow(url);
     }
 
     @Operation(summary = "Получение детального описания черты")
