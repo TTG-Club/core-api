@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "feats",
+@Table(name = "feat",
         indexes = {
                 @Index(name = "url_index", columnList = "url"),
                 @Index(name = "name_index", columnList = "name, english, alternative")
