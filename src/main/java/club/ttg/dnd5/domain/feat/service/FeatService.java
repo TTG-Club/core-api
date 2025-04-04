@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.feat.service;
 
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
@@ -20,5 +19,5 @@ public interface FeatService {
 
     String delete(String featUrl);
 
-    boolean exists(String featUrl);
+    boolean existOrThrow(String featUrl);
 }

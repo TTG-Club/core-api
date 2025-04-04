@@ -86,8 +86,11 @@ public class FeatServiceImpl implements FeatService {
     }
 
     @Override
-    public boolean exists(final String featUrl) {
-        return featRepository.existsById(featUrl);
+    public boolean existOrThrow(final String url) {
+        if (!featRepository.existsById(url)) {
+            throw new EntityNotFoundException(String.format("Черта с url %s не существует", url));
+        }
+        return true;
     }
 
     private Feat findByUrl(String url) {

@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "feats",
+@Table(name = "feat",
         indexes = {
                 @Index(name = "url_index", columnList = "url"),
                 @Index(name = "name_index", columnList = "name, english, alternative")
@@ -38,6 +38,5 @@ public class Feat extends NamedEntity {
     @ManyToOne
     @JoinColumn(name = "source")
     private Book source;
-    @Column(name = "source_page")
     private Long sourcePage;
 }
