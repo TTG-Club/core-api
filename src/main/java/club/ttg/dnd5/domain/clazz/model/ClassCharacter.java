@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.util.Collection;
 import java.util.Set;
 
@@ -24,9 +23,9 @@ import java.util.Set;
         }
 )
 public class ClassCharacter extends NamedEntity {
-    private String genitive;
+
     @Enumerated(EnumType.STRING)
-    private Set<Ability> mainAbility;
+    private Ability mainAbility;
 
     @Enumerated(EnumType.STRING)
     private Dice hitDice;
@@ -37,34 +36,29 @@ public class ClassCharacter extends NamedEntity {
     private String weaponMastery;
     private String toolMastery;
 
-    @ElementCollection(targetClass = Ability.class, fetch = FetchType.LAZY)
+    @ElementCollection(targetClass = Ability.class)
     @JoinTable(name = "class_saving_throw_abilities",
                joinColumns = @JoinColumn(name = "class_url")
     )
-    @Column(name = "ability", nullable = false)
+    @Column(name = "ability")
     @Enumerated(EnumType.STRING)
     private Set<Ability> savingThrowMastery;
 
-    /** Доступные умения. */
     @ElementCollection(targetClass = Skill.class, fetch = FetchType.LAZY)
     @JoinTable(name = "class_available_skills",
                joinColumns = @JoinColumn(name = "class_url"))
     @Column(name = "skill", nullable = false)
     @Enumerated(EnumType.STRING)
     private Set<Skill> availableSkills;
-    /** Количество умений доступных для выбора */
+
     private short countSkillAvailable;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "class_url")
-    private Collection<ClassFeatureLevels> featureLevels;
-
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "class_url")
-    private Collection<ClassSpellLevels> classSpellLevels;
-
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "class_url")
+    @ManyToMany
+    @JoinTable(
+            name = "class_feature_relationships",
+            joinColumns = @JoinColumn(name = "class_url", referencedColumnName = "url"),
+            inverseJoinColumns = @JoinColumn(name = "feature_url", referencedColumnName = "url")
+    )
     private Collection<ClassFeature> features;
 
     @ManyToOne(cascade = { CascadeType.ALL })
@@ -74,9 +68,9 @@ public class ClassCharacter extends NamedEntity {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
     private Collection<ClassCharacter> subClasses;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "source")
     private Book source;
 
-    private Short page;
+    private Short sourcePage;
 }
