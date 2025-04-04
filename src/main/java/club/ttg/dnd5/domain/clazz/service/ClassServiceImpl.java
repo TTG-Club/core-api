@@ -1,9 +1,6 @@
 package club.ttg.dnd5.domain.clazz.service;
 
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassDetailResponse;
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassFeatureRequest;
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassRequest;
-import club.ttg.dnd5.domain.clazz.rest.dto.ClassShortResponse;
+import club.ttg.dnd5.domain.clazz.rest.dto.*;
 import club.ttg.dnd5.domain.clazz.rest.mapper.ClassFeatureMapper;
 import club.ttg.dnd5.domain.clazz.rest.mapper.ClassMapper;
 import club.ttg.dnd5.domain.common.rest.dto.engine.SearchRequest;
@@ -17,9 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -131,5 +126,14 @@ public class ClassServiceImpl implements ClassService {
     private ClassCharacter findByUrl(String url) {
         return classRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Entity not found with URL: " + url));
+    }
+
+    @Override
+    public Collection<ClassFeatureResponse> getFeaturesByClassUrl(final String classUrl) {
+        var features = classRepository.findFeaturesByClassUrl(classUrl);
+        return features.stream()
+                .map(classFeatureMapper::toShortDto)
+                .sorted(Comparator.comparingInt(ClassFeatureResponse::getLevel)) // сортировка по уровню
+                .toList();
     }
 }
