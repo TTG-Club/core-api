@@ -37,7 +37,6 @@ public class FeatController {
             @ApiResponse(responseCode = "200", description = "Черта успешно получена"),
             @ApiResponse(responseCode = "404", description = "Черта не найдена")
     })
-
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{url}")
     public FeatDetailResponse getFeat(@PathVariable final String url) {
