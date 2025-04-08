@@ -44,7 +44,6 @@ public class FeatController {
         return featService.getFeat(url);
     }
 
-    @Secured("ADMIN")
     @Operation(summary = "Получение списка черт")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черты успешно получена")
