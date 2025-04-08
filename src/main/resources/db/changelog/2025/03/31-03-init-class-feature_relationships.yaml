@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1741183862433-8
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: class_feature_relationships
+            columns:
+              - column:
+                  name: class_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: feature_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: level
+                  type: SMALLINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+                  defaultValue: false
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            columnNames: class_url, feature_url
+            constraintName: pk_class_feature_relationships
+            tableName: class_feature_relationships
+        - addForeignKeyConstraint:
+            baseColumnNames: class_url
+            baseTableName: class_feature_relationships
+            constraintName: fk_class_url
+            referencedColumnNames: url
+            referencedTableName: classes
+        - addForeignKeyConstraint:
+            baseColumnNames: feature_url
+            baseTableName: class_feature_relationships
+            constraintName: fk_feature_url
+            referencedColumnNames: url
+            referencedTableName: class_features

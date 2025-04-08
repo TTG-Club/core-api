@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Collection;
 
 @RestController
@@ -123,5 +122,15 @@ public class ClassController {
             @PathVariable final String url,
             @RequestBody final ClassRequest request) {
         return classService.updateClass(url, request);
+    }
+
+    @Operation(summary = "Получить способности класса", description = "Возвращает список способностей, относящихся к классу, отсортированных по уровню (от 1 до 20).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список способностей успешно получен"),
+            @ApiResponse(responseCode = "404", description = "Класс не найден")
+    })
+    @GetMapping("/{classUrl}/features")
+    public Collection<ClassFeatureResponse> getClassFeatures(@PathVariable String classUrl) {
+        return classService.getFeaturesByClassUrl(classUrl);
     }
 }

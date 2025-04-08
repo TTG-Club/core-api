@@ -32,6 +32,6 @@ public interface BaseMapping {
 
     @Named("collectToString")
     default String collectToString(Collection<String> names) {
-        return String.join(" ", names);
+        return String.join(";", names);
     }
 }
