@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.background.model;
 
+import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
@@ -25,14 +26,18 @@ import java.util.Set;
         }
 )
 public class Background extends NamedEntity {
+    private String linkImageUrl; //для изоброжения бэкграунда
+    /** Характеристики */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Set<Ability> abilities;
+
     /** Доступные умения. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Set<Skill> skillProficiencies;
 
+    /** Черта */
     @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "feat_id")
     private Feat feat;
@@ -43,4 +48,9 @@ public class Background extends NamedEntity {
     private String equipment;
     /** Предлагаемый класс */
     private String proposeClasses;
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Book source;
+    private Long sourcePage;
 }

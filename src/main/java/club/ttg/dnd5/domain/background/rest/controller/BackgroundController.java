@@ -2,7 +2,9 @@ package club.ttg.dnd5.domain.background.rest.controller;
 
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,9 +47,14 @@ public class BackgroundController {
         return backgroundService.getBackground(url);
     }
 
+    @GetMapping("/{url}/raw")
+    public BackgroundRequest getSpellFormByUrl(@PathVariable String url) {
+        return backgroundService.findFormByUrl(url);
+    }
+
     @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")
     @PostMapping("/search")
-    public Collection<ShortResponse> findBackgrounds(
+    public Collection<BackgroundShortResponse> findBackgrounds(
             @RequestParam(name = "query", required = false)
             @Valid
             @Size(min = 3)
