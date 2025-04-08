@@ -43,6 +43,11 @@ public class FeatController {
         return featService.getFeat(url);
     }
 
+    @GetMapping("/{url}/raw")
+    public FeatRequest getSpellFormByUrl(@PathVariable String url) {
+        return featService.findFormByUrl(url);
+    }
+
     @Operation(summary = "Получение списка черт")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черты успешно получена")

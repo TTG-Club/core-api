@@ -10,6 +10,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 @Mapper(componentModel = "spring")
@@ -37,4 +38,15 @@ public interface FeatMapper {
     default String collectToString(Collection<String> names) {
         return String.join(";", names);
     }
+
+    @Mapping(source = "name", target = "name.name")
+    @Mapping(source = "english", target = "name.english")
+    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    FeatRequest toRequest(Feat feat);
+
+    @Named("altToCollection")
+    default Collection<String> altToCollection(String string) {
+        return Arrays.asList(string.split(";"));
+    }
+
 }

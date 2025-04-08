@@ -93,6 +93,11 @@ public class FeatServiceImpl implements FeatService {
         return true;
     }
 
+    @Override
+    public FeatRequest findFormByUrl(final String url) {
+        return featMapper.toRequest(findByUrl(url));
+    }
+
     private Feat findByUrl(String url) {
         return featRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
