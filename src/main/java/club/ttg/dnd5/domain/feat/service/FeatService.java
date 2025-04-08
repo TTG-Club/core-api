@@ -20,4 +20,6 @@ public interface FeatService {
     String delete(String featUrl);
 
     boolean existOrThrow(String featUrl);
+
+    FeatRequest findFormByUrl(String url);
 }
