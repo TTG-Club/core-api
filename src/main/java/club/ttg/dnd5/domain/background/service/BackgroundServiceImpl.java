@@ -1,15 +1,16 @@
 package club.ttg.dnd5.domain.background.service;
 
+import club.ttg.dnd5.domain.background.model.Background;
+import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
+import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.domain.background.model.Background;
-import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +28,16 @@ public class BackgroundServiceImpl implements BackgroundService {
     private static final Sort DEFAULT_SORT = Sort.by("name");
     private final BackgroundRepository backgroundRepository;
     private final FeatRepository featRepository;
+    private final BookService bookService;
     private final BackgroundMapper backgroundMapper;
 
     @Override
     public BackgroundDetailResponse getBackground(final String backgroundUrl) {
-        return backgroundMapper.toDetailDto(findByUrl(backgroundUrl));
+        return backgroundMapper.toDetail(findByUrl(backgroundUrl));
     }
 
     @Override
-    public Collection<ShortResponse> getBackgrounds(String searchLine) {
+    public Collection<BackgroundShortResponse> getBackgrounds(String searchLine) {
         return Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
@@ -45,27 +47,31 @@ public class BackgroundServiceImpl implements BackgroundService {
                 })
                 .orElseGet(() -> backgroundRepository.findAll(DEFAULT_SORT))
                 .stream()
-                .map(backgroundMapper::toShortDto)
+                .map(backgroundMapper::toShort)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     @Override
-    public String addBackground(final BackgroundRequest dto) {
-        checkUrlExist(dto.getUrl());
-        var feat = getFeat(dto.getFeatUrl());
-        return backgroundRepository.save(backgroundMapper.toEntity(dto, feat)).getUrl();
+    public String addBackground(final BackgroundRequest request) {
+        checkUrlExist(request.getUrl());
+        var feat = getFeat(request.getFeatUrl());
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, book))
+                .getUrl();
     }
 
     @Transactional
     @Override
-    public String updateBackgrounds(final String url, final BackgroundRequest dto) {
-        checkUrlExist(dto.getUrl());
-        if (!url.equals(dto.getUrl())) {
+    public String updateBackgrounds(final String url, final BackgroundRequest request) {
+        checkUrlExist(request.getUrl());
+        if (!url.equals(request.getUrl())) {
             backgroundRepository.deleteById(url);
         }
-        var feat = getFeat(dto.getFeatUrl());
-        return backgroundRepository.save(backgroundMapper.toEntity(dto, feat)).getUrl();
+        var feat = getFeat(request.getFeatUrl());
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, book))
+                .getUrl();
     }
 
     @Transactional
@@ -79,6 +85,11 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Override
     public boolean exists(final String backgroundUrl) {
         return backgroundRepository.existsById(backgroundUrl);
+    }
+
+    @Override
+    public BackgroundRequest findFormByUrl(final String url) {
+        return backgroundMapper.toRequest(findByUrl(url));
     }
 
     private Feat getFeat(String url) {
