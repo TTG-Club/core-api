@@ -48,10 +48,22 @@ databaseChangeLog:
                   name: source_page
                   type: BIGINT
               - column:
-                  name: category
+                  name: abilities
+                  type: jsonb
+              - column:
+                  name: skill_proficiencies
+                  type: jsonb
+              - column:
+                  name: feat_id
                   type: VARCHAR(255)
               - column:
-                  name: prerequisite
+                  name: tool_proficiency
+                  type: VARCHAR(255)
+              - column:
+                  name: equipment
+                  type: VARCHAR(255)
+              - column:
+                  name: propose_classes
                   type: VARCHAR(255)
             tableName: background
   - changeSet:
