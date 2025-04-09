@@ -10,7 +10,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     primaryKey: true
-                    primaryKeyName: pk_feat
+                    primaryKeyName: pk_background
                   name: url
                   type: VARCHAR(255)
               - column:
@@ -81,3 +81,20 @@ databaseChangeLog:
                   name: alternative
             indexName: background_name_index
             tableName: background
+  - changeSet:
+      id: create-background-relation-index
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: source
+            baseTableName: background
+            constraintName: FK_BACKGROUND_ON_SOURCE
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+        - addForeignKeyConstraint:
+            baseColumnNames: feat_id
+            baseTableName: background
+            constraintName: FK_BACKGROUND_ON_FEAT
+            referencedColumnNames: url
+            referencedTableName: feat
