@@ -22,4 +22,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/03/19-01-delete-markup-description.yaml
   - include:
-      file: db/changelog/2025/03/25-01-changelog.yaml
+      file: db/changelog/2025/04/09-01-init-items.yaml
