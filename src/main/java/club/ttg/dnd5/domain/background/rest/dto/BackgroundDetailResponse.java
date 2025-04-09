@@ -7,9 +7,9 @@ import lombok.*;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 
+@Schema(description = "Информация о предыстории")
 @Getter
 @Setter
-@Schema(description = "Информация о происхождении")
 public class BackgroundDetailResponse extends BaseResponse {
     @Schema(description = "Характеристики:")
     private String abilityScores;

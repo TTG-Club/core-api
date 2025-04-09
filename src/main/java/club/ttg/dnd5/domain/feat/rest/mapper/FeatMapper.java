@@ -28,7 +28,6 @@ public interface FeatMapper {
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
-    @Mapping(source = "request.updatedAt", target = "updatedAt")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(target = "source", source = "source")
