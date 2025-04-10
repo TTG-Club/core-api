@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class FeatServiceImpl implements FeatService {
-    private static final Sort DEFAULT_SORT = Sort.by("category, name");
+    private static final Sort DEFAULT_SORT = Sort.by("category", "name");
     private final FeatRepository featRepository;
     private final BookService bookService;
     private final FeatMapper featMapper;
