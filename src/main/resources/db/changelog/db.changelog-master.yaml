@@ -30,4 +30,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/03/31-03-init-class-feature_relationships.yaml
   - include:
-      file: db/changelog/2025/03/09-04-fix-glossary.yaml
+      file: db/changelog/2025/03/23-init-feats.yaml
+  - include:
+      file: db/changelog/2025/04/03-01-add-image-url-to-feat-table.yaml
+  - include:
+      file: db/changelog/2025/04/09-01-fix-glossary.yaml
