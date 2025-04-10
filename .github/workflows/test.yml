@@ -1,4 +1,4 @@
-name: Test Cases
+name: Maven Tests
 
 on:
   pull_request:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test:
-    name: Analyze
+    name: Run Maven Tests
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     permissions:
