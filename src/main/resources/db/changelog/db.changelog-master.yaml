@@ -23,3 +23,11 @@ databaseChangeLog:
       file: db/changelog/2025/03/20-03-init-glossary.yaml
   - include:
       file: db/changelog/2025/03/19-01-delete-markup-description.yaml
+  - include:
+      file: db/changelog/2025/03/31-03-init-class-character.yaml
+  - include:
+      file: db/changelog/2025/03/31-03-init-class-feature.yaml
+  - include:
+      file: db/changelog/2025/03/31-03-init-class-feature_relationships.yaml
+  - include:
+      file: db/changelog/2025/03/09-04-fix-glossary.yaml
