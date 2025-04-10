@@ -9,6 +9,7 @@ import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,12 +19,12 @@ public interface FeatMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
-    @Mapping(source = "category.name", target = "category")
+    @Mapping(source = "category.name", target = "category", qualifiedByName = "capitalize")
     FeatShortResponse toShortDto(Feat feat);
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
-    @Mapping(source = "category.name", target = "category")
+    @Mapping(source = "category.name", target = "category", qualifiedByName = "capitalize")
     FeatDetailResponse toDetailDto(Feat feat);
 
     @BaseMapping.BaseEntityNameMapping
@@ -47,6 +48,11 @@ public interface FeatMapper {
     @Named("altToCollection")
     default Collection<String> altToCollection(String string) {
         return Arrays.asList(string.split(";"));
+    }
+
+    @Named("capitalize")
+    default String capitalize(String string) {
+        return StringUtils.capitalize(string);
     }
 
 }
