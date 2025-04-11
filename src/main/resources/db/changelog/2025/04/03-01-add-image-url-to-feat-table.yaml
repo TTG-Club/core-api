@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 17411838624323-1
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+            tableName: feat

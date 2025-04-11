@@ -1,0 +1,97 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1741183862433-6
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: class_features
+            columns:
+              - column:
+                  name: quote
+                  type: VARCHAR(255)
+                  constraints:
+                    primaryKey: false
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: english
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: description
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: imageUrl
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+                  defaultValue: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: level
+                  type: SMALLINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: source_page
+                  type: SMALLINT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 1741183862433-7
+      author: ylp
+      changes:
+        - createIndex:
+            indexName: class_features_url_index
+            tableName: class_features
+            columns:
+              - column:
+                  name: url

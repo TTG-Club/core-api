@@ -20,6 +20,12 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/03/17-01-add-markup-description.yaml
   - include:
+      file: db/changelog/2025/03/20-03-init-glossary.yaml
+  - include:
       file: db/changelog/2025/03/19-01-delete-markup-description.yaml
   - include:
-      file: db/changelog/2025/04/09-01-init-items.yaml
+      file: db/changelog/2025/03/23-init-feats.yaml
+  - include:
+      file: db/changelog/2025/04/03-01-add-image-url-to-feat-table.yaml
+  - include:
+      file: db/changelog/2025/04/09-01-glossary-db-fix.yaml
