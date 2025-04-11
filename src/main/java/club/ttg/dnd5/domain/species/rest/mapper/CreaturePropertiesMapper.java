@@ -3,8 +3,9 @@ package club.ttg.dnd5.domain.species.rest.mapper;
 import club.ttg.dnd5.domain.species.model.CreatureProperties;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesPropertiesRequest;
+import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-
+@Mapper(componentModel = "spring")
 public interface CreaturePropertiesMapper {
 
     @Mapping(source = "type.name", target = "type")

@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = {SpeciesFeatureMapper.class, BaseMapping.class})
+@Mapper(componentModel = "spring", uses = {SpeciesFeatureMapper.class, CreaturePropertiesMapper.class, BaseMapping.class})
 public interface SpeciesMapper {
     DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
@@ -65,6 +65,7 @@ public interface SpeciesMapper {
 
     @BaseMapping.BaseRequestNameMapping
     @Mapping(source = "parent.url", target = "parent")
+    @Mapping(source = ".", target = "properties")
     SpeciesRequest toRequest(Species species);
 
     @Named("hasLineages")
