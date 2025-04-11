@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.2</version>
+		<version>3.4.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>club.ttg</groupId>
 	<artifactId>dnd5</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<name>DnD 5E portal</name>
 	<description>TTG club REST API</description>
 	<url/>
@@ -27,18 +27,19 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<hypersistence-utils.version>3.9.2</hypersistence-utils.version>
-		<org.springdoc.version>2.6.0</org.springdoc.version>
+		<org.springdoc.version>2.7.0</org.springdoc.version>
 		<jjwt.version>0.12.5</jjwt.version>
-		<mapstruct.version>1.6.0.Beta2</mapstruct.version>
+		<mapstruct.version>1.5.5.Final</mapstruct.version>
 		<mapstruct-processor.version>1.5.5.Final</mapstruct-processor.version>
 		<liqui-base.version>4.24.0</liqui-base.version>
 		<slugify.version>3.0.7</slugify.version>
 		<icu4j.version>76.1</icu4j.version>
 		<commons-io.version>2.18.0</commons-io.version>
+		<lombok.version>1.18.36</lombok.version>
 	</properties>
 	<dependencies>
 
@@ -78,7 +79,8 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<optional>true</optional>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -123,7 +125,7 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>5.12.0</version>
+			<version>5.14.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -161,6 +163,28 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.14.0</version>
+				<configuration>
+					<release>21</release>
+					<source>21</source>
+					<target>21</target>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>${mapstruct-processor.version}</version>
+						</path>
+					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
 		</plugins>
