@@ -60,12 +60,13 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
     @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
-    @Mapping(source = "galleryUrl", target = "galleryUrl")
+    @Mapping(source = "gallery", target = "galleryUrl")
     Species toEntity(SpeciesRequest request);
 
     @BaseMapping.BaseRequestNameMapping
     @Mapping(source = "parent.url", target = "parent")
     @Mapping(source = ".", target = "properties")
+    @Mapping(source = "galleryUrl", target = "gallery")
     SpeciesRequest toRequest(Species species);
 
     @Named("hasLineages")

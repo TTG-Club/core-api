@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CreaturePropertiesMapper {
 
-    @Mapping(source = "type.name", target = "type")
+    @Mapping(source = "type", target = "type")
     @Mapping(source = "speed", target = "movementAttributes.base")
     @Mapping(source = "fly", target = "movementAttributes.fly")
     @Mapping(source = "climb", target = "movementAttributes.climb")
