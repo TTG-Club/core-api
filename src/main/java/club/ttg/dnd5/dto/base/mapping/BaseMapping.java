@@ -20,6 +20,7 @@ public interface BaseMapping {
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.englishName", target = "source.name.english")
     @Mapping(source = "source.sourceAcronym", target = "source.name.label")
+    @Mapping(source = "sourcePage", target = "source.page")
     @interface BaseSourceMapping {}
 
     @Retention(RetentionPolicy.SOURCE)
@@ -38,6 +39,10 @@ public interface BaseMapping {
     @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
     @interface BaseRequestNameMapping {}
 
+    @Mapping(source = "sourcePage", target = "source.page")
+    @Mapping(source = "source.url", target = "source.url")
+    @interface BaseSourceRequestMapping{}
+
     @Named("collectToString")
     default String collectToString(Collection<String> names) {
         return String.join(";", names);
@@ -47,7 +52,7 @@ public interface BaseMapping {
     default Collection<String> altToCollection(String string) {
         if(StringUtils.isEmpty(string)) {
             return Collections.emptyList();
-        };
+        }
         return Arrays.asList(string.split(";"));
     }
 }
