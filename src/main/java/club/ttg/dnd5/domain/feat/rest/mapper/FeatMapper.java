@@ -14,7 +14,7 @@ import org.springframework.util.StringUtils;
 import java.util.Arrays;
 import java.util.Collection;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {BaseMapping.class})
 public interface FeatMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -40,9 +40,7 @@ public interface FeatMapper {
         return String.join(";", names);
     }
 
-    @Mapping(source = "name", target = "name.name")
-    @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    @BaseMapping.BaseRequestNameMapping
     FeatRequest toRequest(Feat feat);
 
     @Named("altToCollection")
