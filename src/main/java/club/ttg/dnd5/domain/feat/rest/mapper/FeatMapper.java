@@ -14,7 +14,7 @@ import org.springframework.util.StringUtils;
 import java.util.Arrays;
 import java.util.Collection;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {BaseMapping.class})
 public interface FeatMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -35,20 +35,8 @@ public interface FeatMapper {
     @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Book source);
 
-    @Named("collectToString")
-    default String collectToString(Collection<String> names) {
-        return String.join(";", names);
-    }
-
-    @Mapping(source = "name", target = "name.name")
-    @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    @BaseMapping.BaseRequestNameMapping
     FeatRequest toRequest(Feat feat);
-
-    @Named("altToCollection")
-    default Collection<String> altToCollection(String string) {
-        return Arrays.asList(string.split(";"));
-    }
 
     @Named("capitalize")
     default String capitalize(String string) {

@@ -22,6 +22,5 @@ public class SpeciesRequest extends BaseRequest {
 
     @JsonProperty("linkImage")
     private String linkImageUrl;
-    @Schema(description = "Галерея изображений")
-    private List<String> galleryUrl;
+
 }
