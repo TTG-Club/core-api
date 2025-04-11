@@ -35,18 +35,8 @@ public interface FeatMapper {
     @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Book source);
 
-    @Named("collectToString")
-    default String collectToString(Collection<String> names) {
-        return String.join(";", names);
-    }
-
     @BaseMapping.BaseRequestNameMapping
     FeatRequest toRequest(Feat feat);
-
-    @Named("altToCollection")
-    default Collection<String> altToCollection(String string) {
-        return Arrays.asList(string.split(";"));
-    }
 
     @Named("capitalize")
     default String capitalize(String string) {
