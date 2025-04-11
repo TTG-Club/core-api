@@ -8,4 +8,6 @@ import lombok.Setter;
 @Setter
 public class ClassFeatureRequest extends BaseRequest {
     private short level;
+
+    private String quote;
 }

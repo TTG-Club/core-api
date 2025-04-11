@@ -26,6 +26,8 @@ public class ClassDetailResponse extends BaseResponse {
 
     @Schema(description = "Стартовое снаряжение")
     private String startEquipment;
+    @Schema(description = "Список спасс-бросков")
+    private String savingThrowMastery;
 
     // Связанные сущности
     @Schema(description = "Url родительского класса если есть")
@@ -33,8 +35,7 @@ public class ClassDetailResponse extends BaseResponse {
     @Schema(description = "URLs суб классов если есть")
     private Collection<String> subClassUrls;
     @Schema(description = "Умения класса")
-    private Collection<ClassFeatureDto> features;
+    private Collection<ClassFeatureResponse> features;
 
     private NameResponse group = new NameResponse();
-
 }

@@ -7,15 +7,6 @@ on:
       - main
       - dev
 
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
-      - review_requested
-      - auto_merge_enabled
-
   workflow_dispatch:
 
 env:

@@ -1,0 +1,155 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1741183862433-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: classes
+            columns:
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: english
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: description
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+                  defaultValue: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: count_skill_available
+                  type: SMALLINT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: armor_mastery
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: weapon_mastery
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: tool_mastery
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: parent_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: source_page
+                  type: SMALLINT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: hit_dice
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: equipment
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: main_ability
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 1741183862433-2
+      author: ylp
+      changes:
+        - createTable:
+            tableName: class_saving_throw_abilities
+            columns:
+              - column:
+                  name: class_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ability
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - addPrimaryKey:
+                  tableName: class_saving_throw_abilities
+                  constraintName: pk_class_saving_throw_abilities
+                  columnNames: class_url, ability
+
+  - changeSet:
+      id: 1741183862433-3
+      author: ylp
+      changes:
+        - createTable:
+            tableName: class_available_skills
+            columns:
+              - column:
+                  name: class_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: skill
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - addPrimaryKey:
+                  tableName: class_available_skills
+                  constraintName: pk_class_available_skills
+                  columnNames: class_url, skill
