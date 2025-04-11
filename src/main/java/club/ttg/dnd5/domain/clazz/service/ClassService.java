@@ -20,5 +20,7 @@ public interface ClassService {
 
     ClassDetailResponse addFeature(String classUrl, ClassFeatureRequest featureDto);
 
+    Collection<ClassFeatureResponse> getFeaturesByClassUrl(String classUrl);
+
     boolean exist(String url);
 }

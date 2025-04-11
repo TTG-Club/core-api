@@ -7,15 +7,6 @@ on:
       - main
       - dev
 
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
-      - review_requested
-      - auto_merge_enabled
-
   workflow_dispatch:
 
 env:
@@ -82,14 +73,14 @@ jobs:
       group: update-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-server
       cancel-in-progress: false
     env:
-      CONFIG_FILE: ${{ secrets.TMWEB_SSH_PATH }}/${{ github.ref_name == 'main' && 'prod' || 'dev' }}/core/compose.core.yaml
+      CONFIG_FILE: ${{ secrets.BEGET_SSH_PATH }}/${{ github.ref_name == 'main' && 'prod' || 'dev' }}/core/compose.core.yaml
     steps:
       - uses: appleboy/ssh-action@master
         with:
-          host: ${{secrets.TMWEB_SSH_HOST}}
-          username: ${{secrets.TMWEB_SSH_USER}}
-          key: ${{secrets.TMWEB_SSH_KEY}}
-          port: ${{secrets.TMWEB_SSH_PORT}}
+          host: ${{secrets.BEGET_SSH_HOST}}
+          username: ${{secrets.BEGET_SSH_USER}}
+          key: ${{secrets.BEGET_SSH_KEY}}
+          port: ${{secrets.BEGET_SSH_PORT}}
           script: |
             docker compose -f ${{ env.CONFIG_FILE }} pull api && \
               docker compose -f ${{ env.CONFIG_FILE }} build api && \

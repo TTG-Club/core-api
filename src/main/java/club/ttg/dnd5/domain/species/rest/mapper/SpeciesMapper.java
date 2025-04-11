@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
+import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -15,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = SpeciesFeatureMapper.class)
+@Mapper(componentModel = "spring", uses = {SpeciesFeatureMapper.class, CreaturePropertiesMapper.class, BaseMapping.class})
 public interface SpeciesMapper {
     DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
@@ -23,7 +24,7 @@ public interface SpeciesMapper {
     @Mapping(source = "english", target = "name.english")
     @Mapping(source = "updatedAt", target = "updatedAt")
     @Mapping(source = "type.name", target = "properties.type")
-    @Mapping(source = ".", target = "properties.speed",  qualifiedByName = "toSpeed")
+    @Mapping(source = ".", target = "properties.speed", qualifiedByName = "toSpeed")
     @Mapping(source = "size.text", target = "properties.size")
 
     @Mapping(source = "source.type.group", target = "source.group.name")
@@ -59,8 +60,14 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
     @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
-    @Mapping(source = "galleryUrl", target = "galleryUrl")
+    @Mapping(source = "gallery", target = "galleryUrl")
     Species toEntity(SpeciesRequest request);
+
+    @BaseMapping.BaseRequestNameMapping
+    @Mapping(source = "parent.url", target = "parent")
+    @Mapping(source = ".", target = "properties")
+    @Mapping(source = "galleryUrl", target = "gallery")
+    SpeciesRequest toRequest(Species species);
 
     @Named("hasLineages")
     default boolean hasLineages(Collection<Species> lineages) {
@@ -86,8 +93,4 @@ public interface SpeciesMapper {
         return species.getSpeed() + " футов";
     }
 
-    @Named("collectToString")
-    default String collectToString(Collection<String> names) {
-        return String.join(" ", names);
-    }
 }
