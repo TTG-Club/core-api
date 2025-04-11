@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.service;
 
+import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
@@ -146,6 +147,10 @@ public class SpeciesService {
 
         species.setLineages(subSpeciesEntities);
         return speciesMapper.toDetailDto(speciesRepository.save(species));
+    }
+
+    public SpeciesRequest findFormByUrl(final String url) {
+        return speciesMapper.toRequest(findByUrl(url));
     }
 
     // Private methods

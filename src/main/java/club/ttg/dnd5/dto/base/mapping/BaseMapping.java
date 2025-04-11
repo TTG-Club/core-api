@@ -6,6 +6,7 @@ import org.mapstruct.Named;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
 import java.util.Collection;
 
 @Mapper(componentModel = "spring")
@@ -30,8 +31,18 @@ public interface BaseMapping {
     @Mapping(source = "request.name.alternative", target = "alternative", qualifiedByName = "collectToString")
     @interface BaseEntityNameMapping {}
 
+    @Mapping(source = "name", target = "name.name")
+    @Mapping(source = "english", target = "name.english")
+    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    @interface BaseRequestNameMapping {}
+
     @Named("collectToString")
     default String collectToString(Collection<String> names) {
         return String.join(";", names);
+    }
+
+    @Named("altToCollection")
+    default Collection<String> altToCollection(String string) {
+        return Arrays.asList(string.split(";"));
     }
 }
