@@ -82,9 +82,7 @@ public interface SpellMapper {
                 .collect(Collectors.joining(" или "));
     }
 
-    @Mapping(source = "name", target = "name.name")
-    @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    @BaseMapping.BaseRequestNameMapping
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
     @Mapping(source = "school.school", target = "school")
@@ -116,10 +114,6 @@ public interface SpellMapper {
             components.setM(null);
         }
         return components;
-    }
-    @Named("altToCollection")
-    default Collection<String> altToCollection(String string) {
-        return Arrays.asList(string.split(";"));
     }
 
     @Named("capitalize")
