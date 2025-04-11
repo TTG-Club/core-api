@@ -27,8 +27,6 @@ public class SpellRequest extends BaseRequest {
     @NotNull
     private MagicSchool school;
     @NotNull
-    private Boolean concentration;
-    @NotNull
     private SpellComponents components;
     @NotEmpty
     private List<SpellCastingTime> castingTime;
