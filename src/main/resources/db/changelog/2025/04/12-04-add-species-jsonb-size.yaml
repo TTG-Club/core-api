@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-and-migrate-species-size-to-jsonb
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - sqlFile:
+            path: sql/add-and-migrate-species-size-to-jsonb.sql
+            relativeToChangelogFile: true
