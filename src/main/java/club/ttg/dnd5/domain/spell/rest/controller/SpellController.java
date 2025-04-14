@@ -51,7 +51,7 @@ public class SpellController {
         return spellService.findDetailedByUrl(url);
     }
 
-    @GetMapping("/{url}/update")
+    @GetMapping("/{url}/raw")
     public SpellRequest getSpellFormByUrl(@PathVariable String url) {
         return spellService.findFormByUrl(url);
     }

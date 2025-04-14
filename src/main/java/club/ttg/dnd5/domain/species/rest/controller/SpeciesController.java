@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
+import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
@@ -146,5 +147,10 @@ public class SpeciesController {
     @ResponseStatus(HttpStatus.OK)
     public SpeciesDetailResponse updateSpecies(@PathVariable String url, @RequestBody SpeciesRequest request) {
         return speciesService.update(url, request);
+    }
+
+    @GetMapping("/{url}/raw")
+    public SpeciesRequest getSpeciesFormByUrl(@PathVariable String url) {
+        return speciesService.findFormByUrl(url);
     }
 }
