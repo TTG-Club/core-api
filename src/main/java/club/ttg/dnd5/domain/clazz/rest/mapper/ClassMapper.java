@@ -25,15 +25,15 @@ public interface ClassMapper {
 
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "mainAbility", target = "mainAbility", qualifiedByName = "abilityToString")
+    @Mapping(source = "mainAbility", target = "mainAbility", qualifiedByName = "mainAbilityToString")
     @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "diceToString")
     @Mapping(source = "source.name", target = "source.group.name")
     @Mapping(source = "source.sourceAcronym", target = "source.name.name")
+    @Mapping(source = "savingThrowMastery", target = "savingThrowMastery", qualifiedByName = "abilityToString")
     ClassDetailResponse toDetailDto(ClassCharacter entity);
 
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")
-    @Mapping(source = "genitive", target = "genitive")
     @Mapping(source = "hitDice", target = "hitDice", qualifiedByName = "toDice")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     ClassCharacter toEntity(ClassRequest request);
@@ -45,9 +45,17 @@ public interface ClassMapper {
 
     @Named("abilityToString")
     default String abilityToString(Set<Ability> abilities) {
+        if (abilities == null || abilities.isEmpty()) {
+            return "Нет способностей";
+        }
         return abilities.stream()
                 .map(Ability::getName)
                 .collect(Collectors.joining(" и "));
+    }
+
+    @Named("mainAbilityToString")
+    default String mainAbilityToString (Ability ability) {
+        return ability != null ? ability.getName() : null;
     }
 
     @Named("diceToString")
