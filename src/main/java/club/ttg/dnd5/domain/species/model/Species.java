@@ -38,7 +38,7 @@ public class Species extends CreatureProperties {
     private Species parent;
 
     /** Происхождения */
-    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     private Collection<Species> lineages;
 
     /** источник */
