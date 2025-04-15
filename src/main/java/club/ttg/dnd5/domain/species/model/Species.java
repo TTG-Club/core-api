@@ -9,7 +9,6 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  Виды или разновидности (расы)
@@ -39,13 +38,14 @@ public class Species extends CreatureProperties {
     private Species parent;
 
     /** Происхождения */
-    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     private Collection<Species> lineages;
 
     /** источник */
     @ManyToOne
     @JoinColumn(name = "source")
     private Book source;
+    private Long sourcePage;
 
     /** Ссылки на изображения для галереи */
     @ElementCollection(fetch = FetchType.EAGER)
