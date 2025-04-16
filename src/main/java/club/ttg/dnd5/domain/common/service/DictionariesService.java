@@ -149,4 +149,13 @@ public class DictionariesService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    public Collection<SelectOptionDto> getAbilities() {
+        return Arrays.stream(Ability.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
