@@ -432,7 +432,7 @@ public class DictionariesController {
         return ResponseEntity.ok(dictionariesService.getComparisonOperators());
     }
 
-    @Operation(summary = "Характеристики}")
+    @Operation(summary = "Характеристики")
     @GetMapping("/abilities")
     @ApiResponse(
             responseCode = "200",
@@ -450,7 +450,7 @@ public class DictionariesController {
         return dictionariesService.getAbilities();
     }
 
-    @Operation(summary = "Навыки}")
+    @Operation(summary = "Навыки")
     @GetMapping("/skills")
     @ApiResponse(
             responseCode = "200",
