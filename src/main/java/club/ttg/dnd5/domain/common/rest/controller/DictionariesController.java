@@ -449,4 +449,22 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getAbilities() {
         return dictionariesService.getAbilities();
     }
+
+    @Operation(summary = "Навыки}")
+    @GetMapping("/skills")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Акробатика", "value": "ACROBATICS" },
+                              { "label": "Уход за животными", "value": "ANIMAL_HANDLING" },
+                              { "label": "Аркана", "value": "ARCANA" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSkills() {
+        return dictionariesService.getSkills();
+    }
 }
