@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.background.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
+import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -15,8 +17,10 @@ public class BackgroundDetailResponse extends BaseResponse {
     private String abilityScores;
     @Schema(description = "Название черты")
     private String feat;
+    @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Владение инструментом")
     private String skillProficiencies;
+    @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Снаряжение")
     private String toolProficiency;
 }
