@@ -17,10 +17,11 @@ public class BackgroundDetailResponse extends BaseResponse {
     private String abilityScores;
     @Schema(description = "Название черты")
     private String feat;
-    @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    @Schema(description = "Владение инструментом")
+    @Schema(description = "Навыки")
     private String skillProficiencies;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    @Schema(description = "Снаряжение")
+    @Schema(description = "Владение инструментами")
     private String toolProficiency;
+    @Schema(description = "Снаряжение")
+    private String equipment;
 }
