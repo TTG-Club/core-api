@@ -431,4 +431,40 @@ public class DictionariesController {
     public ResponseEntity<List<SelectOptionDto>> getComparisonOperators() {
         return ResponseEntity.ok(dictionariesService.getComparisonOperators());
     }
+
+    @Operation(summary = "Характеристики")
+    @GetMapping("/abilities")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Сила", "value": "STRENGTH" },
+                              { "label": "Ловкость", "value": "DEXTERITY" },
+                              { "label": "Телосложение", "value": "CONSTITUTION" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getAbilities() {
+        return dictionariesService.getAbilities();
+    }
+
+    @Operation(summary = "Навыки")
+    @GetMapping("/skills")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Акробатика", "value": "ACROBATICS" },
+                              { "label": "Уход за животными", "value": "ANIMAL_HANDLING" },
+                              { "label": "Аркана", "value": "ARCANA" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSkills() {
+        return dictionariesService.getSkills();
+    }
 }

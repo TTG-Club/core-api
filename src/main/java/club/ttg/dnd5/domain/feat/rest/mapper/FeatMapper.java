@@ -11,10 +11,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
-import java.util.Collection;
-
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {BaseMapping.class})
 public interface FeatMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -29,26 +26,14 @@ public interface FeatMapper {
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
-    @Mapping(source = "request.updatedAt", target = "updatedAt")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Book source);
 
-    @Named("collectToString")
-    default String collectToString(Collection<String> names) {
-        return String.join(";", names);
-    }
-
-    @Mapping(source = "name", target = "name.name")
-    @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    @BaseMapping.BaseRequestNameMapping
+    @BaseMapping.BaseSourceRequestMapping
     FeatRequest toRequest(Feat feat);
-
-    @Named("altToCollection")
-    default Collection<String> altToCollection(String string) {
-        return Arrays.asList(string.split(";"));
-    }
 
     @Named("capitalize")
     default String capitalize(String string) {

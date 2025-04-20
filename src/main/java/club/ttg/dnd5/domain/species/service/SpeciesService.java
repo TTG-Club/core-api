@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.service;
 
+import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
@@ -9,7 +10,6 @@ import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
-import club.ttg.dnd5.domain.book.repository.BookRepository;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -24,7 +24,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
-    private final BookRepository bookRepository;
+    private final BookService bookService;
     private final SpeciesMapper speciesMapper;
 
     public boolean exists(String url) {
@@ -66,20 +66,10 @@ public class SpeciesService {
         if (speciesRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
-        Species species = speciesMapper.toEntity(request);
-        if (StringUtils.hasText(request.getParent())) {
-            var parent = findByUrl(request.getParent());
-            species.setParent(parent);
-        }
-        var book = bookRepository.findByUrl(request.getSource().getUrl())
-                .orElseThrow(() -> new EntityNotFoundException("Книга не найдена: "
-                        + request.getSource().getUrl()));
-
-        species.setSource(book);
-
-        Species save = speciesRepository.save(species);
-        return speciesMapper.toDetailDto(save);
+        return saveSpecies(request);
     }
+
+
 
     public List<SpeciesDetailResponse> getLineages(String parentUrl) {
         return speciesRepository.findById(parentUrl)
@@ -127,7 +117,7 @@ public class SpeciesService {
             if (!oldUrl.equals(request.getUrl())) {
                 speciesRepository.deleteById(oldUrl);
             }
-            return getSpeciesResponse(request);
+            return saveSpecies(request);
         } else {
             throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
         }
@@ -148,15 +138,28 @@ public class SpeciesService {
         return speciesMapper.toDetailDto(speciesRepository.save(species));
     }
 
+    public SpeciesRequest findFormByUrl(final String url) {
+        return speciesMapper.toRequest(findByUrl(url));
+    }
+
     // Private methods
     private Species findByUrl(String url) {
         return speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
     }
 
-    private SpeciesDetailResponse getSpeciesResponse(SpeciesRequest request) {
+    private SpeciesDetailResponse saveSpecies(SpeciesRequest request) {
         Species species = speciesMapper.toEntity(request);
-        Species updatedSpecies = speciesRepository.save(species);
-        return speciesMapper.toDetailDto(updatedSpecies);
+        if (StringUtils.hasText(request.getParent())) {
+            var parent = findByUrl(request.getParent());
+            species.setParent(parent);
+        }
+        var book = bookService.findByUrl(request.getSource().getUrl());
+
+        species.setSource(book);
+
+        Species save = speciesRepository.save(species);
+        return speciesMapper.toDetailDto(save);
     }
+
 }
