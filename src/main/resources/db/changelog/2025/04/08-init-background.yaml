@@ -1,0 +1,100 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-background-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_background
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: english
+                  type: VARCHAR(255)
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+              - column:
+                  name: source_page
+                  type: BIGINT
+              - column:
+                  name: abilities
+                  type: jsonb
+              - column:
+                  name: skill_proficiencies
+                  type: jsonb
+              - column:
+                  name: feat_id
+                  type: VARCHAR(255)
+              - column:
+                  name: tool_proficiency
+                  type: VARCHAR(255)
+              - column:
+                  name: equipment
+                  type: VARCHAR(255)
+              - column:
+                  name: propose_classes
+                  type: VARCHAR(255)
+            tableName: background
+  - changeSet:
+      id: create-background-index
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+            indexName: background_name_index
+            tableName: background
+  - changeSet:
+      id: create-background-relation-index
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: source
+            baseTableName: background
+            constraintName: FK_BACKGROUND_ON_SOURCE
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+        - addForeignKeyConstraint:
+            baseColumnNames: feat_id
+            baseTableName: background
+            constraintName: FK_BACKGROUND_ON_FEAT
+            referencedColumnNames: url
+            referencedTableName: feat

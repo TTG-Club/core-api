@@ -83,7 +83,7 @@ public class FeatController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @ResponseStatus(HttpStatus.OK)
-    @PostMapping("{url}")
+    @PutMapping("{url}")
     public String updateFeats(@PathVariable final String url,
                                           @RequestBody final FeatRequest featDto) {
         return featService.updateFeat(url, featDto);
