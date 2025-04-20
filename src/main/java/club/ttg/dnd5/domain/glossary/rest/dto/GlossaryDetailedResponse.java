@@ -7,13 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 public class GlossaryDetailedResponse extends BaseResponse {
     @NotNull
-    private List<String> tags;
+    private String tags;
 }
