@@ -38,7 +38,6 @@ public interface GlossaryMapper {
     @Retention(RetentionPolicy.SOURCE)
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
-    @Mapping(source = "request.updatedAt", target = "updatedAt")
     @BaseMapping.BaseEntityNameMapping
     @interface ToEntityMapping {
     }
