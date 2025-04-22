@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
-import lombok.Builder;
+import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
+import lombok.Getter;
+import lombok.Setter;
 
-@Builder
-public class BeastRequest {
+@Getter
+@Setter
+public class BeastRequest extends BaseRequest {
 
 }

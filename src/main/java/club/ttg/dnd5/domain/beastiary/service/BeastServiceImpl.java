@@ -6,11 +6,14 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.BeastDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.BeastRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.BeastShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.BeastMapper;
+import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,7 @@ import java.util.stream.Collectors;
 public class BeastServiceImpl implements BeastService {
     private static final Sort DEFAULT_SORT = Sort.by("level", "name");
     private final BeastRepository beastRepository;
+    private final BookService bookService;
     private final BeastMapper beastMapper;
 
     @Override
@@ -50,27 +54,40 @@ public class BeastServiceImpl implements BeastService {
 
     @Override
     public BeastDetailResponse findDetailedByUrl(final String url) {
-        return null;
+        return beastMapper.toDetail(findByUrl(url));
     }
 
     @Override
     public BeastRequest findFormByUrl(final String url) {
-        return null;
+        return beastMapper.toRequest(findByUrl(url));
     }
 
+    @Secured("ADMIN")
     @Transactional
     @Override
     public String save(final BeastRequest request) {
-        return "";
+        if (beastRepository.existsById(request.getUrl())) {
+            throw new EntityExistException("Существо уже существует с URL: " + request.getUrl());
+        }
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        var beast = beastMapper.toEntity(request, book);
+        return beastRepository.save(beast).getUrl();
     }
 
-
+    @Secured("ADMIN")
     @Transactional
     @Override
     public String update(final String url, final BeastRequest request) {
-        return "";
+        findByUrl(url);
+        if (!url.equalsIgnoreCase(request.getUrl())) {
+            beastRepository.deleteById(url);
+        }
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        var beast = beastMapper.toEntity(request, book);
+        return beastRepository.save(beast).getUrl();
     }
 
+    @Secured("ADMIN")
     @Transactional
     @Override
     public String delete(final String url) {
@@ -81,6 +98,6 @@ public class BeastServiceImpl implements BeastService {
 
     private Beast findByUrl(String url) {
         return beastRepository.findById(url)
-                .orElseThrow(() -> new EntityNotFoundException(String.format("Существо с url %s не существует", url)));
+                .orElseThrow(() -> new EntityNotFoundException(String.format("Существо с URL: %s не существует", url)));
     }
 }

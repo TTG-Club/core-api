@@ -46,6 +46,7 @@ public class BeastController {
         return beastService.search(searchLine);
     }
 
+    @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")
     @GetMapping("/{url}")
     public BeastDetailResponse getByUrl(@PathVariable String url) {
         return beastService.findDetailedByUrl(url);

@@ -32,6 +32,11 @@ public interface BaseMapping {
     @Mapping(source = "request.name.name", target = "name")
     @Mapping(source = "request.name.english", target = "english")
     @Mapping(source = "request.name.alternative", target = "alternative", qualifiedByName = "collectToString")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "source.createdAt", ignore = true)
+    @Mapping(target = "source.updatedAt", ignore = true)
     @interface BaseEntityNameMapping {}
 
     @Mapping(source = "name", target = "name.name")

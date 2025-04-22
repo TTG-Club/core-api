@@ -46,11 +46,6 @@ public interface BackgroundMapper {
     @Mapping(source = "request.skillsProficiencies", target = "skillProficiencies")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "username", ignore = true)
-    @Mapping(target = "source.createdAt", ignore = true)
-    @Mapping(target = "source.updatedAt", ignore = true)
     Background toEntity(BackgroundRequest request, Feat feat, Book source);
 
     @Named("abilitiesToString")
