@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Set;
 
@@ -14,6 +15,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 public class BackgroundRequest extends BaseRequest {
     @Schema(description = "Характеристики:", examples = {"STRENGTH", "DEXTERITY"})
     private Set<Ability> abilityScores;
