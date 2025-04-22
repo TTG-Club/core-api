@@ -40,6 +40,7 @@ public interface BackgroundMapper {
     @Mapping(source = "request.imageUrl", target = "imageUrl")
     @Mapping(source = "request.abilityScores", target = "abilities")
     @Mapping(source = "request.skillsProficiencies", target = "skillProficiencies")
+    @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
