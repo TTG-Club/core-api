@@ -12,6 +12,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,7 +36,7 @@ public interface SpellMapper {
                        List<ClassCharacter> classes, List<ClassCharacter> subclasses,
                        List<Species> species, List<Species> lineages);
 
-    @Mapping(target = "school", source = "school.school.name")
+    @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
     @Mapping(target = "additionalType", source = "school.additionalType")
     @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
     @BaseMapping.BaseSourceMapping
@@ -45,7 +46,7 @@ public interface SpellMapper {
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
 
-    @Mapping(target = "school", source = "school.school.name")
+    @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
     @Mapping(target = "additionalType", source = "school.additionalType")
     @Mapping(target = "castingTime", source = ".", qualifiedByName = "castingTimeToString")
     @Mapping(target = "duration", source = ".", qualifiedByName = "durationToString")
@@ -81,9 +82,7 @@ public interface SpellMapper {
                 .collect(Collectors.joining(" или "));
     }
 
-    @Mapping(source = "name", target = "name.name")
-    @Mapping(source = "english", target = "name.english")
-    @Mapping(source = "alternative", target = "name.alternative", qualifiedByName = "altToCollection")
+    @BaseMapping.BaseRequestNameMapping
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
     @Mapping(source = "school.school", target = "school")
@@ -116,8 +115,9 @@ public interface SpellMapper {
         }
         return components;
     }
-    @Named("altToCollection")
-    default Collection<String> altToCollection(String string) {
-        return Arrays.asList(string.split(";"));
+
+    @Named("capitalize")
+    default String capitalize(String string) {
+        return StringUtils.capitalize(string);
     }
 }
