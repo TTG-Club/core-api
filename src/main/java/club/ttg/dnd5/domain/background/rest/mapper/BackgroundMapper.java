@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public interface BackgroundMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
+    @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
     BackgroundShortResponse toShort(Background background);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -31,6 +32,9 @@ public interface BackgroundMapper {
     BackgroundDetailResponse toDetail(Background background);
 
     @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(source = "abilities", target = "abilityScores")
+    @Mapping(source = "feat.url", target = "featUrl")
+    @Mapping(source = "skillProficiencies", target = "skillsProficiencies")
     BackgroundRequest toRequest(Background background);
 
     @BaseMapping.BaseEntityNameMapping
