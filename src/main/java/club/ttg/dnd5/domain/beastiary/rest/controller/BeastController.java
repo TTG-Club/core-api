@@ -57,6 +57,7 @@ public class BeastController {
         return beastService.findFormByUrl(url);
     }
 
+    @Operation(summary = "Добавление существа")
     @Secured("ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -64,6 +65,7 @@ public class BeastController {
         return beastService.save(request);
     }
 
+    @Operation(summary = "Обновление существа")
     @Secured("ADMIN")
     @PutMapping("/{url}")
     public String update(@PathVariable String url,
@@ -72,6 +74,7 @@ public class BeastController {
         return beastService.update(url, request);
     }
 
+    @Operation(summary = "Сокрытие существа")
     @Secured("ADMIN")
     @DeleteMapping("/{url}")
     public String delete(@PathVariable String url) {

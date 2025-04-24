@@ -8,9 +8,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BeastTraitDto {
+public class BeastTraitResponse {
     @Schema(description = "Название особенности")
     private String name;
+    @Schema(description = "Оригинальное название особенности")
+    private String english;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Описание особенности")
     private String description;

@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BeastSpeed {
-    private short value;
-    private String text;
+public class BeastEquipment {
+    private String url;
+    private String name;
 }

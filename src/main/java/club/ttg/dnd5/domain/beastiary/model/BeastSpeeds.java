@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.model;
 
+import club.ttg.dnd5.domain.beastiary.model.speed.BeastFlySpeed;
+import club.ttg.dnd5.domain.beastiary.model.speed.BeastSpeed;
 import lombok.Getter;
 import lombok.Setter;
 

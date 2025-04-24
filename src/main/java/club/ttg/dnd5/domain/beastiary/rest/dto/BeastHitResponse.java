@@ -3,16 +3,13 @@ package club.ttg.dnd5.domain.beastiary.rest.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.Value;
-
-import java.io.Serializable;
 
 /**
  * DTO for {@link club.ttg.dnd5.domain.beastiary.model.BeastHit}
  */
 @Getter
 @Setter
-public class BeastHitDto {
+public class BeastHitResponse {
     @Schema(description = "Среднее количество хитов или абсолютное значение")
     private Short hit;
     @Schema(description = "формула расчета хитов")

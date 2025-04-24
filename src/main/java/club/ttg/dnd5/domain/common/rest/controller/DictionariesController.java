@@ -167,16 +167,16 @@ public class DictionariesController {
                                     examples = @ExampleObject("""
                                             [
                                               {
-                                                "label": "ослепление",
+                                                "label": "ослеплённый",
                                                 "value": "BLINDED"
                                               },
                                               {
-                                                "label": "очарование",
-                                                "value": "CHARMED"
+                                                "label": "отравленный",
+                                                "value": "POISONED"
                                               },
                                               {
-                                                "label": "смерть",
-                                                "value": "DYING"
+                                                "label": "недееспособный",
+                                                "value": "INCAPACITATED"
                                               }
                                             ]
                                             """)
@@ -467,4 +467,23 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getSkills() {
         return dictionariesService.getSkills();
     }
+
+    @Operation(summary = "Дополнительные чувства")
+    @GetMapping("/sense-types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "тёмное зрение", "value": "DARKVISION" },
+                              { "label": "слепое зрение", "value": "BLINDSIGHT" },
+                              { "label": "истинное зрение", "value": "TRUESIGHT" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSenseType() {
+        return dictionariesService.getSenseType();
+    }
+
 }

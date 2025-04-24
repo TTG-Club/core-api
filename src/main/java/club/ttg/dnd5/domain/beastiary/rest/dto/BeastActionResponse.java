@@ -8,10 +8,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BeastActionDto {
-    @Schema(description = "Название особенности")
+public class BeastActionResponse {
+    @Schema(description = "Название по русски")
     private String name;
+    @Schema(description = "Оригинальное название")
+    private String english;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    @Schema(description = "Описание особенности")
+    @Schema(description = "Описание")
     private String description;
 }

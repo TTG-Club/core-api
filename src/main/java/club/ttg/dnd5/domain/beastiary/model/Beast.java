@@ -1,7 +1,12 @@
 package club.ttg.dnd5.domain.beastiary.model;
 
+import club.ttg.dnd5.domain.beastiary.model.action.BeastAction;
+import club.ttg.dnd5.domain.beastiary.model.language.BeastLanguages;
+import club.ttg.dnd5.domain.beastiary.model.sense.BeastSenses;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
@@ -43,6 +48,7 @@ public class Beast extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<BeastCategory> categories;
+
     /**
      * Мирровозрение
      */
@@ -55,6 +61,11 @@ public class Beast extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private BeastArmor armor;
+
+    /**
+     * Бонус инициативы
+     */
+    private byte initiative;
 
     /**
      * Хиты
@@ -77,8 +88,46 @@ public class Beast extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private BeastAbilities abilities;
 
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<BeastSkill> skills;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<DamageType> vulnerabilities;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<DamageType> resistance;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<DamageType> immunityToDamage;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<Condition> immunityToCondition;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<BeastEquipment> equipments;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private BeastLanguages languages;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<BeastSenses> senses;
+
     @Column(name = "exp")
-    private Long expirience;
+    private Long experience;
+
+    @Column(name = "exp_lair")
+    private Long experienceInLair;
+
+    @Column(name = "exp_suf")
+    private String experienceSuffix;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
@@ -105,6 +154,14 @@ public class Beast extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private Collection<BeastAction> reactions;
 
+    /**
+     * Количество легендарных действий
+     */
+    private byte legendaryAction;
+    /**
+     * Количество легендарных действий в логове
+     */
+    private byte legendaryActionInLair;
     /**
      * Легендарные действия
      */
@@ -135,9 +192,5 @@ public class Beast extends NamedEntity {
             builder.append(conMod * hit.getCountHitDice());
         }
         return builder.toString();
-    }
-
-    public String getChalengeRaiting() {
-        return ChallengeRating.getChallengeRating(expirience);
     }
 }

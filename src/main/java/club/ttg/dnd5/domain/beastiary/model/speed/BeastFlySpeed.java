@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.beastiary.model;
+package club.ttg.dnd5.domain.beastiary.model.speed;
 
 import lombok.Getter;
 import lombok.Setter;

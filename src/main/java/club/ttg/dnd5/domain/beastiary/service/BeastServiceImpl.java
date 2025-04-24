@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class BeastServiceImpl implements BeastService {
-    private static final Sort DEFAULT_SORT = Sort.by("level", "name");
+    private static final Sort DEFAULT_SORT = Sort.by("experience", "name");
     private final BeastRepository beastRepository;
     private final BookService bookService;
     private final BeastMapper beastMapper;
