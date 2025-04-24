@@ -9,5 +9,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BackgroundShortResponse extends ShortResponse {
-
+    @Schema(description = "Характеристики:")
+    private String abilityScores;
 }

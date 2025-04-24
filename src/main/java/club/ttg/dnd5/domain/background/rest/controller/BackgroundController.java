@@ -3,8 +3,6 @@ package club.ttg.dnd5.domain.background.rest.controller;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
-import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,6 +61,7 @@ public class BackgroundController {
         return backgroundService.getBackgrounds(searchLine);
     }
 
+    @Operation(summary = "Создание предыстории", description = "Возвращает ссылку на созданную предысторию")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предыстория успешно создана"),
             @ApiResponse(responseCode = "404", description = "Предыстория не найден"),
@@ -75,6 +74,7 @@ public class BackgroundController {
         return backgroundService.addBackground(backgroundDto);
     }
 
+    @Operation(summary = "Обновление предыстории", description = "Возвращает ссылку на обновленную предысторию")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предыстория успешно обновлена"),
             @ApiResponse(responseCode = "404", description = "Предыстория не найден"),
