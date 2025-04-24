@@ -15,8 +15,10 @@ public class BackgroundDetailResponse extends BaseResponse {
     private String abilityScores;
     @Schema(description = "Название черты")
     private String feat;
-    @Schema(description = "Владение инструментом")
+    @Schema(description = "Навыки")
     private String skillProficiencies;
-    @Schema(description = "Снаряжение")
+    @Schema(description = "Владение инструментами")
     private String toolProficiency;
+    @Schema(description = "Снаряжение")
+    private String equipment;
 }
