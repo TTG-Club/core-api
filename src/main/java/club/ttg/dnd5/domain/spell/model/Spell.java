@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.spell.model;
 
 import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.species.model.Species;
+import club.ttg.dnd5.domain.spell.model.enums.HealingType;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -58,4 +61,18 @@ public class Spell extends NamedEntity {
     //TODO раскомментить после рождения классов
 //    @ManyToMany(fetch = FetchType.LAZY)
 //    private List<ClassCharacter> classAffiliation;
+
+    private Boolean upcastable;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<Ability> savingThrow;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<HealingType> healingType;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<DamageType> damageType;
 }
