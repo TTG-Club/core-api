@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.mapper;
 
 import club.ttg.dnd5.domain.species.model.Species;
-import club.ttg.dnd5.domain.species.model.SpeciesSize;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
@@ -25,13 +24,9 @@ public interface SpeciesMapper {
     @Mapping(source = "updatedAt", target = "updatedAt")
     @Mapping(source = "type.name", target = "properties.type")
     @Mapping(source = ".", target = "properties.speed", qualifiedByName = "toSpeed")
-    @Mapping(source = "size.text", target = "properties.size")
+    @Mapping(source = "sizes", target = "properties.size", qualifiedByName = "collectSizes")
 
-    @Mapping(source = "source.type.group", target = "source.group.name")
-    @Mapping(source = "source.type.label", target = "source.group.label")
-    @Mapping(source = "source.name", target = "source.name.name")
-    @Mapping(source = "source.englishName", target = "source.name.english")
-    @Mapping(source = "source.sourceAcronym", target = "source.name.label")
+    @BaseMapping.BaseSourceMapping
     @Mapping(source = "galleryUrl", target = "gallery")
     @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
     SpeciesDetailResponse toDetailDto(Species species);
@@ -40,11 +35,7 @@ public interface SpeciesMapper {
     @Mapping(source = "english", target = "name.english")
     @Mapping(source = "imageUrl", target = "image")
 
-    @Mapping(source = "source.type.group", target = "source.group.name")
-    @Mapping(source = "source.type.label", target = "source.group.label")
-    @Mapping(source = "source.name", target = "source.name.name")
-    @Mapping(source = "source.englishName", target = "source.name.english")
-    @Mapping(source = "source.sourceAcronym", target = "source.name.label")
+    @BaseMapping.BaseSourceMapping
     @Mapping(source = "updatedAt", target = "updatedAt")
     @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
     SpeciesShortResponse toShortDto(Species species);
@@ -52,7 +43,7 @@ public interface SpeciesMapper {
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")
     @Mapping(target = "parent", ignore = true)
-    @Mapping(source = "properties.sizes", target = "size", qualifiedByName = "collectSizes")
+    @Mapping(source = "properties.sizes", target = "sizes")
     @Mapping(source = "properties.type", target = "type")
     @Mapping(source = "properties.movementAttributes.base", target = "speed")
     @Mapping(source = "properties.movementAttributes.fly", target = "fly")
@@ -61,9 +52,11 @@ public interface SpeciesMapper {
     @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     @Mapping(source = "gallery", target = "galleryUrl")
+    @Mapping(target = "sourcePage", source = "source.page")
     Species toEntity(SpeciesRequest request);
 
     @BaseMapping.BaseRequestNameMapping
+    @BaseMapping.BaseSourceRequestMapping
     @Mapping(source = "parent.url", target = "parent")
     @Mapping(source = ".", target = "properties")
     @Mapping(source = "galleryUrl", target = "gallery")
@@ -75,17 +68,14 @@ public interface SpeciesMapper {
     }
 
     @Named("collectSizes")
-    default SpeciesSize toSizeString(Collection<SpeciesSizeDto> sizes) {
-        var size = new SpeciesSize();
-        size.setSize(size.getSize());
+    default String toSizeString(Collection<SpeciesSizeDto> sizes) {
         var sizeString = sizes.stream()
                 .map(s -> String.format("%s (около %d-%d футов в высоту)", s.getType().getName(), s.getFrom(), s.getTo()))
                 .collect(Collectors.joining(" или "));
         if (sizes.size() > 1) {
             sizeString += ", выбирается при выборе этого вида";
         }
-        size.setText(sizeString);
-        return size;
+        return sizeString;
     }
 
     @Named("toSpeed")
