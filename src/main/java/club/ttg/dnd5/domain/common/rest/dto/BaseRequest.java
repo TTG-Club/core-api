@@ -16,9 +16,9 @@ public abstract class BaseRequest extends TagType.BaseUrl {
     @JsonProperty(value = "name")
     @Schema(description = "название", requiredMode = Schema.RequiredMode.REQUIRED)
     private NameRequest name;
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "описание", requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
-    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @JsonProperty(value = "source")
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
     private SourceRequest source;
