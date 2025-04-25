@@ -18,5 +18,6 @@ public class ShortResponse {
     private SourceResponse source = new SourceResponse();
     @Schema(description = "дата обновления")
     private String updatedAt;
-
+    @Schema(description = "дата обновления")
+    private String createdAt;
 }

@@ -11,9 +11,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 @Mapper(componentModel = "spring", uses = {BaseMapping.class})
 public interface FeatMapper {
 
@@ -29,13 +26,13 @@ public interface FeatMapper {
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
-    @Mapping(source = "request.updatedAt", target = "updatedAt")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Book source);
 
     @BaseMapping.BaseRequestNameMapping
+    @BaseMapping.BaseSourceRequestMapping
     FeatRequest toRequest(Feat feat);
 
     @Named("capitalize")
