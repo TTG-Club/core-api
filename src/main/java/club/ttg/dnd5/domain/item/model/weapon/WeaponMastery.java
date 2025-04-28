@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.item.model;
+package club.ttg.dnd5.domain.item.model.weapon;
 
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import jakarta.persistence.Entity;

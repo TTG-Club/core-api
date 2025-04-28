@@ -12,21 +12,21 @@ public enum Rarity {
 	RARE(4000, "редкий", "редкая", "редкое"),
 	VERY_RARE(40_000, "очень редкий", "очень редкая", "очень редкое" ),
 	LEGENDARY(200_000, "легендарный", "легендарная", "легендарное" ),
-	ARTIFACT(1_500_000, "артефакт", "артефакт", "артефакт"),
+	ARTIFACT(null, "артефакт", "артефакт", "артефакт"),
 
-	UNKNOWN(0, "редкость не определена", "редкость не определена", "редкость не определена"),
-	VARIES(0, "редкость варьируется", "редкость варьируется", "редкость варьируется");
+	UNKNOWN(null, "редкость не определена", "редкость не определена", "редкость не определена"),
+	VARIES(null, "редкость варьируется", "редкость варьируется", "редкость варьируется");
 
-	private static final Random RND = new Random();
-
-	private final String[] names;
-
-	Rarity(int cost, String... names){
+	Rarity(Integer cost, String... names){
 		baseCost = cost;
 		this.names = names;
 	}
-	// базовая цена в золотых монетах
-	private final int baseCost;
+
+	/**
+	 * Цена в золотых монетах
+ 	 */
+	private final Integer baseCost;
+	private final String[] names;
 
 	public static Rarity parse(String value) {
 		return Arrays.stream(values())
