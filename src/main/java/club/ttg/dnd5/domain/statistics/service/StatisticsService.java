@@ -21,7 +21,7 @@ public class StatisticsService {
     @Cacheable(cacheNames = "countAllMaterials")
     public Long countAllMaterials() {
         return COUNTED_ENTITIES.stream().map(
-                        e -> entityManager.createNativeQuery(String.format("SELECT COUNT(*) FROM %s", e.toString()), Long.class)
+                        e -> entityManager.createNativeQuery(String.format("SELECT COUNT(*) FROM %s WHERE is_hidden_entity = false", e.toString()), Long.class)
                                 .getSingleResult())
                 .mapToLong(e -> (Long)e)
                 .sum();

@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
@@ -54,6 +55,7 @@ public class FeatServiceImpl implements FeatService {
     @Secured("ADMIN")
     @Transactional
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String addFeat(final FeatRequest dto) {
         if (featRepository.existsById(dto.getUrl())) {
             throw new EntityExistException("Feat exist by URL: " + dto.getUrl());
@@ -79,6 +81,7 @@ public class FeatServiceImpl implements FeatService {
     @Secured("ADMIN")
     @Transactional
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String delete(final String featUrl) {
         var entity = findByUrl(featUrl);
         entity.setHiddenEntity(true);

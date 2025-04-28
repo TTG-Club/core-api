@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
-@Tag(name = "Кэщ", description = "API для управление кэшем")
+@Tag(name = "Кэш", description = "API для управление кэшем")
 @RequestMapping("/api/v2/cache/")
 @RestController
 public class CacheController {
