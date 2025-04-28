@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.beastiary.model.action.BeastAction;
 import club.ttg.dnd5.domain.beastiary.model.language.BeastLanguages;
+import club.ttg.dnd5.domain.beastiary.model.section.BeastSection;
 import club.ttg.dnd5.domain.beastiary.model.sense.BeastSenses;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
@@ -168,6 +169,10 @@ public class Beast extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<BeastAction> legendaryActions;
+
+    @ManyToOne
+    @JoinColumn(name = "section_url")
+    private BeastSection section;
 
     @ManyToOne
     @JoinColumn(name = "source")

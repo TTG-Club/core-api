@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.beastiary.rest.mapper;
 import club.ttg.dnd5.domain.beastiary.model.Beast;
 import club.ttg.dnd5.domain.beastiary.model.BeastArmor;
 import club.ttg.dnd5.domain.beastiary.model.BeastCategory;
-import club.ttg.dnd5.domain.beastiary.model.BeastHit;
 import club.ttg.dnd5.domain.beastiary.model.BeastSize;
 import club.ttg.dnd5.domain.beastiary.model.BeastSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
@@ -25,7 +24,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = {BeastActionMapper.class, BeastTraitMapper.class})
+@Mapper(componentModel = "spring",
+        uses = {BeastActionMapper.class, BeastTraitMapper.class, BaseMapping.class})
 public interface BeastMapper {
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
@@ -128,19 +128,6 @@ public interface BeastMapper {
             return beastCategory.getType().getName().toLowerCase()
                     + " (" + beastCategory.getText() + ")";
         }
-    }
-
-    @Named("collectToString")
-    default String collectToString(Collection<String> names) {
-        return String.join(" ", names);
-    }
-
-    @Named("altToCollection")
-    default Collection<String> altToCollection(String string) {
-        if(StringUtils.isEmpty(string)) {
-            return Collections.emptyList();
-        }
-        return Arrays.asList(string.split(";"));
     }
 
     @Named("toChallengeRating")

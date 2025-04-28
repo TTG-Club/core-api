@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.beastiary.rest.dto;
 import club.ttg.dnd5.domain.beastiary.model.BeastAbilities;
 import club.ttg.dnd5.domain.beastiary.model.BeastEquipment;
 import club.ttg.dnd5.domain.beastiary.model.BeastHit;
+import club.ttg.dnd5.domain.beastiary.model.BeastTrait;
+import club.ttg.dnd5.domain.beastiary.model.action.BeastAction;
 import club.ttg.dnd5.domain.beastiary.model.language.BeastLanguages;
 import club.ttg.dnd5.domain.beastiary.model.BeastSize;
 import club.ttg.dnd5.domain.beastiary.model.BeastSkill;
@@ -52,4 +54,14 @@ public class BeastRequest extends BaseRequest {
     private Collection<BeastEquipment> equipments;
     @Schema(description = "Языки")
     private BeastLanguages languages;
+    @Schema(description = "Особенности")
+    private Collection<BeastTrait> traits;
+    @Schema(description = "Действия")
+    private Collection<BeastAction> actions;
+    @Schema(description = "Бонусные действия")
+    private Collection<BeastAction> bonusActions;
+    @Schema(description = "Реакции")
+    private Collection<BeastAction> reactions;
+    @Schema(description = "Легендарные действия")
+    private Collection<BeastAction> legendaryActions;
 }

@@ -8,4 +8,5 @@ import lombok.Setter;
 public class BeastEquipment {
     private String url;
     private String name;
+    private Byte quantity;
 }

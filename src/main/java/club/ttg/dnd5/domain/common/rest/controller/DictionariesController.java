@@ -219,37 +219,6 @@ public class DictionariesController {
         return dictionariesService.getAlignments();
     }
 
-    @Operation(summary = "Места обитания существ")
-    @GetMapping("/environments")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    examples = @ExampleObject("""
-                                            [
-                                              {
-                                                "label": "полярная тундра",
-                                                "value": "ARCTIC"
-                                              },
-                                              {
-                                                "label": "побережье",
-                                                "value": "COAST"
-                                              },
-                                              {
-                                                "label": "под водой",
-                                                "value": "WATERS"
-                                              }
-                                            ]
-                                            """)
-                            )
-                    )
-            }
-    )
-    public Collection<SelectOptionDto> getEnvironments() {
-        return dictionariesService.getEnvironments();
-    }
-
     @Operation(summary = "Типы черт")
     @GetMapping("/feat/types")
     @ApiResponses(
@@ -486,4 +455,21 @@ public class DictionariesController {
         return dictionariesService.getSenseType();
     }
 
+    @Operation(summary = "Среды обитания")
+    @GetMapping("/habitats")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Любая", "value": "ANY" },
+                              { "label": "Арктика", "value": "ARCTIC" },
+                              { "label": "Побережье", "value": "COASTAL" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getHabitats() {
+        return dictionariesService.getHabitats();
+    }
 }
