@@ -21,7 +21,7 @@ import java.util.Collection;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v2/background")
+@RequestMapping("/api/v2/backgrounds")
 @Tag(name = "Предыстории", description = "REST API предысторий персонажа")
 public class BackgroundController {
     private final BackgroundService backgroundService;

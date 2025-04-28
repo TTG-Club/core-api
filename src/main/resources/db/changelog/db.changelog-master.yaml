@@ -34,6 +34,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/04/12-04-add-species-jsonb-size.yaml
   - include:
+      file: db/changelog/2025/04/18-01-add_spell_markers.yaml
+  - include:
       file: db/changelog/2025/04/08-init-background.yaml
   - include:
       file: db/changelog/2025/04/17-01-add-column-image-url-background.yaml
