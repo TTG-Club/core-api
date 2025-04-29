@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.magic.rest.dto;
 
 import club.ttg.dnd5.dictionary.item.magic.Rarity;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
+import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -20,7 +21,8 @@ public class MagicItemRequest extends BaseRequest {
     @Schema(description = "Редкость", requiredMode = Schema.RequiredMode.REQUIRED)
     private Rarity rarity;
 
-    private String attunement;
+    @Schema(description = "Настройка", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Attunement attunement;
 
     @Schema(description = "Количество зарядов, если есть", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Byte charges;

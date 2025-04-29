@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
+import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
@@ -22,7 +23,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/magic-item")
 @Tag(name = "Магически предметы", description = "REST API магические предметы и артефакты")
-public class ItemMagicController {
+public class MagicItemController {
     private final MagicItemService magicItemService;
     /**
      * Проверка существования вида по URL.
@@ -52,6 +53,11 @@ public class ItemMagicController {
     @GetMapping("/{url}")
     public MagicItemDetailResponse getItem(@PathVariable final String url) {
         return magicItemService.getItem(url);
+    }
+
+    @GetMapping("/{url}/raw")
+    public MagicItemRequest getMagicItemFormByUrl(@PathVariable String url) {
+        return magicItemService.findFormByUrl(url);
     }
 
     @Operation(summary = "Получение списка краткого описания предметов")
