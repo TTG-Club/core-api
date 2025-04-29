@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.background.rest.dto;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
+import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,6 +27,7 @@ public class BackgroundRequest extends BaseRequest {
     private Set<Skill> skillsProficiencies;
     @Schema(description = "Владение инструментами")
     private String toolProficiency;
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "Снаряжение")
     private String equipment;
 }
