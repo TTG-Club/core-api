@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-magic-item-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_magic_item
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: english
+                  type: VARCHAR(255)
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+              - column:
+                  name: source_page
+                  type: BIGINT
+              - column:
+                  name: category
+                  type: VARCHAR(255)
+              - column:
+                  name: clarification
+                  type: VARCHAR(255)
+              - column:
+                  name: rarity
+                  type: VARCHAR(255)
+              - column:
+                  name: attunement
+                  type: jsonb
+              - column:
+                  name: charges
+                  type: int
+              - column:
+                  name: curse
+                  type: boolean
+              - column:
+                  name: consumable
+                  type: boolean
+            tableName: magic_item
+  - changeSet:
+      id: create-magic-item-index
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+            indexName: magic_item_name_index
+            tableName: magic_item
