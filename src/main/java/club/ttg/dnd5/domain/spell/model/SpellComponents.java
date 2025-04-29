@@ -16,6 +16,6 @@ public class SpellComponents {
     private Boolean v;
     private Boolean s;
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "m", columnDefinition = "jsonb")
     private MaterialComponent m;
 }

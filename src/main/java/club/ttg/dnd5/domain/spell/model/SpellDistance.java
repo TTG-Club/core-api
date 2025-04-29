@@ -15,6 +15,16 @@ public class SpellDistance {
     private Long value;
     private DistanceUnit unit;
     private String custom;
+
+    public static SpellDistance of(Long value, DistanceUnit unit) {
+        return SpellDistance.builder()
+                .value(value)
+                .unit(unit)
+                .build();
+    }
+
+
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
