@@ -49,7 +49,7 @@ databaseChangeLog:
                   type: VARCHAR(255)
               - column:
                   name: item_types
-                  type: item_type[]
+                  type: jsonb
               - column:
                   name: cost
                   type: VARCHAR(255)
@@ -123,6 +123,6 @@ databaseChangeLog:
                   name: english
               - column:
                   name: alternative
-            indexName: name_index
+            indexName: item_name_index
             tableName: item
 

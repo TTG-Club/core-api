@@ -20,12 +20,12 @@ public class WeaponController {
     private final WeaponPropertiesRepository weaponPropertiesRepository;
     private final WeaponMasteryRepository weaponMasteryRepository;
 
-    @GetMapping("property")
+    @GetMapping("/property")
     public Collection<WeaponProperties> getAllWeaponProperties() {
         return weaponPropertiesRepository.findAll();
     }
 
-    @GetMapping("mastery")
+    @GetMapping("/mastery")
     public Collection<WeaponMastery> getAllWeaponMastery() {
         return weaponMasteryRepository.findAll();
     }
