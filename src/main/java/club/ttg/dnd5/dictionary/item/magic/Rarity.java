@@ -1,5 +1,6 @@
 package club.ttg.dnd5.dictionary.item.magic;
 
+import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -38,12 +39,11 @@ public enum Rarity {
 	public String getName() {
 		return names[0];
 	}
-
-	public String getFemaleName() {
-		return names[1];
-	}
-
-	public String getMiddleName() {
-		return names[2];
+	public String getName(MagicItemCategory category) {
+		return switch (category) {
+			case WAND -> names[1];
+			case WEAPON, POTION, RING -> names[2];
+			default -> names[0];
+		};
 	}
 }
