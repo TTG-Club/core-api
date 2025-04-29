@@ -18,5 +18,5 @@ public class Glossary extends NamedEntity {
     /**
      * Некоторые записи содержат тег в скобках после названия записи, как, например, «Атака [Действие]».
      */
-    private String tags;
+    private String tagCategory;
 }

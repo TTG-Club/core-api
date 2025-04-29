@@ -29,7 +29,7 @@ public interface GlossaryMapper {
     Glossary toEntity(GlossaryRequest request, Book source);
 
     @BaseMapping.BaseShortResponseNameMapping
-    @Mapping(target = "tags", source = "tags")
+    @Mapping(target = "tagCategory", source = "tagCategory")
     GlossaryShortResponse toShort(Glossary glossary);
 
     @ToEntityMapping
