@@ -32,8 +32,7 @@ public class Spell extends NamedEntity {
     @Embedded
     private SpellSchool school;
 
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Embedded
     private SpellComponents components;
 
     @Type(JsonType.class)
