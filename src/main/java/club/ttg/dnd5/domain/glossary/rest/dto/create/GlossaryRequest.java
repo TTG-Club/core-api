@@ -12,6 +12,5 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GlossaryRequest extends BaseRequest {
-    @NotNull
-    private String tags;
+    private String tagCategory;
 }

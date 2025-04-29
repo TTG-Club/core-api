@@ -12,6 +12,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GlossaryDetailedResponse extends BaseResponse {
-    @NotNull
-    private String tags;
+    private String tagCategory;
 }
