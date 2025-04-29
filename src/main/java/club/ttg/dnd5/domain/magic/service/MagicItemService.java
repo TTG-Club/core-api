@@ -18,4 +18,6 @@ public interface MagicItemService {
     String delete(String itemUrl);
 
     String updateItem(String url, MagicItemRequest itemDto);
+
+    MagicItemRequest findFormByUrl(String url);
 }
