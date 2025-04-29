@@ -25,7 +25,7 @@ public class WeaponController {
         return weaponPropertiesRepository.findAll();
     }
 
-    @GetMapping("property")
+    @GetMapping("mastery")
     public Collection<WeaponMastery> getAllWeaponMastery() {
         return weaponMasteryRepository.findAll();
     }
