@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename-tags-to-tagCategory
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+            tableName: glossary
+            oldColumnName: tags
+            newColumnName: tag_category
+            columnDataType: VARCHAR(255)
