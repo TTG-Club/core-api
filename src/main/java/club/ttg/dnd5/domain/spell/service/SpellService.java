@@ -18,6 +18,7 @@ import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,6 +80,7 @@ public class SpellService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "countAllMaterials")
     public SpellDetailedResponse save(SpellRequest request) {
         if (existsByUrl(request.getUrl())) {
             throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
@@ -126,6 +128,7 @@ public class SpellService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "countAllMaterials")
     public void delete(String url) {
         Spell existingSpell = findByUrl(url);
         existingSpell.setHiddenEntity(true);
