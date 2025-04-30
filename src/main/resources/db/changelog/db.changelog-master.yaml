@@ -42,6 +42,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/04/17-02-add-column-image-url-background.yaml
   - include:
+      file: db/changelog/2025/04/29-01-add-saved-filters.yaml
+  - include:
       file: db/changelog/2025/04/09-01-init-items.yaml
   - include:
       file: db/changelog/2025/04/28-01-init-magic-item.yaml

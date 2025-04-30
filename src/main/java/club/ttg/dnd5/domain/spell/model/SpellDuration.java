@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.spell.model;
 
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import lombok.*;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
@@ -18,10 +19,17 @@ public class SpellDuration {
     private Boolean concentration = false;
 
 
+    public static SpellDuration of(Long value, DurationUnit unit) {
+        return SpellDuration.builder()
+                .value(value)
+                .unit(unit)
+                .build();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if(concentration) {
+        if(ObjectUtils.defaultIfNull(concentration, false)) {
             sb.append("Концентрация, ");
             if(Objects.nonNull(unit)) {
                 sb.append("до ");
