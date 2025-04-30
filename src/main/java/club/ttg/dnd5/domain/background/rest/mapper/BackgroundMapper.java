@@ -28,7 +28,6 @@ public interface BackgroundMapper {
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "feat.url", target = "feat.url")
     @Mapping(source = "feat.name", target = "feat.name")
-    @Mapping(target = "feat.type", constant = "feat")
     @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
     @Mapping(source = "skillProficiencies", target = "skillProficiencies", qualifiedByName = "skillsToString")
     BackgroundDetailResponse toDetail(Background background);

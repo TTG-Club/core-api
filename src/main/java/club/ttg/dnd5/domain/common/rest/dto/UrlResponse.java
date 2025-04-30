@@ -11,6 +11,4 @@ public class UrlResponse {
     private String url;
     @Schema(description = "текст ссылки")
     private String name;
-    @Schema(description = "тип ссылки", examples = {"feat", "spell"})
-    private String type;
 }
