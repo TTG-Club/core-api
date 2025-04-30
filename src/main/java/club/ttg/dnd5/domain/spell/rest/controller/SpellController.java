@@ -46,7 +46,7 @@ public class SpellController {
                                               @Size(min = 3)
                                               @Schema(description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
-                                              @RequestBody FilterInfo filter) {
+                                              @RequestBody(required = false) FilterInfo filter) {
         return spellService.search(searchLine, filter);
     }
 
