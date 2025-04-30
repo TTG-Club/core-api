@@ -2,8 +2,8 @@ package club.ttg.dnd5.domain.spell.rest.dto.filter;
 
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
+import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
-import club.ttg.dnd5.dto.base.filters.AbstractFilterRange;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import org.apache.commons.collections4.CollectionUtils;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SpellDurationFilterRange extends AbstractFilterRange<SpellDuration, SpellDurationFilterRange.SpellDurationFilterItem> {
+public class SpellDurationFilterRange extends AbstractFilterGroup<SpellDuration, SpellDurationFilterRange.SpellDurationFilterItem> {
 
     private static final String NAME = "Длительность";
     private static final List<SpellDuration> DEFAULT_SPELL_DURATION_FILTERS = List.of(
