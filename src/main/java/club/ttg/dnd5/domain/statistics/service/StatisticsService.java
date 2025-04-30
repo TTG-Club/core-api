@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.statistics.service;
 
+import club.ttg.dnd5.domain.background.model.QBackground;
 import club.ttg.dnd5.domain.feat.model.QFeat;
 import club.ttg.dnd5.domain.species.model.QSpecies;
 import club.ttg.dnd5.domain.spell.model.QSpell;
@@ -15,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StatisticsService {
     private final EntityManager entityManager;
-    private final List<EntityPathBase<?>> COUNTED_ENTITIES = List.of(QSpell.spell, QSpecies.species, QFeat.feat);
+    private final List<EntityPathBase<?>> COUNTED_ENTITIES = List.of(QSpell.spell, QSpecies.species, QFeat.feat, QBackground.background);
 
 
     @Cacheable(cacheNames = "countAllMaterials")
