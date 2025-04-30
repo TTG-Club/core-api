@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.spell.service;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import club.ttg.dnd5.domain.spell.model.Spell;
@@ -44,9 +44,9 @@ public class SpellService {
     }
 
 
-    public List<SpellShortResponse> search(String searchLine, FilterInfo filter) {
+    public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
 
-        return spellQueryDslSearchService.search(searchLine, filter).stream()
+        return spellQueryDslSearchService.search(searchLine, searchBody.getFilter()).stream()
                 .map(spellMapper::toSpeciesShortResponse)
                 .collect(Collectors.toList());
     }

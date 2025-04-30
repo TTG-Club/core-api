@@ -14,7 +14,7 @@ import java.util.Objects;
  *
  * @param <T> тип значения элемента фильтра
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS, include = JsonTypeInfo.As.PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS, include = JsonTypeInfo.As.PROPERTY, property = "c")
 @AllArgsConstructor
 @Getter
 @Setter
