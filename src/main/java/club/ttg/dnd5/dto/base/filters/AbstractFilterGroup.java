@@ -1,8 +1,6 @@
 package club.ttg.dnd5.dto.base.filters;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.SimpleExpression;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,26 +11,33 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * Абстрактный базовый класс для групп фильтров.
+ * Реализует интерфейс {@link Filter} и предоставляет общую функциональность для работы с группой фильтров.
+ *
+ * @param <V> тип значений фильтров в группе
+ * @param <I> тип элементов фильтров, должен наследоваться от {@link AbstractFilterItem}
+ */
 @AllArgsConstructor
 @Getter
 @Setter
 public abstract class AbstractFilterGroup<V, I extends AbstractFilterItem<V>> implements Filter {
 
+    /**
+     * Список фильтров, входящих в данную группу.
+     */
     protected List<I> filters;
 
-    @Override
-    public BooleanExpression getQuery() {
-        if (isSingular()) {
-            return TRUE_EXPRESSION;
-        }
-        Set<V> positiveValues = getPositive();
-        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : getPATH().in(positiveValues);
-        Set<V> negativeValues = getNegative();
-        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : getPATH().notIn(negativeValues));
-
-   }
-
-
+    /**
+     * Проверяет, является ли группа фильтров вырожденной.
+     * Группа считается вырожденной если:
+     * - список фильтров пуст
+     * - все фильтры в состоянии UNCHECKED (не выбраны)
+     * - все фильтры в состоянии POSITIVE (выбраны)
+     * - все фильтры в состоянии NEGATIVE (исключены)
+     *
+     * @return true - если группа вырождена, false - в противном случае
+     */
     @Override
     public Boolean isSingular() {
         return CollectionUtils.isEmpty(filters)
@@ -41,6 +46,11 @@ public abstract class AbstractFilterGroup<V, I extends AbstractFilterItem<V>> im
                 || filters.stream().map(AbstractFilterItem::getState).allMatch(Predicate.isEqual(State.NEGATIVE));
     }
 
+    /**
+     * Возвращает набор значений положительно выбранных фильтров (состояние POSITIVE).
+     *
+     * @return множество значений выбранных фильтров
+     */
     @JsonIgnore
     public Set<V> getPositive() {
         return filters.stream()
@@ -49,6 +59,11 @@ public abstract class AbstractFilterGroup<V, I extends AbstractFilterItem<V>> im
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Возвращает набор значений отрицательно выбранных фильтров (состояние NEGATIVE).
+     *
+     * @return множество значений исключенных фильтров
+     */
     @JsonIgnore
     public Set<V> getNegative() {
         return filters.stream()
@@ -56,9 +71,5 @@ public abstract class AbstractFilterGroup<V, I extends AbstractFilterItem<V>> im
                 .map(AbstractFilterItem::getValue)
                 .collect(Collectors.toSet());
     }
-
-    @JsonIgnore
-    protected SimpleExpression<V> getPATH(){
-        return null;
-    }
 }
+

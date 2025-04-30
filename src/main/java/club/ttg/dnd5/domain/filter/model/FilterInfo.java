@@ -17,7 +17,7 @@ import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
 @AllArgsConstructor
 @Getter
 @Setter
-public class FilterDto {
+public class FilterInfo {
     List<Filter> filters;
     String version;
     @JsonIgnore

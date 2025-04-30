@@ -6,7 +6,6 @@ import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterRange;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.SimpleExpression;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
@@ -37,7 +36,6 @@ public class SpellDistanceFilterRange extends AbstractFilterRange<SpellDistance,
             SpellDistance.of(1000L, DistanceUnit.FEET),
             SpellDistance.of(1L, DistanceUnit.MILE),
             SpellDistance.of(500L, DistanceUnit.MILE));
-
 
     public static SpellDistanceFilterRange getDefault() {
         return new SpellDistanceFilterRange(
@@ -70,11 +68,6 @@ public class SpellDistanceFilterRange extends AbstractFilterRange<SpellDistance,
                         .map(sd -> String.format("elem  @> '{\"value\": %s, \"unit\": \"%s\"}'", sd.getValue(), sd.getUnit()))
                         .collect(Collectors.joining(" or ")))).not());
 
-    }
-
-    @Override
-    protected SimpleExpression<SpellDistance> getPATH() {
-        return null;
     }
 
     @Override

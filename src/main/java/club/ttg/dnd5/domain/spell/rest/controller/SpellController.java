@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.FilterDto;
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
@@ -46,7 +46,7 @@ public class SpellController {
                                               @Size(min = 3)
                                               @Schema(description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
-                                              @RequestBody FilterDto filter) {
+                                              @RequestBody FilterInfo filter) {
         return spellService.search(searchLine, filter);
     }
 
@@ -61,8 +61,8 @@ public class SpellController {
     }
 
     @GetMapping("/filters")
-    public FilterDto getFilters() {
-        return spellFilterService.getDefaultFilterDto();
+    public FilterInfo getFilters() {
+        return spellFilterService.getDefaultFilterInfo();
     }
 
     @Secured("ADMIN")

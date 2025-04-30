@@ -6,7 +6,6 @@ import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterRange;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.SimpleExpression;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
@@ -32,7 +31,6 @@ public class SpellDurationFilterRange extends AbstractFilterRange<SpellDuration,
             SpellDuration.of(null, DurationUnit.UNTIL_DISPEL),
             SpellDuration.of(null, DurationUnit.PERMANENT));
 
-
     public static SpellDurationFilterRange getDefault() {
         return new SpellDurationFilterRange(
                 DEFAULT_SPELL_DURATION_FILTERS.stream()
@@ -54,21 +52,17 @@ public class SpellDurationFilterRange extends AbstractFilterRange<SpellDuration,
                 ? TRUE_EXPRESSION
                 : Expressions.booleanTemplate(String.format("exists (select 1 from jsonb_array_elements(duration) as elem where %s)",
                 getPositive().stream()
-                        .map(sd -> String.format("elem  @> '{\"value\": %s, \"unit\": \"%s\"}'", sd.getValue(), sd.getUnit()))
+                        .map(sd -> String.format("""
+                                elem  @> '{"value": %s, "unit":"%s"}'""", sd.getValue(), sd.getUnit()))
                         .collect(Collectors.joining("or"))));
         Set<SpellDuration> negativeValues = getNegative();
         return result.and(CollectionUtils.isEmpty(negativeValues)
                 ? (TRUE_EXPRESSION)
                 : Expressions.booleanTemplate(String.format("exists (select 1 from jsonb_array_elements(duration) as elem where %s)",
                 getNegative().stream()
-                        .map(sd -> String.format("elem  @> '{\"value\": %s, \"unit\": \"%s\"}'", sd.getValue(), sd.getUnit()))
+                        .map(sd -> String.format("""
+                                elem  @> '{"value": %s, "unit": "%s"}'""", sd.getValue(), sd.getUnit()))
                         .collect(Collectors.joining("or")))).not());
-
-    }
-
-    @Override
-    protected SimpleExpression<SpellDuration> getPATH() {
-        return null;
     }
 
     @Override

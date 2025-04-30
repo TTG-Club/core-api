@@ -35,6 +35,6 @@ public class AbstractSavedFilter extends Timestamped {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    FilterDto filter;
+    FilterInfo filter;
 
 }

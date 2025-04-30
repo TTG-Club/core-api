@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.spell.service;
 
-import club.ttg.dnd5.domain.filter.model.FilterDto;
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.spell.model.filter.SpellSavedFilter;
 import club.ttg.dnd5.domain.spell.repository.SpellSavedFilterRepository;
@@ -19,8 +19,8 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
     }
 
     @Override
-    protected FilterDto buildDefaultFilterDto() {
-        return new FilterDto(List.of(
+    protected FilterInfo buildDefaultFilterInfo() {
+        return new FilterInfo(List.of(
                 SpellLevelFilterGroup.getDefault(),
                 SpellSchoolFilterGroup.getDefault(),
                 SpellRitualFilterSingleton.getDefault(),

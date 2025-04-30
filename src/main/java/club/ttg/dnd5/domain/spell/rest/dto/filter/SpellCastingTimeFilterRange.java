@@ -6,7 +6,6 @@ import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterRange;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.SimpleExpression;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
@@ -26,7 +25,6 @@ public class SpellCastingTimeFilterRange extends AbstractFilterRange<SpellCastin
             SpellCastingTime.of(8L, CastingUnit.HOUR),
             SpellCastingTime.of(12L, CastingUnit.HOUR),
             SpellCastingTime.of(24L, CastingUnit.HOUR));
-
 
     public static SpellCastingTimeFilterRange getDefault() {
         return new SpellCastingTimeFilterRange(
@@ -59,11 +57,6 @@ public class SpellCastingTimeFilterRange extends AbstractFilterRange<SpellCastin
                         .map(sd -> String.format("elem  @> '{\"value\": %s, \"unit\": \"%s\"}'", sd.getValue(), sd.getUnit()))
                         .collect(Collectors.joining(" or ")))).not());
 
-    }
-
-    @Override
-    protected SimpleExpression<SpellCastingTime> getPATH() {
-        return null;
     }
 
     @Override

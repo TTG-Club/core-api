@@ -58,6 +58,4 @@ public class SpellHealingTypeFilterGroup extends AbstractFilterGroup<HealingType
             super(value.getName(), value, null);
         }
     }
-
-
 }
