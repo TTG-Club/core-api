@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.filter.service;
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -12,7 +12,6 @@ import com.querydsl.sql.PostgreSQLTemplates;
 import com.querydsl.sql.SQLTemplates;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.text.MessageFormat;
@@ -37,15 +36,17 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                or {0}.alternative ilike ''%%{2}%%'')
             """;
 
-    public List<E> search(String searchLine, FilterInfo filter) {
+    public List<E> search(String searchLine, SearchBody searchBody) {
         BooleanExpression predicate = Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
                 .map(line ->
                         Expressions.booleanTemplate(MessageFormat.format(FIND_BY_SEARCH_LINE_QUERY, entityPath, searchLine,
-                                        SwitchLayoutUtils.switchLayout(line))))
+                                SwitchLayoutUtils.switchLayout(line))))
                 .orElse((BooleanTemplate) TRUE_EXPRESSION)
-                .and(ObjectUtils.getIfNull(filter, savedFilterService::getDefaultFilterInfo).getQuery());
+                .and(Optional.ofNullable(searchBody)
+                        .map(SearchBody::getFilter)
+                        .orElseGet(savedFilterService::getDefaultFilterInfo).getQuery());
 
         JPASQLQuery<?> query = new JPASQLQuery<Void>(entityManager, dialect);
         return query.select(entityPath).from(entityPath).where(predicate).orderBy(getOrder()).fetch();
