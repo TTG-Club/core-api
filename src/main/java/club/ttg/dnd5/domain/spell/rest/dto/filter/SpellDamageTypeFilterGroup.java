@@ -32,7 +32,6 @@ public class SpellDamageTypeFilterGroup extends AbstractFilterGroup<DamageType, 
             DamageType.PIERCING,
             DamageType.SLASHING);
 
-
     public SpellDamageTypeFilterGroup(List<SpellDamageTypeFilterItem> filters) {
         super(filters);
     }
@@ -72,6 +71,5 @@ public class SpellDamageTypeFilterGroup extends AbstractFilterGroup<DamageType, 
             super(value.getShortName(), value, null);
         }
     }
-
 
 }

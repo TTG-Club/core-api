@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.filter.service;
 
-import club.ttg.dnd5.domain.filter.model.FilterDto;
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -37,7 +37,7 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                or {0}.alternative ilike ''%%{2}%%'')
             """;
 
-    public List<E> search(String searchLine, FilterDto filter) {
+    public List<E> search(String searchLine, FilterInfo filter) {
         BooleanExpression predicate = Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
@@ -45,7 +45,7 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                         Expressions.booleanTemplate(MessageFormat.format(FIND_BY_SEARCH_LINE_QUERY, entityPath, searchLine,
                                         SwitchLayoutUtils.switchLayout(line))))
                 .orElse((BooleanTemplate) TRUE_EXPRESSION)
-                .and(ObjectUtils.getIfNull(filter, savedFilterService::getDefaultFilterDto).getQuery());
+                .and(ObjectUtils.getIfNull(filter, savedFilterService::getDefaultFilterInfo).getQuery());
 
         JPASQLQuery<?> query = new JPASQLQuery<Void>(entityManager, dialect);
         return query.select(entityPath).from(entityPath).where(predicate).orderBy(getOrder()).fetch();

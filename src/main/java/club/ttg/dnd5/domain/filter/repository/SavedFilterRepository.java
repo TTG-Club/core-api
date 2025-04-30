@@ -9,9 +9,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 @NoRepositoryBean
-public interface AbstractSavedFilterRepository<T extends AbstractSavedFilter> extends JpaRepository<T, UUID> {
+public interface SavedFilterRepository<T extends AbstractSavedFilter> extends JpaRepository<T, UUID> {
     @Query("""
-            select sf from #{#entityName} sf where sf.userId = :userId and sf.defaultFilter = true
+            SELECT sf FROM #{#entityName} sf WHERE sf.userId = :userId AND sf.defaultFilter = TRUE
             """)
     Optional<T> findByUserIdAndDefaultFilterTrue(UUID userId);
 }

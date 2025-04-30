@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @Setter
 public class SpellSavingThrowFilterGroup extends AbstractFilterGroup<Ability, SpellSavingThrowFilterGroup.SpellSavingThrowFilterItem> {
 
-
     public SpellSavingThrowFilterGroup(List<SpellSavingThrowFilterItem> filters) {
         super(filters);
     }
@@ -58,6 +57,4 @@ public class SpellSavingThrowFilterGroup extends AbstractFilterGroup<Ability, Sp
             super(value.getName(), value, null);
         }
     }
-
-
 }
