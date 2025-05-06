@@ -23,16 +23,14 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
         return new FilterInfo(List.of(
                 SpellLevelFilterGroup.getDefault(),
                 SpellSchoolFilterGroup.getDefault(),
-                SpellRitualFilterSingleton.getDefault(),
-                SpellConcentrationFilterSingleton.getDefault(),
+                SpellOtherFilterGroup.getDefault(),
                 SpellDamageTypeFilterGroup.getDefault(),
                 SpellHealingTypeFilterGroup.getDefault(),
                 SpellSavingThrowFilterGroup.getDefault(),
                 SpellCastingTimeFilterRange.getDefault(),
                 SpellDistanceFilterRange.getDefault(),
                 SpellDurationFilterRange.getDefault(),
-                SpellComponentsFilterGroup.getDefault(),
-                SpellUpcastableFilterSingleton.getDefault()
+                SpellComponentsFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }
