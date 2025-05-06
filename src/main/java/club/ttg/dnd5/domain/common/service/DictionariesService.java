@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.common.service;
 
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
+import club.ttg.dnd5.dictionary.item.magic.Rarity;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.Environment;
 import club.ttg.dnd5.domain.common.dictionary.*;
@@ -9,6 +10,7 @@ import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
@@ -161,6 +163,24 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getSkills() {
         return Arrays.stream(Skill.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getMagicItemCategories() {
+        return Arrays.stream(MagicItemCategory.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getRarities() {
+        return Arrays.stream(Rarity.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())

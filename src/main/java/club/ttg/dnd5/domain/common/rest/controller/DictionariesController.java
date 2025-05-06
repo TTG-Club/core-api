@@ -467,4 +467,40 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getSkills() {
         return dictionariesService.getSkills();
     }
+
+    @Operation(summary = "Категории магических предметов")
+    @GetMapping("/magic-items/category")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "оружие", "value": "WEAPON" },
+                              { "label": "доспех", "value": "ARMOR" },
+                              { "label": "волшебная палочка", "value": "WAND" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getMagicItemCategories() {
+        return dictionariesService.getMagicItemCategories();
+    }
+
+    @Operation(summary = "Редкость")
+    @GetMapping("/rarity")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "обычный", "value": "COMMON" },
+                              { "label": "необычный", "value": "UNCOMMON" },
+                              { "label": "редкий", "value": "RARE" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getRarities() {
+        return dictionariesService.getRarities();
+    }
 }
