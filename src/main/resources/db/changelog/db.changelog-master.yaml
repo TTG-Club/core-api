@@ -49,3 +49,5 @@ databaseChangeLog:
       file: db/changelog/2025/04/28-01-init-magic-item.yaml
   - include:
       file: db/changelog/2025/04/29-01-rename-tags-to-tagCategory-glossary.yaml
+  - include:
+      file: db/changelog/2025/04/30-01-magic-item-add-column-image_url.yaml

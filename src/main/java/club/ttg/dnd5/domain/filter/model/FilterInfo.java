@@ -18,11 +18,11 @@ import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
 @Getter
 @Setter
 public class FilterInfo {
-    List<Filter> filters;
+    List<Filter> groups;
     String version;
     @JsonIgnore
     public BooleanExpression getQuery() {
-        return filters.stream().map(Filter::getQuery)
+        return groups.stream().map(Filter::getQuery)
                 .filter(q -> !q.equals(TRUE_EXPRESSION))
                 .reduce(BooleanExpression::and)
                 .orElse(TRUE_EXPRESSION);

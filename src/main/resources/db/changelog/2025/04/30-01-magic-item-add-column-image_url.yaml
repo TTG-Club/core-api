@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-image-url-to-magic-item
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
