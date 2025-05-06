@@ -20,6 +20,7 @@ import java.util.Collection;
 public interface GlossaryMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
+    @BaseMapping.BaseSourceMapping
     GlossaryDetailedResponse toDetail(Glossary glossary);
 
     @Mapping(source = "name", target = "name.name")
@@ -29,6 +30,7 @@ public interface GlossaryMapper {
     Glossary toEntity(GlossaryRequest request, Book source);
 
     @BaseMapping.BaseShortResponseNameMapping
+    @BaseMapping.BaseSourceMapping
     @Mapping(target = "tagCategory", source = "tagCategory")
     GlossaryShortResponse toShort(Glossary glossary);
 
@@ -38,6 +40,8 @@ public interface GlossaryMapper {
     @Retention(RetentionPolicy.SOURCE)
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     @BaseMapping.BaseEntityNameMapping
     @interface ToEntityMapping {
     }
