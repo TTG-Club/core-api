@@ -4,8 +4,8 @@ import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.EnumPath;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.StringPath;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Setter
 public class SpellSchoolFilterGroup extends AbstractFilterGroup<MagicSchool, SpellSchoolFilterGroup.SpellSchoolFilterItem> {
 
-    private static final  EnumPath<MagicSchool> PATH = Expressions.enumPath(MagicSchool.class, "school");
+    private static final StringPath PATH = Expressions.stringPath("school");
 
     public SpellSchoolFilterGroup(List<SpellSchoolFilterItem> filters) {
         super(filters);
@@ -31,9 +31,9 @@ public class SpellSchoolFilterGroup extends AbstractFilterGroup<MagicSchool, Spe
             return TRUE_EXPRESSION;
         }
         Set<MagicSchool> positiveValues = getPositive();
-        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues);
+        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(MagicSchool::toString).collect(Collectors.toSet()));
         Set<MagicSchool> negativeValues = getNegative();
-        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues));
+        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues.stream().map(MagicSchool::toString).collect(Collectors.toSet())));
 
     }
 
