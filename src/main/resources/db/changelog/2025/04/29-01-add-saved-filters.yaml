@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 29-01-add-saved-filters-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_saved_filter
+                  name: id
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: user_id
+                  type: UUID
+              - column:
+                  name: default_filter
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: type
+                  type: VARCHAR(255)
+              - column:
+                  name: filter
+                  type: jsonb
+            tableName: saved_filter
+  - changeSet:
+      id: 29-01-add-saved-filters-2
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: type
+            indexName: filter_type_user_id_index
+            tableName: saved_filter
+
