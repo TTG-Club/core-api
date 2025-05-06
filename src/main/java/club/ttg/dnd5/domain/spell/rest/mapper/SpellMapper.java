@@ -16,7 +16,6 @@ import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -102,7 +101,6 @@ public interface SpellMapper {
 
     @Mapping(target = "source", source = "source")
     @Mapping(target = "speciesAffiliation", source = "species")
-    @Mapping(target = "updatedAt", ignore = true)
     @interface ToEntityMapping {
     }
 
