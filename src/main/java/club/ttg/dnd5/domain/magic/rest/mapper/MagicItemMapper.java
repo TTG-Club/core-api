@@ -30,7 +30,7 @@ public interface MagicItemMapper
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
-    @Mapping(source = "typeClarification", target = "clarification")
+    @Mapping(source = "request.typeClarification", target = "clarification")
     @Mapping(target = "source", source = "source")
     MagicItem toEntity(MagicItemRequest request, Book source);
 
