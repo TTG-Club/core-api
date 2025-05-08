@@ -43,7 +43,7 @@ public interface MagicItemMapper
         if (StringUtils.hasText(magicItem.getClarification())) {
             builder.append(" (");
             builder.append(magicItem.getClarification());
-            builder.append(" )");
+            builder.append(")");
         }
         builder.append(", ");
         if (StringUtils.hasText(magicItem.getVaries())) {
