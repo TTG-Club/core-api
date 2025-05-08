@@ -36,6 +36,11 @@ public class MagicItem extends NamedEntity {
     private Rarity rarity;
 
     /**
+     * Текст для магических предметов с варьируемой редкостью
+     */
+    private String varies;
+
+    /**
      * Настройка на магический предмет
      */
     @Type(JsonType.class)
