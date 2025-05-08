@@ -46,7 +46,7 @@ public interface MagicItemMapper
             builder.append(" )");
         }
         builder.append(", ");
-        builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
+
         if (magicItem.getAttunement() != null && magicItem.getAttunement().isRequires()) {
             if (StringUtils.hasText(magicItem.getAttunement().getDescription())) {
                 builder.append(" (требуется настройка ");
