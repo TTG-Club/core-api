@@ -32,4 +32,7 @@ public class MagicItemRequest extends BaseRequest {
 
     @Schema(description = "true если предмет проклят")
     private boolean curse;
+
+    @Schema(description = "true если предмет расходуемый")
+    private boolean consumable;
 }
