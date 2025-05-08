@@ -9,6 +9,7 @@ import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.util.StringUtils;
 
 @Mapper(componentModel = "spring", uses = {BaseMapping.class})
 public interface MagicItemMapper
@@ -45,8 +46,14 @@ public interface MagicItemMapper
         }
         builder.append(", ");
         builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
-        if (magicItem.getAttunement() != null) {
-            builder.append(" (требуется настройка");
+        if (magicItem.getAttunement() != null && magicItem.getAttunement().isRequires()) {
+            if (StringUtils.hasText(magicItem.getAttunement().getDescription())) {
+                builder.append(" (требуется настройка ");
+                builder.append(magicItem.getAttunement().getDescription());
+                builder.append(")");
+            } else {
+                builder.append(" (требуется настройка)");
+            }
         }
         return builder.toString();
     }
