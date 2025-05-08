@@ -21,6 +21,9 @@ public class MagicItemRequest extends BaseRequest {
     @Schema(description = "Редкость", requiredMode = Schema.RequiredMode.REQUIRED)
     private Rarity rarity;
 
+    @Schema(description = "Текстовое описание редкости", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String varies;
+
     @Schema(description = "Настройка", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Attunement attunement;
 

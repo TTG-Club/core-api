@@ -16,6 +16,7 @@ public interface MagicItemMapper
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "attunement.requires", target = "attunement")
+    @Mapping(source = "rarity.name", target = "rarity")
     MagicItemShortResponse toShort(MagicItem magicItem);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -44,7 +45,11 @@ public interface MagicItemMapper
             builder.append(" )");
         }
         builder.append(", ");
-        builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
+        if (magicItem.getVaries() == null) {
+            builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
+        } else {
+            builder.append(magicItem.getVaries());
+        }
         if (magicItem.getAttunement() != null) {
             builder.append(" (требуется настройка");
         }
