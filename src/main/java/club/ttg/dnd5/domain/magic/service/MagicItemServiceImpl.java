@@ -7,7 +7,6 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.rest.mapper.MagicItemMapper;
-import club.ttg.dnd5.exception.ContentNotFoundException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
@@ -32,9 +31,8 @@ public class MagicItemServiceImpl implements MagicItemService {
 
     @Override
     public boolean existsByUrl(String url) {
-        var exists = magicItemRepository.existsById(url);
-        if (!exists) {
-            throw new ContentNotFoundException("Предмет не найден по URL: " + url);
+        if (!magicItemRepository.existsById(url)) {
+            throw new EntityNotFoundException("Предмет не найден по URL: " + url);
         }
         return true;
     }
