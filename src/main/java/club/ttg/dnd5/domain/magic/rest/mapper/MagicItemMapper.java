@@ -40,7 +40,7 @@ public interface MagicItemMapper
     default String toSubtitle(MagicItem magicItem) {
         var builder = new StringBuilder();
         builder.append(magicItem.getCategory().getName());
-        if (magicItem.getClarification() != null) {
+        if (StringUtils.hasText(magicItem.getClarification())) {
             builder.append(" (");
             builder.append(magicItem.getClarification());
             builder.append(" )");
@@ -55,13 +55,11 @@ public interface MagicItemMapper
             } else {
                 builder.append(" (требуется настройка)");
             }
-        if (magicItem.getVaries() == null) {
-            builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
-        } else {
-            builder.append(magicItem.getVaries());
         }
-        if (magicItem.getAttunement() != null) {
-            builder.append(" (требуется настройка");
+        if (StringUtils.hasText(magicItem.getVaries())) {
+            builder.append(magicItem.getVaries());
+        } else {
+            builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
         }
         return builder.toString();
     }
