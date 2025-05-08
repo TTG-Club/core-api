@@ -46,7 +46,11 @@ public interface MagicItemMapper
             builder.append(" )");
         }
         builder.append(", ");
-
+        if (StringUtils.hasText(magicItem.getVaries())) {
+            builder.append(magicItem.getVaries());
+        } else {
+            builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
+        }
         if (magicItem.getAttunement() != null && magicItem.getAttunement().isRequires()) {
             if (StringUtils.hasText(magicItem.getAttunement().getDescription())) {
                 builder.append(" (требуется настройка ");
@@ -55,11 +59,6 @@ public interface MagicItemMapper
             } else {
                 builder.append(" (требуется настройка)");
             }
-        }
-        if (StringUtils.hasText(magicItem.getVaries())) {
-            builder.append(magicItem.getVaries());
-        } else {
-            builder.append(magicItem.getRarity().getName(magicItem.getCategory()));
         }
         return builder.toString();
     }
