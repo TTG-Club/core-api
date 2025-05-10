@@ -46,7 +46,7 @@ public interface MagicItemMapper
     @Named("toSubtitle")
     default String toSubtitle(MagicItem magicItem) {
         var builder = new StringBuilder();
-        builder.append(magicItem.getCategory().getName());
+        builder.append(StringUtils.capitalize(magicItem.getCategory().getName()));
         if (StringUtils.hasText(magicItem.getClarification())) {
             builder.append(" (");
             builder.append(magicItem.getClarification());
@@ -68,5 +68,10 @@ public interface MagicItemMapper
             }
         }
         return builder.toString();
+    }
+
+    @Named("capitalize")
+    default String capitalize(String string) {
+        return StringUtils.capitalize(string);
     }
 }
