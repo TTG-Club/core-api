@@ -13,15 +13,14 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.BeastHitResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.BeastRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.BeastShortResponse;
 import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.common.dictionary.Dice;
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
-import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
@@ -96,9 +95,30 @@ public interface BeastMapper {
     default BeastHitResponse toHit(Beast beast) {
         var response = new BeastHitResponse();
         response.setHit(beast.getHit().getHit());
-        response.setFormula(beast.getHitFormula());
+        response.setFormula(getHitFormula(beast));
         response.setText(beast.getHit().getText());
         return response;
+    }
+
+    default String getHitFormula(Beast beast) {
+        var builder = new StringBuilder();
+        builder.append(beast.getHit().getCountHitDice());
+        if (beast.getSizes().size() == 1) {
+            builder.append(beast.getSizes().stream()
+                    .max(Comparator.comparing(
+                            beastSize -> beastSize.getSize().getHitDice().getMaxValue()))
+                    .map(BeastSize::getSize)
+                    .map(Size::getHitDice)
+                    .map(Dice::getName)
+                    .orElse("")
+            );
+        }
+        var conMod = beast.getAbilities().getConstitution().getMod();
+        if (conMod > 0) {
+            builder.append(" + ");
+            builder.append(conMod * beast.getHit().getCountHitDice());
+        }
+        return builder.toString();
     }
 
     @Named("toSpeed")

@@ -178,24 +178,4 @@ public class Beast extends NamedEntity {
     @JoinColumn(name = "source")
     private Book source;
     private Long sourcePage;
-
-    public String getHitFormula() {
-        var builder = new StringBuilder();
-        builder.append(hit.getCountHitDice());
-        if (sizes.size() == 1) {
-            builder.append(sizes.stream()
-                    .max(Comparator.comparing(beastSize -> beastSize.getSize().getHitDice().getMaxValue()))
-                    .map(BeastSize::getSize)
-                    .map(Size::getHitDice)
-                    .map(Dice::getName)
-                    .orElse("")
-            );
-        }
-        var conMod = abilities.getConstitution().getMod();
-        if (conMod > 0) {
-            builder.append(" + ");
-            builder.append(conMod * hit.getCountHitDice());
-        }
-        return builder.toString();
-    }
 }
