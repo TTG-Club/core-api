@@ -26,6 +26,7 @@ public interface MagicItemMapper
     MagicItemDetailResponse toDetail(MagicItem magicItem);
 
     @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
     @Mapping(target = "category.clarification", source = "clarification")
     @Mapping(target = "category.type", source = "category")
