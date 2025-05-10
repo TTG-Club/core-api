@@ -26,6 +26,10 @@ public interface MagicItemMapper
     MagicItemDetailResponse toDetail(MagicItem magicItem);
 
     @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(target = "request.category.clarification", source = "clarification")
+    @Mapping(target = "request.category.type", source = "category")
+    @Mapping(target = "request.rarity.type", source = "rarity")
+    @Mapping(target = "request.rarity.varies", source = "varies")
     MagicItemRequest toRequest(MagicItem magicItem);
 
     @BaseMapping.BaseEntityNameMapping
