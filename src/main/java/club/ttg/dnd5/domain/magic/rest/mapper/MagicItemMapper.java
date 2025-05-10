@@ -69,9 +69,4 @@ public interface MagicItemMapper
         }
         return builder.toString();
     }
-
-    @Named("capitalize")
-    default String capitalize(String string) {
-        return StringUtils.capitalize(string);
-    }
 }
