@@ -23,7 +23,6 @@ public class StatisticsService {
             QSpecies.species,
             QFeat.feat,
             QBackground.background,
-            QMagicItem.magicItem,
             QGlossary.glossary);
 
 
