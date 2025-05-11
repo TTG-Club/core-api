@@ -12,18 +12,17 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class MagicItemServiceImpl implements MagicItemService {
-    private static final Sort DEFAULT_SORT = Sort.by("rarity", "name");
 
     private final MagicItemRepository magicItemRepository;
     private final MagicItemMapper magicItemMapper;
@@ -54,10 +53,11 @@ public class MagicItemServiceImpl implements MagicItemService {
                 .map(String::trim)
                 .map(line -> {
                     String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return magicItemRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
+                    return magicItemRepository.findBySearchLine(line, invertedSearchLine);
                 })
-                .orElseGet(() -> magicItemRepository.findAll(DEFAULT_SORT))
-                .stream()
+                .orElseGet(magicItemRepository::findAll)
+                .parallelStream()
+                .sorted(Comparator.comparing((MagicItem item) -> item.getRarity().ordinal()).thenComparing(MagicItem::getName))
                 .map(magicItemMapper::toShort)
                 .collect(Collectors.toList());
     }
