@@ -4,19 +4,18 @@ import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import lombok.Getter;
 
 import java.util.Arrays;
-import java.util.Random;
 
 @Getter
 public enum Rarity {
+	VARIES(null, "редкость варьируется", "редкость варьируется", "редкость варьируется"),
 	COMMON(100, "обычный", "обычная", "обычное"),
 	UNCOMMON(400, "необычный", "необычная", "необычное"),
 	RARE(4000, "редкий", "редкая", "редкое"),
 	VERY_RARE(40_000, "очень редкий", "очень редкая", "очень редкое" ),
 	LEGENDARY(200_000, "легендарный", "легендарная", "легендарное" ),
 	ARTIFACT(null, "артефакт", "артефакт", "артефакт"),
-
 	UNKNOWN(null, "редкость не определена", "редкость не определена", "редкость не определена"),
-	VARIES(null, "редкость варьируется", "редкость варьируется", "редкость варьируется");
+	;
 
 	Rarity(Integer cost, String... names){
 		baseCost = cost;
