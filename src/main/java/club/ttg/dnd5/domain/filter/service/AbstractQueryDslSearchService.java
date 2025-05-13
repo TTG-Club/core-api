@@ -41,7 +41,7 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
                 .map(line ->
-                        Expressions.booleanTemplate(MessageFormat.format(FIND_BY_SEARCH_LINE_QUERY, entityPath, searchLine,
+                        Expressions.booleanTemplate(MessageFormat.format(FIND_BY_SEARCH_LINE_QUERY, entityPath, line,
                                 SwitchLayoutUtils.switchLayout(line))))
                 .orElse((BooleanTemplate) TRUE_EXPRESSION)
                 .and(Optional.ofNullable(searchBody)

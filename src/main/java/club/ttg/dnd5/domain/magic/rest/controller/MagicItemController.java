@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
-import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
@@ -36,11 +35,10 @@ public class MagicItemController {
             description = "Возвращает 204 (No Content), если предмет с указанным URL не существует, или 409 (Conflict), если существует."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Предмет с указанным URL не найден."),
-            @ApiResponse(responseCode = "409", description = "Предмет с указанным URL уже существует.")
+            @ApiResponse(responseCode = "200", description = "Предмет с указанным URL уже существует."),
+            @ApiResponse(responseCode = "404", description = "Предмет с указанным URL не найден."),
     })
     @RequestMapping(value = "/{url}", method = RequestMethod.HEAD)
-    @ResponseStatus(HttpStatus.CONFLICT)
     public boolean exists(@PathVariable("url") String url) {
         return magicItemService.existsByUrl(url);
     }
