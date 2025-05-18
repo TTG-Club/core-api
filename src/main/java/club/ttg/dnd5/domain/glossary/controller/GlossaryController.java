@@ -1,8 +1,10 @@
 package club.ttg.dnd5.domain.glossary.controller;
 
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
+import club.ttg.dnd5.domain.glossary.service.GlossaryFilterService;
 import club.ttg.dnd5.domain.glossary.service.GlossaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +26,7 @@ import java.util.List;
 @RequestMapping("/api/v2/glossary")
 public class GlossaryController {
     private final GlossaryService glossaryService;
+    private final GlossaryFilterService glossaryFilterService;
 
     @Operation(summary = "Проверить глоссарий по URL", description = "Проверка записи глоссария по его уникальному URL")
     @ApiResponses(value = {
@@ -71,5 +74,10 @@ public class GlossaryController {
     @DeleteMapping("/{url}")
     public void deleteGlossary(@PathVariable String url) {
         glossaryService.delete(url);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return glossaryFilterService.getDefaultFilterInfo();
     }
 }
