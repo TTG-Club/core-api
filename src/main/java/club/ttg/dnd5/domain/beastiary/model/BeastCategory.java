@@ -8,14 +8,14 @@ import java.util.Set;
 
 @Getter
 @Setter
-@Entity
-@Table(name = "beast_categories")
 public class BeastCategory {
-    @Id
-    private Long id;
     /**
      * Тип существа
      */
     @Enumerated(EnumType.STRING)
     private BeastType type;
+    /**
+     * Уточнения типа существа
+     */
+    private String text;
 }

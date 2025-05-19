@@ -53,3 +53,5 @@ databaseChangeLog:
       file: db/changelog/2025/04/30-01-magic-item-add-column-image_url.yaml
   - include:
       file: db/changelog/2025/05/07-01-add-column-varies-magic-item.yaml
+  - include:
+      file: db/changelog/2025/05/19-01-init-bestiary.yaml

@@ -3,7 +3,8 @@ package club.ttg.dnd5.domain.common.service;
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
 import club.ttg.dnd5.dictionary.item.magic.Rarity;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
-import club.ttg.dnd5.domain.beastiary.model.Environment;
+import club.ttg.dnd5.domain.beastiary.model.section.Habitat;
+import club.ttg.dnd5.domain.beastiary.model.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
@@ -105,13 +106,13 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getDamageTypes() {
         return Arrays.stream(DamageType.values())
-                .map(type -> createBaseOptionDTO(type.getCyrillicName(), type.name()))
+                .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
 
     public Collection<SelectOptionDto> getConditions() {
         return Arrays.stream(Condition.values())
-                .map(type -> createBaseOptionDTO(type.getCyrillicName(), type.name()))
+                .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
 
@@ -121,14 +122,14 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getEnvironments() {
-        return Arrays.stream(Environment.values())
+    public Collection<SelectOptionDto> getFeatTypes() {
+        return Arrays.stream(FeatCategory.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getFeatTypes() {
-        return Arrays.stream(FeatCategory.values())
+    public Collection<SelectOptionDto> getEnvironments() {
+        return Arrays.stream(Habitat.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
@@ -168,6 +169,25 @@ public class DictionariesService {
                         .value(type.name())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getSenseType() {
+        return Arrays.stream(SenseType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getHabitats() {
+        return Arrays.stream(Habitat.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+
     }
 
     public Collection<SelectOptionDto> getMagicItemCategories() {

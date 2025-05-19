@@ -1,29 +1,29 @@
 package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@Entity
-@Table(name = "beast_ability")
 public class BeastAbility {
-  @Id
-  private Long id;
   /**
    * Тип характеристики
    */
-  @Enumerated(EnumType.STRING)
+  @Schema(description = "Название характеристики")
   private Ability ability;
   /**
    * Значение характеристики
    */
+  @Schema(description = "Значение характеристики")
   private short value;
+
   /**
    * Если истина, то для этого навыка при спасбросках добавляется бонус мастерства
    */
+  @Schema(description = "Бонус к спасброску")
   private boolean save;
 
   /**

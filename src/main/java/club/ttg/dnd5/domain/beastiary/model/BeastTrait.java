@@ -9,15 +9,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Entity
-@Table(name = "beast_trait")
 public class BeastTrait {
-    @Id
-    private Long id;
-    @Column(nullable = false)
     private String name;
-    @Column(nullable = false)
+
     private String english;
-    @Column(nullable = false, columnDefinition = "TEXT")
+
     private String description;
 }
