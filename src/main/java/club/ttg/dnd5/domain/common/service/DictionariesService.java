@@ -129,7 +129,7 @@ public class DictionariesService {
     }
 
     public Collection<SelectOptionDto> getEnvironments() {
-        return Arrays.stream(Environment.values())
+        return Arrays.stream(Habitat.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
