@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 
 import java.util.List;
 
@@ -44,8 +45,9 @@ public class GlossaryController {
                                               @Valid
                                               @Size(min = 3)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine) {
-        return glossaryService.search(searchLine);
+                                              String searchLine,
+                                              @RequestBody(required = false) SearchBody searchBody){
+        return glossaryService.search(searchLine, searchBody);
     }
 
     @GetMapping("/{url}")

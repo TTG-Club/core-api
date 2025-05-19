@@ -4,16 +4,12 @@ import club.ttg.dnd5.domain.glossary.model.QGlossary;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Getter
-@Setter
 public class GlossaryTagCategoryFilterGroup extends AbstractFilterGroup<String, GlossaryTagCategoryFilterGroup.GlossaryTagCategoryFilterItem> {
 
     public GlossaryTagCategoryFilterGroup(List<GlossaryTagCategoryFilterItem> filters) {
