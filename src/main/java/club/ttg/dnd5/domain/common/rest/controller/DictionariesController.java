@@ -167,12 +167,12 @@ public class DictionariesController {
                                     examples = @ExampleObject("""
                                             [
                                               {
-                                                "label": "ослепление",
+                                                "label": "ослеплённый",
                                                 "value": "BLINDED"
                                               },
                                               {
-                                                "label": "очарование",
-                                                "value": "CHARMED"
+                                                "label": "отравленный",
+                                                "value": "POISONED"
                                               },
                                               {
                                                 "label": "смерть",
@@ -219,37 +219,6 @@ public class DictionariesController {
         return dictionariesService.getAlignments();
     }
 
-    @Operation(summary = "Места обитания существ")
-    @GetMapping("/environments")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    examples = @ExampleObject("""
-                                            [
-                                              {
-                                                "label": "полярная тундра",
-                                                "value": "ARCTIC"
-                                              },
-                                              {
-                                                "label": "побережье",
-                                                "value": "COAST"
-                                              },
-                                              {
-                                                "label": "под водой",
-                                                "value": "WATERS"
-                                              }
-                                            ]
-                                            """)
-                            )
-                    )
-            }
-    )
-    public Collection<SelectOptionDto> getEnvironments() {
-        return dictionariesService.getEnvironments();
-    }
-
     @Operation(summary = "Типы черт")
     @GetMapping("/feat/types")
     @ApiResponses(
@@ -279,6 +248,37 @@ public class DictionariesController {
     )
     public Collection<SelectOptionDto> getFeatTypes() {
         return dictionariesService.getFeatTypes();
+    }
+
+    @Operation(summary = "Места обитания существ")
+    @GetMapping("/environments")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject("""
+                                            [
+                                              {
+                                                "label": "полярная тундра",
+                                                "value": "ARCTIC"
+                                              },
+                                              {
+                                                "label": "побережье",
+                                                "value": "COAST"
+                                              },
+                                              {
+                                                "label": "под водой",
+                                                "value": "WATERS"
+                                              }
+                                            ]
+                                            """)
+                            )
+                    )
+            }
+    )
+    public Collection<SelectOptionDto> getEnvironments() {
+        return dictionariesService.getEnvironments();
     }
 
     @Operation(summary = "Типы заклинателей")
@@ -466,6 +466,42 @@ public class DictionariesController {
     )
     public Collection<SelectOptionDto> getSkills() {
         return dictionariesService.getSkills();
+    }
+
+    @Operation(summary = "Дополнительные чувства")
+    @GetMapping("/sense-types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "тёмное зрение", "value": "DARKVISION" },
+                              { "label": "слепое зрение", "value": "BLINDSIGHT" },
+                              { "label": "истинное зрение", "value": "TRUESIGHT" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSenseType() {
+        return dictionariesService.getSenseType();
+    }
+
+    @Operation(summary = "Среды обитания")
+    @GetMapping("/habitats")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Любая", "value": "ANY" },
+                              { "label": "Арктика", "value": "ARCTIC" },
+                              { "label": "Побережье", "value": "COASTAL" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getHabitats() {
+        return dictionariesService.getHabitats();
     }
 
     @Operation(summary = "Категории магических предметов")

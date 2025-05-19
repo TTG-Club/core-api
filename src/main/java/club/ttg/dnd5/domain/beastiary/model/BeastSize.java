@@ -7,13 +7,15 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Entity
-@Table(name = "best_sizes")
 public class BeastSize {
-    @Id
-    private Long id;
+    /**
+     * Размер
+     */
     @Enumerated(EnumType.STRING)
     private Size size;
+    /**
+     * Текстовое описание размера
+     */
     private String text;
 
     public String getSizeString () {

@@ -25,10 +25,9 @@ public enum BeastType {
 	GIANT("Великан"),
 	HUMANOID("Гуманоид"),
 	MONSTROSITY("Монстр"),
-	PLANT("Растение"),
-	UNDEAD("Нежить"),
 	SLIME("Слизь"),
-	SWARM("Рой");
+	PLANT("Растение"),
+	UNDEAD("Нежить");
 
 	private final String name;
 
