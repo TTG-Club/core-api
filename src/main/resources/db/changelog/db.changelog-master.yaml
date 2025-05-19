@@ -39,3 +39,5 @@ databaseChangeLog:
       file: db/changelog/2025/04/17-01-add-column-image-url-background.yaml
   - include:
       file: db/changelog/2025/04/17-02-add-column-image-url-background.yaml
+  - include:
+      file: db/changelog/2025/05/19-01-init-bestiary.yaml

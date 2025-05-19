@@ -8,8 +8,6 @@ import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Dice;
-import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -19,7 +17,6 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import java.util.Collection;
-import java.util.Comparator;
 
 /**
  * Существо из бестиария
