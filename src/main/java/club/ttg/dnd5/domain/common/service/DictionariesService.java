@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.common.service;
 
 import club.ttg.dnd5.dictionary.character.SpellcasterType;
+import club.ttg.dnd5.dictionary.item.magic.Rarity;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.section.Habitat;
 import club.ttg.dnd5.domain.beastiary.model.SenseType;
@@ -10,6 +11,7 @@ import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
@@ -126,6 +128,12 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
+    public Collection<SelectOptionDto> getEnvironments() {
+        return Arrays.stream(Environment.values())
+                .map(type -> createBaseOptionDTO(type.getName(), type.name()))
+                .collect(Collectors.toList());
+    }
+
     public Collection<SpellcasterOptionDto> getSpellcasterTypes() {
         return Arrays.stream(SpellcasterType.values())
                 .map(type -> SpellcasterOptionDto.builder()
@@ -180,5 +188,23 @@ public class DictionariesService {
                         .build())
                 .collect(Collectors.toList());
 
+    }
+
+    public Collection<SelectOptionDto> getMagicItemCategories() {
+        return Arrays.stream(MagicItemCategory.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getRarities() {
+        return Arrays.stream(Rarity.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

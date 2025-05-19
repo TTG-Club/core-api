@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
+import club.ttg.dnd5.domain.spell.service.SpellFilterService;
 import club.ttg.dnd5.domain.spell.service.SpellService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/v2/spells")
 public class SpellController {
     private final SpellService spellService;
+    private final SpellFilterService spellFilterService;
 
     @Operation(summary = "Проверить заклинание по URL", description = "Проверка заклинание по его уникальному URL.")
     @ApiResponses(value = {
@@ -41,9 +45,10 @@ public class SpellController {
     public List<SpellShortResponse> getSpells(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 3)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine) {
-        return spellService.search(searchLine);
+                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                              String searchLine,
+                                              @RequestBody(required = false) SearchBody searchBody) {
+        return spellService.search(searchLine, searchBody);
     }
 
     @GetMapping("/{url}")
@@ -54,6 +59,11 @@ public class SpellController {
     @GetMapping("/{url}/raw")
     public SpellRequest getSpellFormByUrl(@PathVariable String url) {
         return spellService.findFormByUrl(url);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return spellFilterService.getDefaultFilterInfo();
     }
 
     @Secured("ADMIN")

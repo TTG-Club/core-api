@@ -5,11 +5,15 @@ import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.item.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -55,10 +59,15 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
     })
     @PostMapping("/search")
-    public Collection<ItemShortResponse> getItems() {
-        return itemService.getItems();
+    public Collection<ItemShortResponse> getItems(@RequestParam(name = "query", required = false)
+                                                  @Valid
+                                                  @Size(min = 3)
+                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                                  String searchLine) {
+        return itemService.getItems(searchLine);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Добавление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно добавлен"),
@@ -67,29 +76,31 @@ public class ItemController {
     })
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public ItemDetailResponse addItem(@RequestBody final ItemRequest itemDto) {
+    public String addItem(@RequestBody final ItemRequest itemDto) {
         return itemService.addItem(itemDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Обновление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно обновлен"),
             @ApiResponse(responseCode = "404", description = "Предмет не существует"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PostMapping("{itemUrl}")
-    public ItemDetailResponse updateItem(@PathVariable final String itemUrl,
+    @PutMapping("{itemUrl}")
+    public String updateItem(@PathVariable final String itemUrl,
                                          @RequestBody final ItemRequest itemDto) {
         return itemService.updateItem(itemUrl, itemDto);
     }
 
+    @Secured("ADMIN")
     @Operation(summary = "Скрывает предмет")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @DeleteMapping("{itemUrl}")
-    public ItemShortResponse deleteItem(@PathVariable final String itemUrl) {
+    public String deleteItem(@PathVariable final String itemUrl) {
         return itemService.delete(itemUrl);
     }
 }

@@ -6,44 +6,40 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum ItemType {
-    AMMUNITION("Боеприпасы"),
+    AMMUNITION("Боеприпасы", ItemCategory.ITEM),
 
-    ADVENTURING_GEAR("Снаряжение приключенца"),
-    ARTISAN_S_TOOLS("Инструменты ремесленников"),
-    FOOD_AND_DRINK("Еда и питье"),
-    GAMING_SET("Игровой набор"),
+    ADVENTURING_GEAR("Снаряжение приключенца", ItemCategory.ITEM),
+    ARTISAN_S_TOOLS("Инструменты ремесленников", ItemCategory.ITEM),
+    TOOL("Инструменты", ItemCategory.TOOL),
+    INSTRUMENT("Музыкальные инструменты", ItemCategory.TOOL),
+    FOOD_AND_DRINK("Еда и питье", ItemCategory.ITEM),
+    GAMING_SET("Игровой набор", ItemCategory.ITEM),
 
-    WEAPON("Оружие"),
-    MARTIAL_WEAPON("Воинское оружие"),
-    SIMPLE_WEAPON("Простое оружие"),
-    MELEE_WEAPON("Рукопашное оружие"),
-    RANGED_WEAPON("Дальнобойное оружие"),
-    FIREARM("Огнестрельное оружие"),
+    AMMO("Боеприпас", ItemCategory.WEAPON),
+    WEAPON("Оружие", ItemCategory.WEAPON),
+    MARTIAL_WEAPON("Воинское оружие", ItemCategory.WEAPON),
+    SIMPLE_WEAPON("Простое оружие", ItemCategory.WEAPON),
+    MELEE_WEAPON("Рукопашное оружие", ItemCategory.WEAPON),
+    RANGED_WEAPON("Дальнобойное оружие", ItemCategory.WEAPON),
+    FIREARM("Огнестрельное оружие", ItemCategory.WEAPON),
+    FUTURISTIC("Футуристическое оружие", ItemCategory.WEAPON),
+    EXPLOSIVE("Взрывчатка", ItemCategory.WEAPON),
 
-    ARMOR("Доспехи"),
-    LIGHT_ARMOR("Легкий доспех"),
-    MEDIUM_ARMOR("Средний доспех"),
-    HEAVY_ARMOR("Тяжелый доспех"),
-    SHIELD("щит"),  // 10
+    ARMOR("Доспехи", ItemCategory.ARMOR),
+    LIGHT_ARMOR("Легкий доспех", ItemCategory.ARMOR),
+    MEDIUM_ARMOR("Средний доспех", ItemCategory.ARMOR),
+    HEAVY_ARMOR("Тяжелый доспех", ItemCategory.ARMOR),
+    SHIELD("Щит", ItemCategory.ARMOR),  // 10
 
-    TOOL("Инструменты"),
-    INSTRUMENT("Музыкальные инструменты"),
-    SPELLCASTING_FOCUS(""),
-    POISON("Яды"),
-    MOUNT("Верховое животное"),
-    TACK_AND_HARNESS("Упряжь и сбруя"),
-    VEHICLE("Транспорт"),
-    VEHICLE_AIR("Транспорт (воздушный)"),
-    VEHICLE_LAND("Транспорт (наземный)"),
-    VEHICLE_WATER("Транспорт (водный)"),
-
-    WAND("волшебная палочка"), // 2
-    ROD("жезл"),  // 3
-    STAFF("посох"), //4
-    POTION("зелье"), //5
-    RING("кольцо"),  //6
-    SCROLL("свиток"), // 7
-    SUBJECT("чудесный предмет");
+    SPELLCASTING_FOCUS("Магическая фокусировка", ItemCategory.ITEM),
+    POISON("Яды", ItemCategory.ITEM),
+    MOUNT("Верховое животное", ItemCategory.MOUNT),
+    TACK_AND_HARNESS("Упряжь и сбруя", ItemCategory.ITEM),
+    VEHICLE("Транспорт", ItemCategory.VEHICLE),
+    VEHICLE_AIR("Транспорт (воздушный)", ItemCategory.VEHICLE),
+    VEHICLE_LAND("Транспорт (наземный)", ItemCategory.VEHICLE),
+    VEHICLE_WATER("Транспорт (водный)", ItemCategory.VEHICLE);
 
     private final String name;
+    private final ItemCategory category;
 }

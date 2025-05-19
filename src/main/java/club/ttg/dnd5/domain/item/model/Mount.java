@@ -10,5 +10,8 @@ import lombok.Setter;
 @Entity
 @DiscriminatorValue("MOUNT")
 public class Mount extends Item {
+    /**
+     * Переносимый вес
+     */
     private String carryingCapacity;
 }
