@@ -15,6 +15,7 @@ import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -53,6 +54,7 @@ public class BackgroundServiceImpl implements BackgroundService {
 
     @Transactional
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String addBackground(final BackgroundRequest request) {
         checkUrlExist(request.getUrl());
         var feat = getFeat(request.getFeatUrl());
@@ -76,6 +78,7 @@ public class BackgroundServiceImpl implements BackgroundService {
 
     @Transactional
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String deleteBackgrounds(final String url) {
         var entity = findByUrl(url);
         entity.setHiddenEntity(true);
