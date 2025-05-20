@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
 import club.ttg.dnd5.domain.beastiary.model.BeastAbilities;
+import club.ttg.dnd5.domain.beastiary.model.BeastCategory;
 import club.ttg.dnd5.domain.beastiary.model.BeastEquipment;
 import club.ttg.dnd5.domain.beastiary.model.BeastHit;
 import club.ttg.dnd5.domain.beastiary.model.BeastTrait;
@@ -26,7 +27,7 @@ public class BeastRequest extends BaseRequest {
     @Schema(description = "Размеры")
     private Collection<BeastSize> size;
     @Schema(description = "Типы")
-    private Collection<BeastType> type;
+    private Collection<BeastCategory> type;
     @Schema(description = "Мирровозрение")
     private Alignment alignment;
     @Schema(description = "Класс доспеха")

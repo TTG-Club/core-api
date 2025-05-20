@@ -45,7 +45,7 @@ public class Beast extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Collection<BeastCategory> categories;
+    private BeastCategory categories;
 
     /**
      * Мирровозрение
