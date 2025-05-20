@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -65,6 +66,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String addItem(final ItemRequest itemRequest) {
         exist(itemRequest.getUrl());
         var item = switch(itemRequest.getCategory()) {
@@ -86,6 +88,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String delete(final String itemUrl) {
         Item item = findByUrl(itemUrl);
         item.setHiddenEntity(true);
