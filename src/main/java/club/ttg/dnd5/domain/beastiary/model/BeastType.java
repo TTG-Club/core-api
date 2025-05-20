@@ -27,7 +27,13 @@ public enum BeastType {
 	MONSTROSITY("Монстр"),
 	SLIME("Слизь"),
 	PLANT("Растение"),
-	UNDEAD("Нежить");
+	UNDEAD("Нежить"),
+	SWARM_OF_TINY_UNDEAD("рой крошечной нежити"),
+	SWARM_OF_TINY_MONSTROSITIES("рой крошечных монстров"),
+	SWARM_OF_TINY_BEASTS("рой крошечных зверей"),
+	SWARM_OF_SMALL_FIENDS("рой маленьких исчадий"),
+	SWARM_OF_MEDIUM_FIENDS("рой средних исчадий"),
+	;
 
 	private final String name;
 
@@ -40,11 +46,5 @@ public enum BeastType {
 				.filter(t -> t.name().equalsIgnoreCase(type))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("Invalid type: " + type));
-	}
-
-
-	public static Set<BeastType> getFilterTypes() {
-		return EnumSet.of(ABERRATION, BEAST, CELESTIAL, CONSTRUCT, DRAGON, ELEMENTAL, FEY, FIEND, GIANT, HUMANOID,
-				MONSTROSITY, PLANT, UNDEAD, SLIME);
 	}
 }
