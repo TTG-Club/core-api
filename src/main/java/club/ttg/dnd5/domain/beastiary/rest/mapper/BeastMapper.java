@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.beastiary.rest.mapper;
 
 import club.ttg.dnd5.domain.beastiary.model.Beast;
 import club.ttg.dnd5.domain.beastiary.model.BeastArmor;
-import club.ttg.dnd5.domain.beastiary.model.BeastCategory;
 import club.ttg.dnd5.domain.beastiary.model.BeastSize;
 import club.ttg.dnd5.domain.beastiary.model.BeastSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
@@ -56,8 +55,8 @@ public interface BeastMapper {
     default String toHeader(Beast beast) {
         var builder = new StringBuilder();
         var type = beast.getCategories()
+                .getType()
                 .stream()
-                .map(BeastCategory::getType)
                 .findFirst()
                 .orElse(BeastType.HUMANOID);
         builder.append(beast.getSizes()
@@ -65,11 +64,16 @@ public interface BeastMapper {
                 .map(BeastSize::getSize)
                 .map(size -> size.getSizeName(type))
                 .collect(Collectors.joining(" или ")));
-        builder.append(beast.getCategories()
+        builder.append(beast.getCategories().getType()
                 .stream()
-                .map(this::getType)
+                .map(BeastType::getName)
                 .collect(Collectors.joining(" или "))
         );
+        if (beast.getCategories().getText() != null) {
+            builder.append(" (");
+            builder.append(beast.getCategories().getText().toLowerCase());
+            builder.append(")");
+        }
         builder.append(", ");
         builder.append(beast.getAlignment().getName(type));
         return builder.toString();
@@ -139,15 +143,6 @@ public interface BeastMapper {
             resonse += "; " + languages.getTelepathy();
         }
         return resonse;
-    }
-
-    default String getType(BeastCategory beastCategory) {
-        if (beastCategory.getText() == null) {
-            return beastCategory.getType().getName();
-        } else {
-            return beastCategory.getType().getName().toLowerCase()
-                    + " (" + beastCategory.getText() + ")";
-        }
     }
 
     @Named("toChallengeRating")
