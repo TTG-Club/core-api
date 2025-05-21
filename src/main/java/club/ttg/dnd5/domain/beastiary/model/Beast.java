@@ -116,7 +116,7 @@ public class Beast extends NamedEntity {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Collection<BeastSenses> senses;
+    private BeastSenses senses;
 
     @Column(name = "exp")
     private Long experience;
