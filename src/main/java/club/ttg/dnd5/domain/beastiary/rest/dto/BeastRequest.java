@@ -10,7 +10,6 @@ import club.ttg.dnd5.domain.beastiary.model.language.BeastLanguages;
 import club.ttg.dnd5.domain.beastiary.model.BeastSize;
 import club.ttg.dnd5.domain.beastiary.model.BeastSkill;
 import club.ttg.dnd5.domain.beastiary.model.BeastSpeeds;
-import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.sense.BeastSenses;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
@@ -58,6 +57,7 @@ public class BeastRequest extends BaseRequest {
     private BeastSenses senses;
     @Schema(description = "Языки")
     private BeastLanguages languages;
+    private BeastExperience experience;
     @Schema(description = "Особенности")
     private Collection<BeastTrait> traits;
     @Schema(description = "Действия")
