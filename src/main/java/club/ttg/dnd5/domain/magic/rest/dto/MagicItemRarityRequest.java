@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.magic.rest.dto;
 
-import club.ttg.dnd5.dictionary.item.magic.Rarity;
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;

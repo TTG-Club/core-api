@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.item.model.weapon;
 
-import club.ttg.dnd5.dictionary.item.WeaponCategory;
+import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.item.model.Item;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;

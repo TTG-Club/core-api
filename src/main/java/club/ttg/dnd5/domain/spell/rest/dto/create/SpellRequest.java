@@ -7,7 +7,7 @@ import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
-import club.ttg.dnd5.domain.spell.model.enums.HealingType;
+import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Max;

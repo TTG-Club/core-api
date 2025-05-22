@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.magic.model;
 
-import club.ttg.dnd5.dictionary.item.magic.Rarity;
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;

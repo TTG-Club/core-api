@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.spell.model.enums;
+package club.ttg.dnd5.domain.common.dictionary;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
