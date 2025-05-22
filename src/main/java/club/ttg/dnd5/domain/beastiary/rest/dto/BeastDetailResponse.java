@@ -25,7 +25,8 @@ public class BeastDetailResponse extends BaseResponse {
 
     @Schema(description = "Характеристики")
     private AbilitiesResponse abilities;
-
+    @Schema(description = "Навыки")
+    private String skills;
     @Schema(description = "Языки", examples = "глубинный язык; телепатия 120 фт.")
     private String languages;
 

@@ -1,8 +1,10 @@
 package club.ttg.dnd5.domain.beastiary.rest.mapper;
 
 import club.ttg.dnd5.domain.beastiary.model.Beast;
+import club.ttg.dnd5.domain.beastiary.model.BeastAbilities;
 import club.ttg.dnd5.domain.beastiary.model.BeastArmor;
 import club.ttg.dnd5.domain.beastiary.model.BeastSize;
+import club.ttg.dnd5.domain.beastiary.model.BeastSkill;
 import club.ttg.dnd5.domain.beastiary.model.BeastSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.ChallengeRatingUtil;
@@ -36,6 +38,7 @@ public interface BeastMapper {
     @Mapping(source = "armor", target = "armorClass", qualifiedByName = "toArmor")
     @Mapping(source = "initiative", target = "initiative", qualifiedByName = "toInit")
     @Mapping(source = ".", target = "hit", qualifiedByName = "toHit")
+    @Mapping(source = ".", target = "skills", qualifiedByName = "toSkills")
     @Mapping(source = "speed", target = "speed", qualifiedByName = "toSpeed")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
     BeastDetailResponse toDetail(Beast beast);
@@ -134,6 +137,21 @@ public interface BeastMapper {
     @Named("toSpeed")
     default String toSpeed(BeastSpeeds speeds) {
         return speeds.getText();
+    }
+
+    @Named("toSkills")
+    default String toSkills(Beast beast) {
+       return beast.getSkills().stream()
+               .map(skill -> skill.getSkill().getName() + " + "
+                       + getSkillBonus(skill, beast.getAbilities(), beast.getExperience()))
+               .collect(Collectors.joining(","));
+    }
+
+    private int getSkillBonus(final BeastSkill skill,
+                                final BeastAbilities abilities,
+                                final long experience) {
+        return abilities.getMod(skill.getSkill().getAbility())
+                + (Integer.parseInt(ChallengeRatingUtil.getProficiencyBonus(ChallengeRatingUtil.getChallengeRating(experience))) * skill.getMultiplier());
     }
 
     @Named("toLanguages")

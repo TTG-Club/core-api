@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Skill;
-import club.ttg.dnd5.domain.common.dictionary.SkillBonusType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,7 +8,8 @@ import lombok.Setter;
 @Setter
 public class BeastSkill {
     private Skill skill;
-    private SkillBonusType type;
+    // множитель модификатора
+    private short multiplier;
 
     private String text;
 }
