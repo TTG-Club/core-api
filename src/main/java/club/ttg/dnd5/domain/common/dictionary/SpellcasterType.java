@@ -1,4 +1,4 @@
-package club.ttg.dnd5.dictionary.character;
+package club.ttg.dnd5.domain.common.dictionary;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

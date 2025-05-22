@@ -1,4 +1,4 @@
-package club.ttg.dnd5.dictionary.item.magic;
+package club.ttg.dnd5.domain.common.dictionary;
 
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import lombok.Getter;

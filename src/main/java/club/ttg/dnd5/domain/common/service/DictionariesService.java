@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.common.service;
 
-import club.ttg.dnd5.dictionary.character.SpellcasterType;
-import club.ttg.dnd5.dictionary.item.magic.Rarity;
+import club.ttg.dnd5.domain.common.dictionary.SpellcasterType;
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import club.ttg.dnd5.domain.beastiary.model.section.Habitat;
 import club.ttg.dnd5.domain.beastiary.model.SenseType;
@@ -201,6 +201,15 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getRarities() {
         return Arrays.stream(Rarity.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getHillTypes() {
+        return Arrays.stream(HillType.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())

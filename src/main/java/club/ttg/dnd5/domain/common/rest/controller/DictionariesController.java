@@ -539,4 +539,21 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getRarities() {
         return dictionariesService.getRarities();
     }
+
+    @Operation(summary = "Типы лечения")
+    @GetMapping("/hill/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "хиты", "value": "HIT" },
+                              { "label": "временные хиты", "value": "TEMPORARY_HIT" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getHillTypes() {
+        return dictionariesService.getHillTypes();
+    }
 }
