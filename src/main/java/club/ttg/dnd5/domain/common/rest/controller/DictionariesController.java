@@ -590,4 +590,21 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getChallengeRailings() {
         return dictionariesService.getChallengeRailings();
     }
+
+    @Operation(summary = "Языки (распространенные и экзотические)")
+    @GetMapping("/languages")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "общий", "value": "COMMON" },
+                              { "label": "драконий", "value": "DRACONIC" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getLanguages() {
+        return dictionariesService.getLanguages();
+    }
 }
