@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.spell.rest.dto.filter;
 
-import club.ttg.dnd5.domain.spell.model.enums.HealingType;
+import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;

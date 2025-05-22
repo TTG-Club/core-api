@@ -209,7 +209,7 @@ public class DictionariesService {
     }
 
     public Collection<SelectOptionDto> getHillTypes() {
-        return Arrays.stream(HillType.values())
+        return Arrays.stream(HealingType.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())

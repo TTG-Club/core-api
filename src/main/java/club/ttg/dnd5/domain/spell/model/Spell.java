@@ -5,7 +5,7 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.species.model.Species;
-import club.ttg.dnd5.domain.spell.model.enums.HealingType;
+import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
