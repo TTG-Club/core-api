@@ -216,4 +216,22 @@ public class DictionariesService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    public Collection<SelectOptionDto> getChallengeRailings() {
+        return Arrays.stream(ChallengeRating.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(String.valueOf(type.getExperience()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getSenses() {
+        return Arrays.stream(SenseType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }

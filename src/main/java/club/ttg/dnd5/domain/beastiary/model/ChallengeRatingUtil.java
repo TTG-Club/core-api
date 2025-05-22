@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.beastiary.model;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class ChallengeRating {
+public class ChallengeRatingUtil {
     public String getChallengeRating(long exp) {
         String cr = "0";
         if ((exp > 10) && (exp <= 25)) {

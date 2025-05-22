@@ -5,7 +5,7 @@ import club.ttg.dnd5.domain.beastiary.model.BeastArmor;
 import club.ttg.dnd5.domain.beastiary.model.BeastSize;
 import club.ttg.dnd5.domain.beastiary.model.BeastSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
-import club.ttg.dnd5.domain.beastiary.model.ChallengeRating;
+import club.ttg.dnd5.domain.beastiary.model.ChallengeRatingUtil;
 import club.ttg.dnd5.domain.beastiary.model.language.BeastLanguages;
 import club.ttg.dnd5.domain.beastiary.rest.dto.BeastDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.BeastHitResponse;
@@ -157,8 +157,8 @@ public interface BeastMapper {
             return String.format("— (Опыт 0; БМ %s)", beast.getExperienceSuffix());
         }
         var lair = beast.getExperienceInLair() == null ? "" : " или " + beast.getExperienceInLair() + " в логове";
-        var cr = ChallengeRating.getChallengeRating(beast.getExperience());
-        var pb = ChallengeRating.getProficiencyBonus(cr);
+        var cr = ChallengeRatingUtil.getChallengeRating(beast.getExperience());
+        var pb = ChallengeRatingUtil.getProficiencyBonus(cr);
         return String.format("%s (Опыт %d%s; БМ %s)", cr, beast.getExperience(), lair, pb);
     }
 }
