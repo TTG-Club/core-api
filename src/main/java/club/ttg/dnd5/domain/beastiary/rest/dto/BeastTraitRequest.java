@@ -1,18 +1,18 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.Name;
-import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class BeastTraitResponse {
-    @Schema(description = "Название")
+public class BeastTraitRequest {
+    @Schema(description = "Название особенности")
     private Name name;
-    @JsonSerialize(using = MarkupDescriptionSerializer.class)
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "Описание особенности")
     private String description;
 }

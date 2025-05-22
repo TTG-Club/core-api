@@ -59,13 +59,13 @@ public class BeastRequest extends BaseRequest {
     private BeastLanguages languages;
     private BeastExperience experience;
     @Schema(description = "Особенности")
-    private Collection<BeastTrait> traits;
+    private Collection<BeastTraitRequest> traits;
     @Schema(description = "Действия")
-    private Collection<BeastAction> actions;
+    private Collection<BeastActionRequest> actions;
     @Schema(description = "Бонусные действия")
-    private Collection<BeastAction> bonusActions;
+    private Collection<BeastActionRequest> bonusActions;
     @Schema(description = "Реакции")
-    private Collection<BeastAction> reactions;
+    private Collection<BeastActionRequest> reactions;
     @Schema(description = "Легендарные действия")
-    private Collection<BeastAction> legendaryActions;
+    private Collection<BeastActionRequest> legendaryActions;
 }

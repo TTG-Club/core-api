@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.model.action;
 
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Dice;
+import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,7 +17,5 @@ public class BeastAction {
     private AttackType attackType;
     private Collection<SawingThrow> sawingThrows;
     private Collection<DamageType> damageTypes;
-    private Dice recharge;
-    private String restrictionOfUse;
-
+    private RechargeType recharge;
 }

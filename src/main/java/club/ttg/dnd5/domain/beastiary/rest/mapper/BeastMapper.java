@@ -48,7 +48,7 @@ public interface BeastMapper {
     @Mapping(target = "experience.value", source = "experience")
     @Mapping(target = "experience.inLair", source = "experienceInLair")
     @Mapping(target = "experience.suffix", source = "experienceSuffix")
-    BeastRequest toRequest(Beast byUrl);
+    BeastRequest toRequest(Beast beast);
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
