@@ -539,4 +539,55 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getRarities() {
         return dictionariesService.getRarities();
     }
+
+    @Operation(summary = "Типы лечения")
+    @GetMapping("/hill/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "хиты", "value": "HIT" },
+                              { "label": "временные хиты", "value": "TEMPORARY_HIT" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getHillTypes() {
+        return dictionariesService.getHillTypes();
+    }
+
+    @Operation(summary = "Типы чувств")
+    @GetMapping("/senses")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "тёмное зрение", "value": "DARKVISION" },
+                              { "label": "слепое зрение", "value": "BLINDSIGHT" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSenses() {
+        return dictionariesService.getSenses();
+    }
+
+    @Operation(summary = "Уровни опасности")
+    @GetMapping("/cr")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "0", "value": "10" },
+                              { "label": "1/8", "value": "25" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getChallengeRailings() {
+        return dictionariesService.getChallengeRailings();
+    }
 }
