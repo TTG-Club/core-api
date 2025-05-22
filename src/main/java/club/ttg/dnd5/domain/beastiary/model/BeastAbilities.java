@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.model;
 
+import club.ttg.dnd5.domain.common.dictionary.Ability;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -44,4 +45,15 @@ public class BeastAbilities {
     @Schema(description = "Харизма")
     @JsonProperty("chr")
     private BeastAbility charisma;
+
+    public int getMod(Ability ability) {
+        return switch (ability) {
+            case STRENGTH -> strength.getMod();
+            case DEXTERITY -> dexterity.getMod();
+            case CONSTITUTION -> constitution.getMod();
+            case INTELLIGENCE -> intelligence.getMod();
+            case WISDOM -> wisdom.getMod();
+            case CHARISMA -> charisma.getMod();
+        };
+    }
 }
