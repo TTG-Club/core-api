@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.service;
 
+import club.ttg.dnd5.domain.beastiary.model.language.Language;
 import club.ttg.dnd5.domain.common.dictionary.SpellcasterType;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.beastiary.model.BeastType;
@@ -228,6 +229,15 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getSenses() {
         return Arrays.stream(SenseType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getLanguages() {
+        return Arrays.stream(Language.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())
