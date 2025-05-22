@@ -541,7 +541,7 @@ public class DictionariesController {
     }
 
     @Operation(summary = "Типы лечения")
-    @GetMapping("/hill/types")
+    @GetMapping("/heal/types")
     @ApiResponse(
             responseCode = "200",
             content = @Content(mediaType = "application/json",
@@ -553,8 +553,8 @@ public class DictionariesController {
                             """)
             )
     )
-    public Collection<SelectOptionDto> getHillTypes() {
-        return dictionariesService.getHillTypes();
+    public Collection<SelectOptionDto> getHealTypes() {
+        return dictionariesService.getHealTypes();
     }
 
     @Operation(summary = "Типы чувств")
