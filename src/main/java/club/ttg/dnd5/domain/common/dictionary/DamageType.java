@@ -6,20 +6,19 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum DamageType {
-    ACID("кислотный"),
-    BLUDGEONING("дробящий"),
-    COLD("холодный"),
-    FAIR("огненный"),
-    FORCE("силовое поле"),
-    LIGHTNING("электрический"),
-    NECROTIC("некротический"),
-    PIERCING ("колющий"),
-    POISON("ядовитый"),
+    ACID("Кислотный"),
+    BLUDGEONING("Дробящий"),
+    COLD("Холодный"),
+    FAIR("Огненный"),
+    FORCE("Силовое поле"),
+    LIGHTNING("Электрический"),
+    NECROTIC("Некротический"),
+    PIERCING ("Колющий"),
+    POISON("Ядовитый"),
     PSYCHIC("Психический"),
-    RADIANT("излучение"),
-    SLASHING ("рубящий"),
-    THUNDER("звуковой");
+    RADIANT("Излучение"),
+    SLASHING ("Рубящий"),
+    THUNDER("Звуковой");
 
     private final String name;
-
 }

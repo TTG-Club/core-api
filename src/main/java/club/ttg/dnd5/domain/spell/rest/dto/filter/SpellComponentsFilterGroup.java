@@ -34,7 +34,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
     }
 
     public static class SpellSomaticComponentFilterItem extends AbstractCustomQueryFilterItem {
-        public static final String NAME = "соматический";
+        public static final String NAME = "Соматический";
 
         public SpellSomaticComponentFilterItem() {
             super(NAME, null);
@@ -52,7 +52,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
     }
 
     public static class SpellVerbalComponentFilterItem extends AbstractCustomQueryFilterItem {
-        public static final String NAME = "вербальный";
+        public static final String NAME = "Вербальный";
 
         public SpellVerbalComponentFilterItem() {
             super(NAME, null);
@@ -70,7 +70,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
     }
 
     public static class SpellMaterialComponentFilterItem extends AbstractCustomQueryFilterItem {
-        public static final String NAME = "материальный";
+        public static final String NAME = "Материальный";
 
         public SpellMaterialComponentFilterItem() {
             super(NAME, null);
@@ -88,7 +88,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
     }
 
     public static class SpellMaterialConsumableFilterItem extends AbstractCustomQueryFilterItem {
-        public static final String NAME = "расходуемый";
+        public static final String NAME = "Расходуемый";
         public static final String EXPRESSION_TEMPLATE = "%s  @> '{\"consumable\": %s}'";
 
         public SpellMaterialConsumableFilterItem() {

@@ -8,14 +8,14 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum MagicSchool {
-    ABJURATION("ограждение"),
-    CONJURATION("вызов"),
-    DIVINATION("прорицание"),
-    ENCHANTMENT("очарование"),
-    EVOCATION("воплощение"),
-    ILLUSION("иллюзия"),
-    NECROMANCY("некромантия"),
-    TRANSMUTATION("преобразование");
+    ABJURATION("Ограждение"),
+    CONJURATION("Вызов"),
+    DIVINATION("Прорицание"),
+    ENCHANTMENT("Очарование"),
+    EVOCATION("Воплощение"),
+    ILLUSION("Иллюзия"),
+    NECROMANCY("Некромантия"),
+    TRANSMUTATION("Преобразование");
 
     private final String name;
 
