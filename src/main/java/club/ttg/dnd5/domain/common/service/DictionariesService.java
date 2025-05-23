@@ -54,6 +54,7 @@ public class DictionariesService {
                         .label(school.getName())
                         .value(school.name())
                         .build())
+                .sorted()
                 .collect(Collectors.toList());
     }
 
@@ -108,6 +109,7 @@ public class DictionariesService {
     public Collection<SelectOptionDto> getDamageTypes() {
         return Arrays.stream(DamageType.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
+                .sorted()
                 .collect(Collectors.toList());
     }
 
