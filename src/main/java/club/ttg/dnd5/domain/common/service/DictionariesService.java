@@ -1,11 +1,11 @@
 package club.ttg.dnd5.domain.common.service;
 
-import club.ttg.dnd5.domain.beastiary.model.language.Language;
+import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.SpellcasterType;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
-import club.ttg.dnd5.domain.beastiary.model.BeastType;
-import club.ttg.dnd5.domain.beastiary.model.section.Habitat;
-import club.ttg.dnd5.domain.beastiary.model.SenseType;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
+import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
@@ -96,7 +96,7 @@ public class DictionariesService {
     }
 
     public Collection<SelectOptionDto> getCreatureCategories() {
-        return Arrays.stream(BeastType.values())
+        return Arrays.stream(CreatureType.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
@@ -230,6 +230,15 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
+    public Collection<SelectOptionDto> getProficiencyBonus() {
+        return Arrays.stream(ChallengeRating.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(String.valueOf(type.getProficiencyBonus()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public Collection<SelectOptionDto> getSenses() {
         return Arrays.stream(SenseType.values())
                 .map(type -> SelectOptionDto.builder()
@@ -247,4 +256,5 @@ public class DictionariesService {
                         .build())
                 .collect(Collectors.toList());
     }
+
 }

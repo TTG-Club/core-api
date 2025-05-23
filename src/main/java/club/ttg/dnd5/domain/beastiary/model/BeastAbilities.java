@@ -14,37 +14,37 @@ public class BeastAbilities {
      */
     @Schema(description = "Сила")
     @JsonProperty("str")
-    private BeastAbility strength;
+    private CreatureAbility strength;
     /**
      * Ловкость
      */
     @JsonProperty("dex")
     @Schema(description = "Ловкость")
-    private BeastAbility dexterity;
+    private CreatureAbility dexterity;
     /**
      * Телосложение
      */
     @Schema(description = "Телосложение")
     @JsonProperty("con")
-    private BeastAbility constitution;
+    private CreatureAbility constitution;
     /**
      * Интеллект
      */
     @Schema(description = "Интеллект")
     @JsonProperty("int")
-    private BeastAbility intelligence;
+    private CreatureAbility intelligence;
     /**
      * Мудрость
      */
     @JsonProperty("wis")
     @Schema(description = "Мудрость")
-    private BeastAbility wisdom;
+    private CreatureAbility wisdom;
     /**
      * Харизма
      */
     @Schema(description = "Харизма")
     @JsonProperty("chr")
-    private BeastAbility charisma;
+    private CreatureAbility charisma;
 
     public int getMod(Ability ability) {
         return switch (ability) {

@@ -2,15 +2,13 @@ package club.ttg.dnd5.domain.beastiary.rest.dto;
 
 import club.ttg.dnd5.domain.beastiary.model.BeastAbilities;
 import club.ttg.dnd5.domain.beastiary.model.BeastCategory;
-import club.ttg.dnd5.domain.beastiary.model.BeastEquipment;
-import club.ttg.dnd5.domain.beastiary.model.BeastHit;
-import club.ttg.dnd5.domain.beastiary.model.BeastTrait;
-import club.ttg.dnd5.domain.beastiary.model.action.BeastAction;
-import club.ttg.dnd5.domain.beastiary.model.language.BeastLanguages;
-import club.ttg.dnd5.domain.beastiary.model.BeastSize;
-import club.ttg.dnd5.domain.beastiary.model.BeastSkill;
-import club.ttg.dnd5.domain.beastiary.model.BeastSpeeds;
-import club.ttg.dnd5.domain.beastiary.model.sense.BeastSenses;
+import club.ttg.dnd5.domain.beastiary.model.CreatureEquipment;
+import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
+import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
+import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
+import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
+import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
+import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
@@ -25,7 +23,7 @@ import java.util.Collection;
 @Setter
 public class BeastRequest extends BaseRequest {
     @Schema(description = "Размеры")
-    private Collection<BeastSize> size;
+    private Collection<CreatureSize> size;
     @Schema(description = "Типы")
     private Collection<BeastCategory> type;
     @Schema(description = "Мирровозрение")
@@ -35,13 +33,13 @@ public class BeastRequest extends BaseRequest {
     @Schema(description = "Бонус инициативы", examples = "+0")
     private byte initiative;
     @Schema(description = "Хиты")
-    private BeastHit hit;
+    private CreatureHit hit;
     @Schema(description = "Скорости")
-    private BeastSpeeds speed;
+    private CreatureSpeeds speed;
     @Schema(description = "Характеристики")
     private BeastAbilities abilities;
     @Schema(description = "Навыки")
-    private Collection<BeastSkill> skills;
+    private Collection<CreatureSkill> skills;
 
     @Schema(description = "Уязвимости")
     private Collection<DamageType> vulnerabilities;
@@ -52,20 +50,20 @@ public class BeastRequest extends BaseRequest {
     @Schema(description = "Иммунитеты к состояниям")
     private Collection<Condition> immunityToCondition;
     @Schema(description = "Снаряжение")
-    private Collection<BeastEquipment> equipments;
+    private Collection<CreatureEquipment> equipments;
     @Schema(description = "Чувства")
-    private BeastSenses senses;
+    private Senses senses;
     @Schema(description = "Языки")
-    private BeastLanguages languages;
-    private BeastExperience experience;
+    private CreatureLanguages languages;
+    private Experience experience;
     @Schema(description = "Особенности")
-    private Collection<BeastTraitRequest> traits;
+    private Collection<TraitRequest> traits;
     @Schema(description = "Действия")
-    private Collection<BeastActionRequest> actions;
+    private Collection<ActionRequest> actions;
     @Schema(description = "Бонусные действия")
-    private Collection<BeastActionRequest> bonusActions;
+    private Collection<ActionRequest> bonusActions;
     @Schema(description = "Реакции")
-    private Collection<BeastActionRequest> reactions;
+    private Collection<ActionRequest> reactions;
     @Schema(description = "Легендарные действия")
-    private Collection<BeastActionRequest> legendaryActions;
+    private Collection<ActionRequest> legendaryActions;
 }

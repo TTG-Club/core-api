@@ -1,10 +1,6 @@
 package club.ttg.dnd5.domain.common.dictionary;
 
-import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import lombok.Getter;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Getter
 public enum Alignment {
@@ -32,7 +28,7 @@ public enum Alignment {
 		return names[0];
 	}
 
-	public String getName(BeastType type) {
+	public String getName(CreatureType type) {
 		return switch (type) {
 			case ABERRATION, FEY, UNDEAD, SLIME, MONSTROSITY -> names[1];
 			case FIEND, PLANT -> names[2];

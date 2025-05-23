@@ -591,6 +591,23 @@ public class DictionariesController {
         return dictionariesService.getChallengeRailings();
     }
 
+    @Operation(summary = "Бонус мастерства")
+    @GetMapping("/proficiency/bonus")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "0", "value": "2" },
+                              { "label": "1/8", "value": "2" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getProficiencyBonus() {
+        return dictionariesService.getProficiencyBonus();
+    }
+
     @Operation(summary = "Языки (распространенные и экзотические)")
     @GetMapping("/languages")
     @ApiResponse(
