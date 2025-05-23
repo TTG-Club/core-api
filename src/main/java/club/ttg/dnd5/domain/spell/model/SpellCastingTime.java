@@ -16,6 +16,13 @@ public class SpellCastingTime {
     private CastingUnit unit;
     private String custom;
 
+    public static SpellCastingTime of(Long value, CastingUnit unit) {
+        return SpellCastingTime.builder()
+                .value(value)
+                .unit(unit)
+                .build();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

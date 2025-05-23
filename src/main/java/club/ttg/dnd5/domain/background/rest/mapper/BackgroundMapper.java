@@ -35,6 +35,8 @@ public interface BackgroundMapper {
     @Mapping(source = "abilities", target = "abilityScores")
     @Mapping(source = "feat.url", target = "featUrl")
     @Mapping(source = "skillProficiencies", target = "skillsProficiencies")
+    @Mapping(source = "source.url", target = "source.url")
+    @Mapping(source = "sourcePage", target = "source.page")
     BackgroundRequest toRequest(Background background);
 
     @BaseMapping.BaseEntityNameMapping
@@ -46,11 +48,6 @@ public interface BackgroundMapper {
     @Mapping(source = "request.skillsProficiencies", target = "skillProficiencies")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "username", ignore = true)
-    @Mapping(target = "source.createdAt", ignore = true)
-    @Mapping(target = "source.updatedAt", ignore = true)
     Background toEntity(BackgroundRequest request, Feat feat, Book source);
 
     @Named("abilitiesToString")

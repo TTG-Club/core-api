@@ -1,8 +1,7 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
-import club.ttg.dnd5.dictionary.item.ArmorCategory;
-import club.ttg.dnd5.dictionary.item.WeaponCategory;
-import club.ttg.dnd5.dictionary.item.magic.Rarity;
+import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Dice;

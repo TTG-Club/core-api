@@ -167,12 +167,12 @@ public class DictionariesController {
                                     examples = @ExampleObject("""
                                             [
                                               {
-                                                "label": "ослепление",
+                                                "label": "ослеплённый",
                                                 "value": "BLINDED"
                                               },
                                               {
-                                                "label": "очарование",
-                                                "value": "CHARMED"
+                                                "label": "отравленный",
+                                                "value": "POISONED"
                                               },
                                               {
                                                 "label": "смерть",
@@ -219,37 +219,6 @@ public class DictionariesController {
         return dictionariesService.getAlignments();
     }
 
-    @Operation(summary = "Места обитания существ")
-    @GetMapping("/environments")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    examples = @ExampleObject("""
-                                            [
-                                              {
-                                                "label": "полярная тундра",
-                                                "value": "ARCTIC"
-                                              },
-                                              {
-                                                "label": "побережье",
-                                                "value": "COAST"
-                                              },
-                                              {
-                                                "label": "под водой",
-                                                "value": "WATERS"
-                                              }
-                                            ]
-                                            """)
-                            )
-                    )
-            }
-    )
-    public Collection<SelectOptionDto> getEnvironments() {
-        return dictionariesService.getEnvironments();
-    }
-
     @Operation(summary = "Типы черт")
     @GetMapping("/feat/types")
     @ApiResponses(
@@ -279,6 +248,37 @@ public class DictionariesController {
     )
     public Collection<SelectOptionDto> getFeatTypes() {
         return dictionariesService.getFeatTypes();
+    }
+
+    @Operation(summary = "Места обитания существ")
+    @GetMapping("/environments")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject("""
+                                            [
+                                              {
+                                                "label": "полярная тундра",
+                                                "value": "ARCTIC"
+                                              },
+                                              {
+                                                "label": "побережье",
+                                                "value": "COAST"
+                                              },
+                                              {
+                                                "label": "под водой",
+                                                "value": "WATERS"
+                                              }
+                                            ]
+                                            """)
+                            )
+                    )
+            }
+    )
+    public Collection<SelectOptionDto> getEnvironments() {
+        return dictionariesService.getEnvironments();
     }
 
     @Operation(summary = "Типы заклинателей")
@@ -466,5 +466,162 @@ public class DictionariesController {
     )
     public Collection<SelectOptionDto> getSkills() {
         return dictionariesService.getSkills();
+    }
+
+    @Operation(summary = "Дополнительные чувства")
+    @GetMapping("/sense-types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "тёмное зрение", "value": "DARKVISION" },
+                              { "label": "слепое зрение", "value": "BLINDSIGHT" },
+                              { "label": "истинное зрение", "value": "TRUESIGHT" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSenseType() {
+        return dictionariesService.getSenseType();
+    }
+
+    @Operation(summary = "Среды обитания")
+    @GetMapping("/habitats")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Любая", "value": "ANY" },
+                              { "label": "Арктика", "value": "ARCTIC" },
+                              { "label": "Побережье", "value": "COASTAL" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getHabitats() {
+        return dictionariesService.getHabitats();
+    }
+
+    @Operation(summary = "Категории магических предметов")
+    @GetMapping("/magic-items/category")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "оружие", "value": "WEAPON" },
+                              { "label": "доспех", "value": "ARMOR" },
+                              { "label": "волшебная палочка", "value": "WAND" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getMagicItemCategories() {
+        return dictionariesService.getMagicItemCategories();
+    }
+
+    @Operation(summary = "Редкость")
+    @GetMapping("/rarity")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "обычный", "value": "COMMON" },
+                              { "label": "необычный", "value": "UNCOMMON" },
+                              { "label": "редкий", "value": "RARE" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getRarities() {
+        return dictionariesService.getRarities();
+    }
+
+    @Operation(summary = "Типы лечения")
+    @GetMapping("/heal/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "хиты", "value": "HIT" },
+                              { "label": "временные хиты", "value": "TEMPORARY_HIT" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getHealTypes() {
+        return dictionariesService.getHealTypes();
+    }
+
+    @Operation(summary = "Типы чувств")
+    @GetMapping("/senses")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "тёмное зрение", "value": "DARKVISION" },
+                              { "label": "слепое зрение", "value": "BLINDSIGHT" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSenses() {
+        return dictionariesService.getSenses();
+    }
+
+    @Operation(summary = "Уровни опасности")
+    @GetMapping("/cr")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "0", "value": "10" },
+                              { "label": "1/8", "value": "25" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getChallengeRailings() {
+        return dictionariesService.getChallengeRailings();
+    }
+
+    @Operation(summary = "Бонус мастерства")
+    @GetMapping("/proficiency/bonus")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "0", "value": "2" },
+                              { "label": "1/8", "value": "2" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getProficiencyBonus() {
+        return dictionariesService.getProficiencyBonus();
+    }
+
+    @Operation(summary = "Языки (распространенные и экзотические)")
+    @GetMapping("/languages")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "общий", "value": "COMMON" },
+                              { "label": "драконий", "value": "DRACONIC" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getLanguages() {
+        return dictionariesService.getLanguages();
     }
 }

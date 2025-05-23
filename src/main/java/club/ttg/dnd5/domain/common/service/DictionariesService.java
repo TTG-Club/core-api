@@ -1,14 +1,18 @@
 package club.ttg.dnd5.domain.common.service;
 
-import club.ttg.dnd5.dictionary.character.SpellcasterType;
-import club.ttg.dnd5.domain.beastiary.model.BeastType;
-import club.ttg.dnd5.domain.beastiary.model.Environment;
+import club.ttg.dnd5.domain.common.dictionary.Language;
+import club.ttg.dnd5.domain.common.dictionary.SpellcasterType;
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
+import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,6 +55,7 @@ public class DictionariesService {
                         .label(school.getName())
                         .value(school.name())
                         .build())
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
@@ -90,7 +96,7 @@ public class DictionariesService {
     }
 
     public Collection<SelectOptionDto> getCreatureCategories() {
-        return Arrays.stream(BeastType.values())
+        return Arrays.stream(CreatureType.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
@@ -103,13 +109,14 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getDamageTypes() {
         return Arrays.stream(DamageType.values())
-                .map(type -> createBaseOptionDTO(type.getCyrillicName(), type.name()))
+                .map(type -> createBaseOptionDTO(type.getName(), type.name()))
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
     public Collection<SelectOptionDto> getConditions() {
         return Arrays.stream(Condition.values())
-                .map(type -> createBaseOptionDTO(type.getCyrillicName(), type.name()))
+                .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
 
@@ -119,14 +126,14 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getEnvironments() {
-        return Arrays.stream(Environment.values())
+    public Collection<SelectOptionDto> getFeatTypes() {
+        return Arrays.stream(FeatCategory.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getFeatTypes() {
-        return Arrays.stream(FeatCategory.values())
+    public Collection<SelectOptionDto> getEnvironments() {
+        return Arrays.stream(Habitat.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }
@@ -167,4 +174,87 @@ public class DictionariesService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    public Collection<SelectOptionDto> getSenseType() {
+        return Arrays.stream(SenseType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getHabitats() {
+        return Arrays.stream(Habitat.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+
+    }
+
+    public Collection<SelectOptionDto> getMagicItemCategories() {
+        return Arrays.stream(MagicItemCategory.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getRarities() {
+        return Arrays.stream(Rarity.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getHealTypes() {
+        return Arrays.stream(HealingType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getChallengeRailings() {
+        return Arrays.stream(ChallengeRating.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(String.valueOf(type.getExperience()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getProficiencyBonus() {
+        return Arrays.stream(ChallengeRating.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(String.valueOf(type.getProficiencyBonus()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getSenses() {
+        return Arrays.stream(SenseType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getLanguages() {
+        return Arrays.stream(Language.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
 }

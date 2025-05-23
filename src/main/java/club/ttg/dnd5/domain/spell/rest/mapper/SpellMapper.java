@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.spell.model.*;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
@@ -16,7 +17,6 @@ import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +39,7 @@ public interface SpellMapper {
     @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
     @Mapping(target = "additionalType", source = "school.additionalType")
     @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
+    @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     SpellShortResponse toSpeciesShortResponse(Spell spell);
@@ -59,6 +60,13 @@ public interface SpellMapper {
         return durations.stream()
                 .map(SpellDuration::getConcentration)
                 .anyMatch(Predicate.isEqual(true));
+    }
+
+    @Named("isRitual")
+    default Boolean isRitual(Collection<SpellCastingTime> castingTimes) {
+        return castingTimes.stream()
+                .map(SpellCastingTime::getUnit)
+                .anyMatch(u -> CastingUnit.RITUAL == u);
     }
 
     @Named("castingTimeToString")
@@ -102,7 +110,6 @@ public interface SpellMapper {
 
     @Mapping(target = "source", source = "source")
     @Mapping(target = "speciesAffiliation", source = "species")
-    @Mapping(target = "updatedAt", ignore = true)
     @interface ToEntityMapping {
     }
 

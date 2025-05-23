@@ -1,9 +1,8 @@
 package club.ttg.dnd5.domain.glossary.model;
 
+import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,5 +17,10 @@ public class Glossary extends NamedEntity {
     /**
      * Некоторые записи содержат тег в скобках после названия записи, как, например, «Атака [Действие]».
      */
-    private String tags;
+    private String tagCategory;
+
+    @ManyToOne
+    @JoinColumn(name = "source")
+    private Book source;
+    private Long sourcePage;
 }

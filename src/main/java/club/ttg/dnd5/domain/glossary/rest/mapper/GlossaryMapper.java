@@ -10,6 +10,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -20,6 +21,8 @@ import java.util.Collection;
 public interface GlossaryMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
+    @BaseMapping.BaseSourceMapping
+    @Mapping(target = "tagCategory", source = "tagCategory", qualifiedByName = "capitalize")
     GlossaryDetailedResponse toDetail(Glossary glossary);
 
     @Mapping(source = "name", target = "name.name")
@@ -29,7 +32,8 @@ public interface GlossaryMapper {
     Glossary toEntity(GlossaryRequest request, Book source);
 
     @BaseMapping.BaseShortResponseNameMapping
-    @Mapping(target = "tags", source = "tags")
+    @BaseMapping.BaseSourceMapping
+    @Mapping(target = "tagCategory", source = "tagCategory", qualifiedByName = "capitalize")
     GlossaryShortResponse toShort(Glossary glossary);
 
     @ToEntityMapping
@@ -38,6 +42,8 @@ public interface GlossaryMapper {
     @Retention(RetentionPolicy.SOURCE)
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     @BaseMapping.BaseEntityNameMapping
     @interface ToEntityMapping {
     }
@@ -45,5 +51,10 @@ public interface GlossaryMapper {
     @Named("collectToString")
     default String collectToString(Collection<String> names) {
         return String.join(" ", names);
+    }
+
+    @Named("capitalize")
+    default String capitalize(String string) {
+        return StringUtils.capitalize(string);
     }
 }
