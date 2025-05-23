@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.model;
 
-import club.ttg.dnd5.domain.beastiary.model.BeastType;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -17,7 +17,7 @@ import java.util.List;
 public abstract class CreatureProperties extends NamedEntity {
     /** Тип существа */
     @Enumerated(EnumType.STRING)
-    private BeastType type;
+    private CreatureType type;
 
 
     @Type(JsonType.class)

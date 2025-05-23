@@ -1,11 +1,12 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
+import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * DTO for {@link club.ttg.dnd5.domain.beastiary.model.BeastHit}
+ * DTO for {@link CreatureHit}
  */
 @Getter
 @Setter

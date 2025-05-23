@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.model;
 
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -15,7 +16,7 @@ public class BeastCategory {
      */
     @Schema(description = "Типы существа")
     @Enumerated(EnumType.STRING)
-    private Collection<BeastType> type;
+    private Collection<CreatureType> type;
     /**
      * Уточнения типа существа
      */
