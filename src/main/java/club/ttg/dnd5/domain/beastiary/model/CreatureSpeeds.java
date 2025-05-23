@@ -4,6 +4,10 @@ import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
 import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.util.StringUtils;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -12,68 +16,51 @@ public class CreatureSpeeds {
     /**
      * Передвижение по горизонтальной поверхности
      */
-    private Speed walk;
+    private Collection<Speed> walk;
     /**
      * Копая
      */
-    private Speed burrow;
+    private Collection<Speed> burrow;
     /**
      * Полетом
      */
-    private FlySpeed fly;
+    private Collection<FlySpeed> fly;
 
     /**
      * Плавая
      */
-    private Speed swim;
+    private Collection<Speed> swim;
     /**
      * Лазая
      */
-    private Speed climb;
+    private Collection<Speed> climb;
 
     public String getText() {
         var builder = new StringBuilder();
-        if (walk != null) {
-            builder.append(walk.getValue());
-            builder.append(" фт.");
-            if (walk.getText() != null) {
-                builder.append(walk.getText());
-            }
-        }
-        if (burrow != null) {
-            builder.append(", копая ");
-            builder.append(burrow.getValue());
-            builder.append(" фт.");
-            if (burrow.getText() != null) {
-                builder.append(burrow.getText());
-            }
-        }
-        if (fly != null) {
-            builder.append(", летая ");
-            builder.append(fly.getValue());
-            builder.append(" фт.");
-            if (fly.isHover()) {
-                builder.append("(");
-                builder.append("парит");
-                builder.append(")");
-            }
-        }
-        if (swim != null) {
-            builder.append(", плавая ");
-            builder.append(swim.getValue());
-            builder.append(" фт.");
-            if (swim.getText() != null) {
-                builder.append(swim.getText());
-            }
-        }
-        if (climb != null) {
-            builder.append(", лазая ");
-            builder.append(climb.getValue());
-            builder.append(" фт.");
-            if (climb.getText() != null) {
-                builder.append(climb.getText());
-            }
-        }
+        getSpeedText(builder, walk, burrow);
+        builder.append(fly.stream().map(s ->
+                "%d фт.%s"
+                        .formatted(s.getValue(),
+                                StringUtils.hasText(s.getText()) ? "("
+                                        + (s.isHover() ? "парит; " : "")
+                                        + s.getText() +")" : "")
+        ).collect(Collectors.joining(", ")));
+        getSpeedText(builder, swim, climb);
         return builder.toString();
+    }
+
+    private void getSpeedText(final StringBuilder builder,
+                              final Collection<Speed> swim,
+                              final Collection<Speed> climb) {
+        builder.append(swim.stream().map(s ->
+                "%d фт.%s"
+                        .formatted(s.getValue(),
+                                StringUtils.hasText(s.getText()) ? "(" + s.getText() +")" : "")
+        ).collect(Collectors.joining(", ")));
+        builder.append(climb.stream().map(s ->
+                "%d фт.%s"
+                        .formatted(s.getValue(),
+                                StringUtils.hasText(s.getText()) ? "(" + s.getText() +")" : "")
+        ).collect(Collectors.joining(", ")));
     }
 }

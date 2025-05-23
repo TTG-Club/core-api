@@ -52,7 +52,7 @@ public class CreatureController {
         return creatureService.findDetailedByUrl(url);
     }
 
-    @GetMapping("/{url}/update")
+    @GetMapping("/{url}/raw")
     public BeastRequest getFormByUrl(@PathVariable String url) {
         return creatureService.findFormByUrl(url);
     }
