@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.item.model;
 
-import club.ttg.dnd5.dictionary.item.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

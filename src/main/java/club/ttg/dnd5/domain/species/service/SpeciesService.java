@@ -1,24 +1,28 @@
 package club.ttg.dnd5.domain.species.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.species.model.Species;
+import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
-import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
-import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.domain.species.model.Species;
-import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -62,6 +66,7 @@ public class SpeciesService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "countAllMaterials")
     public SpeciesDetailResponse save(SpeciesRequest request) {
         if (speciesRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());

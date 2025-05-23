@@ -1,10 +1,6 @@
 package club.ttg.dnd5.domain.common.dictionary;
 
-import club.ttg.dnd5.domain.beastiary.model.BeastType;
 import lombok.Getter;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Getter
 public enum Alignment {
@@ -32,60 +28,11 @@ public enum Alignment {
 		return names[0];
 	}
 
-	public static Alignment parse(String alignment) {
-		if (alignment.equals("нейтральный")) {
-			return NEUTRAL;
-		}
-		if (alignment.contains("-зл")) {
-			if (alignment.contains("хаот")) {
-				return Alignment.CHAOTIC_EVIL;
-			}
-			if (alignment.contains("закон")) {
-				return LAWFUL_EVIL;
-			}
-			if (alignment.contains("нейтр")) {
-				return NEUTRAL_EVIL;
-			}
-		} else if (alignment.contains("-добр")) {
-			if (alignment.contains("нейтр")) {
-				return Alignment.NEUTRAL_GOOD;
-			}
-			if (alignment.contains("хаот")) {
-				return Alignment.CHAOTIC_GOOD;
-			}
-			if (alignment.contains("закон")) {
-				return Alignment.LAWFUL_GOOD;
-			}
-		} else if (alignment.contains("-нейтр")) {
-			if (alignment.contains("закон")) {
-				return Alignment.LAWFUL_NEUTRAL;
-			}
-			if (alignment.contains("хаот")) {
-				return Alignment.CHAOTIC_NEUTRAL;
-			}
-		}
-		return WITHOUT;
-	}
-
-	public String getName(BeastType type) {
+	public String getName(CreatureType type) {
 		return switch (type) {
 			case ABERRATION, FEY, UNDEAD, SLIME, MONSTROSITY -> names[1];
 			case FIEND, PLANT -> names[2];
 			default -> names[0];
 		};
-	}
-	
-	public static List<Alignment> getGods(){
-		return Arrays.asList(
-				LAWFUL_GOOD,
-				LAWFUL_NEUTRAL,
-				LAWFUL_EVIL,
-				NEUTRAL,
-				NEUTRAL_GOOD,
-				NEUTRAL_EVIL,
-				CHAOTIC_GOOD,
-				CHAOTIC_NEUTRAL,
-				CHAOTIC_EVIL
-		);
 	}
 }

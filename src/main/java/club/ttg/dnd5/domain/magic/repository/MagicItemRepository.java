@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.magic.repository;
 
 import club.ttg.dnd5.domain.magic.model.MagicItem;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -18,5 +17,5 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
                or mi.alternative ilike concat('%', :invertedSearchLine, '%')
             """
     )
-    Collection<MagicItem> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
+    Collection<MagicItem> findBySearchLine(String searchLine, String invertedSearchLine);
 }

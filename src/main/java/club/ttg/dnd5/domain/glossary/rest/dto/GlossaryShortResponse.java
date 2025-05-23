@@ -12,6 +12,5 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GlossaryShortResponse extends ShortResponse {
-    @NotNull
-    private String tags;
+    private String tagCategory;
 }
