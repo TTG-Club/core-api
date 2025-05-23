@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.item.service.ItemService;
+import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -52,6 +53,11 @@ public class ItemController {
     @GetMapping("/{url}")
     public ItemDetailResponse getItem(@PathVariable final String url) {
         return itemService.getItem(url);
+    }
+
+    @GetMapping("/{url}/raw")
+    public ItemRequest getSpellFormByUrl(@PathVariable String url) {
+        return itemService.findFormByUrl(url);
     }
 
     @Operation(summary = "Получение списка краткого описания предметов")

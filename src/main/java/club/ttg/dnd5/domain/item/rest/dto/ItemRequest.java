@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
@@ -24,7 +25,9 @@ public class ItemRequest extends BaseRequest {
     private Collection<ItemType> types;
 
     @Schema(description = "Стоимость предмета", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private String cost;
+    private Integer cost;
+    @Schema(description = "Номинал монеты в стоимости", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Coin coin;
     @Schema(description = "Вес предмета", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String weight;
 
