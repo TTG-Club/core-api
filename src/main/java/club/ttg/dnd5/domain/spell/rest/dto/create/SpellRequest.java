@@ -53,9 +53,6 @@ public class SpellRequest extends BaseRequest {
     private CreateAffiliationRequest affiliations;
 
     @Nullable
-    private Boolean upcastable;
-
-    @Nullable
     private List<Ability> savingThrow;
 
     @Nullable
