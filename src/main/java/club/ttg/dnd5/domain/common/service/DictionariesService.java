@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,7 +55,7 @@ public class DictionariesService {
                         .label(school.getName())
                         .value(school.name())
                         .build())
-                .sorted()
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
@@ -109,7 +110,7 @@ public class DictionariesService {
     public Collection<SelectOptionDto> getDamageTypes() {
         return Arrays.stream(DamageType.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
-                .sorted()
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
