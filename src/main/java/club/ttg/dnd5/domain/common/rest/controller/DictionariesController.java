@@ -625,4 +625,22 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getLanguages() {
         return dictionariesService.getLanguages();
     }
+
+    @Operation(summary = "Монеты")
+    @GetMapping("/coins")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "мм", "value": "CC" },
+                              { "label": "см", "value": "SC" },
+                              { "label": "зм", "value": "GC" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getCoins() {
+        return dictionariesService.getCoins();
+    }
 }
