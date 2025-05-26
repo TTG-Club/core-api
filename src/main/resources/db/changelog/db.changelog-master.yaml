@@ -56,8 +56,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/05/19-01-init-bestiary.yaml
   - include:
-      file: db/changelog/2025/05/19-01-init-item.yaml
-  - include:
       file: db/changelog/2025/05/19-02-init-weapon_property.yaml
   - include:
       file: db/changelog/2025/05/19-03-init-weapon-mastery.yaml
