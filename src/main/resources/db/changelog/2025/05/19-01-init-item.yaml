@@ -1,0 +1,140 @@
+databaseChangeLog:
+  - changeSet:
+      id: init-item-table
+      author: liquibase
+      changes:
+        - createTable:
+            tableName: item
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+
+              - column:
+                  name: english
+                  type: VARCHAR(255)
+
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+
+              - column:
+                  name: item_types
+                  type: jsonb
+
+              - column:
+                  name: cost
+                  type: VARCHAR(255)
+
+              - column:
+                  name: coin
+                  type: VARCHAR(255)
+
+              - column:
+                  name: weight
+                  type: VARCHAR(255)
+
+              - column:
+                  name: source
+                  type: BIGINT
+
+              - column:
+                  name: source_page
+                  type: BIGINT
+
+              - column:
+                  name: item_type
+                  type: VARCHAR(31)
+
+              # --- Armor ---
+              - column:
+                  name: armor_category
+                  type: VARCHAR(255)
+              - column:
+                  name: armor_class
+                  type: VARCHAR(255)
+              - column:
+                  name: strength
+                  type: VARCHAR(255)
+              - column:
+                  name: stealth
+                  type: BOOLEAN
+
+              # --- Mount ---
+              - column:
+                  name: carrying_capacity
+                  type: VARCHAR(255)
+
+              # --- Tool ---
+              - column:
+                  name: ability
+                  type: VARCHAR(255)
+              - column:
+                  name: uses
+                  type: VARCHAR(255)
+              - column:
+                  name: creation
+                  type: VARCHAR(255)
+
+              # --- Weapon ---
+              - column:
+                  name: weapon_category
+                  type: VARCHAR(255)
+              - column:
+                  name: weapon_damage
+                  type: jsonb
+              - column:
+                  name: weapon_properties
+                  type: jsonb
+              - column:
+                  name: weapon_mastery
+                  type: jsonb
+
+        - createIndex:
+            indexName: url_index
+            tableName: item
+            columns:
+              - column:
+                  name: url
+
+        - createIndex:
+            indexName: name_index
+            tableName: item
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+
+        - addForeignKeyConstraint:
+            baseTableName: item
+            baseColumnNames: source
+            constraintName: fk_item_book
+            referencedTableName: book
+            referencedColumnNames: id
