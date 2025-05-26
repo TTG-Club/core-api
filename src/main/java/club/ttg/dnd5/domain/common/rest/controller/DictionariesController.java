@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
@@ -582,13 +583,13 @@ public class DictionariesController {
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject("""
                             [
-                              { "label": "0", "value": "10" },
-                              { "label": "1/8", "value": "25" },
+                              { "label": "0", "value": "10", "pb: 2" },
+                              { "label": "1/8", "value": "25", "pb: 2 },
                             ]
                             """)
             )
     )
-    public Collection<SelectOptionDto> getChallengeRailings() {
+    public Collection<CrlOptionDto> getChallengeRailings() {
         return dictionariesService.getChallengeRailings();
     }
 

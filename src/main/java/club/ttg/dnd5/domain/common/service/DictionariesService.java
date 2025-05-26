@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.*;
+import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
@@ -224,11 +225,12 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getChallengeRailings() {
+    public Collection<CrlOptionDto> getChallengeRailings() {
         return Arrays.stream(ChallengeRating.values())
-                .map(type -> SelectOptionDto.builder()
+                .map(type -> CrlOptionDto.builder()
                         .label(type.getName())
                         .value(String.valueOf(type.getExperience()))
+                        .pb(type.getProficiencyBonus())
                         .build())
                 .collect(Collectors.toList());
     }
