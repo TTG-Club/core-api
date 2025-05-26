@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "weapon_poperty")
+@Table(name = "weapon_property")
 public class WeaponProperties extends NamedEntity {
     private boolean hasDistance;
     private boolean hasVersatile;

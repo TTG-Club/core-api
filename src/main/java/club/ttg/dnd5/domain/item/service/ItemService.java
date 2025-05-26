@@ -18,4 +18,6 @@ public interface ItemService {
     String delete(String itemUrl);
 
     boolean existsByUrl(String url);
+
+    ItemRequest findFormByUrl(String url);
 }

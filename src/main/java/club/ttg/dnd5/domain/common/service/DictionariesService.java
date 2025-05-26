@@ -260,4 +260,12 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
+    public Collection<SelectOptionDto> getCoins() {
+        return Arrays.stream(Coin.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getShortName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
