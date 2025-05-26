@@ -19,7 +19,7 @@ public class CreatureDetailResponse extends BaseResponse {
     @Schema(description = "Инициатива", examples = {"+12 (22)"})
     private String initiative;
     @Schema(description = "Хиты")
-    private BeastHitResponse hit;
+    private HitResponse hit;
     @Schema(description = "Скорость")
     private String speed;
 

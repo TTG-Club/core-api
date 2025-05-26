@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.beastiary.service;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.BeastRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
@@ -58,14 +58,14 @@ public class CreatureServiceImpl implements CreatureService {
     }
 
     @Override
-    public BeastRequest findFormByUrl(final String url) {
+    public CreatureRequest findFormByUrl(final String url) {
         return creatureMapper.toRequest(findByUrl(url));
     }
 
     @Secured("ADMIN")
     @Transactional
     @Override
-    public String save(final BeastRequest request) {
+    public String save(final CreatureRequest request) {
         if (creatureRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Существо уже существует с URL: " + request.getUrl());
         }
@@ -77,7 +77,7 @@ public class CreatureServiceImpl implements CreatureService {
     @Secured("ADMIN")
     @Transactional
     @Override
-    public String update(final String url, final BeastRequest request) {
+    public String update(final String url, final CreatureRequest request) {
         findByUrl(url);
         if (!url.equalsIgnoreCase(request.getUrl())) {
             creatureRepository.deleteById(url);

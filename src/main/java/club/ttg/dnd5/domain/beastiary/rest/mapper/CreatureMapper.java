@@ -1,17 +1,17 @@
 package club.ttg.dnd5.domain.beastiary.rest.mapper;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
-import club.ttg.dnd5.domain.beastiary.model.BeastAbilities;
+import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.beastiary.model.ChallengeRatingUtil;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.BeastHitResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.BeastRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.HitResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
@@ -52,7 +52,7 @@ public interface CreatureMapper {
     @Mapping(target = "experience.value", source = "experience")
     @Mapping(target = "experience.inLair", source = "experienceInLair")
     @Mapping(target = "experience.suffix", source = "experienceSuffix")
-    BeastRequest toRequest(Creature creature);
+    CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
@@ -62,7 +62,7 @@ public interface CreatureMapper {
     @Mapping(source = "request.experience.inLair", target = "experienceInLair")
     @Mapping(source = "request.experience.suffix", target = "experienceSuffix")
     @Mapping(target = "source", source = "source")
-    Creature toEntity(BeastRequest request, Book source);
+    Creature toEntity(CreatureRequest request, Book source);
 
     @Named("toHeader")
     default String toHeader(Creature creature) {
@@ -109,8 +109,8 @@ public interface CreatureMapper {
     }
 
     @Named("toHit")
-    default BeastHitResponse toHit(Creature creature) {
-        var response = new BeastHitResponse();
+    default HitResponse toHit(Creature creature) {
+        var response = new HitResponse();
         response.setHit(creature.getHit().getHit());
         response.setFormula(getHitFormula(creature));
         response.setText(creature.getHit().getText());
@@ -152,7 +152,7 @@ public interface CreatureMapper {
     }
 
     private int getSkillBonus(final CreatureSkill skill,
-                                final BeastAbilities abilities,
+                                final CreatureAbilities abilities,
                                 final long experience) {
         return abilities.getMod(skill.getSkill().getAbility())
                 + (Integer.parseInt(ChallengeRatingUtil.getProficiencyBonus(ChallengeRatingUtil.getChallengeRating(experience))) * skill.getMultiplier());
