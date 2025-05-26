@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.BeastRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,7 +53,7 @@ public class CreatureController {
     }
 
     @GetMapping("/{url}/raw")
-    public BeastRequest getFormByUrl(@PathVariable String url) {
+    public CreatureRequest getFormByUrl(@PathVariable String url) {
         return creatureService.findFormByUrl(url);
     }
 
@@ -61,7 +61,7 @@ public class CreatureController {
     @Secured("ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public String create(@RequestBody BeastRequest request) {
+    public String create(@RequestBody CreatureRequest request) {
         return creatureService.save(request);
     }
 
@@ -70,7 +70,7 @@ public class CreatureController {
     @PutMapping("/{url}")
     public String update(@PathVariable String url,
                                       @Valid
-                                      @RequestBody BeastRequest request) {
+                                      @RequestBody CreatureRequest request) {
         return creatureService.update(url, request);
     }
 

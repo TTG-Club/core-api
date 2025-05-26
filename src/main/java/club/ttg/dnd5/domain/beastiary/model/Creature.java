@@ -45,7 +45,7 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private BeastCategory categories;
+    private CreatureCategory categories;
 
     /**
      * Мирровозрение
@@ -84,7 +84,7 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private BeastAbilities abilities;
+    private CreatureAbilities abilities;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
@@ -118,13 +118,10 @@ public class Creature extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private Senses senses;
 
-    @Column(name = "exp")
     private Long experience;
 
-    @Column(name = "exp_lair")
     private Long experienceInLair;
 
-    @Column(name = "exp_suf")
     private String experienceSuffix;
 
     @Type(JsonType.class)

@@ -10,7 +10,7 @@ import java.util.Collection;
 
 @Getter
 @Setter
-public class BeastCategory {
+public class CreatureCategory {
     /**
      * Типы существа
      */

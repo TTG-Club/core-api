@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.BeastRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 
 import java.util.List;
@@ -13,11 +13,11 @@ public interface CreatureService {
 
     CreatureDetailResponse findDetailedByUrl(String url);
 
-    BeastRequest findFormByUrl(String url);
+    CreatureRequest findFormByUrl(String url);
 
-    String save(BeastRequest request);
+    String save(CreatureRequest request);
 
-    String update(String url, BeastRequest request);
+    String update(String url, CreatureRequest request);
 
     String delete(String url);
 }

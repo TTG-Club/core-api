@@ -10,7 +10,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class BeastHitResponse {
+public class HitResponse {
     @Schema(description = "Среднее количество хитов или абсолютное значение")
     private Short hit;
     @Schema(description = "формула расчета хитов")

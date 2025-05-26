@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
-import club.ttg.dnd5.domain.beastiary.model.BeastAbilities;
-import club.ttg.dnd5.domain.beastiary.model.BeastCategory;
+import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
+import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
 import club.ttg.dnd5.domain.beastiary.model.CreatureEquipment;
 import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
@@ -21,11 +21,11 @@ import java.util.Collection;
 
 @Getter
 @Setter
-public class BeastRequest extends BaseRequest {
+public class CreatureRequest extends BaseRequest {
     @Schema(description = "Размеры")
     private Collection<CreatureSize> size;
     @Schema(description = "Типы")
-    private Collection<BeastCategory> type;
+    private Collection<CreatureCategory> type;
     @Schema(description = "Мирровозрение")
     private Alignment alignment;
     @Schema(description = "Класс доспеха")
@@ -37,7 +37,7 @@ public class BeastRequest extends BaseRequest {
     @Schema(description = "Скорости")
     private CreatureSpeeds speed;
     @Schema(description = "Характеристики")
-    private BeastAbilities abilities;
+    private CreatureAbilities abilities;
     @Schema(description = "Навыки")
     private Collection<CreatureSkill> skills;
 
