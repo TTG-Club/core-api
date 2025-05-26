@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
@@ -166,11 +167,13 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getSkills() {
+    public Collection<SkillOptionDto> getSkills() {
         return Arrays.stream(Skill.values())
-                .map(type -> SelectOptionDto.builder()
+                .map(type -> SkillOptionDto.builder()
                         .label(type.getName())
+                        .ability(type.getAbility().name())
                         .value(type.name())
+
                         .build())
                 .collect(Collectors.toList());
     }
