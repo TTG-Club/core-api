@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.common.rest.controller;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.common.service.DictionariesService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -457,14 +458,14 @@ public class DictionariesController {
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject("""
                             [
-                              { "label": "Акробатика", "value": "ACROBATICS" },
-                              { "label": "Уход за животными", "value": "ANIMAL_HANDLING" },
+                              { "label": "Акробатика", "value": "ACROBATICS", "ability" : "DEXTERITY" },
+                              { "label": "Уход за животными", "value": "ANIMAL_HANDLING", "ability" : "INTELLIGENCE" },
                               { "label": "Аркана", "value": "ARCANA" }
                             ]
                             """)
             )
     )
-    public Collection<SelectOptionDto> getSkills() {
+    public Collection<SkillOptionDto> getSkills() {
         return dictionariesService.getSkills();
     }
 
