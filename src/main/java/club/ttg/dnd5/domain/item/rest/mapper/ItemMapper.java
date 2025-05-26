@@ -74,29 +74,45 @@ public interface ItemMapper {
     ItemRequest toRequest(Vehicle vehicle);
 
     @BaseMapping.BaseEntityNameMapping
-    @BaseMapping.BaseSourceMapping
+    @Mapping(source = "request.url", target = "url")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     Item toItem(ItemRequest request, Book source);
 
-    @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseEntityNameMapping
-    @Mapping(source = "armorCategory.name", target = "armorCategory")
+    @Mapping(source = "request.url", target = "url")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     Armor toArmor(ItemRequest request, Book source);
 
     @BaseMapping.BaseEntityNameMapping
-    @BaseMapping.BaseSourceMapping
-    @Mapping(source = "weaponCategory.name", target = "weaponCategory")
+    @Mapping(source = "request.url", target = "url")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     Weapon toWeapon(ItemRequest request, Book source);
 
     @BaseMapping.BaseEntityNameMapping
-    @BaseMapping.BaseSourceMapping
+    @Mapping(source = "request.url", target = "url")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     Vehicle toVehicle(ItemRequest request, Book source);
 
     @BaseMapping.BaseEntityNameMapping
-    @BaseMapping.BaseSourceMapping
+    @Mapping(source = "request.url", target = "url")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     Mount toMount(ItemRequest request, Book source);
 
     @BaseMapping.BaseEntityNameMapping
-    @BaseMapping.BaseSourceMapping
+    @Mapping(source = "request.url", target = "url")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
     Tool toTool(ItemRequest request, Book source);
 
     @Named("damageToString")
