@@ -64,4 +64,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/05/26-02-rename-column-immunity.yaml
   - include:
-      file: db/changelog/2025/05/26-03-add-column-image_url.yaml
+      file: db/changelog/2025/05/26-04-add-column-speed.yaml
