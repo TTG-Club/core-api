@@ -59,7 +59,7 @@ public interface CreatureMapper {
     @Mapping(source = "vulnerabilities", target = "vulnerability", qualifiedByName = "toDamage")
     @Mapping(source = "resistance", target = "resistance", qualifiedByName = "toDamage")
     @Mapping(source = ".", target = "immunity", qualifiedByName = "toImmunity")
-    @Mapping(source = "sense", target = "sense", qualifiedByName = "toSense")
+    @Mapping(source = "sense", target = "senses", qualifiedByName = "toSense")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
     CreatureDetailResponse toDetail(Creature creature);
