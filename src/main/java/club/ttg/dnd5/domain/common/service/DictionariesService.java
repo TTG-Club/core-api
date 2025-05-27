@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.KeySelectDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
@@ -159,11 +160,12 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getAbilities() {
+    public Collection<KeySelectDto> getAbilities() {
         return Arrays.stream(Ability.values())
-                .map(type -> SelectOptionDto.builder()
+                .map(type -> KeySelectDto.builder()
                         .label(type.getName())
                         .value(type.name())
+                        .key(type.getKey())
                         .build())
                 .collect(Collectors.toList());
     }

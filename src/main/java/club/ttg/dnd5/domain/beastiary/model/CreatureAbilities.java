@@ -48,12 +48,12 @@ public class CreatureAbilities {
 
     public int getMod(Ability ability) {
         return switch (ability) {
-            case STRENGTH -> strength.getMod();
-            case DEXTERITY -> dexterity.getMod();
-            case CONSTITUTION -> constitution.getMod();
-            case INTELLIGENCE -> intelligence.getMod();
-            case WISDOM -> wisdom.getMod();
-            case CHARISMA -> charisma.getMod();
+            case STRENGTH -> strength.mod();
+            case DEXTERITY -> dexterity.mod();
+            case CONSTITUTION -> constitution.mod();
+            case INTELLIGENCE -> intelligence.mod();
+            case WISDOM -> wisdom.mod();
+            case CHARISMA -> charisma.mod();
         };
     }
 }

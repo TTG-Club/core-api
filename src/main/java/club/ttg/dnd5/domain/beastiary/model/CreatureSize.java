@@ -17,12 +17,4 @@ public class CreatureSize {
      * Текстовое описание размера
      */
     private String text;
-
-    public String getSizeString () {
-        if (text == null) {
-            return size.getName();
-        } else {
-            return String.format("%s (%s)", size.getName(), text);
-        }
-    }
 }

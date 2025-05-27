@@ -25,13 +25,13 @@ public class CreatureAbility {
    * 2 - добавляется удвоенный бонус мастерства
    */
   @Schema(description = "Множитель бонуса мастерства для спасброска")
-  private short multiplier;
+  private byte multiplier;
 
   /**
    * Получение модификатора характеристики
    * @return модификатор характеристики
    */
-  public byte getMod() {
+  public byte mod() {
     return (byte) ((value - 10) < 0 ? (value - 11) / 2 : (value - 10) / 2);
   }
 }

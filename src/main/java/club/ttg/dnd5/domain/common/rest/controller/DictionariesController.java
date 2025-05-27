@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.common.rest.controller;
 
 import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.KeySelectDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
@@ -448,7 +449,7 @@ public class DictionariesController {
                             """)
             )
     )
-    public Collection<SelectOptionDto> getAbilities() {
+    public Collection<KeySelectDto> getAbilities() {
         return dictionariesService.getAbilities();
     }
 
