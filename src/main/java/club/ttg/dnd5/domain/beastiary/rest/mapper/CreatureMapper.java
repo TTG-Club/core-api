@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
+import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
@@ -58,6 +59,7 @@ public interface CreatureMapper {
     @Mapping(source = "vulnerabilities", target = "vulnerability", qualifiedByName = "toDamage")
     @Mapping(source = "resistance", target = "resistance", qualifiedByName = "toDamage")
     @Mapping(source = ".", target = "immunity", qualifiedByName = "toImmunity")
+    @Mapping(source = "sense", target = "sense", qualifiedByName = "toSense")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
     CreatureDetailResponse toDetail(Creature creature);
@@ -242,6 +244,7 @@ public interface CreatureMapper {
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "));
     }
+
     @Named("toImmunity")
     default String toImmunity(Creature creature) {
         if (CollectionUtils.isEmpty(creature.getImmunityToDamage()) && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
@@ -259,6 +262,17 @@ public interface CreatureMapper {
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "));
         return response;
+    }
+
+    @Named("toSense")
+    default String toSense(Senses senses) {
+        var respons = senses.getSenses().stream()
+                .map(sense -> "%s %d фт.".formatted(sense.getType().getName(), sense.getValue())).collect(Collectors.joining(", "));
+        if (!respons.isEmpty()) {
+            respons+=", ";
+        }
+        respons+="ПВ " + senses.getPassivePerception();
+        return respons;
     }
 
     @Named("toLanguages")
