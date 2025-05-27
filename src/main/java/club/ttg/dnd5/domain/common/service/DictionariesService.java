@@ -176,7 +176,6 @@ public class DictionariesService {
                         .label(type.getName())
                         .ability(type.getAbility().name())
                         .value(type.name())
-
                         .build())
                 .collect(Collectors.toList());
     }
@@ -231,7 +230,7 @@ public class DictionariesService {
         return Arrays.stream(ChallengeRating.values())
                 .map(type -> CrlOptionDto.builder()
                         .label(type.getName())
-                        .value(String.valueOf(type.getExperience()))
+                        .value(type.getExperience())
                         .pb(type.getProficiencyBonus())
                         .build())
                 .collect(Collectors.toList());
@@ -241,7 +240,7 @@ public class DictionariesService {
         return Arrays.stream(ChallengeRating.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
-                        .value(String.valueOf(type.getProficiencyBonus()))
+                        .value(type.getProficiencyBonus())
                         .build())
                 .collect(Collectors.toList());
     }
