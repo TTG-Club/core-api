@@ -53,6 +53,12 @@ public class CreatureDetailResponse extends BaseResponse {
     private Collection<ActionResponse> reactions;
     @Schema(description = "Бонусные действия")
     private Collection<ActionResponse> bonusActions;
+
+    @Schema(description ="Количество легендарных действий")
+    private byte legendaryAction;
+    @Schema(description ="Количество легендарных действий в логове")
+    private Byte legendaryActionInLair;
+
     @Schema(description = "Легендарные действия")
     private Collection<ActionResponse> legendaryActions;
 }

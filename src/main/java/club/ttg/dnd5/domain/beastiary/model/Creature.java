@@ -86,44 +86,80 @@ public class Creature extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private CreatureAbilities abilities;
 
+    /**
+     * Навыки
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureSkill> skills;
 
+    /**
+     * Уязвимости
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> vulnerabilities;
 
+    /**
+     * Сопротивления
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> resistance;
 
+    /**
+     * Иммунитеты к урону
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> immunityToDamage;
 
+    /**
+     * Иммунитеты к состояниям
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<Condition> immunityToCondition;
 
+    /**
+     * Снаряжение
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureEquipment> equipments;
 
+    /**
+     * Языки
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private CreatureLanguages languages;
 
+    /**
+     * Чувства
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Senses senses;
 
+    /**
+     * Опыт
+     */
     private Long experience;
 
+    /**
+     * Опыт в логове
+     */
     private Long experienceInLair;
 
+    /**
+     * Дополнительный текст в ПО
+     */
     private String experienceSuffix;
 
+    /**
+     * Черты
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureTrait> traits;
@@ -163,7 +199,9 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureAction> legendaryActions;
-
+    /**
+     * Секция
+     */
     @ManyToOne
     @JoinColumn(name = "section_url")
     private CreatureSection section;
