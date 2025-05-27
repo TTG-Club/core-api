@@ -27,6 +27,16 @@ public class CreatureDetailResponse extends BaseResponse {
     private AbilitiesResponse abilities;
     @Schema(description = "Навыки")
     private String skills;
+    @Schema(description = "Уязвимости")
+    private String vulnerability;
+    @Schema(description = "Сопротивление")
+    private String resistance;
+    @Schema(description = "Иммунитет")
+    private String immunity;
+    @Schema(description = "Снаряжение")
+    private String equipment;
+    @Schema(description = "Чувства")
+    private String sense;
     @Schema(description = "Языки", examples = "глубинный язык; телепатия 120 фт.")
     private String languages;
 

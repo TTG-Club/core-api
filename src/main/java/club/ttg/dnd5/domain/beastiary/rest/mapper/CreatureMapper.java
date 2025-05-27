@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.beastiary.model.ChallengeRatingUtil;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
@@ -18,12 +19,14 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.HitResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -52,6 +55,9 @@ public interface CreatureMapper {
     @Mapping(source = ".", target = "abilities", qualifiedByName = "toAbilities")
     @Mapping(source = ".", target = "skills", qualifiedByName = "toSkills")
     @Mapping(source = "speed", target = "speed", qualifiedByName = "toSpeed")
+    @Mapping(source = "vulnerabilities", target = "vulnerability", qualifiedByName = "toDamage")
+    @Mapping(source = "resistance", target = "resistance", qualifiedByName = "toDamage")
+    @Mapping(source = ".", target = "immunity", qualifiedByName = "toImmunity")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
     CreatureDetailResponse toDetail(Creature creature);
@@ -229,11 +235,37 @@ public interface CreatureMapper {
                 + (Integer.parseInt(ChallengeRatingUtil.getProficiencyBonus(ChallengeRatingUtil.getChallengeRating(experience))) * skill.getMultiplier());
     }
 
+    @Named("toDamage")
+    default String toDamage(Collection<DamageType> damages) {
+        return damages.stream()
+                .map(DamageType::getName)
+                .map(String::toLowerCase)
+                .collect(Collectors.joining(", "));
+    }
+    @Named("toImmunity")
+    default String toImmunity(Creature creature) {
+        if (CollectionUtils.isEmpty(creature.getImmunityToDamage()) && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
+            return null;
+        }
+        var response = creature.getImmunityToDamage().stream()
+                .map(DamageType::getName)
+                .map(String::toLowerCase)
+                .collect(Collectors.joining(", "));
+        if (!CollectionUtils.isEmpty(creature.getImmunityToDamage()) && !CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
+            response += "; ";
+        }
+        response += creature.getImmunityToCondition().stream()
+                .map(Condition::getName)
+                .map(String::toLowerCase)
+                .collect(Collectors.joining(", "));
+        return response;
+    }
+
     @Named("toLanguages")
     default String toLanguages(CreatureLanguages languages) {
         var resonse = languages.getLanguages()
                 .stream()
-                .map(language -> language.getLanguage().getName() + language.getText())
+                .map(language -> language.getLanguage().getName() + (StringUtils.hasText(language.getText()) ? language.getText() : ""))
                 .collect(Collectors.joining(", "));
         if (languages.getText() != null) {
             resonse += languages.getText();
