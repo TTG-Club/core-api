@@ -2,10 +2,14 @@ package club.ttg.dnd5.domain.beastiary.rest.mapper;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
+import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
 import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
+import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
+import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
+import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.beastiary.model.ChallengeRatingUtil;
@@ -20,7 +24,10 @@ import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -33,7 +40,7 @@ import java.util.stream.Collectors;
 public interface CreatureMapper {
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
-    @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
+    @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toShortChallengeRating")
     CreatureShortResponse toShort(Creature creature);
 
     @BaseMapping.BaseSourceMapping
@@ -42,9 +49,11 @@ public interface CreatureMapper {
     @Mapping(source = "armor", target = "armorClass", qualifiedByName = "toArmor")
     @Mapping(source = "initiative", target = "initiative", qualifiedByName = "toInit")
     @Mapping(source = ".", target = "hit", qualifiedByName = "toHit")
+    @Mapping(source = ".", target = "abilities", qualifiedByName = "toAbilities")
     @Mapping(source = ".", target = "skills", qualifiedByName = "toSkills")
     @Mapping(source = "speed", target = "speed", qualifiedByName = "toSpeed")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
+    @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
     CreatureDetailResponse toDetail(Creature creature);
 
     @BaseMapping.BaseRequestNameMapping
@@ -64,6 +73,33 @@ public interface CreatureMapper {
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Book source);
 
+    @Named("toAbilities")
+    default AbilitiesResponse toAbilities(Creature creature) {
+        var pb = Byte.parseByte(
+            ChallengeRatingUtil.getProficiencyBonus(
+                    ChallengeRatingUtil.getChallengeRating(creature.getExperience()
+        )));
+        var response = new AbilitiesResponse();
+
+        response.setStrength(getAbility(creature.getAbilities().getStrength(), pb));
+        response.setDexterity(getAbility(creature.getAbilities().getDexterity(), pb));
+        response.setConstitution(getAbility(creature.getAbilities().getConstitution(), pb));
+        response.setIntelligence(getAbility(creature.getAbilities().getIntelligence(), pb));
+        response.setWisdom(getAbility(creature.getAbilities().getWisdom(), pb));
+        response.setCharisma(getAbility(creature.getAbilities().getCharisma(), pb));
+        return response;
+    }
+
+    private AbilityResponse getAbility(CreatureAbility ability, byte pb) {
+        var response = new AbilityResponse();
+        response.setValue(ability.getValue());
+        var mod = ability.mod();
+        response.setMod(mod >=0 ? "+" + mod : ""+ mod);
+        mod += (byte) (ability.getMultiplier() * pb);
+        response.setSav(mod >=0 ? "+" + mod : ""+ mod);
+        return response;
+    }
+
     @Named("toHeader")
     default String toHeader(Creature creature) {
         var builder = new StringBuilder();
@@ -77,9 +113,11 @@ public interface CreatureMapper {
                 .map(CreatureSize::getSize)
                 .map(size -> size.getSizeName(type))
                 .collect(Collectors.joining(" или ")));
+        builder.append(" ");
         builder.append(creature.getCategories().getType()
                 .stream()
                 .map(CreatureType::getName)
+                .map(String::toLowerCase)
                 .collect(Collectors.joining(" или "))
         );
         if (creature.getCategories().getText() != null) {
@@ -130,7 +168,7 @@ public interface CreatureMapper {
                     .orElse("")
             );
         }
-        var conMod = creature.getAbilities().getConstitution().getMod();
+        var conMod = creature.getAbilities().getConstitution().mod();
         if (conMod > 0) {
             builder.append(" + ");
             builder.append(conMod * creature.getHit().getCountHitDice());
@@ -140,13 +178,46 @@ public interface CreatureMapper {
 
     @Named("toSpeed")
     default String toSpeed(CreatureSpeeds speeds) {
-        return speeds.getText();
+        var builder = new StringBuilder();
+        var speedList = new ArrayList<String>(4);
+        speedList.add(getSpeedText("", speeds.getWalk()));
+        if (!speeds.getFly().isEmpty()) {
+            builder.append("летая");
+            builder.append(speeds.getFly().stream().map(s ->
+                    " %d фт. %s "
+                            .formatted(s.getValue(),
+                                    StringUtils.hasText(s.getText()) ? "("
+                                            + (s.isHover() ? "парит; " : "")
+                                            + s.getText() +")" : "")
+            ).collect(Collectors.joining(", ")));
+            speedList.add(builder.toString());
+        }
+        if (!speeds.getSwim().isEmpty()) {
+            speedList.add(getSpeedText("плавая", speeds.getSwim()));
+        }
+        if (!speeds.getBurrow().isEmpty()) {
+            speedList.add(getSpeedText("копая", speeds.getBurrow()));
+        }
+        if (!speeds.getClimb().isEmpty()) {
+            speedList.add(getSpeedText("лазая", speeds.getClimb()));
+        }
+        return String.join(", ", speedList);
+    }
+
+    private String getSpeedText(final String name,
+                                final Collection<Speed> speeds) {
+        return name +
+                speeds.stream().map(s ->
+                        " %d фт.%s"
+                                .formatted(s.getValue(),
+                                        StringUtils.hasText(s.getText()) ? " (" + s.getText() + ")" : "")
+                ).collect(Collectors.joining(", "));
     }
 
     @Named("toSkills")
     default String toSkills(Creature creature) {
        return creature.getSkills().stream()
-               .map(skill -> skill.getSkill().getName() + " + "
+               .map(skill -> skill.getSkill().getName() + " +"
                        + getSkillBonus(skill, creature.getAbilities(), creature.getExperience()))
                .collect(Collectors.joining(","));
     }
@@ -182,5 +253,10 @@ public interface CreatureMapper {
         var cr = ChallengeRatingUtil.getChallengeRating(creature.getExperience());
         var pb = ChallengeRatingUtil.getProficiencyBonus(cr);
         return String.format("%s (Опыт %d%s; БМ %s)", cr, creature.getExperience(), lair, pb);
+    }
+
+    @Named("toShortChallengeRating")
+    default String toShortChallengeRating(Creature creature) {
+        return ChallengeRatingUtil.getChallengeRating(creature.getExperience());
     }
 }
