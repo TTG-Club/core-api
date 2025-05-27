@@ -442,9 +442,9 @@ public class DictionariesController {
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject("""
                             [
-                              { "label": "Сила", "value": "STRENGTH" },
-                              { "label": "Ловкость", "value": "DEXTERITY" },
-                              { "label": "Телосложение", "value": "CONSTITUTION" }
+                              { "label": "Сила", "value": "STRENGTH", "key": "str" },
+                              { "label": "Ловкость", "value": "DEXTERITY" "key": "dex" },
+                              { "label": "Телосложение", "value": "CONSTITUTION" "key": "con" }
                             ]
                             """)
             )
