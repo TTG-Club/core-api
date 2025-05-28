@@ -4,7 +4,6 @@ import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
 import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
-import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
@@ -21,7 +20,6 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.HitResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
@@ -32,7 +30,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
@@ -111,26 +109,24 @@ public interface CreatureMapper {
     @Named("toHeader")
     default String toHeader(Creature creature) {
         var builder = new StringBuilder();
-        var type = creature.getCategories()
-                .getType()
+        var type = creature.getTypes()
+                .getValues()
                 .stream()
                 .findFirst()
                 .orElse(CreatureType.HUMANOID);
-        builder.append(creature.getSizes()
-                .stream()
-                .map(CreatureSize::getSize)
-                .map(size -> size.getSizeName(type))
+        builder.append(creature.getSizes().getValues().stream()
+                .map(Size::getName)
                 .collect(Collectors.joining(" или ")));
         builder.append(" ");
-        builder.append(creature.getCategories().getType()
+        builder.append(creature.getTypes().getValues()
                 .stream()
                 .map(CreatureType::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(" или "))
         );
-        if (creature.getCategories().getText() != null) {
+        if (creature.getTypes().getText() != null) {
             builder.append(" (");
-            builder.append(creature.getCategories().getText().toLowerCase());
+            builder.append(creature.getTypes().getText().toLowerCase());
             builder.append(")");
         }
         builder.append(", ");
@@ -157,7 +153,7 @@ public interface CreatureMapper {
     @Named("toHit")
     default HitResponse toHit(Creature creature) {
         var response = new HitResponse();
-        response.setHit(creature.getHit().getHit());
+        response.setHit(creature.getHit().getValue());
         response.setFormula(getHitFormula(creature));
         response.setText(creature.getHit().getText());
         return response;
@@ -166,14 +162,10 @@ public interface CreatureMapper {
     default String getHitFormula(Creature creature) {
         var builder = new StringBuilder();
         builder.append(creature.getHit().getCountHitDice());
-        if (creature.getSizes().size() == 1) {
-            builder.append(creature.getSizes().stream()
-                    .max(Comparator.comparing(
-                            creatureSize -> creatureSize.getSize().getHitDice().getMaxValue()))
-                    .map(CreatureSize::getSize)
-                    .map(Size::getHitDice)
-                    .map(Dice::getName)
-                    .orElse("")
+
+        if (creature.getSizes().getValues().size() == 1) {
+                builder.append(new LinkedList<>(
+                        creature.getSizes().getValues()).getLast().getHitDice().getName()
             );
         }
         var conMod = creature.getAbilities().getConstitution().mod();
@@ -285,7 +277,7 @@ public interface CreatureMapper {
 
     @Named("toLanguages")
     default String toLanguages(CreatureLanguages languages) {
-        var resonse = languages.getLanguages()
+        var resonse = languages.getValues()
                 .stream()
                 .map(language -> language.getLanguage().getName() + (StringUtils.hasText(language.getText()) ? language.getText() : ""))
                 .collect(Collectors.joining(", "));

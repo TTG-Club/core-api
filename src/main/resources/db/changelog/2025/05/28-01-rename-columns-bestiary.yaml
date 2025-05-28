@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-speed-bestiary-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+            tableName: bestiary
+            oldColumnName: categories
+            newColumnName: types
+        - renameColumn:
+            tableName: bestiary
+            oldColumnName: speed
+            newColumnName: speeds
+        - renameColumn:
+            tableName: bestiary
+            oldColumnName: size
+            newColumnName: sizes

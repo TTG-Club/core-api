@@ -11,7 +11,7 @@ public class CreatureHit {
      * Среднее или абсолютное значение хитов
      */
     @Schema(description = "Среднее или абсолютное значение хитов")
-    private Short hit;
+    private Short value;
 
     /**
      * Количество хит дайсов (может быть null для призванных существ)
