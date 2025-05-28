@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: add-column-speed-bestiary-table
+      id: rename-column-in-bestiary-table
       author: Magistrus
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
