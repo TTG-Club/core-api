@@ -53,7 +53,7 @@ public interface CreatureMapper {
     @Mapping(source = ".", target = "hit", qualifiedByName = "toHit")
     @Mapping(source = ".", target = "abilities", qualifiedByName = "toAbilities")
     @Mapping(source = ".", target = "skills", qualifiedByName = "toSkills")
-    @Mapping(source = "speed", target = "speed", qualifiedByName = "toSpeed")
+    @Mapping(source = "speeds", target = "speed", qualifiedByName = "toSpeed")
     @Mapping(source = "vulnerabilities", target = "vulnerability", qualifiedByName = "toDamage")
     @Mapping(source = "resistance", target = "resistance", qualifiedByName = "toDamage")
     @Mapping(source = ".", target = "immunity", qualifiedByName = "toImmunity")
