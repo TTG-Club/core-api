@@ -38,14 +38,14 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Collection<CreatureSize> sizes;
+    private CreatureSize sizes;
 
     /**
      * Типы существа.
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private CreatureCategory categories;
+    private CreatureCategory types;
 
     /**
      * Мирровозрение
@@ -77,7 +77,7 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private CreatureSpeeds speed;
+    private CreatureSpeeds speeds;
 
     /**
      * Характеристики существа
@@ -105,7 +105,7 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Collection<DamageType> resistance;
+    private Collection<DamageType> resistances;
 
     /**
      * Иммунитеты к урону

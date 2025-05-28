@@ -16,7 +16,7 @@ public class CreatureCategory {
      */
     @Schema(description = "Типы существа")
     @Enumerated(EnumType.STRING)
-    private Collection<CreatureType> type;
+    private Collection<CreatureType> values;
     /**
      * Уточнения типа существа
      */

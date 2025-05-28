@@ -8,7 +8,7 @@ import java.util.Collection;
 @Getter
 @Setter
 public class CreatureLanguages {
-    private Collection<CreatureLanguage> languages;
+    private Collection<CreatureLanguage> values;
     private String text;
     private String telepathy;
 }
