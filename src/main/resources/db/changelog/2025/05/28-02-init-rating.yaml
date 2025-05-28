@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: init-rating-table
+      author: Magistrus
+      changes:
+        - createTable:
+            tableName: rating
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: section
+                  type: VARCHAR(255)
+
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+
+              - column:
+                  name: user
+                  type: VARCHAR(255)
+
+              - column:
+                  name: value
+                  type: SMALLINT
+
+        - createIndex:
+            indexName: rating_section_url_index
+            tableName: rating
+            columns:
+              - column:
+                  name: section
+              - column:
+                  name: url

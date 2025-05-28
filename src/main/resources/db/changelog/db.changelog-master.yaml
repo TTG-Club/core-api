@@ -65,3 +65,5 @@ databaseChangeLog:
       file: db/changelog/2025/05/26-02-rename-column-immunity.yaml
   - include:
       file: db/changelog/2025/05/26-04-add-column-speed.yaml
+  - include:
+      file: db/changelog/2025/05/28-02-init-rating.yaml
