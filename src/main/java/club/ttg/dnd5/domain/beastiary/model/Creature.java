@@ -105,7 +105,7 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Collection<DamageType> resistances;
+    private Collection<DamageType> resistance;
 
     /**
      * Иммунитеты к урону
