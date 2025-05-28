@@ -65,6 +65,13 @@ public class CreatureController {
         return creatureService.save(request);
     }
 
+    @Operation(summary = "Предпросмотр существа")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public CreatureDetailResponse preview(@RequestBody CreatureRequest request) {
+        return creatureService.preview(request);
+    }
+
     @Operation(summary = "Обновление существа")
     @Secured("ADMIN")
     @PutMapping("/{url}")
