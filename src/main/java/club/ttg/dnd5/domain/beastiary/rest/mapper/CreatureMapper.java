@@ -266,13 +266,21 @@ public interface CreatureMapper {
 
     @Named("toSense")
     default String toSense(Senses senses) {
-        var respons = senses.getSenses().stream()
-                .map(sense -> "%s %d фт.".formatted(sense.getType().getName(), sense.getValue())).collect(Collectors.joining(", "));
-        if (!respons.isEmpty()) {
-            respons+=", ";
+        var response = new ArrayList<String>();
+        if (senses.getDarkvision() != null) {
+            response.add("тёмное зрение %d фт.".formatted(senses.getDarkvision()));
         }
-        respons+="ПВ " + senses.getPassivePerception();
-        return respons;
+        if (senses.getBlindsight() != null) {
+            response.add("слепое зрение %d фт.".formatted(senses.getBlindsight()));
+        }
+        if (senses.getTruesight() != null) {
+            response.add("истинное зрение %d фт.".formatted(senses.getTruesight()));
+        }
+        if (senses.getTremorsense() != null) {
+            response.add("чувство вибрации %d фт.".formatted(senses.getTremorsense()));
+        }
+        response.add("пассивная внимательность %d".formatted(senses.getPassivePerception()));
+        return String.join(", ", response);
     }
 
     @Named("toLanguages")
