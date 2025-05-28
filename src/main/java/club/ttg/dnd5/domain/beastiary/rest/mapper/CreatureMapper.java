@@ -71,6 +71,9 @@ public interface CreatureMapper {
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
+    @Mapping(source = "request.ac", target = "armor.armorClass")
+    @Mapping(source = "request.speeds", target = "speeds")
+    @Mapping(source = "request.sizes", target = "sizes")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.experience.value", target = "experience")

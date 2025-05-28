@@ -23,9 +23,9 @@ import java.util.Collection;
 @Setter
 public class CreatureRequest extends BaseRequest {
     @Schema(description = "Размеры")
-    private Collection<CreatureSize> size;
+    private CreatureSize sizes;
     @Schema(description = "Типы")
-    private Collection<CreatureCategory> type;
+    private CreatureCategory types;
     @Schema(description = "Мирровозрение")
     private Alignment alignment;
     @Schema(description = "Класс доспеха")
@@ -35,7 +35,7 @@ public class CreatureRequest extends BaseRequest {
     @Schema(description = "Хиты")
     private CreatureHit hit;
     @Schema(description = "Скорости")
-    private CreatureSpeeds speed;
+    private CreatureSpeeds speeds;
     @Schema(description = "Характеристики")
     private CreatureAbilities abilities;
     @Schema(description = "Навыки")
