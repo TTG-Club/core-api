@@ -16,10 +16,12 @@ public class RatingService {
     @Transactional
     public byte addOrUpdate(final RatingRequest rating) {
         ratingRepository.save(ratingMapper.toRating(rating));
-        return ratingRepository.getRating(rating.getSection(), rating.getUrl());
+        var avg = ratingRepository.getRating(rating.getSection(), rating.getUrl());
+        return  avg == null ? 0 : avg.byteValue();
     }
 
     public byte getRating(final String section, final String url) {
-        return ratingRepository.getRating(section, url);
+        var avg = ratingRepository.getRating(section, url);
+        return  avg == null ? 0 : avg.byteValue();
     }
 }

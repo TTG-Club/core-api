@@ -7,16 +7,18 @@ import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedBy;
 
+import java.util.UUID;
+
 @Entity
 @Getter
 @Setter
 public class Rating {
     @Id
     @UuidGenerator
-    private String id;
+    private UUID id;
     private String section;
     private String url;
     @CreatedBy
-    private String user;
+    private String username;
     private byte value;
 }
