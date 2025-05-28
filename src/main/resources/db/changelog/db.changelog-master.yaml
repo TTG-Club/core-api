@@ -66,4 +66,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/05/26-04-add-column-speed.yaml
   - include:
+      file: db/changelog/2025/05/28-01-rename-columns-bestiary.yaml
+  - include:
       file: db/changelog/2025/05/28-02-init-rating.yaml
