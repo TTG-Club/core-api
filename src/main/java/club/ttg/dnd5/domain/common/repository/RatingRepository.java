@@ -5,8 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, String> {
     @Query("SELECT AVG(r.value) FROM Rating r WHERE r.section = :section AND r.url=:url")
     Double getRating(String section, String url);
+    Optional<Rating> findByUsernameAndSectionAndUrl(String username, String section, String url);
 }

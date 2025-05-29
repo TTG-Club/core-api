@@ -6,5 +6,5 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface RatingMapper {
-    Rating toRating(RatingRequest request);
+    Rating toRating(RatingRequest request, String username);
 }
