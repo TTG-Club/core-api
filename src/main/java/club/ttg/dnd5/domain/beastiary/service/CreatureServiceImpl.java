@@ -96,6 +96,12 @@ public class CreatureServiceImpl implements CreatureService {
         return creatureRepository.save(existing).getUrl();
     }
 
+    @Override
+    public CreatureDetailResponse preview(final CreatureRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return creatureMapper.toDetail(creatureMapper.toEntity(request, book));
+    }
+
     private Creature findByUrl(String url) {
         return creatureRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Существо с URL: %s не существует", url)));

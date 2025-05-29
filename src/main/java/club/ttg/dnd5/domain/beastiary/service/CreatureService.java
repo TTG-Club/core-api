@@ -20,4 +20,6 @@ public interface CreatureService {
     String update(String url, CreatureRequest request);
 
     String delete(String url);
+
+    CreatureDetailResponse preview(CreatureRequest request);
 }
