@@ -149,16 +149,18 @@ public interface CreatureMapper {
 
     @Named("toInit")
     default String toInit(Byte initiative) {
-        String sign = initiative >= 0 ? "+" : "-";
+        String sign = initiative >= 0 ? "+" : "";
         return String.format("%s%d (%d)", sign, initiative, 10 + initiative);
     }
 
     @Named("toHit")
     default HitResponse toHit(Creature creature) {
         var response = new HitResponse();
-        response.setHit(creature.getHit().getValue());
-        response.setFormula(getHitFormula(creature));
-        response.setText(creature.getHit().getText());
+        if (creature.getHit() != null) {
+            response.setHit(creature.getHit().getValue());
+            response.setFormula(getHitFormula(creature));
+            response.setText(creature.getHit().getText());
+        }
         return response;
     }
 
