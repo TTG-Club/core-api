@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Рейтинг", description = "API для рейтинга")
 @RestController
 @AllArgsConstructor
-@RequestMapping("/rating")
+@RequestMapping("/api/v2/rating")
 public class RatingController {
     private final RatingService ratingService;
     @GetMapping
