@@ -8,5 +8,5 @@ import lombok.Setter;
 public class RatingRequest {
     private String section;
     private String url;
-    private byte value;
+    private double value;
 }

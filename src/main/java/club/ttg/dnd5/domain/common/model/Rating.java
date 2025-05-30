@@ -20,5 +20,5 @@ public class Rating {
     private String url;
     @CreatedBy
     private String username;
-    private byte value;
+    private double value;
 }
