@@ -299,8 +299,8 @@ public interface CreatureMapper {
         if (languages.getText() != null) {
             resonse += languages.getText();
         }
-        if (languages.getTelepathy() != null) {
-            resonse += "; " + languages.getTelepathy();
+        if (StringUtils.hasText(languages.getTelepathy())) {
+            resonse += "; телепатия %s.".formatted(languages.getTelepathy());
         }
         return resonse;
     }
