@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.common.service;
 import club.ttg.dnd5.domain.common.repository.RatingRepository;
 import club.ttg.dnd5.domain.common.rest.RatingMapper;
 import club.ttg.dnd5.domain.common.rest.dto.rating.RatingRequest;
+import club.ttg.dnd5.domain.common.rest.dto.rating.RatingResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +17,7 @@ public class RatingService {
     private final RatingMapper ratingMapper;
 
     @Transactional
-    public byte addOrUpdate(final RatingRequest request) {
+    public RatingResponse addOrUpdate(final RatingRequest request) {
         var username = getCurrentUsername();
         var rating = ratingRepository.findByUsernameAndSectionAndUrl(
                 username,
@@ -25,13 +26,14 @@ public class RatingService {
             .orElse(ratingMapper.toRating(request, username));
         rating.setValue(request.getValue());
         ratingRepository.save(rating);
-        var avg = ratingRepository.getRating(request.getSection(), request.getUrl());
-        return  avg == null ? 0 : avg.byteValue();
+        return ratingMapper.toResponse(
+                ratingRepository.getRating(request.getSection(), request.getUrl())
+        );
     }
 
-    public double getRating(final String section, final String url) {
-        var avg = ratingRepository.getRating(section, url);
-        return  avg == null ? 0 : Math.round(avg * 10.0) / 10.0;
+    public RatingResponse getRating(final String section, final String url) {
+        var ratingStats = ratingRepository.getRating(section, url);
+        return  ratingMapper.toResponse(ratingStats);
     }
 
     public String getCurrentUsername() {
