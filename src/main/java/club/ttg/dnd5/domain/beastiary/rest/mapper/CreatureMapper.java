@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
+import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
 import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
@@ -188,12 +189,9 @@ public interface CreatureMapper {
         speedList.add(getSpeedText("", speeds.getWalk()));
         if (!CollectionUtils.isEmpty(speeds.getFly())) {
             builder.append("летая");
-            builder.append(speeds.getFly().stream().map(s ->
-                    " %d фт. %s "
-                            .formatted(s.getValue(),
-                                    StringUtils.hasText(s.getText()) ? "("
-                                            + (s.isHover() ? "парит; " : "")
-                                            + s.getText() +")" : "")
+            builder.append(speeds.getFly().stream()
+                            .map(s ->
+                                " %d фт. %s".formatted(s.getValue(), getFly(s))
             ).collect(Collectors.joining(", ")));
             speedList.add(builder.toString());
         }
@@ -207,6 +205,16 @@ public interface CreatureMapper {
             speedList.add(getSpeedText("лазая", speeds.getClimb()));
         }
         return String.join(", ", speedList);
+    }
+
+    private String getFly(FlySpeed fly) {
+        if (fly.isHover() && StringUtils.hasText(fly.getText())) {
+            return "(парит; " + fly.getText() + ")";
+        }
+        if (fly.isHover()) {
+            return "(парит)";
+        }
+        return "";
     }
 
     private String getSpeedText(final String name,
