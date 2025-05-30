@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.beastiary.model.ChallengeRatingUtil;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
@@ -21,6 +22,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.HitResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -60,6 +62,8 @@ public interface CreatureMapper {
     @Mapping(source = "senses", target = "sense", qualifiedByName = "toSense")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
+    @Mapping(source = "habitats", target = "habitats", qualifiedByName = "toHabitats")
+    @Mapping(source = "treasures", target = "treasures", qualifiedByName = "toTreasures")
     CreatureDetailResponse toDetail(Creature creature);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -319,5 +323,27 @@ public interface CreatureMapper {
     @Named("toShortChallengeRating")
     default String toShortChallengeRating(Creature creature) {
         return ChallengeRatingUtil.getChallengeRating(creature.getExperience());
+    }
+
+    @Named("toHabitats")
+    default String toHabitats(Collection<Habitat> habitats) {
+        if (CollectionUtils.isEmpty(habitats)) {
+            return "";
+        }
+        return habitats
+                .stream()
+                .map(Habitat::getName)
+                .collect(Collectors.joining(", "));
+    }
+
+    @Named("toTreasures")
+    default String toTreasures(Collection<CreatureTreasure> treasures) {
+        if (CollectionUtils.isEmpty(treasures)) {
+            return "";
+        }
+        return treasures
+                .stream()
+                .map(CreatureTreasure::getName)
+                .collect(Collectors.joining(", "));
     }
 }
