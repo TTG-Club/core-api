@@ -300,7 +300,7 @@ public interface CreatureMapper {
             resonse += languages.getText();
         }
         if (StringUtils.hasText(languages.getTelepathy())) {
-            resonse += "; телепатия %s.".formatted(languages.getTelepathy());
+            resonse += "; телепатия %s".formatted(languages.getTelepathy());
         }
         return resonse;
     }
