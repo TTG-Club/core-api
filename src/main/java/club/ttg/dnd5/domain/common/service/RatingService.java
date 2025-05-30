@@ -29,9 +29,9 @@ public class RatingService {
         return  avg == null ? 0 : avg.byteValue();
     }
 
-    public byte getRating(final String section, final String url) {
+    public double getRating(final String section, final String url) {
         var avg = ratingRepository.getRating(section, url);
-        return  avg == null ? 0 : avg.byteValue();
+        return  avg == null ? 0 : Math.round(avg * 10.0) / 10.0;
     }
 
     public String getCurrentUsername() {
