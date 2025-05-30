@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RatingController {
     private final RatingService ratingService;
     @GetMapping
-    public byte getRating(String section, String url) {
+    public double getRating(String section, String url) {
         return ratingService.getRating(section, url);
     }
 
