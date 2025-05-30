@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: update-column-value-to-numeric-in-rating-table
+      author: svifty7
+      changes:
+        - modifyDataType:
+            tableName: rating
+            columnName: value
+            newDataType: NUMERIC(3,2)

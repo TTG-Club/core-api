@@ -17,6 +17,6 @@ public interface RatingMapper {
 
     @Named("round")
     default Double round(Double value) {
-        return value == null ? 0 : Math.round(value * 10.0) / 10.0;
+        return value == null ? 0 : Math.round(value * 100.0) / 100.0;
     }
 }
