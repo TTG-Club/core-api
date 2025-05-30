@@ -313,7 +313,7 @@ public interface CreatureMapper {
         var lair = creature.getExperienceInLair() == null ? "" : " или " + creature.getExperienceInLair() + " в логове";
         var cr = ChallengeRatingUtil.getChallengeRating(creature.getExperience());
         var pb = ChallengeRatingUtil.getProficiencyBonus(cr);
-        return String.format("%s (Опыт %d%s; БМ %s)", cr, creature.getExperience(), lair, pb);
+        return String.format("%s (Опыт %d%s; БМ +%s)", cr, creature.getExperience(), lair, pb);
     }
 
     @Named("toShortChallengeRating")
