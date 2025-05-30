@@ -2,12 +2,13 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
-import club.ttg.dnd5.domain.beastiary.model.section.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -199,12 +200,24 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureAction> legendaryActions;
+
     /**
-     * Секция
+     * Подзаголовок секции
      */
-    @ManyToOne
-    @JoinColumn(name = "section_url")
-    private CreatureSection section;
+    private String subtitle;
+    /**
+     * Места обитания
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<Habitat> habitats;
+
+    /**
+     * Сокровища
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<CreatureTreasure> treasures;
 
     @ManyToOne
     @JoinColumn(name = "source")

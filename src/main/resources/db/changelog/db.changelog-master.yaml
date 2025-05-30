@@ -71,3 +71,5 @@ databaseChangeLog:
       file: db/changelog/2025/05/28-02-init-rating.yaml
   - include:
       file: db/changelog/2025/05/28-03-rename-column-user-rating-table.yaml
+  - include:
+      file: db/changelog/2025/05/30-02-remove-bestiary-section-table.yaml
