@@ -63,8 +63,9 @@ public interface CreatureMapper {
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
     CreatureDetailResponse toDetail(Creature creature);
 
-    @BaseMapping.BaseRequestNameMapping
+    @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceRequestMapping
+    @Mapping(target = "ac", source = "armor.armorClass")
     @Mapping(target = "experience.value", source = "experience")
     @Mapping(target = "experience.inLair", source = "experienceInLair")
     @Mapping(target = "experience.suffix", source = "experienceSuffix")
