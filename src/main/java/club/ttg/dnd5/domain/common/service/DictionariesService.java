@@ -135,8 +135,8 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getEnvironments() {
-        return Arrays.stream(Habitat.values())
+    public Collection<SelectOptionDto> getTreasures() {
+        return Arrays.stream(CreatureTreasure.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
                 .collect(Collectors.toList());
     }

@@ -253,8 +253,8 @@ public class DictionariesController {
         return dictionariesService.getFeatTypes();
     }
 
-    @Operation(summary = "Места обитания существ")
-    @GetMapping("/environments")
+    @Operation(summary = "Типы сокровищь")
+    @GetMapping("/treasures")
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -263,16 +263,16 @@ public class DictionariesController {
                                     examples = @ExampleObject("""
                                             [
                                               {
-                                                "label": "полярная тундра",
-                                                "value": "ARCTIC"
+                                                "label": "Любые",
+                                                "value": "ANY"
                                               },
                                               {
-                                                "label": "побережье",
-                                                "value": "COAST"
+                                                "label": "Индивидуальные",
+                                                "value": "INDIVIDUAL"
                                               },
                                               {
-                                                "label": "под водой",
-                                                "value": "WATERS"
+                                                "label": "Магия",
+                                                "value": "ARCANA"
                                               }
                                             ]
                                             """)
@@ -280,8 +280,8 @@ public class DictionariesController {
                     )
             }
     )
-    public Collection<SelectOptionDto> getEnvironments() {
-        return dictionariesService.getEnvironments();
+    public Collection<SelectOptionDto> getTreasures() {
+        return dictionariesService.getTreasures();
     }
 
     @Operation(summary = "Типы заклинателей")
