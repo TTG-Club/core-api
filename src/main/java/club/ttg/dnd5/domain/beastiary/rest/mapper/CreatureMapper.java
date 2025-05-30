@@ -186,7 +186,7 @@ public interface CreatureMapper {
         var builder = new StringBuilder();
         var speedList = new ArrayList<String>(4);
         speedList.add(getSpeedText("", speeds.getWalk()));
-        if (!speeds.getFly().isEmpty()) {
+        if (!CollectionUtils.isEmpty(speeds.getFly())) {
             builder.append("летая");
             builder.append(speeds.getFly().stream().map(s ->
                     " %d фт. %s "
@@ -197,13 +197,13 @@ public interface CreatureMapper {
             ).collect(Collectors.joining(", ")));
             speedList.add(builder.toString());
         }
-        if (!speeds.getSwim().isEmpty()) {
+        if (!CollectionUtils.isEmpty(speeds.getSwim())) {
             speedList.add(getSpeedText("плавая", speeds.getSwim()));
         }
-        if (!speeds.getBurrow().isEmpty()) {
+        if (!CollectionUtils.isEmpty(speeds.getBurrow())) {
             speedList.add(getSpeedText("копая", speeds.getBurrow()));
         }
-        if (!speeds.getClimb().isEmpty()) {
+        if (!CollectionUtils.isEmpty(speeds.getClimb())) {
             speedList.add(getSpeedText("лазая", speeds.getClimb()));
         }
         return String.join(", ", speedList);
