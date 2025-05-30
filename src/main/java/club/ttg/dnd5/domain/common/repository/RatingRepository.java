@@ -9,7 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, String> {
-    @Query("SELECT AVG(r.value) FROM Rating r WHERE r.section = :section AND r.url=:url")
-    Double getRating(String section, String url);
+    @Query("SELECT AVG(r.value) AS value, COUNT(r.value) AS total FROM Rating r WHERE r.section = :section AND r.url=:url")
+    RatingStats getRating(String section, String url);
+
     Optional<Rating> findByUsernameAndSectionAndUrl(String username, String section, String url);
 }

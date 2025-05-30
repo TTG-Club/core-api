@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
 import club.ttg.dnd5.domain.common.rest.dto.rating.RatingRequest;
+import club.ttg.dnd5.domain.common.rest.dto.rating.RatingResponse;
 import club.ttg.dnd5.domain.common.service.RatingService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
@@ -18,13 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class RatingController {
     private final RatingService ratingService;
     @GetMapping
-    public double getRating(String section, String url) {
+    public RatingResponse getRating(String section, String url) {
         return ratingService.getRating(section, url);
     }
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public byte addRating(@RequestBody RatingRequest rating) {
+    public RatingResponse addRating(@RequestBody RatingRequest rating) {
         return ratingService.addOrUpdate(rating);
     }
 }
