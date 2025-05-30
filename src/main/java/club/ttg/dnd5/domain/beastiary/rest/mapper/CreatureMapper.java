@@ -21,7 +21,6 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.HitResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -122,7 +121,7 @@ public interface CreatureMapper {
                 .findFirst()
                 .orElse(CreatureType.HUMANOID);
         builder.append(creature.getSizes().getValues().stream()
-                .map(Size::getName)
+                .map(size -> size.getSizeName(type))
                 .collect(Collectors.joining(" или ")));
         builder.append(" ");
         builder.append(creature.getTypes().getValues()
