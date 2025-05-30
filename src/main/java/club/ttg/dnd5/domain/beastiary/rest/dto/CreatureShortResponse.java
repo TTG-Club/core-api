@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 @Getter
 public class CreatureShortResponse extends BaseResponse {
-    @Schema(name = "CR", description = "Уровень опасности")
+    @Schema(name = "cr", description = "Уровень опасности")
     private String challengeRailing;
     @Schema(description = "Тип (или типы) существ")
     private String type;

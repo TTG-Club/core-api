@@ -65,7 +65,8 @@ public interface CreatureMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceRequestMapping
-    @Mapping(target = "ac", source = "armor.armorClass")
+    @Mapping(target = "ac.value", source = "armor.armorClass")
+    @Mapping(target = "ac.text", source = "armor.text")
     @Mapping(target = "experience.value", source = "experience")
     @Mapping(target = "experience.inLair", source = "experienceInLair")
     @Mapping(target = "experience.suffix", source = "experienceSuffix")
@@ -73,7 +74,8 @@ public interface CreatureMapper {
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
-    @Mapping(source = "request.ac", target = "armor.armorClass")
+    @Mapping(source = "request.ac.value", target = "armor.armorClass")
+    @Mapping(source = "request.ac.text", target = "armor.text")
     @Mapping(source = "request.speeds", target = "speeds")
     @Mapping(source = "request.sizes", target = "sizes")
     @Mapping(source = "request.description", target = "description")

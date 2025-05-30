@@ -29,7 +29,7 @@ public class CreatureRequest extends BaseRequest {
     @Schema(description = "Мирровозрение")
     private Alignment alignment;
     @Schema(description = "Класс доспеха")
-    private byte ac;
+    private ArmorRequest ac;
     @Schema(description = "Бонус инициативы", examples = "+0")
     private byte initiative;
     @Schema(description = "Хиты")
