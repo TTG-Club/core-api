@@ -33,6 +33,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
@@ -86,6 +87,9 @@ public interface CreatureMapper {
     @Mapping(source = "request.experience.value", target = "experience")
     @Mapping(source = "request.experience.inLair", target = "experienceInLair")
     @Mapping(source = "request.experience.suffix", target = "experienceSuffix")
+    @Mapping(source = "request.section.subtitle", target = "subtitle")
+    @Mapping(source = "request.section.habitats", target = "habitats")
+    @Mapping(source = "request.section.treasures", target = "treasures")
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Book source);
 
@@ -296,11 +300,18 @@ public interface CreatureMapper {
 
     @Named("toLanguages")
     default String toLanguages(CreatureLanguages languages) {
+        var opt = Optional.of(languages);
+        if (opt.map(CreatureLanguages::getValues).map(Collection::isEmpty).orElse(true)
+            && !StringUtils.hasText(opt.map(CreatureLanguages::getText).orElse(""))
+            && !StringUtils.hasText(opt.map(CreatureLanguages::getTelepathy).orElse(""))
+        ) {
+            return "—";
+        }
         var resonse = languages.getValues()
                 .stream()
                 .map(language -> language.getLanguage().getName() + (StringUtils.hasText(language.getText()) ? language.getText() : ""))
                 .collect(Collectors.joining(", "));
-        if (languages.getText() != null) {
+        if (StringUtils.hasText(languages.getText())) {
             resonse += languages.getText();
         }
         if (StringUtils.hasText(languages.getTelepathy())) {
