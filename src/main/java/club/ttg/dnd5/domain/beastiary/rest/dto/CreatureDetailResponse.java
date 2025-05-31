@@ -61,7 +61,6 @@ public class CreatureDetailResponse extends BaseResponse {
 
     @Schema(description = "Легендарные действия")
     private Collection<ActionResponse> legendaryActions;
-    private String subtitle;
-    private String habitats;
-    private String treasures;
+    @Schema(description = "Описании общей секции")
+    private CreatureSectionResponse section;
 }
