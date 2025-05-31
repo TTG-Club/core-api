@@ -339,7 +339,7 @@ public interface CreatureMapper {
     @Named("toTreasures")
     default String toTreasures(Collection<CreatureTreasure> treasures) {
         if (CollectionUtils.isEmpty(treasures)) {
-            return "";
+            return "Нет";
         }
         return treasures
                 .stream()
