@@ -77,3 +77,5 @@ databaseChangeLog:
       file: db/changelog/2025/05/31-03-update-column-value-to-numeric-in-rating-table.yaml
   - include:
       file: db/changelog/2025/05/31-04-update-column-type-initiative-bestiary-table.yaml
+  - include:
+      file: db/changelog/2025/05/31-05-update-section-bestiary-table.yaml

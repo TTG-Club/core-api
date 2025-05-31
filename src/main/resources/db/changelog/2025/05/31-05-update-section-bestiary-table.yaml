@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-columns-section-bestiary-table
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: section
+                  type: jsonb
+        - dropColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: subtitle
+              - column:
+                  name: habitats
+              - column:
+                  name: treasures
