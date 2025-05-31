@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
 import club.ttg.dnd5.domain.beastiary.model.CreatureEquipment;
 import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
+import club.ttg.dnd5.domain.beastiary.model.CreatureInitiative;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
@@ -30,8 +31,8 @@ public class CreatureRequest extends BaseRequest {
     private Alignment alignment;
     @Schema(description = "Класс доспеха")
     private ArmorRequest ac;
-    @Schema(description = "Бонус инициативы", examples = "+0")
-    private byte initiative;
+    @Schema(description = "Бонус инициативы")
+    private CreatureInitiative initiative;
     @Schema(description = "Хиты")
     private CreatureHit hit;
     @Schema(description = "Скорости")

@@ -64,7 +64,9 @@ public class Creature extends NamedEntity {
     /**
      * Бонус инициативы
      */
-    private byte initiative;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private CreatureInitiative initiative;
 
     /**
      * Хиты
