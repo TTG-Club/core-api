@@ -242,7 +242,7 @@ public interface CreatureMapper {
        return creature.getSkills().stream()
                .map(skill -> skill.getSkill().getName() + " +"
                        + getSkillBonus(skill, creature.getAbilities(), creature.getExperience()))
-               .collect(Collectors.joining(","));
+               .collect(Collectors.joining(", "));
     }
 
     private int getSkillBonus(final CreatureSkill skill,
