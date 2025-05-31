@@ -52,7 +52,7 @@ public interface CreatureMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = ".", target = "header", qualifiedByName = "toHeader")
     @Mapping(source = "armor", target = "armorClass", qualifiedByName = "toArmor")
-    @Mapping(source = "initiative", target = "initiative", qualifiedByName = "toInit")
+    @Mapping(source = ".", target = "initiative", qualifiedByName = "toInit")
     @Mapping(source = ".", target = "hit", qualifiedByName = "toHit")
     @Mapping(source = ".", target = "abilities", qualifiedByName = "toAbilities")
     @Mapping(source = ".", target = "skills", qualifiedByName = "toSkills")
@@ -159,9 +159,14 @@ public interface CreatureMapper {
     }
 
     @Named("toInit")
-    default String toInit(Byte initiative) {
-        String sign = initiative >= 0 ? "+" : "";
-        return String.format("%s%d (%d)", sign, initiative, 10 + initiative);
+    default String toInit(Creature creature) {
+        String sign = creature.getInitiative().getValue() >= 0 ? "+" : "";
+        var cr = ChallengeRatingUtil.getChallengeRating(creature.getExperience());
+        var pb = Integer.parseInt(ChallengeRatingUtil.getProficiencyBonus(cr));
+        var initiative = creature.getInitiative().getValue() + pb * creature.getInitiative().getMultiplier();
+        return String.format("%s%d (%d)",
+                sign, initiative,
+                10 + initiative);
     }
 
     @Named("toHit")
