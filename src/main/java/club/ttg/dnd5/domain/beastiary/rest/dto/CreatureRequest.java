@@ -11,9 +11,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
-import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -68,12 +66,6 @@ public class CreatureRequest extends BaseRequest {
     private Collection<ActionRequest> reactions;
     @Schema(description = "Легендарные действия")
     private Collection<ActionRequest> legendaryActions;
-
-    @Schema(description = "Подзаголовок секции")
-    private String subtitle;
-    @Schema(description = "Места обитания")
-    private Collection<Habitat> habitats;
-
-    @Schema(description = "Сокровища")
-    private Collection<CreatureTreasure> treasures;
+    @Schema(description = "Секция описательных характеристик существа")
+    private CreatureSection section;
 }
