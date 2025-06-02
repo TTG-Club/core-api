@@ -276,8 +276,9 @@ public interface CreatureMapper {
 
     @Named("toImmunity")
     default String toImmunity(Creature creature) {
-        if (CollectionUtils.isEmpty(creature.getImmunityToDamage()) && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
-            return null;
+        if (CollectionUtils.isEmpty(creature.getImmunityToDamage())
+                && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
+            return "";
         }
         var response = creature.getImmunityToDamage().stream()
                 .map(DamageType::getName)
