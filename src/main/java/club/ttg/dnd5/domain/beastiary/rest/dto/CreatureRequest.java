@@ -5,7 +5,6 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
 import club.ttg.dnd5.domain.beastiary.model.CreatureEquipment;
 import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
 import club.ttg.dnd5.domain.beastiary.model.CreatureInitiative;
-import club.ttg.dnd5.domain.beastiary.model.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
@@ -69,5 +68,5 @@ public class CreatureRequest extends BaseRequest {
     @Schema(description = "Легендарные действия")
     private Collection<ActionRequest> legendaryActions;
     @Schema(description = "Секция описательных характеристик существа")
-    private CreatureSection section;
+    private CreatureSectionRequest section;
 }
