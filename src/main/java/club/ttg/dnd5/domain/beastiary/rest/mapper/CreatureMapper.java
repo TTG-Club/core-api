@@ -77,6 +77,9 @@ public interface CreatureMapper {
     @Mapping(target = "experience.value", source = "experience")
     @Mapping(target = "experience.inLair", source = "experienceInLair")
     @Mapping(target = "experience.suffix", source = "experienceSuffix")
+    @Mapping(source = "section.sectionName", target = "section.name.name")
+    @Mapping(source = "section.sectionEnglish", target = "section.name.english")
+    @Mapping(source = "section.sectionDescription", target = "section.description")
     CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping
