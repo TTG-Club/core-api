@@ -63,8 +63,11 @@ public interface CreatureMapper {
     @Mapping(source = "senses", target = "sense", qualifiedByName = "toSense")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
+    @Mapping(source = "section.sectionName", target = "section.name.name")
+    @Mapping(source = "section.sectionEnglish", target = "section.name.english")
     @Mapping(source = "section.habitats", target = "section.habitats", qualifiedByName = "toHabitats")
     @Mapping(source = "section.treasures", target = "section.treasures", qualifiedByName = "toTreasures")
+    @Mapping(source = "section.sectionDescription", target = "section.description")
     CreatureDetailResponse toDetail(Creature creature);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -92,6 +95,7 @@ public interface CreatureMapper {
     @Mapping(source = "request.section.subtitle", target = "section.subtitle")
     @Mapping(source = "request.section.habitats", target = "section.habitats")
     @Mapping(source = "request.section.treasures", target = "section.treasures")
+    @Mapping(source = "request.section.description", target = "section.sectionDescription")
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Book source);
 
