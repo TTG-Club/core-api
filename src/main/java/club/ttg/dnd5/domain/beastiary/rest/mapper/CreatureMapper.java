@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
@@ -176,10 +177,11 @@ public interface CreatureMapper {
 
     @Named("toInit")
     default String toInit(Creature creature) {
-        String sign = creature.getInitiative().getValue() >= 0 ? "+" : "";
+        var mod = creature.getAbilities().getMod(Ability.DEXTERITY);
+        String sign = mod >= 0 ? "+" : "";
         var cr = ChallengeRatingUtil.getChallengeRating(creature.getExperience());
         var pb = Integer.parseInt(ChallengeRatingUtil.getProficiencyBonus(cr));
-        var initiative = creature.getInitiative().getValue() + pb * creature.getInitiative().getMultiplier();
+        var initiative = mod + pb * creature.getInitiative().getMultiplier();
         return String.format("%s%d (%d)",
                 sign, initiative,
                 10 + initiative);
