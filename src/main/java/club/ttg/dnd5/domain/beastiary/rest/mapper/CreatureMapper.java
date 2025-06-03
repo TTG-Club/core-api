@@ -302,13 +302,13 @@ public interface CreatureMapper {
     @Named("toSense")
     default String toSense(Senses senses) {
         var response = new ArrayList<String>();
-        if (senses.getDarkvision() != null) {
-            response.add("тёмное зрение %d фт.".formatted(senses.getDarkvision()));
-        }
         if (senses.getBlindsight() != null) {
             response.add("слепое зрение %d фт.".formatted(senses.getBlindsight()));
         }
-        if (senses.getTruesight() != null) {
+        if (senses.getDarkvision() != null) {
+            response.add("тёмное зрение %d фт.".formatted(senses.getDarkvision()));
+        }
+         if (senses.getTruesight() != null) {
             response.add("истинное зрение %d фт.".formatted(senses.getTruesight()));
         }
         if (senses.getTremorsense() != null) {
