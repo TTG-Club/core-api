@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
 import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
+import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
@@ -46,6 +47,7 @@ public interface CreatureMapper {
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toShortChallengeRating")
+    @Mapping(source = "types", target = "type", qualifiedByName = "toType")
     CreatureShortResponse toShort(Creature creature);
 
     @BaseMapping.BaseSourceMapping
@@ -155,6 +157,11 @@ public interface CreatureMapper {
         builder.append(", ");
         builder.append(creature.getAlignment().getName(type));
         return builder.toString();
+    }
+
+    @Named("toType")
+    default String toType(CreatureCategory category) {
+        return category.getValues().stream().map(CreatureType::getName).collect(Collectors.joining(", "));
     }
 
     @Named("toArmor")
