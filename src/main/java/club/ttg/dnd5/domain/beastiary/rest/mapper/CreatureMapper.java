@@ -192,12 +192,8 @@ public interface CreatureMapper {
     default String getHitFormula(Creature creature) {
         var builder = new StringBuilder();
         builder.append(creature.getHit().getCountHitDice());
-
-        if (creature.getSizes().getValues().size() == 1) {
-                builder.append(new LinkedList<>(
-                        creature.getSizes().getValues()).getLast().getHitDice().getName()
-            );
-        }
+        builder.append(new LinkedList<>(
+                        creature.getSizes().getValues()).getLast().getHitDice().getName());
         var conMod = creature.getAbilities().getConstitution().mod();
         if (conMod > 0) {
             builder.append(" + ");
