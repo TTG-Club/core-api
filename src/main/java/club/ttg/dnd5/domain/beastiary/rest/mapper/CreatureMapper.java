@@ -253,6 +253,9 @@ public interface CreatureMapper {
 
     @Named("toSkills")
     default String toSkills(Creature creature) {
+        if (CollectionUtils.isEmpty(creature.getSkills())) {
+            return "";
+        }
        return creature.getSkills().stream()
                .map(skill -> skill.getSkill().getName() + " +"
                        + getSkillBonus(skill, creature.getAbilities(), creature.getExperience()))
@@ -276,9 +279,8 @@ public interface CreatureMapper {
 
     @Named("toImmunity")
     default String toImmunity(Creature creature) {
-        if (CollectionUtils.isEmpty(creature.getImmunityToDamage())
-                && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
-            return "";
+        if (CollectionUtils.isEmpty(creature.getImmunityToDamage()) && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
+            return null;
         }
         var response = creature.getImmunityToDamage().stream()
                 .map(DamageType::getName)
