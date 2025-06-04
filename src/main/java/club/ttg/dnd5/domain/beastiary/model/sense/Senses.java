@@ -9,6 +9,8 @@ import lombok.Setter;
 public class Senses {
     @Schema(description = "Тёмное зрение")
     private Short darkvision;
+    @Schema(description = "Тёмное зрение проникает через магическую тьму")
+    private Boolean unimpeded;
     @Schema(description = "Истинное зрение")
     private Short truesight;
     @Schema(description = "Слепое зрение")

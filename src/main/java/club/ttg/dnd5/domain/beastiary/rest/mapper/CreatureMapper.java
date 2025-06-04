@@ -308,7 +308,11 @@ public interface CreatureMapper {
             response.add("слепое зрение %d фт.".formatted(senses.getBlindsight()));
         }
         if (senses.getDarkvision() != null) {
-            response.add("тёмное зрение %d фт.".formatted(senses.getDarkvision()));
+            var darkvision = "тёмное зрение %d фт.".formatted(senses.getDarkvision());
+            if (senses.getUnimpeded() !=null && senses.getUnimpeded()) {
+                darkvision += " (даже через магическую тьму)";
+            }
+            response.add(darkvision);
         }
          if (senses.getTruesight() != null) {
             response.add("истинное зрение %d фт.".formatted(senses.getTruesight()));
