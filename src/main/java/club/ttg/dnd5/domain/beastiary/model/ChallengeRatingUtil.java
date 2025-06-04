@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import lombok.experimental.UtilityClass;
 
+@Deprecated
 @UtilityClass
 public class ChallengeRatingUtil {
     public String getChallengeRating(long exp) {

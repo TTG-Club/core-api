@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ChallengeRating {
     CR_UNKNOWN("—", -1, 2),
-    CR_0("0", 10, 2),
+    CR_0("0 ", 10, 2),
     CR_1_8("1/8", 25, 2),
     CR_1_4("1/4", 50, 2),
     CR_1_2("1/2", 100, 2),
@@ -43,6 +43,25 @@ public enum ChallengeRating {
     CR_30("30", 155_000, 9);
 
     private final String name;
-    private final int experience;
+    private final long experience;
     private final int proficiencyBonus;
+
+    public static String getCr(long experience) {
+        for (var cr : values()) {
+            if (cr.experience == experience) {
+                return cr.name;
+            }
+        }
+        return CR_UNKNOWN.name;
+    }
+
+    public static int getPb(long experience) {
+        for (var cr : values()) {
+            if (cr.experience == experience) {
+                return cr.proficiencyBonus;
+            }
+        }
+        return 2;
+    }
+
 }

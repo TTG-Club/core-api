@@ -14,10 +14,10 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
-import club.ttg.dnd5.domain.beastiary.model.ChallengeRatingUtil;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.HitResponse;
@@ -107,10 +107,7 @@ public interface CreatureMapper {
 
     @Named("toAbilities")
     default AbilitiesResponse toAbilities(Creature creature) {
-        var pb = Byte.parseByte(
-            ChallengeRatingUtil.getProficiencyBonus(
-                    ChallengeRatingUtil.getChallengeRating(creature.getExperience()
-        )));
+        var pb =  ChallengeRating.getPb(creature.getExperience());
         var response = new AbilitiesResponse();
 
         response.setStrength(getAbility(creature.getAbilities().getStrength(), pb));
@@ -122,7 +119,7 @@ public interface CreatureMapper {
         return response;
     }
 
-    private AbilityResponse getAbility(CreatureAbility ability, byte pb) {
+    private AbilityResponse getAbility(CreatureAbility ability, int pb) {
         var response = new AbilityResponse();
         response.setValue(ability.getValue());
         var mod = ability.mod();
@@ -179,8 +176,7 @@ public interface CreatureMapper {
     default String toInit(Creature creature) {
         var mod = creature.getAbilities().getMod(Ability.DEXTERITY);
         String sign = mod >= 0 ? "+" : "";
-        var cr = ChallengeRatingUtil.getChallengeRating(creature.getExperience());
-        var pb = Integer.parseInt(ChallengeRatingUtil.getProficiencyBonus(cr));
+        var pb = ChallengeRating.getPb(creature.getExperience());
         var initiative = mod + pb * creature.getInitiative().getMultiplier();
         return String.format("%s%d (%d)",
                 sign, initiative,
@@ -274,7 +270,7 @@ public interface CreatureMapper {
                                 final CreatureAbilities abilities,
                                 final long experience) {
         return abilities.getMod(skill.getSkill().getAbility())
-                + (Integer.parseInt(ChallengeRatingUtil.getProficiencyBonus(ChallengeRatingUtil.getChallengeRating(experience))) * skill.getMultiplier());
+                + ChallengeRating.getPb(experience) * skill.getMultiplier();
     }
 
     @Named("toDamage")
@@ -354,15 +350,18 @@ public interface CreatureMapper {
         if (creature.getExperience() == null) {
             return String.format("— (Опыт 0; БМ %s)", creature.getExperienceSuffix());
         }
-        var lair = creature.getExperienceInLair() == null ? "" : " или " + creature.getExperienceInLair() + " в логове";
-        var cr = ChallengeRatingUtil.getChallengeRating(creature.getExperience());
-        var pb = ChallengeRatingUtil.getProficiencyBonus(cr);
+        var lair = creature.getExperienceInLair() == null ? "" : " или "+ creature.getExperienceInLair() + " в логове";
+        var cr = ChallengeRating.getCr(creature.getExperience());
+        if (creature.getExperience() < 0) {
+            return String.format("%s (Опыт 0; БМ +%s)", cr, creature.getExperienceSuffix());
+        }
+        var pb = ChallengeRating.getPb(creature.getExperience());
         return String.format("%s (Опыт %d%s; БМ +%s)", cr, creature.getExperience(), lair, pb);
     }
 
     @Named("toShortChallengeRating")
     default String toShortChallengeRating(Creature creature) {
-        return ChallengeRatingUtil.getChallengeRating(creature.getExperience());
+        return ChallengeRating.getCr(creature.getExperience());
     }
 
     @Named("toHabitats")
