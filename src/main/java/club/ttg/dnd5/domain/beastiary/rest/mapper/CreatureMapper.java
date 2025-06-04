@@ -148,7 +148,7 @@ public interface CreatureMapper {
                 .stream()
                 .map(CreatureType::getName)
                 .map(String::toLowerCase)
-                .collect(Collectors.joining(" или "))
+                .collect(Collectors.joining(", "))
         );
         if (creature.getTypes().getText() != null) {
             builder.append(" (");
