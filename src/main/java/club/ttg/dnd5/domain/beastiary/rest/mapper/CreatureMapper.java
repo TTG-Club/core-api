@@ -332,6 +332,9 @@ public interface CreatureMapper {
         ) {
             return "—";
         }
+        if (languages.getText() != null) {
+            return languages.getText();
+        }
         var resonse = languages.getValues()
                 .stream()
                 .map(language -> language.getLanguage().getName() + (StringUtils.hasText(language.getText()) ? language.getText() : ""))
