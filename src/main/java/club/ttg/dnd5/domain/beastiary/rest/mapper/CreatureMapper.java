@@ -199,16 +199,19 @@ public interface CreatureMapper {
     }
 
     default String getHitFormula(Creature creature) {
-        var builder = new StringBuilder();
-        builder.append(creature.getHit().getCountHitDice());
-        builder.append(new LinkedList<>(
-                        creature.getSizes().getValues()).getLast().getHitDice().getName());
-        var conMod = creature.getAbilities().getConstitution().mod();
-        if (conMod > 0) {
-            builder.append(" + ");
-            builder.append(conMod * creature.getHit().getCountHitDice());
+        if (creature.getHit().getCountHitDice() != null) {
+            var builder = new StringBuilder();
+            builder.append(creature.getHit().getCountHitDice());
+            builder.append(new LinkedList<>(
+                    creature.getSizes().getValues()).getLast().getHitDice().getName());
+            var conMod = creature.getAbilities().getConstitution().mod();
+            if (conMod > 0) {
+                builder.append(" + ");
+                builder.append(conMod * creature.getHit().getCountHitDice());
+            }
+            return builder.toString();
         }
-        return builder.toString();
+        return "";
     }
 
     @Named("toSpeed")
@@ -310,7 +313,7 @@ public interface CreatureMapper {
         if (senses.getDarkvision() != null) {
             var darkvision = "тёмное зрение %d фт.".formatted(senses.getDarkvision());
             if (senses.getUnimpeded() !=null && senses.getUnimpeded()) {
-                darkvision += " (даже через магическую тьму)";
+                darkvision += " (магическая тьма не является препятствием)";
             }
             response.add(darkvision);
         }
