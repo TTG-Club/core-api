@@ -14,7 +14,7 @@ public enum Habitat {
     COASTAL("Побережье"),
     DESERT("Пустыня"),
     FOREST("Лес"),
-    GRASSLAND("Равнина"),
+    GRASSLAND("Луг"),
     HILL("Холмы"),
     MOUNTAIN("Горы"),
     PLANAR_ABYSS("План (Бездна)"),
@@ -26,7 +26,7 @@ public enum Habitat {
     PLANAR_BEASTLAND("План (Звериные земли)"),
     PLANAR_BYTOPIA("План (Битопия)"),
     PLANAR_CARCERY("План (Карцери)"),
-    PLANAR_ELEMENTAL_PLANE_OF_EARTH("план (Стихийный план земли)"),
+    PLANAR_ELEMENTAL_PLANE_OF_EARTH("План (Стихийный план земли)"),
     PLANAR_ELEMENTAL_CHAOS("План (Стихийный хаос)"),
     PLANAR_ELYSIUM("План (Элизиум)"),
     PLANAR_ETHEREAL_PLANE("План (Эфирный план)"),
@@ -45,7 +45,7 @@ public enum Habitat {
     PLANAR_YSGARD("План (Асгард)"),
     SWAMP("Болота"),
     UNDERDARK("Подземье"),
-    UNDERWATER("Подводные глубины"),
+    UNDERWATER("Под водой"),
     URBAN("Город");
 
     private final String name;
