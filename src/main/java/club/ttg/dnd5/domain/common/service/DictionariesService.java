@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.*;
+import club.ttg.dnd5.domain.common.rest.dto.select.BaseSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.KeySelectDto;
@@ -101,6 +102,7 @@ public class DictionariesService {
     public Collection<SelectOptionDto> getCreatureCategories() {
         return Arrays.stream(CreatureType.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
@@ -120,12 +122,14 @@ public class DictionariesService {
     public Collection<SelectOptionDto> getConditions() {
         return Arrays.stream(Condition.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
     public Collection<SelectOptionDto> getAlignments() {
         return Arrays.stream(Alignment.values())
                 .map(type -> createBaseOptionDTO(type.getName(), type.name()))
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
@@ -177,6 +181,7 @@ public class DictionariesService {
                         .ability(type.getAbility().name())
                         .value(type.name())
                         .build())
+                .sorted(Comparator.comparing(BaseSelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
@@ -195,6 +200,7 @@ public class DictionariesService {
                         .label(type.getName())
                         .value(type.name())
                         .build())
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
 
     }
@@ -260,6 +266,7 @@ public class DictionariesService {
                         .label(type.getName())
                         .value(type.name())
                         .build())
+                .sorted(Comparator.comparing(SelectOptionDto::getLabel))
                 .collect(Collectors.toList());
     }
 
