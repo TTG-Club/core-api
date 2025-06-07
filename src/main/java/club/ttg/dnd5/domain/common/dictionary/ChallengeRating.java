@@ -48,7 +48,7 @@ public enum ChallengeRating {
 
     public static String getCr(long experience) {
         for (var cr : values()) {
-            if (cr.experience == experience) {
+            if (cr.experience <= experience) {
                 return cr.name;
             }
         }
