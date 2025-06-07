@@ -37,30 +37,10 @@ public enum Size {
 				.orElse(UNDEFINED);
 	}
 
-	public static String convertSizeToEntityFormat(Collection<String> sizes) {
-		List<Size> list = sizes.stream()
-				.map(Size::parse)
-				.toList();
-		return list.stream()
-				.map(Size::name)
-				.collect(Collectors.joining(", "));
-	}
-
-	public static List<String> convertEntityFormatToDtoFormat(String entityFormat) {
-		return Arrays.stream(entityFormat.split(","))
-				.map(String::trim)
-				.map(Size::parse)
-				.map(s -> s.getNames()[0])
-				.toList();
-	}
-
-	public static Set<Size> getFilterSizes(){
-		return EnumSet.of(TINY, SMALL, MEDIUM, LARGE, HUGE, GARGANTUAN);
-	}
-
 	public String getSizeName(CreatureType type) {
 		return switch (type) {
-			case ABERRATION, FEY, UNDEAD, SLIME, FIEND, PLANT -> names[2];
+			case ABERRATION, FEY, UNDEAD, SLIME -> names[1];
+			case FIEND, PLANT -> names[2];
 			default -> names[0];
 		};
 	}
