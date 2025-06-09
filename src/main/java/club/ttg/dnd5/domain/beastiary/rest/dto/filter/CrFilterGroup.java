@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
+import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
-import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Setter
 public class CrFilterGroup extends AbstractFilterGroup<Long, CrFilterGroup.CrFilterItem> {
 
-    private static final NumberPath<Long> PATH = QSpell.spell.level;
+    private static final NumberPath<Long> PATH = QCreature.creature.experience;
 
     public CrFilterGroup(List<CrFilterItem> filters) {
         super(filters);
