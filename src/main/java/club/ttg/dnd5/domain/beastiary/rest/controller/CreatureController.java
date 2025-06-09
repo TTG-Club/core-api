@@ -3,7 +3,10 @@ package club.ttg.dnd5.domain.beastiary.rest.controller;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
+import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/v2/bestiary")
 public class CreatureController {
     private final CreatureService creatureService;
+    private final CreatureFilterService creatureFilterService;
 
     @Operation(summary = "Проверить существо по URL", description = "Проверка существа по его уникальному URL.")
     @ApiResponses(value = {
@@ -42,8 +46,9 @@ public class CreatureController {
                                               @Valid
                                               @Size(min = 3)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine) {
-        return creatureService.search(searchLine);
+                                              String searchLine,
+                                              @RequestBody(required = false) SearchBody searchBody) {
+        return creatureService.search(searchLine, searchBody);
     }
 
     @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")
@@ -55,6 +60,11 @@ public class CreatureController {
     @GetMapping("/{url}/raw")
     public CreatureRequest getFormByUrl(@PathVariable String url) {
         return creatureService.findFormByUrl(url);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return creatureFilterService.getDefaultFilterInfo();
     }
 
     @Operation(summary = "Добавление существа")

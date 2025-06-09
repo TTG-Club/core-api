@@ -7,25 +7,21 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class CreatureServiceImpl implements CreatureService {
-    private static final Sort DEFAULT_SORT = Sort.by("experience", "name");
     private final CreatureRepository creatureRepository;
+    private final CreatureQueryDslSearchService creatureQueryDslSearchService;
     private final BookService bookService;
     private final CreatureMapper creatureMapper;
 
@@ -38,18 +34,11 @@ public class CreatureServiceImpl implements CreatureService {
     }
 
     @Override
-    public List<CreatureShortResponse> search(final String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return creatureRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
-                })
-                .orElseGet(() -> creatureRepository.findAll(DEFAULT_SORT))
+    public List<CreatureShortResponse> search(final String searchLine, final SearchBody searchBody) {
+        return creatureQueryDslSearchService.search(searchLine, searchBody)
                 .stream()
                 .map(creatureMapper::toShort)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

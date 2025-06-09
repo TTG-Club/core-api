@@ -44,7 +44,6 @@ public class SpellService {
         return true;
     }
 
-
     public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
         return spellQueryDslSearchService.search(searchLine, searchBody).stream()
                 .map(spellMapper::toSpeciesShortResponse)
