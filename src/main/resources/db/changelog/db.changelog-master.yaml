@@ -79,3 +79,5 @@ databaseChangeLog:
       file: db/changelog/2025/05/31-04-update-column-type-initiative-bestiary-table.yaml
   - include:
       file: db/changelog/2025/05/31-05-update-section-bestiary-table.yaml
+  - include:
+      file: db/changelog/2025/06/10-01-add-column-lair-bestiary-table.yaml

@@ -200,6 +200,19 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureAction> legendaryActions;
+
+    /**
+     * Описание логова
+     */
+    private String lair;
+
+    /**
+     * Эффекты логова
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<CreatureAction> lairEffects;
+
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private CreatureSection section;
