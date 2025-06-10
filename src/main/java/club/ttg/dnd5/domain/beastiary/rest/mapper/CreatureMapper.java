@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.LegendaryActionResponse;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
@@ -71,6 +72,7 @@ public interface CreatureMapper {
     @Mapping(source = "section.habitats", target = "section.habitats", qualifiedByName = "toHabitats")
     @Mapping(source = "section.treasures", target = "section.treasures", qualifiedByName = "toTreasures")
     @Mapping(source = "section.sectionDescription", target = "section.description")
+    @Mapping(source = ".", target = "legendary", qualifiedByName = "toLegendary")
     CreatureDetailResponse toDetail(Creature creature);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -83,6 +85,9 @@ public interface CreatureMapper {
     @Mapping(source = "section.sectionName", target = "section.name.name")
     @Mapping(source = "section.sectionEnglish", target = "section.name.english")
     @Mapping(source = "section.sectionDescription", target = "section.description")
+    @Mapping(target = "legendary.actions", source = "legendaryActions")
+    @Mapping(target = "legendary.count", source = "legendaryAction")
+    @Mapping(target = "legendary.inLair", source = "legendaryActionInLair")
     CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping
@@ -102,6 +107,9 @@ public interface CreatureMapper {
     @Mapping(source = "request.section.habitats", target = "section.habitats")
     @Mapping(source = "request.section.treasures", target = "section.treasures")
     @Mapping(source = "request.section.description", target = "section.sectionDescription")
+    @Mapping(source = "request.legendary.actions", target = "legendaryActions")
+    @Mapping(source = "request.legendary.count", target = "legendaryAction")
+    @Mapping(source = "request.legendary.inLair", target = "legendaryActionInLair")
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Book source);
 
@@ -390,5 +398,16 @@ public interface CreatureMapper {
                 .stream()
                 .map(CreatureTreasure::getName)
                 .collect(Collectors.joining(", "));
+    }
+    @Named("toLegendary")
+    default LegendaryActionResponse toLegendary(Creature creature) {
+        var response = new LegendaryActionResponse();
+
+        if (creature.getLegendaryActionInLair() > 0) {
+            response.setCount("%d (%d в логове)".formatted(creature.getLegendaryAction(), creature.getLegendaryActionInLair()));
+        } else {
+            response.setCount("" + creature.getLegendaryAction());
+        }
+        return response;
     }
 }
