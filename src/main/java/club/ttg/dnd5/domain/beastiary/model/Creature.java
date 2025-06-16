@@ -186,6 +186,8 @@ public class Creature extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureAction> reactions;
 
+    private String legendaryDescription;
+
     /**
      * Количество легендарных действий
      */

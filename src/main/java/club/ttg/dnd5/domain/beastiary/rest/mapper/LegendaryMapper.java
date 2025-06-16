@@ -30,7 +30,7 @@ public abstract class LegendaryMapper {
                 ? "%d (%d в логове)".formatted(base, inLair)
                 : String.valueOf(base)
         );
-        response.setDescription(creature.getDescription());
+        response.setDescription(creature.getLegendaryDescription());
         return response;
     }
 }
