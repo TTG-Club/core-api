@@ -13,7 +13,6 @@ import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
-import club.ttg.dnd5.domain.beastiary.rest.dto.LegendaryActionResponse;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
@@ -43,7 +42,8 @@ import java.util.stream.Collectors;
     uses = {
         ActionMapper.class,
         TraitMapper.class,
-        BaseMapping.class
+        BaseMapping.class,
+        LegendaryMapper.class
     })
 public interface CreatureMapper {
     @BaseMapping.BaseSourceMapping
@@ -398,16 +398,5 @@ public interface CreatureMapper {
                 .stream()
                 .map(CreatureTreasure::getName)
                 .collect(Collectors.joining(", "));
-    }
-    @Named("toLegendary")
-    default LegendaryActionResponse toLegendary(Creature creature) {
-        var response = new LegendaryActionResponse();
-
-        if (creature.getLegendaryActionInLair() > 0) {
-            response.setCount("%d (%d в логове)".formatted(creature.getLegendaryAction(), creature.getLegendaryActionInLair()));
-        } else {
-            response.setCount("" + creature.getLegendaryAction());
-        }
-        return response;
     }
 }
