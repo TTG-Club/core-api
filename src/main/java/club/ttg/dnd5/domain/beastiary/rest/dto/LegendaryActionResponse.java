@@ -10,9 +10,9 @@ import java.util.Collection;
 @Setter
 public class LegendaryActionResponse {
     @Schema(description = "Легендарные действия")
-    private Collection<ActionRequest> actions;
+    private Collection<ActionResponse> actions;
     @Schema(description ="Количество легендарных действий")
     private String count;
-    @Schema(description ="Описание легендарных действий (если отличается от стандартного)")
+    @Schema(description ="Описание использования легендарных действий (если отличается от стандартного)")
     private String description;
 }
