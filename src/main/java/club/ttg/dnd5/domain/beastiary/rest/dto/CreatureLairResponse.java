@@ -12,5 +12,5 @@ import java.util.Collection;
 public class CreatureLairResponse {
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
-    private Collection<ActionRequest> effects;
+    private Collection<ActionResponse> effects;
 }
