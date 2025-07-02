@@ -58,9 +58,7 @@ public class CreatureDetailResponse extends BaseResponse {
     private LegendaryActionResponse legendary;
 
     @Schema(description ="Описание логова")
-    private String lair;
-    @Schema(description = "Эффекты логова")
-    private Collection<ActionResponse> lairEffects;
+    private CreatureLairResponse lair;
 
     @Schema(description = "Описании общей секции")
     private CreatureSectionResponse section;
