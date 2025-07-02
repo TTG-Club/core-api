@@ -68,9 +68,7 @@ public class CreatureRequest extends BaseRequest {
     @Schema(description = "Легендарные действия")
     private LegendaryActionRequest legendary;
     @Schema(description = "Описание логова")
-    private String lair;
-    @Schema(description = "Эффекты логова")
-    private Collection<ActionRequest> lairEffects;
+    private CreatureLairRequest lair;
     @Schema(description = "Секция описательных характеристик существа")
     private CreatureSectionRequest section;
 }
