@@ -72,6 +72,7 @@ public interface CreatureMapper {
     @Mapping(source = "section.habitats", target = "section.habitats", qualifiedByName = "toHabitats")
     @Mapping(source = "section.treasures", target = "section.treasures", qualifiedByName = "toTreasures")
     @Mapping(source = "section.sectionDescription", target = "section.description")
+    @Mapping(source = "lair", target = "lair.description")
     @Mapping(source = ".", target = "legendary", qualifiedByName = "toLegendary")
     CreatureDetailResponse toDetail(Creature creature);
 
