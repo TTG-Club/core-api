@@ -645,4 +645,40 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getCoins() {
         return dictionariesService.getCoins();
     }
+
+    @Operation(summary = "Типы предметов")
+    @GetMapping("/item/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Боеприпасы", "value": "AMMUNITION" },
+                              { "label": "Снаряжение приключенца", "value": "ADVENTURING_GEAR" },
+                              { "label": "Инструменты ремесленников", "value": "ARTISAN_S_TOOLS" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getItemTypes() {
+        return dictionariesService.getItemTypes();
+    }
+
+    @Operation(summary = "Категории предметов")
+    @GetMapping("/item/categories")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Снаряжение", "value": "ITEM" },
+                              { "label": "Доспех", "value": "ARMOR" },
+                              { "label": "Оружие", "value": "WEAPON" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getItemCategories() {
+        return dictionariesService.getItemCategories();
+    }
 }
