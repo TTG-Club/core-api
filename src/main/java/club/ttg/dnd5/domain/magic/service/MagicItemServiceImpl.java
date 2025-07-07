@@ -12,6 +12,7 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +65,7 @@ public class MagicItemServiceImpl implements MagicItemService {
 
     @Transactional
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String addItem(MagicItemRequest request) {
         exist(request.getUrl());
         var book = bookService.findByUrl(request.getSource().getUrl());
@@ -85,6 +87,7 @@ public class MagicItemServiceImpl implements MagicItemService {
 
     @Transactional
     @Override
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String delete(String url) {
         var item = findByUrl(url);
         item.setHiddenEntity(true);

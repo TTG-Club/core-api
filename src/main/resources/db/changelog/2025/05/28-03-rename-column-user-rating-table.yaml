@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename-column-user-rating-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+            tableName: rating
+            oldColumnName: user
+            newColumnName: username

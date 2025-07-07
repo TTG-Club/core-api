@@ -20,5 +20,4 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
             """
     )
     List<Spell> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
-
 }

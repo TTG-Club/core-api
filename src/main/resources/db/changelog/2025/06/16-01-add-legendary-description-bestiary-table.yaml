@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-legendary-description-table-bestiary
+      author: Magistrus
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: legendary_description
+                  type: TEXT
+            tableName: bestiary

@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: update-column-type-initiative-bestiary-table.
+      author: Magistrus
+      changes:
+        - modifyDataType:
+            tableName: bestiary
+            columnName: initiative
+            newDataType: jsonb
