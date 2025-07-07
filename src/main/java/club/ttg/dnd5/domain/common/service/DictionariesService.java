@@ -16,6 +16,8 @@ import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.item.model.ItemCategory;
+import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
@@ -274,6 +276,24 @@ public class DictionariesService {
         return Arrays.stream(Coin.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getShortName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getItemTypes() {
+        return Arrays.stream(ItemType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getItemCategories() {
+        return Arrays.stream(ItemCategory.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
                         .value(type.name())
                         .build())
                 .collect(Collectors.toList());
