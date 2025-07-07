@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-image_url-bestiary-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+

@@ -12,64 +12,64 @@ import lombok.*;
 @Setter
 @Schema(name = "Предметы, снаряжение и прочие объекты")
 public class ItemDetailResponse extends BaseResponse {
-    @Schema(name = "Категория объекта", examples = {"ITEM", "ARMOR", "WEAPON"})
+    @Schema(description = "Категория объекта", examples = {"ITEM", "ARMOR", "WEAPON"})
     private String category;
-    @Schema(name = "Типы объекта разделенные запятой", examples = "Оружие, Воинское оружие, Рукопашное оружие")
+    @Schema(description = "Типы объекта разделенные запятой", examples = "Оружие, Воинское оружие, Рукопашное оружие")
     private String types;
     /** Стоимость предмета */
-    @Schema(name = "Стоимость", examples = "10 зм.")
+    @Schema(description = "Стоимость", examples = "10 зм.")
     private String cost;
     /** Вес предмета */
-    @Schema(name = "Вес", examples = "2 фунта")
+    @Schema(description = "Вес", examples = "2 фунта")
     private String weight;
 
-    @Schema(name = "Категория доспеха")
+    @Schema(description = "Категория доспеха")
     private String armorCategory;
     @JsonProperty(value = "ac")
-    @Schema(name = "Класс доспеха", examples = "12")
+    @Schema(description = "Класс доспеха", examples = "12")
     private String armorClass;
-    @Schema(name = "Требуемая Сила для ношения без уменьшения скорости", examples = "Сила 12")
+    @Schema(description = "Требуемая Сила для ношения без уменьшения скорости", examples = "Сила 12")
     private String strength;
-    @Schema(name = "Помеха на проверку Ловкости (Скрытность)", examples = "Есть")
+    @Schema(description = "Помеха на проверку Ловкости (Скрытность)", examples = "Есть")
     private String stealth;
 
     /** Оружие */
-    @Schema(name = "Категория оружия", examples = "Простое рукопашное")
+    @Schema(description = "Категория оружия", examples = "Простое рукопашное")
     private String weaponCategory;
-    @Schema(name = "Урон оружия", examples = "1к6 дробящий")
+    @Schema(description = "Урон оружия", examples = "1к6 дробящий")
     private String damage;
-    @Schema(name = "Свойства оружия", examples = "Фехтовальное, Лёгкое, Метательное (дистанция 20/60)")
+    @Schema(description = "Свойства оружия", examples = "Фехтовальное, Лёгкое, Метательное (дистанция 20/60)")
     private String weaponProperties;
-    @Schema(name = "Приём оружия", examples = "Подавление")
+    @Schema(description = "Приём оружия", examples = "Подавление")
     private String mastery;
 
     /**
      * Магический предмет
      */
-    @Schema(name = "редкость магического предмета", examples = "редкий")
+    @Schema(description = "редкость магического предмета", examples = "редкий")
     private String rarity;
-    @Schema(name = "уточнение типа магического предмета", examples = "любой меч")
+    @Schema(description = "уточнение типа магического предмета", examples = "любой меч")
     private String typeClarification;
-    @Schema(name = "настройка магического предмета", examples = "Требуется настройка (волшебник)")
+    @Schema(description = "настройка магического предмета", examples = "Требуется настройка (волшебник)")
     private String attunement;
-    @Schema(name = "количество зарядов магического предмета")
+    @Schema(description = "количество зарядов магического предмета")
     private Byte charges;
-    @Schema(name = "true если магический предмет - проклят")
+    @Schema(description = "true если магический предмет - проклят")
     private Boolean curse;
 
     /**
      * Верховое животное
      */
-    @Schema(name = "Переносимый вес", examples = "300 фунтов")
+    @Schema(description = "Переносимый вес", examples = "300 фунтов")
     private String carryingCapacity;
 
     /**
      * Характеристика
      */
-    @Schema(name = "Характеристика для Тест к20", examples = "Сила")
+    @Schema(description = "Характеристика для Тест к20", examples = "Сила")
     public String ability;
-    @Schema(name = "Использование инструмента")
+    @Schema(description = "Использование инструмента")
     public String uses;
-    @Schema(name = "Что можно создать")
+    @Schema(description = "Что можно создать")
     public String creation;
 }

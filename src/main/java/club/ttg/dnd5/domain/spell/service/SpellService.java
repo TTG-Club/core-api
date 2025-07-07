@@ -21,6 +21,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +43,6 @@ public class SpellService {
         }
         return true;
     }
-
 
     public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
         return spellQueryDslSearchService.search(searchLine, searchBody).stream()
@@ -93,7 +93,7 @@ public class SpellService {
                 .orElse(null);
 
         Spell spell = spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
-
+        spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
         return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
 
     }
@@ -116,6 +116,7 @@ public class SpellService {
                 .map(bookService::findByUrl)
                 .orElse(null);
         Spell spell = spellMapper.updateEntity(existingSpell, request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
+        spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
         return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
     }
 

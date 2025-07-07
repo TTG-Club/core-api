@@ -12,15 +12,7 @@ import java.util.Collection;
 @Getter
 @Setter
 @JsonRootName("name")
-@Builder
-public class NameRequest {
-    @JsonProperty(value = "rus")
-    @Schema(description = "русское название", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String name = "";
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty(value = "eng")
-    @Schema(description = "английское название", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String english = "";
+public class NameRequest extends Name {
     @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "alt")
     @Schema(description = "альтернативные названия")

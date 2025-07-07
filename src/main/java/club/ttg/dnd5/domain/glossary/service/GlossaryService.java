@@ -17,6 +17,7 @@ import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -41,6 +42,7 @@ public class GlossaryService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "countAllMaterials")
     public String save(GlossaryRequest glossaryRequest) {
         if (glossaryRepository.existsById(glossaryRequest.getUrl())) {
             throw new EntityExistException(String.format("Glossary with url %s already exists", glossaryRequest.getUrl()));
@@ -76,6 +78,7 @@ public class GlossaryService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "countAllMaterials")
     public void delete(String url) {
         Glossary existingGlossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));

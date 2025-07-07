@@ -30,7 +30,7 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
 
     public static class SpellRitualFilterSingleton extends AbstractCustomQueryFilterItem {
 
-        private static final String NAME = "ритуал";
+        private static final String NAME = "Ритуал";
 
         public SpellRitualFilterSingleton() {
             super(NAME, null);
@@ -49,7 +49,7 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
 
     public static class SpellConcentrationFilterSingleton extends AbstractCustomQueryFilterItem {
 
-        private static final String NAME = "концентрация";
+        private static final String NAME = "Концентрация";
 
         public SpellConcentrationFilterSingleton() {
             super(NAME, null);
@@ -68,7 +68,7 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
 
     public static class SpellUpcastableFilterSingleton extends AbstractCustomQueryFilterItem {
 
-        private static final String NAME = "улучшается с уровнем ячейки";
+        private static final String NAME = "Улучшается с уровнем ячейки";
         private static final BooleanPath PATH = QSpell.spell.upcastable;
 
         public SpellUpcastableFilterSingleton() {

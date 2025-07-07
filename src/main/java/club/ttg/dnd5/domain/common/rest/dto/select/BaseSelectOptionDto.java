@@ -29,5 +29,5 @@ public abstract class BaseSelectOptionDto {
             description = "Используемое значение. Передается в запросах на API, например, при создании вида.",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
-    private String value;
+    private Object value;
 }

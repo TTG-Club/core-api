@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-lair-table-bestiary
+      author: Magistrus
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lair
+                  type: text
+              - column:
+                  name: lair_effects
+                  type: jsonb
+            tableName: bestiary

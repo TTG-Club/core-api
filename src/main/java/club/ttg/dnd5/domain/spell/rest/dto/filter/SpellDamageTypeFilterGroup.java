@@ -68,7 +68,7 @@ public class SpellDamageTypeFilterGroup extends AbstractFilterGroup<DamageType, 
 
     public static class SpellDamageTypeFilterItem extends AbstractFilterItem<DamageType> {
         public SpellDamageTypeFilterItem(DamageType value) {
-            super(value.getShortName(), value, null);
+            super(value.getName(), value, null);
         }
     }
 

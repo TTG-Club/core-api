@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
-import club.ttg.dnd5.domain.beastiary.model.BeastType;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -20,5 +20,5 @@ public class SpeciesPropertiesRequest {
     @Schema(description = "Размеры")
     private Collection<SpeciesSizeDto> sizes;
     @Schema(description = "Тип существа")
-    private BeastType type;
+    private CreatureType type;
 }

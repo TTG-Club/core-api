@@ -28,9 +28,11 @@ public class SpellCastingTime {
         StringBuilder sb = new StringBuilder();
         if(Objects.nonNull(unit)) {
             sb.append(unit.getFormattedName(value));
-            sb.append(" ");
         }
         if(StringUtils.isNotBlank(custom)) {
+            if (!custom.startsWith(",") && !custom.startsWith(" ")) {
+                sb.append(" ");
+            }
             sb.append(custom);
         }
         return sb.toString();

@@ -53,3 +53,33 @@ databaseChangeLog:
       file: db/changelog/2025/04/30-01-magic-item-add-column-image_url.yaml
   - include:
       file: db/changelog/2025/05/07-01-add-column-varies-magic-item.yaml
+  - include:
+      file: db/changelog/2025/05/19-01-init-bestiary.yaml
+  - include:
+      file: db/changelog/2025/05/19-02-init-weapon_property.yaml
+  - include:
+      file: db/changelog/2025/05/19-03-init-weapon-mastery.yaml
+  - include:
+      file: db/changelog/2025/05/26-01-add-column-image_url.yaml
+  - include:
+      file: db/changelog/2025/05/26-02-rename-column-immunity.yaml
+  - include:
+      file: db/changelog/2025/05/26-04-add-column-speed.yaml
+  - include:
+      file: db/changelog/2025/05/28-01-rename-columns-bestiary.yaml
+  - include:
+      file: db/changelog/2025/05/28-02-init-rating.yaml
+  - include:
+      file: db/changelog/2025/05/28-03-rename-column-user-rating-table.yaml
+  - include:
+      file: db/changelog/2025/05/30-02-remove-bestiary-section-table.yaml
+  - include:
+      file: db/changelog/2025/05/31-03-update-column-value-to-numeric-in-rating-table.yaml
+  - include:
+      file: db/changelog/2025/05/31-04-update-column-type-initiative-bestiary-table.yaml
+  - include:
+      file: db/changelog/2025/05/31-05-update-section-bestiary-table.yaml
+  - include:
+      file: db/changelog/2025/06/10-01-add-column-lair-bestiary-table.yaml
+  - include:
+      file: db/changelog/2025/06/16-01-add-legendary-description-bestiary-table.yaml

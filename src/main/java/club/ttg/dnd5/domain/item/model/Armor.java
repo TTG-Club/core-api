@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.item.model;
 
-import club.ttg.dnd5.dictionary.item.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,7 +16,7 @@ import lombok.Setter;
 @DiscriminatorValue("ARMOR")
 public class Armor extends Item {
     @Enumerated(EnumType.STRING)
-    private ArmorCategory category;
+    private ArmorCategory armorCategory;
     /** КД. */
     private String armorClass;
     /** Сила. */

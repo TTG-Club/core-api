@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: init-weapon-properties-table
+      author: Magistrus
+      changes:
+        - createTable:
+            tableName: weapon_property
+            columns:
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: english
+                  type: VARCHAR(255)
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+
+              - column:
+                  name: has_distance
+                  type: BOOLEAN
+              - column:
+                  name: has_versatile
+                  type: BOOLEAN
+              - column:
+                  name: has_ammo
+                  type: BOOLEAN
+
+        - createIndex:
+            indexName: weapon_property_url_index
+            tableName: weapon_property
+            columns:
+              - column:
+                  name: url
+
+        - createIndex:
+            indexName: weapon_property_name_index
+            tableName: weapon_property
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
