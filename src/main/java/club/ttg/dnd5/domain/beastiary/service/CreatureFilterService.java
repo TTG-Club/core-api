@@ -2,7 +2,9 @@ package club.ttg.dnd5.domain.beastiary.service;
 
 import club.ttg.dnd5.domain.beastiary.model.filter.CreatureSavedFilter;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureSavedFilterRepository;
+import club.ttg.dnd5.domain.beastiary.rest.dto.filter.AlignmentFilterGroup;
 import club.ttg.dnd5.domain.beastiary.rest.dto.filter.CrFilterGroup;
+import club.ttg.dnd5.domain.beastiary.rest.dto.filter.CreatureSizeFilterGroup;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.user.service.UserService;
@@ -22,7 +24,9 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
     @Override
     protected FilterInfo buildDefaultFilterInfo() {
         return new FilterInfo(List.of(
-                CrFilterGroup.getDefault()
+                CrFilterGroup.getDefault(),
+                CreatureSizeFilterGroup.getDefault(),
+                AlignmentFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }
