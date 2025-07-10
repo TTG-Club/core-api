@@ -30,7 +30,7 @@ public class SpellCastingTime {
             sb.append(unit.getFormattedName(value));
         }
         if(StringUtils.isNotBlank(custom)) {
-            if (!custom.startsWith(",") && !custom.startsWith(" ")) {
+            if (!custom.startsWith(",") || !custom.startsWith(" ")) {
                 sb.append(" ");
             }
             sb.append(custom);
