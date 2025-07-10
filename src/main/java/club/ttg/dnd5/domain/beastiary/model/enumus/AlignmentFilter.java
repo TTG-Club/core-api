@@ -26,6 +26,6 @@ public enum AlignmentFilter {
                 return alignment;
             }
         }
-        throw new ApiException(HttpStatus.NOT_FOUND, "Неправильный размер существа");
+        throw new ApiException(HttpStatus.NOT_FOUND, "Неправильное мировозрение");
     }
 }
