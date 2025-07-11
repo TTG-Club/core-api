@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-coin-to-item
+      author: Magistrus
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: coin
+                  type: VARCHAR(255)
+            tableName: item

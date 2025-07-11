@@ -83,3 +83,11 @@ databaseChangeLog:
       file: db/changelog/2025/06/10-01-add-column-lair-bestiary-table.yaml
   - include:
       file: db/changelog/2025/06/16-01-add-legendary-description-bestiary-table.yaml
+  - include:
+      file: db/changelog/2025/07/11-01-add-column-coin-to-item.yaml
+  - include:
+      file: db/changelog/2025/07/11-02-add-column-source-to-item.yaml
+  - include:
+      file: db/changelog/2025/07/11-03-add-column-source_page-to-item.yaml
+  - include:
+      file: db/changelog/2025/07/11-04-add-column-category-to-item.yaml
