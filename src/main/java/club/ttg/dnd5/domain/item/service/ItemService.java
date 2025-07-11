@@ -17,7 +17,7 @@ public interface ItemService {
 
     String delete(String itemUrl);
 
-    boolean existsByUrl(String url);
+    boolean existOrThrow(String url);
 
     ItemRequest findFormByUrl(String url);
 }
