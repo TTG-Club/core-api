@@ -11,7 +11,8 @@ public enum CreatureSenses {
     TRUESIGHT("Истинное зрение"),
     BLINDSIGHT("Слепое зрение"),
     DARKVISION("Темное зрение"),
-    TREMORSENSE("Чувство вибраций");
+    TREMORSENSE("Чувство вибраций"),
+    UNIMPEDED("Темное зрение (даже через магическую тьму)");
 
     private final String name;
 

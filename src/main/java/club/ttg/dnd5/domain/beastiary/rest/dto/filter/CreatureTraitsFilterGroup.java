@@ -33,8 +33,7 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<CreatureTrait
         Set<CreatureTraits> positiveValues = getPositive();
         BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(CreatureTraits::toString).collect(Collectors.toSet()));
         Set<CreatureTraits> negativeValues = getNegative();
-        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues.stream().map(CreatureTraits::toString).collect(Collectors.toSet())));
-
+        return result.and(CollectionUtils.isEmpty(negativeValues) ? TRUE_EXPRESSION : PATH.notIn(negativeValues.stream().map(CreatureTraits::toString).collect(Collectors.toSet())));
     }
 
     @Override
@@ -43,10 +42,15 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<CreatureTrait
     }
 
     public static CreatureTraitsFilterGroup getDefault() {
+        return getDefault(Arrays.asList(CreatureTraits.values()));
+    }
+
+    public static CreatureTraitsFilterGroup getDefault(List<CreatureTraits> popularTraits) {
         return new CreatureTraitsFilterGroup(
-                Arrays.stream(CreatureTraits.values())
+                popularTraits.stream()
                         .map(CreatureTraitsFilterGroup.CreatureTraitsFilterItem::new)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList())
+        );
     }
 
     public static class CreatureTraitsFilterItem extends AbstractFilterItem<CreatureTraits> {
