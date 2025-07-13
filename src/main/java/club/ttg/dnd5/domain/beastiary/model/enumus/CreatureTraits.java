@@ -37,6 +37,6 @@ public enum CreatureTraits {
                 return traits;
             }
         }
-        throw new ApiException(HttpStatus.NOT_FOUND, "Неправильное мировозрение");
+        throw new ApiException(HttpStatus.NOT_FOUND, "Неправильное умение");
     }
 }
