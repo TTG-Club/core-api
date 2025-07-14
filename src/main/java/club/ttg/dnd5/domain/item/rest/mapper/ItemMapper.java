@@ -20,6 +20,7 @@ public interface ItemMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(target = "category", constant = "ITEM")
+    @Mapping(source = ".", target = "cost", qualifiedByName = "getCost")
     @BaseItem
     ItemDetailResponse toDetailResponse(final Item item);
 
@@ -123,6 +124,11 @@ public interface ItemMapper {
     @Named("typeToSting")
     default String typeToSting(Set<ItemType> types) {
         return types.stream().map(ItemType::getName).collect(Collectors.joining(", "));
+    }
+
+    @Named("getCost")
+    default String getCost(Item item) {
+        return item.getCost() + " " + item.getCoin().getName();
     }
 
     @Mapping(source = "types", target = "types", qualifiedByName = "typeToSting")
