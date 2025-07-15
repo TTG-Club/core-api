@@ -128,7 +128,7 @@ public interface ItemMapper {
 
     @Named("getCost")
     default String getCost(Item item) {
-        return item.getCost() + " " + item.getCoin().getName();
+        return item.getCost() + " " + item.getCoin().getShortName();
     }
 
     @Mapping(source = "types", target = "types", qualifiedByName = "typeToSting")
