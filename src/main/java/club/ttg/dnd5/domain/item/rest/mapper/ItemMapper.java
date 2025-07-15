@@ -128,6 +128,9 @@ public interface ItemMapper {
 
     @Named("getCost")
     default String getCost(Item item) {
+        if (item.getCost() == null) {
+            return "варьируется";
+        }
         return item.getCost() + " " + item.getCoin().getShortName();
     }
 
