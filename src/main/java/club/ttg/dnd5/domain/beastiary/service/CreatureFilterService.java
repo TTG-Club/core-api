@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
-import club.ttg.dnd5.domain.beastiary.model.enumus.CreatureTraits;
 import club.ttg.dnd5.domain.beastiary.model.filter.CreatureSavedFilter;
 import club.ttg.dnd5.domain.beastiary.model.filter.CreatureTraitsStats;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
@@ -32,7 +31,7 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
         List<Creature> creatures = creatureRepository.findAll();
 
         CreatureTraitsStats stats = new CreatureTraitsStats();
-        List<CreatureTraits> top4Traits = stats.getTopTraits(creatures, 4);
+        List<String> top4Traits = stats.getTopTraits(creatures, 4);
 
         return new FilterInfo(List.of(
                 CrFilterGroup.getDefault(),

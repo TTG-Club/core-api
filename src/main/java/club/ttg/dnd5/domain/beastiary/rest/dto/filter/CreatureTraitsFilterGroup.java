@@ -1,25 +1,20 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
-import club.ttg.dnd5.domain.beastiary.model.enumus.CreatureTraits;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.StringPath;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class CreatureTraitsFilterGroup extends AbstractFilterGroup<CreatureTraits, CreatureTraitsFilterGroup.CreatureTraitsFilterItem> {
-
-    private static final StringPath PATH = Expressions.stringPath("traits");
+public class CreatureTraitsFilterGroup extends AbstractFilterGroup<String, CreatureTraitsFilterGroup.CreatureTraitsFilterItem> {
 
     public CreatureTraitsFilterGroup(List<CreatureTraitsFilterItem> filters) {
         super(filters);
@@ -30,10 +25,28 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<CreatureTrait
         if (isSingular()) {
             return TRUE_EXPRESSION;
         }
-        Set<CreatureTraits> positiveValues = getPositive();
-        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(CreatureTraits::toString).collect(Collectors.toSet()));
-        Set<CreatureTraits> negativeValues = getNegative();
-        return result.and(CollectionUtils.isEmpty(negativeValues) ? TRUE_EXPRESSION : PATH.notIn(negativeValues.stream().map(CreatureTraits::toString).collect(Collectors.toSet())));
+
+        Set<String> positiveValues = getPositive();
+        BooleanExpression positiveExpr = CollectionUtils.isEmpty(positiveValues)
+                ? TRUE_EXPRESSION
+                : Expressions.booleanTemplate(String.format(
+                "(traits is not null and exists (select 1 from jsonb_array_elements(traits) as elem where %s))",
+                positiveValues.stream()
+                        .map(val -> String.format("elem @> '\"%s\"'", escape(val)))
+                        .collect(Collectors.joining(" or "))
+        ));
+
+        Set<String> negativeValues = getNegative();
+        BooleanExpression negativeExpr = CollectionUtils.isEmpty(negativeValues)
+                ? TRUE_EXPRESSION
+                : Expressions.booleanTemplate(String.format(
+                "(traits is not null and not exists (select 1 from jsonb_array_elements(traits) as elem where %s))",
+                negativeValues.stream()
+                        .map(val -> String.format("elem @> '\"%s\"'", escape(val)))
+                        .collect(Collectors.joining(" or "))
+        ));
+
+        return positiveExpr.and(negativeExpr);
     }
 
     @Override
@@ -41,21 +54,21 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<CreatureTrait
         return "Умения";
     }
 
-    public static CreatureTraitsFilterGroup getDefault() {
-        return getDefault(Arrays.asList(CreatureTraits.values()));
-    }
-
-    public static CreatureTraitsFilterGroup getDefault(List<CreatureTraits> popularTraits) {
+    public static CreatureTraitsFilterGroup getDefault(List<String> traitNames) {
         return new CreatureTraitsFilterGroup(
-                popularTraits.stream()
-                        .map(CreatureTraitsFilterGroup.CreatureTraitsFilterItem::new)
+                traitNames.stream()
+                        .map(CreatureTraitsFilterItem::new)
                         .collect(Collectors.toList())
         );
     }
 
-    public static class CreatureTraitsFilterItem extends AbstractFilterItem<CreatureTraits> {
-        public CreatureTraitsFilterItem(CreatureTraits value) {
-            super(value.getName(), value, null);
+    public static class CreatureTraitsFilterItem extends AbstractFilterItem<String> {
+        public CreatureTraitsFilterItem(String value) {
+            super(value, value, null);
         }
+    }
+
+    private static String escape(String value) {
+        return value.replace("\"", "\\\"");
     }
 }

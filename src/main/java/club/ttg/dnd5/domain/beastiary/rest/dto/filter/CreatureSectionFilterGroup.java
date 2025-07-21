@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
-import club.ttg.dnd5.domain.beastiary.model.enumus.CreatureSection;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class CreatureSectionFilterGroup extends AbstractFilterGroup<CreatureSection, CreatureSectionFilterGroup.CreatureSectionFilterItem> {
+public class CreatureSectionFilterGroup extends AbstractFilterGroup<Habitat, CreatureSectionFilterGroup.CreatureSectionFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("section");
 
@@ -30,10 +30,10 @@ public class CreatureSectionFilterGroup extends AbstractFilterGroup<CreatureSect
         if (isSingular()) {
             return TRUE_EXPRESSION;
         }
-        Set<CreatureSection> positiveValues = getPositive();
-        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(CreatureSection::toString).collect(Collectors.toSet()));
-        Set<CreatureSection> negativeValues = getNegative();
-        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues.stream().map(CreatureSection::toString).collect(Collectors.toSet())));
+        Set<Habitat> positiveValues = getPositive();
+        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(Habitat::toString).collect(Collectors.toSet()));
+        Set<Habitat> negativeValues = getNegative();
+        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues.stream().map(Habitat::toString).collect(Collectors.toSet())));
 
     }
 
@@ -43,14 +43,14 @@ public class CreatureSectionFilterGroup extends AbstractFilterGroup<CreatureSect
 
     public static CreatureSectionFilterGroup getDefault() {
         return new CreatureSectionFilterGroup(
-                Arrays.stream(CreatureSection.values())
+                Arrays.stream(Habitat.values())
                         .map(CreatureSectionFilterGroup.CreatureSectionFilterItem::new)
                         .collect(Collectors.toList()));
     }
 
-    public static class CreatureSectionFilterItem extends AbstractFilterItem<CreatureSection> {
-        public CreatureSectionFilterItem(CreatureSection section) {
-            super(section.getName(), section, null);
+    public static class CreatureSectionFilterItem extends AbstractFilterItem<Habitat> {
+        public CreatureSectionFilterItem(Habitat habitat) {
+            super(habitat.getName(), habitat, null);
         }
     }
 }
