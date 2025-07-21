@@ -96,9 +96,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public String updateItem(final String itemUrl, final ItemRequest itemDto) {
-        Item item = findByUrl(itemUrl);
-        return itemRepository.save(item).getUrl();
+    public String updateItem(final String itemUrl, final ItemRequest request) {
+        findByUrl(itemUrl);
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return itemRepository.save(itemMapper.toItem(request, book)).getUrl();
     }
 
     @Override
