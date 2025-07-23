@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-articles-table
+      author: your-name
+      changes:
+        - createTable:
+            tableName: articles
+            columns:
+              - column:
+                  name: url
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: english
+                  type: varchar(255)
+              - column:
+                  name: alternative
+                  type: varchar(255)
+              - column:
+                  name: categories
+                  type: varchar(255)
+              - column:
+                  name: tags
+                  type: jsonb
+              - column:
+                  name: source
+                  type: varchar(255)
+              - column:
+                  name: source_page
+                  type: bigint
+              - column:
+                  name: created_at
+                  type: timestamp
+              - column:
+                  name: updated_at
+                  type: timestamp
+              - column:
+                  name: username
+                  type: varchar(255)
+
+        - createIndex:
+            tableName: articles
+            indexName: url_index
+            columns:
+              - column:
+                  name: url
+
+        - createIndex:
+            tableName: articles
+            indexName: name_index
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+
+        - addForeignKeyConstraint:
+            baseTableName: articles
+            baseColumnNames: source
+            referencedTableName: books
+            referencedColumnNames: url
+            constraintName: fk_article_book

@@ -83,3 +83,5 @@ databaseChangeLog:
       file: db/changelog/2025/06/10-01-add-column-lair-bestiary-table.yaml
   - include:
       file: db/changelog/2025/06/16-01-add-legendary-description-bestiary-table.yaml
+  - include:
+      file: db/changelog/2025/07/23-01-init-article.yaml
