@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface ArticleFilterRepository extends JpaRepository<Article, Long> {
     //дописать запрос квери для тегов
-    @Query("SELECT DISTINCT a.categories FROM Articles a WHERE a.categories IS NOT NULL")
+    @Query("SELECT DISTINCT a.categories FROM Article a WHERE a.categories IS NOT NULL")
     List<String> findDistinctTagCategories();
 }

@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: create-articles-table
-      author: your-name
+      author: ylp
       changes:
         - createTable:
             tableName: articles
@@ -45,14 +45,7 @@ databaseChangeLog:
 
         - createIndex:
             tableName: articles
-            indexName: url_index
-            columns:
-              - column:
-                  name: url
-
-        - createIndex:
-            tableName: articles
-            indexName: name_index
+            indexName: articles_name_index
             columns:
               - column:
                   name: name
@@ -60,10 +53,3 @@ databaseChangeLog:
                   name: english
               - column:
                   name: alternative
-
-        - addForeignKeyConstraint:
-            baseTableName: articles
-            baseColumnNames: source
-            referencedTableName: books
-            referencedColumnNames: url
-            constraintName: fk_article_book

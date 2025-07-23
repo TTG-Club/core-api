@@ -16,7 +16,7 @@ import java.util.Collection;
         @Index(name = "name_index", columnList = "name, english, alternative")
 })
 public class Article extends NamedEntity {
-    @Enumerated(EnumType.STRING)
+
     @Column(name = "categories")
     private String categories;
 

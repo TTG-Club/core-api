@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-description-to-articles
+      author: ylp
+      changes:
+        - addColumn:
+            tableName: articles
+            columns:
+              - column:
+                  name: description
+                  type: TEXT
