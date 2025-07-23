@@ -33,8 +33,8 @@
 		<hypersistence-utils.version>3.9.2</hypersistence-utils.version>
 		<org.springdoc.version>2.7.0</org.springdoc.version>
 		<jjwt.version>0.12.5</jjwt.version>
-		<mapstruct.version>1.5.5.Final</mapstruct.version>
-		<mapstruct-processor.version>1.5.5.Final</mapstruct-processor.version>
+		<mapstruct.version>1.6.3</mapstruct.version>
+		<mapstruct-processor.version>1.6.3</mapstruct-processor.version>
 		<liqui-base.version>4.24.0</liqui-base.version>
 		<slugify.version>3.0.7</slugify.version>
 		<icu4j.version>76.1</icu4j.version>
