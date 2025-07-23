@@ -18,4 +18,18 @@ public interface ArticleRepository extends JpaRepository<Article, String> {
             """
     )
     List<Article> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
+
+    @Query(value = """
+    select distinct jsonb_array_elements_text(tags) as tag
+    from articles
+    where tags is not null
+    """, nativeQuery = true)
+    List<String> findAllUniqueTags();
+
+    @Query(value = """
+    select distinct jsonb_array_elements_text(categories::jsonb) as category
+    from articles
+    where categories is not null
+    """, nativeQuery = true)
+    List<String> findAllUniqueCategories();
 }

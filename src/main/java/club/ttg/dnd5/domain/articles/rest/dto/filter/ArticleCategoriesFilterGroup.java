@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ArticleTagFilterGroup extends AbstractFilterGroup<String, ArticleTagFilterGroup.ArticleTagFilterItem> {
+public class ArticleCategoriesFilterGroup extends AbstractFilterGroup<String, ArticleCategoriesFilterGroup.ArticleCategoriesFilterItem> {
 
-    public ArticleTagFilterGroup(List<ArticleTagFilterGroup.ArticleTagFilterItem> filters) {
+    public ArticleCategoriesFilterGroup(List<ArticleCategoriesFilterGroup.ArticleCategoriesFilterItem> filters) {
         super(filters);
     }
 
@@ -48,20 +48,20 @@ public class ArticleTagFilterGroup extends AbstractFilterGroup<String, ArticleTa
 
     @Override
     public String getName() {
-        return "Тег";
+        return "Категория";
     }
 
-    public static ArticleTagFilterGroup getDefault(ArticleRepository articleRepository) {
-        List<String> allTags = articleRepository.findAllUniqueTags();
-        return new ArticleTagFilterGroup(
-                allTags.stream()
-                        .map(ArticleTagFilterGroup.ArticleTagFilterItem::new)
+    public static ArticleCategoriesFilterGroup getDefault(ArticleRepository articleRepository) {
+        List<String> allCategories = articleRepository.findAllUniqueCategories();
+        return new ArticleCategoriesFilterGroup(
+                allCategories.stream()
+                        .map(ArticleCategoriesFilterGroup.ArticleCategoriesFilterItem::new)
                         .collect(Collectors.toList())
         );
     }
 
-    public static class ArticleTagFilterItem extends AbstractFilterItem<String> {
-        public ArticleTagFilterItem(String value) {
+    public static class ArticleCategoriesFilterItem extends AbstractFilterItem<String> {
+        public ArticleCategoriesFilterItem(String value) {
             super(value, value, null);
         }
     }
