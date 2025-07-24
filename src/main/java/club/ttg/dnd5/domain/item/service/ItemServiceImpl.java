@@ -7,7 +7,6 @@ import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
-import club.ttg.dnd5.exception.ContentNotFoundException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
@@ -31,10 +30,9 @@ public class ItemServiceImpl implements ItemService {
     private final ItemMapper itemMapper;
 
     @Override
-    public boolean existsByUrl(final String url) {
-        var exists = itemRepository.existsById(url);
-        if (!exists) {
-            throw new ContentNotFoundException("Item not found by uls: " + url);
+    public boolean existOrThrow(final String url) {
+        if (!itemRepository.existsById(url)) {
+            throw new EntityNotFoundException(String.format("Предмет с url %s не существует", url));
         }
         return true;
     }
@@ -98,9 +96,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public String updateItem(final String itemUrl, final ItemRequest itemDto) {
-        Item item = findByUrl(itemUrl);
-        return itemRepository.save(item).getUrl();
+    public String updateItem(final String itemUrl, final ItemRequest request) {
+        findByUrl(itemUrl);
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return itemRepository.save(itemMapper.toItem(request, book)).getUrl();
     }
 
     @Override

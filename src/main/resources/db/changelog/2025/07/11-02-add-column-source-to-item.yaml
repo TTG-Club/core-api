@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-source-to-item
+      author: Magistrus
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+            tableName: item
