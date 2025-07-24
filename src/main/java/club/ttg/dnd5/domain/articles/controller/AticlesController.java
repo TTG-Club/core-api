@@ -29,17 +29,17 @@ public class AticlesController {
     private final ArticleService articleService;
     private final ArticleFilterService articleFilterService;
 
-    @Operation(summary = "Проверить заклинание по URL", description = "Проверка заклинание по его уникальному URL.")
+    @Operation(summary = "Проверить статью по URL", description = "Проверка статьи по ее уникальному URL.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Заклинание существует"),
-            @ApiResponse(responseCode = "404", description = "Заклинание не существует")
+            @ApiResponse(responseCode = "200", description = "Статьи существует"),
+            @ApiResponse(responseCode = "404", description = "Статьи не существует")
     })
     @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
     public Boolean isSpellExist(@PathVariable String url) {
         return articleService.existOrThrow(url);
     }
 
-    @Operation(summary = "Поиск заклинаний", description = "Поиск заклинания по именам")
+    @Operation(summary = "Поиск статьи", description = "Поиск статьи по именам")
     @PostMapping("/search")
     public List<ArticleShortResponse> getSpells(@RequestParam(name = "query", required = false)
                                               @Valid
