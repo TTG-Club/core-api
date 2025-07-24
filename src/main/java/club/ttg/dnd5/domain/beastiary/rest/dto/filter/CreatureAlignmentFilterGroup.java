@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
 import club.ttg.dnd5.domain.beastiary.model.enumus.AlignmentFilter;
-import club.ttg.dnd5.domain.spell.rest.dto.filter.SpellSchoolFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -18,11 +17,11 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class AlignmentFilterGroup extends AbstractFilterGroup<AlignmentFilter, AlignmentFilterGroup.AlignmentFilterItem> {
+public class CreatureAlignmentFilterGroup extends AbstractFilterGroup<AlignmentFilter, CreatureAlignmentFilterGroup.CreatureAlignmentFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("alignment");
 
-    public AlignmentFilterGroup(List<AlignmentFilterItem> filters) {
+    public CreatureAlignmentFilterGroup(List<CreatureAlignmentFilterItem> filters) {
         super(filters);
     }
 
@@ -38,20 +37,21 @@ public class AlignmentFilterGroup extends AbstractFilterGroup<AlignmentFilter, A
 
     }
 
+    @Override
     public String getName() {
-        return "Мировозрение";
+        return "Тип";
     }
 
-    public static AlignmentFilterGroup getDefault() {
-        return new AlignmentFilterGroup(
+    public static CreatureAlignmentFilterGroup getDefault() {
+        return new CreatureAlignmentFilterGroup(
                 Arrays.stream(AlignmentFilter.values())
-                        .map(AlignmentFilterGroup.AlignmentFilterItem::new)
+                        .map(CreatureAlignmentFilterGroup.CreatureAlignmentFilterItem::new)
                         .collect(Collectors.toList()));
     }
 
-    public static class AlignmentFilterItem extends AbstractFilterItem<AlignmentFilter> {
-        public AlignmentFilterItem(AlignmentFilter alignment) {
-            super(alignment.getName(), alignment, null);
+    public static class CreatureAlignmentFilterItem extends AbstractFilterItem<AlignmentFilter> {
+        public CreatureAlignmentFilterItem(AlignmentFilter value) {
+            super(value.getName(), value, null);
         }
     }
 }

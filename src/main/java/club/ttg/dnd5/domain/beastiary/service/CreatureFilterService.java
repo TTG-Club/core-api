@@ -19,7 +19,6 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
 
     private final CreatureRepository creatureRepository;
 
-
     public CreatureFilterService(CreatureSavedFilterRepository creatureSavedFilterRepository,
                                  UserService userService, CreatureRepository creatureRepository) {
         super(creatureSavedFilterRepository, userService);
@@ -35,12 +34,14 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
 
         return new FilterInfo(List.of(
                 CrFilterGroup.getDefault(),
+                CreatureAlignmentFilterGroup.getDefault(),
                 CreatureSizeFilterGroup.getDefault(),
-                AlignmentFilterGroup.getDefault(),
                 CreatureTypesFilterGroup.getDefault(),
-                CreatureSensesFilterGroup.getDefault(),
                 CreatureTraitsFilterGroup.getDefault(top4Traits),
-                CreatureSectionFilterGroup.getDefault()
+                CreatureOtherFilterGroup.getDefault(),
+                CreatureSensesFilterGroup.getDefault()
+
+//                CreatureSectionFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }

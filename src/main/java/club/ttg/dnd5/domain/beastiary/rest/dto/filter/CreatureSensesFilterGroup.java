@@ -27,16 +27,28 @@ public class CreatureSensesFilterGroup extends AbstractFilterGroup<CreatureSense
 
     @Override
     public BooleanExpression getQuery() {
-        if (isSingular()) {
+        Set<CreatureSenses> positiveValues = getPositive();
+        if (CollectionUtils.isEmpty(positiveValues)) {
             return TRUE_EXPRESSION;
         }
-        Set<CreatureSenses> positiveValues = getPositive();
-        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(CreatureSenses::toString).collect(Collectors.toSet()));
-        Set<CreatureSenses> negativeValues = getNegative();
-        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues.stream().map(CreatureSenses::toString).collect(Collectors.toSet())));
 
+        // Создаем выражения по каждому нужному ключу, проверяем что значение не null и > 0
+        List<BooleanExpression> expressions = positiveValues.stream()
+                .map(sense -> Expressions.booleanTemplate(
+                        "(senses ->> {0} IS NOT NULL AND (senses ->> {0})::int > 0)",
+                        sense.toString().toLowerCase() // ключ в JSON у тебя в нижнем регистре
+                ))
+                .collect(Collectors.toList());
+
+        // Объединяем все условия ИЛИ, т.е. достаточно, чтобы хотя бы один был true
+        BooleanExpression combined = expressions.stream()
+                .reduce(BooleanExpression::or)
+                .orElse(TRUE_EXPRESSION);
+
+        return combined;
     }
 
+    @Override
     public String getName() {
         return "Чувство";
     }
@@ -49,8 +61,8 @@ public class CreatureSensesFilterGroup extends AbstractFilterGroup<CreatureSense
     }
 
     public static class CreatureSensesFilterItem extends AbstractFilterItem<CreatureSenses> {
-        public CreatureSensesFilterItem(CreatureSenses senses) {
-            super(senses.getName(), senses, null);
+        public CreatureSensesFilterItem(CreatureSenses value) {
+            super(value.getName(), value, null);
         }
     }
 }
