@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
-import club.ttg.dnd5.domain.beastiary.model.enumus.CreatureSize;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, CreatureSizeFilterGroup.SizeFilterItem> {
+public class CreatureTypeFilterGroup extends AbstractFilterGroup<CreatureType, CreatureTypeFilterGroup.CreatureTypeFilterItem> {
 
-    private static final StringPath PATH = Expressions.stringPath("sizes");
+    private static final StringPath PATH = Expressions.stringPath("types");
 
-    public CreatureSizeFilterGroup(List<SizeFilterItem> filters) {
+    public CreatureTypeFilterGroup(List<CreatureTypeFilterItem> filters) {
         super(filters);
     }
 
@@ -31,8 +31,8 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
             return TRUE_EXPRESSION;
         }
 
-        Set<CreatureSize> positiveValues = getPositive();
-        Set<CreatureSize> negativeValues = getNegative();
+        Set<CreatureType> positiveValues = getPositive();
+        Set<CreatureType> negativeValues = getNegative();
 
         BooleanExpression positiveExpr;
         if (CollectionUtils.isEmpty(positiveValues)) {
@@ -69,18 +69,18 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
 
     @Override
     public String getName() {
-        return "Размер";
+        return "Тип";
     }
 
-    public static CreatureSizeFilterGroup getDefault() {
-        return new CreatureSizeFilterGroup(
-                Arrays.stream(CreatureSize.values())
-                        .map(CreatureSizeFilterGroup.SizeFilterItem::new)
+    public static CreatureTypeFilterGroup getDefault() {
+        return new CreatureTypeFilterGroup(
+                Arrays.stream(CreatureType.values())
+                        .map(CreatureTypeFilterGroup.CreatureTypeFilterItem::new)
                         .collect(Collectors.toList()));
     }
 
-    public static class SizeFilterItem extends AbstractFilterItem<CreatureSize> {
-        public SizeFilterItem(CreatureSize value) {
+    public static class CreatureTypeFilterItem extends AbstractFilterItem<CreatureType> {
+        public CreatureTypeFilterItem(CreatureType value) {
             super(value.getName(), value, null);
         }
     }

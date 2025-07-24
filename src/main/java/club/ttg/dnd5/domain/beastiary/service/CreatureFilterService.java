@@ -36,12 +36,11 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
                 CrFilterGroup.getDefault(),
                 CreatureAlignmentFilterGroup.getDefault(),
                 CreatureSizeFilterGroup.getDefault(),
-                CreatureTypesFilterGroup.getDefault(),
+                CreatureTypeFilterGroup.getDefault(),
                 CreatureTraitsFilterGroup.getDefault(top4Traits),
                 CreatureOtherFilterGroup.getDefault(),
-                CreatureSensesFilterGroup.getDefault()
-
-//                CreatureSectionFilterGroup.getDefault()
+                CreatureSensesFilterGroup.getDefault(),
+                CreatureHabittatFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }

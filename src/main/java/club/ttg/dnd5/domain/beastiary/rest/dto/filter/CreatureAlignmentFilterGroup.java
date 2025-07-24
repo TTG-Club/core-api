@@ -39,7 +39,7 @@ public class CreatureAlignmentFilterGroup extends AbstractFilterGroup<AlignmentF
 
     @Override
     public String getName() {
-        return "Тип";
+        return "Мировоззрение";
     }
 
     public static CreatureAlignmentFilterGroup getDefault() {

@@ -32,7 +32,7 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<String, Creat
                 : Expressions.booleanTemplate(String.format(
                 "(traits is not null and exists (select 1 from jsonb_array_elements(traits) as elem where %s))",
                 positiveValues.stream()
-                        .map(val -> String.format("elem @> '\"%s\"'", escape(val)))
+                        .map(val -> String.format("elem->>'name' = '%s'", escape(val)))
                         .collect(Collectors.joining(" or "))
         ));
 
@@ -42,7 +42,7 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<String, Creat
                 : Expressions.booleanTemplate(String.format(
                 "(traits is not null and not exists (select 1 from jsonb_array_elements(traits) as elem where %s))",
                 negativeValues.stream()
-                        .map(val -> String.format("elem @> '\"%s\"'", escape(val)))
+                        .map(val -> String.format("elem->>'name' = '%s'", escape(val)))
                         .collect(Collectors.joining(" or "))
         ));
 

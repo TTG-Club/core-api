@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
-import club.ttg.dnd5.domain.beastiary.model.enumus.CreatureSize;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, CreatureSizeFilterGroup.SizeFilterItem> {
+public class CreatureHabittatFilterGroup extends AbstractFilterGroup<Habitat, CreatureHabittatFilterGroup.CreatureHabittatFilterItem> {
 
-    private static final StringPath PATH = Expressions.stringPath("sizes");
+    private static final StringPath PATH = Expressions.stringPath("section");
 
-    public CreatureSizeFilterGroup(List<SizeFilterItem> filters) {
+    public CreatureHabittatFilterGroup(List<CreatureHabittatFilterItem> filters) {
         super(filters);
     }
 
@@ -31,8 +31,8 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
             return TRUE_EXPRESSION;
         }
 
-        Set<CreatureSize> positiveValues = getPositive();
-        Set<CreatureSize> negativeValues = getNegative();
+        Set<Habitat> positiveValues = getPositive();
+        Set<Habitat> negativeValues = getNegative();
 
         BooleanExpression positiveExpr;
         if (CollectionUtils.isEmpty(positiveValues)) {
@@ -40,7 +40,7 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
         } else {
             List<BooleanExpression> positiveConditions = positiveValues.stream()
                     .map(val -> Expressions.booleanTemplate(
-                            "({0}->'values') @> '[\""+ val.toString() + "\"]'::jsonb",
+                            "({0}->'habitats') @> '[\""+ val.toString() + "\"]'::jsonb",
                             PATH))
                     .collect(Collectors.toList());
 
@@ -55,7 +55,7 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
         } else {
             List<BooleanExpression> negativeConditions = negativeValues.stream()
                     .map(val -> Expressions.booleanTemplate(
-                            "NOT (({0}->'values') @> '[\""+ val.toString() + "\"]'::jsonb)",
+                            "NOT (({0}->'habitats') @> '[\""+ val.toString() + "\"]'::jsonb)",
                             PATH))
                     .collect(Collectors.toList());
 
@@ -69,18 +69,18 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
 
     @Override
     public String getName() {
-        return "Размер";
+        return "Место обитания";
     }
 
-    public static CreatureSizeFilterGroup getDefault() {
-        return new CreatureSizeFilterGroup(
-                Arrays.stream(CreatureSize.values())
-                        .map(CreatureSizeFilterGroup.SizeFilterItem::new)
+    public static CreatureHabittatFilterGroup getDefault() {
+        return new CreatureHabittatFilterGroup(
+                Arrays.stream(Habitat.values())
+                        .map(CreatureHabittatFilterGroup.CreatureHabittatFilterItem::new)
                         .collect(Collectors.toList()));
     }
 
-    public static class SizeFilterItem extends AbstractFilterItem<CreatureSize> {
-        public SizeFilterItem(CreatureSize value) {
+    public static class CreatureHabittatFilterItem extends AbstractFilterItem<Habitat> {
+        public CreatureHabittatFilterItem(Habitat value) {
             super(value.getName(), value, null);
         }
     }

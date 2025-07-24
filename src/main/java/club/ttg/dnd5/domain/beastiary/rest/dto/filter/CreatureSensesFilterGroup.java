@@ -28,24 +28,53 @@ public class CreatureSensesFilterGroup extends AbstractFilterGroup<CreatureSense
     @Override
     public BooleanExpression getQuery() {
         Set<CreatureSenses> positiveValues = getPositive();
-        if (CollectionUtils.isEmpty(positiveValues)) {
-            return TRUE_EXPRESSION;
-        }
+        Set<CreatureSenses> negativeValues = getNegative();
 
-        // Создаем выражения по каждому нужному ключу, проверяем что значение не null и > 0
-        List<BooleanExpression> expressions = positiveValues.stream()
-                .map(sense -> Expressions.booleanTemplate(
-                        "(senses ->> {0} IS NOT NULL AND (senses ->> {0})::int > 0)",
-                        sense.toString().toLowerCase() // ключ в JSON у тебя в нижнем регистре
-                ))
+        List<BooleanExpression> positiveExpressions = positiveValues.stream()
+                .map(sense -> {
+                    String key = sense.toString().toLowerCase();
+
+                    if ("unimpeded".equals(key)) {
+                        return Expressions.booleanTemplate(
+                                "(senses ->> {0}) = 'true'",
+                                key
+                        );
+                    }
+
+                    return Expressions.booleanTemplate(
+                            "(senses ->> {0}) ~ '^\\d+$' AND (senses ->> {0})::int > 0",
+                            key
+                    );
+                })
                 .collect(Collectors.toList());
 
-        // Объединяем все условия ИЛИ, т.е. достаточно, чтобы хотя бы один был true
-        BooleanExpression combined = expressions.stream()
+        List<BooleanExpression> negativeExpressions = negativeValues.stream()
+                .map(sense -> {
+                    String key = sense.toString().toLowerCase();
+
+                    if ("unimpeded".equals(key)) {
+                        return Expressions.booleanTemplate(
+                                "((senses ->> {0}) IS NULL OR (senses ->> {0}) != 'true')",
+                                key
+                        );
+                    }
+
+                    return Expressions.booleanTemplate(
+                            "((senses ->> {0}) IS NULL OR (senses ->> {0}) !~ '^\\d+$' OR (senses ->> {0})::int <= 0)",
+                            key
+                    );
+                })
+                .collect(Collectors.toList());
+
+        BooleanExpression positiveCombined = positiveExpressions.stream()
                 .reduce(BooleanExpression::or)
                 .orElse(TRUE_EXPRESSION);
 
-        return combined;
+        BooleanExpression negativeCombined = negativeExpressions.stream()
+                .reduce(BooleanExpression::and)
+                .orElse(TRUE_EXPRESSION);
+
+        return positiveCombined.and(negativeCombined);
     }
 
     @Override
