@@ -28,7 +28,7 @@ public class FullTextSearchController {
     private final FullTextSearchViewService fullTextSearchViewService;
 
     @Operation(summary = "Поиск по всем разделам")
-    @PostMapping
+    @GetMapping
     public Collection<FullTextSearchViewResponse> search(@RequestParam(name = "query")
                                                          @Valid
                                                          @Size(min = 3)
