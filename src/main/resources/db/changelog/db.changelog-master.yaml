@@ -87,3 +87,5 @@ databaseChangeLog:
       file: db/changelog/2025/07/23-01-init-article.yaml
   - include:
       file: db/changelog/2025/07/23-02-fix-article-description.yaml
+  - include:
+      file: db/changelog/2025/07/29-01-fix-article-tags.yaml
