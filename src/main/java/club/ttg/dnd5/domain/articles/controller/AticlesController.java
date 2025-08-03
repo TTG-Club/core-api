@@ -24,7 +24,7 @@ import java.util.List;
 @Tag(name = "Статьи", description = "REST API глоссарий")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v2/article")
+@RequestMapping("/api/v2/articles")
 public class AticlesController {
     private final ArticleService articleService;
     private final ArticleFilterService articleFilterService;

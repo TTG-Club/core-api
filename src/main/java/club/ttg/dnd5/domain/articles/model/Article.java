@@ -21,7 +21,7 @@ public class Article extends NamedEntity {
     private String categories;
 
     @Column(name = "tags")
-    private Collection<String> tags;
+    private Collection<String> tagsArticles;
 
     @ManyToOne
     @JoinColumn(name = "source")
