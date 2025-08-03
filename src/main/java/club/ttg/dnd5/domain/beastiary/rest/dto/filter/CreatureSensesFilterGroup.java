@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
-import club.ttg.dnd5.domain.beastiary.model.enumus.CreatureSenses;
+import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -8,7 +8,6 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Arrays;
 import java.util.List;

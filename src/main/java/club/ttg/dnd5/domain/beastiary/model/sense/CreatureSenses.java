@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.beastiary.model.enumus;
+package club.ttg.dnd5.domain.beastiary.model.sense;
 
 import club.ttg.dnd5.exception.ApiException;
 import lombok.AllArgsConstructor;
@@ -12,7 +12,7 @@ public enum CreatureSenses {
     BLINDSIGHT("Слепое зрение"),
     DARKVISION("Темное зрение"),
     TREMORSENSE("Чувство вибраций"),
-    UNIMPEDED("Темное зрение (даже через магическую тьму)");
+    UNIMPEDED("Тёмное зрение проникает через магическую тьму");
 
     private final String name;
 

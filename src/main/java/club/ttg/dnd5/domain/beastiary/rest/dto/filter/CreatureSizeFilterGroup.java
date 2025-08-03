@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
-import club.ttg.dnd5.domain.beastiary.model.enumus.CreatureSize;
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, CreatureSizeFilterGroup.SizeFilterItem> {
+public class CreatureSizeFilterGroup extends AbstractFilterGroup<Size, CreatureSizeFilterGroup.SizeFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("sizes");
 
@@ -31,8 +31,8 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
             return TRUE_EXPRESSION;
         }
 
-        Set<CreatureSize> positiveValues = getPositive();
-        Set<CreatureSize> negativeValues = getNegative();
+        Set<Size> positiveValues = getPositive();
+        Set<Size> negativeValues = getNegative();
 
         BooleanExpression positiveExpr;
         if (CollectionUtils.isEmpty(positiveValues)) {
@@ -74,13 +74,13 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<CreatureSize, C
 
     public static CreatureSizeFilterGroup getDefault() {
         return new CreatureSizeFilterGroup(
-                Arrays.stream(CreatureSize.values())
+                Arrays.stream(Size.values())
                         .map(CreatureSizeFilterGroup.SizeFilterItem::new)
                         .collect(Collectors.toList()));
     }
 
-    public static class SizeFilterItem extends AbstractFilterItem<CreatureSize> {
-        public SizeFilterItem(CreatureSize value) {
+    public static class SizeFilterItem extends AbstractFilterItem<Size> {
+        public SizeFilterItem(Size value) {
             super(value.getName(), value, null);
         }
     }
