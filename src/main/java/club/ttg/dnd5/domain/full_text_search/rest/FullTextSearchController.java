@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collection;
 
 @RequiredArgsConstructor
-@Tag(name = "Справочники", description = "API для различных справочников")
+@Tag(name = "Поиск по всем разделам", description = "API для поиска по всем разделам")
 @RequestMapping("/api/v2/full-text-search")
 @RestController
 public class FullTextSearchController {
