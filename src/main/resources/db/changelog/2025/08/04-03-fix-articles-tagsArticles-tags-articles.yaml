@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename-tags-to-tagsArticles
+      author: ylp
+      changes:
+        - renameColumn:
+            tableName: articles
+            oldColumnName: tagsArticles
+            newColumnName: tags_articles
+            columnDataType: jsonb

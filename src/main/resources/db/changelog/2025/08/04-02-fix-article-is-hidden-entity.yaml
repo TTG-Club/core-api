@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-img-is-hidden-entity
+      author: ylp
+      changes:
+        - addColumn:
+            tableName: articles
+            columns:
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN

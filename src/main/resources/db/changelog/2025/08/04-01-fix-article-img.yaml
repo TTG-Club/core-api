@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-img-articles
+      author: ylp
+      changes:
+        - addColumn:
+            tableName: articles
+            columns:
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)

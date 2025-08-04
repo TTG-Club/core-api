@@ -41,7 +41,7 @@ public class AticlesController {
 
     @Operation(summary = "Поиск статьи", description = "Поиск статьи по именам")
     @PostMapping("/search")
-    public List<ArticleShortResponse> getSpells(@RequestParam(name = "query", required = false)
+    public List<ArticleShortResponse> getArticles(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 3)
                                               @Schema(description = "Строка поиска, если null-отдаются все сущности")
