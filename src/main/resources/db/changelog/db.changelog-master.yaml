@@ -89,3 +89,9 @@ databaseChangeLog:
       file: db/changelog/2025/07/23-02-fix-article-description.yaml
   - include:
       file: db/changelog/2025/07/29-01-fix-article-tags.yaml
+  - include:
+      file: db/changelog/2025/08/04-01-fix-article-img.yaml
+  - include:
+      file: db/changelog/2025/08/04-02-fix-article-is-hidden-entity.yaml
+  - include:
+      file: db/changelog/2025/08/04-03-fix-articles-tagsArticles-tags-articles.yaml

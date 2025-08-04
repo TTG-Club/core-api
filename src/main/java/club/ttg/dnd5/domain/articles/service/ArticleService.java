@@ -30,7 +30,8 @@ public class ArticleService {
     private final ArticleQueryDslSearchService articleQueryDslSearchService;
 
     public List<ArticleShortResponse> search(String searchLine, SearchBody searchBody) {
-        return articleQueryDslSearchService.search(searchLine, searchBody).stream()
+        return articleQueryDslSearchService.search(searchLine, null).stream()
+                .filter(article -> article.getCategories() != null && article.getCategories().contains("articles"))
                 .map(articleMapper::toShort)
                 .collect(Collectors.toList());
     }

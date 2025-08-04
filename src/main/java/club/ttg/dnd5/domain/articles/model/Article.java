@@ -20,7 +20,7 @@ public class Article extends NamedEntity {
     @Column(name = "categories")
     private String categories;
 
-    @Column(name = "tags")
+    @Column(name = "tags_articles")
     private Collection<String> tagsArticles;
 
     @ManyToOne

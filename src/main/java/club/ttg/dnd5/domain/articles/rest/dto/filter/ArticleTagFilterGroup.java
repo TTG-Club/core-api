@@ -52,7 +52,7 @@ public class ArticleTagFilterGroup extends AbstractFilterGroup<String, ArticleTa
     }
 
     public static ArticleTagFilterGroup getDefault(ArticleRepository articleRepository) {
-        List<String> allTags = articleRepository.findAllUniqueTags();
+        List<String> allTags = articleRepository.findAllUniquetagsArticles();
         return new ArticleTagFilterGroup(
                 allTags.stream()
                         .map(ArticleTagFilterGroup.ArticleTagFilterItem::new)
