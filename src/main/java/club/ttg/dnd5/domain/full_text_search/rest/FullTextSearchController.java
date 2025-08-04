@@ -1,16 +1,10 @@
 package club.ttg.dnd5.domain.full_text_search.rest;
 
-import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
-import club.ttg.dnd5.domain.common.service.DictionariesService;
+import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewDto;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse;
 import club.ttg.dnd5.domain.full_text_search.service.FullTextSearchViewService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -29,7 +23,7 @@ public class FullTextSearchController {
 
     @Operation(summary = "Поиск по всем разделам")
     @GetMapping
-    public Collection<FullTextSearchViewResponse> search(@RequestParam(name = "query")
+    public FullTextSearchViewResponse search(@RequestParam(name = "query")
                                                          @Valid
                                                          @Size(min = 3)
                                                          @Schema(description = "Строка поиска")

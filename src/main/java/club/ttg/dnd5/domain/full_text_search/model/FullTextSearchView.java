@@ -30,6 +30,6 @@ public class FullTextSearchView {
     private String bookEnglishName;
     @Enumerated(EnumType.STRING)
     private TypeBook bookType;
-    private String page;
+    private Integer page;
 
 }
