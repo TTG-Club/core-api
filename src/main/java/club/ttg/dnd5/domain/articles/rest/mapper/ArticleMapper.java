@@ -24,7 +24,7 @@ public interface ArticleMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(target = "categories", source = "categories", qualifiedByName = "capitalize")
-    @Mapping(target = "tags", source = "tags", qualifiedByName = "capitalize")
+    @Mapping(target = "tagsArticles", source = "tagsArticles", qualifiedByName = "capitalize")
     ArticleDetailedResponse toDetail(Article article);
 
 
@@ -39,7 +39,7 @@ public interface ArticleMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(target = "categories", source = "categories", qualifiedByName = "capitalize")
-    @Mapping(target = "tags", source = "tags", qualifiedByName = "capitalize")
+    @Mapping(target = "tagsArticles", source = "tagsArticles", qualifiedByName = "capitalize")
     ArticleShortResponse toShort(Article article);
 
     @ArticleMapper.ToEntityMapping

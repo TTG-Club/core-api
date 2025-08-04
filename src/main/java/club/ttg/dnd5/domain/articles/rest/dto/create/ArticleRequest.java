@@ -15,5 +15,5 @@ import java.util.Collection;
 @NoArgsConstructor
 public class ArticleRequest extends BaseRequest {
     private String categories;
-    private Collection<String> tags;
+    private Collection<String> tagsArticles;
 }

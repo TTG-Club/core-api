@@ -14,5 +14,5 @@ import java.util.Collection;
 @Setter
 public class ArticleDetailedResponse extends BaseResponse {
     private String categories;
-    private Collection<String> tags;
+    private Collection<String> tagsArticles;
 }
