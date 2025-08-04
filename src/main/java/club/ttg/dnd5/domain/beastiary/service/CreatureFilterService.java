@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
+import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.model.filter.CreatureSavedFilter;
+import club.ttg.dnd5.domain.beastiary.model.filter.CreatureTraitsStats;
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureSavedFilterRepository;
-import club.ttg.dnd5.domain.beastiary.rest.dto.filter.CrFilterGroup;
+import club.ttg.dnd5.domain.beastiary.rest.dto.filter.*;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.user.service.UserService;
@@ -14,15 +17,30 @@ import java.util.List;
 public class CreatureFilterService extends AbstractSavedFilterService<CreatureSavedFilter> {
     private static final String FILTER_VERSION = "1.0";
 
+    private final CreatureRepository creatureRepository;
+
     public CreatureFilterService(CreatureSavedFilterRepository creatureSavedFilterRepository,
-                                 UserService userService) {
+                                 UserService userService, CreatureRepository creatureRepository) {
         super(creatureSavedFilterRepository, userService);
+        this.creatureRepository = creatureRepository;
     }
 
     @Override
     protected FilterInfo buildDefaultFilterInfo() {
+        List<Creature> creatures = creatureRepository.findAll();
+
+        CreatureTraitsStats stats = new CreatureTraitsStats();
+        List<String> top4Traits = stats.getTopTraits(creatures, 4);
+
         return new FilterInfo(List.of(
-                CrFilterGroup.getDefault()
+                CrFilterGroup.getDefault(),
+                CreatureAlignmentFilterGroup.getDefault(),
+                CreatureSizeFilterGroup.getDefault(),
+                CreatureTypeFilterGroup.getDefault(),
+                CreatureTraitsFilterGroup.getDefault(top4Traits),
+                CreatureOtherFilterGroup.getDefault(),
+                CreatureSensesFilterGroup.getDefault(),
+                CreatureHabittatFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }

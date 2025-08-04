@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.common.dictionary;
 
+import club.ttg.dnd5.exception.ApiException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 /**
  * Места обитания
