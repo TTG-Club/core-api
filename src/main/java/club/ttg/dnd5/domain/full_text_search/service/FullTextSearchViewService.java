@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.full_text_search.service;
 
 import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
+import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchView;
+import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchViewType;
 import club.ttg.dnd5.domain.full_text_search.repository.FullTextSearchViewRepository;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewDto;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse;
@@ -9,7 +11,7 @@ import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -23,32 +25,60 @@ public class FullTextSearchViewService {
         return Optional.ofNullable(searchLine)
                 .filter(Predicate.not(String::isBlank))
                 .map(line -> fullTextSearchViewRepository.findBySearchLine(line, SwitchLayoutUtils.switchLayout(line)))
-                .map(results ->
-                        FullTextSearchViewResponse.builder()
-                                .result(results.stream().map(ftsv ->
-                                        FullTextSearchViewDto.builder()
-                                                .url(ftsv.getUrl())
-                                                .name(NameResponse.builder()
-                                                        .name(ftsv.getName())
-                                                        .english(ftsv.getEnglish())
-                                                        .build())
-                                                .type(ftsv.getType())
-                                                .source(SourceResponse.builder()
-                                                        .name(NameResponse.builder()
-                                                                .name(ftsv.getBookName())
-                                                                .label(ftsv.getBookAcronym())
-                                                                .english(ftsv.getBookEnglishName())
-                                                                .build())
-                                                        .group(NameResponse.builder()
-                                                                .name(ftsv.getBookType().getGroup())
-                                                                .label(ftsv.getBookType().getLabel())
-                                                                .build())
-                                                        .page(ftsv.getPage())
-                                                        .build())
-                                                .build()).collect(Collectors.toList()))
-                                .total(results.size())
-                                .build())
+                .map(this::getFullTextSearchViewResponse)
                 .orElseGet(FullTextSearchViewResponse::new);
+    }
+
+    private FullTextSearchViewResponse getFullTextSearchViewResponse(Collection<FullTextSearchView> results) {
+        if (results.isEmpty()) {
+            return FullTextSearchViewResponse.builder()
+                    .result(Collections.emptyList())
+                    .total(0)
+                    .build();
+        }
+
+        Map<FullTextSearchViewType, Integer> typeCount = new HashMap<>();
+
+        List<FullTextSearchViewDto> limitedResults = results.stream()
+                .filter(ftsv -> {
+                    FullTextSearchViewType type = ftsv.getType();
+                    int count = typeCount.getOrDefault(type, 0);
+                    if (count < 5) {
+                        typeCount.put(type, count + 1);
+                        return true;
+                    }
+                    return false;
+                })
+                .map(this::getConvertedResult)
+                .collect(Collectors.toList());
+
+        return FullTextSearchViewResponse.builder()
+                .result(limitedResults)
+                .total(limitedResults.size())
+                .build();
+    }
+
+    private FullTextSearchViewDto getConvertedResult(FullTextSearchView ftsv) {
+       return FullTextSearchViewDto.builder()
+                .url(ftsv.getUrl())
+                .name(NameResponse.builder()
+                        .name(ftsv.getName())
+                        .english(ftsv.getEnglish())
+                        .build())
+                .type(ftsv.getType())
+                .source(SourceResponse.builder()
+                        .name(NameResponse.builder()
+                                .name(ftsv.getBookName())
+                                .label(ftsv.getBookAcronym())
+                                .english(ftsv.getBookEnglishName())
+                                .build())
+                        .group(NameResponse.builder()
+                                .name(ftsv.getBookType().getGroup())
+                                .label(ftsv.getBookType().getLabel())
+                                .build())
+                        .page(ftsv.getPage())
+                        .build())
+                .build();
     }
 
 }
