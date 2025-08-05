@@ -7,12 +7,8 @@ import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse
 import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -24,13 +20,12 @@ public class FullTextSearchViewService {
 
     //TODO доделать маппинг
     public FullTextSearchViewResponse findBySearchLine(String searchLine) {
-        Pageable pageable = PageRequest.of(0, 5);
         return Optional.ofNullable(searchLine)
                 .filter(Predicate.not(String::isBlank))
-                .map(line -> fullTextSearchViewRepository.findBySearchLine(line, SwitchLayoutUtils.switchLayout(line), pageable))
-                .map(page ->
+                .map(line -> fullTextSearchViewRepository.findBySearchLine(line, SwitchLayoutUtils.switchLayout(line)))
+                .map(results ->
                         FullTextSearchViewResponse.builder()
-                                .result(page.getContent().stream().map(ftsv ->
+                                .result(results.stream().map(ftsv ->
                                         FullTextSearchViewDto.builder()
                                                 .url(ftsv.getUrl())
                                                 .name(NameResponse.builder()
@@ -40,18 +35,18 @@ public class FullTextSearchViewService {
                                                 .type(ftsv.getType())
                                                 .source(SourceResponse.builder()
                                                         .name(NameResponse.builder()
-                                                                .name(ftsv.getName())
+                                                                .name(ftsv.getBookName())
                                                                 .label(ftsv.getBookAcronym())
-                                                                .english(ftsv.getEnglish())
+                                                                .english(ftsv.getBookEnglishName())
                                                                 .build())
                                                         .group(NameResponse.builder()
-                                                                .name(ftsv.getBookType().getName())
-                                                                .label(ftsv.getBookType().getGroup())
+                                                                .name(ftsv.getBookType().getGroup())
+                                                                .label(ftsv.getBookType().getLabel())
                                                                 .build())
                                                         .page(ftsv.getPage())
                                                         .build())
                                                 .build()).collect(Collectors.toList()))
-                                .total(page.getTotalElements())
+                                .total(results.size())
                                 .build())
                 .orElseGet(FullTextSearchViewResponse::new);
     }

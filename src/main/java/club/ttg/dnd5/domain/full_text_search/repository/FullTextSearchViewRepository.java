@@ -1,15 +1,10 @@
 package club.ttg.dnd5.domain.full_text_search.repository;
 
 import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchView;
-import club.ttg.dnd5.domain.spell.model.Spell;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 
-import java.util.List;
+import java.util.Collection;
 
 public interface FullTextSearchViewRepository extends JpaRepository<FullTextSearchView, Long> {
 
@@ -29,7 +24,7 @@ public interface FullTextSearchViewRepository extends JpaRepository<FullTextSear
             case when ftsv.english ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end +
             case when ftsv.alternative ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end desc
         """)
-    Page<FullTextSearchView> findBySearchLine(String searchLine, String invertedSearchLine, Pageable pageable);
+    Collection<FullTextSearchView> findBySearchLine(String searchLine, String invertedSearchLine);
 
 
 }

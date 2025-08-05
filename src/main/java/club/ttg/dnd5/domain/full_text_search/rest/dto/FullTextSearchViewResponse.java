@@ -18,5 +18,5 @@ public class FullTextSearchViewResponse {
 
     List<FullTextSearchViewDto> result;
 
-    Long total;
+    Integer total;
 }
