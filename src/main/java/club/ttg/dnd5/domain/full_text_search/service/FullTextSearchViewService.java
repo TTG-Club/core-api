@@ -26,20 +26,17 @@ public class FullTextSearchViewService {
                 .filter(Predicate.not(String::isBlank))
                 .map(line -> fullTextSearchViewRepository.findBySearchLine(line, SwitchLayoutUtils.switchLayout(line)))
                 .map(this::getFullTextSearchViewResponse)
-                .orElseGet(FullTextSearchViewResponse::new);
+                .orElseGet(this::getEmptyResponse);
     }
 
     private FullTextSearchViewResponse getFullTextSearchViewResponse(Collection<FullTextSearchView> results) {
         if (results.isEmpty()) {
-            return FullTextSearchViewResponse.builder()
-                    .result(Collections.emptyList())
-                    .total(0)
-                    .build();
+            return getEmptyResponse();
         }
 
         Map<FullTextSearchViewType, Integer> typeCount = new HashMap<>();
 
-        List<FullTextSearchViewDto> limitedResults = results.stream()
+        List<FullTextSearchViewDto> filtered = results.stream()
                 .filter(ftsv -> {
                     FullTextSearchViewType type = ftsv.getType();
                     int count = typeCount.getOrDefault(type, 0);
@@ -53,13 +50,14 @@ public class FullTextSearchViewService {
                 .collect(Collectors.toList());
 
         return FullTextSearchViewResponse.builder()
-                .result(limitedResults)
-                .total(limitedResults.size())
+                .items(filtered)
+                .filtered(filtered.size())
+                .total(results.size())
                 .build();
     }
 
     private FullTextSearchViewDto getConvertedResult(FullTextSearchView ftsv) {
-       return FullTextSearchViewDto.builder()
+        return FullTextSearchViewDto.builder()
                 .url(ftsv.getUrl())
                 .name(NameResponse.builder()
                         .name(ftsv.getName())
@@ -78,6 +76,14 @@ public class FullTextSearchViewService {
                                 .build())
                         .page(ftsv.getPage())
                         .build())
+                .build();
+    }
+
+    private FullTextSearchViewResponse getEmptyResponse() {
+        return FullTextSearchViewResponse.builder()
+                .items(Collections.emptyList())
+                .filtered(0)
+                .total(0)
                 .build();
     }
 
