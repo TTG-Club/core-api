@@ -26,5 +26,4 @@ public interface FullTextSearchViewRepository extends JpaRepository<FullTextSear
         """)
     Collection<FullTextSearchView> findBySearchLine(String searchLine, String invertedSearchLine);
 
-
 }

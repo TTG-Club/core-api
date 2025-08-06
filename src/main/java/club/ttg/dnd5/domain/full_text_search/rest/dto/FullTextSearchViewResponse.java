@@ -16,7 +16,8 @@ import java.util.List;
 @Builder
 public class FullTextSearchViewResponse {
 
-    List<FullTextSearchViewDto> result;
+    List<FullTextSearchViewDto> items;
 
     Integer total;
+    Integer filtered;
 }

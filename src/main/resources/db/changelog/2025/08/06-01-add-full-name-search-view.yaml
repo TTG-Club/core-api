@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-full-text-search-view
+      author: svifty7
+      changes:
+        - sqlFile:
+            path: sql/create-full-name-search-view.sql
+            relativeToChangelogFile: true
+
