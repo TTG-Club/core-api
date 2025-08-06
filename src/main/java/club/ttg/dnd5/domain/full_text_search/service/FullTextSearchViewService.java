@@ -4,7 +4,6 @@ import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchView;
 import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchViewType;
 import club.ttg.dnd5.domain.full_text_search.repository.FullTextSearchViewRepository;
-import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchNameResponse;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewDto;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse;
 import club.ttg.dnd5.dto.base.SourceResponse;
@@ -66,10 +65,9 @@ public class FullTextSearchViewService {
     private FullTextSearchViewDto getConvertedResult(FullTextSearchView ftsv) {
         return FullTextSearchViewDto.builder()
                 .url(ftsv.getUrl())
-                .name(FullTextSearchNameResponse.builder()
+                .name(NameResponse.builder()
                         .name(ftsv.getName())
                         .english(ftsv.getEnglish())
-                        .alternative(List.of(ftsv.getAlternative().split(";")))
                         .build())
                 .type(ftsv.getType())
                 .source(SourceResponse.builder()
