@@ -4,11 +4,13 @@ import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchView;
 import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchViewType;
 import club.ttg.dnd5.domain.full_text_search.repository.FullTextSearchViewRepository;
+import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchNameResponse;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewDto;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse;
 import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -19,6 +21,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FullTextSearchViewService {
     private final FullTextSearchViewRepository fullTextSearchViewRepository;
+
+    @Value("${global-search.limit-per-group:5}")
+    private int maxItemsPerGroup;
 
     //TODO доделать маппинг
     public FullTextSearchViewResponse findBySearchLine(String searchLine) {
@@ -36,16 +41,8 @@ public class FullTextSearchViewService {
 
         Map<FullTextSearchViewType, Integer> typeCount = new HashMap<>();
 
-        List<FullTextSearchViewDto> filtered = results.stream()
-                .filter(ftsv -> {
-                    FullTextSearchViewType type = ftsv.getType();
-                    int count = typeCount.getOrDefault(type, 0);
-                    if (count < 5) {
-                        typeCount.put(type, count + 1);
-                        return true;
-                    }
-                    return false;
-                })
+        List<FullTextSearchViewDto> filtered = results.parallelStream()
+                .filter(ftsv -> counterFilter(ftsv, typeCount))
                 .map(this::getConvertedResult)
                 .collect(Collectors.toList());
 
@@ -56,12 +53,23 @@ public class FullTextSearchViewService {
                 .build();
     }
 
+    private boolean counterFilter(FullTextSearchView item, Map<FullTextSearchViewType, Integer> typeCount) {
+        FullTextSearchViewType type = item.getType();
+        int count = typeCount.getOrDefault(type, 0);
+        if (count < maxItemsPerGroup) {
+            typeCount.put(type, count + 1);
+            return true;
+        }
+        return false;
+    }
+
     private FullTextSearchViewDto getConvertedResult(FullTextSearchView ftsv) {
         return FullTextSearchViewDto.builder()
                 .url(ftsv.getUrl())
-                .name(NameResponse.builder()
+                .name(FullTextSearchNameResponse.builder()
                         .name(ftsv.getName())
                         .english(ftsv.getEnglish())
+                        .alternative(List.of(ftsv.getAlternative().split(";")))
                         .build())
                 .type(ftsv.getType())
                 .source(SourceResponse.builder()
