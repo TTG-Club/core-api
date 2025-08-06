@@ -60,6 +60,16 @@ from (select species.url,
              'BESTIARY'::text     as type,
              bestiary.source,
              bestiary.is_hidden_entity
-      from bestiary) entity
+      from bestiary
+      union
+      select magic_item.url,
+             magic_item.name,
+             magic_item.english,
+             magic_item.alternative,
+             magic_item.source_page as page,
+             'MAGIC_ITEM'::text     as type,
+             magic_item.source,
+             magic_item.is_hidden_entity
+      from magic_item) entity
          join books on entity.source::text = books.source_acronym::text
 where entity.is_hidden_entity = false;

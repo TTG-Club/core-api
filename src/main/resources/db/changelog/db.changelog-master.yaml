@@ -91,3 +91,5 @@ databaseChangeLog:
       file: db/changelog/2025/07/11-03-add-column-source_page-to-item.yaml
   - include:
       file: db/changelog/2025/07/11-04-add-column-category-to-item.yaml
+  - include:
+      file: db/changelog/2025/08/06-01-add-full-name-search-view.yaml
