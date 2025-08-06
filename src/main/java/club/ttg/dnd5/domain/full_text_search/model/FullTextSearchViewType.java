@@ -10,7 +10,9 @@ public enum FullTextSearchViewType {
     BACKGROUND("background"),
     FEAT("feat"),
     SPECIES("species"),
-    SPELL("spell");
+    SPELL("spell"),
+    BESTIARY("bestiary"),
+    MAGIC_ITEM("magic-item");
 
     @Getter
     @JsonValue
