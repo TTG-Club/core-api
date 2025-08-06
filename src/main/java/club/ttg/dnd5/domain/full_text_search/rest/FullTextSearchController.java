@@ -25,7 +25,7 @@ public class FullTextSearchController {
     @GetMapping
     public FullTextSearchViewResponse search(@RequestParam(name = "query")
                                                  @Valid
-                                                 @Size(min = 3)
+                                                 @Size(min = 2)
                                                  @Schema(description = "Строка поиска")
                                                  String searchLine) {
         return fullTextSearchViewService.findBySearchLine(searchLine);
