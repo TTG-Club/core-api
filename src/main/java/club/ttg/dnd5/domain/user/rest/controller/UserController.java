@@ -38,7 +38,7 @@ public class UserController {
         return userDto.getRoles();
     }
 
-    @Operation(summary = "Получение количества страниц созданных пользователем")
+    @Operation(summary = "Получение количества страниц созданных пользователем по разделу")
     @GetMapping("/user-statistic/{type}")
     public Integer getUserStatistics(@PathVariable SectionType type) {
         UserDto userDto = SecurityUtils.getUserDto();

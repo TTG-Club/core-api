@@ -41,10 +41,10 @@ public class UserService{
     }
 
     public UserDetailsService userDetailsService() {
-        return this::getByUsernameOrEmailWrapper;
+        return this::getByUsernameOrEmailForSecurity;
     }
 
-    public UserDetails getByUsernameOrEmailWrapper(String usernameOrEmail) {
+    public UserDetails getByUsernameOrEmailForSecurity(String usernameOrEmail) {
         User user = getByUsernameOrEmail(usernameOrEmail);
 
         return org.springframework.security.core.userdetails.User.withUsername(user.getUsername())
