@@ -21,4 +21,6 @@ public interface FeatRepository extends JpaRepository<Feat, String> {
             """
     )
     Collection<Feat> findBySearchLine(String searchLine, String invertedSearchLine, Sort defaultSort);
+
+    Integer countByUsername(String username);
 }

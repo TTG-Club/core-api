@@ -18,4 +18,6 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
             """
     )
     Collection<MagicItem> findBySearchLine(String searchLine, String invertedSearchLine);
+
+    Integer countByUsername(String username);
 }
