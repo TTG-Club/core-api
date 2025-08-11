@@ -7,6 +7,8 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -14,8 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -34,11 +34,21 @@ public class CreatureServiceImpl implements CreatureService {
     }
 
     @Override
-    public List<CreatureShortResponse> search(final String searchLine, final SearchBody searchBody) {
-        return creatureQueryDslSearchService.search(searchLine, searchBody)
+    public PageResponse<CreatureShortResponse> search(final String searchLine,
+                                                      final int page,
+                                                      final int limit,
+                                                      final String sort,
+                                                      final SearchBody searchBody) {
+        var responseItems = creatureQueryDslSearchService.search(
+                searchLine, page, limit, sort, searchBody)
                 .stream()
                 .map(creatureMapper::toShort)
                 .toList();
+        var pagination = Pagination.of(page, limit, creatureRepository.count(), responseItems.size());
+        return PageResponse.<CreatureShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Override

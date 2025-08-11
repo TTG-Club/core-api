@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
@@ -18,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "Заклинания", description = "REST API заклинаний")
 
@@ -42,13 +41,19 @@ public class SpellController {
 
     @Operation(summary = "Поиск заклинаний", description = "Поиск заклинания по именам")
     @PostMapping("/search")
-    public List<SpellShortResponse> getSpells(@RequestParam(name = "query", required = false)
+    public PageResponse<SpellShortResponse> getSpells(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 3)
                                               @Schema(description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
-                                              @RequestBody(required = false) SearchBody searchBody) {
-        return spellService.search(searchLine, searchBody);
+                                                      @RequestParam(required = false, defaultValue = "1")
+                                              int page,
+                                                      @RequestParam(required = false, defaultValue = "120")
+                                              int limit,
+                                                      @RequestParam(required = false, defaultValue = "name")
+                                              String sort,
+                                                      @RequestBody(required = false) SearchBody searchBody) {
+        return spellService.search(searchLine, page, limit, sort, searchBody);
     }
 
     @GetMapping("/{url}")

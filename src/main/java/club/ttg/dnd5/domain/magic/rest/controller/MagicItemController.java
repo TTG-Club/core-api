@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
@@ -15,8 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
@@ -63,12 +63,20 @@ public class MagicItemController {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
     })
     @PostMapping("/search")
-    public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "query", required = false)
-                                                       @Valid
-                                                       @Size(min = 3)
-                                                       @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                       String searchLine) {
-        return magicItemService.getItems(searchLine);
+    public PageResponse<MagicItemShortResponse> getItems(@RequestParam(name = "query", required = false)
+                                                @Valid
+                                                @Size(min = 3)
+                                                @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                                String searchLine,
+                                                @RequestParam(required = false, defaultValue = "1")
+                                                int page,
+                                                @RequestParam(required = false, defaultValue = "120")
+                                                int limit,
+                                                @RequestParam(required = false, defaultValue = "name")
+                                                String sort,
+                                                @RequestBody(required = false)
+                                                SearchBody searchBody) {
+        return magicItemService.getItems(searchLine, page, limit, sort, searchBody);
     }
 
     @Secured("ADMIN")

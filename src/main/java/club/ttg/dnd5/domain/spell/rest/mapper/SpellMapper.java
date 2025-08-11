@@ -42,7 +42,7 @@ public interface SpellMapper {
     @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
-    SpellShortResponse toSpeciesShortResponse(Spell spell);
+    SpellShortResponse toShort(Spell spell);
 
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping

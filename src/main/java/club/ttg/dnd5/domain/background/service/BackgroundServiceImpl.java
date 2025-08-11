@@ -7,27 +7,25 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
-import java.util.Collection;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class BackgroundServiceImpl implements BackgroundService {
-    private static final Sort DEFAULT_SORT = Sort.by("name");
     private final BackgroundRepository backgroundRepository;
+    private final BackgroundQDslSearchService backgroundSearchService;
     private final FeatRepository featRepository;
     private final BookService bookService;
     private final BackgroundMapper backgroundMapper;
@@ -38,18 +36,20 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     @Override
-    public Collection<BackgroundShortResponse> getBackgrounds(String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return backgroundRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
-                })
-                .orElseGet(() -> backgroundRepository.findAll(DEFAULT_SORT))
+    public PageResponse<BackgroundShortResponse> getBackgrounds(String searchLine,
+                                                                final int page,
+                                                                final int limit,
+                                                                final String sort, final SearchBody searchBody) {
+        var responseItems = backgroundSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
                 .stream()
                 .map(backgroundMapper::toShort)
-                .collect(Collectors.toList());
+                .toList();
+        var pagination = Pagination.of(page, limit, backgroundRepository.count(), responseItems.size());
+        return PageResponse.<BackgroundShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Transactional
@@ -109,5 +109,22 @@ public class BackgroundServiceImpl implements BackgroundService {
     private Background findByUrl(String url) {
         return backgroundRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Предыстория не найден по URL: " + url));
+    }
+
+    Specification<Background> containsText(String searchLine) {
+        return (root, query, cb) -> {
+            String likePattern = "%" + searchLine + "%";
+            String invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
+            String invertedPattern = "%" + invertedSearchLine + "%";
+
+            return cb.or(
+                    cb.like(cb.lower(root.get("name")), likePattern.toLowerCase()),
+                    cb.like(cb.lower(root.get("english")), likePattern.toLowerCase()),
+                    cb.like(cb.lower(root.get("alternative")), likePattern.toLowerCase()),
+                    cb.like(cb.lower(root.get("name")), invertedPattern.toLowerCase()),
+                    cb.like(cb.lower(root.get("english")), invertedPattern.toLowerCase()),
+                    cb.like(cb.lower(root.get("alternative")), invertedPattern.toLowerCase())
+            );
+        };
     }
 }

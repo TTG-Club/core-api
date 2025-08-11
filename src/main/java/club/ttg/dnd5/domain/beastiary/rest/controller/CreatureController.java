@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "Бестиарий", description = "REST API для существ из бестиария")
 
@@ -42,13 +41,19 @@ public class CreatureController {
 
     @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
     @PostMapping("/search")
-    public List<CreatureShortResponse> search(@RequestParam(name = "query", required = false)
+    public PageResponse<CreatureShortResponse> search(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 3)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
+                                              @RequestParam(required = false, defaultValue = "1")
+                                              int page,
+                                              @RequestParam(required = false, defaultValue = "120")
+                                              int limit,
+                                              @RequestParam(required = false, defaultValue = "name")
+                                              String sort,
                                               @RequestBody(required = false) SearchBody searchBody) {
-        return creatureService.search(searchLine, searchBody);
+        return creatureService.search(searchLine, page, limit, sort, searchBody);
     }
 
     @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")

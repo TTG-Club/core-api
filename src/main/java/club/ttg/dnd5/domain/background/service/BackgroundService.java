@@ -3,16 +3,16 @@ package club.ttg.dnd5.domain.background.service;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
-
-import java.util.Collection;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 
 public interface BackgroundService {
     BackgroundDetailResponse getBackground(String backgroundUrl);
 
-    Collection<BackgroundShortResponse> getBackgrounds(String searchLine);
+    PageResponse<BackgroundShortResponse> getBackgrounds(String searchLine,
+                                                         final int page,
+                                                         final int limit,
+                                                         final String sort, final SearchBody searchBody);
 
     String addBackground(BackgroundRequest backgroundDto);
 

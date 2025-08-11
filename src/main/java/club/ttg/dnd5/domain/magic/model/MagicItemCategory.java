@@ -6,15 +6,15 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum MagicItemCategory {
-    WEAPON("оружие"),
-    ARMOR("доспех"),
-    WAND("волшебная палочка"),
-    ROD("жезл"),
-    STAFF("посох"),
-    POTION("зелье"),
-    RING("кольцо"),
-    SCROLL("свиток"),
-    SUBJECT("чудесный предмет");
+    WEAPON("Оружие"),
+    ARMOR("Доспех"),
+    WAND("Волшебная палочка"),
+    ROD("Жезл"),
+    STAFF("Посох"),
+    POTION("Зелье"),
+    RING("Кольцо"),
+    SCROLL("Свиток"),
+    SUBJECT("Чудесный предмет");
 
     private final String name;
 }

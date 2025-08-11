@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
-import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
@@ -46,16 +47,21 @@ public class SpeciesController {
 
     @PostMapping("/search")
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<SpeciesShortResponse> getAllSpecies(
+    public PageResponse<SpeciesShortResponse> getAllSpecies(
             @RequestParam(name = "query", required = false)
             @Valid
             @Size(min = 3)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
-            @Parameter(description = "Сортировка")
+            @RequestParam(required = false, defaultValue = "1")
+            int page,
+            @RequestParam(required = false, defaultValue = "120")
+            int limit,
             @RequestParam(required = false, defaultValue = "name")
-            String[] sort) {
-        return speciesService.getSpecies(searchLine, sort);
+            String sort,
+            @RequestBody(required = false)
+            SearchBody searchBody) {
+        return speciesService.getSpecies(searchLine, page, limit, sort, searchBody);
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")

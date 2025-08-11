@@ -1,10 +1,12 @@
 package club.ttg.dnd5.domain.feat.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.service.FeatService;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,8 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
@@ -54,12 +54,20 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
-    public Collection<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
-                                                  @Valid
-                                                  @Size(min = 3)
-                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine) {
-        return featService.getFeats(searchLine);
+    public PageResponse<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
+                                           @Valid
+                                           @Size(min = 3)
+                                           @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                           String searchLine,
+                                           @RequestParam(required = false, defaultValue = "1")
+                                           int page,
+                                           @RequestParam(required = false, defaultValue = "120")
+                                           int limit,
+                                           @RequestParam(required = false, defaultValue = "name")
+                                           String sort,
+                                           @RequestBody(required = false) SearchBody searchBody
+    ) {
+        return featService.getFeats(searchLine, page, limit, sort, searchBody);
     }
 
     @Secured("ADMIN")
