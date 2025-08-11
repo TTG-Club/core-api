@@ -120,8 +120,8 @@ public class SpellService {
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
         if (!Objects.equals(oldUrl, request.getUrl())) {
             spellRepository.deleteById(oldUrl);
+            spellRepository.flush();
         }
-        spellRepository.flush();
         return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
     }
 

@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -99,6 +100,10 @@ public class ItemServiceImpl implements ItemService {
     public String updateItem(final String itemUrl, final ItemRequest request) {
         findByUrl(itemUrl);
         var book = bookService.findByUrl(request.getSource().getUrl());
+        if (!Objects.equals(itemUrl, request.getUrl())) {
+            itemRepository.deleteById(itemUrl);
+            itemRepository.flush();
+        }
         return itemRepository.save(itemMapper.toItem(request, book)).getUrl();
     }
 
