@@ -72,6 +72,7 @@ public class GlossaryService {
         Glossary updatedGlossary = glossaryMapper.toEntity(request, book);
         updatedGlossary.setUrl(url);
         glossaryRepository.delete(existingGlossary);
+        glossaryRepository.flush();
         glossaryRepository.save(updatedGlossary);
 
         return updatedGlossary.getUrl();
