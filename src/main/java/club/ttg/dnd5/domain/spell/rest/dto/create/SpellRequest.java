@@ -9,6 +9,8 @@ import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
+import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -47,6 +49,7 @@ public class SpellRequest extends BaseRequest {
     private List<SpellDuration> duration;
 
     @Nullable
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String upper;
 
     @Nullable
