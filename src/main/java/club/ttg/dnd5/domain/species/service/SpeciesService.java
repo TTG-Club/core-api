@@ -1,6 +1,9 @@
 package club.ttg.dnd5.domain.species.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
@@ -52,7 +55,11 @@ public class SpeciesService {
         return speciesRepository.findAllById(urls);
     }
 
-    public List<SpeciesShortResponse> getSpecies(String searchLine, String[] sort) {
+    public PageResponse<SpeciesShortResponse> getSpecies(String searchLine,
+                                                         final int page,
+                                                         final int limit,
+                                                         final String sort,
+                                                         final SearchBody searchBody) {
         Collection<Species> specieses;
         if (StringUtils.hasText(searchLine)) {
             String invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
@@ -60,9 +67,17 @@ public class SpeciesService {
         } else {
             specieses = speciesRepository.findAllByParentIsNull(Sort.by(sort));
         }
-        return specieses.stream()
-                .map(speciesMapper::toShortDto)
-                .toList();
+
+        return PageResponse.<SpeciesShortResponse>builder()
+                .items(specieses.stream()
+                        .map(speciesMapper::toShortDto)
+                        .toList())
+                .pagination(Pagination.builder()
+                        .total(speciesRepository.count())
+                        .page(page)
+                        .limit(limit)
+                        .build())
+                .build();
     }
 
     @Transactional

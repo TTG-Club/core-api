@@ -1,6 +1,9 @@
 package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
@@ -9,23 +12,17 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.rest.mapper.MagicItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class MagicItemServiceImpl implements MagicItemService {
 
     private final MagicItemRepository magicItemRepository;
+    private final MagicItemDslSearchService magicItemDslSearchService;
     private final MagicItemMapper magicItemMapper;
     private final BookService bookService;
 
@@ -48,19 +45,21 @@ public class MagicItemServiceImpl implements MagicItemService {
     }
 
     @Override
-    public Collection<MagicItemShortResponse> getItems(final String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return magicItemRepository.findBySearchLine(line, invertedSearchLine);
-                })
-                .orElseGet(magicItemRepository::findAll)
-                .parallelStream()
-                .sorted(Comparator.comparing((MagicItem item) -> item.getRarity().ordinal()).thenComparing(MagicItem::getName))
+    public PageResponse<MagicItemShortResponse> getItems(final String searchLine,
+                                                         final int page,
+                                                         final int limit,
+                                                         final String sort,
+                                                         final SearchBody searchBody) {
+        var responseItems = magicItemDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
+                .stream()
                 .map(magicItemMapper::toShort)
-                .collect(Collectors.toList());
+                .toList();
+        var pagination = Pagination.of(page, limit, magicItemRepository.count(), responseItems.size());
+        return PageResponse.<MagicItemShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Transactional

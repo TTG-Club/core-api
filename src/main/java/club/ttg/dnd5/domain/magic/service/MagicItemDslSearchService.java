@@ -1,24 +1,22 @@
-package club.ttg.dnd5.domain.beastiary.service;
+package club.ttg.dnd5.domain.magic.service;
 
-import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.domain.filter.service.AbstractQueryDslSearchService;
+import club.ttg.dnd5.domain.glossary.model.QGlossary;
+import club.ttg.dnd5.domain.magic.model.MagicItem;
+import club.ttg.dnd5.domain.magic.model.QMagicItem;
 import com.querydsl.core.types.OrderSpecifier;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CreatureQueryDslSearchService extends AbstractQueryDslSearchService<Creature, QCreature> {
-    private static final QCreature CREATURE = QCreature.creature;
+public class MagicItemDslSearchService extends AbstractQueryDslSearchService<MagicItem, QMagicItem> {
+    private static final QMagicItem MAGIC_ITEM = QMagicItem.magicItem;
+    private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{MAGIC_ITEM.rarity.asc(), MAGIC_ITEM.name.asc()};
 
-    private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{
-            CREATURE.experience.asc(),
-            CREATURE.name.asc()};
-
-    public CreatureQueryDslSearchService(CreatureFilterService creatureFilterService,
-                                         EntityManager entityManager) {
-        super(creatureFilterService, entityManager, CREATURE);
+    public MagicItemDslSearchService(MagicItemFilterService magicItemFilterService, EntityManager entityManager) {
+        super(magicItemFilterService, entityManager, MAGIC_ITEM);
     }
 
     @Override
@@ -32,15 +30,15 @@ public class CreatureQueryDslSearchService extends AbstractQueryDslSearchService
         boolean descending = parts.length > 1 && "desc".equalsIgnoreCase(parts[1].trim());
 
         OrderSpecifier<?> order = switch (field) {
-            case "experience" -> descending
-                    ? QCreature.creature.experience.desc()
-                    : QCreature.creature.experience.asc();
             case "name" -> descending
-                    ? QCreature.creature.name.desc()
-                    : QCreature.creature.name.asc();
+                    ? QGlossary.glossary.name.desc()
+                    : QGlossary.glossary.name.asc();
             case "english" -> descending
                     ? QCreature.creature.english.desc()
-                    : QCreature.creature.english.asc();
+                    : QGlossary.glossary.english.asc();
+            case "category" -> descending
+                    ? QGlossary.glossary.tagCategory.desc()
+                    : QGlossary.glossary.tagCategory.asc();
             default ->
                 // fallback на name
                     QCreature.creature.name.asc();

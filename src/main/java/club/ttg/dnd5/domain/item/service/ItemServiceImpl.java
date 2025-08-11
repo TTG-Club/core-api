@@ -1,6 +1,9 @@
 package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
@@ -17,9 +20,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -64,8 +65,12 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemShortResponse> getItems(String searchLine) {
-        return Optional.ofNullable(searchLine)
+    public PageResponse<ItemShortResponse> getItems(String searchLine,
+                                                    final int page,
+                                                    final int limit,
+                                                    final String sort,
+                                                    final SearchBody searchBody) {
+        var items =  Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
                 .map(line -> {
@@ -75,7 +80,16 @@ public class ItemServiceImpl implements ItemService {
                 .orElseGet(() -> itemRepository.findAll(DEFAULT_SORT))
                 .stream()
                 .map(itemMapper::toShortResponse)
-                .collect(Collectors.toList());
+                .toList();
+        return PageResponse.<ItemShortResponse>builder()
+                .items(items)
+                .pagination(Pagination.builder()
+                        .total(itemRepository.count())
+                        .page(page)
+                        .limit(limit)
+                        .filtered(items.size())
+                        .build())
+                .build();
     }
 
     @Override

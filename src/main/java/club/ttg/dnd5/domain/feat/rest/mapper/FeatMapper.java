@@ -17,12 +17,12 @@ public interface FeatMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "category.name", target = "category", qualifiedByName = "capitalize")
-    FeatShortResponse toShortDto(Feat feat);
+    FeatShortResponse toShort(Feat feat);
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "category.name", target = "category", qualifiedByName = "capitalize")
-    FeatDetailResponse toDetailDto(Feat feat);
+    FeatDetailResponse toDetail(Feat feat);
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")

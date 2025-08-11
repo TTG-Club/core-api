@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -26,7 +28,6 @@ import org.springframework.util.StringUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,10 +45,21 @@ public class SpellService {
         return true;
     }
 
-    public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
-        return spellQueryDslSearchService.search(searchLine, searchBody).stream()
-                .map(spellMapper::toSpeciesShortResponse)
-                .collect(Collectors.toList());
+    public PageResponse<SpellShortResponse> search(String searchLine,
+                                                   int page,
+                                                   int limit,
+                                                   String sort,
+                                                   SearchBody searchBody) {
+        var responseItems = spellQueryDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
+                .stream()
+                .map(spellMapper::toShort)
+                .toList();
+        var pagination = Pagination.of(page, limit, spellRepository.count(), responseItems.size());
+        return PageResponse.<SpellShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     public List<Spell> findAll(Sort sort) {

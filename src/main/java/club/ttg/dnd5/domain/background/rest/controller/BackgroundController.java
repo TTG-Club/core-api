@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.background.rest.controller;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,8 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collection;
 
 @RequiredArgsConstructor
 @RestController
@@ -52,13 +52,21 @@ public class BackgroundController {
 
     @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")
     @PostMapping("/search")
-    public Collection<BackgroundShortResponse> findBackgrounds(
+    public PageResponse<BackgroundShortResponse> findBackgrounds(
             @RequestParam(name = "query", required = false)
             @Valid
             @Size(min = 3)
             @Schema( description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine) {
-        return backgroundService.getBackgrounds(searchLine);
+            String searchLine,
+            @RequestParam(required = false, defaultValue = "1")
+            int page,
+            @RequestParam(required = false, defaultValue = "120")
+            int limit,
+            @RequestParam(required = false, defaultValue = "name")
+            String sort,
+            @RequestBody(required = false) SearchBody searchBody
+    ) {
+        return backgroundService.getBackgrounds(searchLine, page, limit, sort, searchBody);
     }
 
     @Operation(summary = "Создание предыстории", description = "Возвращает ссылку на созданную предысторию")
