@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class WorkshopDto {
+public class WorkshopResponse {
     private SectionType type;
     private Counters counters;
 

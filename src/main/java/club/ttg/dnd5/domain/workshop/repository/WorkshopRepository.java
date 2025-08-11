@@ -51,5 +51,5 @@ public interface WorkshopRepository extends JpaRepository<Spell, String> {
             "              from Spell " +
             "              where username = :username ) as t " +
             " group by t.section_type ")
-    List<WorkshopPairDto> test(String username);
+    List<WorkshopPairDto> findWorkshopUserStatistics(String username);
 }
