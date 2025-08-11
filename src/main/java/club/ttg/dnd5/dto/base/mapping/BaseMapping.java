@@ -10,6 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 
 @Mapper(componentModel = "spring")
 public interface BaseMapping {
@@ -50,7 +51,7 @@ public interface BaseMapping {
 
     @Named("collectToString")
     default String collectToString(Collection<String> names) {
-        return String.join(";", names);
+        return Optional.ofNullable(names).map(name -> String.join(";", name)).orElse("");
     }
 
     @Named("altToCollection")
