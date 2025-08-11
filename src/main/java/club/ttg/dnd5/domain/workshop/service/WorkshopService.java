@@ -15,7 +15,7 @@ public class WorkshopService {
     private final WorkshopMapper workshopMapper;
 
     public List<WorkshopResponse> getWorkshopUserSections(String username) {
-        return workshopRepository.findWorkshopUserStatistics(username).stream()
+        return workshopRepository.findWorkshopUserSetions(username).stream()
                 .map(workshopMapper::toResponse)
                 .toList();
     }
