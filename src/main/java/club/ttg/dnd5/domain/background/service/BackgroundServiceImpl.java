@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -72,6 +73,10 @@ public class BackgroundServiceImpl implements BackgroundService {
         }
         var feat = getFeat(request.getFeatUrl());
         var book = bookService.findByUrl(request.getSource().getUrl());
+        if (!Objects.equals(url, request.getUrl())) {
+            featRepository.deleteById(url);
+            featRepository.flush();
+        }
         return backgroundRepository.save(backgroundMapper.toEntity(request, feat, book))
                 .getUrl();
     }

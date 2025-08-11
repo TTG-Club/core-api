@@ -121,6 +121,7 @@ public class SpeciesService {
         if (speciesRepository.existsById(oldUrl)) {
             if (!oldUrl.equals(request.getUrl())) {
                 speciesRepository.deleteById(oldUrl);
+                speciesRepository.flush();
             }
             return saveSpecies(request);
         } else {

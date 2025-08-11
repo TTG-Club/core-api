@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -73,6 +74,10 @@ public class CreatureServiceImpl implements CreatureService {
         }
         var book = bookService.findByUrl(request.getSource().getUrl());
         var beast = creatureMapper.toEntity(request, book);
+        if (!Objects.equals(url, request.getUrl())) {
+            creatureRepository.deleteById(url);
+            creatureRepository.flush();
+        }
         return creatureRepository.save(beast).getUrl();
     }
 
