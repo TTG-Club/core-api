@@ -12,8 +12,8 @@ public class ArticleQueryDslSearchService extends AbstractQueryDslSearchService<
     private static final QArticle ARTICLE = QArticle.article;
     private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{ARTICLE.categories.asc(), ARTICLE.name.asc()};
 
-    public ArticleQueryDslSearchService(ArticleFilterService articleFilterService, EntityManager entityManager) {
-        super(articleFilterService, entityManager, ARTICLE);
+    public ArticleQueryDslSearchService(ArticlesFilterServise articlesFilterService, EntityManager entityManager) {
+        super(articlesFilterService, entityManager, ARTICLE);
     }
 
     @Override

@@ -3,8 +3,8 @@ package club.ttg.dnd5.domain.articles.controller;
 import club.ttg.dnd5.domain.articles.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.articles.rest.dto.ArticleShortResponse;
 import club.ttg.dnd5.domain.articles.rest.dto.create.ArticleRequest;
-import club.ttg.dnd5.domain.articles.service.ArticleFilterService;
 import club.ttg.dnd5.domain.articles.service.ArticleService;
+import club.ttg.dnd5.domain.articles.service.ArticlesFilterServise;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,7 +27,7 @@ import java.util.List;
 @RequestMapping("/api/v2/articles")
 public class AticlesController {
     private final ArticleService articleService;
-    private final ArticleFilterService articleFilterService;
+    private final ArticlesFilterServise articleFilterService;
 
     @Operation(summary = "Проверить статью по URL", description = "Проверка статьи по ее уникальному URL.")
     @ApiResponses(value = {
@@ -35,28 +35,28 @@ public class AticlesController {
             @ApiResponse(responseCode = "404", description = "Статьи не существует")
     })
     @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
-    public Boolean isSpellExist(@PathVariable String url) {
+    public Boolean isArticlesExist(@PathVariable String url) {
         return articleService.existOrThrow(url);
     }
 
-    @Operation(summary = "Поиск статьи", description = "Поиск статьи по именам")
+    @Operation(summary = "Поиск статей", description = "Поиск статьй по именам")
     @PostMapping("/search")
-    public List<ArticleShortResponse> getArticles(@RequestParam(name = "query", required = false)
+    public List<ArticleShortResponse> search(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 3)
-                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
-                                                @RequestBody(required = false) SearchBody searchBody) {
+                                              @RequestBody(required = false) SearchBody searchBody) {
         return articleService.search(searchLine, searchBody);
     }
 
     @GetMapping("/{url}")
-    public ArticleDetailedResponse getSpellByUrl(@PathVariable String url) {
+    public ArticleDetailedResponse getArticlesByUrl(@PathVariable String url) {
         return articleService.findDetailedByUrl(url);
     }
 
     @GetMapping("/{url}/raw")
-    public ArticleRequest getSpellFormByUrl(@PathVariable String url) {
+    public ArticleRequest getArticlesFormByUrl(@PathVariable String url) {
         return articleService.findFormByUrl(url);
     }
 
@@ -74,7 +74,7 @@ public class AticlesController {
 
     @Secured("ADMIN")
     @PutMapping("/{url}")
-    public String updateSpell(@PathVariable String url,
+    public String updateArticles(@PathVariable String url,
                                              @Valid
                                              @RequestBody ArticleRequest request) {
         return articleService.update(url, request);
@@ -82,7 +82,7 @@ public class AticlesController {
 
     @Secured("ADMIN")
     @DeleteMapping("/{url}")
-    public void deleteSpell(@PathVariable String url) {
+    public void deleteArticles(@PathVariable String url) {
         articleService.delete(url);
     }
 }

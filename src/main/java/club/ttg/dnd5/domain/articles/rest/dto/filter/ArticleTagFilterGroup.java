@@ -5,12 +5,16 @@ import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Getter
+@Setter
 public class ArticleTagFilterGroup extends AbstractFilterGroup<String, ArticleTagFilterGroup.ArticleTagFilterItem> {
 
     public ArticleTagFilterGroup(List<ArticleTagFilterGroup.ArticleTagFilterItem> filters) {
@@ -27,7 +31,7 @@ public class ArticleTagFilterGroup extends AbstractFilterGroup<String, ArticleTa
         BooleanExpression positiveExpr = CollectionUtils.isEmpty(positiveValues)
                 ? TRUE_EXPRESSION
                 : Expressions.booleanTemplate(String.format(
-                "(articles is not null and exists (select 1 from jsonb_array_elements(articles) as elem where %s))",
+                "(tags_articles is not null and exists (select 1 from jsonb_array_elements(tags_articles) as elem where %s))",
                 positiveValues.stream()
                         .map(val -> String.format("elem @> '\"%s\"'", escape(val)))
                         .collect(Collectors.joining(" or "))
@@ -37,7 +41,7 @@ public class ArticleTagFilterGroup extends AbstractFilterGroup<String, ArticleTa
         BooleanExpression negativeExpr = CollectionUtils.isEmpty(negativeValues)
                 ? TRUE_EXPRESSION
                 : Expressions.booleanTemplate(String.format(
-                "(articles is not null and not exists (select 1 from jsonb_array_elements(articles) as elem where %s))",
+                "(tags_articles is not null and not exists (select 1 from jsonb_array_elements(tags_articles) as elem where %s))",
                 negativeValues.stream()
                         .map(val -> String.format("elem @> '\"%s\"'", escape(val)))
                         .collect(Collectors.joining(" or "))
@@ -51,8 +55,7 @@ public class ArticleTagFilterGroup extends AbstractFilterGroup<String, ArticleTa
         return "Тег";
     }
 
-    public static ArticleTagFilterGroup getDefault(ArticleRepository articleRepository) {
-        List<String> allTags = articleRepository.findAllUniquetagsArticles();
+    public static ArticleTagFilterGroup getDefault(Set<String> allTags) {
         return new ArticleTagFilterGroup(
                 allTags.stream()
                         .map(ArticleTagFilterGroup.ArticleTagFilterItem::new)
