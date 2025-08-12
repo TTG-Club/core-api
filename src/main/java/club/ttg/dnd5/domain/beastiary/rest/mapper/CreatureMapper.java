@@ -91,6 +91,7 @@ public interface CreatureMapper {
     @Mapping(target = "legendary.count", source = "legendaryAction")
     @Mapping(target = "legendary.inLair", source = "legendaryActionInLair")
     @Mapping(target = "lair.description", source = "lair")
+    @Mapping(target = "lair.effects", source = "lairEffects")
     CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping
