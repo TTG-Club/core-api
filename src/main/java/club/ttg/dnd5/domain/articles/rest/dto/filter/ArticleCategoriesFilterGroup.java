@@ -51,14 +51,14 @@ public class ArticleCategoriesFilterGroup extends AbstractFilterGroup<String, Ar
         return "Категория";
     }
 
-    public static ArticleCategoriesFilterGroup getDefault(ArticleRepository articleRepository) {
-        List<String> allCategories = articleRepository.findAllUniqueCategories();
-        return new ArticleCategoriesFilterGroup(
-                allCategories.stream()
-                        .map(ArticleCategoriesFilterGroup.ArticleCategoriesFilterItem::new)
-                        .collect(Collectors.toList())
-        );
-    }
+//    public static ArticleCategoriesFilterGroup getDefault(ArticleRepository articleRepository) {
+//        List<String> allCategories = articleRepository.findAllUniqueCategories();
+//        return new ArticleCategoriesFilterGroup(
+//                allCategories.stream()
+//                        .map(ArticleCategoriesFilterGroup.ArticleCategoriesFilterItem::new)
+//                        .collect(Collectors.toList())
+//        );
+//    }
 
     public static class ArticleCategoriesFilterItem extends AbstractFilterItem<String> {
         public ArticleCategoriesFilterItem(String value) {
