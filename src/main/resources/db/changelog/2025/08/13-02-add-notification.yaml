@@ -1,0 +1,141 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-08-13-01-create-persona
+      author: vitalii
+      changes:
+        - createTable:
+            tableName: persona
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_persona
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: image
+                  type: VARCHAR(1024)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: disabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropTable:
+            tableName: persona
+            cascadeConstraints: true
+
+  - changeSet:
+      id: 2025-08-13-02-create-notification
+      author: vitalii
+      changes:
+        - createTable:
+            tableName: notification
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_notification
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: UUID
+                  constraints:
+                    nullable: true
+              - column:
+                  name: description
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: type
+                  type: VARCHAR(50)   # @Enumerated(EnumType.STRING)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: "after"
+                  type: TIMESTAMP      # timestamp without time zone
+                  constraints:
+                    nullable: true
+              - column:
+                  name: "before"
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: disabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+
+        - addForeignKeyConstraint:
+            baseTableName: notification
+            baseColumnNames: persona_id
+            referencedTableName: persona
+            referencedColumnNames: id
+            constraintName: fk_notification_persona
+            onDelete: SET NULL
+            onUpdate: NO ACTION
+
+        - createIndex:
+            tableName: notification
+            indexName: ix_notification_persona_id
+            columns:
+              - column:
+                  name: persona_id
+
+        - createIndex:
+            tableName: notification
+            indexName: ix_notification_type
+            columns:
+              - column:
+                  name: type
+
+        - createIndex:
+            tableName: notification
+            indexName: ix_notification_after_before
+            columns:
+              - column:
+                  name: "after"
+              - column:
+                  name: "before"
+
+      rollback:
+        - dropIndex:
+            tableName: notification
+            indexName: ix_notification_after_before
+        - dropIndex:
+            tableName: notification
+            indexName: ix_notification_type
+        - dropIndex:
+            tableName: notification
+            indexName: ix_notification_persona_id
+        - dropForeignKeyConstraint:
+            baseTableName: notification
+            constraintName: fk_notification_persona
+        - dropTable:
+            tableName: notification
+            cascadeConstraints: true

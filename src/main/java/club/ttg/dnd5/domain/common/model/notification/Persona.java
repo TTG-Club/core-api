@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
 
 import java.util.Collection;
 
@@ -19,6 +20,12 @@ public class Persona {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String name;
-    @OneToMany(fetch = FetchType.LAZY)
+    private String image;
+
+    @OneToMany(mappedBy = "persona", fetch = FetchType.LAZY)
     private Collection<Notification> notifications;
+    private boolean disabled;
+
+    @CreatedBy
+    private String username;
 }

@@ -20,19 +20,19 @@ public class Notification {
     @Id
     @GeneratedValue
     private Long id;
-    @ManyToOne
+    @ManyToOne(targetEntity = Persona.class)
     private Persona persona;
 
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    private String image;
 
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
     private LocalDateTime after;
     private LocalDateTime before;
+
+    private boolean disabled;
 
     @CreatedBy
     private String username;
