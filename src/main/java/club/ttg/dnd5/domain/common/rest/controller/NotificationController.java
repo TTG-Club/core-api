@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationResponse;
 import club.ttg.dnd5.domain.common.service.NotificationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public String getNotification() {
+    public NotificationResponse getNotification() {
         return notificationService.getNotification();
     }
 }
