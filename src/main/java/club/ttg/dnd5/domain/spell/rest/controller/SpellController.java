@@ -69,13 +69,13 @@ public class SpellController {
     @Secured("ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SpellDetailedResponse createSpell(@RequestBody SpellRequest request) {
+    public String createSpell(@RequestBody SpellRequest request) {
         return spellService.save(request);
     }
 
     @Secured("ADMIN")
     @PutMapping("/{url}")
-    public SpellDetailedResponse updateSpell(@PathVariable String url,
+    public String updateSpell(@PathVariable String url,
                                              @Valid
                                              @RequestBody SpellRequest request) {
         return spellService.update(url, request);

@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.glossary.controller;
+package club.ttg.dnd5.domain.glossary.rest.controller;
 
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
@@ -53,10 +53,6 @@ public class GlossaryController {
     @GetMapping("/{url}")
     public GlossaryDetailedResponse getGlossaryByUrl(@PathVariable String url) {
         return glossaryService.findDetailedByUrl(url);
-    }
-
-    public GlossaryRequest findGlossaryFormByUrl(final String url) {
-        return glossaryService.findFormByUrl(url);
     }
 
     @Secured("ADMIN")

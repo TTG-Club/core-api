@@ -67,11 +67,11 @@ public class SpeciesService {
 
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
-    public SpeciesDetailResponse save(SpeciesRequest request) {
+    public String save(SpeciesRequest request) {
         if (speciesRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
-        return saveSpecies(request);
+        return saveSpecies(request).getUrl();
     }
 
 
@@ -117,13 +117,13 @@ public class SpeciesService {
     }
 
     @Transactional
-    public SpeciesDetailResponse update(String oldUrl, SpeciesRequest request) {
+    public String update(String oldUrl, SpeciesRequest request) {
         if (speciesRepository.existsById(oldUrl)) {
             if (!oldUrl.equals(request.getUrl())) {
                 speciesRepository.deleteById(oldUrl);
                 speciesRepository.flush();
             }
-            return saveSpecies(request);
+            return saveSpecies(request).getUrl();
         } else {
             throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
         }
