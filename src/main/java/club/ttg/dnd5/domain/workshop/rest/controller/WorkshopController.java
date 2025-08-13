@@ -16,7 +16,7 @@ import java.util.List;
 @Tag(name = "Мастерская", description = "REST API мастерской")
 
 @RestController
-@RequestMapping("/api/workshop")
+@RequestMapping("/api/v2/workshop")
 @RequiredArgsConstructor
 public class WorkshopController {
 
