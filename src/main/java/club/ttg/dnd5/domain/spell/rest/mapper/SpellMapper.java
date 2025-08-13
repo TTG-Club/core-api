@@ -94,6 +94,7 @@ public interface SpellMapper {
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
     @Mapping(source = "school.school", target = "school")
+    @Mapping(source = ".", target = "affiliations")
     SpellRequest toRequest(Spell spell);
 
     @Retention(RetentionPolicy.SOURCE)

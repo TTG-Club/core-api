@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.spell.rest.dto.create;
 
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class CreateAffiliationRequest {
     @Nullable
     private List<String> classes;

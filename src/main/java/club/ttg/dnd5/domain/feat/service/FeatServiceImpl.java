@@ -21,6 +21,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -70,11 +71,12 @@ public class FeatServiceImpl implements FeatService {
     @Override
     public String updateFeat(final String featUrl, final FeatRequest dto) {
         var entity = findByUrl(featUrl);
-        if (!featUrl.equalsIgnoreCase(dto.getUrl())) {
-            featRepository.deleteById(featUrl);
-        }
         var book = bookService.findByUrl(dto.getSource().getUrl());
         var feat = featMapper.toEntity(dto, book);
+        if (!Objects.equals(featUrl, dto.getUrl())) {
+            featRepository.deleteById(featUrl);
+            featRepository.flush();
+        }
         return featRepository.save(feat).getUrl();
     }
 
