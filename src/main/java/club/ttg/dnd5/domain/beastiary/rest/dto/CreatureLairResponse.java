@@ -12,7 +12,10 @@ import java.util.Collection;
 @Getter
 @Setter
 public class CreatureLairResponse {
+    private String name;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
     private Collection<ActionResponse> effects;
+    @JsonSerialize(using = MarkupDescriptionSerializer.class)
+    private String ending;
 }

@@ -72,8 +72,6 @@ public interface CreatureMapper {
     @Mapping(source = "section.habitats", target = "section.habitats", qualifiedByName = "toHabitats")
     @Mapping(source = "section.treasures", target = "section.treasures", qualifiedByName = "toTreasures")
     @Mapping(source = "section.sectionDescription", target = "section.description")
-    @Mapping(source = "lair", target = "lair.description")
-    @Mapping(source = "lairEffects", target = "lair.effects")
     @Mapping(source = ".", target = "legendary", qualifiedByName = "toLegendary")
     CreatureDetailResponse toDetail(Creature creature);
 
@@ -90,8 +88,6 @@ public interface CreatureMapper {
     @Mapping(target = "legendary.actions", source = "legendaryActions")
     @Mapping(target = "legendary.count", source = "legendaryAction")
     @Mapping(target = "legendary.inLair", source = "legendaryActionInLair")
-    @Mapping(target = "lair.description", source = "lair")
-    @Mapping(target = "lair.effects", source = "lairEffects")
     CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping
@@ -114,8 +110,6 @@ public interface CreatureMapper {
     @Mapping(source = "request.legendary.actions", target = "legendaryActions")
     @Mapping(source = "request.legendary.count", target = "legendaryAction")
     @Mapping(source = "request.legendary.inLair", target = "legendaryActionInLair")
-    @Mapping(source = "request.lair.description", target = "lair")
-    @Mapping(source = "request.lair.effects", target = "lairEffects")
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Book source);
 

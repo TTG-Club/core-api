@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: change-column-lair
+      author: Magistrus
+      changes:
+        - dropColumn:
+            columns:
+              - column:
+                  name: lair_effects
+            tableName: bestiary
+        - modifyDataType:
+            columnName: lair
+            newDataType: jsonb
+            tableName: bestiary
