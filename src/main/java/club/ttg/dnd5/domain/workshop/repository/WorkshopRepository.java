@@ -9,47 +9,50 @@ import java.util.List;
 
 public interface WorkshopRepository extends JpaRepository<Spell, String> {
 
-    @Query(" select t.section_type as sectionType," +
-            " COUNT(*) as count " +
-            " from (select 'BACKGROUND' as section_type, " +
-            "                     username as username " +
-            "              from Background " +
-            "              where username = :username " +
-            "              union all " +
-            "              select 'BESTIARY' as section_type, " +
-            "                     username as username " +
-            "              from Creature " +
-            "              where username = :username " +
-            "              union all " +
-            "              select 'FEAT' as section_type, " +
-            "                     username as username " +
-            "              from Feat " +
-            "              where username = :username " +
-            "              union all " +
-            "              select 'GLOSSARY' as section_type, " +
-            "                     username as username " +
-            "              from Glossary " +
-            "              where username = :username " +
-            "              union all " +
-            "              select 'MAGIC_ITEM' as section_type, " +
-            "                     username as username " +
-            "              from MagicItem " +
-            "              where username = :username " +
-            "              union all " +
-            "              select 'SPECIES' as section_type, " +
-            "                     username as username " +
-            "              from Species " +
-            "              where username = :username " +
-            "              union all " +
-            "              select 'ITEM' as section_type, " +
-            "                     username as username " +
-            "              from Item " +
-            "              where username = :username " +
-            "              union all " +
-            "              select 'SPELL' as section_type, " +
-            "                     username as username " +
-            "              from Spell " +
-            "              where username = :username ) as t " +
-            " group by t.section_type ")
-    List<WorkshopPairDto> findWorkshopUserSetions(String username);
+    @Query("""
+            WITH workshop_count as (SELECT 'BACKGROUND' as section_type,
+                         username     as username
+                  FROM Background
+                  WHERE username = :username
+                  UNION ALL
+                  SELECT 'BESTIARY' as section_type,
+                         username   as username
+                  FROM Creature
+                  WHERE username = :username
+                  UNION ALL
+                  SELECT 'FEAT'   as section_type,
+                         username as username
+                  FROM Feat
+                  WHERE username = :username
+                  UNION ALL
+                  SELECT 'GLOSSARY' as section_type,
+                         username   as username
+                  FROM Glossary
+                  WHERE username = :username
+                  UNION ALL
+                  SELECT 'MAGIC_ITEM' as section_type,
+                         username     as username
+                  FROM MagicItem
+                  WHERE username = :username
+                  UNION ALL
+                  SELECT 'SPECIES' as section_type,
+                         username  as username
+                  FROM Species
+                  WHERE username = :username
+                  UNION ALL
+                  SELECT 'ITEM'   as section_type,
+                         username as username
+                  FROM Item
+                  WHERE username = :username
+                  UNION ALL
+                  SELECT 'SPELL'  as section_type,
+                         username as username
+                  FROM Spell
+                  WHERE username = :username)
+            SELECT wc.section_type as sectionType,
+                   COUNT(*)       as count
+            FROM workshop_count as wc
+            GROUP BY wc.section_type
+            """)
+    List<WorkshopPairDto> findWorkshopUserSections(String username);
 }
