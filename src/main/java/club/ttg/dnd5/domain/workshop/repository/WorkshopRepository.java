@@ -1,13 +1,12 @@
 package club.ttg.dnd5.domain.workshop.repository;
 
-import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.workshop.rest.dto.WorkshopPairDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface WorkshopRepository extends JpaRepository<Spell, String> {
+public interface WorkshopRepository extends JpaRepository<Object, String> {
 
     @Query("""
             WITH workshop_count as (SELECT 'BACKGROUND' as section_type,
