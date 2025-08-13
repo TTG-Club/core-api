@@ -55,6 +55,11 @@ public class GlossaryController {
         return glossaryService.findDetailedByUrl(url);
     }
 
+    @GetMapping("/{url}/raw")
+    public GlossaryRequest getFormByUrl(@PathVariable String url) {
+        return glossaryService.findFormByUrl(url);
+    }
+
     @Secured("ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
