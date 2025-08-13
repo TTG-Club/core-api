@@ -30,8 +30,6 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String image;
-
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
