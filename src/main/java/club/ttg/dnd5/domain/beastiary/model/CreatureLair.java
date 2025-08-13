@@ -20,7 +20,7 @@ public class CreatureLair {
     /**
      * Эффекты
      */
-    private Collection<CreatureAction> lairEffects;
+    private Collection<CreatureAction> effects;
     /**
      * Описание окончания эффектов логова
      */
