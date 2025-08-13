@@ -25,6 +25,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -117,6 +118,10 @@ public class SpellService {
                 .orElse(null);
         Spell spell = spellMapper.updateEntity(existingSpell, request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
+        if (!Objects.equals(oldUrl, request.getUrl())) {
+            spellRepository.deleteById(oldUrl);
+            spellRepository.flush();
+        }
         return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
     }
 
