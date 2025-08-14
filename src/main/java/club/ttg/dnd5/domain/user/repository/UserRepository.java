@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	@Query("SELECT count(u) FROM User u LEFT JOIN u.roles r WHERE r.name = :role")
 	long countByRoles(@Param("role") String role);
 
-	boolean existsByEmail(String email);
-	boolean existsByUsername(String username);
+	boolean existsByEmailIgnoreCase(String email);
+	boolean existsByUsernameIgnoreCase(String username);
 
 }
