@@ -12,7 +12,3 @@ databaseChangeLog:
             tableName: bestiary
             oldColumnName: speed
             newColumnName: speeds
-        - renameColumn:
-            tableName: bestiary
-            oldColumnName: size
-            newColumnName: sizes
