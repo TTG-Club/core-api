@@ -39,12 +39,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
-    uses = {
-        ActionMapper.class,
-        TraitMapper.class,
-        BaseMapping.class,
-        LegendaryMapper.class
-    })
+        uses = {
+                ActionMapper.class,
+                TraitMapper.class,
+                BaseMapping.class,
+                LegendaryMapper.class
+        })
 public interface CreatureMapper {
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
@@ -226,9 +226,9 @@ public interface CreatureMapper {
         if (!CollectionUtils.isEmpty(speeds.getFly())) {
             builder.append("летая");
             builder.append(speeds.getFly().stream()
-                            .map(s ->
-                                " %d фт. %s".formatted(s.getValue(), getFly(s))
-            ).collect(Collectors.joining(", ")));
+                    .map(s ->
+                            " %d фт. %s".formatted(s.getValue(), getFly(s))
+                    ).collect(Collectors.joining(", ")));
             speedList.add(builder.toString());
         }
         if (!CollectionUtils.isEmpty(speeds.getSwim())) {
@@ -268,15 +268,15 @@ public interface CreatureMapper {
         if (CollectionUtils.isEmpty(creature.getSkills())) {
             return "";
         }
-       return creature.getSkills().stream()
-               .map(skill -> skill.getSkill().getName() + " +"
-                       + getSkillBonus(skill, creature.getAbilities(), creature.getExperience()))
-               .collect(Collectors.joining(", "));
+        return creature.getSkills().stream()
+                .map(skill -> skill.getSkill().getName() + " +"
+                        + getSkillBonus(skill, creature.getAbilities(), creature.getExperience()))
+                .collect(Collectors.joining(", "));
     }
 
     private int getSkillBonus(final CreatureSkill skill,
-                                final CreatureAbilities abilities,
-                                final long experience) {
+                              final CreatureAbilities abilities,
+                              final long experience) {
         return abilities.getMod(skill.getSkill().getAbility())
                 + ChallengeRating.getPb(experience) * skill.getMultiplier();
     }
@@ -321,7 +321,7 @@ public interface CreatureMapper {
             }
             response.add(darkvision);
         }
-         if (senses.getTruesight() != null) {
+        if (senses.getTruesight() != null) {
             response.add("истинное зрение %d фт.".formatted(senses.getTruesight()));
         }
         if (senses.getTremorsense() != null) {
@@ -335,8 +335,8 @@ public interface CreatureMapper {
     default String toLanguages(CreatureLanguages languages) {
         var opt = Optional.of(languages);
         if (opt.map(CreatureLanguages::getValues).map(Collection::isEmpty).orElse(true)
-            && !StringUtils.hasText(opt.map(CreatureLanguages::getText).orElse(""))
-            && !StringUtils.hasText(opt.map(CreatureLanguages::getTelepathy).orElse(""))
+                && !StringUtils.hasText(opt.map(CreatureLanguages::getText).orElse(""))
+                && !StringUtils.hasText(opt.map(CreatureLanguages::getTelepathy).orElse(""))
         ) {
             return "—";
         }
