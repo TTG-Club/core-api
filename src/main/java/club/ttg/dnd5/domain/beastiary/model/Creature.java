@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
-import club.ttg.dnd5.domain.beastiary.model.section.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
