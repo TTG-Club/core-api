@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: remove-bestiary-section-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropForeignKeyConstraint:
+            constraintName: fk_bestiary_on_beast_section
+            baseTableName: bestiary
+        - dropColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: section_url
+        - dropTable:
+            tableName: beast_section
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: subtitle
+                  type: VARCHAR(255)
+              - column:
+                  name: habitats
+                  type: jsonb
+              - column:
+                  name: treasures
+                  type: jsonb

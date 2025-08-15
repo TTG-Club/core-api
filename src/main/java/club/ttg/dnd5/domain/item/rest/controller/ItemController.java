@@ -35,13 +35,13 @@ public class ItemController {
             description = "Возвращает 204 (No Content), если предмет с указанным URL не существует, или 409 (Conflict), если существует."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Предмет с указанным URL не найден."),
-            @ApiResponse(responseCode = "409", description = "Предмет с указанным URL уже существует.")
+            @ApiResponse(responseCode = "404", description = "Предмет с указанным URL не найден."),
+            @ApiResponse(responseCode = "200", description = "Предмет с указанным URL уже существует.")
     })
     @RequestMapping(value = "/{url}", method = RequestMethod.HEAD)
     @ResponseStatus(HttpStatus.CONFLICT)
     public boolean exists(@PathVariable("url") String url) {
-        return itemService.existsByUrl(url);
+        return itemService.existOrThrow(url);
     }
 
     @Operation(summary = "Получение детального описания предмета")
@@ -52,6 +52,11 @@ public class ItemController {
     @GetMapping("/{url}")
     public ItemDetailResponse getItem(@PathVariable final String url) {
         return itemService.getItem(url);
+    }
+
+    @GetMapping("/{url}/raw")
+    public ItemRequest getSpellFormByUrl(@PathVariable String url) {
+        return itemService.findFormByUrl(url);
     }
 
     @Operation(summary = "Получение списка краткого описания предметов")

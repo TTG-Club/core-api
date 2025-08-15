@@ -22,7 +22,7 @@ public enum ChallengeRating {
     CR_9("9", 5_000, 4),
     CR_10("10", 5_900, 4),
     CR_11("11", 7_200, 4),
-    CR_12("12", 7_400, 4),
+    CR_12("12", 8_400, 4),
     CR_13("13", 10_000, 5),
     CR_14("14", 11_500, 5),
     CR_15("15", 13_000, 5),
@@ -43,6 +43,24 @@ public enum ChallengeRating {
     CR_30("30", 155_000, 9);
 
     private final String name;
-    private final int experience;
+    private final long experience;
     private final int proficiencyBonus;
+
+    public static String getCr(long experience) {
+        for (var cr : values()) {
+            if (experience <= cr.experience) {
+                return cr.name;
+            }
+        }
+        return CR_UNKNOWN.name;
+    }
+
+    public static int getPb(long experience) {
+        for (var cr : values()) {
+            if (cr.experience == experience) {
+                return cr.proficiencyBonus;
+            }
+        }
+        return 2;
+    }
 }

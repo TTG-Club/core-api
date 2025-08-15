@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-source-page-to-item
+      author: Magistrus
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: source_page
+                  type: BIGINT
+            tableName: item

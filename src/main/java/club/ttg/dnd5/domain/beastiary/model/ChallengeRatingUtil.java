@@ -2,77 +2,78 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import lombok.experimental.UtilityClass;
 
+@Deprecated
 @UtilityClass
 public class ChallengeRatingUtil {
     public String getChallengeRating(long exp) {
         String cr = "0";
-        if ((exp > 10) && (exp <= 25)) {
+        if (exp == 10 || exp == 0) {
+            cr = "0";
+        } else if (exp == 25) {
             cr = "1/8";
-        } else if ((exp > 25) && (exp <= 50)) {
-            cr = "1/8";
-        } else if ((exp > 50) && (exp <= 100)) {
+        } else if (exp == 50) {
             cr = "1/4";
-        } else if ((exp > 100) && (exp <= 200)) {
+        } else if (exp == 100) {
             cr = "1/2";
-        } else if ((exp > 200) && (exp <= 450)) {
+        } else if (exp == 200) {
             cr = "1";
-        } else if ((exp > 450) && (exp <= 700)) {
+        } else if (exp == 450) {
             cr = "2";
-        } else if ((exp > 700) && (exp <= 1100)) {
+        } else if (exp == 700) {
             cr = "3";
-        } else if ((exp > 1100) && (exp <= 1800)) {
+        } else if (exp == 1_100) {
             cr = "4";
-        } else if ((exp > 1800) && (exp <= 2300)) {
+        } else if (exp == 1_800) {
             cr = "5";
-        } else if ((exp > 2300) && (exp <= 2900)) {
+        } else if (exp == 2_300) {
             cr = "6";
-        } else if ((exp > 2900) && (exp <= 3900)) {
+        } else if (exp == 2_900) {
             cr = "7";
-        } else if ((exp > 3900) && (exp <= 5000)) {
+        } else if (exp == 3_900) {
             cr = "8";
-        } else if ((exp > 5000) && (exp <= 5900)) {
+        } else if (exp == 5_000) {
             cr = "9";
-        } else if ((exp > 5900) && (exp <= 7200)) {
+        } else if (exp == 5_900) {
             cr = "10";
-        } else if ((exp > 7200) && (exp <= 8400)) {
+        } else if (exp == 7_200) {
             cr = "11";
-        } else if ((exp > 8400) && (exp <= 10000)) {
+        } else if (exp == 8_400) {
             cr = "12";
-        } else if ((exp > 10000) && (exp <= 11500)) {
+        } else if (exp == 10_000) {
             cr = "13";
-        } else if ((exp > 11500) && (exp <= 13000)) {
+        } else if (exp == 11_500) {
             cr = "14";
-        } else if ((exp > 13000) && (exp <= 15000)) {
+        } else if (exp == 13_000) {
             cr = "15";
-        } else if ((exp > 15000) && (exp <= 18000)) {
+        } else if (exp == 15_000) {
             cr = "16";
-        } else if ((exp > 18000) && (exp <= 20000)) {
+        } else if (exp == 18_000) {
             cr = "17";
-        } else if ((exp > 20000) && (exp <= 22000)) {
+        } else if (exp == 20_000) {
             cr = "18";
-        } else if ((exp > 22000) && (exp <= 25000)) {
+        } else if (exp == 22_000) {
             cr = "19";
-        } else if ((exp > 25000) && (exp <= 33000)) {
+        } else if (exp == 25_000) {
             cr = "20";
-        } else if ((exp > 33000) && (exp <= 41000)) {
+        } else if (exp == 33_000) {
             cr = "21";
-        } else if ((exp > 41000) && (exp <= 50000)) {
+        } else if (exp == 41_000) {
             cr = "22";
-        } else if ((exp > 50000) && (exp <= 62000)) {
+        } else if (exp == 50_000) {
             cr = "23";
-        } else if ((exp > 62000) && (exp <= 75000)) {
+        } else if (exp == 62_000) {
             cr = "24";
-        } else if ((exp > 75000) && (exp <= 90000)) {
+        } else if (exp == 75_000) {
             cr = "25";
-        } else if ((exp > 90000) && (exp <= 105000)) {
+        } else if (exp == 90_000) {
             cr = "26";
-        } else if ((exp > 105000) && (exp <= 120000)) {
+        } else if (exp == 105_000) {
             cr = "27";
-        } else if ((exp > 120000) && (exp <= 135000)) {
+        } else if (exp == 120_000) {
             cr = "28";
-        } else if ((exp > 135000) && (exp <= 155000)) {
+        } else if (exp == 135_000) {
             cr = "29";
-        } else if (exp > 155000) {
+        } else if (exp == 155_000) {
             cr = "30";
         }
         return cr;

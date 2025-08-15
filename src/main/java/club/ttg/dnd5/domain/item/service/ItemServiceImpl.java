@@ -1,12 +1,12 @@
 package club.ttg.dnd5.domain.item.service;
 
+import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
-import club.ttg.dnd5.exception.ContentNotFoundException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -26,15 +27,28 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private static final Sort DEFAULT_SORT = Sort.by("name");
     private final ItemRepository itemRepository;
+    private final BookService bookService;
     private final ItemMapper itemMapper;
 
     @Override
-    public boolean existsByUrl(final String url) {
-        var exists = itemRepository.existsById(url);
-        if (!exists) {
-            throw new ContentNotFoundException("Item not found by uls: " + url);
+    public boolean existOrThrow(final String url) {
+        if (!itemRepository.existsById(url)) {
+            throw new EntityNotFoundException(String.format("Предмет с url %s не существует", url));
         }
         return true;
+    }
+
+    @Override
+    public ItemRequest findFormByUrl(final String url) {
+        var item = findByUrl(url);
+        return switch (item) {
+            case Armor armor -> itemMapper.toRequest(armor);
+            case Weapon weapon -> itemMapper.toRequest(weapon);
+            case Tool tool -> itemMapper.toRequest(tool);
+            case Vehicle ship -> itemMapper.toRequest(ship);
+            case Mount mount -> itemMapper.toRequest(mount);
+            case Item object -> itemMapper.toRequest(object);
+        };
     }
 
     @Override
@@ -67,24 +81,30 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
-    public String addItem(final ItemRequest itemRequest) {
-        exist(itemRequest.getUrl());
-        var item = switch(itemRequest.getCategory()) {
-            case ITEM -> itemMapper.toItemEntity(itemRequest);
-            case ARMOR -> itemMapper.toArmorEntity(itemRequest);
-            case WEAPON -> itemMapper.toWeaponEntity(itemRequest);
-            case VEHICLE -> itemMapper.toVehicleEntity(itemRequest);
-            case MOUNT -> itemMapper.toMountEntity(itemRequest);
-            case TOOL -> itemMapper.toToolEntity(itemRequest);
+    public String addItem(final ItemRequest request) {
+        exist(request.getUrl());
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        var item = switch(request.getCategory()) {
+            case ITEM -> itemMapper.toItem(request, book);
+            case ARMOR -> itemMapper.toArmor(request, book);
+            case WEAPON -> itemMapper.toWeapon(request, book);
+            case VEHICLE -> itemMapper.toVehicle(request, book);
+            case MOUNT -> itemMapper.toMount(request, book);
+            case TOOL -> itemMapper.toTool(request, book);
         };
 
         return itemRepository.save(item).getUrl();
     }
 
     @Override
-    public String updateItem(final String itemUrl, final ItemRequest itemDto) {
-        Item item = findByUrl(itemUrl);
-        return itemRepository.save(item).getUrl();
+    public String updateItem(final String itemUrl, final ItemRequest request) {
+        findByUrl(itemUrl);
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        if (!Objects.equals(itemUrl, request.getUrl())) {
+            itemRepository.deleteById(itemUrl);
+            itemRepository.flush();
+        }
+        return itemRepository.save(itemMapper.toItem(request, book)).getUrl();
     }
 
     @Override

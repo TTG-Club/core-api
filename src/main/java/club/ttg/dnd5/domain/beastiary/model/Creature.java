@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
-import club.ttg.dnd5.domain.beastiary.model.section.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
@@ -14,6 +13,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 
 import java.util.Collection;
@@ -21,6 +21,7 @@ import java.util.Collection;
 /**
  * Существо из бестиария
  */
+@DynamicUpdate
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,14 +39,14 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Collection<CreatureSize> sizes;
+    private CreatureSize sizes;
 
     /**
      * Типы существа.
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private BeastCategory categories;
+    private CreatureCategory types;
 
     /**
      * Мирровозрение
@@ -63,7 +64,9 @@ public class Creature extends NamedEntity {
     /**
      * Бонус инициативы
      */
-    private byte initiative;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private CreatureInitiative initiative;
 
     /**
      * Хиты
@@ -77,56 +80,89 @@ public class Creature extends NamedEntity {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private CreatureSpeeds speed;
+    private CreatureSpeeds speeds;
 
     /**
      * Характеристики существа
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private BeastAbilities abilities;
+    private CreatureAbilities abilities;
 
+    /**
+     * Навыки
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureSkill> skills;
 
+    /**
+     * Уязвимости
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> vulnerabilities;
 
+    /**
+     * Сопротивления
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> resistance;
 
+    /**
+     * Иммунитеты к урону
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> immunityToDamage;
 
+    /**
+     * Иммунитеты к состояниям
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<Condition> immunityToCondition;
 
+    /**
+     * Снаряжение
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureEquipment> equipments;
 
+    /**
+     * Языки
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private CreatureLanguages languages;
 
+    /**
+     * Чувства
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Senses senses;
 
-    @Column(name = "exp")
+    /**
+     * Опыт
+     */
     private Long experience;
 
-    @Column(name = "exp_lair")
+    /**
+     * Опыт в логове
+     */
     private Long experienceInLair;
 
-    @Column(name = "exp_suf")
+    /**
+     * Дополнительный текст в ПО
+     */
     private String experienceSuffix;
 
+    /**
+     * Черты
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureTrait> traits;
@@ -152,6 +188,8 @@ public class Creature extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureAction> reactions;
 
+    private String legendaryDescription;
+
     /**
      * Количество легендарных действий
      */
@@ -167,8 +205,15 @@ public class Creature extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private Collection<CreatureAction> legendaryActions;
 
-    @ManyToOne
-    @JoinColumn(name = "section_url")
+    /**
+     * Логово
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private CreatureLair lair;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private CreatureSection section;
 
     @ManyToOne

@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
+
 @Getter
 @Setter
 public class CreatureSize {
@@ -12,17 +14,9 @@ public class CreatureSize {
      * Размер
      */
     @Enumerated(EnumType.STRING)
-    private Size size;
+    private Collection<Size> values;
     /**
      * Текстовое описание размера
      */
     private String text;
-
-    public String getSizeString () {
-        if (text == null) {
-            return size.getName();
-        } else {
-            return String.format("%s (%s)", size.getName(), text);
-        }
-    }
 }

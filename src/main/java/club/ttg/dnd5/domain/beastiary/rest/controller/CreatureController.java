@@ -1,9 +1,12 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.BeastRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/v2/bestiary")
 public class CreatureController {
     private final CreatureService creatureService;
+    private final CreatureFilterService creatureFilterService;
 
     @Operation(summary = "Проверить существо по URL", description = "Проверка существа по его уникальному URL.")
     @ApiResponses(value = {
@@ -42,8 +46,9 @@ public class CreatureController {
                                               @Valid
                                               @Size(min = 3)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine) {
-        return creatureService.search(searchLine);
+                                              String searchLine,
+                                              @RequestBody(required = false) SearchBody searchBody) {
+        return creatureService.search(searchLine, searchBody);
     }
 
     @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")
@@ -53,16 +58,28 @@ public class CreatureController {
     }
 
     @GetMapping("/{url}/raw")
-    public BeastRequest getFormByUrl(@PathVariable String url) {
+    public CreatureRequest getFormByUrl(@PathVariable String url) {
         return creatureService.findFormByUrl(url);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return creatureFilterService.getDefaultFilterInfo();
     }
 
     @Operation(summary = "Добавление существа")
     @Secured("ADMIN")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public String create(@RequestBody BeastRequest request) {
+    public String create(@RequestBody CreatureRequest request) {
         return creatureService.save(request);
+    }
+
+    @Operation(summary = "Предпросмотр существа")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public CreatureDetailResponse preview(@RequestBody CreatureRequest request) {
+        return creatureService.preview(request);
     }
 
     @Operation(summary = "Обновление существа")
@@ -70,7 +87,7 @@ public class CreatureController {
     @PutMapping("/{url}")
     public String update(@PathVariable String url,
                                       @Valid
-                                      @RequestBody BeastRequest request) {
+                                      @RequestBody CreatureRequest request) {
         return creatureService.update(url, request);
     }
 
