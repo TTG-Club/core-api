@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ChallengeRating {
     CR_UNKNOWN("—", -1, 2),
-    CR_0("0 ", 10, 2),
+    CR_0("0", 10, 2),
     CR_1_8("1/8", 25, 2),
     CR_1_4("1/4", 50, 2),
     CR_1_2("1/2", 100, 2),
@@ -63,5 +63,4 @@ public enum ChallengeRating {
         }
         return 2;
     }
-
 }
