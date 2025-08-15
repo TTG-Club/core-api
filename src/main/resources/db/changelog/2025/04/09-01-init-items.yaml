@@ -57,7 +57,7 @@ databaseChangeLog:
                   name: weight
                   type: VARCHAR(255)
               - column:
-                  name: armorCategory
+                  name: category
                   type: VARCHAR(255)
               - column:
                   name: weapon_damage
