@@ -25,6 +25,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -43,7 +44,6 @@ public class SpellService {
         }
         return true;
     }
-
 
     public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
         return spellQueryDslSearchService.search(searchLine, searchBody).stream()
@@ -74,7 +74,7 @@ public class SpellService {
 
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
-    public SpellDetailedResponse save(SpellRequest request) {
+    public String save(SpellRequest request) {
         if (existsByUrl(request.getUrl())) {
             throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
         }
@@ -95,12 +95,12 @@ public class SpellService {
 
         Spell spell = spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
-        return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
+        return spellMapper.toSpellDetailedResponse(spellRepository.save(spell)).getUrl();
 
     }
 
     @Transactional
-    public SpellDetailedResponse update(String oldUrl, @Valid SpellRequest request) {
+    public String update(String oldUrl, @Valid SpellRequest request) {
         Spell existingSpell = findByUrl(oldUrl);
         List<Species> species = Optional.ofNullable(request.getAffiliations())
                 .map(CreateAffiliationRequest::getSpecies)
@@ -118,7 +118,11 @@ public class SpellService {
                 .orElse(null);
         Spell spell = spellMapper.updateEntity(existingSpell, request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
-        return spellMapper.toSpellDetailedResponse(spellRepository.save(spell));
+        if (!Objects.equals(oldUrl, request.getUrl())) {
+            spellRepository.deleteById(oldUrl);
+            spellRepository.flush();
+        }
+        return spellMapper.toSpellDetailedResponse(spellRepository.save(spell)).getUrl();
     }
 
     @Transactional

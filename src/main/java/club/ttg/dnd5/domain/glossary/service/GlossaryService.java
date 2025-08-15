@@ -3,12 +3,14 @@ package club.ttg.dnd5.domain.glossary.service;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.glossary.repository.GlossaryRepository;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.rest.mapper.GlossaryMapper;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
@@ -31,18 +33,10 @@ public class GlossaryService {
 
     private final GlossaryMapper glossaryMapper;
 
-    private static final Sort DEFAULT_GLOSSARY_SORT = Sort.by("name");
+    private final GlossaryQueryDslSearchService glossaryQueryDslSearchService;
 
-    public List<GlossaryShortResponse> search(String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return glossaryRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_GLOSSARY_SORT);
-                })
-                .orElseGet(() -> glossaryRepository.findAll(DEFAULT_GLOSSARY_SORT))
-                .stream()
+    public List<GlossaryShortResponse> search(String searchLine, SearchBody searchBody) {
+        return glossaryQueryDslSearchService.search(searchLine, searchBody).stream()
                 .map(glossaryMapper::toShort)
                 .collect(Collectors.toList());
     }
@@ -78,6 +72,7 @@ public class GlossaryService {
         Glossary updatedGlossary = glossaryMapper.toEntity(request, book);
         updatedGlossary.setUrl(url);
         glossaryRepository.delete(existingGlossary);
+        glossaryRepository.flush();
         glossaryRepository.save(updatedGlossary);
 
         return updatedGlossary.getUrl();

@@ -22,7 +22,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
@@ -42,16 +41,14 @@ public class SecurityConfig {
     private final UserService userService;
     private final JwtAuthFilter jwtAuthFilter;
 
-    private final String[] ignored = Arrays
-            .asList(
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/scalar-ui.html",
-                    "/api/auth/**",
-                    "/api/v2/**"
-            )
-            .toArray(String[]::new);
+    private static final String[] IGNORED = {
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/scalar-ui.html",
+            "/api/auth/**",
+            "/api/v2/**"
+    };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,7 +56,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(this::getCorsConfigurer))
             .authorizeHttpRequests(request -> request
-                .requestMatchers(ignored).permitAll()
+                .requestMatchers(IGNORED).permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))

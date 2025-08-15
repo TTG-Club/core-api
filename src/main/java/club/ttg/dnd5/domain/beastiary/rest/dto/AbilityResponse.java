@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class AbilityResponse {
     @Schema(description = "Значение характеристики")
-    private byte value;
+    private short value;
     @Schema(description = "Модификатор характеристики")
     private String mod;
     @Schema(description = "Бонус к спасброску")

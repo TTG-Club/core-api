@@ -10,4 +10,6 @@ import lombok.Setter;
 public class ItemShortResponse extends ShortResponse {
     @Schema(description = "Тип объекта", examples = {"ARMOR, WEAPON","OBJECT"})
     private String type;
+    @Schema(description = "Стоимость", examples = "1 зм")
+    private String cost;
 }

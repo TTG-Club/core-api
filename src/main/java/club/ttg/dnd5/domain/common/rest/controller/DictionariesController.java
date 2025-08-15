@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.KeySelectDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
 import club.ttg.dnd5.domain.common.service.DictionariesService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -250,8 +253,8 @@ public class DictionariesController {
         return dictionariesService.getFeatTypes();
     }
 
-    @Operation(summary = "Места обитания существ")
-    @GetMapping("/environments")
+    @Operation(summary = "Типы сокровищь")
+    @GetMapping("/treasures")
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -260,16 +263,16 @@ public class DictionariesController {
                                     examples = @ExampleObject("""
                                             [
                                               {
-                                                "label": "полярная тундра",
-                                                "value": "ARCTIC"
+                                                "label": "Любые",
+                                                "value": "ANY"
                                               },
                                               {
-                                                "label": "побережье",
-                                                "value": "COAST"
+                                                "label": "Индивидуальные",
+                                                "value": "INDIVIDUAL"
                                               },
                                               {
-                                                "label": "под водой",
-                                                "value": "WATERS"
+                                                "label": "Магия",
+                                                "value": "ARCANA"
                                               }
                                             ]
                                             """)
@@ -277,8 +280,8 @@ public class DictionariesController {
                     )
             }
     )
-    public Collection<SelectOptionDto> getEnvironments() {
-        return dictionariesService.getEnvironments();
+    public Collection<SelectOptionDto> getTreasures() {
+        return dictionariesService.getTreasures();
     }
 
     @Operation(summary = "Типы заклинателей")
@@ -439,14 +442,14 @@ public class DictionariesController {
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject("""
                             [
-                              { "label": "Сила", "value": "STRENGTH" },
-                              { "label": "Ловкость", "value": "DEXTERITY" },
-                              { "label": "Телосложение", "value": "CONSTITUTION" }
+                              { "label": "Сила", "value": "STRENGTH", "key": "str" },
+                              { "label": "Ловкость", "value": "DEXTERITY" "key": "dex" },
+                              { "label": "Телосложение", "value": "CONSTITUTION" "key": "con" }
                             ]
                             """)
             )
     )
-    public Collection<SelectOptionDto> getAbilities() {
+    public Collection<KeySelectDto> getAbilities() {
         return dictionariesService.getAbilities();
     }
 
@@ -457,14 +460,14 @@ public class DictionariesController {
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject("""
                             [
-                              { "label": "Акробатика", "value": "ACROBATICS" },
-                              { "label": "Уход за животными", "value": "ANIMAL_HANDLING" },
+                              { "label": "Акробатика", "value": "ACROBATICS", "ability" : "DEXTERITY" },
+                              { "label": "Уход за животными", "value": "ANIMAL_HANDLING", "ability" : "INTELLIGENCE" },
                               { "label": "Аркана", "value": "ARCANA" }
                             ]
                             """)
             )
     )
-    public Collection<SelectOptionDto> getSkills() {
+    public Collection<SkillOptionDto> getSkills() {
         return dictionariesService.getSkills();
     }
 
@@ -581,13 +584,13 @@ public class DictionariesController {
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject("""
                             [
-                              { "label": "0", "value": "10" },
-                              { "label": "1/8", "value": "25" },
+                              { "label": "0", "value": "10", "pb: 2" },
+                              { "label": "1/8", "value": "25", "pb: 2 },
                             ]
                             """)
             )
     )
-    public Collection<SelectOptionDto> getChallengeRailings() {
+    public Collection<CrlOptionDto> getChallengeRailings() {
         return dictionariesService.getChallengeRailings();
     }
 
@@ -623,5 +626,59 @@ public class DictionariesController {
     )
     public Collection<SelectOptionDto> getLanguages() {
         return dictionariesService.getLanguages();
+    }
+
+    @Operation(summary = "Монеты")
+    @GetMapping("/coins")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "мм", "value": "CC" },
+                              { "label": "см", "value": "SC" },
+                              { "label": "зм", "value": "GC" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getCoins() {
+        return dictionariesService.getCoins();
+    }
+
+    @Operation(summary = "Типы предметов")
+    @GetMapping("/item/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Боеприпасы", "value": "AMMUNITION" },
+                              { "label": "Снаряжение приключенца", "value": "ADVENTURING_GEAR" },
+                              { "label": "Инструменты ремесленников", "value": "ARTISAN_S_TOOLS" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getItemTypes() {
+        return dictionariesService.getItemTypes();
+    }
+
+    @Operation(summary = "Категории предметов")
+    @GetMapping("/item/categories")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Снаряжение", "value": "ITEM" },
+                              { "label": "Доспех", "value": "ARMOR" },
+                              { "label": "Оружие", "value": "WEAPON" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getItemCategories() {
+        return dictionariesService.getItemCategories();
     }
 }

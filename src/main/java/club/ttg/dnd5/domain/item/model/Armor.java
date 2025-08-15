@@ -16,7 +16,7 @@ import lombok.Setter;
 @DiscriminatorValue("ARMOR")
 public class Armor extends Item {
     @Enumerated(EnumType.STRING)
-    private ArmorCategory category;
+    private ArmorCategory armorCategory;
     /** КД. */
     private String armorClass;
     /** Сила. */

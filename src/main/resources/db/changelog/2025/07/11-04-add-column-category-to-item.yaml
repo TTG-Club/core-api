@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-category-to-item
+      author: Magistrus
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: weapon_category
+                  type: VARCHAR(255)
+              - column:
+                  name: armor_category
+                  type: VARCHAR(255)
+            tableName: item

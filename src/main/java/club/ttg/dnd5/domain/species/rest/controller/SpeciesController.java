@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
-import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
@@ -132,7 +131,7 @@ public class SpeciesController {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SpeciesDetailResponse createSpecies(@RequestBody SpeciesRequest request) {
+    public String createSpecies(@RequestBody SpeciesRequest request) {
         return speciesService.save(request);
     }
 
@@ -145,7 +144,7 @@ public class SpeciesController {
     @PutMapping("/{url}")
     @Secured("ADMIN")
     @ResponseStatus(HttpStatus.OK)
-    public SpeciesDetailResponse updateSpecies(@PathVariable String url, @RequestBody SpeciesRequest request) {
+    public String updateSpecies(@PathVariable String url, @RequestBody SpeciesRequest request) {
         return speciesService.update(url, request);
     }
 

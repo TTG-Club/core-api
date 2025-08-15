@@ -20,7 +20,7 @@ import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v2/magic-item")
+@RequestMapping("/api/v2/magic-items")
 @Tag(name = "Магически предметы", description = "REST API магические предметы и артефакты")
 public class MagicItemController {
     private final MagicItemService magicItemService;

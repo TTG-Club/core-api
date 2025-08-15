@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-image_url-bestiary-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+              tableName: bestiary
+              oldColumnName: immunitytodamage
+              newColumnName: immunity_to_damage
+        - renameColumn:
+            tableName: bestiary
+            oldColumnName: immunitytocondition
+            newColumnName: immunity_to_condition
+
+

@@ -8,13 +8,14 @@ import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 
 @Mapper(componentModel = "spring")
@@ -25,7 +26,7 @@ public interface GlossaryMapper {
     @Mapping(target = "tagCategory", source = "tagCategory", qualifiedByName = "capitalize")
     GlossaryDetailedResponse toDetail(Glossary glossary);
 
-    @Mapping(source = "name", target = "name.name")
+    @BaseMapping.BaseRequestNameMapping
     GlossaryRequest toRequest(Glossary glossary);
 
     @ToEntityMapping
@@ -35,9 +36,6 @@ public interface GlossaryMapper {
     @BaseMapping.BaseSourceMapping
     @Mapping(target = "tagCategory", source = "tagCategory", qualifiedByName = "capitalize")
     GlossaryShortResponse toShort(Glossary glossary);
-
-    @ToEntityMapping
-    void updateEntity(@MappingTarget Glossary glossary, GlossaryRequest request);
 
     @Retention(RetentionPolicy.SOURCE)
     @Mapping(source = "request.url", target = "url")
@@ -56,5 +54,13 @@ public interface GlossaryMapper {
     @Named("capitalize")
     default String capitalize(String string) {
         return StringUtils.capitalize(string);
+    }
+
+    @Named("altToCollection")
+    default Collection<String> altToCollection(String string) {
+        if(org.apache.commons.lang3.StringUtils.isEmpty(string)) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(string.split(";"));
     }
 }
