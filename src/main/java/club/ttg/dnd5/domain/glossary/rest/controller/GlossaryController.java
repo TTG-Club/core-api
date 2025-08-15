@@ -1,8 +1,10 @@
-package club.ttg.dnd5.domain.glossary.controller;
+package club.ttg.dnd5.domain.glossary.rest.controller;
 
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
+import club.ttg.dnd5.domain.glossary.service.GlossaryFilterService;
 import club.ttg.dnd5.domain.glossary.service.GlossaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 
 import java.util.List;
 
@@ -24,6 +27,7 @@ import java.util.List;
 @RequestMapping("/api/v2/glossary")
 public class GlossaryController {
     private final GlossaryService glossaryService;
+    private final GlossaryFilterService glossaryFilterService;
 
     @Operation(summary = "Проверить глоссарий по URL", description = "Проверка записи глоссария по его уникальному URL")
     @ApiResponses(value = {
@@ -41,8 +45,9 @@ public class GlossaryController {
                                               @Valid
                                               @Size(min = 3)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine) {
-        return glossaryService.search(searchLine);
+                                              String searchLine,
+                                              @RequestBody(required = false) SearchBody searchBody){
+        return glossaryService.search(searchLine, searchBody);
     }
 
     @GetMapping("/{url}")
@@ -50,7 +55,8 @@ public class GlossaryController {
         return glossaryService.findDetailedByUrl(url);
     }
 
-    public GlossaryRequest findGlossaryFormByUrl(final String url) {
+    @GetMapping("/{url}/raw")
+    public GlossaryRequest getFormByUrl(@PathVariable String url) {
         return glossaryService.findFormByUrl(url);
     }
 
@@ -71,5 +77,10 @@ public class GlossaryController {
     @DeleteMapping("/{url}")
     public void deleteGlossary(@PathVariable String url) {
         glossaryService.delete(url);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return glossaryFilterService.getDefaultFilterInfo();
     }
 }

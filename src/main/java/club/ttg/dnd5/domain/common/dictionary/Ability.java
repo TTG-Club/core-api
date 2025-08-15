@@ -9,22 +9,14 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum Ability {
-    STRENGTH("Сила", "Сил."),
-    DEXTERITY("Ловкость", "Лов."),
-    CONSTITUTION("Телосложение", "Тел."),
-    INTELLIGENCE("Интеллект", "Инт."),
-    WISDOM("Мудрость", "Мдр."),
-    CHARISMA("Харизма", "Хар.");
+    STRENGTH("Сила", "Сил.", "str"),
+    DEXTERITY("Ловкость", "Лов.", "dex"),
+    CONSTITUTION("Телосложение", "Тел.", "con"),
+    INTELLIGENCE("Интеллект", "Инт.", "int"),
+    WISDOM("Мудрость", "Мдр.", "wis"),
+    CHARISMA("Харизма", "Хар.", "chr");
 
     private final String name;
     private final String shortName;
-
-    /**
-     * Получение модификатора характеристики
-     * @param ability значение характеристики
-     * @return модификатор характеристики
-     */
-    public static byte getModifier(byte ability) {
-        return (byte) ((ability - 10) < 0 ? (ability - 11) / 2 : (ability - 10) / 2);
-    }
+    private final String key;
 }

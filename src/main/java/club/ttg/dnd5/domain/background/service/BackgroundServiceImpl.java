@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -66,12 +67,12 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Transactional
     @Override
     public String updateBackgrounds(final String url, final BackgroundRequest request) {
-        checkUrlExist(request.getUrl());
-        if (!url.equals(request.getUrl())) {
-            backgroundRepository.deleteById(url);
-        }
         var feat = getFeat(request.getFeatUrl());
         var book = bookService.findByUrl(request.getSource().getUrl());
+        if (!Objects.equals(url, request.getUrl())) {
+            backgroundRepository.deleteById(url);
+            backgroundRepository.flush();
+        }
         return backgroundRepository.save(backgroundMapper.toEntity(request, feat, book))
                 .getUrl();
     }

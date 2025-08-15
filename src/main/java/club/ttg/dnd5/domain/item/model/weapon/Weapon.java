@@ -19,7 +19,7 @@ import java.util.Collection;
 public class Weapon extends Item {
     /** Категория оружия */
     @Enumerated(EnumType.STRING)
-    private WeaponCategory category;
+    private WeaponCategory weaponCategory;
 
     /**
      * Урон
