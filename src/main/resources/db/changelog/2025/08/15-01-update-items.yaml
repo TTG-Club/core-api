@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1744196122316-1
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+            tableName: items
+            oldColumnName: category
+            newColumnName: armorCategory
+
