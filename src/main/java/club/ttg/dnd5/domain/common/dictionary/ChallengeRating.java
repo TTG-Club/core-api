@@ -43,7 +43,7 @@ public enum ChallengeRating {
     CR_30("30", 155_000, 9);
 
     private final String name;
-    private final int experience;
+    private final long experience;
     private final int proficiencyBonus;
 
     public static String getCr(long experience) {
