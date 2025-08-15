@@ -62,7 +62,7 @@ databaseChangeLog:
                   type: jsonb
               - column:
                   name: initiative
-                  type: int
+                  type: jsonb
               - column:
                   name: hit
                   type: jsonb
