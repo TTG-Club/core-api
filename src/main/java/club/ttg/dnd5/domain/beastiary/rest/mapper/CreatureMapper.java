@@ -161,7 +161,7 @@ public interface CreatureMapper {
             builder.append(")");
         }
         builder.append(", ");
-        builder.append(creature.getAlignment().getName(type));
+        builder.append(creature.getAlignment().getName(type).toLowerCase());
         return builder.toString();
     }
 
