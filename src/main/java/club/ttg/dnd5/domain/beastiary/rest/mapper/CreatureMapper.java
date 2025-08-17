@@ -195,7 +195,10 @@ public interface CreatureMapper {
     default HitResponse toHit(Creature creature) {
         var response = new HitResponse();
         if (creature.getHit() != null) {
-            response.setHit(creature.getHit().getValue());
+            if (creature.getHit().getValue() > 0)
+            {
+                response.setHit(creature.getHit().getValue());
+            }
             response.setFormula(getHitFormula(creature));
             response.setText(creature.getHit().getText());
         }
