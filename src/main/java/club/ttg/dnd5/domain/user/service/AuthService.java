@@ -19,6 +19,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ import java.util.UUID;
 
 
 @Service
-@Transactional
+@Transactional(propagation = Propagation.NESTED)
 @RequiredArgsConstructor
 public class AuthService {
     private final JwtUtils jwtUtils;

@@ -32,13 +32,16 @@ public class StatisticsService {
             Glossary.class,
             Creature.class
     );
-    private final Set<String> COUNTED_ENTITIES_TABLE_NAMES = COUNTED_ENTITIES.stream().map(clazz -> clazz.getAnnotation(Table.class).name()).collect(Collectors.toSet());
+    private final Set<String> COUNTED_ENTITIES_TABLE_NAMES = COUNTED_ENTITIES.stream()
+            .map(clazz -> clazz.getAnnotation(Table.class).name())
+            .collect(Collectors.toSet());
 
     @Cacheable(cacheNames = "countAllMaterials")
     public Long countAllMaterials() {
-        return COUNTED_ENTITIES_TABLE_NAMES.stream().map(
+        return COUNTED_ENTITIES_TABLE_NAMES.stream()
+                .map(
                         tableName -> entityManager.createNativeQuery(
-                                "SELECT COUNT(*) FROM %s WHERE is_hidden_entity = false".format(tableName), Long.class)
+                                "SELECT COUNT(*) FROM %s WHERE is_hidden_entity = false".formatted(tableName), Long.class)
                                 .getSingleResult())
                 .mapToLong(e -> (Long)e)
                 .sum();
