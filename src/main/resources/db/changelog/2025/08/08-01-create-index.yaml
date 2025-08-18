@@ -1,0 +1,81 @@
+databaseChangeLog:
+  - changeSet:
+      id: 08-01-create-index-background
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: background_username_index
+            tableName: background
+  - changeSet:
+      id: 08-01-create-index-feat
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: feat_username_index
+            tableName: feat
+  - changeSet:
+      id: 08-01-create-index-species
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: species_username_index
+            tableName: species
+  - changeSet:
+      id: 08-01-create-index-spell
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: spell_username_index
+            tableName: spell
+  - changeSet:
+      id: 08-01-create-index-bestiary
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: bestiary_username_index
+            tableName: bestiary
+  - changeSet:
+      id: 08-01-create-index-magic_item
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: magic_item_username_index
+            tableName: magic_item
+  - changeSet:
+      id: 08-01-create-index-item
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: item_username_index
+            tableName: item
+  - changeSet:
+      id: 08-01-create-index-glossary
+      author: dovran-annakuliev
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: username
+            indexName: glossary_username_index
+            tableName: glossary

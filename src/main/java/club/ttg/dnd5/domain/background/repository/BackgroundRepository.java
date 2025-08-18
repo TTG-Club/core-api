@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.background.repository;
 
 import club.ttg.dnd5.domain.background.model.Background;
-import club.ttg.dnd5.domain.spell.model.Spell;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -24,4 +23,6 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
             """
     )
     List<Background> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
+
+    Integer countByUsername(String username);
 }
