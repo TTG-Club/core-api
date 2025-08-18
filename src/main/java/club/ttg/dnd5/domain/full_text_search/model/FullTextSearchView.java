@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.full_text_search.model;
 
 import club.ttg.dnd5.domain.book.model.TypeBook;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,7 +24,7 @@ public class FullTextSearchView {
     private String english;
     private String alternative;
     @Enumerated(EnumType.STRING)
-    private FullTextSearchViewType type;
+    private SectionType type;
     private Boolean isHiddenEntity;
     private String bookAcronym;
     private String bookName;

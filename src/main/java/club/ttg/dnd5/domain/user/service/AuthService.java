@@ -78,11 +78,11 @@ public class AuthService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Необходимо указать имя пользователя или электронный адрес");
         }
 
-        if (userRepository.existsByUsername(username)) {
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
             throw new ApiException(HttpStatus.CONFLICT, "Пользователь с таким именем уже существует");
         }
 
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new ApiException(HttpStatus.CONFLICT, "Пользователь с таким e-mail уже существует");
         }
     }

@@ -23,4 +23,6 @@ public interface ItemRepository extends JpaRepository<Item, String>,
             """
     )
     Collection<Item> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
+
+    Integer countByUsername(String username);
 }

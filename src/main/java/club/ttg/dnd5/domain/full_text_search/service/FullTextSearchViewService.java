@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.full_text_search.service;
 
 import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchView;
-import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchViewType;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.full_text_search.repository.FullTextSearchViewRepository;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewDto;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse;
@@ -38,7 +38,7 @@ public class FullTextSearchViewService {
             return getEmptyResponse();
         }
 
-        Map<FullTextSearchViewType, Integer> typeCount = new HashMap<>();
+        Map<SectionType, Integer> typeCount = new HashMap<>();
 
         List<FullTextSearchViewDto> filtered = results.parallelStream()
                 .filter(ftsv -> counterFilter(ftsv, typeCount))
@@ -52,8 +52,8 @@ public class FullTextSearchViewService {
                 .build();
     }
 
-    private boolean counterFilter(FullTextSearchView item, Map<FullTextSearchViewType, Integer> typeCount) {
-        FullTextSearchViewType type = item.getType();
+    private boolean counterFilter(FullTextSearchView item, Map<SectionType, Integer> typeCount) {
+        SectionType type = item.getType();
         int count = typeCount.getOrDefault(type, 0);
         if (count < maxItemsPerGroup) {
             typeCount.put(type, count + 1);
