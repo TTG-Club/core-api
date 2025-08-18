@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v2/statistics/")
 @RestController
 public class StatisticsController {
-   private final   StatisticsService statisticsService;
+    private final StatisticsService statisticsService;
 
     @Operation(summary = "Количество материалов")
     @GetMapping("/count-all")

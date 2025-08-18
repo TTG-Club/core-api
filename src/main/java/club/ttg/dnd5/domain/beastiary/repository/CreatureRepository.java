@@ -21,4 +21,6 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
             """
     )
     List<Creature> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
+
+    Integer countByUsername(String username);
 }
