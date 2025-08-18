@@ -26,8 +26,7 @@ public class UserService{
     }
 
     public User getByUsernameOrEmail(String usernameOrEmail) throws ApiException {
-        String login = usernameOrEmail.toLowerCase();
-        return userRepository.findByEmailOrUsername(login, login)
+        return userRepository.findByEmailOrUsername(usernameOrEmail)
                 .orElseThrow(() ->
                         new ApiException(HttpStatus.UNAUTHORIZED, "Пользователь не найден"));
     }

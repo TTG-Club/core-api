@@ -14,7 +14,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	Optional<User> findByEmail(String email);
 	Optional<User> findByEmailIgnoreCase(String email);
     Optional<User> findByUsername(String username);
-	Optional<User> findByEmailOrUsername(String email, String username);
+
+	@Query("SELECT u FROM User u WHERE lower(u.username) = lower(:usernameOrEmail) or lower(u.email) = lower(:usernameOrEmail)")
+	Optional<User> findByEmailOrUsername(String usernameOrEmail);
 
 	@Query("SELECT count(u) FROM User u LEFT JOIN u.roles r WHERE r.name = :role")
 	long countByRoles(@Param("role") String role);
