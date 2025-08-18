@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService{
     private final UserRepository userRepository;
 
     public User getByUsername(String username) throws ApiException {
@@ -25,7 +26,8 @@ public class UserService {
     }
 
     public User getByUsernameOrEmail(String usernameOrEmail) throws ApiException {
-        return userRepository.findByEmailOrUsername(usernameOrEmail, usernameOrEmail)
+        String login = usernameOrEmail.toLowerCase();
+        return userRepository.findByEmailOrUsername(login, login)
                 .orElseThrow(() ->
                         new ApiException(HttpStatus.UNAUTHORIZED, "Пользователь не найден"));
     }
@@ -39,6 +41,14 @@ public class UserService {
     }
 
     public UserDetailsService userDetailsService() {
-        return this::getByUsername;
+        return this::getByUsernameOrEmailForSecurity;
+    }
+
+    public UserDetails getByUsernameOrEmailForSecurity(String usernameOrEmail) {
+        User user = getByUsernameOrEmail(usernameOrEmail);
+
+        return org.springframework.security.core.userdetails.User.withUsername(user.getUsername())
+                .password(user.getPassword())
+                .build();
     }
 }

@@ -24,4 +24,6 @@ public interface SpeciesRepository extends JpaRepository<Species, String> {
             """
     )
     Collection<Species> findAllSearch(String searchLine, String invertedSearchLine, Sort by);
+
+    Integer countByUsername(String username);
 }

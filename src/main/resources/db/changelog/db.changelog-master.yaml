@@ -94,4 +94,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/08/06-01-add-full-name-search-view.yaml
   - include:
+      file: db/changelog/2025/08/08-01-create-index.yaml
+  - include:
       file: db/changelog/2025/08/13-01-change-column-lair.yaml
