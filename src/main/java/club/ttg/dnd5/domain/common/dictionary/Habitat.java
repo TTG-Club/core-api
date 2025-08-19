@@ -1,9 +1,7 @@
 package club.ttg.dnd5.domain.common.dictionary;
 
-import club.ttg.dnd5.exception.ApiException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 /**
  * Места обитания
@@ -43,7 +41,7 @@ public enum Habitat {
     PLANAR_NINE_HELLS("План (Девять преисподних)"),
     PLANAR_PANDEMONIUM("План (Пандемониум)"),
     PLANAR_SHADOWFELL("План (Царство теней)"),
-    PLANAR_ELEMENTAL_PLANE_OF_WATER("план (Стихийный план воздуха)"),
+    PLANAR_ELEMENTAL_PLANE_OF_WATER("План (Стихийный план воздуха)"),
     PLANAR_YSGARD("План (Асгард)"),
     SWAMP("Болота"),
     UNDERDARK("Подземье"),

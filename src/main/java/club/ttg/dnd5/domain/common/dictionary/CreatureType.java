@@ -3,8 +3,6 @@ package club.ttg.dnd5.domain.common.dictionary;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Arrays;
-
 /**
  * Типы существ из бестиария
  */
@@ -25,23 +23,12 @@ public enum CreatureType {
 	SLIME("Слизь"),
 	PLANT("Растение"),
 	UNDEAD("Нежить"),
-	SWARM_OF_TINY_UNDEAD("рой крошечной нежити"),
-	SWARM_OF_TINY_MONSTROSITIES("рой крошечных монстров"),
-	SWARM_OF_TINY_BEASTS("рой крошечных зверей"),
-	SWARM_OF_SMALL_FIENDS("рой маленьких исчадий"),
-	SWARM_OF_MEDIUM_FIENDS("рой средних исчадий"),
+	SWARM_OF_TINY_UNDEAD("Рой крошечной нежити"),
+	SWARM_OF_TINY_MONSTROSITIES("Рой крошечных монстров"),
+	SWARM_OF_TINY_BEASTS("Рой крошечных зверей"),
+	SWARM_OF_SMALL_FIENDS("Рой маленьких исчадий"),
+	SWARM_OF_MEDIUM_FIENDS("Рой средних исчадий"),
 	;
 
 	private final String name;
-
-
-	public static CreatureType parse(final String type) {
-		if (type == null) {
-			throw new IllegalArgumentException("Type cannot be null");
-		}
-		return Arrays.stream(values())
-				.filter(t -> t.name().equalsIgnoreCase(type))
-				.findFirst()
-				.orElseThrow(() -> new IllegalArgumentException("Invalid type: " + type));
-	}
 }
