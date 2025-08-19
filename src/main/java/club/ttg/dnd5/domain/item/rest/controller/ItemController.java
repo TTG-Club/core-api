@@ -66,7 +66,7 @@ public class ItemController {
     @PostMapping("/search")
     public Collection<ItemShortResponse> getItems(@RequestParam(name = "query", required = false)
                                                   @Valid
-                                                  @Size(min = 3)
+                                                  @Size(min = 2)
                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                   String searchLine) {
         return itemService.getItems(searchLine);
