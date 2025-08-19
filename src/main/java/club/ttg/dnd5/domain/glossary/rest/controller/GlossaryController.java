@@ -43,7 +43,7 @@ public class GlossaryController {
     @PostMapping("/search")
     public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "query", required = false)
                                               @Valid
-                                              @Size(min = 3)
+                                              @Size(min = 2)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
                                               @RequestBody(required = false) SearchBody searchBody){

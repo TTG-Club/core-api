@@ -55,7 +55,7 @@ public class BackgroundController {
     public Collection<BackgroundShortResponse> findBackgrounds(
             @RequestParam(name = "query", required = false)
             @Valid
-            @Size(min = 3)
+            @Size(min = 2)
             @Schema( description = "Строка поиска, если null-отдаются все сущности")
             String searchLine) {
         return backgroundService.getBackgrounds(searchLine);

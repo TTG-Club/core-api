@@ -48,7 +48,7 @@ public class SpeciesController {
     public List<SpeciesShortResponse> getAllSpecies(
             @RequestParam(name = "query", required = false)
             @Valid
-            @Size(min = 3)
+            @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
             @Parameter(description = "Сортировка")

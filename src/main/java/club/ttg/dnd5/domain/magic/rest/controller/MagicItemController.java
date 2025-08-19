@@ -65,7 +65,7 @@ public class MagicItemController {
     @PostMapping("/search")
     public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "query", required = false)
                                                        @Valid
-                                                       @Size(min = 3)
+                                                       @Size(min = 2)
                                                        @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                        String searchLine) {
         return magicItemService.getItems(searchLine);
