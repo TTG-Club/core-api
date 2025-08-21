@@ -83,16 +83,7 @@ public class ItemServiceImpl implements ItemService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String addItem(final ItemRequest request) {
         exist(request.getUrl());
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        var item = switch(request.getCategory()) {
-            case ITEM -> itemMapper.toItem(request, book);
-            case ARMOR -> itemMapper.toArmor(request, book);
-            case WEAPON -> itemMapper.toWeapon(request, book);
-            case VEHICLE -> itemMapper.toVehicle(request, book);
-            case MOUNT -> itemMapper.toMount(request, book);
-            case TOOL -> itemMapper.toTool(request, book);
-        };
-
+        var item = toItem(request);
         return itemRepository.save(item).getUrl();
     }
 
@@ -115,6 +106,18 @@ public class ItemServiceImpl implements ItemService {
         return itemRepository.save(item).getUrl();
     }
 
+    private Item toItem(final ItemRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return switch(request.getCategory()) {
+            case ITEM -> itemMapper.toItem(request, book);
+            case ARMOR -> itemMapper.toArmor(request, book);
+            case WEAPON -> itemMapper.toWeapon(request, book);
+            case VEHICLE -> itemMapper.toVehicle(request, book);
+            case MOUNT -> itemMapper.toMount(request, book);
+            case TOOL -> itemMapper.toTool(request, book);
+        };
+    }
+
     private void exist(String url) {
         if (itemRepository.existsById(url)) {
             throw new EntityExistException();
@@ -124,5 +127,9 @@ public class ItemServiceImpl implements ItemService {
     private Item findByUrl(String url) {
         return itemRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Предмет не найден по URL: " + url));
+    }
+
+    public ItemDetailResponse preview(final ItemRequest request) {
+        return itemMapper.toDetailResponse(toItem(request));
     }
 }

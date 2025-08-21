@@ -35,7 +35,7 @@ public class FeatServiceImpl implements FeatService {
 
     @Override
     public FeatDetailResponse getFeat(final String featUrl) {
-        return featMapper.toDetailDto(findByUrl(featUrl));
+        return featMapper.toDetail(findByUrl(featUrl));
     }
 
     @Override
@@ -49,7 +49,7 @@ public class FeatServiceImpl implements FeatService {
                 })
                 .orElseGet(() -> featRepository.findAll(DEFAULT_SORT))
                 .stream()
-                .map(featMapper::toShortDto)
+                .map(featMapper::toShort)
                 .collect(Collectors.toList());
     }
 
@@ -69,11 +69,11 @@ public class FeatServiceImpl implements FeatService {
     @Secured("ADMIN")
     @Transactional
     @Override
-    public String updateFeat(final String featUrl, final FeatRequest dto) {
-        var entity = findByUrl(featUrl);
-        var book = bookService.findByUrl(dto.getSource().getUrl());
-        var feat = featMapper.toEntity(dto, book);
-        if (!Objects.equals(featUrl, dto.getUrl())) {
+    public String updateFeat(final String featUrl, final FeatRequest request) {
+        findByUrl(featUrl);
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        var feat = featMapper.toEntity(request, book);
+        if (!Objects.equals(featUrl, request.getUrl())) {
             featRepository.deleteById(featUrl);
             featRepository.flush();
         }
@@ -106,5 +106,10 @@ public class FeatServiceImpl implements FeatService {
     private Feat findByUrl(String url) {
         return featRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
+    }
+
+    public FeatDetailResponse preview(final FeatRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return featMapper.toDetail(featMapper.toEntity(request, book));
     }
 }
