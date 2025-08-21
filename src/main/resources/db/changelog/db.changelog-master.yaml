@@ -97,3 +97,5 @@ databaseChangeLog:
       file: db/changelog/2025/08/08-01-create-index.yaml
   - include:
       file: db/changelog/2025/08/13-01-change-column-lair.yaml
+  - include:
+      file: db/changelog/2025/08/21-01-update-search-view.yaml
