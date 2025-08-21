@@ -104,4 +104,9 @@ public class MagicItemServiceImpl implements MagicItemService {
         return magicItemRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Предмет не найден по URL: " + url));
     }
+
+    public MagicItemDetailResponse preview(final MagicItemRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return magicItemMapper.toDetail(magicItemMapper.toEntity(request, book));
+    }
 }

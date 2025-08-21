@@ -47,7 +47,7 @@ public class SpellService {
 
     public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
         return spellQueryDslSearchService.search(searchLine, searchBody).stream()
-                .map(spellMapper::toSpeciesShortResponse)
+                .map(spellMapper::toShort)
                 .collect(Collectors.toList());
     }
 
@@ -56,7 +56,7 @@ public class SpellService {
     }
 
     public SpellDetailedResponse findDetailedByUrl(String url) {
-        return spellMapper.toSpellDetailedResponse(findByUrl(url));
+        return spellMapper.toDetail(findByUrl(url));
     }
 
     public SpellRequest findFormByUrl(final String url) {
@@ -78,14 +78,8 @@ public class SpellService {
         if (existsByUrl(request.getUrl())) {
             throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
         }
-        List<Species> species = Optional.ofNullable(request.getAffiliations())
-                .map(CreateAffiliationRequest::getSpecies)
-                .map(speciesService::findAllById)
-                .orElseGet(Collections::emptyList);
-        List<Species> lineages = Optional.ofNullable(request.getAffiliations())
-                .map(CreateAffiliationRequest::getLineages)
-                .map(speciesService::findAllById)
-                .orElseGet(Collections::emptyList);
+        List<Species> species = getSpecieses(request);
+        List<Species> lineages = getLineages(request);
         //TODO долить связи с классами и происхождениями
 
         Book book = Optional.ofNullable(request.getSource())
@@ -95,21 +89,29 @@ public class SpellService {
 
         Spell spell = spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
-        return spellMapper.toSpellDetailedResponse(spellRepository.save(spell)).getUrl();
+        return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
 
+    }
+
+    private List<Species> getSpecieses(SpellRequest request) {
+        return Optional.ofNullable(request.getAffiliations())
+                .map(CreateAffiliationRequest::getSpecies)
+                .map(speciesService::findAllById)
+                .orElseGet(Collections::emptyList);
+    }
+
+    private List<Species> getLineages(SpellRequest request) {
+        return Optional.ofNullable(request.getAffiliations())
+                .map(CreateAffiliationRequest::getLineages)
+                .map(speciesService::findAllById)
+                .orElseGet(Collections::emptyList);
     }
 
     @Transactional
     public String update(String oldUrl, @Valid SpellRequest request) {
         Spell existingSpell = findByUrl(oldUrl);
-        List<Species> species = Optional.ofNullable(request.getAffiliations())
-                .map(CreateAffiliationRequest::getSpecies)
-                .map(speciesService::findAllById)
-                .orElseGet(Collections::emptyList);
-        List<Species> lineages = Optional.ofNullable(request.getAffiliations())
-                .map(CreateAffiliationRequest::getLineages)
-                .map(speciesService::findAllById)
-                .orElseGet(Collections::emptyList);
+        List<Species> species = getSpecieses(request);
+        List<Species> lineages = getLineages(request);
         //TODO долить связи с классами и происхождениями
 
         Book book = Optional.ofNullable(request.getSource())
@@ -122,7 +124,7 @@ public class SpellService {
             spellRepository.deleteById(oldUrl);
             spellRepository.flush();
         }
-        return spellMapper.toSpellDetailedResponse(spellRepository.save(spell)).getUrl();
+        return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
     }
 
     @Transactional
@@ -131,5 +133,14 @@ public class SpellService {
         Spell existingSpell = findByUrl(url);
         existingSpell.setHiddenEntity(true);
         spellRepository.save(existingSpell);
+    }
+
+    public SpellDetailedResponse preview(final SpellRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        List<Species> species = getSpecieses(request);
+        List<Species> lineages = getLineages(request);
+        return spellMapper.toDetail(
+                spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages)
+        );
     }
 }

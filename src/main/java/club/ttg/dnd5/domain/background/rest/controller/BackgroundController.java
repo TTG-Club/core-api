@@ -74,6 +74,13 @@ public class BackgroundController {
         return backgroundService.addBackground(backgroundDto);
     }
 
+    @Operation(summary = "Предпросмотр предыстории")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public BackgroundDetailResponse preview(@RequestBody BackgroundRequest request) {
+        return backgroundService.preview(request);
+    }
+
     @Operation(summary = "Обновление предыстории", description = "Возвращает ссылку на обновленную предысторию")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предыстория успешно обновлена"),

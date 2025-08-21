@@ -67,6 +67,13 @@ public class GlossaryController {
         return glossaryService.save(request);
     }
 
+    @Operation(summary = "Предпросмотр глоссария")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public GlossaryDetailedResponse preview(@RequestBody GlossaryRequest request) {
+        return glossaryService.preview(request);
+    }
+
     @Secured("ADMIN")
     @PutMapping("/{url}")
     public String updateGlossary(@PathVariable String url, @Valid @RequestBody GlossaryRequest request) {

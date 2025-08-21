@@ -20,4 +20,6 @@ public interface ItemService {
     boolean existOrThrow(String url);
 
     ItemRequest findFormByUrl(String url);
+
+    ItemDetailResponse preview(ItemRequest request);
 }

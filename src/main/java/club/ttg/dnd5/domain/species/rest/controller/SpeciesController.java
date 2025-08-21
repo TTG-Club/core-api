@@ -135,6 +135,13 @@ public class SpeciesController {
         return speciesService.save(request);
     }
 
+    @Operation(summary = "Предпросмотр вида")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public SpeciesDetailResponse preview(@RequestBody SpeciesRequest request) {
+        return speciesService.preview(request);
+    }
+
     @Operation(summary = "Обновить существующий вид", description = "Обновление данных существующего вида.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Вид успешно обновлен"),

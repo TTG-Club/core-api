@@ -84,6 +84,13 @@ public class MagicItemController {
         return magicItemService.addItem(itemDto);
     }
 
+    @Operation(summary = "Предпросмотр предмета")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public MagicItemDetailResponse preview(@RequestBody MagicItemRequest request) {
+        return magicItemService.preview(request);
+    }
+
     @Secured("ADMIN")
     @Operation(summary = "Обновление предмета")
     @ApiResponses(value = {

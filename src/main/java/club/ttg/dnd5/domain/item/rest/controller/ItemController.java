@@ -85,6 +85,13 @@ public class ItemController {
         return itemService.addItem(itemDto);
     }
 
+    @Operation(summary = "Предпросмотр предмета")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public ItemDetailResponse preview(@RequestBody ItemRequest request) {
+        return itemService.preview(request);
+    }
+
     @Secured("ADMIN")
     @Operation(summary = "Обновление предмета")
     @ApiResponses(value = {

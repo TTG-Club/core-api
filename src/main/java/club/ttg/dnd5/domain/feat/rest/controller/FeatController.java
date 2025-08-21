@@ -75,6 +75,13 @@ public class FeatController {
         return featService.addFeat(featDto);
     }
 
+    @Operation(summary = "Предпросмотр черты")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public FeatDetailResponse preview(@RequestBody FeatRequest request) {
+        return featService.preview(request);
+    }
+
     @Secured("ADMIN")
     @Operation(summary = "Обновление черты")
     @ApiResponses(value = {

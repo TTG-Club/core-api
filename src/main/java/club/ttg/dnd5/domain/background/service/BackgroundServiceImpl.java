@@ -111,4 +111,10 @@ public class BackgroundServiceImpl implements BackgroundService {
         return backgroundRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Предыстория не найден по URL: " + url));
     }
+
+    public BackgroundDetailResponse preview(final BackgroundRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        var feat = getFeat(request.getFeatUrl());
+        return backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
+    }
 }

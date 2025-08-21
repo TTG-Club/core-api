@@ -42,7 +42,7 @@ public interface SpellMapper {
     @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
-    SpellShortResponse toSpeciesShortResponse(Spell spell);
+    SpellShortResponse toShort(Spell spell);
 
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
@@ -53,7 +53,7 @@ public interface SpellMapper {
     @Mapping(target = "duration", source = ".", qualifiedByName = "durationToString")
     @Mapping(target = "range", source = ".", qualifiedByName = "distanceToString")
     @Mapping(target = "affiliation", source = ".")
-    SpellDetailedResponse toSpellDetailedResponse(Spell spell);
+    SpellDetailedResponse toDetail(Spell spell);
 
     @Named("isConcentration")
     default Boolean isConcentration(Collection<SpellDuration> durations) {

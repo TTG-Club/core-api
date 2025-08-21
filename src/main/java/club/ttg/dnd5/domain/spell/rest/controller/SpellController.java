@@ -73,6 +73,13 @@ public class SpellController {
         return spellService.save(request);
     }
 
+    @Operation(summary = "Предпросмотр заклинания")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public SpellDetailedResponse preview(@RequestBody SpellRequest request) {
+        return spellService.preview(request);
+    }
+
     @Secured("ADMIN")
     @PutMapping("/{url}")
     public String updateSpell(@PathVariable String url,
