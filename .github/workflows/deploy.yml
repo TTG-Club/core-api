@@ -82,9 +82,9 @@ jobs:
           key: ${{secrets.BEGET_SSH_KEY}}
           port: ${{secrets.BEGET_SSH_PORT}}
           script: |
-            docker compose -f ${{ env.CONFIG_FILE }} pull api && \
-              docker compose -f ${{ env.CONFIG_FILE }} build api && \
-              docker compose -f ${{ env.CONFIG_FILE }} up api \
+            docker compose -f ${{ env.CONFIG_FILE }} pull 5e24-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-api && \
+              docker compose -f ${{ env.CONFIG_FILE }} build 5e24-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-api && \
+              docker compose -f ${{ env.CONFIG_FILE }} up 5e24-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-api \
                 --no-deps \
                 --detach
             docker rmi $(docker images --filter "dangling=true" -q --no-trunc) &
