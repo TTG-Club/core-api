@@ -29,7 +29,7 @@ public interface SpeciesMapper {
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "galleryUrl", target = "gallery")
     @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
-    SpeciesDetailResponse toDetailDto(Species species);
+    SpeciesDetailResponse toDetail(Species species);
 
     @Mapping(source = "name", target = "name.name")
     @Mapping(source = "english", target = "name.english")
@@ -38,7 +38,7 @@ public interface SpeciesMapper {
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "updatedAt", target = "updatedAt")
     @Mapping(source = "lineages", target = "hasLineages", qualifiedByName = "hasLineages")
-    SpeciesShortResponse toShortDto(Species species);
+    SpeciesShortResponse toShort(Species species);
 
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")
@@ -82,5 +82,4 @@ public interface SpeciesMapper {
     default String toSpeed(Species species) {
         return species.getSpeed() + " футов";
     }
-
 }

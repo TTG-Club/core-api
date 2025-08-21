@@ -45,7 +45,7 @@ public class SpeciesService {
                 species.setFeatures(species.getParent().getFeatures());
             }
         }
-        return speciesMapper.toDetailDto(species);
+        return speciesMapper.toDetail(species);
     }
 
     public List<Species> findAllById(Collection<String> urls) {
@@ -61,7 +61,7 @@ public class SpeciesService {
             specieses = speciesRepository.findAllByParentIsNull(Sort.by(sort));
         }
         return specieses.stream()
-                .map(speciesMapper::toShortDto)
+                .map(speciesMapper::toShort)
                 .toList();
     }
 
@@ -74,15 +74,13 @@ public class SpeciesService {
         return saveSpecies(request).getUrl();
     }
 
-
-
     public List<SpeciesDetailResponse> getLineages(String parentUrl) {
         return speciesRepository.findById(parentUrl)
                 .filter(species -> !species.isHiddenEntity())
                 .map(speciesRepository::findByParent)
                 .orElseThrow(() -> new EntityNotFoundException("Вид не найден для URL: " + parentUrl))
                 .stream()
-                .map(speciesMapper::toDetailDto)
+                .map(speciesMapper::toDetail)
                 .toList();
     }
 
@@ -90,8 +88,8 @@ public class SpeciesService {
         Species species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Вид не найден URL: " + url));
         return species.getLineages().stream()
-            .map(speciesMapper::toShortDto)
-                .toList();
+            .map(speciesMapper::toShort)
+            .toList();
     }
 
     public SpeciesDetailResponse addParent(String speciesUrl, String speciesParentUrl) {
@@ -109,7 +107,7 @@ public class SpeciesService {
                     })
                     .add(species);
 
-            return speciesMapper.toDetailDto(speciesRepository.save(species));
+            return speciesMapper.toDetail(speciesRepository.save(species));
         } else {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "This is not a parent Species");
@@ -141,7 +139,7 @@ public class SpeciesService {
                 .toList();
 
         species.setLineages(subSpeciesEntities);
-        return speciesMapper.toDetailDto(speciesRepository.save(species));
+        return speciesMapper.toDetail(speciesRepository.save(species));
     }
 
     public SpeciesRequest findFormByUrl(final String url) {
@@ -165,7 +163,13 @@ public class SpeciesService {
         species.setSource(book);
 
         Species save = speciesRepository.save(species);
-        return speciesMapper.toDetailDto(save);
+        return speciesMapper.toDetail(save);
     }
 
+    public SpeciesDetailResponse preview(final SpeciesRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        var species = speciesMapper.toEntity(request);
+        species.setSource(book);
+        return speciesMapper.toDetail(species);
+    }
 }
