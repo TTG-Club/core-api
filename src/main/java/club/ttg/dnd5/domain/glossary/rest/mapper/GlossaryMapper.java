@@ -27,6 +27,7 @@ public interface GlossaryMapper {
     GlossaryDetailedResponse toDetail(Glossary glossary);
 
     @BaseMapping.BaseRequestNameMapping
+    @BaseMapping.BaseSourceRequestMapping
     GlossaryRequest toRequest(Glossary glossary);
 
     @ToEntityMapping
