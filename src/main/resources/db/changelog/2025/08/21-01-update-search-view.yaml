@@ -4,7 +4,7 @@ databaseChangeLog:
       author: Magistrus
       changes:
         - sqlFile:
-            path: db/changelog/2025/08/sql/21-full-name-search-view.sql
+            path: db/changelog/2025/08/sql/21-update-full-name-search-view.sql
             relativeToChangelogFile: false
             splitStatements: false
             endDelimiter: ;
