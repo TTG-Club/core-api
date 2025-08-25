@@ -99,3 +99,5 @@ databaseChangeLog:
       file: db/changelog/2025/08/13-01-change-column-lair.yaml
   - include:
       file: db/changelog/2025/08/21-01-update-search-view.yaml
+  - include:
+      file: db/changelog/2025/08/23-01-add-gallery.yaml
