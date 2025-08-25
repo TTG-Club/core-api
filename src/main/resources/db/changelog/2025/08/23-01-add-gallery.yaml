@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-gallery-table
+      author: Magistrus
+      changes:
+        - createTable:
+            tableName: gallery
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: image
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+
+        - createIndex:
+            indexName: idx_gallery_url
+            tableName: gallery
+            columns:
+              - column:
+                  name: url
+
+        - createIndex:
+            indexName: idx_gallery_type
+            tableName: gallery
+            columns:
+              - column:
+                  name: type
