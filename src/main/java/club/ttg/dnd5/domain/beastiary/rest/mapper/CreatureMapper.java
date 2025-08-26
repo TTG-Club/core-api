@@ -12,6 +12,8 @@ import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
 import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDefense;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureImmunities;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
@@ -61,9 +63,9 @@ public interface CreatureMapper {
     @Mapping(source = ".", target = "abilities", qualifiedByName = "toAbilities")
     @Mapping(source = ".", target = "skills", qualifiedByName = "toSkills")
     @Mapping(source = "speeds", target = "speed", qualifiedByName = "toSpeed")
-    @Mapping(source = ".", target = "vulnerability", qualifiedByName = "toVulnerabilities")
-    @Mapping(source = ".", target = "resistance", qualifiedByName = "toResistance")
-    @Mapping(source = ".", target = "immunity", qualifiedByName = "toImmunity")
+    @Mapping(source = "defenses.vulnerabilities", target = "defenses.vulnerability", qualifiedByName = "toVulnerabilities")
+    @Mapping(source = "defenses.resistances", target = "defenses.resistances", qualifiedByName = "toResistance")
+    @Mapping(source = "request.defenses.immunities", target = "defenses.immunity", qualifiedByName = "toImmunity")
     @Mapping(source = "senses", target = "sense", qualifiedByName = "toSense")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toChallengeRating")
@@ -88,14 +90,6 @@ public interface CreatureMapper {
     @Mapping(target = "legendary.actions", source = "legendaryActions")
     @Mapping(target = "legendary.count", source = "legendaryAction")
     @Mapping(target = "legendary.inLair", source = "legendaryActionInLair")
-
-    @Mapping(target = "defenses.vulnerabilities.values", source = "vulnerabilities")
-    @Mapping(target = "defenses.vulnerabilities.text", source = "vulnerabilitiesText")
-    @Mapping(target = "defenses.resistances.values", source = "resistance")
-    @Mapping(target = "defenses.resistances.text", source = "resistanceText")
-    @Mapping(target = "defenses.immunities.damage", source = "immunityToDamage")
-    @Mapping(target = "defenses.immunities.condition", source = "immunityToCondition")
-    @Mapping(target = "defenses.immunities.text", source = "vulnerabilitiesText")
     CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping
@@ -301,43 +295,43 @@ public interface CreatureMapper {
     }
 
     @Named("toVulnerabilities")
-    default String toVulnerabilities(Creature creature) {
-        if (StringUtils.hasText(creature.getVulnerabilitiesText())) {
-            return creature.getVulnerabilitiesText();
+    default String toVulnerabilities(CreatureDefense creatureDefense) {
+        if (StringUtils.hasText(creatureDefense.getText())) {
+            return creatureDefense.getText();
         }
-        return creature.getVulnerabilities().stream()
+        return creatureDefense.getValues().stream()
                 .map(DamageType::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "));
     }
 
     @Named("toResistance")
-    default String toResistance(Creature creature) {
-        if (StringUtils.hasText(creature.getResistanceText())) {
-            return creature.getResistanceText();
+    default String toResistance(CreatureDefense creatureDefense) {
+        if (StringUtils.hasText(creatureDefense.getText())) {
+            return creatureDefense.getText();
         }
-        return creature.getResistance().stream()
+        return creatureDefense.getValues().stream()
                 .map(DamageType::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "));
     }
 
     @Named("toImmunity")
-    default String toImmunity(Creature creature) {
-        if (StringUtils.hasText(creature.getImmunityText())) {
-            return creature.getImmunityText();
+    default String toImmunity(CreatureImmunities creatureImmunities) {
+        if (StringUtils.hasText(creatureImmunities.getText())) {
+            return creatureImmunities.getText();
         }
-        if (CollectionUtils.isEmpty(creature.getImmunityToDamage()) && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
+        if (CollectionUtils.isEmpty(creatureImmunities.getDamage()) && CollectionUtils.isEmpty(creatureImmunities.getCondition())) {
             return null;
         }
-        var response = creature.getImmunityToDamage().stream()
+        var response = creatureImmunities.getDamage().stream()
                 .map(DamageType::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "));
-        if (!CollectionUtils.isEmpty(creature.getImmunityToDamage()) && !CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
+        if (!CollectionUtils.isEmpty(creatureImmunities.getDamage()) && !CollectionUtils.isEmpty(creatureImmunities.getCondition())) {
             response += "; ";
         }
-        response += creature.getImmunityToCondition().stream()
+        response += creatureImmunities.getCondition().stream()
                 .map(Condition::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "));
