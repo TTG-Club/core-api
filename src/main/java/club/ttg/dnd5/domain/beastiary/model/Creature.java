@@ -3,10 +3,9 @@ package club.ttg.dnd5.domain.beastiary.model;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDefenses;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
-import club.ttg.dnd5.domain.common.dictionary.Condition;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -97,36 +96,11 @@ public class Creature extends NamedEntity {
     private Collection<CreatureSkill> skills;
 
     /**
-     * Уязвимости
+     * Уязвимости, сопротивления, иммунитеты
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Collection<DamageType> vulnerabilities;
-    private String vulnerabilitiesText;
-
-    /**
-     * Сопротивления
-     */
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Collection<DamageType> resistance;
-    private String resistanceText;
-
-    /**
-     * Иммунитеты к урону
-     */
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Collection<DamageType> immunityToDamage;
-
-    /**
-     * Иммунитеты к состояниям
-     */
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Collection<Condition> immunityToCondition;
-
-    private String immunityText;
+    private CreatureDefenses defenses;
 
     /**
      * Снаряжение
