@@ -56,7 +56,7 @@ public class FeatController {
     @PostMapping("/search")
     public Collection<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
                                                   @Valid
-                                                  @Size(min = 3)
+                                                  @Size(min = 2)
                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                   String searchLine) {
         return featService.getFeats(searchLine);
@@ -73,6 +73,13 @@ public class FeatController {
     @PostMapping
     public String addFeats(@RequestBody final FeatRequest featDto) {
         return featService.addFeat(featDto);
+    }
+
+    @Operation(summary = "Предпросмотр черты")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public FeatDetailResponse preview(@RequestBody FeatRequest request) {
+        return featService.preview(request);
     }
 
     @Secured("ADMIN")

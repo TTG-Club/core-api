@@ -48,7 +48,7 @@ public class SpeciesController {
     public List<SpeciesShortResponse> getAllSpecies(
             @RequestParam(name = "query", required = false)
             @Valid
-            @Size(min = 3)
+            @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
             @Parameter(description = "Сортировка")
@@ -133,6 +133,13 @@ public class SpeciesController {
     @ResponseStatus(HttpStatus.CREATED)
     public String createSpecies(@RequestBody SpeciesRequest request) {
         return speciesService.save(request);
+    }
+
+    @Operation(summary = "Предпросмотр вида")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public SpeciesDetailResponse preview(@RequestBody SpeciesRequest request) {
+        return speciesService.preview(request);
     }
 
     @Operation(summary = "Обновить существующий вид", description = "Обновление данных существующего вида.")

@@ -73,7 +73,8 @@ jobs:
       group: update-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-server
       cancel-in-progress: false
     env:
-      CONFIG_FILE: ${{ secrets.BEGET_SSH_PATH }}/${{ github.ref_name == 'main' && 'prod' || 'dev' }}/core/compose.yaml
+      SERVICE_NAME: 5e24-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-api
+      CONFIG_FILE: ${{ secrets.BEGET_SSH_PATH }}/${{ github.ref_name == 'main' && 'prod' || 'dev' }}/5e24/compose.yaml
     steps:
       - uses: appleboy/ssh-action@master
         with:
@@ -82,9 +83,9 @@ jobs:
           key: ${{secrets.BEGET_SSH_KEY}}
           port: ${{secrets.BEGET_SSH_PORT}}
           script: |
-            docker compose -f ${{ env.CONFIG_FILE }} pull api && \
-              docker compose -f ${{ env.CONFIG_FILE }} build api && \
-              docker compose -f ${{ env.CONFIG_FILE }} up api \
+            docker compose -f ${{ env.CONFIG_FILE }} pull ${{ env.SERVICE_NAME }} && \
+              docker compose -f ${{ env.CONFIG_FILE }} build ${{ env.SERVICE_NAME }} && \
+              docker compose -f ${{ env.CONFIG_FILE }} up ${{ env.SERVICE_NAME }} \
                 --no-deps \
                 --detach
             docker rmi $(docker images --filter "dangling=true" -q --no-trunc) &

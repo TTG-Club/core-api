@@ -20,4 +20,6 @@ public interface MagicItemService {
     String updateItem(String url, MagicItemRequest itemDto);
 
     MagicItemRequest findFormByUrl(String url);
+
+    MagicItemDetailResponse preview(MagicItemRequest request);
 }

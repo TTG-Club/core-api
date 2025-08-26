@@ -10,15 +10,11 @@ import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.rest.mapper.GlossaryMapper;
-import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -114,5 +110,10 @@ public class GlossaryService {
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
         return glossaryMapper.toRequest(glossary);
+    }
+
+    public GlossaryDetailedResponse preview(final GlossaryRequest request) {
+        var book = bookService.findByUrl(request.getSource().getUrl());
+        return glossaryMapper.toDetail(glossaryMapper.toEntity(request, book));
     }
 }

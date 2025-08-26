@@ -7,6 +7,9 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.model.Gallery;
+import club.ttg.dnd5.domain.common.model.SectionType;
+import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -14,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +28,7 @@ public class CreatureServiceImpl implements CreatureService {
     private final CreatureRepository creatureRepository;
     private final CreatureQueryDslSearchService creatureQueryDslSearchService;
     private final BookService bookService;
+    private final GalleryRepository galleryRepository;
     private final CreatureMapper creatureMapper;
 
     @Override
@@ -44,7 +49,12 @@ public class CreatureServiceImpl implements CreatureService {
 
     @Override
     public CreatureDetailResponse findDetailedByUrl(final String url) {
-        return creatureMapper.toDetail(findByUrl(url));
+        var response =   creatureMapper.toDetail(findByUrl(url));
+        response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.BESTIARY)
+                .stream()
+                .map(Gallery::getImage)
+                .toList());
+        return response;
     }
 
     @Override
@@ -59,6 +69,7 @@ public class CreatureServiceImpl implements CreatureService {
         if (creatureRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Существо уже существует с URL: " + request.getUrl());
         }
+        saveGallery(request.getUrl(), request.getGallery());
         var book = bookService.findByUrl(request.getSource().getUrl());
         var beast = creatureMapper.toEntity(request, book);
         return creatureRepository.save(beast).getUrl();
@@ -78,6 +89,9 @@ public class CreatureServiceImpl implements CreatureService {
             creatureRepository.deleteById(url);
             creatureRepository.flush();
         }
+        galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.BESTIARY);
+
+        saveGallery(request.getUrl(), request.getGallery());
         return creatureRepository.save(beast).getUrl();
     }
 
@@ -94,6 +108,17 @@ public class CreatureServiceImpl implements CreatureService {
     public CreatureDetailResponse preview(final CreatureRequest request) {
         var book = bookService.findByUrl(request.getSource().getUrl());
         return creatureMapper.toDetail(creatureMapper.toEntity(request, book));
+    }
+
+    private void saveGallery(String url, List<String> gallery) {
+        if (!CollectionUtils.isEmpty(gallery)) {
+            gallery.forEach(
+                    image -> galleryRepository.save(Gallery.builder()
+                            .url(url)
+                            .type(SectionType.BESTIARY)
+                            .image(image)
+                            .build()));
+        }
     }
 
     private Creature findByUrl(String url) {

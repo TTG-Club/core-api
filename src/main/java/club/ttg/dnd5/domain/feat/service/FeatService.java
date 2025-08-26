@@ -22,4 +22,6 @@ public interface FeatService {
     boolean existOrThrow(String featUrl);
 
     FeatRequest findFormByUrl(String url);
+
+    FeatDetailResponse preview(FeatRequest request);
 }
