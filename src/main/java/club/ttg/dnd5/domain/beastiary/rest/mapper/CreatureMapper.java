@@ -89,13 +89,13 @@ public interface CreatureMapper {
     @Mapping(target = "legendary.count", source = "legendaryAction")
     @Mapping(target = "legendary.inLair", source = "legendaryActionInLair")
 
-    @Mapping(source = "defenses.vulnerabilities.values", target = "vulnerabilities")
-    @Mapping(source = "defenses.vulnerabilities.text", target = "vulnerabilitiesText")
-    @Mapping(source = "defenses.resistances.values", target = "resistances")
-    @Mapping(source = "defenses.resistances.text", target = "resistancesText")
-    @Mapping(source = "defenses.immunities.damage", target = "immunityToDamage")
-    @Mapping(source = "defenses.immunities.condition", target = "immunityToCondition")
-    @Mapping(source = "defenses.immunities.text", target = "vulnerabilitiesText")
+    @Mapping(target = "defenses.vulnerabilities.values", source = "vulnerabilities")
+    @Mapping(target = "defenses.vulnerabilities.text", source = "vulnerabilitiesText")
+    @Mapping(target = "defenses.resistances.values", source = "resistance")
+    @Mapping(target = "defenses.resistances.text", source = "resistanceText")
+    @Mapping(target = "defenses.immunities.damage", source = "immunityToDamage")
+    @Mapping(target = "defenses.immunities.condition", source = "immunityToCondition")
+    @Mapping(target = "defenses.immunities.text", source = "vulnerabilitiesText")
     CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping
