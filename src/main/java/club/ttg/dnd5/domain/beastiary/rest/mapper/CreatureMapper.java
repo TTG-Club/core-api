@@ -61,8 +61,8 @@ public interface CreatureMapper {
     @Mapping(source = ".", target = "abilities", qualifiedByName = "toAbilities")
     @Mapping(source = ".", target = "skills", qualifiedByName = "toSkills")
     @Mapping(source = "speeds", target = "speed", qualifiedByName = "toSpeed")
-    @Mapping(source = "vulnerabilities", target = "vulnerability", qualifiedByName = "toDamage")
-    @Mapping(source = "resistance", target = "resistance", qualifiedByName = "toDamage")
+    @Mapping(source = ".", target = "vulnerability", qualifiedByName = "toVulnerabilities")
+    @Mapping(source = ".", target = "resistance", qualifiedByName = "toResistance")
     @Mapping(source = ".", target = "immunity", qualifiedByName = "toImmunity")
     @Mapping(source = "senses", target = "sense", qualifiedByName = "toSense")
     @Mapping(source = "languages", target = "languages", qualifiedByName = "toLanguages")
@@ -110,6 +110,14 @@ public interface CreatureMapper {
     @Mapping(source = "request.legendary.actions", target = "legendaryActions")
     @Mapping(source = "request.legendary.count", target = "legendaryAction")
     @Mapping(source = "request.legendary.inLair", target = "legendaryActionInLair")
+    @Mapping(source = "request.defenses.vulnerabilities.values", target = "vulnerabilities")
+    @Mapping(source = "request.defenses.vulnerabilities.text", target = "vulnerabilitiesText")
+    @Mapping(source = "request.defenses.resistances.values", target = "resistance")
+    @Mapping(source = "request.defenses.resistances.text", target = "resistanceText")
+
+    @Mapping(source = "request.defenses.immunities.damage", target = "immunityToDamage")
+    @Mapping(source = "request.defenses.immunities.condition", target = "immunityToCondition")
+    @Mapping(source = "request.defenses.immunities.text", target = "immunityText")
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Book source);
 
@@ -284,9 +292,23 @@ public interface CreatureMapper {
                 + ChallengeRating.getPb(experience) * skill.getMultiplier();
     }
 
-    @Named("toDamage")
-    default String toDamage(Collection<DamageType> damages) {
-        return damages.stream()
+    @Named("toVulnerabilities")
+    default String toVulnerabilities(Creature creature) {
+        if (StringUtils.hasText(creature.getVulnerabilitiesText())) {
+            return creature.getVulnerabilitiesText();
+        }
+        return creature.getVulnerabilities().stream()
+                .map(DamageType::getName)
+                .map(String::toLowerCase)
+                .collect(Collectors.joining(", "));
+    }
+
+    @Named("toResistance")
+    default String toResistance(Creature creature) {
+        if (StringUtils.hasText(creature.getResistanceText())) {
+            return creature.getResistanceText();
+        }
+        return creature.getResistance().stream()
                 .map(DamageType::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "));
@@ -294,6 +316,9 @@ public interface CreatureMapper {
 
     @Named("toImmunity")
     default String toImmunity(Creature creature) {
+        if (StringUtils.hasText(creature.getImmunityText())) {
+            return creature.getImmunityText();
+        }
         if (CollectionUtils.isEmpty(creature.getImmunityToDamage()) && CollectionUtils.isEmpty(creature.getImmunityToCondition())) {
             return null;
         }
