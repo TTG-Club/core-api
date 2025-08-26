@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 26-02-rename-creature-defenses-text-columns
+      author: Magistrus
+      changes:
+        - renameColumn:
+            tableName: bestiary
+            oldColumnName: vulnerabilitiesText
+            newColumnName: vulnerabilities_text
+            columnDataType: TEXT
+        - renameColumn:
+            tableName: bestiary
+            oldColumnName: resistanceText
+            newColumnName: resistance_text
+            columnDataType: TEXT
+        - renameColumn:
+            tableName: bestiary
+            oldColumnName: immunityText
+            newColumnName: immunity_text
+            columnDataType: TEXT
