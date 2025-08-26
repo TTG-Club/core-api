@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-08-21-full-name-search-view
+      author: Magistrus
+      changes:
+        - sqlFile:
+            path: db/changelog/2025/08/sql/21-update-full-name-search-view.sql
+            relativeToChangelogFile: false
+            splitStatements: false
+            endDelimiter: ;
+      rollback:
+        - sql:
+            sql: |
+              DROP VIEW IF EXISTS full_name_search_view;

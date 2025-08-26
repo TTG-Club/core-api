@@ -66,7 +66,7 @@ public class ItemController {
     @PostMapping("/search")
     public Collection<ItemShortResponse> getItems(@RequestParam(name = "query", required = false)
                                                   @Valid
-                                                  @Size(min = 3)
+                                                  @Size(min = 2)
                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                   String searchLine) {
         return itemService.getItems(searchLine);
@@ -83,6 +83,13 @@ public class ItemController {
     @PostMapping
     public String addItem(@RequestBody final ItemRequest itemDto) {
         return itemService.addItem(itemDto);
+    }
+
+    @Operation(summary = "Предпросмотр предмета")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public ItemDetailResponse preview(@RequestBody ItemRequest request) {
+        return itemService.preview(request);
     }
 
     @Secured("ADMIN")

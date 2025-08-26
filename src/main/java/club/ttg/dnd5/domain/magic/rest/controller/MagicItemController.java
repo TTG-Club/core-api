@@ -65,7 +65,7 @@ public class MagicItemController {
     @PostMapping("/search")
     public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "query", required = false)
                                                        @Valid
-                                                       @Size(min = 3)
+                                                       @Size(min = 2)
                                                        @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                        String searchLine) {
         return magicItemService.getItems(searchLine);
@@ -82,6 +82,13 @@ public class MagicItemController {
     @PostMapping
     public String addItem(@RequestBody final MagicItemRequest itemDto) {
         return magicItemService.addItem(itemDto);
+    }
+
+    @Operation(summary = "Предпросмотр предмета")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public MagicItemDetailResponse preview(@RequestBody MagicItemRequest request) {
+        return magicItemService.preview(request);
     }
 
     @Secured("ADMIN")

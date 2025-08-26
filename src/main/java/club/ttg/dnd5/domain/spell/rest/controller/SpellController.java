@@ -44,7 +44,7 @@ public class SpellController {
     @PostMapping("/search")
     public List<SpellShortResponse> getSpells(@RequestParam(name = "query", required = false)
                                               @Valid
-                                              @Size(min = 3)
+                                              @Size(min = 2)
                                               @Schema(description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
                                               @RequestBody(required = false) SearchBody searchBody) {
@@ -71,6 +71,13 @@ public class SpellController {
     @ResponseStatus(HttpStatus.CREATED)
     public String createSpell(@RequestBody SpellRequest request) {
         return spellService.save(request);
+    }
+
+    @Operation(summary = "Предпросмотр заклинания")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public SpellDetailedResponse preview(@RequestBody SpellRequest request) {
+        return spellService.preview(request);
     }
 
     @Secured("ADMIN")

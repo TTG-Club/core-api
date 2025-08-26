@@ -11,8 +11,6 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
-import club.ttg.dnd5.domain.common.dictionary.Condition;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -41,15 +39,8 @@ public class CreatureRequest extends BaseRequest {
     private CreatureAbilities abilities;
     @Schema(description = "Навыки")
     private Collection<CreatureSkill> skills;
-
-    @Schema(description = "Уязвимости")
-    private Collection<DamageType> vulnerabilities;
-    @Schema(description = "Сопротивления")
-    private Collection<DamageType> resistance;
-    @Schema(description = "Иммунитеты к типам урона")
-    private Collection<DamageType> immunityToDamage;
-    @Schema(description = "Иммунитеты к состояниям")
-    private Collection<Condition> immunityToCondition;
+    @Schema(description = "Уязвимости, Сопротивления, Иммунитеты")
+    private CreatureDefenses defenses;
     @Schema(description = "Снаряжение")
     private Collection<CreatureEquipment> equipments;
     @Schema(description = "Чувства")
