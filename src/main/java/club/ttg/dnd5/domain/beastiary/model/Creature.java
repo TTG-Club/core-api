@@ -102,6 +102,7 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> vulnerabilities;
+    private String vulnerabilitiesText;
 
     /**
      * Сопротивления
@@ -109,6 +110,7 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<DamageType> resistance;
+    private String resistanceText;
 
     /**
      * Иммунитеты к урону
@@ -123,6 +125,8 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<Condition> immunityToCondition;
+
+    private String immunityText;
 
     /**
      * Снаряжение
