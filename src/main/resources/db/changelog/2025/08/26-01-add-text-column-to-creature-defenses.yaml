@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 26-01-add-text-column-to-creature-defenses
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: vulnerabilitiesText
+                  type: TEXT
+              - column:
+                  name: resistanceText
+                  type: TEXT
+              - column:
+                  name: immunityText
+                  type: TEXT
