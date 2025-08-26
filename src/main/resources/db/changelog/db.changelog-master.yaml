@@ -107,3 +107,5 @@ databaseChangeLog:
       file: db/changelog/2025/08/26-02-defenses-jsonb.yaml
   - include:
       file: db/changelog/2025/08/26-01-add-text-column-to-creature-defenses.yaml
+  - include:
+      file: db/changelog/2025/08/26-02-rename-text-column-to-creature-defenses.yaml
