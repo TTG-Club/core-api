@@ -101,3 +101,5 @@ databaseChangeLog:
       file: db/changelog/2025/08/21-01-update-search-view.yaml
   - include:
       file: db/changelog/2025/08/23-01-add-gallery.yaml
+  - include:
+      file: db/changelog/2025/08/26-01-add-text-column-to-creature-defenses.yaml
