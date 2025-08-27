@@ -294,7 +294,8 @@ public interface CreatureMapper {
                               final CreatureAbilities abilities,
                               final long experience) {
         return abilities.getMod(skill.getSkill().getAbility())
-                + ChallengeRating.getPb(experience) * skill.getMultiplier();
+                + ChallengeRating.getPb(experience) * skill.getMultiplier()
+                + (skill.getBonus() == null ? 0 : skill.getBonus());
     }
 
     @Named("toVulnerabilities")
