@@ -29,7 +29,7 @@ public enum Alignment {
 
 	public String getName(CreatureType type) {
 		return switch (type) {
-			case ABERRATION, FEY, UNDEAD, SLIME, MONSTROSITY -> names[1];
+			case ABERRATION, FEY, UNDEAD, SLIME -> names[1];
 			case FIEND, PLANT -> names[2];
 			default -> names[0];
 		};
