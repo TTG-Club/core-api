@@ -231,6 +231,9 @@ public interface CreatureMapper {
             if (conMod > 0) {
                 builder.append(" + ");
                 builder.append(conMod * creature.getHit().getCountHitDice());
+            } else if (conMod < 0) {
+                builder.append(" - ");
+                builder.append(Math.abs(conMod * creature.getHit().getCountHitDice()));
             }
             return builder.toString();
         }
@@ -297,7 +300,8 @@ public interface CreatureMapper {
                               final CreatureAbilities abilities,
                               final long experience) {
         return abilities.getMod(skill.getSkill().getAbility())
-                + ChallengeRating.getPb(experience) * skill.getMultiplier();
+                + ChallengeRating.getPb(experience) * skill.getMultiplier()
+                + (skill.getBonus() == null ? 0 : skill.getBonus());
     }
 
     @Named("toVulnerabilities")
