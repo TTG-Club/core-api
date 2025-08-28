@@ -231,6 +231,9 @@ public interface CreatureMapper {
             if (conMod > 0) {
                 builder.append(" + ");
                 builder.append(conMod * creature.getHit().getCountHitDice());
+            } else if (conMod < 0) {
+                builder.append(" - ");
+                builder.append(Math.abs(conMod * creature.getHit().getCountHitDice()));
             }
             return builder.toString();
         }
