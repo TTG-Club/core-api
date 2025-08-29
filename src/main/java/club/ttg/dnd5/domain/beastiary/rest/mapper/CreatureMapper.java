@@ -171,7 +171,7 @@ public interface CreatureMapper {
                 .map(String::toLowerCase)
                 .collect(Collectors.joining(", "))
         );
-        if (creature.getTypes().getText() != null) {
+        if (StringUtils.hasText(creature.getTypes().getText())) {
             builder.append(" (");
             builder.append(creature.getTypes().getText().toLowerCase());
             builder.append(")");
@@ -183,16 +183,18 @@ public interface CreatureMapper {
 
     @Named("toType")
     default String toType(CreatureCategory category) {
-        return category.getValues().stream().map(CreatureType::getName).collect(Collectors.joining(", "));
+        return category.getValues().stream()
+                .map(CreatureType::getName)
+                .collect(Collectors.joining(", "));
     }
 
     @Named("toArmor")
     default String toHeader(CreatureArmor creatureArmor) {
         var ac = String.valueOf((creatureArmor.getArmorClass()));
-        if (creatureArmor.getText() == null) {
-            return ac;
-        } else {
+        if (StringUtils.hasText(creatureArmor.getText())) {
             return ac + " " + creatureArmor.getText();
+        } else {
+            return ac;
         }
     }
 
@@ -300,7 +302,8 @@ public interface CreatureMapper {
                               final CreatureAbilities abilities,
                               final long experience) {
         return abilities.getMod(skill.getSkill().getAbility())
-                + ChallengeRating.getPb(experience) * skill.getMultiplier();
+                + ChallengeRating.getPb(experience) * skill.getMultiplier()
+                + (skill.getBonus() == null ? 0 : skill.getBonus());
     }
 
     @Named("toVulnerabilities")
