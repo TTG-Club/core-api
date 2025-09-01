@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
@@ -68,6 +69,9 @@ public class CreatureServiceImpl implements CreatureService {
     public String save(final CreatureRequest request) {
         if (creatureRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Существо уже существует с URL: " + request.getUrl());
+        }
+        if (request.getAlignment() == null) {
+            request.setAlignment(Alignment.WITHOUT);
         }
         saveGallery(request.getUrl(), request.getGallery());
         var book = bookService.findByUrl(request.getSource().getUrl());
