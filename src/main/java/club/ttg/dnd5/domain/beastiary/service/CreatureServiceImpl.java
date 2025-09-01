@@ -110,8 +110,11 @@ public class CreatureServiceImpl implements CreatureService {
 
     @Override
     public CreatureDetailResponse preview(final CreatureRequest request) {
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        return creatureMapper.toDetail(creatureMapper.toEntity(request, book));
+        var book = bookService.findByUrOptional(request.getSource().getUrl());
+        if (book.isPresent()) {
+            return creatureMapper.toDetail(creatureMapper.toEntity(request, book.get()));
+        }
+        return creatureMapper.toDetail(creatureMapper.toEntity(request, null));
     }
 
     private void saveGallery(String url, List<String> gallery) {
