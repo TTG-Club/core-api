@@ -92,4 +92,8 @@ public class ClassService {
     public ClassDetailedResponse findDetailedByUrl(String url) {
         return classMapper.toDetailedResponse(findByUrl(url));
     }
+
+    public ClassRequest findFormByUrl(String url) {
+        return classMapper.toRequest(findByUrl(url));
+    }
 }

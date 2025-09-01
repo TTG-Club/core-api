@@ -55,4 +55,12 @@ public interface ClassMapper {
     @Mapping(target = "source", source = "source")
     @Mapping(target = "sourcePage", source = "request.source.page")
     CharacterClass updateEntity(@MappingTarget CharacterClass existingClass, CharacterClass parent, ClassRequest request, Book source);
+
+    @BaseMapping.BaseRequestNameMapping
+    @Mapping(target = "gallery", ignore = true)
+    @Mapping(target = "parentUrl", source = "parent.url")
+    @Mapping(source = "source.url", target = "source.url")
+    @Mapping(source = "sourcePage", target = "source.page")
+    ClassRequest toRequest(CharacterClass entity);
+
 }

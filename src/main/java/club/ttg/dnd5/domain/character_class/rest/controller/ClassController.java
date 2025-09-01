@@ -77,4 +77,10 @@ public class ClassController {
                               @RequestBody ClassRequest request) {
         return classService.update(url, request);
     }
+
+    @GetMapping("/{url}/raw")
+    public ClassRequest getClassFormByUrl(@PathVariable String url) {
+        return classService.findFormByUrl(url);
+    }
+
 }
