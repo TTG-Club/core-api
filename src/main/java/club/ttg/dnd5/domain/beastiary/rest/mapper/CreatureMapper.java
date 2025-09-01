@@ -296,6 +296,7 @@ public interface CreatureMapper {
                 .map(skill -> getSkill(creature, skill))
                 .collect(Collectors.joining(", "));
     }
+
     private String getSkill(Creature creature, CreatureSkill skill) {
         return  skill.getSkill().getName()
                 + " +"
