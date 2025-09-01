@@ -4,7 +4,6 @@ import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
-import club.ttg.dnd5.domain.species.model.Species;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,7 +52,7 @@ public class CharacterClass extends NamedEntity {
     private List<ClassFeature> features;
 
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "jsonb", name = "class_table")
     private List<ClassTableColumn> table;
 
     @ManyToOne

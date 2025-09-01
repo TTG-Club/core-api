@@ -29,8 +29,8 @@ public class ClassService {
     private final ClassMapper classMapper;
     private final BookService bookService;
 
-    public List<ClassShortResponse> findAll() {
-        return classRepository.findAll().stream()
+    public List<ClassShortResponse> findAllClasses() {
+        return classRepository.findAllClassesFetchSubclasses().stream()
                 .map(classMapper::toShortResponse)
                 .collect(Collectors.toList());
     }
@@ -60,7 +60,7 @@ public class ClassService {
 
         CharacterClass toSave = classMapper.toEntity(request, parent, book);
 
-        return classMapper.toDetailedResponse(toSave);
+        return classMapper.toDetailedResponse(classRepository.save(toSave));
     }
 
     @Transactional

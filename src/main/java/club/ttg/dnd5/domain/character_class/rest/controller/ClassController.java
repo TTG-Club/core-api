@@ -50,7 +50,7 @@ public class ClassController {
     @GetMapping("/search")
     @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
     public List<ClassShortResponse> getAllClasses() {
-        return classService.findAll();
+        return classService.findAllClasses();
     }
 
     @GetMapping("/{url}")

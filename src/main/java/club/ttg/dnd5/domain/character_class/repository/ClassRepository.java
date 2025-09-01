@@ -11,7 +11,8 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
     @Query("""
                     select cc from CharacterClass cc
                     join fetch cc.subclasses
+                     where cc.parent is null
             """)
-    List<CharacterClass> findAllFetchSubclasses();
+    List<CharacterClass> findAllClassesFetchSubclasses();
 
 }
