@@ -293,9 +293,14 @@ public interface CreatureMapper {
             return "";
         }
         return creature.getSkills().stream()
-                .map(skill -> skill.getSkill().getName() + " +"
-                        + getSkillBonus(skill, creature.getAbilities(), creature.getExperience()))
+                .map(skill -> getSkill(creature, skill))
                 .collect(Collectors.joining(", "));
+    }
+    private String getSkill(Creature creature, CreatureSkill skill) {
+        return  skill.getSkill().getName()
+                + " +"
+                + getSkillBonus(skill, creature.getAbilities(), creature.getExperience())
+                + (StringUtils.hasText(skill.getText()) ? " (" + skill.getText() + ")" : "");
     }
 
     private int getSkillBonus(final CreatureSkill skill,
