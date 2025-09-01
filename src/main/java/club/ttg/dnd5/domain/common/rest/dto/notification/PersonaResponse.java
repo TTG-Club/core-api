@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PersonaRequest {
+public class PersonaResponse {
     private String id;
     private String name;
     private String image;

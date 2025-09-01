@@ -6,4 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class NotificationResponse {
+    private String persona;
+    private String image;
+    private String text;
 }

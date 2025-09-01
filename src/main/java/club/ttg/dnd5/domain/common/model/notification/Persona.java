@@ -9,7 +9,9 @@ import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 
 @Getter
@@ -28,4 +30,6 @@ public class Persona {
 
     @CreatedBy
     private String username;
+    @CreatedDate
+    private LocalDateTime createdAt;
 }
