@@ -103,4 +103,16 @@ databaseChangeLog:
             constraintName: FK_CLASS_ON_SOURCE
             referencedColumnNames: source_acronym
             referencedTableName: books
-
+  - changeSet:
+      id: 2025-01-01-full-name-search-view
+      author: ylp
+      changes:
+        - sqlFile:
+            path: db/changelog/2025/09/sql/01-update-full-name-search-view.sql
+            relativeToChangelogFile: false
+            splitStatements: false
+            endDelimiter: ;
+      rollback:
+        - sql:
+            sql: |
+              DROP VIEW IF EXISTS full_name_search_view;
