@@ -1,5 +1,6 @@
 package club.ttg.dnd5.config;
 
+import club.ttg.dnd5.config.properties.SecurityProperties;
 import club.ttg.dnd5.security.JwtAuthFilter;
 import club.ttg.dnd5.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
@@ -40,15 +41,7 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
     private final UserService userService;
     private final JwtAuthFilter jwtAuthFilter;
-
-    private static final String[] IGNORED = {
-            "/v3/api-docs/**",
-            "/swagger-ui.html",
-            "/swagger-ui/**",
-            "/scalar-ui.html",
-            "/api/auth/**",
-            "/api/v2/**"
-    };
+    private final SecurityProperties securityProperties;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -56,7 +49,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(this::getCorsConfigurer))
             .authorizeHttpRequests(request -> request
-                .requestMatchers(IGNORED).permitAll()
+                .requestMatchers(securityProperties.getIgnoredPaths().toArray(new String[0])).permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
