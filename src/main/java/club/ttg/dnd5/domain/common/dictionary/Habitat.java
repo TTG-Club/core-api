@@ -42,7 +42,7 @@ public enum Habitat {
     PLANAR_PANDEMONIUM("План (Пандемониум)"),
     PLANAR_SHADOWFELL("План (Царство теней)"),
     PLANAR_UPPER_PLANES("План (верхние планы)"),
-    PLANAR_ELEMENTAL_PLANE_OF_WATER("План (Стихийный план воздуха)"),
+    PLANAR_ELEMENTAL_PLANE_OF_WATER("План (Стихийный план воды)"),
     PLANAR_YSGARD("План (Асгард)"),
     SWAMP("Болота"),
     UNDERDARK("Подземье"),
