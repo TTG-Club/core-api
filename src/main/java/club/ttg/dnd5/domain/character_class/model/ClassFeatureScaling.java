@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.character_class.model;
 
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,8 +12,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ClassFeatureScaling {
-    private Integer level;
+    @Schema(description = "Уровень улучшения", example = "5")
+    private int level;
+
+    @Schema(description = "Название улучшения", example = "Мультиатака (3)")
     private String name;
+
+    @Schema(description = "Описание улучшения на этом уровне")
     private String description;
+
+    @Schema(description = "Всплывающая подсказка для улучшения", example = "Дополнительное использование")
     private String tooltip;
 }

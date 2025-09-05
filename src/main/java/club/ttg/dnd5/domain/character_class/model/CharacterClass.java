@@ -7,6 +7,8 @@ import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -43,6 +45,27 @@ public class CharacterClass extends NamedEntity {
     private List<CharacterClass> subclasses;
 
     private Dice hitDice;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private ArmorProficiency armorProficiency;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private WeaponProficiency weaponProficiency;
+
+    private String toolProficiency;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private SkillProficiency skillProficiency;
+
+    @Column(columnDefinition = "TEXT")
+    private String equipment;
+
+    @Enumerated(EnumType.STRING)
+    private CasterType casterType;
+
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Set<Ability> savingThrows;

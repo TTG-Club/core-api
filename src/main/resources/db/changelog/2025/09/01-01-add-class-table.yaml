@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 1756749178676-1
+      id: 01-01-add-class-table-1
       author: ylp
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
@@ -51,6 +51,24 @@ databaseChangeLog:
                   name: hit_dice
                   type: SMALLINT
               - column:
+                  name: armor_proficiency
+                  type: jsonb
+              - column:
+                  name: weapon_proficiency
+                  type: jsonb
+              - column:
+                  name: tool_proficiency
+                  type: VARCHAR(255)
+              - column:
+                  name: skill_proficiency
+                  type: jsonb
+              - column:
+                  name: equipment
+                  type: TEXT
+              - column:
+                  name: caster_type
+                  type: VARCHAR(255)
+              - column:
                   name: saving_throws
                   type: jsonb
               - column:
@@ -67,7 +85,7 @@ databaseChangeLog:
                   type: BIGINT
             tableName: class
   - changeSet:
-      id: 1756749178676-2
+      id: 01-01-add-class-table-2
       author: ylp
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
@@ -82,7 +100,7 @@ databaseChangeLog:
             indexName: class_name_index
             tableName: class
   - changeSet:
-      id: 1756749178676-3
+      id: 01-01-add-class-table-3
       author: ylp
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
@@ -93,7 +111,7 @@ databaseChangeLog:
             referencedColumnNames: url
             referencedTableName: class
   - changeSet:
-      id: 1756749178676-4
+      id: 01-01-add-class-table-4
       author: ylp
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
@@ -103,6 +121,7 @@ databaseChangeLog:
             constraintName: FK_CLASS_ON_SOURCE
             referencedColumnNames: source_acronym
             referencedTableName: books
+
   - changeSet:
       id: 2025-01-01-full-name-search-view
       author: ylp

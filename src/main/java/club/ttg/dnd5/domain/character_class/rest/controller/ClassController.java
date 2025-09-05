@@ -4,6 +4,8 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
+import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -83,4 +85,10 @@ public class ClassController {
         return classService.findFormByUrl(url);
     }
 
+    @Operation(summary = "Предпросмотр класса")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public ClassDetailedResponse preview(@RequestBody ClassRequest request) {
+        return classService.preview(request);
+    }
 }

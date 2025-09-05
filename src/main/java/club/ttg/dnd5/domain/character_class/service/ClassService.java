@@ -46,7 +46,7 @@ public class ClassService {
 
     public ClassDetailedResponse save(ClassRequest request) {
         if (exists(request.getUrl())) {
-            throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
+            throw new EntityExistException(String.format("Класс с url %s уже существует", request.getUrl()));
         }
 
         CharacterClass parent = Optional.ofNullable(request.getParentUrl())
@@ -95,5 +95,16 @@ public class ClassService {
 
     public ClassRequest findFormByUrl(String url) {
         return classMapper.toRequest(findByUrl(url));
+    }
+
+    public ClassDetailedResponse preview(ClassRequest request) {
+        CharacterClass parent = Optional.ofNullable(request.getParentUrl())
+                .map(this::findByUrl)
+                .orElse(null);
+        Book book = Optional.ofNullable(request.getSource())
+                .map(SourceRequest::getUrl)
+                .map(bookService::findByUrl)
+                .orElse(null);
+        return classMapper.toDetailedResponse(classMapper.toEntity(request, parent, book));
     }
 }
