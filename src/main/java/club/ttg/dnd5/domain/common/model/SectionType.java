@@ -14,7 +14,8 @@ public enum SectionType {
     BESTIARY("bestiary"),
     MAGIC_ITEM("magic-item"),
     ITEM("item"),
-    GLOSSARY("glossary");
+    GLOSSARY("glossary"),
+    CLASS("class");
 
     @Getter
     @JsonValue
