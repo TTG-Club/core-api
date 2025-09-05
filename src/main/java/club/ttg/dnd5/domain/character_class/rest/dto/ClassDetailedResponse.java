@@ -49,7 +49,7 @@ public class ClassDetailedResponse extends BaseResponse {
     private String equipment;
 
     @Schema(description = "Спасброски класса")
-    private Set<String> savingThrows;
+    private String savingThrows;
 
     @Schema(description = "Список особенностей класса")
     private List<ClassFeatureDto> features;

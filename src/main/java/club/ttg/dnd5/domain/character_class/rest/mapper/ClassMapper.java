@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
@@ -19,6 +20,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -81,6 +83,9 @@ public interface ClassMapper {
     @interface ToEntityMapping {
     }
 
+    default String toSavingThrowsString(Collection<Ability> savingThrows) {
+        return savingThrows.stream().map(Ability::toString).collect(Collectors.joining(","));
+    }
 
     default DiceOptionDto toDiceOptionDto(Dice dice) {
         return DiceOptionDto.builder()
