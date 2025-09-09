@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.magic.service;
 
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
@@ -11,7 +12,7 @@ public interface MagicItemService {
 
     MagicItemDetailResponse getItem(String url);
 
-    Collection<MagicItemShortResponse> getItems(String searchLine);
+    Collection<MagicItemShortResponse> getItems(String searchLine, final SearchBody searchBody);
 
     String addItem(MagicItemRequest itemDto);
 

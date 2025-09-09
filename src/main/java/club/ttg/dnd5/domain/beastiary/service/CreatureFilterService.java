@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 public class CreatureFilterService extends AbstractSavedFilterService<CreatureSavedFilter> {
     private static final String FILTER_VERSION = "1.0";
-
+    private static final int TOP_TRAITS = 10;
     private final CreatureRepository creatureRepository;
 
     public CreatureFilterService(CreatureSavedFilterRepository creatureSavedFilterRepository,
@@ -30,14 +30,14 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
         List<Creature> creatures = creatureRepository.findAll();
 
         CreatureTraitsStats stats = new CreatureTraitsStats();
-        List<String> top4Traits = stats.getTopTraits(creatures, 4);
+        List<String> topTraits = stats.getTopTraits(creatures, TOP_TRAITS);
 
         return new FilterInfo(List.of(
                 CrFilterGroup.getDefault(),
-                CreatureAlignmentFilterGroup.getDefault(),
-                CreatureSizeFilterGroup.getDefault(),
                 CreatureTypeFilterGroup.getDefault(),
-                CreatureTraitsFilterGroup.getDefault(top4Traits),
+                CreatureSizeFilterGroup.getDefault(),
+                CreatureAlignmentFilterGroup.getDefault(),
+                CreatureTraitsFilterGroup.getDefault(topTraits),
                 CreatureOtherFilterGroup.getDefault(),
                 CreatureSensesFilterGroup.getDefault(),
                 CreatureHabittatFilterGroup.getDefault()

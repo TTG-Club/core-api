@@ -3,6 +3,9 @@ package club.ttg.dnd5.domain.background.rest.controller;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
+import club.ttg.dnd5.domain.background.service.BackgroundFilterService;
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +27,7 @@ import java.util.Collection;
 @RequestMapping("/api/v2/backgrounds")
 @Tag(name = "Предыстории", description = "REST API предысторий персонажа")
 public class BackgroundController {
+    private final BackgroundFilterService backgroundFilterService;
     private final BackgroundService backgroundService;
 
     @ApiResponses(value = {
@@ -57,8 +61,14 @@ public class BackgroundController {
             @Valid
             @Size(min = 2)
             @Schema( description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine) {
-        return backgroundService.getBackgrounds(searchLine);
+            String searchLine,
+            @RequestBody(required = false) SearchBody searchBody) {
+        return backgroundService.getBackgrounds(searchLine, searchBody);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return backgroundFilterService.getDefaultFilterInfo();
     }
 
     @Operation(summary = "Создание предыстории", description = "Возвращает ссылку на созданную предысторию")

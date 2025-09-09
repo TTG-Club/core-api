@@ -4,7 +4,10 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
+import club.ttg.dnd5.domain.feat.service.FeatFilterService;
 import club.ttg.dnd5.domain.feat.service.FeatService;
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,6 +28,7 @@ import java.util.Collection;
 @Tag(name = "Черты ", description = "REST API черт персонажа")
 public class FeatController {
     private final FeatService featService;
+    private final FeatFilterService featFilterService;
 
     @ResponseStatus(HttpStatus.OK)
     @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
@@ -58,8 +62,15 @@ public class FeatController {
                                                   @Valid
                                                   @Size(min = 2)
                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine) {
-        return featService.getFeats(searchLine);
+                                                  String searchLine,
+                                                  @RequestBody(required = false) SearchBody searchBody
+    ) {
+        return featService.getFeats(searchLine, searchBody);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return featFilterService.getDefaultFilterInfo();
     }
 
     @Secured("ADMIN")
