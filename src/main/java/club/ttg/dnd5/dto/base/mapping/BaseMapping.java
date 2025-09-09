@@ -17,6 +17,7 @@ public interface BaseMapping {
 
     @Retention(RetentionPolicy.SOURCE)
     @Mapping(source = "source.type.group", target = "source.group.name")
+    @Mapping(target = "source.group.english", ignore = true)
     @Mapping(source = "source.type.label", target = "source.group.label")
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.englishName", target = "source.name.english")
