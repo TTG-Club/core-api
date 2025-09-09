@@ -30,4 +30,11 @@ public class DiceOptionDto extends BaseSelectOptionDto {
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     private int maxValue;
+
+    @Schema(
+            example = "5",
+            description = "Среднее значение на кубе",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    private int avg;
 }
