@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.magic.rest.dto.filter;
 
-import club.ttg.dnd5.domain.beastiary.rest.dto.filter.CreatureOtherFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -12,62 +11,79 @@ import java.util.List;
 
 @Getter
 @Setter
-public class AttunementFilterGroup extends AbstractCustomQueryFilterGroup {
+public class AttunementFilterGroup extends AbstractCustomQueryFilterGroup
+{
     public static final String NAME = "Прочее";
 
-    public AttunementFilterGroup(final List<? extends AbstractCustomQueryFilterItem> filters) {
+    public AttunementFilterGroup(final List<? extends AbstractCustomQueryFilterItem> filters)
+    {
         super(filters);
     }
 
-
     @Override
-    public String getName() {
+    public String getName()
+    {
         return NAME;
     }
 
-    public static CreatureOtherFilterGroup getDefault() {
-        return new CreatureOtherFilterGroup(
-            List.of(
-                new AttunementFilterGroup.AttunementTrueFilterSingleton(),
-                new ChargesFilterSingleton())
+    /** Factory with both filters enabled */
+    public static AttunementFilterGroup getDefault()
+    {
+        return new AttunementFilterGroup(
+                List.of(
+                        new AttunementTrueFilterSingleton(),
+                        new ChargesFilterSingleton()
+                )
         );
     }
 
-    public static class AttunementTrueFilterSingleton extends AbstractCustomQueryFilterItem {
-
+    /** Filters items that require attunement */
+    public static class AttunementTrueFilterSingleton extends AbstractCustomQueryFilterItem
+    {
         private static final String NAME = "Настройка";
 
-        public AttunementTrueFilterSingleton() {
+        public AttunementTrueFilterSingleton()
+        {
             super(NAME, null);
         }
 
         @Override
-        public BooleanExpression getPositiveQuery() {
-            return Expressions.booleanTemplate("attunement ->> requires == 'true'");
+        public BooleanExpression getPositiveQuery()
+        {
+            return Expressions.booleanTemplate(
+                    "attunement @> cast('{\"requires\": true}' as jsonb)"
+            );
         }
 
         @Override
-        public BooleanExpression getNegativeQuery() {
-            return Expressions.booleanTemplate("attunement ->> requires == 'false'");
+        public BooleanExpression getNegativeQuery()
+        {
+            return Expressions.booleanTemplate(
+                    "NOT (attunement @> cast('{\"requires\": true}' as jsonb))"
+            );
         }
     }
 
-    public static class ChargesFilterSingleton extends AbstractCustomQueryFilterItem {
-
+    /** Filters by charges count */
+    public static class ChargesFilterSingleton extends AbstractCustomQueryFilterItem
+    {
         private static final String NAME = "Заряды";
 
-        public ChargesFilterSingleton() {
+        public ChargesFilterSingleton()
+        {
             super(NAME, null);
         }
 
         @Override
-        public BooleanExpression getPositiveQuery() {
-            return Expressions.booleanTemplate("charges > 0");
+        public BooleanExpression getPositiveQuery()
+        {
+            return Expressions.booleanTemplate("coalesce(charges, 0) > 0");
         }
 
         @Override
-        public BooleanExpression getNegativeQuery() {
-            return Expressions.booleanTemplate("charges = 0 OR charges IS NULL");
+        public BooleanExpression getNegativeQuery()
+        {
+            return Expressions.booleanTemplate("coalesce(charges, 0) = 0");
         }
     }
 }
