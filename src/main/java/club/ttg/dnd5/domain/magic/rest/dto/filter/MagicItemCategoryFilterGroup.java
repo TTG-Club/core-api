@@ -11,6 +11,7 @@ import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,6 +47,7 @@ public class MagicItemCategoryFilterGroup extends AbstractFilterGroup<MagicItemC
         return new MagicItemCategoryFilterGroup(
                 Arrays.stream(MagicItemCategory.values())
                         .map(FilterItem::new)
+                        .sorted(Comparator.comparing(FilterItem::getName))
                         .collect(Collectors.toList()));
     }
 

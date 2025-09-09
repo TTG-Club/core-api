@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.magic.model.filter.MagicItemSavedFilter;
 import club.ttg.dnd5.domain.magic.repository.MagicItemSavedFilterRepository;
-import club.ttg.dnd5.domain.magic.rest.dto.filter.AttunementFilterGroup;
+import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemOtherFilterGroup;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemCategoryFilterGroup;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.RarityFilterGroup;
 import club.ttg.dnd5.domain.user.service.UserService;
@@ -26,7 +26,7 @@ public class MagicItemFilterService extends AbstractSavedFilterService<MagicItem
         return new FilterInfo(List.of(
                 MagicItemCategoryFilterGroup.getDefault(),
                 RarityFilterGroup.getDefault(),
-                AttunementFilterGroup.getDefault()
+                MagicItemOtherFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }
