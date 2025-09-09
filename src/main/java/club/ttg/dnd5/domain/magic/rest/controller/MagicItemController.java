@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
+import club.ttg.dnd5.domain.magic.service.MagicItemFilterService;
 import club.ttg.dnd5.domain.magic.service.MagicItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,6 +26,7 @@ import java.util.Collection;
 @RequestMapping("/api/v2/magic-items")
 @Tag(name = "Магически предметы", description = "REST API магические предметы и артефакты")
 public class MagicItemController {
+    private final MagicItemFilterService magicItemFilterService;
     private final MagicItemService magicItemService;
     /**
      * Проверка существования вида по URL.
@@ -67,8 +71,15 @@ public class MagicItemController {
                                                        @Valid
                                                        @Size(min = 2)
                                                        @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                       String searchLine) {
-        return magicItemService.getItems(searchLine);
+                                                       String searchLine,
+                                                       @RequestBody(required = false) SearchBody searchBody
+    ) {
+        return magicItemService.getItems(searchLine, searchBody);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return magicItemFilterService.getDefaultFilterInfo();
     }
 
     @Secured("ADMIN")

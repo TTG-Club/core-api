@@ -5,31 +5,27 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.rest.mapper.FeatMapper;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class FeatServiceImpl implements FeatService {
-    private static final Sort DEFAULT_SORT = Sort.by("category", "name");
     private final FeatRepository featRepository;
+    private final FeatQueryDslSearchService featQueryDslSearchService;
     private final BookService bookService;
     private final FeatMapper featMapper;
 
@@ -39,18 +35,11 @@ public class FeatServiceImpl implements FeatService {
     }
 
     @Override
-    public Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return featRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
-                })
-                .orElseGet(() -> featRepository.findAll(DEFAULT_SORT))
+    public Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody) {
+        return featQueryDslSearchService.search(searchLine, searchBody)
                 .stream()
                 .map(featMapper::toShort)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Secured("ADMIN")
