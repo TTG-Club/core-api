@@ -1,0 +1,137 @@
+databaseChangeLog:
+  - changeSet:
+      id: 01-01-add-class-table-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_class
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: english
+                  type: VARCHAR(255)
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: parent_url
+                  type: VARCHAR(255)
+              - column:
+                  name: hit_dice
+                  type: SMALLINT
+              - column:
+                  name: armor_proficiency
+                  type: jsonb
+              - column:
+                  name: weapon_proficiency
+                  type: jsonb
+              - column:
+                  name: tool_proficiency
+                  type: VARCHAR(255)
+              - column:
+                  name: skill_proficiency
+                  type: jsonb
+              - column:
+                  name: equipment
+                  type: TEXT
+              - column:
+                  name: caster_type
+                  type: VARCHAR(255)
+              - column:
+                  name: saving_throws
+                  type: jsonb
+              - column:
+                  name: features
+                  type: jsonb
+              - column:
+                  name: class_table
+                  type: jsonb
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+              - column:
+                  name: source_page
+                  type: BIGINT
+            tableName: class
+  - changeSet:
+      id: 01-01-add-class-table-2
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+            indexName: class_name_index
+            tableName: class
+  - changeSet:
+      id: 01-01-add-class-table-3
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: parent_url
+            baseTableName: class
+            constraintName: FK_CLASS_ON_PARENT_URL
+            referencedColumnNames: url
+            referencedTableName: class
+  - changeSet:
+      id: 01-01-add-class-table-4
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: source
+            baseTableName: class
+            constraintName: FK_CLASS_ON_SOURCE
+            referencedColumnNames: source_acronym
+            referencedTableName: books
+
+  - changeSet:
+      id: 2025-01-01-full-name-search-view
+      author: ylp
+      changes:
+        - sqlFile:
+            path: db/changelog/2025/09/sql/01-update-full-name-search-view.sql
+            relativeToChangelogFile: false
+            splitStatements: false
+            endDelimiter: ;
+      rollback:
+        - sql:
+            sql: |
+              DROP VIEW IF EXISTS full_name_search_view;
