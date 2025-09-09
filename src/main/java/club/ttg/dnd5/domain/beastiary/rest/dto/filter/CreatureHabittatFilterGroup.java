@@ -11,17 +11,18 @@ import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class CreatureHabittatFilterGroup extends AbstractFilterGroup<Habitat, CreatureHabittatFilterGroup.CreatureHabittatFilterItem> {
+public class CreatureHabittatFilterGroup extends AbstractFilterGroup<Habitat, CreatureHabittatFilterGroup.CreatureHabitatFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("section");
 
-    public CreatureHabittatFilterGroup(List<CreatureHabittatFilterItem> filters) {
+    public CreatureHabittatFilterGroup(List<CreatureHabitatFilterItem> filters) {
         super(filters);
     }
 
@@ -75,12 +76,13 @@ public class CreatureHabittatFilterGroup extends AbstractFilterGroup<Habitat, Cr
     public static CreatureHabittatFilterGroup getDefault() {
         return new CreatureHabittatFilterGroup(
                 Arrays.stream(Habitat.values())
-                        .map(CreatureHabittatFilterGroup.CreatureHabittatFilterItem::new)
+                        .map(CreatureHabitatFilterItem::new)
+                        .sorted(Comparator.comparing(CreatureHabitatFilterItem::getName))
                         .collect(Collectors.toList()));
     }
 
-    public static class CreatureHabittatFilterItem extends AbstractFilterItem<Habitat> {
-        public CreatureHabittatFilterItem(Habitat value) {
+    public static class CreatureHabitatFilterItem extends AbstractFilterItem<Habitat> {
+        public CreatureHabitatFilterItem(Habitat value) {
             super(value.getName(), value, null);
         }
     }

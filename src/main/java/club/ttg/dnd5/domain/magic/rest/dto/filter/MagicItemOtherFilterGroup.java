@@ -11,11 +11,11 @@ import java.util.List;
 
 @Getter
 @Setter
-public class AttunementFilterGroup extends AbstractCustomQueryFilterGroup
+public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
 {
     public static final String NAME = "Прочее";
 
-    public AttunementFilterGroup(final List<? extends AbstractCustomQueryFilterItem> filters)
+    public MagicItemOtherFilterGroup(final List<? extends AbstractCustomQueryFilterItem> filters)
     {
         super(filters);
     }
@@ -26,18 +26,18 @@ public class AttunementFilterGroup extends AbstractCustomQueryFilterGroup
         return NAME;
     }
 
-    /** Factory with both filters enabled */
-    public static AttunementFilterGroup getDefault()
+    public static MagicItemOtherFilterGroup getDefault()
     {
-        return new AttunementFilterGroup(
+        return new MagicItemOtherFilterGroup(
                 List.of(
                         new AttunementTrueFilterSingleton(),
-                        new ChargesFilterSingleton()
+                        new ChargesFilterSingleton(),
+                        new CurseFilterSingleton(),
+                        new ConsumableFilterSingleton()
                 )
         );
     }
 
-    /** Filters items that require attunement */
     public static class AttunementTrueFilterSingleton extends AbstractCustomQueryFilterItem
     {
         private static final String NAME = "Настройка";
@@ -84,6 +84,53 @@ public class AttunementFilterGroup extends AbstractCustomQueryFilterGroup
         public BooleanExpression getNegativeQuery()
         {
             return Expressions.booleanTemplate("coalesce(charges, 0) = 0");
+        }
+    }
+
+    public static class CurseFilterSingleton extends AbstractCustomQueryFilterItem
+    {
+        private static final String NAME = "Проклятие";
+
+        public CurseFilterSingleton()
+        {
+            super(NAME, null);
+        }
+
+        @Override
+        public BooleanExpression getPositiveQuery()
+        {
+            // boolean column; NULL-safe
+            return Expressions.booleanTemplate("curse IS TRUE");
+        }
+
+        @Override
+        public BooleanExpression getNegativeQuery()
+        {
+            // false OR NULL considered as "not cursed"
+            return Expressions.booleanTemplate("curse IS NOT TRUE");
+        }
+    }
+
+    public static class ConsumableFilterSingleton extends AbstractCustomQueryFilterItem
+    {
+        private static final String NAME = "Расходуемый";
+
+        public ConsumableFilterSingleton()
+        {
+            super(NAME, null);
+        }
+
+        @Override
+        public BooleanExpression getPositiveQuery()
+        {
+            // boolean column; NULL-safe
+            return Expressions.booleanTemplate("consumable IS TRUE");
+        }
+
+        @Override
+        public BooleanExpression getNegativeQuery()
+        {
+            return Expressions.booleanTemplate("consumable IS NOT TRUE");
         }
     }
 }
