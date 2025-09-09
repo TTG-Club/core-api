@@ -5,7 +5,6 @@ import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.StringPath;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
@@ -19,8 +18,6 @@ import java.util.stream.Collectors;
 @Setter
 public class SkillFilterGroup extends AbstractFilterGroup<Skill, SkillFilterGroup.AbilityFilterItem> {
 
-    private static final StringPath PATH = Expressions.stringPath("skillProficiencies");
-
     public SkillFilterGroup(List<AbilityFilterItem> filters) {
         super(filters);
     }
@@ -31,10 +28,27 @@ public class SkillFilterGroup extends AbstractFilterGroup<Skill, SkillFilterGrou
             return TRUE_EXPRESSION;
         }
         Set<Skill> positiveValues = getPositive();
-        BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(Skill::toString).collect(Collectors.toSet()));
+        BooleanExpression result = TRUE_EXPRESSION;
+        if (CollectionUtils.isNotEmpty(positiveValues)) {
+            String jsonArray = positiveValues.stream()
+                    .map(Skill::toString)
+                    .map(s -> "\"" + s + "\"")
+                    .collect(Collectors.joining(",", "[", "]"));
+            result = Expressions.booleanTemplate(
+                    "skill_proficiencies @> cast({0} as jsonb)", jsonArray
+            );
+        }
+        // отрицательные — чуть сложнее, можно через not @>
         Set<Skill> negativeValues = getNegative();
-        return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues.stream().map(Skill::toString).collect(Collectors.toSet())));
-
+        if (CollectionUtils.isNotEmpty(negativeValues)) {
+            for (Skill neg : negativeValues) {
+                String json = "[\"" + neg.toString() + "\"]";
+                result = result.and(Expressions.booleanTemplate(
+                        "not (skill_proficiencies @> cast({0} as jsonb))", json
+                ));
+            }
+        }
+        return result;
     }
 
     @Override
