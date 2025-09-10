@@ -40,7 +40,7 @@ public class MagicItemCategoryFilterGroup extends AbstractFilterGroup<MagicItemC
 
     @Override
     public String getName() {
-        return "Редкость";
+        return "Категория";
     }
 
     public static MagicItemCategoryFilterGroup getDefault() {
