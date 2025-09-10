@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchService<MagicItem, QMagicItem> {
     private static final QMagicItem MAGIC_ITEM = QMagicItem.magicItem;
-    private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{MAGIC_ITEM.rarity.asc(), MAGIC_ITEM.name.asc()};
 
     public MagicItemQueryDslSearchService(MagicItemFilterService filterService, EntityManager entityManager) {
         super(filterService, entityManager, MAGIC_ITEM);
@@ -18,6 +17,9 @@ public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchServic
 
     @Override
     protected OrderSpecifier<?>[] getOrder() {
-        return ORDER;
+        return new OrderSpecifier[]{
+                MAGIC_ITEM.rarity.asc(),
+                MAGIC_ITEM.name.asc()
+        };
     }
 }
