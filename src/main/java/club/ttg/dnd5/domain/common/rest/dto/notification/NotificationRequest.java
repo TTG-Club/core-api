@@ -9,7 +9,7 @@ import lombok.Setter;
 public class NotificationRequest {
     private String id;
     private NotificationType type;
-    private String personAId;
+    private String personaId;
     private String text;
     private String before;
     private String after;

@@ -98,6 +98,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/08/13-01-change-column-lair.yaml
   - include:
+      file: db/changelog/2025/08/13-02-add-notification.yaml
+  - include:
       file: db/changelog/2025/08/21-01-update-search-view.yaml
   - include:
       file: db/changelog/2025/08/23-01-add-gallery.yaml
@@ -108,4 +110,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/09/01-01-add-class-table.yaml
   - include:
-      file: db/changelog/2025/08/13-02-add-notification.yaml
+      file: db/changelog/2025/09/11-01-add-column-view.yaml
