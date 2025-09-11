@@ -5,11 +5,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
@@ -18,8 +20,9 @@ import java.time.LocalDateTime;
 @Entity
 public class Notification {
     @Id
-    @GeneratedValue
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
     @ManyToOne(targetEntity = Persona.class)
     private Persona persona;
 
@@ -33,7 +36,14 @@ public class Notification {
     private LocalDateTime before;
 
     private boolean disabled;
+    /**
+     * Количество показов
+     */
+    private long view;
 
     @CreatedBy
     private String username;
+
+    @CreatedDate
+    private LocalDateTime createdAt;
 }
