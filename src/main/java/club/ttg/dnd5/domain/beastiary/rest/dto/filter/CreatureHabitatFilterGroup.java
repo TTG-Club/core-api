@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class CreatureHabittatFilterGroup extends AbstractFilterGroup<Habitat, CreatureHabittatFilterGroup.CreatureHabitatFilterItem> {
+public class CreatureHabitatFilterGroup extends AbstractFilterGroup<Habitat, CreatureHabitatFilterGroup.CreatureHabitatFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("section");
 
-    public CreatureHabittatFilterGroup(List<CreatureHabitatFilterItem> filters) {
+    public CreatureHabitatFilterGroup(List<CreatureHabitatFilterItem> filters) {
         super(filters);
     }
 
@@ -73,8 +73,8 @@ public class CreatureHabittatFilterGroup extends AbstractFilterGroup<Habitat, Cr
         return "Место обитания";
     }
 
-    public static CreatureHabittatFilterGroup getDefault() {
-        return new CreatureHabittatFilterGroup(
+    public static CreatureHabitatFilterGroup getDefault() {
+        return new CreatureHabitatFilterGroup(
                 Arrays.stream(Habitat.values())
                         .map(CreatureHabitatFilterItem::new)
                         .sorted(Comparator.comparing(CreatureHabitatFilterItem::getName))
