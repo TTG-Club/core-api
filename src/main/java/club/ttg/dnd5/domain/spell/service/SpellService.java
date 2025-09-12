@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -18,7 +20,6 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -27,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class SpellService {
     private final BookService bookService;
     private final SpellRepository spellRepository;
     private final SpellMapper spellMapper;
-    private final SpellQueryDslSearchService spellQueryDslSearchService;
+    private final SpellQueryDslSearchService spellDslSearchService;
 
     public boolean existOrThrow(String url) {
         if (!spellRepository.existsById(url)) {
@@ -45,14 +45,25 @@ public class SpellService {
         return true;
     }
 
-    public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
-        return spellQueryDslSearchService.search(searchLine, searchBody).stream()
+    public PageResponse<SpellShortResponse> search(String searchLine,
+                                                   final int page,
+                                                   final int limit,
+                                                   final String[] sort,
+                                                   SearchBody searchBody) {
+        var responseItems = spellDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
+                .stream()
                 .map(spellMapper::toShort)
-                .collect(Collectors.toList());
-    }
-
-    public List<Spell> findAll(Sort sort) {
-        return spellRepository.findAll(sort);
+                .toList();
+        var pagination = Pagination.of(page,
+                limit,
+                spellRepository.count(),
+                spellDslSearchService.count(searchLine, searchBody)
+        );
+        return PageResponse.<SpellShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     public SpellDetailedResponse findDetailedByUrl(String url) {

@@ -1,18 +1,17 @@
 package club.ttg.dnd5.domain.magic.service;
 
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
-
-import java.util.Collection;
 
 public interface MagicItemService {
     boolean existsByUrl(String url);
 
     MagicItemDetailResponse getItem(String url);
 
-    Collection<MagicItemShortResponse> getItems(String searchLine, final SearchBody searchBody);
+    PageResponse<MagicItemShortResponse> getItems(String searchLine, int page, int limit, String[] sort,  final SearchBody searchBody);
 
     String addItem(MagicItemRequest itemDto);
 

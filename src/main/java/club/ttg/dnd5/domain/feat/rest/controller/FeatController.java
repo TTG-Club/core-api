@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
@@ -19,8 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
@@ -58,14 +57,20 @@ public class FeatController {
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/search")
-    public Collection<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
-                                                  @Valid
-                                                  @Size(min = 2)
-                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine,
-                                                  @RequestBody(required = false) SearchBody searchBody
+    public PageResponse<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
+        @Valid
+         @Size(min = 2)
+         @Schema( description = "Строка поиска, если null-отдаются все сущности")
+         String searchLine,
+         @RequestParam(required = false, defaultValue = "1")
+         int page,
+         @RequestParam(required = false, defaultValue = "120")
+         int limit,
+         @RequestParam(required = false, defaultValue = "name")
+         String[] sort,
+         @RequestBody(required = false) SearchBody searchBody
     ) {
-        return featService.getFeats(searchLine, searchBody);
+        return featService.getFeats(searchLine, page, limit, sort, searchBody);
     }
 
     @GetMapping("/filters")

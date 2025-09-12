@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.item.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
@@ -15,8 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
@@ -64,12 +64,20 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
     })
     @PostMapping("/search")
-    public Collection<ItemShortResponse> getItems(@RequestParam(name = "query", required = false)
-                                                  @Valid
-                                                  @Size(min = 2)
-                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine) {
-        return itemService.getItems(searchLine);
+    public PageResponse<ItemShortResponse> getItems(@RequestParam(name = "query", required = false)
+        @Valid
+        @Size(min = 2)
+        @Schema( description = "Строка поиска, если null-отдаются все сущности")
+        String searchLine,
+        @RequestParam(required = false, defaultValue = "1")
+        int page,
+        @RequestParam(required = false, defaultValue = "120")
+        int limit,
+        @RequestParam(required = false, defaultValue = "name")
+        String[] sort,
+        @RequestBody(required = false) SearchBody searchBody
+    ) {
+        return itemService.getItems(searchLine, page, limit, sort, searchBody);
     }
 
     @Secured("ADMIN")

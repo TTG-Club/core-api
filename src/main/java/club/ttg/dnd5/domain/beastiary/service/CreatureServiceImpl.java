@@ -11,6 +11,8 @@ import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -41,11 +43,25 @@ public class CreatureServiceImpl implements CreatureService {
     }
 
     @Override
-    public List<CreatureShortResponse> search(final String searchLine, final SearchBody searchBody) {
-        return creatureQueryDslSearchService.search(searchLine, searchBody)
+    public PageResponse<CreatureShortResponse> search(final String searchLine,
+                                                      final int page,
+                                                      final int limit,
+                                                      final String[] sort,
+                                                      final SearchBody searchBody) {
+        var responseItems = creatureQueryDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
                 .stream()
                 .map(creatureMapper::toShort)
                 .toList();
+        var pagination = Pagination.of(page,
+                limit,
+                creatureRepository.count(),
+                creatureQueryDslSearchService.count(searchLine, searchBody)
+        );
+        return PageResponse.<CreatureShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Override

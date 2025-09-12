@@ -36,22 +36,51 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                or {0}.alternative ilike ''%%{2}%%'')
             """;
 
-    public List<E> search(String searchLine, SearchBody searchBody) {
-        BooleanExpression predicate = Optional.ofNullable(searchLine)
+    public List<E> search(String searchLine,
+                          int page,
+                          int limit,
+                          String[] sort,
+                          SearchBody searchBody) {
+        BooleanExpression predicate = getPredicate(searchLine, searchBody);
+
+        JPASQLQuery<?> query = new JPASQLQuery<Void>(entityManager, dialect);
+        return query.select(entityPath)
+                .from(entityPath)
+                .where(predicate)
+                .orderBy(getOrder(sort))
+                .limit(limit)
+                .offset((long) Math.max(page - 1, 0) * limit)
+            .fetch();
+    }
+
+    public long count(String searchLine, SearchBody searchBody) {
+        BooleanExpression predicate = getPredicate(searchLine, searchBody);
+
+        Long total = new JPASQLQuery<Void>(entityManager, dialect)
+                .select(Expressions.numberTemplate(Long.class, "count(*)"))
+                .from(entityPath)
+                .where(predicate)
+                .fetchOne();
+
+        return total != null ? total : 0L;
+    }
+
+    private BooleanExpression getPredicate(String searchLine, SearchBody searchBody) {
+        return  Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
                 .map(line ->
-                        Expressions.booleanTemplate(MessageFormat.format(FIND_BY_SEARCH_LINE_QUERY, entityPath, line,
+                        Expressions.booleanTemplate(MessageFormat.format(
+                                FIND_BY_SEARCH_LINE_QUERY,
+                                entityPath,
+                                line,
                                 SwitchLayoutUtils.switchLayout(line))))
                 .orElse((BooleanTemplate) TRUE_EXPRESSION)
                 .and(Optional.ofNullable(searchBody)
                         .map(SearchBody::getFilter)
-                        .orElseGet(savedFilterService::getDefaultFilterInfo).getQuery());
-
-        JPASQLQuery<?> query = new JPASQLQuery<Void>(entityManager, dialect);
-        return query.select(entityPath).from(entityPath).where(predicate).orderBy(getOrder()).fetch();
-
+                        .orElseGet(savedFilterService::getDefaultFilterInfo)
+                        .getQuery());
     }
 
-    protected abstract OrderSpecifier<?>[] getOrder();
+    protected abstract OrderSpecifier<?>[] getOrder(String[] sort);
 }

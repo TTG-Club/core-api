@@ -7,6 +7,8 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
@@ -17,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.Objects;
 
 @RequiredArgsConstructor
@@ -35,11 +36,25 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     @Override
-    public Collection<BackgroundShortResponse> getBackgrounds(String searchLine, final SearchBody searchBody) {
-        return backgroundQueryDslSearchService.search(searchLine, searchBody)
+    public PageResponse<BackgroundShortResponse> getBackgrounds(String searchLine,
+                                                                final int page,
+                                                                final int limit,
+                                                                final String[] sort,
+                                                                final SearchBody searchBody) {
+        var responseItems = backgroundQueryDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
                 .stream()
                 .map(backgroundMapper::toShort)
                 .toList();
+        var pagination = Pagination.of(page,
+                limit,
+                backgroundRepository.count(),
+                backgroundQueryDslSearchService.count(searchLine, searchBody)
+        );
+        return PageResponse.<BackgroundShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Transactional

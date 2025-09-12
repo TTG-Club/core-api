@@ -3,14 +3,13 @@ package club.ttg.dnd5.domain.background.service;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
-
-import java.util.Collection;
 
 public interface BackgroundService {
     BackgroundDetailResponse getBackground(String backgroundUrl);
 
-    Collection<BackgroundShortResponse> getBackgrounds(String searchLine, final SearchBody searchBody);
+    PageResponse<BackgroundShortResponse> getBackgrounds(String searchLine, final int page, final int limit, final String[] sort, final SearchBody searchBody);
 
     String addBackground(BackgroundRequest backgroundDto);
 

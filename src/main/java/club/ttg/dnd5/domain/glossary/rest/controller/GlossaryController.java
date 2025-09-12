@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.glossary.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
@@ -18,8 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
-
-import java.util.List;
 
 @Tag(name = "Глоссарий", description = "REST API глоссарий")
 @RestController
@@ -41,13 +40,20 @@ public class GlossaryController {
 
     @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
     @PostMapping("/search")
-    public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "query", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestBody(required = false) SearchBody searchBody){
-        return glossaryService.search(searchLine, searchBody);
+    public PageResponse<GlossaryShortResponse> getGlossary(
+        @RequestParam(name = "query", required = false)
+        @Valid
+        @Size(min = 2)
+        @Schema( description = "Строка поиска, если null-отдаются все сущности")
+        String searchLine,
+        @RequestParam(required = false, defaultValue = "1")
+        int page,
+        @RequestParam(required = false, defaultValue = "120")
+        int limit,
+        @RequestParam(required = false, defaultValue = "name")
+        String[] sort,
+        @RequestBody(required = false) SearchBody searchBody){
+        return glossaryService.search(searchLine, page, limit, sort, searchBody);
     }
 
     @GetMapping("/{url}")
