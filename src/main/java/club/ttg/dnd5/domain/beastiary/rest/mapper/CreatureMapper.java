@@ -185,7 +185,8 @@ public interface CreatureMapper {
     default String toType(CreatureCategory category) {
         return category.getValues().stream()
                 .map(CreatureType::getName)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(", "))
+                + (StringUtils.hasText(category.getText()) ? " (" + category.getText() + ")" : "");
     }
 
     @Named("toArmor")
