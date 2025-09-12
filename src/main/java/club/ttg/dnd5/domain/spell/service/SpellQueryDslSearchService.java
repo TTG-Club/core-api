@@ -17,7 +17,7 @@ public class SpellQueryDslSearchService extends AbstractQueryDslSearchService<Sp
     }
 
     @Override
-    protected OrderSpecifier<?>[] getOrder(String[] sort) {
+    protected OrderSpecifier<?>[] getDefaultOrder() {
         return ORDER;
     }
 }

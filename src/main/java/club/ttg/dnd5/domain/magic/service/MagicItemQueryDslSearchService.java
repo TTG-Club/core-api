@@ -19,7 +19,7 @@ public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchServic
     }
 
     @Override
-    protected OrderSpecifier<?>[] getOrder(String[] sort) {
+    protected OrderSpecifier<?>[] getDefaultOrder() {
         NumberExpression<Integer> rarityRank = Expressions.numberTemplate(
                 Integer.class,
                 """
@@ -37,8 +37,7 @@ public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchServic
                 MAGIC_ITEM.rarity
         );
 
-        OrderSpecifier<Integer> rarityOrder =
-                new OrderSpecifier<>(Order.ASC, rarityRank);
+        OrderSpecifier<Integer> rarityOrder = new OrderSpecifier<>(Order.ASC, rarityRank);
 
         return new OrderSpecifier<?>[]{
                 rarityOrder,

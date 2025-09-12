@@ -19,7 +19,7 @@ public class ItemQueryDslSearchService extends AbstractQueryDslSearchService<Ite
     }
 
     @Override
-    protected OrderSpecifier<?>[] getOrder(String[] sort) {
+    protected OrderSpecifier<?>[] getDefaultOrder() {
         return ORDER;
     }
 }
