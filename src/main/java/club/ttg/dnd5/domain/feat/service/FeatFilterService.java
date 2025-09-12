@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.feat.service;
 import club.ttg.dnd5.domain.feat.model.filter.FeatSavedFilter;
 import club.ttg.dnd5.domain.feat.repository.FeatSavedFilterRepository;
 import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatCategoryFilterGroup;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatRepeatabilityFilterGroup;
+import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatOtherFilterGroup;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.user.service.UserService;
@@ -24,7 +24,7 @@ public class FeatFilterService extends AbstractSavedFilterService<FeatSavedFilte
     protected FilterInfo buildDefaultFilterInfo() {
         return new FilterInfo(List.of(
                 FeatCategoryFilterGroup.getDefault(),
-                FeatRepeatabilityFilterGroup.getDefault()
+                FeatOtherFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }
