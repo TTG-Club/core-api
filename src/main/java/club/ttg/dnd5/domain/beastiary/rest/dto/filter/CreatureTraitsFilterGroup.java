@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,6 +59,7 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<String, Creat
         return new CreatureTraitsFilterGroup(
                 traitNames.stream()
                         .map(CreatureTraitsFilterItem::new)
+                        .sorted(Comparator.comparing(CreatureTraitsFilterItem::getName))
                         .collect(Collectors.toList())
         );
     }

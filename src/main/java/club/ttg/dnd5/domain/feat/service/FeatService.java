@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.feat.service;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 
@@ -11,7 +12,7 @@ import java.util.Collection;
 public interface FeatService {
     FeatDetailResponse getFeat(String featUrl);
 
-    Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine);
+    Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody);
 
     String addFeat(FeatRequest featDto);
 

@@ -9,25 +9,21 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class BackgroundServiceImpl implements BackgroundService {
-    private static final Sort DEFAULT_SORT = Sort.by("name");
+    private final BackgroundQueryDslSearchService backgroundQueryDslSearchService;
     private final BackgroundRepository backgroundRepository;
     private final FeatRepository featRepository;
     private final BookService bookService;
@@ -39,18 +35,11 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     @Override
-    public Collection<BackgroundShortResponse> getBackgrounds(String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return backgroundRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
-                })
-                .orElseGet(() -> backgroundRepository.findAll(DEFAULT_SORT))
+    public Collection<BackgroundShortResponse> getBackgrounds(String searchLine, final SearchBody searchBody) {
+        return backgroundQueryDslSearchService.search(searchLine, searchBody)
                 .stream()
                 .map(backgroundMapper::toShort)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional

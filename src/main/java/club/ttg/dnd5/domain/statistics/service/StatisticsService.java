@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.statistics.service;
 
 import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.item.model.Item;
@@ -30,7 +31,8 @@ public class StatisticsService {
             MagicItem.class,
             Item.class,
             Glossary.class,
-            Creature.class
+            Creature.class,
+            CharacterClass.class
     );
     private final Set<String> COUNTED_ENTITIES_TABLE_NAMES = COUNTED_ENTITIES.stream()
             .map(clazz -> clazz.getAnnotation(Table.class).name())

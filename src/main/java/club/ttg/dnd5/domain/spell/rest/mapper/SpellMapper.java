@@ -1,9 +1,14 @@
 package club.ttg.dnd5.domain.spell.rest.mapper;
 
 import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.clazz.model.ClassCharacter;
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.species.model.Species;
-import club.ttg.dnd5.domain.spell.model.*;
+import club.ttg.dnd5.domain.spell.model.MaterialComponent;
+import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
+import club.ttg.dnd5.domain.spell.model.SpellComponents;
+import club.ttg.dnd5.domain.spell.model.SpellDistance;
+import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
@@ -28,12 +33,12 @@ public interface SpellMapper {
 
     @ToEntityMapping
     Spell toEntity(SpellRequest request, Book source,
-                   List<ClassCharacter> classes, List<ClassCharacter> subclasses,
+                   List<CharacterClass> classes, List<CharacterClass> subclasses,
                    List<Species> species, List<Species> lineages);
 
     @ToEntityMapping
     Spell updateEntity(@MappingTarget Spell target, SpellRequest request, Book source,
-                       List<ClassCharacter> classes, List<ClassCharacter> subclasses,
+                       List<CharacterClass> classes, List<CharacterClass> subclasses,
                        List<Species> species, List<Species> lineages);
 
     @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
