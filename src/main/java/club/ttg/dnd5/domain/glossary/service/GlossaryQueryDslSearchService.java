@@ -17,7 +17,7 @@ public class GlossaryQueryDslSearchService extends AbstractQueryDslSearchService
     }
 
     @Override
-    protected OrderSpecifier<?>[] getOrder(String[] sort) {
+    protected OrderSpecifier<?>[] getDefaultOrder() {
         return ORDER;
     }
 }
