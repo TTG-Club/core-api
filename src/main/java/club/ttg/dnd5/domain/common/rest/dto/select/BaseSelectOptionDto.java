@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.rest.dto.select;
 
+import club.ttg.dnd5.dto.base.SelectableEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,4 +31,9 @@ public abstract class BaseSelectOptionDto {
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     private Object value;
+
+    public BaseSelectOptionDto(SelectableEnum selectableEnum) {
+        this.label = selectableEnum.getLabel();
+        this.value = selectableEnum.getValue();
+    }
 }
