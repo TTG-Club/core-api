@@ -185,7 +185,8 @@ public interface CreatureMapper {
     default String toType(CreatureCategory category) {
         return category.getValues().stream()
                 .map(CreatureType::getName)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(", "))
+                + (StringUtils.hasText(category.getText()) ? " (" + category.getText() + ")" : "");
     }
 
     @Named("toArmor")
@@ -201,9 +202,9 @@ public interface CreatureMapper {
     @Named("toInit")
     default String toInit(Creature creature) {
         var mod = creature.getAbilities().getMod(Ability.DEXTERITY);
-        String sign = mod >= 0 ? "+" : "";
         var pb = ChallengeRating.getPb(creature.getExperience());
         var initiative = mod + pb * creature.getInitiative().getMultiplier();
+        String sign = initiative >= 0 ? "+" : "";
         return String.format("%s%d (%d)",
                 sign, initiative,
                 10 + initiative);

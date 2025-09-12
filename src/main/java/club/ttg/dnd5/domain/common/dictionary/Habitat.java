@@ -14,7 +14,7 @@ public enum Habitat {
     COASTAL("Побережье"),
     DESERT("Пустыня"),
     FOREST("Лес"),
-    GRASSLAND("Луга (Равнина)"),
+    GRASSLAND("Луга (Равнины)"),
     HILL("Холмы"),
     MOUNTAIN("Горы"),
     PLANAR_ABYSS("План (Бездна)"),
