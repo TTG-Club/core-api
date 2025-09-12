@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
@@ -18,7 +20,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.Objects;
 
 @RequiredArgsConstructor
@@ -35,11 +36,25 @@ public class FeatServiceImpl implements FeatService {
     }
 
     @Override
-    public Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody) {
-        return featQueryDslSearchService.search(searchLine, searchBody)
+    public PageResponse<FeatShortResponse> getFeats(final @Valid @Size String searchLine,
+                                                    final int page,
+                                                    final int limit,
+                                                    final String[] sort,
+                                                    final SearchBody searchBody) {
+        var responseItems = featQueryDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
                 .stream()
                 .map(featMapper::toShort)
                 .toList();
+        var pagination = Pagination.of(page,
+                limit,
+                featRepository.count(),
+                featQueryDslSearchService.count(searchLine, searchBody)
+        );
+        return PageResponse.<FeatShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Secured("ADMIN")
