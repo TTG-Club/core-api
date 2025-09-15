@@ -71,7 +71,6 @@ public class CreatureTagFilterGroup extends AbstractFilterGroup<String, Creature
                 tags.stream()
                         .map(CreatureTagFilterItem::new)
                         .sorted(Comparator.comparing(CreatureTagFilterItem::getName))
-                        .distinct()
                         .collect(Collectors.toList())
         );
     }
