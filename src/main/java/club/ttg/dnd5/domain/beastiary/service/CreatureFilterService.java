@@ -38,6 +38,7 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
                 .map(CreatureCategory::getText)
                 .filter(StringUtils::hasText)
                 .map(String::toLowerCase)
+                .distinct()
                 .sorted()
                 .toList();
         return new FilterInfo(List.of(
