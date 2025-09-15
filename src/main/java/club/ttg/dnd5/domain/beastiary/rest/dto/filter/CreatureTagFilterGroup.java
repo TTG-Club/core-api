@@ -8,6 +8,7 @@ import com.querydsl.core.types.dsl.SimplePath;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -78,7 +79,7 @@ public class CreatureTagFilterGroup extends AbstractFilterGroup<String, Creature
     {
         public CreatureTagFilterItem(String value)
         {
-            super(value, value, null);
+            super(StringUtils.capitalize(value), value, null);
         }
     }
 }
