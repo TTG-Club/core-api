@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.user.service.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -35,6 +36,7 @@ public class CreatureFilterService extends AbstractSavedFilterService<CreatureSa
         List<String> tags = creatures.stream()
                 .map(Creature::getTypes)
                 .map(CreatureCategory::getText)
+                .filter(StringUtils::hasText)
                 .map(String::toLowerCase)
                 .sorted()
                 .toList();
