@@ -109,3 +109,5 @@ databaseChangeLog:
       file: db/changelog/2025/09/01-01-add-class-table.yaml
   - include:
       file: db/changelog/2025/09/15-01-add-column-abilities-to-feet.yaml
+  - include:
+      file: db/changelog/2025/08/13-02-add-notification.yaml
