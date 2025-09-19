@@ -25,6 +25,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -35,6 +36,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -161,15 +163,7 @@ public interface CreatureMapper {
                 .stream()
                 .findFirst()
                 .orElse(CreatureType.HUMANOID);
-        if (creature.getSizes().getValues().size() < 3) {
-            builder.append(creature.getSizes().getValues().stream()
-                    .map(size -> size.getSizeName(type))
-                    .collect(Collectors.joining(" или ")));
-        } else {
-            builder.append(creature.getSizes().getValues().stream()
-                    .map(size -> size.getSizeName(type))
-                    .collect(Collectors.joining(", ")));
-        }
+        builder.append(joinWithOr(creature.getSizes().getValues(), type));
         builder.append(" ");
         builder.append(creature.getTypes().getValues()
                 .stream()
@@ -184,6 +178,25 @@ public interface CreatureMapper {
         builder.append(", ");
         builder.append(creature.getAlignment().getName(type));
         return StringUtils.capitalize(builder.toString().toLowerCase());
+    }
+
+    default String joinWithOr(List<Size> items, CreatureType type) {
+        if (items == null || items.isEmpty()) {
+            return "";
+        }
+        if (items.size() == 1) {
+            return items.getFirst().getSizeName(type);
+        }
+        if (items.size() == 2) {
+            return items.getFirst().getSizeName(type) + " или " + items.get(1).getSizeName(type);
+        }
+
+        String prefix = items.stream()
+                .map(size -> size.getSizeName(type))
+                .limit(items.size() - 1)
+                .collect(Collectors.joining(", "));
+
+        return prefix + " или " + items.getLast().getSizeName(type);
     }
 
     @Named("toType")
