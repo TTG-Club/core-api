@@ -161,24 +161,29 @@ public interface CreatureMapper {
                 .stream()
                 .findFirst()
                 .orElse(CreatureType.HUMANOID);
-        builder.append(creature.getSizes().getValues().stream()
-                .map(size -> size.getSizeName(type))
-                .collect(Collectors.joining(" или ")));
+        if (creature.getSizes().getValues().size() < 3) {
+            builder.append(creature.getSizes().getValues().stream()
+                    .map(size -> size.getSizeName(type))
+                    .collect(Collectors.joining(" или ")));
+        } else {
+            builder.append(creature.getSizes().getValues().stream()
+                    .map(size -> size.getSizeName(type))
+                    .collect(Collectors.joining(", ")));
+        }
         builder.append(" ");
         builder.append(creature.getTypes().getValues()
                 .stream()
                 .map(CreatureType::getName)
-                .map(String::toLowerCase)
                 .collect(Collectors.joining(", "))
         );
         if (StringUtils.hasText(creature.getTypes().getText())) {
             builder.append(" (");
-            builder.append(creature.getTypes().getText().toLowerCase());
+            builder.append(creature.getTypes().getText());
             builder.append(")");
         }
         builder.append(", ");
-        builder.append(creature.getAlignment().getName(type).toLowerCase());
-        return builder.toString();
+        builder.append(creature.getAlignment().getName(type));
+        return StringUtils.capitalize(builder.toString().toLowerCase());
     }
 
     @Named("toType")
