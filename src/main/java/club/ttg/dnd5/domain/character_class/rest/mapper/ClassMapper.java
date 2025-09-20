@@ -109,7 +109,8 @@ public interface ClassMapper {
 
     default List<ClassFeatureDto> toFeaturesDto(CharacterClass characterClass) {
         boolean isSubclass = Objects.isNull(characterClass.getParent());
-        List<ClassFeatureDto> parentFeaturesDtos = Optional.ofNullable(characterClass.getParent().getFeatures())
+        List<ClassFeatureDto> parentFeaturesDtos = Optional.ofNullable(characterClass.getParent())
+                .map(CharacterClass::getFeatures)
                 .orElse(List.of()).stream()
                 .map(f -> new ClassFeatureDto(f, false))
                 .collect(Collectors.toList());
