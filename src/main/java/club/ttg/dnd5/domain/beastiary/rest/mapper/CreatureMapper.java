@@ -165,10 +165,7 @@ public interface CreatureMapper {
                 .orElse(CreatureType.HUMANOID);
         builder.append(joinWithOr(creature.getSizes().getValues(), type));
         builder.append(" ");
-        builder.append(creature.getTypes().getValues()
-                .stream()
-                .map(CreatureType::getName)
-                .collect(Collectors.joining(", "))
+        builder.append(joinWithOr(creature.getTypes().getValues())
         );
         if (StringUtils.hasText(creature.getTypes().getText())) {
             builder.append(" (");
@@ -197,6 +194,25 @@ public interface CreatureMapper {
                 .collect(Collectors.joining(", "));
 
         return prefix + " или " + items.getLast().getSizeName(type);
+    }
+
+    default String joinWithOr(List<CreatureType> items) {
+        if (items == null || items.isEmpty()) {
+            return "";
+        }
+        if (items.size() == 1) {
+            return items.getFirst().getName();
+        }
+        if (items.size() == 2) {
+            return items.getFirst().getName() + " или " + items.get(1).getName();
+        }
+
+        String prefix = items.stream()
+                .map(CreatureType::getName)
+                .limit(items.size() - 1)
+                .collect(Collectors.joining(", "));
+
+        return prefix + " или " + items.getLast().getName();
     }
 
     @Named("toType")
