@@ -22,5 +22,5 @@ public class Armor extends Item {
     /** Сила. */
     private String strength;
     /** Скрытность. */
-    private boolean stealth;
+    private Boolean stealth;
 }
