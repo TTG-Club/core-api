@@ -18,8 +18,14 @@ public class Hit {
      * Максимальное количество
      */
     private short max;
+
     /**
-     * Бонус (опционально)
+     * Количество максимальных хитов которые заменяют текущий максимум
      */
-    private short bonus;
+    private Short override;
+
+    /**
+     * Бонус максимальных хитов (опционально)
+     */
+    private Short bonus;
 }

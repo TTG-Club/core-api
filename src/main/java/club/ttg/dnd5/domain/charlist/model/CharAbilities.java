@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Abilities {
+public class CharAbilities {
     /**
      * Сила
      */

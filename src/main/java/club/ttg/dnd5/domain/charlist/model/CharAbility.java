@@ -13,9 +13,9 @@ public class CharAbility {
      */
     private byte current;
     /**
-     * Бонус к характеристике
+     * Модификатор характеристики
      */
-    private byte bonus;
+    private byte modifier;
     /**
      * Владение спасбросками
      */
