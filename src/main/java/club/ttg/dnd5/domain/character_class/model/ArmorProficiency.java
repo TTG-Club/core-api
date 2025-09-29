@@ -21,9 +21,9 @@ public class ArmorProficiency {
 
     @Override
     public String toString() {
-        return Stream.of(category.stream().map(Object::toString).collect(Collectors.joining(",")),
+        return Stream.of(category.stream().map(ArmorCategory::getName).collect(Collectors.joining(",")),
                 custom)
                 .filter(StringUtils::hasText)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining(", "));
     }
 }
