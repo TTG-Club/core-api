@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.common.rest;
+package club.ttg.dnd5.domain.common.rest.mapper;
 
 import club.ttg.dnd5.domain.common.model.Rating;
 import club.ttg.dnd5.domain.common.repository.RatingStats;
