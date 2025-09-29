@@ -1,11 +1,7 @@
 package club.ttg.dnd5.domain.character_class.rest.mapper;
 
 import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.character_class.model.ArmorProficiency;
-import club.ttg.dnd5.domain.character_class.model.CharacterClass;
-import club.ttg.dnd5.domain.character_class.model.ClassFeature;
-import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
-import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
+import club.ttg.dnd5.domain.character_class.model.*;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
@@ -14,17 +10,10 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
+import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,8 +22,7 @@ public interface ClassMapper {
 
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
-    @Mapping(target = "userId", source = "username")
-    @Mapping(target = "gallery", ignore = true)
+    @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     ClassShortResponse toShortResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseSourceMapping
@@ -42,6 +30,11 @@ public interface ClassMapper {
     @Mapping(target = "userId", source = "username")
     @Mapping(target = "gallery", ignore = true)
     @Mapping(target = "features", source = ".")
+    @Mapping(target = "proficiency.armor", source = "armorProficiency", qualifiedByName = "armorProficiencyToString")
+    @Mapping(target = "proficiency.weapon", source = "weaponProficiency", qualifiedByName = "weaponProficiencyToString")
+    @Mapping(target = "proficiency.tool", source = "toolProficiency")
+    @Mapping(target = "proficiency.skill", source = "skillProficiency", qualifiedByName = "skillProficiencyToString")
+    @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping
@@ -63,6 +56,10 @@ public interface ClassMapper {
     @Mapping(target = "parentUrl", source = "parent.url")
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
+    @Mapping(target = "proficiency.armor", source = "armorProficiency")
+    @Mapping(target = "proficiency.weapon", source = "weaponProficiency")
+    @Mapping(target = "proficiency.tool", source = "toolProficiency")
+    @Mapping(target = "proficiency.skill", source = "skillProficiency")
     ClassRequest toRequest(CharacterClass entity);
 
     @Mapping(target = "url", source = "request.url")
@@ -74,17 +71,18 @@ public interface ClassMapper {
     @Mapping(target = "table", source = "request.table")
     @Mapping(target = "source", source = "source")
     @Mapping(target = "sourcePage", source = "request.source.page")
-    @Mapping(target = "armorProficiency", source = "request.armorProficiency")
-    @Mapping(target = "weaponProficiency", source = "request.weaponProficiency")
-    @Mapping(target = "toolProficiency", source = "request.toolProficiency")
-    @Mapping(target = "skillProficiency", source = "request.skillProficiency")
+    @Mapping(target = "armorProficiency", source = "request.proficiency.armor")
+    @Mapping(target = "weaponProficiency", source = "request.proficiency.weapon")
+    @Mapping(target = "toolProficiency", source = "request.proficiency.tool")
+    @Mapping(target = "skillProficiency", source = "request.proficiency.skill")
     @Mapping(target = "equipment", source = "request.equipment")
     @Mapping(target = "casterType", source = "request.casterType")
     @interface ToEntityMapping {
     }
 
+    @Named("toSavingThrowsString")
     default String toSavingThrowsString(Collection<Ability> savingThrows) {
-        return savingThrows.stream().map(Ability::toString).collect(Collectors.joining(","));
+        return savingThrows.stream().map(Ability::getName).collect(Collectors.joining(", "));
     }
 
     default DiceOptionDto toDiceOptionDto(Dice dice) {
@@ -92,17 +90,21 @@ public interface ClassMapper {
                 .label(dice.getName())
                 .value(dice.name())
                 .maxValue(dice.getMaxValue())
+                .avg(dice.getAvgValue())
                 .build();
     }
 
+    @Named("armorProficiencyToString")
     default String armorProficiencyToString(ArmorProficiency proficiency) {
         return proficiency == null ? "" : proficiency.toString();
     }
 
+    @Named("weaponProficiencyToString")
     default String weaponProficiencyToString(WeaponProficiency proficiency) {
         return proficiency == null ? "" : proficiency.toString();
     }
 
+    @Named("skillProficiencyToString")
     default String skillProficiencyToString(SkillProficiency proficiency) {
         return proficiency == null ? "" : proficiency.toString();
     }
@@ -121,5 +123,10 @@ public interface ClassMapper {
                 .flatMap(List::stream)
                 .sorted(Comparator.comparing(ClassFeature::getLevel))
                 .collect(Collectors.toList());
+    }
+
+    @Named("hasSubclasses")
+    default boolean hasSubclasses(Collection<CharacterClass> subclasses) {
+        return !CollectionUtils.isEmpty(subclasses);
     }
 }
