@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.charlist.model;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
+
 @Getter
 @Setter
 public class CharSkills {
@@ -24,4 +26,6 @@ public class CharSkills {
     private CharSkill sleightOfHand;
     private CharSkill stealth;
     private CharSkill survival;
+
+    private Collection<CharSkill> custom;
 }

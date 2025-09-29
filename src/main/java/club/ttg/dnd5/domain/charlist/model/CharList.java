@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.charlist.model;
 
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
@@ -51,7 +52,7 @@ public class CharList {
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Abilities abilities;
+    private CharAbilities abilities;
     /**
      * Навыки
      */
@@ -64,6 +65,39 @@ public class CharList {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<CharClass> classes;
+
+    /**
+     * Состояния
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<Condition> conditions;
+
+    /**
+     * Предыстория
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private CharBackground background;
+
+    /**
+     * Черты
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<CharFeat> feats;
+    /**
+     * Текущий опыт персонажа
+     */
+    private long xp;
+    /**
+     * Уровень истощения
+     */
+    private byte exhaustion;
+    /**
+     * Героическое вдохновение
+     */
+    private byte heroicInspiration;
 
     @CreatedBy
     private String createdBy;
