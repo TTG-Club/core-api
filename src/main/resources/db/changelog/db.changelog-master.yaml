@@ -113,3 +113,5 @@ databaseChangeLog:
       file: db/changelog/2025/08/13-02-add-notification.yaml
   - include:
       file: db/changelog/2025/09/29-01-fix-column-definition-item.yaml
+  - include:
+      file: db/changelog/2025/09/30-01-add-primary-characteristic-to-class-table.yaml

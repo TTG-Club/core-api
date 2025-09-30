@@ -24,6 +24,6 @@ public class ClassFeatureScaling {
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;
 
-    @Schema(description = "Всплывающая подсказка для улучшения", example = "Дополнительное использование")
-    private String tooltip;
+    @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
+    private String additional;
 }

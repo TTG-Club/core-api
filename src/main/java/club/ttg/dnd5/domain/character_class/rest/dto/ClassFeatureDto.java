@@ -33,8 +33,8 @@ public class ClassFeatureDto {
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
 
-    @Schema(description = "Всплывающая подсказка для UI", example = "Один раз в короткий отдых")
-    private String tooltip;
+    @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
+    private String additional;
 
     @Schema(description = "Шкалирование особенности по уровням")
     List<ClassFeatureScalingDto> scaling;
@@ -45,7 +45,7 @@ public class ClassFeatureDto {
         this.level = classFeature.getLevel();
         this.name = classFeature.getName();
         this.description = classFeature.getDescription();
-        this.tooltip = classFeature.getTooltip();
+        this.additional = classFeature.getAdditional();
         this.scaling = classFeature.getScaling().stream().map(ClassFeatureScalingDto::new).toList();
     }
 

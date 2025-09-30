@@ -29,6 +29,9 @@ public class ClassRequest extends BaseRequest {
     @Schema(description = "Кость хитов класса")
     private Dice hitDice;
 
+    @Schema(description = "Основная характеристика")
+    private Ability primaryCharacteristic;
+
     @Schema(description = "Владение спасбросками")
     private Set<Ability> savingThrows;
 

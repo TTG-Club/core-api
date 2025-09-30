@@ -46,6 +46,9 @@ public class CharacterClass extends NamedEntity {
 
     private Dice hitDice;
 
+    @Enumerated(EnumType.STRING)
+    private Ability primaryCharacteristic;
+
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private ArmorProficiency armorProficiency;
