@@ -41,4 +41,7 @@ public class ClassDetailedResponse extends BaseResponse {
 
     @Schema(description = "Тип заклинателя", example = "FULL")
     private CasterType casterType;
+
+    @Schema(description = "Есть ли подклассы")
+    private boolean hasSubclasses;
 }

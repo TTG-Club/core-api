@@ -35,6 +35,7 @@ public interface ClassMapper {
     @Mapping(target = "proficiency.tool", source = "toolProficiency")
     @Mapping(target = "proficiency.skill", source = "skillProficiency", qualifiedByName = "skillProficiencyToString")
     @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
+    @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping
@@ -110,7 +111,7 @@ public interface ClassMapper {
     }
 
     default List<ClassFeatureDto> toFeaturesDto(CharacterClass characterClass) {
-        boolean isSubclass = Objects.isNull(characterClass.getParent());
+        boolean isSubclass = !Objects.isNull(characterClass.getParent());
         List<ClassFeatureDto> parentFeaturesDtos = Optional.ofNullable(characterClass.getParent())
                 .map(CharacterClass::getFeatures)
                 .orElse(List.of()).stream()
@@ -119,9 +120,10 @@ public interface ClassMapper {
         List<ClassFeatureDto> classFeatureDtos = characterClass.getFeatures().stream()
                 .map(f -> new ClassFeatureDto(f, isSubclass))
                 .collect(Collectors.toList());
+
         return Stream.of(parentFeaturesDtos, classFeatureDtos)
                 .flatMap(List::stream)
-                .sorted(Comparator.comparing(ClassFeature::getLevel))
+                .sorted(Comparator.comparing(ClassFeatureDto::getLevel))
                 .collect(Collectors.toList());
     }
 

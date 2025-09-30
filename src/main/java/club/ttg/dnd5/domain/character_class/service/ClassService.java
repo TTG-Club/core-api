@@ -11,15 +11,18 @@ import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -29,10 +32,19 @@ public class ClassService {
     private final ClassMapper classMapper;
     private final BookService bookService;
 
-    public List<ClassShortResponse> findAllClasses() {
-        return classRepository.findAllClassesFetchSubclasses().stream()
+    public List<ClassShortResponse> findAllClasses(String searchLine, String[] sort) {
+        Collection<CharacterClass> classes;
+
+        if (StringUtils.hasText(searchLine)) {
+            String invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
+            classes = classRepository.findAllSearch(searchLine, invertedSearchLine, Sort.by(sort));
+        } else {
+            classes = classRepository.findAllByParentIsNull(Sort.by(sort));
+        }
+
+        return classes.stream()
                 .map(classMapper::toShortResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public boolean exists(String url) {
@@ -87,6 +99,17 @@ public class ClassService {
             classRepository.flush();
         }
         return classRepository.save(spell).getUrl();
+    }
+
+    public List<ClassShortResponse> getSubclasses(String parentUrl) {
+        CharacterClass characterClass = classRepository.findByUrl(parentUrl)
+                .orElseThrow(() -> new EntityNotFoundException("Класс не найден для URL:" + parentUrl));
+
+        if (characterClass.isHiddenEntity()) {
+            throw new EntityNotFoundException("Класс не найден для URL:" + parentUrl);
+        }
+
+        return characterClass.getSubclasses().stream().map(classMapper::toShortResponse).toList();
     }
 
     public ClassDetailedResponse findDetailedByUrl(String url) {

@@ -6,10 +6,12 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -39,15 +41,28 @@ public class ClassController {
         }
     }
 
-    @GetMapping("/search")
+    @PostMapping("/search")
     @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<ClassShortResponse> getAllClasses() {
-        return classService.findAllClasses();
+    public List<ClassShortResponse> getAllClasses(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Size(min = 2)
+            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine,
+            @Parameter(description = "Сортировка")
+            @RequestParam(required = false, defaultValue = "name")
+            String[] sort) {
+        return classService.findAllClasses(searchLine, sort);
     }
 
     @GetMapping("/{url}")
     public ClassDetailedResponse getClassByUrl(@PathVariable String url) {
         return classService.findDetailedByUrl(url);
+    }
+
+    @GetMapping("/{parentUrl}/subclasses")
+    public List<ClassShortResponse> getSubClassesByParentUrl(@PathVariable String parentUrl) {
+        return classService.getSubclasses(parentUrl);
     }
 
     @Secured("ADMIN")
