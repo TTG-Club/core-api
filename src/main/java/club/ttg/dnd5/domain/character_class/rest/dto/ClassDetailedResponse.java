@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
@@ -22,6 +23,9 @@ public class ClassDetailedResponse extends BaseResponse {
 
     @Schema(description = "Кость хитов класса с опциями")
     private DiceOptionDto hitDice;
+
+    @Schema(description = "Основная характеристика")
+    private Ability primaryCharacteristic;
 
     @Schema(description = "Владения класса")
     private ClassProficiencyDto proficiency;

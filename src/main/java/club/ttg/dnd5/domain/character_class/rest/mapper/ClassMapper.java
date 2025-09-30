@@ -35,6 +35,7 @@ public interface ClassMapper {
     @Mapping(target = "proficiency.tool", source = "toolProficiency")
     @Mapping(target = "proficiency.skill", source = "skillProficiency", qualifiedByName = "skillProficiencyToString")
     @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
+    @Mapping(target = "primaryCharacteristic", source = "primaryCharacteristic", qualifiedByName = "toAbilityName")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
@@ -78,7 +79,13 @@ public interface ClassMapper {
     @Mapping(target = "skillProficiency", source = "request.proficiency.skill")
     @Mapping(target = "equipment", source = "request.equipment")
     @Mapping(target = "casterType", source = "request.casterType")
+    @Mapping(target = "primaryCharacteristic", source = "request.primaryCharacteristic")
     @interface ToEntityMapping {
+    }
+
+    @Named("toAbilityName")
+    default String toAbilityName(Ability ability) {
+        return ability.getName();
     }
 
     @Named("toSavingThrowsString")

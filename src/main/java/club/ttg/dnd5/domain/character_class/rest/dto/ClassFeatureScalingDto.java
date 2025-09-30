@@ -25,13 +25,13 @@ public class ClassFeatureScalingDto {
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
 
-    @Schema(description = "Всплывающая подсказка для улучшения", example = "Дополнительное использование")
-    private String tooltip;
+    @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
+    private String additional;
 
     public ClassFeatureScalingDto(ClassFeatureScaling classFeatureScaling) {
         this.level = classFeatureScaling.getLevel();
         this.name = classFeatureScaling.getName();
         this.description = classFeatureScaling.getDescription();
-        this.tooltip = classFeatureScaling.getTooltip();
+        this.additional = classFeatureScaling.getAdditional();
     }
 }
