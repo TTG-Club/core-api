@@ -1,25 +1,18 @@
 package club.ttg.dnd5.domain.character_class.model;
 
-import club.ttg.dnd5.dto.base.SelectableEnum;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.io.Serializable;
-
+@Getter
 @RequiredArgsConstructor
-public enum CasterType implements SelectableEnum {
-    FULL("Полноценный заклинатель"),
-    HALF("1/2"),
-    THIRD("1/3"),
-    NONE("Не владеет заклинаниями"),
-    PACT("Магия договора");
+public enum CasterType {
+    FULL("Полноценный заклинатель", 9),
+    HALF("Половинный заклинатель", 5),
+    THIRD("Заклинатель на треть", 4),
+    NONE("Не владеет заклинаниями", 0),
+    PACT("Магия договора", 5);
 
-    @Getter
-    private final String label;
-
-    @Override
-    public String getValue() {
-        return name();
-    }
+    private final String name;
+    private final int maxSpellLevel;
 
 }

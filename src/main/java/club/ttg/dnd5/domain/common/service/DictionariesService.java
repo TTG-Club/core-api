@@ -1,11 +1,6 @@
 package club.ttg.dnd5.domain.common.service;
 
-import club.ttg.dnd5.domain.common.dictionary.Language;
-import club.ttg.dnd5.domain.common.dictionary.SpellcasterType;
-import club.ttg.dnd5.domain.common.dictionary.Rarity;
-import club.ttg.dnd5.domain.common.dictionary.CreatureType;
-import club.ttg.dnd5.domain.common.dictionary.Habitat;
-import club.ttg.dnd5.domain.common.dictionary.SenseType;
+import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.*;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
@@ -140,9 +135,9 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SpellcasterOptionDto> getSpellcasterTypes() {
-        return Arrays.stream(SpellcasterType.values())
-                .map(type -> SpellcasterOptionDto.builder()
+    public Collection<CasterOptionDto> getCasterTypes() {
+        return Arrays.stream(CasterType.values())
+                .map(type -> CasterOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())
                         .levels(type.getMaxSpellLevel())

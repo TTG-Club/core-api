@@ -85,13 +85,21 @@ public class ClassService {
 
     public String update(String url, ClassRequest request) {
         CharacterClass existingClass = findByUrl(url);
-        CharacterClass parent = Optional.ofNullable(request.getParentUrl())
-                .map(this::findByUrl)
-                .orElse(null);
+        CharacterClass parent = null;
+
+        if (request.getParentUrl() != null) {
+            try {
+                parent = findByUrl(request.getParentUrl());
+            } catch (EntityNotFoundException e) {
+                throw new EntityNotFoundException(String.format("Родительского класса с url %s не существует", request.getParentUrl()));
+            }
+        }
+
         Book book = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
                 .map(bookService::findByUrl)
                 .orElse(null);
+
         CharacterClass spell = classMapper.updateEntity(existingClass, parent, request, book);
 
         if (!Objects.equals(url, request.getUrl())) {
