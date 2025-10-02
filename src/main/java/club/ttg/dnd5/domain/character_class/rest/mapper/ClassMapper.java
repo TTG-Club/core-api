@@ -2,10 +2,7 @@ package club.ttg.dnd5.domain.character_class.rest.mapper;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.character_class.model.*;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
+import club.ttg.dnd5.domain.character_class.rest.dto.*;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
@@ -69,7 +66,7 @@ public interface ClassMapper {
     @Mapping(target = "imageUrl", source = "request.imageUrl")
     @Mapping(target = "hitDice", source = "request.hitDice")
     @Mapping(target = "savingThrows", source = "request.savingThrows")
-    @Mapping(target = "features", source = "request.features")
+    @Mapping(target = "features", source = "request.features", qualifiedByName = "toFeatureEntities")
     @Mapping(target = "table", source = "request.table")
     @Mapping(target = "source", source = "source")
     @Mapping(target = "sourcePage", source = "request.source.page")
@@ -115,6 +112,11 @@ public interface ClassMapper {
     @Named("skillProficiencyToString")
     default String skillProficiencyToString(SkillProficiency proficiency) {
         return proficiency == null ? "" : proficiency.toString();
+    }
+
+    @Named("toFeatureEntities")
+    default List<ClassFeature> toFeatureEntities(List<ClassFeatureRequest> features) {
+        return features.stream().map(ClassFeature::new).toList();
     }
 
     default List<ClassFeatureDto> toFeaturesDto(CharacterClass characterClass) {

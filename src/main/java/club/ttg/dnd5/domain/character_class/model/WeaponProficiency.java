@@ -21,7 +21,7 @@ public class WeaponProficiency {
 
     @Override
     public String toString() {
-        return Stream.of(category.stream().map(WeaponCategory::getName).collect(Collectors.joining(",")),
+        return Stream.of(category.stream().map(WeaponCategory::getName).collect(Collectors.joining(", ")),
                         custom)
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining(", "));

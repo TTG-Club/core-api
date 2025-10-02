@@ -1,12 +1,6 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
-import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.KeySelectDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.*;
 import club.ttg.dnd5.domain.common.service.DictionariesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -680,5 +674,41 @@ public class DictionariesController {
     )
     public Collection<SelectOptionDto> getItemCategories() {
         return dictionariesService.getItemCategories();
+    }
+
+    @Operation(summary = "Категории доспехов")
+    @GetMapping("/armor/categories")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Легкий доспех", "value": "LIGHT", "putting": "1 минута", "removal": "1 минута" },
+                              { "label": "Средний доспех", "value": "MEDIUM", "putting": "5 минут", "removal": "5 минут" },
+                              { "label": "Тяжелый доспех", "value": "HEAVY", "putting": "10 минут", "removal": "5 минут" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<ArmorOptionDto> getArmorCategories() {
+        return dictionariesService.getArmorCategories();
+    }
+
+    @Operation(summary = "Категории оружия")
+    @GetMapping("/weapon/categories")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Простое рукопашное", "value": "SIMPLE_MELEE" },
+                              { "label": "Простое дальнобойное", "value": "SIMPLE_RANGED" },
+                              { "label": "Воинское рукопашное", "value": "MATERIAL_MELEE" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getWeaponCategories() {
+        return dictionariesService.getWeaponCategories();
     }
 }
