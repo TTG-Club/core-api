@@ -279,7 +279,7 @@ public class DictionariesController {
     }
 
     @Operation(summary = "Типы заклинателей")
-    @GetMapping("/spellcaster/types")
+    @GetMapping("/caster-types")
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -308,8 +308,8 @@ public class DictionariesController {
                     )
             }
     )
-    public Collection<SpellcasterOptionDto> getSpellcasterTypes() {
-        return dictionariesService.getSpellcasterTypes();
+    public Collection<CasterOptionDto> getCasterTypes() {
+        return dictionariesService.getCasterTypes();
     }
 
     @Operation(summary = "Единицы времени")
