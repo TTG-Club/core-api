@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.CasterType;
-import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
@@ -43,7 +42,7 @@ public class ClassRequest extends BaseRequest {
     private String equipment;
 
     @Schema(description = "Особенности класса")
-    private List<ClassFeature> features;
+    private List<ClassFeatureRequest> features;
 
     @Schema(description = "Колонки таблицы прогрессии класса")
     private List<ClassTableColumn> table;
