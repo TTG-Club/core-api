@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,10 +16,16 @@ import java.util.Collection;
 public class SkillProficiency {
     private int cnt;
     private Collection<Skill> skills;
-    private String text;
 
     @Override
     public String toString() {
-        return String.format("Выберите %s навыка из следующих %s", cnt, skills);
+        if (skills.size() == Skill.values().length) {
+            return "Выберите любые %d".formatted(cnt);
+        }
+        return "Выберите %d навыка из следующих %s".formatted(
+                cnt,
+                skills.stream()
+                        .map(Skill::getName)
+                        .collect(Collectors.joining(", ")));
     }
 }
