@@ -20,6 +20,7 @@ public interface ClassMapper {
     @Named("toShortResponse")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(target = "image", source = "imageUrl")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     ClassShortResponse toShortResponse(CharacterClass characterClass);
 
