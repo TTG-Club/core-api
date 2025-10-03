@@ -14,16 +14,16 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 public class SkillProficiency {
-    private int cnt;
+    private int count;
     private Collection<Skill> skills;
 
     @Override
     public String toString() {
         if (skills.size() == Skill.values().length) {
-            return "Выберите любые %d".formatted(cnt);
+            return "Выберите любые %d".formatted(count);
         }
         return "Выберите %d навыка из следующих %s".formatted(
-                cnt,
+                count,
                 skills.stream()
                         .map(Skill::getName)
                         .collect(Collectors.joining(", ")));

@@ -124,6 +124,7 @@ public interface ClassMapper {
         List<ClassFeatureDto> parentFeaturesDtos = Optional.ofNullable(characterClass.getParent())
                 .map(CharacterClass::getFeatures)
                 .orElse(List.of()).stream()
+                .filter(classFeature -> !classFeature.isHideInSubclasses())
                 .map(f -> new ClassFeatureDto(f, false))
                 .collect(Collectors.toList());
         List<ClassFeatureDto> classFeatureDtos = characterClass.getFeatures().stream()

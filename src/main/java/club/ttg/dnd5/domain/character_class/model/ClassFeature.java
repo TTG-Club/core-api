@@ -34,8 +34,11 @@ public class ClassFeature {
     @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
     private String additional;
 
-    @Schema(description = "Шкалирование особенности по уровням")
+    @Schema(description = "Масштабирование особенности по уровням")
     List<ClassFeatureScaling> scaling;
+
+    @Schema(description = "Скрывать умение в подклассе")
+    private boolean hideInSubclasses;
 
     public ClassFeature(ClassFeatureRequest classFeatureRequest) {
         this.level = classFeatureRequest.getLevel();

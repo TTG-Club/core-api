@@ -28,6 +28,9 @@ public class ClassFeatureScalingDto {
     @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
     private String additional;
 
+    @Schema(description = "Скрывать умение в подклассе")
+    private boolean hideInSubclasses;
+
     public ClassFeatureScalingDto(ClassFeatureScaling classFeatureScaling) {
         this.level = classFeatureScaling.getLevel();
         this.name = classFeatureScaling.getName();
