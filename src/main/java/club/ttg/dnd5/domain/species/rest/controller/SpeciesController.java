@@ -68,6 +68,13 @@ public class SpeciesController {
         return speciesService.findById(url);
     }
 
+    @GetMapping("/lineages")
+    @Operation(summary = "Получить все подвиды",
+            description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
+    public List<SpeciesShortResponse> getLineages() {
+        return speciesService.getLineages();
+    }
+
     @GetMapping("/{url}/lineages")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")

@@ -22,6 +22,13 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
 
     @Query(value = """
         select c from CharacterClass c
+        where c.parent is not null
+        order by c.parent.name, c.name
+        """)
+    Collection<CharacterClass> findAllByParentIsNotNull();
+
+    @Query(value = """
+        select c from CharacterClass c
         where c.name ilike concat('%', :searchLine, '%')
             or c.english ilike concat('%', :searchLine, '%')
             or c.alternative ilike concat('%', :searchLine, '%')

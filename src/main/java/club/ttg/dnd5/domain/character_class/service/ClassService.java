@@ -109,6 +109,13 @@ public class ClassService {
         return classRepository.save(spell).getUrl();
     }
 
+    public List<ClassShortResponse> getSubclasses() {
+        return classRepository.findAllByParentIsNotNull().stream()
+                .filter(characterClass -> !characterClass.isHiddenEntity())
+                .map(classMapper::toShortResponse)
+                .toList();
+    }
+
     public List<ClassShortResponse> getSubclasses(String parentUrl) {
         CharacterClass characterClass = classRepository.findByUrl(parentUrl)
                 .orElseThrow(() -> new EntityNotFoundException("Класс не найден для URL:" + parentUrl));
