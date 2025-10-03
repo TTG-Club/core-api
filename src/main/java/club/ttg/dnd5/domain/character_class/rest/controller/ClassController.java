@@ -60,6 +60,11 @@ public class ClassController {
         return classService.findDetailedByUrl(url);
     }
 
+    @GetMapping("/subclasses")
+    public List<ClassShortResponse> getSubClasses() {
+        return classService.getSubclasses();
+    }
+
     @GetMapping("/{parentUrl}/subclasses")
     public List<ClassShortResponse> getSubClassesByParentUrl(@PathVariable String parentUrl) {
         return classService.getSubclasses(parentUrl);
