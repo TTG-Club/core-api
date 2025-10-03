@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.*;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,8 +21,8 @@ public interface ClassMapper {
     @Named("toShortResponse")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
-    @Mapping(target = "image", source = "imageUrl")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
+    @Mapping(target = "image", source = ".", qualifiedByName = "toImageUrl")
     ClassShortResponse toShortResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseSourceMapping
@@ -37,6 +38,7 @@ public interface ClassMapper {
     @Mapping(target = "primaryCharacteristics", source = "primaryCharacteristics", qualifiedByName = "toPrimaryCharacteristics")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
+    @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping
@@ -158,5 +160,13 @@ public interface ClassMapper {
     @Named("hasSubclasses")
     default boolean hasSubclasses(Collection<CharacterClass> subclasses) {
         return !CollectionUtils.isEmpty(subclasses);
+    }
+
+    @Named("toImageUrl")
+    default String toImageUrl(CharacterClass characterClass) {
+        if (characterClass.getParent() == null || StringUtils.hasText(characterClass.getImageUrl())) {
+            return characterClass.getImageUrl();
+        }
+        return characterClass.getParent().getImageUrl();
     }
 }
