@@ -47,6 +47,6 @@ public class ClassRequest extends BaseRequest {
     @Schema(description = "Колонки таблицы прогрессии класса")
     private List<ClassTableColumn> table;
 
-    @Schema(description = "Тип заклинателя для отрисоввки таблицы ячеек")
+    @Schema(description = "Тип заклинателя для отрисовки таблицы ячеек")
     private CasterType casterType;
 }

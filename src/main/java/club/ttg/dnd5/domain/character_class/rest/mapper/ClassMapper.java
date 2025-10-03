@@ -87,22 +87,23 @@ public interface ClassMapper {
 
     @Named("toPrimaryCharacteristics")
     default String toPrimaryCharacteristics(Set<Ability> abilities) {
-        Set<String> names = abilities.stream().map(Ability::getName).collect(Collectors.toSet());
-
-        if (names.size() < 2) {
-            return names.stream().findFirst().orElse("");
+        var list = abilities.stream().toList();
+        if (list.isEmpty()) {
+            return "";
+        }
+        if (list.size() == 1) {
+            return list.getFirst().getName();
+        }
+        if (abilities.size() == 2) {
+            return list.getFirst().getName() + " или " + list.get(1).getName();
         }
 
-        StringBuilder sb = new StringBuilder();
+        String prefix = abilities.stream()
+                .map(Ability::getName)
+                .limit(abilities.size() - 1)
+                .collect(Collectors.joining(", "));
 
-        for (Iterator<String> iterator = names.iterator(); iterator.hasNext(); ) {
-            String name = iterator.next();
-            boolean isLast = !iterator.hasNext();
-
-            sb.append(isLast ? " или " : ", ").append(name);
-        }
-
-        return sb.toString();
+        return prefix + " или " + list.getLast().getName();
     }
 
     @Named("toSavingThrowsString")
