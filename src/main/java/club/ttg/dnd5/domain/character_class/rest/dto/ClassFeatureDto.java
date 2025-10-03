@@ -39,6 +39,9 @@ public class ClassFeatureDto {
     @Schema(description = "Масштабирование  особенности по уровням")
     List<ClassFeatureScalingDto> scaling;
 
+    @Schema(description = "Скрывать умение в подклассе")
+    private boolean hideInSubclasses;
+
     public ClassFeatureDto(ClassFeature classFeature, boolean isSubclass) {
         this.isSubclass = isSubclass;
         this.key = classFeature.getKey();
