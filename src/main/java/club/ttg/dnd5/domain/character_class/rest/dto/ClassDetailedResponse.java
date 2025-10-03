@@ -47,4 +47,7 @@ public class ClassDetailedResponse extends BaseResponse {
 
     @Schema(description = "Есть ли подклассы")
     private boolean hasSubclasses;
+
+    @Schema(description = "Ссылка на родительский класс")
+    private ClassShortResponse parent;
 }

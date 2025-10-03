@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, uses = {BaseMapping.class}, componentModel = "spring")
 public interface ClassMapper {
 
+    @Named("toShortResponse")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
@@ -34,6 +35,7 @@ public interface ClassMapper {
     @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
     @Mapping(target = "primaryCharacteristic", source = "primaryCharacteristic", qualifiedByName = "toAbilityName")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
+    @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping
