@@ -12,6 +12,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ClassShortResponse extends ShortResponse {
+    @Schema(description = "Ссылка на изображение бэкграунда")
+    private String image;
+
     @Schema(description = "Имеет ли подклассы")
     private boolean hasSubclasses;
 }
