@@ -23,8 +23,8 @@ public class ClassDetailedResponse extends BaseResponse {
     @Schema(description = "Кость хитов класса с опциями")
     private DiceOptionDto hitDice;
 
-    @Schema(description = "Основная характеристика")
-    private String primaryCharacteristic;
+    @Schema(description = "Основные характеристики")
+    private String primaryCharacteristics;
 
     @Schema(description = "Владения класса")
     private ClassProficiencyDto proficiency;

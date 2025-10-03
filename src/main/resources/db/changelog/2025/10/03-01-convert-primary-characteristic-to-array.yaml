@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 03-01-convert-primary-characteristic-to-array
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: class
+            schemaName: public
+            columns:
+              - column:
+                  name: primary_characteristics
+                  type: jsonb
+        - sql:
+            sql: >
+              UPDATE public.class
+              SET primary_characteristics = jsonb_build_array(primary_characteristic);
+
+        - dropColumn:
+            tableName: class
+            schemaName: public
+            columnName: primary_characteristic

@@ -34,7 +34,7 @@ public interface ClassMapper {
     @Mapping(target = "proficiency.tool", source = "toolProficiency")
     @Mapping(target = "proficiency.skill", source = "skillProficiency", qualifiedByName = "skillProficiencyToString")
     @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
-    @Mapping(target = "primaryCharacteristic", source = "primaryCharacteristic", qualifiedByName = "toAbilityName")
+    @Mapping(target = "primaryCharacteristics", source = "primaryCharacteristics", qualifiedByName = "toPrimaryCharacteristics")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
@@ -79,13 +79,28 @@ public interface ClassMapper {
     @Mapping(target = "skillProficiency", source = "request.proficiency.skill")
     @Mapping(target = "equipment", source = "request.equipment")
     @Mapping(target = "casterType", source = "request.casterType")
-    @Mapping(target = "primaryCharacteristic", source = "request.primaryCharacteristic")
+    @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics")
     @interface ToEntityMapping {
     }
 
-    @Named("toAbilityName")
-    default String toAbilityName(Ability ability) {
-        return ability.getName();
+    @Named("toPrimaryCharacteristics")
+    default String toPrimaryCharacteristics(Set<Ability> abilities) {
+        Set<String> names = abilities.stream().map(Ability::getName).collect(Collectors.toSet());
+
+        if (names.size() < 2) {
+            return names.stream().findFirst().orElse("");
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        for (Iterator<String> iterator = names.iterator(); iterator.hasNext(); ) {
+            String name = iterator.next();
+            boolean isLast = !iterator.hasNext();
+
+            sb.append(isLast ? " или " : ", ").append(name);
+        }
+
+        return sb.toString();
     }
 
     @Named("toSavingThrowsString")
