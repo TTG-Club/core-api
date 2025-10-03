@@ -17,7 +17,7 @@ import java.util.List;
 @Setter
 public class ClassFeatureDto {
 
-    @Schema(description = "Являетя ли способность подклассовой")
+    @Schema(description = "Является ли способность подклассовой")
     private Boolean isSubclass;
 
     @Schema(description = "Уникальный ключ особенности", example = "action_surge")
@@ -36,7 +36,7 @@ public class ClassFeatureDto {
     @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
     private String additional;
 
-    @Schema(description = "Шкалирование особенности по уровням")
+    @Schema(description = "Масштабирование  особенности по уровням")
     List<ClassFeatureScalingDto> scaling;
 
     public ClassFeatureDto(ClassFeature classFeature, boolean isSubclass) {
@@ -46,7 +46,15 @@ public class ClassFeatureDto {
         this.name = classFeature.getName();
         this.description = classFeature.getDescription();
         this.additional = classFeature.getAdditional();
-        this.scaling = classFeature.getScaling().stream().map(ClassFeatureScalingDto::new).toList();
+        if (isSubclass) {
+            this.scaling = classFeature.getScaling().stream()
+                    .filter(featureScaling -> !featureScaling.isHideInSubclasses())
+                    .map(ClassFeatureScalingDto::new)
+                    .toList();
+        } else {
+            this.scaling = classFeature.getScaling().stream()
+                    .map(ClassFeatureScalingDto::new)
+                    .toList();
+        }
     }
-
 }

@@ -26,4 +26,7 @@ public class ClassFeatureScaling {
 
     @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
     private String additional;
+
+    @Schema(description = "Скрывать умение в подклассе")
+    private boolean hideInSubclasses;
 }
