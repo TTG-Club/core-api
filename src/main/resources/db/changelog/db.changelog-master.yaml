@@ -125,3 +125,5 @@ databaseChangeLog:
       file: db/changelog/2025/10/07-01-add-relation-tables-for-spell.yaml
   - include:
       file: db/changelog/2025/10/07-02-rename-lineage-affiliation-table.yaml
+  - include:
+      file: db/changelog/2025/10/07-03-rename-lineages-affiliation-column.yaml
