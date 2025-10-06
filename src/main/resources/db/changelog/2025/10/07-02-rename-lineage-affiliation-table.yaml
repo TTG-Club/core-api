@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 07-02-rename-lineage-affiliation-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      preConditions:
+        - tableExists:
+            tableName: spell_lineage_affiliation
+      changes:
+        - renameTable:
+            oldTableName: spell_lineage_affiliation
+            newTableName: spell_lineages_affiliation
+
+        - dropForeignKeyConstraint:
+            baseTableName: spell_lineages_affiliation
+            constraintName: fk_spell_lineage_affiliation_spell
+        - dropForeignKeyConstraint:
+            baseTableName: spell_lineages_affiliation
+            constraintName: fk_spell_lineage_affiliation_species
+
+        - dropPrimaryKey:
+            tableName: spell_lineages_affiliation
+            constraintName: pk_spell_lineage_affiliation
+        - addPrimaryKey:
+            tableName: spell_lineages_affiliation
+            columnNames: spell_url, lineage_affiliation_url
+            constraintName: pk_spell_lineages_affiliation
+
+        - addForeignKeyConstraint:
+            baseTableName: spell_lineages_affiliation
+            baseColumnNames: spell_url
+            referencedTableName: spell
+            referencedColumnNames: url
+            constraintName: fk_spell_lineages_affiliation_spell
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: spell_lineages_affiliation
+            baseColumnNames: lineage_affiliation_url
+            referencedTableName: species
+            referencedColumnNames: url
+            constraintName: fk_spell_lineages_affiliation_species
+            onDelete: CASCADE
