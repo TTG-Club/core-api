@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: 07-03-rename-lineages-affiliation-column
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      preConditions:
+        - tableExists:
+            tableName: spell_lineages_affiliation
+        - columnExists:
+            tableName: spell_lineages_affiliation
+            columnName: lineage_affiliation_url
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: spell_lineages_affiliation
+            constraintName: fk_spell_lineages_affiliation_species
+        - dropPrimaryKey:
+            tableName: spell_lineages_affiliation
+            constraintName: pk_spell_lineages_affiliation
+
+        - renameColumn:
+            tableName: spell_lineages_affiliation
+            oldColumnName: lineage_affiliation_url
+            newColumnName: lineages_affiliation_url
+            columnDataType: VARCHAR(255)
+
+        - addPrimaryKey:
+            tableName: spell_lineages_affiliation
+            columnNames: spell_url, lineages_affiliation_url
+            constraintName: pk_spell_lineages_affiliation
+
+        - createIndex:
+            tableName: spell_lineages_affiliation
+            indexName: ix_sla_lineages
+            columns:
+              - column:
+                  name: lineages_affiliation_url
+
+        - addForeignKeyConstraint:
+            baseTableName: spell_lineages_affiliation
+            baseColumnNames: lineages_affiliation_url
+            referencedTableName: species
+            referencedColumnNames: url
+            constraintName: fk_spell_lineages_affiliation_species
+            onDelete: CASCADE
