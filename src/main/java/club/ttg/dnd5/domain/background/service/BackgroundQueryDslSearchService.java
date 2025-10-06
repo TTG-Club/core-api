@@ -17,7 +17,7 @@ public class BackgroundQueryDslSearchService extends AbstractQueryDslSearchServi
     }
 
     @Override
-    protected OrderSpecifier<?>[] getOrder() {
+    protected OrderSpecifier<?>[] getDefaultOrder() {
         return ORDER;
     }
 }

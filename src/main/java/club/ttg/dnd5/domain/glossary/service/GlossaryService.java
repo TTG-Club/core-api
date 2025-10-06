@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.glossary.service;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.glossary.model.Glossary;
@@ -16,9 +18,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
-import java.util.List;
+
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,12 +30,23 @@ public class GlossaryService {
 
     private final GlossaryMapper glossaryMapper;
 
-    private final GlossaryQueryDslSearchService glossaryQueryDslSearchService;
+    private final GlossaryQueryDslSearchService glossaryDslSearchService;
 
-    public List<GlossaryShortResponse> search(String searchLine, SearchBody searchBody) {
-        return glossaryQueryDslSearchService.search(searchLine, searchBody).stream()
+    public PageResponse<GlossaryShortResponse> search(String searchLine, final int page, final int limit, final String[] sort, SearchBody searchBody) {
+        var responseItems = glossaryDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
+                .stream()
                 .map(glossaryMapper::toShort)
-                .collect(Collectors.toList());
+                .toList();
+        var pagination = Pagination.of(page,
+                limit,
+                glossaryRepository.count(),
+                glossaryDslSearchService.count(searchLine, searchBody)
+        );
+        return PageResponse.<GlossaryShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Transactional

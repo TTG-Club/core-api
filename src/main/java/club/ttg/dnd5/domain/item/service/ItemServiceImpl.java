@@ -1,6 +1,9 @@
 package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
@@ -10,23 +13,17 @@ import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class ItemServiceImpl implements ItemService {
-    private static final Sort DEFAULT_SORT = Sort.by("name");
     private final ItemRepository itemRepository;
+    private final ItemQueryDslSearchService itemDslSearchService;
     private final BookService bookService;
     private final ItemMapper itemMapper;
 
@@ -65,18 +62,25 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemShortResponse> getItems(String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return itemRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
-                })
-                .orElseGet(() -> itemRepository.findAll(DEFAULT_SORT))
+    public PageResponse<ItemShortResponse> getItems(String searchLine,
+                                                    final int page,
+                                                    final int limit,
+                                                    final String[] sort,
+                                                    final SearchBody searchBody) {
+        var responseItems = itemDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
                 .stream()
-                .map(itemMapper::toShortResponse)
-                .collect(Collectors.toList());
+                .map(itemMapper::toShort)
+                .toList();
+        var pagination = Pagination.of(page,
+                limit,
+                itemRepository.count(),
+                itemDslSearchService.count(searchLine, searchBody)
+        );
+        return PageResponse.<ItemShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Override

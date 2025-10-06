@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.common.rest.dto.PageResponse;
+import club.ttg.dnd5.domain.common.rest.dto.Pagination;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
@@ -15,15 +17,13 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-
 @RequiredArgsConstructor
 @Service
 public class MagicItemServiceImpl implements MagicItemService {
 
     private final MagicItemRepository magicItemRepository;
     private final MagicItemMapper magicItemMapper;
-    private final MagicItemQueryDslSearchService magicItemQueryDslSearchService;
+    private final MagicItemQueryDslSearchService magicDslSearchService;
     private final BookService bookService;
 
     @Override
@@ -45,11 +45,25 @@ public class MagicItemServiceImpl implements MagicItemService {
     }
 
     @Override
-    public Collection<MagicItemShortResponse> getItems(final String searchLine, final SearchBody searchBody) {
-        return magicItemQueryDslSearchService.search(searchLine, searchBody)
+    public PageResponse<MagicItemShortResponse> getItems(final String searchLine,
+                                                         int page,
+                                                         int limit,
+                                                         String[] sort,
+                                                         final SearchBody searchBody) {
+        var responseItems = magicDslSearchService.search(
+                        searchLine, page, limit, sort, searchBody)
                 .stream()
                 .map(magicItemMapper::toShort)
                 .toList();
+        var pagination = Pagination.of(page,
+                limit,
+                magicItemRepository.count(),
+                magicDslSearchService.count(searchLine, searchBody)
+        );
+        return PageResponse.<MagicItemShortResponse>builder()
+                .items(responseItems)
+                .pagination(pagination)
+                .build();
     }
 
     @Transactional

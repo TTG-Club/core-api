@@ -54,7 +54,7 @@ public interface ItemMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = ".", target = "cost", qualifiedByName = "getCost")
-    ItemShortResponse toShortResponse(Item item);
+    ItemShortResponse toShort(Item item);
 
     @BaseMapping.BaseRequestNameMapping
     @BaseMapping.BaseSourceRequestMapping

@@ -17,7 +17,7 @@ public class FeatQueryDslSearchService extends AbstractQueryDslSearchService<Fea
     }
 
     @Override
-    protected OrderSpecifier<?>[] getOrder() {
+    protected OrderSpecifier<?>[] getDefaultOrder() {
         return ORDER;
     }
 }
