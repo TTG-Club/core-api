@@ -15,12 +15,24 @@ import java.util.stream.Collectors;
 public interface SpellAffiliationMapper {
     SpellAffiliationDto toSpellAffiliationDto(NamedEntity entity);
 
+    @Mapping(target = "classes", source = "classAffiliation")
+    @Mapping(target = "subclasses", source = "subclassAffiliation")
     @Mapping(target = "species", source = "speciesAffiliation")
+    @Mapping(target = "lineages", source = "lineagesAffiliation")
     SpellAffiliationResponse toSpellAffiliationResponse(Spell spell);
 
     default CreateAffiliationRequest toCreateAffiliationRequest(Spell spell) {
         return CreateAffiliationRequest.builder()
                 .species(spell.getSpeciesAffiliation().stream()
+                        .map(NamedEntity::getUrl)
+                        .collect(Collectors.toList()))
+                .lineages(spell.getLineagesAffiliation().stream()
+                        .map(NamedEntity::getUrl)
+                        .collect(Collectors.toList()))
+                .classes(spell.getClassAffiliation().stream()
+                        .map(NamedEntity::getUrl)
+                        .collect(Collectors.toList()))
+                .subclasses(spell.getSubclassAffiliation().stream()
                         .map(NamedEntity::getUrl)
                         .collect(Collectors.toList()))
                 .build();
