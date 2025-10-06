@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -100,13 +101,17 @@ public class ClassService {
                 .map(bookService::findByUrl)
                 .orElse(null);
 
-        CharacterClass spell = classMapper.updateEntity(existingClass, parent, request, book);
-
+        CharacterClass characterClass = classMapper.updateEntity(existingClass, parent, request, book);
+        if (!existingClass.getSubclasses().isEmpty()) {
+            characterClass.setSubclasses(existingClass.getSubclasses());
+            existingClass.setSubclasses(Collections.emptyList());
+            classRepository.save(existingClass);
+        }
         if (!Objects.equals(url, request.getUrl())) {
             classRepository.deleteById(url);
             classRepository.flush();
         }
-        return classRepository.save(spell).getUrl();
+        return classRepository.save(characterClass).getUrl();
     }
 
     public List<ClassShortResponse> getSubclasses() {
