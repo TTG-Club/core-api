@@ -117,3 +117,5 @@ databaseChangeLog:
       file: db/changelog/2025/09/30-01-add-primary-characteristic-to-class-table.yaml
   - include:
       file: db/changelog/2025/10/03-01-convert-primary-characteristic-to-array.yaml
+  - include:
+      file: db/changelog/2025/10/06-01-add-last-modified-user.yaml
