@@ -37,6 +37,7 @@ public interface BaseMapping {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "username", ignore = true)
+    @Mapping(target = "lastUsername", ignore = true)
     @Mapping(target = "source.createdAt", ignore = true)
     @Mapping(target = "source.updatedAt", ignore = true)
     @interface BaseEntityNameMapping {}
