@@ -119,3 +119,5 @@ databaseChangeLog:
       file: db/changelog/2025/10/03-01-convert-primary-characteristic-to-array.yaml
   - include:
       file: db/changelog/2025/10/06-01-add-last-modified-user.yaml
+  - include:
+      file: db/changelog/2025/10/06-02-add-last-modified-user-to-books.yaml

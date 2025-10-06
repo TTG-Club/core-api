@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.character_class.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.util.PluralUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,8 +23,9 @@ public class SkillProficiency {
         if (skills.size() == Skill.values().length) {
             return "Выберите любые %d".formatted(count);
         }
-        return "Выберите %d навыка из следующих %s".formatted(
+        return "Выберите %d %s из следующих %s".formatted(
                 count,
+                PluralUtil.getPlural(count, new String[]{"навык", "навыка", "навыков"}),
                 skills.stream()
                         .map(Skill::getName)
                         .collect(Collectors.joining(", ")));
