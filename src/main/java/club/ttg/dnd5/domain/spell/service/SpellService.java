@@ -76,16 +76,17 @@ public class SpellService {
         if (existsByUrl(request.getUrl())) {
             throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
         }
+        List<CharacterClass> classes = getClasses(request);
+        List<CharacterClass> subclasses = getSubclasses(request);
         List<Species> species = getSpecieses(request);
         List<Species> lineages = getLineages(request);
-        //TODO долить связи с классами и происхождениями
 
         Book book = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
                 .map(bookService::findByUrl)
                 .orElse(null);
 
-        Spell spell = spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
+        Spell spell = spellMapper.toEntity(request, book, classes, subclasses, species, lineages);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
         return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
 
@@ -126,7 +127,6 @@ public class SpellService {
         List<Species> lineages = getLineages(request);
         List<CharacterClass> classes = getClasses(request);
         List<CharacterClass> subclasses = getSubclasses(request);
-
 
         Book book = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)

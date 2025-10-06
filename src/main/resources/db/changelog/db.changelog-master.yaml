@@ -121,3 +121,5 @@ databaseChangeLog:
       file: db/changelog/2025/10/06-01-add-last-modified-user.yaml
   - include:
       file: db/changelog/2025/10/06-02-add-last-modified-user-to-books.yaml
+  - include:
+      file: db/changelog/2025/10/07-01-add-relation-tables-for-spell.yaml
