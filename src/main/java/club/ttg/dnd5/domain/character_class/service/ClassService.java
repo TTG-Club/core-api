@@ -150,4 +150,8 @@ public class ClassService {
                 .orElse(null);
         return classMapper.toDetailedResponse(classMapper.toEntity(request, parent, book));
     }
+
+    public List<CharacterClass> findAllById(List<String> urls) {
+        return classRepository.findAllById(urls);
+    }
 }
