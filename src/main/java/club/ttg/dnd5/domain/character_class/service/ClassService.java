@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
@@ -155,9 +156,17 @@ public class ClassService {
         return classRepository.findAllById(urls);
     }
 
-    public List<ClassShortResponse> findAllSubclasses() {
-        return classRepository.findAllByParentIsNotNull().stream()
+    public List<ClassShortResponse> findAllMagicSubclasses() {
+        return classRepository.findAllByParentIsNotNullAndCasterTypeNot(CasterType.NONE)
+                .stream()
                 .map(classMapper::toShortResponse)
         .toList();
+    }
+
+    public List<ClassShortResponse> findAllMagicClasses() {
+        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE)
+                .stream()
+                .map(classMapper::toShortResponse)
+                .toList();
     }
 }
