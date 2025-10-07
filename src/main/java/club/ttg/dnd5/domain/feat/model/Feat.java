@@ -1,11 +1,16 @@
 package club.ttg.dnd5.domain.feat.model;
 
 import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
+
+import java.util.Collection;
 
 /**
  * Черты.
@@ -26,6 +31,13 @@ public class Feat extends NamedEntity {
      */
     @Enumerated(EnumType.STRING)
     private FeatCategory category;
+    /**
+     * Улучшаемые характеристики
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Collection<Ability> abilities;
+
     /**
      * Предварительное условие
      */

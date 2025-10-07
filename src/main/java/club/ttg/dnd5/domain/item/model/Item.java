@@ -29,6 +29,7 @@ public class Item extends NamedEntity {
     /** Стоимость предмета */
     private String cost;
     /** Номинал монеты */
+    @Enumerated(EnumType.STRING)
     private Coin coin;
     /** Вес предмета */
     private String weight;

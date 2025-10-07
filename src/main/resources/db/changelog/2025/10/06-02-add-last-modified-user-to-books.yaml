@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 06-02-add-last-modified-user-to-books
+      author: svifty7
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: books
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)

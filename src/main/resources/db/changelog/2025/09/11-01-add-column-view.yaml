@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 11-01-add-column-view
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: notification
+            columns:
+              - column:
+                  name: vulnerabilitiesText
+                  type: BIGINT
+                  defaultValueNumeric: '0'

@@ -1,5 +1,9 @@
 package club.ttg.dnd5.domain.character_class.model;
 
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureRequest;
+import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import club.ttg.dnd5.util.SlugifyUtil;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,11 +28,25 @@ public class ClassFeature {
     private String name;
 
     @Schema(description = "Описание особенности")
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;
 
-    @Schema(description = "Всплывающая подсказка для UI", example = "Один раз в короткий отдых")
-    private String tooltip;
+    @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
+    private String additional;
 
-    @Schema(description = "Шкалирование особенности по уровням")
+    @Schema(description = "Масштабирование особенности по уровням")
     List<ClassFeatureScaling> scaling;
+
+    @Schema(description = "Скрывать умение в подклассе")
+    private boolean hideInSubclasses;
+
+    public ClassFeature(ClassFeatureRequest classFeatureRequest) {
+        this.level = classFeatureRequest.getLevel();
+        this.name = classFeatureRequest.getName();
+        this.description = classFeatureRequest.getDescription();
+        this.additional = classFeatureRequest.getAdditional();
+        this.scaling = classFeatureRequest.getScaling();
+        this.key = SlugifyUtil.getSlug(this.name);
+        this.hideInSubclasses = classFeatureRequest.isHideInSubclasses();
+    }
 }

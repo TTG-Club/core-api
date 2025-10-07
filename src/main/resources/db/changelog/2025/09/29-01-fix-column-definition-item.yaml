@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 29-01-fix-columt-definition-item
+      author: Magistrus
+      changes:
+        - dropNotNullConstraint:
+            tableName: item
+            columnName: stealth

@@ -28,4 +28,6 @@ public abstract class BaseResponse extends TagType.BaseUrl {
     @Schema(description = "дата обновления")
     private Instant updatedAt;
     private String userId;
+    @Schema(description = "пользователь который последний обновил")
+    private String lastUsername;
 }

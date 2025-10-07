@@ -1,20 +1,8 @@
 package club.ttg.dnd5.domain.common.service;
 
-import club.ttg.dnd5.domain.common.dictionary.Language;
-import club.ttg.dnd5.domain.common.dictionary.SpellcasterType;
-import club.ttg.dnd5.domain.common.dictionary.Rarity;
-import club.ttg.dnd5.domain.common.dictionary.CreatureType;
-import club.ttg.dnd5.domain.common.dictionary.Habitat;
-import club.ttg.dnd5.domain.common.dictionary.SenseType;
+import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.common.dictionary.*;
-import club.ttg.dnd5.domain.common.rest.dto.select.BaseSelectOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.CrlOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.KeySelectDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.MeasurableSelectOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.SkillOptionDto;
-import club.ttg.dnd5.domain.common.rest.dto.select.SpellcasterOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.select.*;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.ItemType;
@@ -147,9 +135,9 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SpellcasterOptionDto> getSpellcasterTypes() {
-        return Arrays.stream(SpellcasterType.values())
-                .map(type -> SpellcasterOptionDto.builder()
+    public Collection<CasterOptionDto> getCasterTypes() {
+        return Arrays.stream(CasterType.values())
+                .map(type -> CasterOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())
                         .levels(type.getMaxSpellLevel())
@@ -295,6 +283,26 @@ public class DictionariesService {
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<ArmorOptionDto> getArmorCategories() {
+        return Arrays.stream(ArmorCategory.values())
+                .map(armorCategory -> ArmorOptionDto.builder()
+                        .label(armorCategory.getName())
+                        .value(armorCategory.name())
+                        .putting(armorCategory.getPutting())
+                        .removal(armorCategory.getRemoval())
+                        .build())
+                .toList();
+    }
+
+    public Collection<SelectOptionDto> getWeaponCategories() {
+        return Arrays.stream(WeaponCategory.values())
+                .map(weaponCategory -> SelectOptionDto.builder()
+                        .label(weaponCategory.getName())
+                        .value(weaponCategory.name())
                         .build())
                 .collect(Collectors.toList());
     }

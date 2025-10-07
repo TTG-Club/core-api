@@ -48,6 +48,10 @@ public class CharacterClass extends NamedEntity {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
+    private Set<Ability> primaryCharacteristics;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private ArmorProficiency armorProficiency;
 
     @Type(JsonType.class)

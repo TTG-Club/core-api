@@ -26,7 +26,7 @@ public class SpellLevelFilterGroup extends AbstractFilterGroup<Long, SpellLevelF
 
     @Override
     public String getName() {
-        return "Заклинания";
+        return "Уровень";
     }
 
     @Override

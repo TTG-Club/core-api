@@ -107,3 +107,25 @@ databaseChangeLog:
       file: db/changelog/2025/08/26-02-rename-text-column-to-creature-defenses.yaml
   - include:
       file: db/changelog/2025/09/01-01-add-class-table.yaml
+  - include:
+      file: db/changelog/2025/09/15-01-add-column-abilities-to-feet.yaml
+  - include:
+      file: db/changelog/2025/08/13-02-add-notification.yaml
+  - include:
+      file: db/changelog/2025/09/29-01-fix-column-definition-item.yaml
+  - include:
+      file: db/changelog/2025/09/30-01-add-primary-characteristic-to-class-table.yaml
+  - include:
+      file: db/changelog/2025/10/03-01-convert-primary-characteristic-to-array.yaml
+  - include:
+      file: db/changelog/2025/10/06-01-add-last-modified-user.yaml
+  - include:
+      file: db/changelog/2025/10/06-02-add-last-modified-user-to-books.yaml
+  - include:
+      file: db/changelog/2025/10/07-01-add-relation-tables-for-spell.yaml
+  - include:
+      file: db/changelog/2025/10/07-02-rename-lineage-affiliation-table.yaml
+  - include:
+      file: db/changelog/2025/10/07-03-rename-lineages-affiliation-column.yaml
+  - include:
+      file: db/changelog/2025/10/07-04-add-last-modified-user-saved-filter.yaml

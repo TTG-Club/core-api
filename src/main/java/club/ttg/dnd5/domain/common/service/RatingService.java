@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.common.service;
 
 import club.ttg.dnd5.domain.common.repository.RatingRepository;
-import club.ttg.dnd5.domain.common.rest.RatingMapper;
+import club.ttg.dnd5.domain.common.rest.mapper.RatingMapper;
 import club.ttg.dnd5.domain.common.rest.dto.rating.RatingRequest;
 import club.ttg.dnd5.domain.common.rest.dto.rating.RatingResponse;
 import lombok.AllArgsConstructor;
