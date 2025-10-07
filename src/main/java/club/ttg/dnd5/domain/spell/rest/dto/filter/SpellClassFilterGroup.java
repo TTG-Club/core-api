@@ -47,7 +47,7 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
                 "exists (" +
                         "  select 1 " +
                         "  from spell_class_affiliation sca " +
-                        "  where sca.spell_id = spell.id " +
+                        "  where sca.spell_url = spell.url " +
                         "    and sca.class_affiliation_url = any (cast({0} as text[]))" +
                         ")",
                 Expressions.constant(positives.toArray(String[]::new))
@@ -60,7 +60,7 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
                 "not exists (" +
                         "  select 1 " +
                         "  from spell_class_affiliation sca " +
-                        "  where sca.spell_id = spell.id " +
+                        "  where sca.spell_url = spell.url " +
                         "    and sca.class_affiliation_url = any (cast({0} as text[]))" +
                         ")",
                 Expressions.constant(negatives.toArray(String[]::new))
