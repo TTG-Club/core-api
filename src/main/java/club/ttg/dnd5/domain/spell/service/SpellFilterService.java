@@ -27,7 +27,7 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
     protected FilterInfo buildDefaultFilterInfo() {
         return new FilterInfo(List.of(
                 SpellClassFilterGroup.getDefault(
-                        classService.findAllClasses(null , null)
+                        classService.findAllClasses(null , "name")
                 ),
                 SpellLevelFilterGroup.getDefault(),
                 SpellSchoolFilterGroup.getDefault(),

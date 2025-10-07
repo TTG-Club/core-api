@@ -33,7 +33,7 @@ public class ClassService {
     private final ClassMapper classMapper;
     private final BookService bookService;
 
-    public List<ClassShortResponse> findAllClasses(String searchLine, String[] sort) {
+    public List<ClassShortResponse> findAllClasses(String searchLine, String... sort) {
         Collection<CharacterClass> classes;
 
         if (StringUtils.hasText(searchLine)) {
