@@ -127,3 +127,5 @@ databaseChangeLog:
       file: db/changelog/2025/10/07-02-rename-lineage-affiliation-table.yaml
   - include:
       file: db/changelog/2025/10/07-03-rename-lineages-affiliation-column.yaml
+  - include:
+      file: db/changelog/2025/10/07-04-add-last-modified-user-saved-filter.yaml

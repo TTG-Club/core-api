@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 07-04-add-last-modified-user-saved-filter
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: saved_filter
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
