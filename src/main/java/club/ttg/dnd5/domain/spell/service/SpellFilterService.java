@@ -30,7 +30,7 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
                         classService.findAllClasses(null , "name")
                 ),
                 SpellSubclassFilterGroup.getDefault(
-                        classService.findAllSubclasses("name")
+                        classService.findAllSubclasses()
                 ),
                 SpellLevelFilterGroup.getDefault(),
                 SpellSchoolFilterGroup.getDefault(),

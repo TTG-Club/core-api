@@ -155,8 +155,8 @@ public class ClassService {
         return classRepository.findAllById(urls);
     }
 
-    public List<ClassShortResponse> findAllSubclasses(final String... sort) {
-        return classRepository.findAllByParentIsNull(Sort.by(sort)).stream()
+    public List<ClassShortResponse> findAllSubclasses() {
+        return classRepository.findAllByParentIsNotNull().stream()
                 .map(classMapper::toShortResponse)
         .toList();
     }
