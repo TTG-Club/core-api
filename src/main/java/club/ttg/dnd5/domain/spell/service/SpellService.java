@@ -151,10 +151,12 @@ public class SpellService {
 
     public SpellDetailedResponse preview(final SpellRequest request) {
         var book = bookService.findByUrl(request.getSource().getUrl());
+        List<CharacterClass> classes = getClasses(request);
+        List<CharacterClass> subclasses = getSubclasses(request);
         List<Species> species = getSpecieses(request);
         List<Species> lineages = getLineages(request);
         return spellMapper.toDetail(
-                spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages)
+                spellMapper.toEntity(request, book, classes, subclasses, species, lineages)
         );
     }
 }
