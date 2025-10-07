@@ -51,7 +51,7 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
                         select 1
                          from spell_class_affiliation sca
                                   join class cc on cc.url = sca.class_affiliation_url
-                         where cc.url = any ({0}::text[])
+                         where cc.url = any (cast({0} as text[]))
                         )""",
                 Expressions.constant(positives.toArray(String[]::new))
         );
@@ -66,7 +66,7 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
                           from spell_class_affiliation sca \
                           join class cc on cc.id = sca.class_affiliation_id \
                           where sca.spell_id = spell.id \
-                            and cc.url = any ({0}::text[])
+                            and cc.url = any (cast({0} as text[]))
                         )""",
                 Expressions.constant(negatives.toArray(String[]::new))
         ));
