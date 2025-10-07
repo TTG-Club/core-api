@@ -21,9 +21,9 @@ public class SkillProficiency {
     @Override
     public String toString() {
         if (skills.size() == Skill.values().length) {
-            return "Выберите любые %d".formatted(count);
+            return "Выберите любые %d навыка".formatted(count);
         }
-        return "Выберите %d %s из следующих %s".formatted(
+        return "Выберите %d %s из следующих: %s".formatted(
                 count,
                 PluralUtil.getPlural(count, new String[]{"навык", "навыка", "навыков"}),
                 skills.stream()
