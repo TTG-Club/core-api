@@ -27,10 +27,10 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
     protected FilterInfo buildDefaultFilterInfo() {
         return new FilterInfo(List.of(
                 SpellClassFilterGroup.getDefault(
-                        classService.findAllClasses(null , "name")
+                        classService.findAllMagicClasses()
                 ),
                 SpellSubclassFilterGroup.getDefault(
-                        classService.findAllSubclasses()
+                        classService.findAllMagicSubclasses()
                 ),
                 SpellLevelFilterGroup.getDefault(),
                 SpellSchoolFilterGroup.getDefault(),

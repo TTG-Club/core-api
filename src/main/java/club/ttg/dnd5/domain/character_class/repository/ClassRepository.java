@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.repository;
 
+import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,13 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ClassRepository extends JpaRepository<CharacterClass, String> {
-
-    @Query("""
-                    select cc from CharacterClass cc
-                    join fetch cc.subclasses
-                     where cc.parent is null
-            """)
-    List<CharacterClass> findAllClassesFetchSubclasses();
 
     Collection<CharacterClass> findAllByParentIsNull(final Sort by);
 
@@ -39,4 +33,9 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
     List<CharacterClass> findAllSearch(String searchLine, String invertedSearchLine, Sort sort);
 
     Optional<CharacterClass> findByUrl(String url);
+
+    List<CharacterClass> findAllByParentIsNullAndCasterTypeNot(CasterType casterType);
+
+    List<CharacterClass> findAllByParentIsNotNullAndCasterTypeNot(CasterType casterType);
+
 }
