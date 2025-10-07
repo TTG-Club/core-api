@@ -63,6 +63,7 @@ public class ClassService {
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Класс с url %s не существует", url)));
     }
 
+    @Transactional
     public ClassDetailedResponse save(ClassRequest request) {
         if (exists(request.getUrl())) {
             throw new EntityExistException(String.format("Класс с url %s уже существует", request.getUrl()));
@@ -90,6 +91,7 @@ public class ClassService {
         classRepository.save(characterClass);
     }
 
+    @Transactional
     public String update(String url, ClassRequest request) {
         CharacterClass existingClass = findByUrl(url);
         CharacterClass parent = null;
