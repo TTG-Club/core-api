@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -44,12 +45,14 @@ public class SpellSubclassFilterGroup extends AbstractFilterGroup<String, SpellS
         BooleanExpression result = CollectionUtils.isEmpty(positives)
                 ? TRUE_EXPRESSION
                 : Expressions.booleanTemplate(
-                "exists (" +
-                        "  select 1 " +
-                        "  from spell_subclass_affiliation sca " +
-                        "  where sca.spell_url = spell.url " +
-                        "    and sca.subclass_affiliation_url = any (cast({0} as text[]))" +
-                        ")",
+                """
+                        exists (\
+                          select 1 \
+                          from spell_subclass_affiliation ssa \
+                          where ssa.spell_url = spell.url \
+                            and ssa.subclass_affiliation_url = any (cast({0} as text[]))\
+                        )
+                        """,
                 Expressions.constant(positives.toArray(String[]::new))
         );
 
@@ -57,12 +60,14 @@ public class SpellSubclassFilterGroup extends AbstractFilterGroup<String, SpellS
         return result.and(CollectionUtils.isEmpty(negatives)
                 ? TRUE_EXPRESSION
                 : Expressions.booleanTemplate(
-                "not exists (" +
-                        "  select 1 " +
-                        "  from spell_subclass_affiliation sca " +
-                        "  where sca.spell_url = spell.url " +
-                        "    and sca.subclass_affiliation_url = any (cast({0} as text[]))" +
-                        ")",
+                """
+                        not exists (\
+                          select 1 \
+                          from spell_subclass_affiliation ssa \
+                          where ssa.spell_url = spell.url \
+                            and ssa.subclass_affiliation_url = any (cast({0} as text[]))\
+                        )
+                        """,
                 Expressions.constant(negatives.toArray(String[]::new))
         ));
     }
@@ -78,6 +83,7 @@ public class SpellSubclassFilterGroup extends AbstractFilterGroup<String, SpellS
                 .map(c -> new SpellSubclassFilterItem(
                         c.getName().getName(), c.getUrl())
                 )
+                .sorted(Comparator.comparing(AbstractFilterItem::getName))
                 .collect(Collectors.toList());
 
         return new SpellSubclassFilterGroup(items);
