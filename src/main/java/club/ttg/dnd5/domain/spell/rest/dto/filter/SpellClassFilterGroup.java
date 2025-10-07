@@ -35,10 +35,8 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
     }
 
     @Override
-    public BooleanExpression getQuery()
-    {
-        if (isSingular())
-        {
+    public BooleanExpression getQuery() {
+        if (isSingular()) {
             return TRUE_EXPRESSION;
         }
 
@@ -46,13 +44,12 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
         BooleanExpression result = CollectionUtils.isEmpty(positives)
                 ? TRUE_EXPRESSION
                 : Expressions.booleanTemplate(
-                """
-                        exists ( \
-                        select 1
-                         from spell_class_affiliation sca
-                                  join class cc on cc.url = sca.class_affiliation_url
-                         where cc.url = any (cast({0} as text[]))
-                        )""",
+                "exists (" +
+                        "  select 1 " +
+                        "  from spell_class_affiliation sca " +
+                        "  where sca.spell_id = spell.id " +
+                        "    and sca.class_affiliation_url = any (cast({0} as text[]))" +
+                        ")",
                 Expressions.constant(positives.toArray(String[]::new))
         );
 
@@ -60,14 +57,12 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
         return result.and(CollectionUtils.isEmpty(negatives)
                 ? TRUE_EXPRESSION
                 : Expressions.booleanTemplate(
-                """
-                        not exists ( \
-                          select 1 \
-                          from spell_class_affiliation sca \
-                          join class cc on cc.id = sca.class_affiliation_id \
-                          where sca.spell_id = spell.id \
-                            and cc.url = any (cast({0} as text[]))
-                        )""",
+                "not exists (" +
+                        "  select 1 " +
+                        "  from spell_class_affiliation sca " +
+                        "  where sca.spell_id = spell.id " +
+                        "    and sca.class_affiliation_url = any (cast({0} as text[]))" +
+                        ")",
                 Expressions.constant(negatives.toArray(String[]::new))
         ));
     }
