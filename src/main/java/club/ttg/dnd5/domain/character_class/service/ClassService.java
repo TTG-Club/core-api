@@ -9,6 +9,9 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
+import club.ttg.dnd5.domain.common.model.Gallery;
+import club.ttg.dnd5.domain.common.model.SectionType;
+import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -18,6 +21,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
@@ -33,6 +37,7 @@ public class ClassService {
     private final ClassRepository classRepository;
     private final ClassMapper classMapper;
     private final BookService bookService;
+    private final GalleryRepository galleryRepository;
 
     public List<ClassShortResponse> findAllClasses(String searchLine, String... sort) {
         Collection<CharacterClass> classes;
@@ -73,7 +78,7 @@ public class ClassService {
                 .orElse(null);
 
         CharacterClass toSave = classMapper.toEntity(request, parent, book);
-
+        saveGallery(request.getUrl(), request.getGallery());
         return classMapper.toDetailedResponse(classRepository.save(toSave));
     }
 
@@ -112,6 +117,9 @@ public class ClassService {
             classRepository.deleteById(url);
             classRepository.flush();
         }
+        galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.CLASS);
+
+        saveGallery(request.getUrl(), request.getGallery());
         return classRepository.save(characterClass).getUrl();
     }
 
@@ -134,7 +142,12 @@ public class ClassService {
     }
 
     public ClassDetailedResponse findDetailedByUrl(String url) {
-        return classMapper.toDetailedResponse(findByUrl(url));
+        var response = classMapper.toDetailedResponse(findByUrl(url));
+        response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
+                .stream()
+                .map(Gallery::getImage)
+                .toList());
+        return response;
     }
 
     public ClassRequest findFormByUrl(String url) {
@@ -168,5 +181,16 @@ public class ClassService {
                 .stream()
                 .map(classMapper::toShortResponse)
                 .toList();
+    }
+
+    private void saveGallery(String url, List<String> gallery) {
+        if (!CollectionUtils.isEmpty(gallery)) {
+            gallery.forEach(
+                    image -> galleryRepository.save(Gallery.builder()
+                            .url(url)
+                            .type(SectionType.CLASS)
+                            .image(image)
+                            .build()));
+        }
     }
 }
