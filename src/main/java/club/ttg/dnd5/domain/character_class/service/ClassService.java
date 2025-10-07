@@ -151,7 +151,12 @@ public class ClassService {
     }
 
     public ClassRequest findFormByUrl(String url) {
-        return classMapper.toRequest(findByUrl(url));
+        var request = classMapper.toRequest(findByUrl(url));
+        request.setGallery(galleryRepository.findAllByUrlAndType(request.getUrl(), SectionType.CLASS)
+                .stream()
+                .map(Gallery::getImage)
+                .toList());
+        return request;
     }
 
     public ClassDetailedResponse preview(ClassRequest request) {
@@ -162,7 +167,12 @@ public class ClassService {
                 .map(SourceRequest::getUrl)
                 .map(bookService::findByUrl)
                 .orElse(null);
-        return classMapper.toDetailedResponse(classMapper.toEntity(request, parent, book));
+        var response = classMapper.toDetailedResponse(classMapper.toEntity(request, parent, book));
+        response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)
+                .stream()
+                .map(Gallery::getImage)
+                .toList());
+        return response;
     }
 
     public List<CharacterClass> findAllById(List<String> urls) {
