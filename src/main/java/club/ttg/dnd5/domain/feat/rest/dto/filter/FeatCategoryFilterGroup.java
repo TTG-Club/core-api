@@ -34,7 +34,6 @@ public class FeatCategoryFilterGroup extends AbstractFilterGroup<FeatCategory, F
         BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues.stream().map(FeatCategory::toString).collect(Collectors.toSet()));
         Set<FeatCategory> negativeValues = getNegative();
         return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues.stream().map(FeatCategory::toString).collect(Collectors.toSet())));
-
     }
 
     @Override

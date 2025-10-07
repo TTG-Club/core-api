@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
+import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -18,7 +20,6 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SpellService {
+    private final ClassService classService;
     private final SpeciesService speciesService;
     private final BookService bookService;
     private final SpellRepository spellRepository;
@@ -49,10 +51,6 @@ public class SpellService {
         return spellQueryDslSearchService.search(searchLine, searchBody).stream()
                 .map(spellMapper::toShort)
                 .collect(Collectors.toList());
-    }
-
-    public List<Spell> findAll(Sort sort) {
-        return spellRepository.findAll(sort);
     }
 
     public SpellDetailedResponse findDetailedByUrl(String url) {
@@ -78,19 +76,34 @@ public class SpellService {
         if (existsByUrl(request.getUrl())) {
             throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
         }
+        List<CharacterClass> classes = getClasses(request);
+        List<CharacterClass> subclasses = getSubclasses(request);
         List<Species> species = getSpecieses(request);
         List<Species> lineages = getLineages(request);
-        //TODO долить связи с классами и происхождениями
 
         Book book = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
                 .map(bookService::findByUrl)
                 .orElse(null);
 
-        Spell spell = spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
+        Spell spell = spellMapper.toEntity(request, book, classes, subclasses, species, lineages);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
         return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
 
+    }
+
+    private List<CharacterClass> getClasses(SpellRequest request) {
+        return Optional.ofNullable(request.getAffiliations())
+                .map(CreateAffiliationRequest::getClasses)
+                .map(classService::findAllById)
+                .orElseGet(Collections::emptyList);
+    }
+
+    private List<CharacterClass> getSubclasses(SpellRequest request) {
+        return Optional.ofNullable(request.getAffiliations())
+                .map(CreateAffiliationRequest::getSubclasses)
+                .map(classService::findAllById)
+                .orElseGet(Collections::emptyList);
     }
 
     private List<Species> getSpecieses(SpellRequest request) {
@@ -112,13 +125,14 @@ public class SpellService {
         Spell existingSpell = findByUrl(oldUrl);
         List<Species> species = getSpecieses(request);
         List<Species> lineages = getLineages(request);
-        //TODO долить связи с классами и происхождениями
+        List<CharacterClass> classes = getClasses(request);
+        List<CharacterClass> subclasses = getSubclasses(request);
 
         Book book = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
                 .map(bookService::findByUrl)
                 .orElse(null);
-        Spell spell = spellMapper.updateEntity(existingSpell, request, book, Collections.emptyList(), Collections.emptyList(), species, lineages);
+        Spell spell = spellMapper.updateEntity(existingSpell, request, book, classes, subclasses, species, lineages);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
         if (!Objects.equals(oldUrl, request.getUrl())) {
             spellRepository.deleteById(oldUrl);
@@ -137,10 +151,12 @@ public class SpellService {
 
     public SpellDetailedResponse preview(final SpellRequest request) {
         var book = bookService.findByUrl(request.getSource().getUrl());
+        List<CharacterClass> classes = getClasses(request);
+        List<CharacterClass> subclasses = getSubclasses(request);
         List<Species> species = getSpecieses(request);
         List<Species> lineages = getLineages(request);
         return spellMapper.toDetail(
-                spellMapper.toEntity(request, book, Collections.emptyList(), Collections.emptyList(), species, lineages)
+                spellMapper.toEntity(request, book, classes, subclasses, species, lineages)
         );
     }
 }

@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 15-01-add-column-abilities-to-feat
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: feat
+            columns:
+              - column:
+                  name: abilities
+                  type: jsonb
