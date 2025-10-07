@@ -13,24 +13,25 @@ import java.util.Set;
 @Getter
 @AllArgsConstructor
 public enum Dice {
-	d4(4),
-	d6(6),
-	d8(8),
-	d10(10),
-	d12(12),
-	d20(20),
-	d100(100),
-	d3(3),
-	d2(2);
+    d4(4, 3),
+    d6(6, 4),
+    d8(8, 5),
+    d10(10, 6),
+    d12(12, 7),
+    d20(20, 11),
+    d100(100, 51),
+    d3(3, 2),
+    d2(2, 2);
 
-	private static final Random rnd = new Random();
+    private static final Random rnd = new Random();
 
 	private final int maxValue;
-	
+    private final int avgValue;
+
 	public int roll() {
 		return 1 + rnd.nextInt(this.getMaxValue());
 	}
-	
+
 	public int roll(int diceCount) {
 		int result = 0;
 		for (int i = 0; i < diceCount; i++) {
@@ -38,7 +39,7 @@ public enum Dice {
 		}
 		return result;
 	}
-	
+
 	public static Dice parse(int dice) {
 		return switch (dice) {
 			case 4 -> d4;
@@ -51,7 +52,7 @@ public enum Dice {
 			default -> null;
 		};
 	}
-	
+
 	public static Dice parse(String dice) {
 		if (dice == null) {
 			return null;
@@ -68,7 +69,7 @@ public enum Dice {
 			default -> null;
 		};
 	}
-	
+
 	public String getName() {
 		return "к" + maxValue;
 	}

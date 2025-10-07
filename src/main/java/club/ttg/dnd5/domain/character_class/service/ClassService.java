@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
@@ -11,15 +12,19 @@ import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -29,10 +34,19 @@ public class ClassService {
     private final ClassMapper classMapper;
     private final BookService bookService;
 
-    public List<ClassShortResponse> findAllClasses() {
-        return classRepository.findAllClassesFetchSubclasses().stream()
+    public List<ClassShortResponse> findAllClasses(String searchLine, String... sort) {
+        Collection<CharacterClass> classes;
+
+        if (StringUtils.hasText(searchLine)) {
+            String invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
+            classes = classRepository.findAllSearch(searchLine, invertedSearchLine, Sort.by(sort));
+        } else {
+            classes = classRepository.findAllByParentIsNull(Sort.by(sort));
+        }
+
+        return classes.stream()
                 .map(classMapper::toShortResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public boolean exists(String url) {
@@ -73,20 +87,50 @@ public class ClassService {
 
     public String update(String url, ClassRequest request) {
         CharacterClass existingClass = findByUrl(url);
-        CharacterClass parent = Optional.ofNullable(request.getParentUrl())
-                .map(this::findByUrl)
-                .orElse(null);
+        CharacterClass parent = null;
+
+        if (request.getParentUrl() != null) {
+            try {
+                parent = findByUrl(request.getParentUrl());
+            } catch (EntityNotFoundException e) {
+                throw new EntityNotFoundException(String.format("Родительского класса с url %s не существует", request.getParentUrl()));
+            }
+        }
+
         Book book = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
                 .map(bookService::findByUrl)
                 .orElse(null);
-        CharacterClass spell = classMapper.updateEntity(existingClass, parent, request, book);
 
+        CharacterClass characterClass = classMapper.updateEntity(existingClass, parent, request, book);
+        if (!existingClass.getSubclasses().isEmpty()) {
+            characterClass.setSubclasses(existingClass.getSubclasses());
+            existingClass.setSubclasses(Collections.emptyList());
+            classRepository.save(existingClass);
+        }
         if (!Objects.equals(url, request.getUrl())) {
             classRepository.deleteById(url);
             classRepository.flush();
         }
-        return classRepository.save(spell).getUrl();
+        return classRepository.save(characterClass).getUrl();
+    }
+
+    public List<ClassShortResponse> getSubclasses() {
+        return classRepository.findAllByParentIsNotNull().stream()
+                .filter(characterClass -> !characterClass.isHiddenEntity())
+                .map(classMapper::toShortResponse)
+                .toList();
+    }
+
+    public List<ClassShortResponse> getSubclasses(String parentUrl) {
+        CharacterClass characterClass = classRepository.findByUrl(parentUrl)
+                .orElseThrow(() -> new EntityNotFoundException("Класс не найден для URL:" + parentUrl));
+
+        if (characterClass.isHiddenEntity()) {
+            throw new EntityNotFoundException("Класс не найден для URL:" + parentUrl);
+        }
+
+        return characterClass.getSubclasses().stream().map(classMapper::toShortResponse).toList();
     }
 
     public ClassDetailedResponse findDetailedByUrl(String url) {
@@ -106,5 +150,23 @@ public class ClassService {
                 .map(bookService::findByUrl)
                 .orElse(null);
         return classMapper.toDetailedResponse(classMapper.toEntity(request, parent, book));
+    }
+
+    public List<CharacterClass> findAllById(List<String> urls) {
+        return classRepository.findAllById(urls);
+    }
+
+    public List<ClassShortResponse> findAllMagicSubclasses() {
+        return classRepository.findAllByParentIsNotNullAndCasterTypeNot(CasterType.NONE)
+                .stream()
+                .map(classMapper::toShortResponse)
+        .toList();
+    }
+
+    public List<ClassShortResponse> findAllMagicClasses() {
+        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE)
+                .stream()
+                .map(classMapper::toShortResponse)
+                .toList();
     }
 }

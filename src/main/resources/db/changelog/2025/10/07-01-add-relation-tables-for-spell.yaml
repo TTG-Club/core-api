@@ -1,0 +1,162 @@
+databaseChangeLog:
+  - changeSet:
+      id: 07-01-add-relation-tables-classes-for-spell
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      preConditions:
+        - tableExists:
+            tableName: spell
+        - tableExists:
+            tableName: class
+      changes:
+        - createTable:
+            tableName: spell_class_affiliation
+            columns:
+              - column:
+                  name: spell_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: class_affiliation_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: spell_class_affiliation
+            columnNames: spell_url, class_affiliation_url
+            constraintName: pk_spell_class_affiliation
+        - createIndex:
+            tableName: spell_class_affiliation
+            indexName: ix_sca_spell
+            columns:
+              - column:
+                  name: spell_url
+        - createIndex:
+            tableName: spell_class_affiliation
+            indexName: ix_sca_class
+            columns:
+              - column:
+                  name: class_affiliation_url
+        - addForeignKeyConstraint:
+            baseTableName: spell_class_affiliation
+            baseColumnNames: spell_url
+            referencedTableName: spell
+            referencedColumnNames: url
+            constraintName: fk_spell_class_affiliation_spell
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: spell_class_affiliation
+            baseColumnNames: class_affiliation_url
+            referencedTableName: class
+            referencedColumnNames: url
+            constraintName: fk_spell_class_affiliation_class
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 07-01-add-relation-tables-subclasses-for-spell
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      preConditions:
+        - tableExists:
+            tableName: spell
+        - tableExists:
+            tableName: class
+      changes:
+        - createTable:
+            tableName: spell_subclass_affiliation
+            columns:
+              - column:
+                  name: spell_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subclass_affiliation_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: spell_subclass_affiliation
+            columnNames: spell_url, subclass_affiliation_url
+            constraintName: pk_spell_subclass_affiliation
+        - createIndex:
+            tableName: spell_subclass_affiliation
+            indexName: ix_ssa_spell
+            columns:
+              - column:
+                  name: spell_url
+        - createIndex:
+            tableName: spell_subclass_affiliation
+            indexName: ix_ssa_subclass
+            columns:
+              - column:
+                  name: subclass_affiliation_url
+        - addForeignKeyConstraint:
+            baseTableName: spell_subclass_affiliation
+            baseColumnNames: spell_url
+            referencedTableName: spell
+            referencedColumnNames: url
+            constraintName: fk_spell_subclass_affiliation_spell
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: spell_subclass_affiliation
+            baseColumnNames: subclass_affiliation_url
+            referencedTableName: class
+            referencedColumnNames: url
+            constraintName: fk_spell_subclass_affiliation_subclass
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 07-01-add-relation-tables-lineages-for-spell
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      preConditions:
+        - tableExists:
+            tableName: spell
+        - tableExists:
+            tableName: species
+      changes:
+        - createTable:
+            tableName: spell_lineage_affiliation
+            columns:
+              - column:
+                  name: spell_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lineage_affiliation_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: spell_lineage_affiliation
+            columnNames: spell_url, lineage_affiliation_url
+            constraintName: pk_spell_lineage_affiliation
+        - createIndex:
+            tableName: spell_lineage_affiliation
+            indexName: ix_sla_spell
+            columns:
+              - column:
+                  name: spell_url
+        - createIndex:
+            tableName: spell_lineage_affiliation
+            indexName: ix_sla_lineage
+            columns:
+              - column:
+                  name: lineage_affiliation_url
+        - addForeignKeyConstraint:
+            baseTableName: spell_lineage_affiliation
+            baseColumnNames: spell_url
+            referencedTableName: spell
+            referencedColumnNames: url
+            constraintName: fk_spell_lineage_affiliation_spell
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: spell_lineage_affiliation
+            baseColumnNames: lineage_affiliation_url
+            referencedTableName: species
+            referencedColumnNames: url
+            constraintName: fk_spell_lineage_affiliation_species
+            onDelete: CASCADE

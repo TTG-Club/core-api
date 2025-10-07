@@ -8,7 +8,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SpellcasterOptionDto extends BaseSelectOptionDto {
+public class CasterOptionDto extends BaseSelectOptionDto {
 
     @Schema(
             example = "полный заклинатель",

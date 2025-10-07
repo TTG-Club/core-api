@@ -1,0 +1,83 @@
+databaseChangeLog:
+  - changeSet:
+      id: 06-01-add-last-modified-user
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: class
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: species
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: feat
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: background
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: magic_item
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: item
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: spell
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: bestiary
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: glossary
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: weapon_mastery
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: weapon_property
+            schemaName: public
+            columns:
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)

@@ -84,6 +84,13 @@ public class SpeciesService {
                 .toList();
     }
 
+    public List<SpeciesShortResponse> getLineages() {
+        return speciesRepository.findAllByParentIsNotNull().stream()
+                .filter(species -> !species.isHiddenEntity())
+                .map(speciesMapper::toShort)
+                .toList();
+    }
+
     public Collection<SpeciesShortResponse> getAllLineages(String url) {
         Species species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Вид не найден URL: " + url));

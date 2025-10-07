@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.model;
 
 import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
@@ -57,9 +58,15 @@ public class Spell extends NamedEntity {
 
     @ManyToMany(fetch = FetchType.LAZY)
     private List<Species> speciesAffiliation;
-    //TODO раскомментить после рождения классов
-//    @ManyToMany(fetch = FetchType.LAZY)
-//    private List<ClassCharacter> classAffiliation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    private List<Species> lineagesAffiliation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    private List<CharacterClass> classAffiliation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    private List<CharacterClass> subclassAffiliation;
 
     private Boolean upcastable;
 

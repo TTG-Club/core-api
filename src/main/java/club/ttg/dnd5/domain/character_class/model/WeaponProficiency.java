@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.character_class.model;
 
-import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,9 +21,9 @@ public class WeaponProficiency {
 
     @Override
     public String toString() {
-        return Stream.of(category.stream().map(Object::toString).collect(Collectors.joining(",")),
+        return Stream.of(category.stream().map(WeaponCategory::getName).collect(Collectors.joining(", ")),
                         custom)
                 .filter(StringUtils::hasText)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining(", "));
     }
 }

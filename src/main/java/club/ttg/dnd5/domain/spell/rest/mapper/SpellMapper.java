@@ -116,6 +116,9 @@ public interface SpellMapper {
 
     @Mapping(target = "source", source = "source")
     @Mapping(target = "speciesAffiliation", source = "species")
+    @Mapping(target = "lineagesAffiliation", source = "lineages")
+    @Mapping(target = "classAffiliation", source = "classes")
+    @Mapping(target = "subclassAffiliation", source = "subclasses")
     @interface ToEntityMapping {
     }
 
