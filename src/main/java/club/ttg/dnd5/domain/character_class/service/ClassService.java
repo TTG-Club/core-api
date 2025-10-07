@@ -154,4 +154,10 @@ public class ClassService {
     public List<CharacterClass> findAllById(List<String> urls) {
         return classRepository.findAllById(urls);
     }
+
+    public List<ClassShortResponse> findAllSubclasses(final String... sort) {
+        return classRepository.findAllByParentIsNull(Sort.by(sort)).stream()
+                .map(classMapper::toShortResponse)
+        .toList();
+    }
 }

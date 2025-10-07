@@ -29,6 +29,9 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
                 SpellClassFilterGroup.getDefault(
                         classService.findAllClasses(null , "name")
                 ),
+                SpellSubclassFilterGroup.getDefault(
+                        classService.findAllSubclasses(null , "name")
+                ),
                 SpellLevelFilterGroup.getDefault(),
                 SpellSchoolFilterGroup.getDefault(),
                 SpellOtherFilterGroup.getDefault(),
