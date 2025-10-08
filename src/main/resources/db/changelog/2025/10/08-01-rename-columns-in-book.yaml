@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 08-01-rename-columns-in-book
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+            tableName: books
+            oldColumnName: englishName
+            newColumnName: english
+        - renameColumn:
+            tableName: books
+            oldColumnName: bookDate
+            newColumnName: published
+        - renameColumn:
+            tableName: books
+            oldColumnName: alt_name
+            newColumnName: alternative
+        - renameColumn:
+            tableName: books
+            oldColumnName: source_acronym
+            newColumnName: acronym
