@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.book.rest.controller;
 
+import club.ttg.dnd5.domain.book.rest.dto.BookRequest;
 import club.ttg.dnd5.domain.book.service.BookService;
 
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
@@ -25,5 +26,16 @@ public class BookController {
     @Operation(summary = "Получить книги", description = "Возвращает список книги")
     public Collection<ShortResponse> getBooksByType() {
         return bookService.getAllBooks();
+    }
+
+    @PostMapping
+    @Operation(summary = "Добавить книгу", description = "Добавление новой книги")
+    public String create(BookRequest request) {
+        return bookService.save(request);
+    }
+    @PutMapping
+    @Operation(summary = "Обновить книгу", description = "Обновление книги")
+    public String update(BookRequest request) {
+        return bookService.update(request);
     }
 }

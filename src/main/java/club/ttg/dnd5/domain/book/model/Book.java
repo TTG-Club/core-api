@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.book.model;
 
 import club.ttg.dnd5.domain.common.model.Timestamped;
-import club.ttg.dnd5.domain.common.model.Translation;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,22 +17,22 @@ import java.util.Set;
 public class Book extends Timestamped {
     @Id
     @Column(unique = true, nullable = false)
-    private String sourceAcronym;
+    private String acronym;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String url;
+
     private String name;
-    private String englishName;
-    private String altName;
+    private String english;
+    private String alternative;
+
     @Column(columnDefinition = "TEXT")
     private String description;
+
     @Enumerated(EnumType.STRING)
     private TypeBook type;
-    private LocalDate bookDate;
+    private LocalDate published;
     private String image;
-
-    //@Embedded
-    //private Translation translation;
 
     // Collection of authors for the book itself
     @ElementCollection

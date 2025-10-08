@@ -39,5 +39,4 @@ public interface FeatMapper {
     default String capitalize(String string) {
         return StringUtils.capitalize(string);
     }
-
 }

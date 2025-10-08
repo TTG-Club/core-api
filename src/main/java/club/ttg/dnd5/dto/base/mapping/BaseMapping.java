@@ -20,7 +20,7 @@ public interface BaseMapping {
     @Mapping(target = "source.group.english", ignore = true)
     @Mapping(source = "source.type.label", target = "source.group.label")
     @Mapping(source = "source.name", target = "source.name.name")
-    @Mapping(source = "source.englishName", target = "source.name.english")
+    @Mapping(source = "source.english", target = "source.name.english")
     @Mapping(source = "source.sourceAcronym", target = "source.name.label")
     @Mapping(source = "sourcePage", target = "source.page")
     @interface BaseSourceMapping {}
