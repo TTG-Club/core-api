@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.book.repository.BookRepository;
 import club.ttg.dnd5.domain.book.rest.dto.BookRequest;
 import club.ttg.dnd5.domain.book.rest.mapper.BookMapper;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
+import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,13 +40,16 @@ public class BookService {
 
     @Transactional
     public String save(final BookRequest request) {
-        bookRepository.existsById(request.getAcronym());
+        if (bookRepository.existsById(request.getAcronym())) {
+            throw new EntityExistException("Книга с таким акронимом уже существует");
+        }
         return bookRepository.save(bookMapper.toEntity(request)).getUrl();
     }
 
     @Transactional
     public String update(final BookRequest request) {
-        findByUrl(request.getUrl());
-        return null;
+        var book = findByUrl(request.getUrl());
+        bookMapper.toEntity(request, book);
+        return bookRepository.save(book).getUrl();
     }
 }
