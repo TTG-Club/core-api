@@ -8,9 +8,9 @@ import lombok.RequiredArgsConstructor;
 public enum CasterType {
     FULL("Полноценный заклинатель", 9),
     HALF("Половинный заклинатель", 5),
+    PACT("Магия договора", 5),
     THIRD("Заклинатель на треть", 4),
-    NONE("Не владеет заклинаниями", 0),
-    PACT("Магия договора", 5);
+    NONE("Не владеет заклинаниями", 0);
 
     private final String name;
     private final int maxSpellLevel;
