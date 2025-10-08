@@ -139,3 +139,5 @@ databaseChangeLog:
       file: db/changelog/2025/10/10-01-item-drop-and-add-columns.yaml
   - include:
       file: db/changelog/2025/10/10-02-item-drop-columns.yaml
+  - include:
+      file: db/changelog/2025/10/08-01-rename-columns-in-book.yaml
