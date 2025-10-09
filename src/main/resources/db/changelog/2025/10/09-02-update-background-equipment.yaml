@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 09-02-update-background-equipment.yaml
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - modifyDataType:
+            columnName: equipment
+            newDataType: text
+            tableName: background
