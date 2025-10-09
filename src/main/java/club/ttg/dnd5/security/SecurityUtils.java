@@ -1,16 +1,13 @@
 package club.ttg.dnd5.security;
 
-import club.ttg.dnd5.domain.user.rest.dto.UserDto;
-import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.domain.user.model.User;
+import club.ttg.dnd5.exception.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Класс утилита для работы с аутентифицированным пользователем
@@ -39,31 +36,7 @@ public final class SecurityUtils {
         }
     }
 
-    /**
-     * Получение объекта с данными пользователя, получаемые при авторизации
-     *
-     * @return Объект с логином, email, и ролями.
-     */
-    public static UserDto getUserDto() throws ApiException {
-        return convertUserToUserDto(getUser());
-    }
-
-    /**
-     * Конвертирует User в UserDto
-     *
-     * @param user Сущность пользователя
-     * @return UserDto
-     */
-    public static UserDto convertUserToUserDto(User user) {
-        return UserDto.builder()
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .roles(user.getAuthorities()
-                        .stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toList()))
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
+    public static String getUsername() throws ApiException {
+        return getUser().getUsername();
     }
 }
