@@ -33,6 +33,7 @@ public class BookController {
     public String create(BookRequest request) {
         return bookService.save(request);
     }
+
     @PutMapping
     @Operation(summary = "Обновить книгу", description = "Обновление книги")
     public String update(BookRequest request) {
