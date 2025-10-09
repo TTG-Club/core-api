@@ -7,7 +7,7 @@ import java.util.Map;
 
 @UtilityClass
 public class SwitchLayoutUtils {
-    private static Map<Character, Character> LAYOUT_SWITCH_MAP;
+    private static final Map<Character, Character> LAYOUT_SWITCH_MAP;
 
     static {
         LAYOUT_SWITCH_MAP = new HashMap<>();
