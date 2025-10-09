@@ -1,14 +1,13 @@
 package club.ttg.dnd5.domain.user.model;
 
-import club.ttg.dnd5.domain.common.model.Timestamped;
 import club.ttg.dnd5.domain.user.model.party.UserParty;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SourceType;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -52,6 +51,10 @@ public class User implements UserDetails {
 	@Column(name = "updated_at")
 	@UpdateTimestamp(source = SourceType.DB)
 	private Instant updatedAt;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private UserPreferences preferences;
 
 	@Override
 	public Collection<GrantedAuthority> getAuthorities() {

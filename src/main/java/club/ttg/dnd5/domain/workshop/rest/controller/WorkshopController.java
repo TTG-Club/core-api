@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.workshop.rest.controller;
 
-import club.ttg.dnd5.domain.user.rest.dto.UserDto;
 import club.ttg.dnd5.domain.workshop.rest.dto.WorkshopResponse;
 import club.ttg.dnd5.domain.workshop.service.WorkshopService;
 import club.ttg.dnd5.security.SecurityUtils;
@@ -25,8 +24,6 @@ public class WorkshopController {
     @Operation(summary = "Получение количества страниц созданных пользователем по разделу")
     @GetMapping("/sections")
     public List<WorkshopResponse> getWorkshopSections() {
-        UserDto userDto = SecurityUtils.getUserDto();
-
-        return workshopService.getWorkshopUserSections(userDto.getUsername());
+        return workshopService.getWorkshopUserSections(SecurityUtils.getUsername());
     }
 }
