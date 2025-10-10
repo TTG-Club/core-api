@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
 import club.ttg.dnd5.domain.item.model.*;
-import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
@@ -41,27 +40,13 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemRequest findFormByUrl(final String url) {
         var item = findByUrl(url);
-        return switch (item) {
-            case Armor armor -> itemMapper.toRequest(armor);
-            case Weapon weapon -> itemMapper.toRequest(weapon);
-            case Tool tool -> itemMapper.toRequest(tool);
-            case Vehicle ship -> itemMapper.toRequest(ship);
-            case Mount mount -> itemMapper.toRequest(mount);
-            case Item object -> itemMapper.toRequest(object);
-        };
+        return itemMapper.toRequest(item);
     }
 
     @Override
     public ItemDetailResponse getItem(final String itemUrl) {
         var item = findByUrl(itemUrl);
-        return switch (item) {
-            case Armor armor -> itemMapper.toDetailResponse(armor);
-            case Weapon weapon -> itemMapper.toDetailResponse(weapon);
-            case Tool tool -> itemMapper.toDetailResponse(tool);
-            case Vehicle ship -> itemMapper.toDetailResponse(ship);
-            case Mount mount -> itemMapper.toDetailResponse(mount);
-            case Item object -> itemMapper.toDetailResponse(object);
-        };
+        return itemMapper.toDetailResponse(item);
     }
 
     @Override
@@ -95,7 +80,7 @@ public class ItemServiceImpl implements ItemService {
             itemRepository.deleteById(itemUrl);
             itemRepository.flush();
         }
-        return itemRepository.save(itemMapper.toItem(request, book)).getUrl();
+        return itemRepository.save(itemMapper.toEntity(request, book)).getUrl();
     }
 
     @Override
@@ -108,14 +93,7 @@ public class ItemServiceImpl implements ItemService {
 
     private Item toItem(final ItemRequest request) {
         var book = bookService.findByUrl(request.getSource().getUrl());
-        return switch(request.getCategory()) {
-            case ITEM -> itemMapper.toItem(request, book);
-            case ARMOR -> itemMapper.toArmor(request, book);
-            case WEAPON -> itemMapper.toWeapon(request, book);
-            case VEHICLE -> itemMapper.toVehicle(request, book);
-            case MOUNT -> itemMapper.toMount(request, book);
-            case TOOL -> itemMapper.toTool(request, book);
-        };
+        return itemMapper.toEntity(request, book);
     }
 
     private void exist(String url) {

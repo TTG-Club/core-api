@@ -1,26 +1,37 @@
 package club.ttg.dnd5.domain.item.model;
 
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@NoArgsConstructor
 @Getter
 @Setter
-@Entity
-@DiscriminatorValue("ARMOR")
-public class Armor extends Item {
-    @Enumerated(EnumType.STRING)
-    private ArmorCategory armorCategory;
-    /** КД. */
-    private String armorClass;
+public class Armor {
+    /**
+     * Категория доспеха
+     */
+    private ArmorCategory category;
+    /**
+     *  КД.
+     */
+    private Integer armorClass;
+    /**
+     * Добавление модификатора Ловкости к классу доспеха
+     */
+    private DexterityMod mod;
     /** Сила. */
     private String strength;
     /** Скрытность. */
     private Boolean stealth;
+
+    @AllArgsConstructor
+    @Getter
+    public enum DexterityMod {
+        PLUS ("+ модификатор Ловкости"),
+        PLUS_MAX_2("+ модификатор Ловкости (максимум +2)"),
+        NONE("");
+
+        private final String name;
+    }
 }
