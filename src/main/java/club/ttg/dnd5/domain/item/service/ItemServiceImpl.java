@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -9,23 +10,19 @@ import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class ItemServiceImpl implements ItemService {
-    private static final Sort DEFAULT_SORT = Sort.by("name");
     private final ItemRepository itemRepository;
+    private final ItemQueryDslService itemQueryDslService;
     private final BookService bookService;
     private final ItemMapper itemMapper;
 
@@ -50,15 +47,8 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemShortResponse> getItems(String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return itemRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
-                })
-                .orElseGet(() -> itemRepository.findAll(DEFAULT_SORT))
+    public Collection<ItemShortResponse> getItems(String searchLine, final SearchBody searchBody) {
+        return itemQueryDslService.search(searchLine, searchBody)
                 .stream()
                 .map(itemMapper::toShortResponse)
                 .collect(Collectors.toList());

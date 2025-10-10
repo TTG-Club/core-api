@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.item.rest.mapper;
+package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
