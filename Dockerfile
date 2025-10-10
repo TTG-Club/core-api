@@ -1,19 +1,13 @@
-FROM maven:3-eclipse-temurin-21 AS base
-
+FROM maven:3-eclipse-temurin-21 AS build
 WORKDIR /opt/app
+COPY --link pom.xml ./
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn dependency:go-offline -B
+COPY --link src src
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn package -B -DskipTests
 
-
-FROM base AS build
-
-COPY --link . .
-
-RUN mvn -B clean install
-
-
-FROM eclipse-temurin:21-jre
-
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /opt/app
-
 COPY --from=build /opt/app/target/dnd5.jar dnd5.jar
-
 ENTRYPOINT ["java","-jar","dnd5.jar"]
