@@ -12,10 +12,6 @@ public class Damage {
     private DamageType type;
 
     public String toString() {
-        var builder = new StringBuilder();
-        builder.append(roll.toString());
-        builder.append(" ");
-        builder.append(type.name());
-        return builder.toString();
+        return "%s %s".formatted(roll.toString(), type.name());
     }
 }

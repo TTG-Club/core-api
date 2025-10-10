@@ -133,3 +133,5 @@ databaseChangeLog:
       file: db/changelog/2025/10/09-01-update-full-search-add-item.yaml
   - include:
       file: db/changelog/2025/10/09-02-update-background-equipment.yaml
+  - include:
+      file: db/changelog/2025/10/10-01-item-drop-and-add-columns.yaml
