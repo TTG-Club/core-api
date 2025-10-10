@@ -1,41 +1,26 @@
 package club.ttg.dnd5.domain.item.model.weapon;
 
-import club.ttg.dnd5.domain.common.model.Roll;
-import club.ttg.dnd5.domain.item.rest.dto.Range;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
+/**
+ * Свойства оружия
+ */
+@AllArgsConstructor
 @Getter
-@Setter
-public class Property {
-    private String url;
-    private String name;
-    private Range range;
-    private Roll versatile;
-    /**
-     * Требуемый тип снаряда для выстрела (только дальнобойного)
-     */
-    private AmmunitionType ammo;
-    private String additional;
+public enum Property {
+    AMMUNITION("Боеприпасы"),
+    FINESSE("Фехтовальное"),
+    HEAVY("Тяжёлое"),
+    LIGHT("Лёгкое"),
+    LOADING("Перезарядка"),
+    RANGE("Дистанция"),
+    REACH("Досягаемость"),
+    THROWN("Метательное"),
+    TWO_HANDED("Двуручное"),
+    VERSATILE("Универсальное"),
+    BURST_FIRE("Очередь");
 
-    public String toString() {
-        var builder = new StringBuilder(name);
-        if (range != null) {
-            builder.append("(дистанция ");
-            builder.append(range.getNormal());
-            builder.append("/");
-            builder.append(range.getMax());
-            if (ammo != null) {
-                builder.append(", ");
-                builder.append(ammo.getName());
-            }
-            builder.append(")");
-        }
-        if (versatile != null) {
-            builder.append("(");
-            builder.append(versatile);
-            builder.append(")");
-        }
-        return builder.toString();
-    }
+    private final String name;
+
 }

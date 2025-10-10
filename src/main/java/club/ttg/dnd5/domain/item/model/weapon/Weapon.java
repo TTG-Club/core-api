@@ -1,42 +1,39 @@
 package club.ttg.dnd5.domain.item.model.weapon;
 
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
-import club.ttg.dnd5.domain.item.model.Item;
-import io.hypersistence.utils.hibernate.type.json.JsonType;
-import jakarta.persistence.*;
+import club.ttg.dnd5.domain.common.model.Roll;
+import club.ttg.dnd5.domain.item.rest.dto.Range;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Type;
 
-import java.util.Collection;
+import java.util.Set;
 
-@NoArgsConstructor
 @Getter
 @Setter
-@Entity
-@DiscriminatorValue("WEAPON")
-public class Weapon extends Item {
+public class Weapon  {
     /** Категория оружия */
-    @Enumerated(EnumType.STRING)
-    private WeaponCategory weaponCategory;
+    private WeaponCategory category;
 
     /**
-     * Урон
+     * Тип урона
      */
-    @Type(JsonType.class)
-    @Column(name = "weapon_damage", columnDefinition = "jsonb")
     private Damage damage;
 
     /**
      * Свойства оружия
      */
-    @Type(JsonType.class)
-    @Column(name = "weapon_properties", columnDefinition = "jsonb")
-    private Collection<Property> properties;
+    private Set<Property> properties;
 
-    /** Приёам */
-    @Type(JsonType.class)
-    @Column(name = "weapon_mastery", columnDefinition = "jsonb")
+    /** Приём */
     private Mastery mastery;
+
+    private Range range;
+    private Roll versatile;
+
+    /**
+     * Требуемый тип снаряда для выстрела (только дальнобойного)
+     */
+    private AmmunitionType ammo;
+
+    private String additional;
 }
