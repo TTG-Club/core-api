@@ -6,16 +6,15 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum ItemType {
-    AMMUNITION("Боеприпасы", ItemCategory.ITEM),
-
     ADVENTURING_GEAR("Снаряжение приключенца", ItemCategory.ITEM),
+    SIEGE_EQUIPMENT("Осадное снаряжение", ItemCategory.ITEM),
     ARTISAN_S_TOOLS("Инструменты ремесленников", ItemCategory.ITEM),
     TOOL("Инструменты", ItemCategory.TOOL),
     INSTRUMENT("Музыкальные инструменты", ItemCategory.TOOL),
     FOOD_AND_DRINK("Еда и питье", ItemCategory.ITEM),
     GAMING_SET("Игровой набор", ItemCategory.ITEM),
 
-    AMMO("Боеприпас", ItemCategory.WEAPON),
+    AMMUNITION("Боеприпасы", ItemCategory.ITEM),
     WEAPON("Оружие", ItemCategory.WEAPON),
     MARTIAL_WEAPON("Воинское оружие", ItemCategory.WEAPON),
     SIMPLE_WEAPON("Простое оружие", ItemCategory.WEAPON),
@@ -38,7 +37,8 @@ public enum ItemType {
     VEHICLE("Транспорт", ItemCategory.VEHICLE),
     VEHICLE_AIR("Транспорт (воздушный)", ItemCategory.VEHICLE),
     VEHICLE_LAND("Транспорт (наземный)", ItemCategory.VEHICLE),
-    VEHICLE_WATER("Транспорт (водный)", ItemCategory.VEHICLE);
+    VEHICLE_WATER("Транспорт (водный)", ItemCategory.VEHICLE)
+    ;
 
     private final String name;
     private final ItemCategory category;
