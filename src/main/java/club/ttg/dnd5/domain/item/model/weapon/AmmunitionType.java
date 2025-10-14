@@ -6,10 +6,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum AmmunitionType {
-    ARROW("стрела"),
-    BOLT("болт"),
-    SLING_BULLET("игла для трубки"),
-    BULLET("пуля");
+    ARROW("Стрела"),
+    BOLT("Болт"),
+    SLING_BULLET("Игла для трубки"),
+    BULLET("Пуля");
 
     private final String name;
 }
