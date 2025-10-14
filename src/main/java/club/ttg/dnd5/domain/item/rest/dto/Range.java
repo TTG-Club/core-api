@@ -11,5 +11,5 @@ public class Range {
     @Schema(description = "Нормальная")
     private short normal;
     @Schema(description = "Максимальная")
-    private short max;
+    private Short max;
 }

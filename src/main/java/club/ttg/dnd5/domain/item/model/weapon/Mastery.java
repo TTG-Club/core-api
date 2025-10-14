@@ -1,11 +1,22 @@
 package club.ttg.dnd5.domain.item.model.weapon;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
+/**
+ * Приёмы оружия
+ */
+@AllArgsConstructor
 @Getter
-@Setter
-public class Mastery {
-    private String url;
-    private String name;
+public enum Mastery {
+    CLEAVE("Прорубание"),
+    GRAZE("Задевание"),
+    NICK("Выпад"),
+    PUSH("Толкание"),
+    SAP("Изнурение"),
+    SLOW("Замедление"),
+    TOPPLE("Опрокидывание"),
+    VEX("Подавление");
+
+    private final String name;
 }

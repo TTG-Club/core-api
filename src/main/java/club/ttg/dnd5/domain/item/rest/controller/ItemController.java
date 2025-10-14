@@ -1,8 +1,11 @@
 package club.ttg.dnd5.domain.item.rest.controller;
 
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
+import club.ttg.dnd5.domain.item.service.ItemFilterService;
 import club.ttg.dnd5.domain.item.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,6 +26,7 @@ import java.util.Collection;
 @RequestMapping("/api/v2/item")
 @Tag(name = "Снаряжение и предметы", description = "REST API снаряжение и прочие предметы")
 public class ItemController {
+    private final ItemFilterService itemFilterService;
     private final ItemService itemService;
     /**
      * Проверка существования вида по URL.
@@ -68,8 +72,9 @@ public class ItemController {
                                                   @Valid
                                                   @Size(min = 2)
                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine) {
-        return itemService.getItems(searchLine);
+                                                  String searchLine,
+                                                  @RequestBody(required = false) SearchBody searchBody) {
+        return itemService.getItems(searchLine, searchBody);
     }
 
     @Secured("ADMIN")
@@ -83,6 +88,11 @@ public class ItemController {
     @PostMapping
     public String addItem(@RequestBody final ItemRequest itemDto) {
         return itemService.addItem(itemDto);
+    }
+
+    @GetMapping("/filters")
+    public FilterInfo getFilters() {
+        return itemFilterService.getDefaultFilterInfo();
     }
 
     @Operation(summary = "Предпросмотр предмета")
