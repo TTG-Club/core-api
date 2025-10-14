@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 10-02-item-drop_extra-columns
+      author: Magistrus
+      changes:
+        - dropColumn:
+            tableName: item
+            columnName: strength
