@@ -36,27 +36,35 @@ public class ItemTypeFilterGroup extends AbstractFilterGroup<ItemType, ItemTypeF
             return TRUE_EXPRESSION;
         }
 
-        final Set<ItemType> positiveValues = getPositive();
-        final Set<ItemType> negativeValues = getNegative();
-
+        Set<ItemType> positiveValues = getPositive();
         BooleanExpression result = TRUE_EXPRESSION;
 
-        // Есть хотя бы один из позитивных типов: item_types ?| array['ARMOR','WEAPON',...]
-        if (CollectionUtils.isNotEmpty(positiveValues))
+        // AND по каждому положительному значению
+        if (!CollectionUtils.isEmpty(positiveValues))
         {
-            result = result.and(
-                    Expressions.booleanTemplate("{0} ?| array[" + toSqlTextArray(positiveValues) + "]", PATH)
-            );
+            for (var itemType : positiveValues)
+            {
+                result = result.and(
+                        Expressions.booleanTemplate("{0} @> cast({1} as jsonb)",
+                                PATH,
+                                "[\"" + itemType.toString() + "\"]")
+                );
+            }
         }
 
-        // Нет ни одного из негативных типов: NOT (item_types ?| array['ARMOR','WEAPON',...])
-        if (CollectionUtils.isNotEmpty(negativeValues))
+        // исключения (NOT IN) через AND
+        Set<ItemType> negativeValues = getNegative();
+        if (!CollectionUtils.isEmpty(negativeValues))
         {
-            result = result.and(
-                    Expressions.booleanTemplate("NOT ({0} ?| array[" + toSqlTextArray(negativeValues) + "])", PATH)
-            );
+            for (var itemType : negativeValues)
+            {
+                result = result.and(
+                        Expressions.booleanTemplate("not ({0} @> cast({1} as jsonb))",
+                                PATH,
+                                "[\"" + itemType.toString() + "\"]")
+                );
+            }
         }
-
         return result;
     }
 
@@ -82,13 +90,5 @@ public class ItemTypeFilterGroup extends AbstractFilterGroup<ItemType, ItemTypeF
         {
             super(value.getName(), value, null);
         }
-    }
-
-    private static String toSqlTextArray(Set<ItemType> values)
-    {
-        return values.stream()
-                .map(ItemType::name)
-                .map(s -> "'" + s + "'")
-                .collect(Collectors.joining(","));
     }
 }
