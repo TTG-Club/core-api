@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Setter
 public class ItemTypeFilterGroup extends AbstractFilterGroup<ItemType, ItemTypeFilterGroup.FilterItem> {
 
-    private static final StringPath PATH = Expressions.stringPath("item_types");
+    private static final StringPath PATH = Expressions.stringPath("item_type");
 
     public ItemTypeFilterGroup(List<FilterItem> filters) {
         super(filters);
