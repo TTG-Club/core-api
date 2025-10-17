@@ -6,11 +6,11 @@ databaseChangeLog:
       changes:
         - renameColumn:
             tableName: books
-            oldColumnName: englishName
+            oldColumnName: english_name
             newColumnName: english
         - renameColumn:
             tableName: books
-            oldColumnName: bookDate
+            oldColumnName: book_date
             newColumnName: published
         - renameColumn:
             tableName: books
@@ -20,3 +20,23 @@ databaseChangeLog:
             tableName: books
             oldColumnName: source_acronym
             newColumnName: acronym
+        - addColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: authors
+                  type: varchar(1024)
+        - renameTable:
+            oldTableName: books
+            newTableName: source
+
+  - changeSet:
+      id: drop-book-authors-table
+      author: Magistrus
+      preConditions:
+        - onFail: MARK_RAN
+          tableExists:
+            tableName: book_authors
+      changes:
+        - dropTable:
+            tableName: book_authors

@@ -1,20 +1,18 @@
-package club.ttg.dnd5.domain.book.model;
+package club.ttg.dnd5.domain.source.model;
 
 import club.ttg.dnd5.domain.common.model.Timestamped;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "books")
-public class Book extends Timestamped {
+@Table(name = "source")
+public class Source extends Timestamped {
     @Id
     @Column(unique = true, nullable = false)
     private String acronym;
@@ -30,16 +28,10 @@ public class Book extends Timestamped {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    private TypeBook type;
+    private SourceType type;
     private LocalDate published;
     private String image;
 
-    // Collection of authors for the book itself
-    @ElementCollection
-    @CollectionTable(
-            name = "book_authors", // Name of the table for book authors
-            joinColumns = @JoinColumn(name = "book_id") // Foreign key linking to the book
-    )
-    @Column(name = "author_name") // Column for the author names
-    private Set<String> authors = new HashSet<>();
+    // список авторов, разделенных запятой
+    private String authors;
 }

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.model;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -44,7 +44,7 @@ public class Species extends CreatureProperties {
     /** источник */
     @ManyToOne
     @JoinColumn(name = "source")
-    private Book source;
+    private Source source;
     private Long sourcePage;
 
     /** Ссылки на изображения для галереи */

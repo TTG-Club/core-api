@@ -1,8 +1,8 @@
-package club.ttg.dnd5.domain.book.rest.mapper;
+package club.ttg.dnd5.domain.source.rest.mapper;
 
-import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.book.rest.dto.BookDetailResponse;
-import club.ttg.dnd5.domain.book.rest.dto.BookRequest;
+import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
+import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
@@ -12,17 +12,17 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring", uses = {
         BaseMapping.class
 })
-public interface BookMapper {
+public interface SourceMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = "acronym", target = "name.label")
-    ShortResponse toShort(Book book);
+    ShortResponse toShort(Source source);
 
     @BaseMapping.BaseShortResponseNameMapping
-    BookDetailResponse toDetail(Book book);
+    SourceDetailResponse toDetail(Source source);
 
     @BaseMapping.BaseEntityNameMapping
-    Book toEntity(BookRequest request);
+    Source toEntity(SourceRequest request);
 
     @BaseMapping.BaseEntityNameMapping
-    void toEntity(BookRequest request, @MappingTarget Book book);
+    void toEntity(SourceRequest request, @MappingTarget Source source);
 }

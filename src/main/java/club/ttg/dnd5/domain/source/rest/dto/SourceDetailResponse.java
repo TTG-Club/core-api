@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.book.rest.dto;
+package club.ttg.dnd5.domain.source.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.dto.base.TranslationDto;
@@ -12,7 +12,7 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookDetailResponse extends BaseResponse {
+public class SourceDetailResponse extends BaseResponse {
     private String published;
     private String type;
     private String image;
