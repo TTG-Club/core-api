@@ -9,6 +9,7 @@ import java.util.Objects;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 @Getter
 @Setter
 @Builder
