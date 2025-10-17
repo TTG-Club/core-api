@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.mapper;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.*;
 import club.ttg.dnd5.domain.character_class.rest.dto.*;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -46,14 +46,17 @@ public interface ClassMapper {
     @Mapping(target = "subclasses", ignore = true)
 
     @ToEntityMapping
-    CharacterClass toEntity(ClassRequest request, CharacterClass parent, Book source);
+    CharacterClass toEntity(ClassRequest request, CharacterClass parent, Source source);
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(target = "parent", source = "parent")
     @Mapping(target = "subclasses", ignore = true)
 
     @ToEntityMapping
-    CharacterClass updateEntity(@MappingTarget CharacterClass existingClass, CharacterClass parent, ClassRequest request, Book source);
+    CharacterClass updateEntity(@MappingTarget CharacterClass existingClass,
+                                CharacterClass parent,
+                                ClassRequest request,
+                                Source source);
 
     @BaseMapping.BaseRequestNameMapping
     @Mapping(target = "gallery", ignore = true)

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.item.rest.mapper;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -37,7 +37,7 @@ public interface ItemMapper {
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(target = "source", source = "source")
-    Item toEntity(ItemRequest request, Book source);
+    Item toEntity(ItemRequest request, Source source);
 
     @Named("typeToSting")
     default String typeToSting(Set<ItemType> types) {
