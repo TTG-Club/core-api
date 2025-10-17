@@ -21,7 +21,7 @@ databaseChangeLog:
             oldColumnName: source_acronym
             newColumnName: acronym
         - addColumn:
-            tableName: source
+            tableName: books
             columns:
               - column:
                   name: authors
