@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -48,7 +48,7 @@ public interface BackgroundMapper {
     @Mapping(source = "request.skillsProficiencies", target = "skillProficiencies")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
-    Background toEntity(BackgroundRequest request, Feat feat, Book source);
+    Background toEntity(BackgroundRequest request, Feat feat, Source source);
 
     @Named("abilitiesToString")
     default String getAbilitiesToString(Set<Ability> skillProficiencies) {

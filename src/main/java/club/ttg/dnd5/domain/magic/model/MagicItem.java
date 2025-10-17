@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.magic.model;
 
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
-import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -62,6 +62,6 @@ public class MagicItem extends NamedEntity {
 
     @ManyToOne
     @JoinColumn(name = "source")
-    private Book source;
+    private Source source;
     private Long sourcePage;
 }

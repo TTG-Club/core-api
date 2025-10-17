@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.glossary.model;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -22,6 +22,6 @@ public class Glossary extends NamedEntity {
 
     @ManyToOne
     @JoinColumn(name = "source")
-    private Book source;
+    private Source source;
     private Long sourcePage;
 }

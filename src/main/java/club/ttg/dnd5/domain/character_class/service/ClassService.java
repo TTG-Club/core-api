@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.character_class.service;
 
-import club.ttg.dnd5.domain.book.model.Book;
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
@@ -36,7 +36,7 @@ public class ClassService {
 
     private final ClassRepository classRepository;
     private final ClassMapper classMapper;
-    private final BookService bookService;
+    private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
 
     public List<ClassShortResponse> findAllClasses(String searchLine, String... sort) {
@@ -73,12 +73,12 @@ public class ClassService {
                 .map(this::findByUrl)
                 .orElse(null);
 
-        Book book = Optional.ofNullable(request.getSource())
+        Source source = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
-                .map(bookService::findByUrl)
+                .map(sourceService::findByUrl)
                 .orElse(null);
 
-        CharacterClass toSave = classMapper.toEntity(request, parent, book);
+        CharacterClass toSave = classMapper.toEntity(request, parent, source);
         saveGallery(request.getUrl(), request.getGallery());
         return classMapper.toDetailedResponse(classRepository.save(toSave));
     }
@@ -104,12 +104,12 @@ public class ClassService {
             }
         }
 
-        Book book = Optional.ofNullable(request.getSource())
+        Source source = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
-                .map(bookService::findByUrl)
+                .map(sourceService::findByUrl)
                 .orElse(null);
 
-        CharacterClass characterClass = classMapper.updateEntity(existingClass, parent, request, book);
+        CharacterClass characterClass = classMapper.updateEntity(existingClass, parent, request, source);
         if (!existingClass.getSubclasses().isEmpty()) {
             characterClass.setSubclasses(existingClass.getSubclasses());
             existingClass.setSubclasses(Collections.emptyList());
@@ -165,11 +165,11 @@ public class ClassService {
         CharacterClass parent = Optional.ofNullable(request.getParentUrl())
                 .map(this::findByUrl)
                 .orElse(null);
-        Book book = Optional.ofNullable(request.getSource())
+        Source source = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
-                .map(bookService::findByUrl)
+                .map(sourceService::findByUrl)
                 .orElse(null);
-        var response = classMapper.toDetailedResponse(classMapper.toEntity(request, parent, book));
+        var response = classMapper.toDetailedResponse(classMapper.toEntity(request, parent, source));
         response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)

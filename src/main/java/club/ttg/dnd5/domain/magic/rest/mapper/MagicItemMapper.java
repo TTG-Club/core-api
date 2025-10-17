@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.magic.rest.mapper;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
@@ -43,7 +43,7 @@ public interface MagicItemMapper
     @Mapping(source = "request.rarity.type", target = "rarity")
     @Mapping(source = "request.rarity.varies", target = "varies")
     @Mapping(target = "source", source = "source")
-    MagicItem toEntity(MagicItemRequest request, Book source);
+    MagicItem toEntity(MagicItemRequest request, Source source);
 
     @Named("toSubtitle")
     default String toSubtitle(MagicItem magicItem) {

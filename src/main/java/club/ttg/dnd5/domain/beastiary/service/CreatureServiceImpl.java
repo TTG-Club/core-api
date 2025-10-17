@@ -6,7 +6,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
@@ -28,7 +28,7 @@ import java.util.Objects;
 public class CreatureServiceImpl implements CreatureService {
     private final CreatureRepository creatureRepository;
     private final CreatureQueryDslSearchService creatureQueryDslSearchService;
-    private final BookService bookService;
+    private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
     private final CreatureMapper creatureMapper;
 
@@ -74,7 +74,7 @@ public class CreatureServiceImpl implements CreatureService {
             request.setAlignment(Alignment.WITHOUT);
         }
         saveGallery(request.getUrl(), request.getGallery());
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var book = sourceService.findByUrl(request.getSource().getUrl());
         var beast = creatureMapper.toEntity(request, book);
         return creatureRepository.save(beast).getUrl();
     }
@@ -87,7 +87,7 @@ public class CreatureServiceImpl implements CreatureService {
         if (!url.equalsIgnoreCase(request.getUrl())) {
             creatureRepository.deleteById(url);
         }
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var book = sourceService.findByUrl(request.getSource().getUrl());
         var beast = creatureMapper.toEntity(request, book);
         if (!Objects.equals(url, request.getUrl())) {
             creatureRepository.deleteById(url);
@@ -110,7 +110,7 @@ public class CreatureServiceImpl implements CreatureService {
 
     @Override
     public CreatureDetailResponse preview(final CreatureRequest request) {
-        var book = bookService.findByUrOptional(request.getSource().getUrl());
+        var book = sourceService.findByUrOptional(request.getSource().getUrl());
         if (book.isPresent()) {
             return creatureMapper.toDetail(creatureMapper.toEntity(request, book.get()));
         }

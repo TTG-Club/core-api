@@ -1,7 +1,6 @@
-package club.ttg.dnd5.domain.book.rest.dto;
+package club.ttg.dnd5.domain.source.rest.dto;
 
-import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
-import club.ttg.dnd5.dto.base.HasTagDto;
+import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.dto.base.TranslationDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -13,11 +12,8 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookDetailResponse implements HasTagDto {
-    private String url;
-    private NameResponse name;
-    private String description;
-    private int year;
+public class SourceDetailResponse extends BaseResponse {
+    private String published;
     private String type;
     private String image;
     private Set<String> author = new HashSet<>();

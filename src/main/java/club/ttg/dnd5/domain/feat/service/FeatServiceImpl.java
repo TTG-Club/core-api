@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.feat.service;
 
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
@@ -26,7 +26,7 @@ import java.util.Objects;
 public class FeatServiceImpl implements FeatService {
     private final FeatRepository featRepository;
     private final FeatQueryDslSearchService featQueryDslSearchService;
-    private final BookService bookService;
+    private final SourceService sourceService;
     private final FeatMapper featMapper;
 
     @Override
@@ -50,7 +50,7 @@ public class FeatServiceImpl implements FeatService {
         if (featRepository.existsById(dto.getUrl())) {
             throw new EntityExistException("Feat exist by URL: " + dto.getUrl());
         }
-        var book = bookService.findByUrl(dto.getSource().getUrl());
+        var book = sourceService.findByUrl(dto.getSource().getUrl());
         var feat = featMapper.toEntity(dto, book);
         return featRepository.save(feat).getUrl();
     }
@@ -60,7 +60,7 @@ public class FeatServiceImpl implements FeatService {
     @Override
     public String updateFeat(final String featUrl, final FeatRequest request) {
         findByUrl(featUrl);
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var book = sourceService.findByUrl(request.getSource().getUrl());
         var feat = featMapper.toEntity(request, book);
         if (!Objects.equals(featUrl, request.getUrl())) {
             featRepository.deleteById(featUrl);
@@ -98,7 +98,7 @@ public class FeatServiceImpl implements FeatService {
     }
 
     public FeatDetailResponse preview(final FeatRequest request) {
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var book = sourceService.findByUrl(request.getSource().getUrl());
         return featMapper.toDetail(featMapper.toEntity(request, book));
     }
 }

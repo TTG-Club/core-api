@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.spell.model;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
@@ -53,7 +53,7 @@ public class Spell extends NamedEntity {
 
     @ManyToOne
     @JoinColumn(name = "source")
-    private Book source;
+    private Source source;
     private Long sourcePage;
 
     @ManyToMany(fetch = FetchType.LAZY)

@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 17-01-rename-columns-in-book
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - renameColumn:
+            tableName: books
+            oldColumnName: english_name
+            newColumnName: english
+        - renameColumn:
+            tableName: books
+            oldColumnName: book_date
+            newColumnName: published
+        - renameColumn:
+            tableName: books
+            oldColumnName: alt_name
+            newColumnName: alternative
+        - renameColumn:
+            tableName: books
+            oldColumnName: source_acronym
+            newColumnName: acronym
+        - addColumn:
+            tableName: books
+            columns:
+              - column:
+                  name: authors
+                  type: varchar(1024)
+        - renameTable:
+            oldTableName: books
+            newTableName: source
+
+  - changeSet:
+      id: drop-book-authors-table
+      author: Magistrus
+      preConditions:
+        - onFail: MARK_RAN
+          tableExists:
+            tableName: book_authors
+      changes:
+        - dropTable:
+            tableName: book_authors
