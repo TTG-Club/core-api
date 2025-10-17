@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.book.service;
 
 import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.book.repository.BookRepository;
+import club.ttg.dnd5.domain.book.rest.dto.BookDetailResponse;
 import club.ttg.dnd5.domain.book.rest.dto.BookRequest;
 import club.ttg.dnd5.domain.book.rest.mapper.BookMapper;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
@@ -27,11 +28,11 @@ public class BookService {
                 .toList();
     }
 
-    public Book findByUrl(String url) {
-        return bookRepository.findByUrl(url)
+    public BookDetailResponse findByUrl(String url) {
+        return bookMapper.toDetail(bookRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        String.format("Книга с url %s не существует" , url)));
-
+                        String.format("Книга с url %s не существует" , url)))
+        );
     }
 
     public Optional<Book> findByUrOptional(String url) {
@@ -48,7 +49,9 @@ public class BookService {
 
     @Transactional
     public String update(final BookRequest request) {
-        var book = findByUrl(request.getUrl());
+        var book = bookRepository.findByUrl(request.getUrl())
+                .orElseThrow(() -> new EntityNotFoundException(
+                                String.format("Книга с url %s не существует" , request.getUrl())));
         bookMapper.toEntity(request, book);
         return bookRepository.save(book).getUrl();
     }

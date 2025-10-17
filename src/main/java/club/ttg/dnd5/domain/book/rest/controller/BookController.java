@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.book.rest.controller;
 
+import club.ttg.dnd5.domain.book.rest.dto.BookDetailResponse;
 import club.ttg.dnd5.domain.book.rest.dto.BookRequest;
 import club.ttg.dnd5.domain.book.service.BookService;
 
@@ -17,6 +18,11 @@ import java.util.Collection;
 @Tag(name = "Книги", description = "Контроллер для управления книгами и их поиском")
 public class BookController {
     private final BookService bookService;
+
+    @GetMapping("/{url}")
+    public BookDetailResponse getByAcronym(@PathVariable String url) {
+        return bookService.findByUrl(url);
+    }
 
     /**
      * Получение всех книг.
