@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 08-01-rename-columns-in-book
+      id: 17-01-rename-columns-in-book
       author: Magistrus
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:

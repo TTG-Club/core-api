@@ -130,8 +130,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/10/07-04-add-last-modified-user-saved-filter.yaml
   - include:
-      file: db/changelog/2025/10/08-01-rename-columns-in-book.yaml
-  - include:
       file: db/changelog/2025/10/09-01-update-full-search-add-item.yaml
   - include:
       file: db/changelog/2025/10/09-02-update-background-equipment.yaml
@@ -140,4 +138,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/10/10-02-item-drop-columns.yaml
   - include:
-      file: db/changelog/2025/10/08-01-rename-columns-in-book.yaml
+      file: db/changelog/2025/10/17-01-rename-columns-in-book.yaml
