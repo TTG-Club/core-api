@@ -21,7 +21,7 @@ public class SourceService {
     private final SourceRepository sourceRepository;
     private final SourceMapper sourceMapper;
 
-    public List<ShortResponse> getAllBooks() {
+    public List<ShortResponse> getAll() {
         return sourceRepository.findAll()
                 .stream()
                 .map(sourceMapper::toShort)
@@ -31,14 +31,14 @@ public class SourceService {
     public Source findByUrl(String url) {
         return sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        String.format("Книга с url %s не существует" , url))
+                        String.format("Источник с url %s не существует" , url))
                 );
     }
 
     public SourceDetailResponse findDetailByUrl(String url) {
         return sourceMapper.toDetail(sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        String.format("Книга с url %s не существует" , url)))
+                        String.format("Источник с url %s не существует" , url)))
         );
     }
 
@@ -58,8 +58,18 @@ public class SourceService {
     public String update(final SourceRequest request) {
         var source = sourceRepository.findByUrl(request.getUrl())
                 .orElseThrow(() -> new EntityNotFoundException(
-                                String.format("Книга с url %s не существует" , request.getUrl())));
+                                String.format("Источник с url %s не существует" , request.getUrl())));
         sourceMapper.toEntity(request, source);
         return sourceRepository.save(source).getUrl();
+    }
+
+    public SourceRequest findFormByUrl(final String url) {
+        return sourceMapper.toRequest(sourceRepository.findByUrl(url)
+                .orElseThrow(() -> new EntityNotFoundException(
+                String.format("Источник с url %s не существует" , url))));
+    }
+
+    public SourceDetailResponse preview(final SourceRequest request) {
+        return sourceMapper.toDetail(sourceMapper.toEntity(request));
     }
 }

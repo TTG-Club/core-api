@@ -14,5 +14,7 @@ public class SourceRequest extends BaseRequest {
     private SourceType type;
     @Schema(description = "дата выхода книги")
     private String published;
+    @Schema(description = "список авторов")
+    private String authors;
     private String image;
 }
