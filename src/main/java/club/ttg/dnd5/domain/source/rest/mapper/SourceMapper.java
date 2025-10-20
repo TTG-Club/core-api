@@ -25,4 +25,8 @@ public interface SourceMapper {
 
     @BaseMapping.BaseEntityNameMapping
     void toEntity(SourceRequest request, @MappingTarget Source source);
+
+    @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(source = "acronym", target = "name.label")
+    SourceRequest toRequest(Source source);
 }
