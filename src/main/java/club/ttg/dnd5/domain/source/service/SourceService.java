@@ -8,9 +8,12 @@ import club.ttg.dnd5.domain.source.rest.mapper.SourceMapper;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,11 +24,19 @@ public class SourceService {
     private final SourceRepository sourceRepository;
     private final SourceMapper sourceMapper;
 
-    public List<ShortResponse> getAll() {
+    public List<ShortResponse> search(String searchLine) {
+        if (StringUtils.hasText(searchLine)) {
+            var invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
+            return sourceRepository.findBySearchLine(searchLine, invertedSearchLine, Sort.by("name"))
+                    .stream()
+                    .map(sourceMapper::toShort)
+                    .toList();
+        }
         return sourceRepository.findAll()
                 .stream()
                 .map(sourceMapper::toShort)
                 .toList();
+
     }
 
     public Source findByUrl(String url) {
