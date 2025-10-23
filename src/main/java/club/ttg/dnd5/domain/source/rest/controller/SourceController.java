@@ -6,7 +6,10 @@ import club.ttg.dnd5.domain.source.service.SourceService;
 
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -44,8 +47,12 @@ public class SourceController {
      */
     @PostMapping("/search")
     @Operation(summary = "Получить источники", description = "Возвращает список источников")
-    public Collection<ShortResponse> getBooksByType() {
-        return sourceService.getAll();
+    public Collection<ShortResponse> search(@RequestParam(name = "query", required = false)
+                                                @Valid
+                                                @Size(min = 2)
+                                                @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                                String searchLine) {
+        return sourceService.search(searchLine);
     }
 
     @PostMapping

@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.source.rest.dto;
 
 import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
+import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +16,7 @@ public class SourceRequest extends BaseRequest {
     private SourceType type;
     @Schema(description = "дата выхода книги")
     private String published;
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "список авторов")
     private String authors;
     private String image;

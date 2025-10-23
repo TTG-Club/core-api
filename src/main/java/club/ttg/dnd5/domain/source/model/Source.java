@@ -29,9 +29,14 @@ public class Source extends Timestamped {
 
     @Enumerated(EnumType.STRING)
     private SourceType type;
+    /**
+     * Дата публикации
+     */
     private LocalDate published;
     private String image;
 
-    // список авторов, разделенных запятой
+    /**
+     * Список авторов, разделенных запятой
+     */
     private String authors;
 }
