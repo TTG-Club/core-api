@@ -25,6 +25,7 @@ public class BackgroundRequest extends BaseRequest {
     private String featUrl;
     @Schema(description = "Навыки", examples = {"ACROBATICS", "ATHLETICS"})
     private Set<Skill> skillsProficiencies;
+    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "Владение инструментами")
     private String toolProficiency;
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
