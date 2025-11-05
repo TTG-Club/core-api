@@ -26,7 +26,7 @@ public interface BackgroundMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
-    @Mapping(source = "feat.name", target = "feat")
+    @Mapping(source = "feat", target = "feat", qualifiedByName = "featToMarkup")
     @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
     @Mapping(source = "skillProficiencies", target = "skillProficiencies", qualifiedByName = "skillsToString")
     BackgroundDetailResponse toDetail(Background background);
@@ -49,6 +49,11 @@ public interface BackgroundMapper {
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
     Background toEntity(BackgroundRequest request, Feat feat, Source source);
+
+    @Named("featToMarkup")
+    default String featToMarkup(Feat feat) {
+        return "{@feat %s [%s]|url:%s}".formatted(feat.getName(), feat.getEnglish(), feat.getUrl());
+    }
 
     @Named("abilitiesToString")
     default String getAbilitiesToString(Set<Ability> skillProficiencies) {
