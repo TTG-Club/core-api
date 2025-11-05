@@ -52,7 +52,7 @@ public interface BackgroundMapper {
 
     @Named("featToMarkup")
     default String featToMarkup(Feat feat) {
-        return "{@feat %s [%s]|url:%s}".formatted(feat.getName(), feat.getEnglish(), feat.getUrl());
+        return "\"{@feat %s [%s]|url:%s}\"".formatted(feat.getName(), feat.getEnglish(), feat.getUrl());
     }
 
     @Named("abilitiesToString")
