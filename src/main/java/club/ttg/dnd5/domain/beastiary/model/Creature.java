@@ -89,6 +89,8 @@ public class Creature extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private CreatureAbilities abilities;
 
+    private String equipments;
+
     /**
      * Навыки
      */
@@ -127,13 +129,6 @@ public class Creature extends NamedEntity {
     private Collection<Condition> immunityToCondition;
 
     private String immunityText;
-
-    /**
-     * Снаряжение
-     */
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Collection<CreatureEquipment> equipments;
 
     /**
      * Языки
