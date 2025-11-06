@@ -3,12 +3,11 @@ package club.ttg.dnd5.domain.roadmap.controller;
 import club.ttg.dnd5.domain.roadmap.model.Roadmap;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapResponse;
 import club.ttg.dnd5.domain.roadmap.service.RoadmapService;
+import club.ttg.dnd5.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,8 +29,7 @@ public class RoadmapController {
 
     @GetMapping
     public Collection<RoadmapResponse> findAll() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        var allVisible = auth.getAuthorities().stream()
+        var allVisible = SecurityUtils.getUser().getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(ROLES::contains);
         return roadmapService.findAll(allVisible);
