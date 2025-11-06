@@ -143,3 +143,5 @@ databaseChangeLog:
       file: db/changelog/2025/11/05-01-background-tool-proficiency-wrap-in-json-array.yaml
   - include:
       file: db/changelog/2025/11/06-01-bestiary-equipments.yaml
+  - include:
+      file: db/changelog/2025/11/06-02-create-roadmap-table.yaml
