@@ -140,7 +140,9 @@ public class ClassService {
             throw new EntityNotFoundException("Класс не найден для URL:" + parentUrl);
         }
 
-        return characterClass.getSubclasses().stream().map(classMapper::toShortResponse).toList();
+        return characterClass.getSubclasses().stream()
+                .map(classMapper::toShortResponse)
+                .toList();
     }
 
     public ClassDetailedResponse findDetailedByUrl(String url) {
