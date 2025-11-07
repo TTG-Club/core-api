@@ -143,7 +143,7 @@ public class ClassService {
 
         return characterClass.getSubclasses().stream()
                 .sorted(Comparator
-                        .comparing((CharacterClass c) -> c.getSource().getType())
+                        .comparing((CharacterClass c) -> c.getSource().getType().ordinal())
                         .thenComparing(CharacterClass::getName)
                 )
                 .map(classMapper::toShortResponse)
