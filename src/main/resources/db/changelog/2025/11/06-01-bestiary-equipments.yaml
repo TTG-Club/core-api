@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: replace-equipments-jsonb-with-text
+      author: Magistrus
+      changes:
+        - dropColumn:
+            columnName: equipments
+            tableName: bestiary
+
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: equipments
+                  type: text

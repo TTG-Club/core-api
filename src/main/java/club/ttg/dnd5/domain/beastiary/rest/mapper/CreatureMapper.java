@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
@@ -22,7 +23,6 @@ import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.HitResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
-import club.ttg.dnd5.domain.book.model.Book;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
@@ -129,7 +129,7 @@ public interface CreatureMapper {
     @Mapping(source = "request.defenses.immunities.condition", target = "immunityToCondition")
     @Mapping(source = "request.defenses.immunities.text", target = "immunityText")
     @Mapping(target = "source", source = "source")
-    Creature toEntity(CreatureRequest request, Book source);
+    Creature toEntity(CreatureRequest request, Source source);
 
     @Named("toAbilities")
     default AbilitiesResponse toAbilities(Creature creature) {

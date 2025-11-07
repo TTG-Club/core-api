@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Size;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +10,7 @@ import java.io.Serializable;
 /**
  * DTO for {@link club.ttg.dnd5.domain.species.model.SpeciesSize}
  */
+@EqualsAndHashCode
 @Getter
 @Setter
 public class SpeciesSizeDto implements Serializable {

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.magic.service;
 
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
@@ -24,7 +24,7 @@ public class MagicItemServiceImpl implements MagicItemService {
     private final MagicItemRepository magicItemRepository;
     private final MagicItemMapper magicItemMapper;
     private final MagicItemQueryDslSearchService magicItemQueryDslSearchService;
-    private final BookService bookService;
+    private final SourceService sourceService;
 
     @Override
     public boolean existsByUrl(String url) {
@@ -57,8 +57,8 @@ public class MagicItemServiceImpl implements MagicItemService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String addItem(MagicItemRequest request) {
         exist(request.getUrl());
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        var entity = magicItemMapper.toEntity(request, book);
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+        var entity = magicItemMapper.toEntity(request, source);
         return magicItemRepository.save(entity).getUrl();
     }
 
@@ -69,8 +69,8 @@ public class MagicItemServiceImpl implements MagicItemService {
         if (!request.getUrl().equals(url)) {
             magicItemRepository.deleteById(url);
         }
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        var entity = magicItemMapper.toEntity(request, book);
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+        var entity = magicItemMapper.toEntity(request, source);
         return magicItemRepository.save(entity).getUrl();
     }
 
@@ -95,7 +95,7 @@ public class MagicItemServiceImpl implements MagicItemService {
     }
 
     public MagicItemDetailResponse preview(final MagicItemRequest request) {
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        return magicItemMapper.toDetail(magicItemMapper.toEntity(request, book));
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+        return magicItemMapper.toDetail(magicItemMapper.toEntity(request, source));
     }
 }

@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: background-tool-proficiency-text-normalize-to-array
+      author: Magistrus
+      changes:
+        - update:
+            tableName: background
+            columns:
+              - column:
+                  name: tool_proficiency
+                  valueComputed: |
+                    CASE
+                      WHEN tool_proficiency IS NULL OR btrim(tool_proficiency) = '' THEN '[]'
+                      WHEN left(btrim(tool_proficiency), 1) = '[' THEN tool_proficiency
+                      WHEN left(btrim(tool_proficiency), 1) = '{' THEN '[' || tool_proficiency || ']'
+                      ELSE '[' || to_json(tool_proficiency)::text || ']'
+                    END

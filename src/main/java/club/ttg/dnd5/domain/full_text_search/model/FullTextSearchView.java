@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.full_text_search.model;
 
-import club.ttg.dnd5.domain.book.model.TypeBook;
+import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,7 +30,7 @@ public class FullTextSearchView {
     private String bookName;
     private String bookEnglishName;
     @Enumerated(EnumType.STRING)
-    private TypeBook bookType;
+    private SourceType bookType;
     private Integer page;
 
 }

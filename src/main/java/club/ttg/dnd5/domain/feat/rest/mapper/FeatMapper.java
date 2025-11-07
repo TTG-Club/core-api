@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.mapper;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
@@ -29,7 +29,7 @@ public interface FeatMapper {
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(target = "source", source = "source")
-    Feat toEntity(FeatRequest request, Book source);
+    Feat toEntity(FeatRequest request, Source source);
 
     @BaseMapping.BaseRequestNameMapping
     @BaseMapping.BaseSourceRequestMapping
@@ -39,5 +39,4 @@ public interface FeatMapper {
     default String capitalize(String string) {
         return StringUtils.capitalize(string);
     }
-
 }

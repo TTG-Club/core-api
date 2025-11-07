@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.spell.rest.mapper;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
@@ -32,12 +32,12 @@ import java.util.stream.Collectors;
 public interface SpellMapper {
 
     @ToEntityMapping
-    Spell toEntity(SpellRequest request, Book source,
+    Spell toEntity(SpellRequest request, Source source,
                    List<CharacterClass> classes, List<CharacterClass> subclasses,
                    List<Species> species, List<Species> lineages);
 
     @ToEntityMapping
-    Spell updateEntity(@MappingTarget Spell target, SpellRequest request, Book source,
+    Spell updateEntity(@MappingTarget Spell target, SpellRequest request, Source source,
                        List<CharacterClass> classes, List<CharacterClass> subclasses,
                        List<Species> species, List<Species> lineages);
 
