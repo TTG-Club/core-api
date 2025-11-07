@@ -11,8 +11,6 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
-import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,7 +41,6 @@ public class CreatureRequest extends BaseRequest {
     @Schema(description = "Уязвимости, Сопротивления, Иммунитеты")
     private CreatureDefenses defenses;
     @Schema(description = "Снаряжение", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String equipments;
     @Schema(description = "Чувства")
     private Senses senses;
