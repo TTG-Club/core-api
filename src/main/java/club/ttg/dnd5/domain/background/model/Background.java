@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.background.model;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
@@ -51,6 +51,6 @@ public class Background extends NamedEntity {
 
     @ManyToOne
     @JoinColumn(name = "source")
-    private Book source;
+    private Source source;
     private Long sourcePage;
 }

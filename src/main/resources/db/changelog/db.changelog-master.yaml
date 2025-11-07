@@ -137,3 +137,9 @@ databaseChangeLog:
       file: db/changelog/2025/10/10-01-item-drop-and-add-columns.yaml
   - include:
       file: db/changelog/2025/10/10-02-item-drop-columns.yaml
+  - include:
+      file: db/changelog/2025/10/17-01-rename-columns-in-book.yaml
+  - include:
+      file: db/changelog/2025/11/05-01-background-tool-proficiency-wrap-in-json-array.yaml
+  - include:
+      file: db/changelog/2025/11/06-01-bestiary-equipments.yaml

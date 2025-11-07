@@ -2,11 +2,13 @@ package club.ttg.dnd5.domain.beastiary.model.action;
 
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.RechargeType;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
 
+@EqualsAndHashCode
 @Getter
 @Setter
 public class CreatureAction {

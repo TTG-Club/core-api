@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.beastiary.rest.dto;
 
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
-import club.ttg.dnd5.domain.beastiary.model.CreatureEquipment;
 import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
 import club.ttg.dnd5.domain.beastiary.model.CreatureInitiative;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
@@ -41,8 +40,8 @@ public class CreatureRequest extends BaseRequest {
     private Collection<CreatureSkill> skills;
     @Schema(description = "Уязвимости, Сопротивления, Иммунитеты")
     private CreatureDefenses defenses;
-    @Schema(description = "Снаряжение")
-    private Collection<CreatureEquipment> equipments;
+    @Schema(description = "Снаряжение", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String equipments;
     @Schema(description = "Чувства")
     private Senses senses;
     @Schema(description = "Языки")
