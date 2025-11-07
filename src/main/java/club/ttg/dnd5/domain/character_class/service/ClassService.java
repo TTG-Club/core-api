@@ -26,6 +26,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -140,7 +141,13 @@ public class ClassService {
             throw new EntityNotFoundException("Класс не найден для URL:" + parentUrl);
         }
 
-        return characterClass.getSubclasses().stream().map(classMapper::toShortResponse).toList();
+        return characterClass.getSubclasses().stream()
+                .sorted(Comparator
+                        .comparing((CharacterClass c) -> c.getSource().getType().ordinal())
+                        .thenComparing(CharacterClass::getName)
+                )
+                .map(classMapper::toShortResponse)
+                .toList();
     }
 
     public ClassDetailedResponse findDetailedByUrl(String url) {
