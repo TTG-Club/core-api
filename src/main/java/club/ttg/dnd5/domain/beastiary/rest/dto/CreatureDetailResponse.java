@@ -1,9 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
-import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,7 +34,6 @@ public class CreatureDetailResponse extends BaseResponse {
     @Schema(description = "Иммунитет")
     private String immunity;
     @Schema(description = "Снаряжение")
-    @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String equipments;
     @Schema(description = "Чувства")
     private String sense;
