@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.item.service;
 
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final ItemQueryDslService itemQueryDslService;
-    private final BookService bookService;
+    private final SourceService sourceService;
     private final ItemMapper itemMapper;
 
     @Override
@@ -65,12 +65,12 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public String updateItem(final String itemUrl, final ItemRequest request) {
         findByUrl(itemUrl);
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var source = sourceService.findByUrl(request.getSource().getUrl());
         if (!Objects.equals(itemUrl, request.getUrl())) {
             itemRepository.deleteById(itemUrl);
             itemRepository.flush();
         }
-        return itemRepository.save(itemMapper.toEntity(request, book)).getUrl();
+        return itemRepository.save(itemMapper.toEntity(request, source)).getUrl();
     }
 
     @Override
@@ -82,8 +82,8 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private Item toItem(final ItemRequest request) {
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        return itemMapper.toEntity(request, book);
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+        return itemMapper.toEntity(request, source);
     }
 
     private void exist(String url) {

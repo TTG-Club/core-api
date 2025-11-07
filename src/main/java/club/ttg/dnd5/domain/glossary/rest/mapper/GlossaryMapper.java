@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.glossary.rest.mapper;
 
-import club.ttg.dnd5.domain.book.model.Book;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
@@ -31,7 +31,7 @@ public interface GlossaryMapper {
     GlossaryRequest toRequest(Glossary glossary);
 
     @ToEntityMapping
-    Glossary toEntity(GlossaryRequest request, Book source);
+    Glossary toEntity(GlossaryRequest request, Source source);
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping

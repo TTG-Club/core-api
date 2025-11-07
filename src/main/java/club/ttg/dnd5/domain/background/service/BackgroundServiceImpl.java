@@ -6,7 +6,7 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
@@ -26,7 +26,7 @@ public class BackgroundServiceImpl implements BackgroundService {
     private final BackgroundQueryDslSearchService backgroundQueryDslSearchService;
     private final BackgroundRepository backgroundRepository;
     private final FeatRepository featRepository;
-    private final BookService bookService;
+    private final SourceService sourceService;
     private final BackgroundMapper backgroundMapper;
 
     @Override
@@ -48,8 +48,8 @@ public class BackgroundServiceImpl implements BackgroundService {
     public String addBackground(final BackgroundRequest request) {
         checkUrlExist(request.getUrl());
         var feat = getFeat(request.getFeatUrl());
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, book))
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
                 .getUrl();
     }
 
@@ -57,12 +57,12 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Override
     public String updateBackgrounds(final String url, final BackgroundRequest request) {
         var feat = getFeat(request.getFeatUrl());
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var source = sourceService.findByUrl(request.getSource().getUrl());
         if (!Objects.equals(url, request.getUrl())) {
             backgroundRepository.deleteById(url);
             backgroundRepository.flush();
         }
-        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, book))
+        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
                 .getUrl();
     }
 
@@ -102,7 +102,7 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     public BackgroundDetailResponse preview(final BackgroundRequest request) {
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var book = sourceService.findByUrl(request.getSource().getUrl());
         var feat = getFeat(request.getFeatUrl());
         return backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
     }

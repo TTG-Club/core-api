@@ -8,6 +8,7 @@ import java.util.Objects;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 @Setter
 @Getter
 @Builder

@@ -17,7 +17,7 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
     @Query(value = """
         select c from CharacterClass c
         where c.parent is not null
-        order by c.parent.name, c.name
+        order by c.source.type, c.parent.name, c.name
         """)
     Collection<CharacterClass> findAllByParentIsNotNull();
 

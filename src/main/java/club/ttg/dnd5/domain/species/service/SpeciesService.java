@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.service;
 
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
@@ -28,7 +28,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SpeciesService {
     private final SpeciesRepository speciesRepository;
-    private final BookService bookService;
+    private final SourceService sourceService;
     private final SpeciesMapper speciesMapper;
 
     public boolean exists(String url) {
@@ -165,18 +165,18 @@ public class SpeciesService {
             var parent = findByUrl(request.getParent());
             species.setParent(parent);
         }
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var source = sourceService.findByUrl(request.getSource().getUrl());
 
-        species.setSource(book);
+        species.setSource(source);
 
         Species save = speciesRepository.save(species);
         return speciesMapper.toDetail(save);
     }
 
     public SpeciesDetailResponse preview(final SpeciesRequest request) {
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var source = sourceService.findByUrl(request.getSource().getUrl());
         var species = speciesMapper.toEntity(request);
-        species.setSource(book);
+        species.setSource(source);
         return speciesMapper.toDetail(species);
     }
 }
