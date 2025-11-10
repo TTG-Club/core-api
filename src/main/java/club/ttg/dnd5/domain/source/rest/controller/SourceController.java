@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collection;
 
 @RestController
-@RequestMapping("/api/v2/books")
+@RequestMapping("/api/v2/source")
 @RequiredArgsConstructor
 @Tag(name = "Источники", description = "Контроллер для управления источниками и их поиском")
 public class SourceController {
