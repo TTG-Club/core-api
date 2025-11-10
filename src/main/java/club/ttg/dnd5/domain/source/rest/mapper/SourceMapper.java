@@ -18,6 +18,12 @@ public interface SourceMapper {
     ShortResponse toShort(Source source);
 
     @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(target = "source.name", ignore = true)
+    @Mapping(source = "type.group", target = "source.group.name")
+    @Mapping(source = "type.label", target = "source.group.label")
+    @Mapping(source = "name", target = "source.name.name")
+    @Mapping(source = "english", target = "source.name.english")
+    @Mapping(source = "acronym", target = "source.name.label")
     SourceDetailResponse toDetail(Source source);
 
     @BaseMapping.BaseEntityNameMapping
