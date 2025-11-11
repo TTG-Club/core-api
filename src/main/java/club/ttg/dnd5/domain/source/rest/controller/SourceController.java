@@ -57,13 +57,13 @@ public class SourceController {
 
     @PostMapping
     @Operation(summary = "Добавить источник", description = "Добавление нового источника")
-    public String create(SourceRequest request) {
+    public String create(@RequestBody SourceRequest request) {
         return sourceService.save(request);
     }
 
     @PutMapping
     @Operation(summary = "Обновить источник", description = "Обновление источника")
-    public String update(SourceRequest request) {
-        return sourceService.update(request);
+    public String update(String url, @RequestBody SourceRequest request) {
+        return sourceService.update(url, request);
     }
 }

@@ -66,8 +66,8 @@ public class SourceService {
     }
 
     @Transactional
-    public String update(final SourceRequest request) {
-        var source = sourceRepository.findByUrl(request.getUrl())
+    public String update(final String url, final SourceRequest request) {
+        var source = sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
                                 String.format("Источник с url %s не существует" , request.getUrl())));
         sourceMapper.toEntity(request, source);
