@@ -19,6 +19,8 @@ import java.time.format.DateTimeFormatter;
 public interface SourceMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = "acronym", target = "name.label")
+    @Mapping(target = "source.name", ignore = true)
+    @Mapping(source = "type.label", target = "source.group.label")
     ShortResponse toShort(Source source);
 
     @BaseMapping.BaseShortResponseNameMapping
