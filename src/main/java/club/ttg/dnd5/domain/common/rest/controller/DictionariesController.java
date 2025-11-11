@@ -765,4 +765,22 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getWeaponAmmunitionType() {
         return dictionariesService.getWeaponAmmunitionType();
     }
+
+    @Operation(summary = "Типы источников")
+    @GetMapping("/source/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Стрела", "value": "ARROW" },
+                              { "label": "Болт", "value": "BOLT" },
+                              { "label": "Игла для трубки", "value": "SLING_BULLET" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSourceTypes() {
+        return dictionariesService.getSourceTypes();
+    }
 }
