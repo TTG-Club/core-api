@@ -24,6 +24,7 @@ public interface SourceMapper {
     @Mapping(source = "name", target = "source.name.name")
     @Mapping(source = "english", target = "source.name.english")
     @Mapping(source = "acronym", target = "source.name.label")
+    @Mapping(source = "type.name", target = "type")
     SourceDetailResponse toDetail(Source source);
 
     @BaseMapping.BaseEntityNameMapping
