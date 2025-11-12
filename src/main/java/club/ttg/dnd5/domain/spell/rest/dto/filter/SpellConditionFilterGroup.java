@@ -24,7 +24,7 @@ public class SpellConditionFilterGroup extends AbstractFilterGroup<Condition, Sp
 
     @Override
     public String getName() {
-        return "Тип урона";
+        return "Накладываемые состояния";
     }
 
     @Override
