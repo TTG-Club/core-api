@@ -41,7 +41,8 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
                 SpellCastingTimeFilterRange.getDefault(),
                 SpellDistanceFilterRange.getDefault(),
                 SpellDurationFilterRange.getDefault(),
-                SpellComponentsFilterGroup.getDefault()
+                SpellComponentsFilterGroup.getDefault(),
+                SpellConditionFilterGroup.getDefault()
         ), FILTER_VERSION);
     }
 }
