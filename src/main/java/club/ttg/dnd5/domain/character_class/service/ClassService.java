@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
+import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
@@ -12,6 +13,7 @@ import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
 import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
+import club.ttg.dnd5.domain.common.rest.dto.MulticlassRequest;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -211,5 +214,44 @@ public class ClassService {
                             .image(image)
                             .build()));
         }
+    }
+
+    public ClassDetailedResponse getMulticlass(final MulticlassRequest request) {
+        var multiclass = new CharacterClass();
+        var mainClass = findByUrl(request.getUrl());
+        var features = new ArrayList<>(mainClass.getFeatures().stream()
+                .filter(f -> f.getLevel() < request.getLevel())
+                .toList());
+        var spellMulticlass = mainClass.getCasterType() != CasterType.NONE;
+        var names = new ArrayList<String>(request.getClasses().size());
+        for (var multiclassRequest :  request.getClasses()) {
+            var clazz = findByUrl(multiclassRequest.getUrl());
+            var level = multiclassRequest.getLevel();
+            features.addAll(clazz.getFeatures().stream()
+                    .filter(f -> f.getLevel() < level)
+                    .map(f -> createMulticlassFeature(f , level))
+                    .toList());
+            names.add(clazz.getName());
+            spellMulticlass |= clazz.getCasterType() != CasterType.NONE;
+        }
+        if (spellMulticlass) {
+            multiclass.setCasterType(CasterType.MULTICLASS);
+        }
+        multiclass.setName(mainClass.getName() + " / " + String.join("/", names));
+        multiclass.setHitDice(mainClass.getHitDice());
+        multiclass.setSavingThrows(mainClass.getSavingThrows());
+        multiclass.setArmorProficiency(mainClass.getArmorProficiency());
+        multiclass.setPrimaryCharacteristics(mainClass.getPrimaryCharacteristics());
+        features.sort(Comparator.comparing(ClassFeature::getLevel));
+        multiclass.setFeatures(features);
+
+        return classMapper.toDetailedResponse(multiclass);
+    }
+
+    private ClassFeature createMulticlassFeature(ClassFeature classFeature, final int level) {
+        classFeature.setScaling(classFeature.getScaling().stream()
+                .filter(f -> f.getLevel() < level)
+                .toList());
+        return classFeature;
     }
 }
