@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-table-roadmap
+      author: ttg
+      changes:
+        - createTable:
+            tableName: roadmap
+            columns:
+              - column:
+                  name: url
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: visible
+                  type: boolean
+                  defaultValueBoolean: false
