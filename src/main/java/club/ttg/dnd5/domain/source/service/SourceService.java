@@ -49,7 +49,7 @@ public class SourceService {
     public SourceDetailResponse findDetailByUrl(String url) {
         return sourceMapper.toDetail(sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        String.format("Источник с url %s не существует" , url)))
+                        String.format("Источник с акронимом %s не существует" , url)))
         );
     }
 
@@ -62,12 +62,16 @@ public class SourceService {
         if (sourceRepository.existsById(request.getAcronym())) {
             throw new EntityExistException("Книга с таким акронимом уже существует");
         }
+        if (sourceRepository.existByUrl(request.getUrl())) {
+            throw new EntityExistException("Книга с таким url уже существует");
+        }
+
         return sourceRepository.save(sourceMapper.toEntity(request)).getUrl();
     }
 
     @Transactional
-    public String update(final SourceRequest request) {
-        var source = sourceRepository.findByUrl(request.getUrl())
+    public String update(final String url, final SourceRequest request) {
+        var source = sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
                                 String.format("Источник с url %s не существует" , request.getUrl())));
         sourceMapper.toEntity(request, source);
