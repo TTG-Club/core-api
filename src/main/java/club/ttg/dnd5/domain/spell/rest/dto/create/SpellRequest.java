@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.rest.dto.create;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
@@ -63,4 +64,7 @@ public class SpellRequest extends BaseRequest {
 
     @Nullable
     private List<DamageType> damageType;
+
+    @Nullable
+    private List<Condition> condition;
 }

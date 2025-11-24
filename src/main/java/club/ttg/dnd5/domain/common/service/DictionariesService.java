@@ -6,7 +6,11 @@ import club.ttg.dnd5.domain.common.rest.dto.select.*;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.ItemType;
+import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
+import club.ttg.dnd5.domain.item.model.weapon.Mastery;
+import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
@@ -263,7 +267,7 @@ public class DictionariesService {
     public Collection<SelectOptionDto> getCoins() {
         return Arrays.stream(Coin.values())
                 .map(type -> SelectOptionDto.builder()
-                        .label(type.getShortName())
+                        .label(type.getName())
                         .value(type.name())
                         .build())
                 .collect(Collectors.toList());
@@ -300,6 +304,42 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getWeaponCategories() {
         return Arrays.stream(WeaponCategory.values())
+                .map(weaponCategory -> SelectOptionDto.builder()
+                        .label(weaponCategory.getName())
+                        .value(weaponCategory.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getWeaponProperties() {
+        return Arrays.stream(Property.values())
+                .map(weaponCategory -> SelectOptionDto.builder()
+                        .label(weaponCategory.getName())
+                        .value(weaponCategory.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getWeaponMastery() {
+        return Arrays.stream(Mastery.values())
+                .map(weaponCategory -> SelectOptionDto.builder()
+                        .label(weaponCategory.getName())
+                        .value(weaponCategory.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getWeaponAmmunitionType() {
+        return Arrays.stream(AmmunitionType.values())
+                .map(weaponCategory -> SelectOptionDto.builder()
+                        .label(weaponCategory.getName())
+                        .value(weaponCategory.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getSourceTypes() {
+        return Arrays.stream(SourceType.values())
                 .map(weaponCategory -> SelectOptionDto.builder()
                         .label(weaponCategory.getName())
                         .value(weaponCategory.name())

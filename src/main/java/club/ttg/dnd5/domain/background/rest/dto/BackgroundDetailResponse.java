@@ -15,10 +15,12 @@ import lombok.*;
 public class BackgroundDetailResponse extends BaseResponse {
     @Schema(description = "Характеристики:")
     private String abilityScores;
+    @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Название черты")
     private String feat;
     @Schema(description = "Навыки")
     private String skillProficiencies;
+    @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Владение инструментами")
     private String toolProficiency;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)

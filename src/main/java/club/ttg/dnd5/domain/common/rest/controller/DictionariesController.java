@@ -711,4 +711,76 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getWeaponCategories() {
         return dictionariesService.getWeaponCategories();
     }
+
+    @Operation(summary = "Свойства оружия")
+    @GetMapping("/weapon/properties")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Боеприпасы", "value": "AMMUNITION" },
+                              { "label": "Фехтовальное", "value": "FINESSE" },
+                              { "label": "Тяжёлое", "value": "HEAVY" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getWeaponProperties() {
+        return dictionariesService.getWeaponProperties();
+    }
+
+    @Operation(summary = "Приёмы оружия")
+    @GetMapping("/weapon/mastery")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Прорубание", "value": "CLEAVE" },
+                              { "label": "Задевание", "value": "GRAZE" },
+                              { "label": "Выпад", "value": "NICK" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getWeaponMastery() {
+        return dictionariesService.getWeaponMastery();
+    }
+
+    @Operation(summary = "Тип амуниции для оружия")
+    @GetMapping("/weapon/ammunition")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Стрела", "value": "ARROW" },
+                              { "label": "Болт", "value": "BOLT" },
+                              { "label": "Игла для трубки", "value": "SLING_BULLET" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getWeaponAmmunitionType() {
+        return dictionariesService.getWeaponAmmunitionType();
+    }
+
+    @Operation(summary = "Типы источников")
+    @GetMapping("/source/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Стрела", "value": "ARROW" },
+                              { "label": "Болт", "value": "BOLT" },
+                              { "label": "Игла для трубки", "value": "SLING_BULLET" },
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSourceTypes() {
+        return dictionariesService.getSourceTypes();
+    }
 }

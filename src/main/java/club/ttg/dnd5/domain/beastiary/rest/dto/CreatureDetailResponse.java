@@ -34,7 +34,7 @@ public class CreatureDetailResponse extends BaseResponse {
     @Schema(description = "Иммунитет")
     private String immunity;
     @Schema(description = "Снаряжение")
-    private String equipment;
+    private String equipments;
     @Schema(description = "Чувства")
     private String sense;
     @Schema(description = "Языки", examples = "глубинный язык; телепатия 120 фт.")

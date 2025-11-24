@@ -1,8 +1,8 @@
 package club.ttg.dnd5.domain.item.service;
 
-import club.ttg.dnd5.domain.book.service.BookService;
+import club.ttg.dnd5.domain.source.service.SourceService;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.model.*;
-import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
@@ -10,24 +10,20 @@ import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class ItemServiceImpl implements ItemService {
-    private static final Sort DEFAULT_SORT = Sort.by("name");
     private final ItemRepository itemRepository;
-    private final BookService bookService;
+    private final ItemQueryDslService itemQueryDslService;
+    private final SourceService sourceService;
     private final ItemMapper itemMapper;
 
     @Override
@@ -41,39 +37,18 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemRequest findFormByUrl(final String url) {
         var item = findByUrl(url);
-        return switch (item) {
-            case Armor armor -> itemMapper.toRequest(armor);
-            case Weapon weapon -> itemMapper.toRequest(weapon);
-            case Tool tool -> itemMapper.toRequest(tool);
-            case Vehicle ship -> itemMapper.toRequest(ship);
-            case Mount mount -> itemMapper.toRequest(mount);
-            case Item object -> itemMapper.toRequest(object);
-        };
+        return itemMapper.toRequest(item);
     }
 
     @Override
     public ItemDetailResponse getItem(final String itemUrl) {
         var item = findByUrl(itemUrl);
-        return switch (item) {
-            case Armor armor -> itemMapper.toDetailResponse(armor);
-            case Weapon weapon -> itemMapper.toDetailResponse(weapon);
-            case Tool tool -> itemMapper.toDetailResponse(tool);
-            case Vehicle ship -> itemMapper.toDetailResponse(ship);
-            case Mount mount -> itemMapper.toDetailResponse(mount);
-            case Item object -> itemMapper.toDetailResponse(object);
-        };
+        return itemMapper.toDetailResponse(item);
     }
 
     @Override
-    public Collection<ItemShortResponse> getItems(String searchLine) {
-        return Optional.ofNullable(searchLine)
-                .filter(StringUtils::isNotBlank)
-                .map(String::trim)
-                .map(line -> {
-                    String invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
-                    return itemRepository.findBySearchLine(line, invertedSearchLine, DEFAULT_SORT);
-                })
-                .orElseGet(() -> itemRepository.findAll(DEFAULT_SORT))
+    public Collection<ItemShortResponse> getItems(String searchLine, final SearchBody searchBody) {
+        return itemQueryDslService.search(searchLine, searchBody)
                 .stream()
                 .map(itemMapper::toShortResponse)
                 .collect(Collectors.toList());
@@ -90,12 +65,12 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public String updateItem(final String itemUrl, final ItemRequest request) {
         findByUrl(itemUrl);
-        var book = bookService.findByUrl(request.getSource().getUrl());
+        var source = sourceService.findByUrl(request.getSource().getUrl());
         if (!Objects.equals(itemUrl, request.getUrl())) {
             itemRepository.deleteById(itemUrl);
             itemRepository.flush();
         }
-        return itemRepository.save(itemMapper.toItem(request, book)).getUrl();
+        return itemRepository.save(itemMapper.toEntity(request, source)).getUrl();
     }
 
     @Override
@@ -107,15 +82,8 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private Item toItem(final ItemRequest request) {
-        var book = bookService.findByUrl(request.getSource().getUrl());
-        return switch(request.getCategory()) {
-            case ITEM -> itemMapper.toItem(request, book);
-            case ARMOR -> itemMapper.toArmor(request, book);
-            case WEAPON -> itemMapper.toWeapon(request, book);
-            case VEHICLE -> itemMapper.toVehicle(request, book);
-            case MOUNT -> itemMapper.toMount(request, book);
-            case TOOL -> itemMapper.toTool(request, book);
-        };
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+        return itemMapper.toEntity(request, source);
     }
 
     private void exist(String url) {
