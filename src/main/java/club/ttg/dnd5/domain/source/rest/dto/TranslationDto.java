@@ -1,16 +1,16 @@
-package club.ttg.dnd5.dto.base;
+package club.ttg.dnd5.domain.source.rest.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
-@Builder
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class TranslationDto {
