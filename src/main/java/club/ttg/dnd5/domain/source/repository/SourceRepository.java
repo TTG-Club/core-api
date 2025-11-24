@@ -19,6 +19,6 @@ public interface SourceRepository extends JpaRepository<Source, String> {
     )
     Collection<Source> findBySearchLine(String searchLine, String invertedSearchLine, Sort defaultSort);
     Optional<Source> findByUrl(String url);
-    boolean existByUrl(String url);
+    boolean existsByUrl(String url);
 
 }

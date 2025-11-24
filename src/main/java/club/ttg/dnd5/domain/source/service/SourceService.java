@@ -62,7 +62,7 @@ public class SourceService {
         if (sourceRepository.existsById(request.getAcronym())) {
             throw new EntityExistException("Книга с таким акронимом уже существует");
         }
-        if (sourceRepository.existByUrl(request.getUrl())) {
+        if (sourceRepository.existsByUrl(request.getUrl())) {
             throw new EntityExistException("Книга с таким url уже существует");
         }
 
