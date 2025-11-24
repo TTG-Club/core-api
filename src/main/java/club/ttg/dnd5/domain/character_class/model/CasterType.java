@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum CasterType {
     FULL("Полноценный заклинатель", 9),
+    MULTICLASS("Мультикласс", 9),
     HALF("Половинный заклинатель", 5),
     PACT("Магия договора", 5),
     THIRD("Заклинатель на треть", 4),

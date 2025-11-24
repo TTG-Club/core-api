@@ -216,6 +216,7 @@ public class ClassService {
         var features = new ArrayList<>(mainClass.getFeatures().stream()
                 .filter(f -> f.getLevel() < request.getLevel())
                 .toList());
+        var spellMulticlass = mainClass.getCasterType() != CasterType.NONE;
         var names = new ArrayList<String>(request.getClasses().size());
         for (var multiclassRequest :  request.getClasses()) {
             var clazz = findByUrl(multiclassRequest.getUrl());
@@ -225,6 +226,10 @@ public class ClassService {
                     .map(f -> createMulticlassFeature(f , level))
                     .toList());
             names.add(clazz.getName());
+            spellMulticlass |= clazz.getCasterType() != CasterType.NONE;
+        }
+        if (spellMulticlass) {
+            multiclass.setCasterType(CasterType.MULTICLASS);
         }
         multiclass.setName(mainClass.getName() + " / " + String.join("/", names));
         multiclass.setHitDice(mainClass.getHitDice());
