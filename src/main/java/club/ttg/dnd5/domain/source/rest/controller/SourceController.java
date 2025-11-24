@@ -61,9 +61,9 @@ public class SourceController {
         return sourceService.save(request);
     }
 
-    @PutMapping
+    @PutMapping("/{url}")
     @Operation(summary = "Обновить источник", description = "Обновление источника")
-    public String update(String url, @RequestBody SourceRequest request) {
+    public String update(@PathVariable  String url, @RequestBody SourceRequest request) {
         return sourceService.update(url, request);
     }
 }
