@@ -56,7 +56,7 @@ public class GlossaryService {
     }
 
     @Transactional
-    public String update(String url, GlossaryRequest request) {
+    public String updateGlossary(String url, GlossaryRequest request) {
         Glossary existingGlossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
@@ -76,7 +76,7 @@ public class GlossaryService {
 
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
-    public void delete(String url) {
+    public void deleteGlossary(String url) {
         Glossary existingGlossary = glossaryRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 

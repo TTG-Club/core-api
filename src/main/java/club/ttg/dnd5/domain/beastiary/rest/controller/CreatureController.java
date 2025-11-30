@@ -1,8 +1,8 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
@@ -17,7 +17,17 @@ import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -45,7 +55,7 @@ public class CreatureController {
     public List<CreatureShortResponse> search(@RequestParam(name = "query", required = false)
                                               @Valid
                                               @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
                                               @RequestBody(required = false) SearchBody searchBody) {
         return creatureService.search(searchLine, searchBody);
@@ -86,15 +96,15 @@ public class CreatureController {
     @Secured("ADMIN")
     @PutMapping("/{url}")
     public String update(@PathVariable String url,
-                                      @Valid
-                                      @RequestBody CreatureRequest request) {
-        return creatureService.update(url, request);
+                         @Valid
+                         @RequestBody CreatureRequest request) {
+        return creatureService.updateCreature(url, request);
     }
 
     @Operation(summary = "Сокрытие существа")
     @Secured("ADMIN")
     @DeleteMapping("/{url}")
     public String delete(@PathVariable String url) {
-        return creatureService.delete(url);
+        return creatureService.deleteCreature(url);
     }
 }

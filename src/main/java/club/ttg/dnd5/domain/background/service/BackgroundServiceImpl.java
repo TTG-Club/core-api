@@ -45,12 +45,11 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Transactional
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
-    public String addBackground(final BackgroundRequest request) {
+    public Background addBackground(final BackgroundRequest request) {
         checkUrlExist(request.getUrl());
         var feat = getFeat(request.getFeatUrl());
         var source = sourceService.findByUrl(request.getSource().getUrl());
-        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
-                .getUrl();
+        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source));
     }
 
     @Transactional

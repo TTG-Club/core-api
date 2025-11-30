@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
@@ -14,7 +15,7 @@ public interface FeatService {
 
     Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody);
 
-    String addFeat(FeatRequest featDto);
+    Feat addFeat(FeatRequest featDto);
 
     String updateFeat(final String featUrl, FeatRequest featDto);
 

@@ -46,13 +46,13 @@ public class FeatServiceImpl implements FeatService {
     @Transactional
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
-    public String addFeat(final FeatRequest dto) {
+    public Feat addFeat(final FeatRequest dto) {
         if (featRepository.existsById(dto.getUrl())) {
             throw new EntityExistException("Feat exist by URL: " + dto.getUrl());
         }
         var book = sourceService.findByUrl(dto.getSource().getUrl());
         var feat = featMapper.toEntity(dto, book);
-        return featRepository.save(feat).getUrl();
+        return featRepository.save(feat);
     }
 
     @Secured("ADMIN")
