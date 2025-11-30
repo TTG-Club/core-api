@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.roadmap.service;
 import club.ttg.dnd5.domain.common.service.RatingService;
 import club.ttg.dnd5.domain.roadmap.model.Roadmap;
 import club.ttg.dnd5.domain.roadmap.repository.RoadmapRepository;
+import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapRequest;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapResponse;
 import club.ttg.dnd5.domain.roadmap.rest.mapper.RoadmapMapper;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -40,16 +41,16 @@ public class RoadmapService {
     }
 
     @Transactional
-    public String save(final Roadmap roadmap) {
-        return roadmapRepository.save(roadmap).getUrl();
+    public String save(final RoadmapRequest roadmap) {
+        return roadmapRepository.save(roadmapMapper.toEntity(roadmap)).getUrl();
     }
 
     @Transactional
-    public String update(final Roadmap roadmap) {
-        var source = roadmapRepository.findById(roadmap.getUrl())
+    public String update(final RoadmapRequest roadmap) {
+        var entity = roadmapRepository.findById(roadmap.getUrl())
                 .orElseThrow(() -> new EntityNotFoundException("Roadmap not found"));
-        roadmapMapper.update(roadmap, source);
-        return roadmapRepository.save(source).getUrl();
+        roadmapMapper.update(entity, roadmap);
+        return roadmapRepository.save(entity).getUrl();
     }
 
     @Transactional

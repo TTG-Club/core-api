@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.roadmap.controller;
 
-import club.ttg.dnd5.domain.roadmap.model.Roadmap;
+import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapRequest;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapResponse;
 import club.ttg.dnd5.domain.roadmap.service.RoadmapService;
 import club.ttg.dnd5.security.SecurityUtils;
@@ -8,14 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 import java.util.Set;
@@ -44,19 +37,19 @@ public class RoadmapController {
 
     @Secured("ADMIN")
     @PostMapping
-    public String save(@RequestBody Roadmap roadmap) {
+    public String save(@RequestBody RoadmapRequest roadmap) {
         return roadmapService.save(roadmap);
     }
 
     @Secured("ADMIN")
     @PutMapping
-    public String update(@RequestBody Roadmap roadmap) {
+    public String update(@RequestBody RoadmapRequest roadmap) {
         return roadmapService.update(roadmap);
     }
 
     @Secured("ADMIN")
     @DeleteMapping("/{url}")
-    public String remove(String url) {
+    public String remove(@PathVariable String url) {
         return roadmapService.remove(url);
     }
 }
