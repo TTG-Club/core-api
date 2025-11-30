@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 19-01-create-moderation-table
+      author: dsannakuliev
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_admin
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: section_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: comment
+                  type: VARCHAR(4000)
+                  constraints:
+                    nullable: false
+            tableName: moderation
+  - changeSet:
+      id: 2025-01-19-insert-default-value-in-moderation
+      author: dsannakuliev
+      changes:
+        - sqlFile:
+            path: 02-insert-default-value-in-moderation.sql
+            relativeToChangelogFile: false
+            splitStatements: false
+            endDelimiter: ;
+      rollback:
+        - sql:
+            sql: |
+              delete from moderation where 1 = 1;

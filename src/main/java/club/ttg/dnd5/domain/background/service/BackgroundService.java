@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.background.service;
 
+import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
@@ -12,7 +13,7 @@ public interface BackgroundService {
 
     Collection<BackgroundShortResponse> getBackgrounds(String searchLine, final SearchBody searchBody);
 
-    String addBackground(BackgroundRequest backgroundDto);
+    Background addBackground(BackgroundRequest backgroundDto);
 
     String updateBackgrounds(String backgroundUrl, BackgroundRequest backgroundDto);
 

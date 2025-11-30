@@ -17,7 +17,17 @@ import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
 
@@ -92,7 +102,7 @@ public class MagicItemController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public String addItem(@RequestBody final MagicItemRequest itemDto) {
-        return magicItemService.addItem(itemDto);
+        return magicItemService.addMagicItem(itemDto).getUrl();
     }
 
     @Operation(summary = "Предпросмотр предмета")
@@ -112,7 +122,7 @@ public class MagicItemController {
     @PutMapping("{url}")
     public String updateItem(@PathVariable final String url,
                                          @RequestBody final MagicItemRequest itemDto) {
-        return magicItemService.updateItem(url, itemDto);
+        return magicItemService.updateMagicItem(url, itemDto);
     }
 
     @Secured("ADMIN")
@@ -123,6 +133,6 @@ public class MagicItemController {
     })
     @DeleteMapping("{itemUrl}")
     public String deleteItem(@PathVariable final String itemUrl) {
-        return magicItemService.delete(itemUrl);
+        return magicItemService.deleteMagicItem(itemUrl);
     }
 }

@@ -55,16 +55,16 @@ public class MagicItemServiceImpl implements MagicItemService {
     @Transactional
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
-    public String addItem(MagicItemRequest request) {
+    public MagicItem addMagicItem(MagicItemRequest request) {
         exist(request.getUrl());
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var entity = magicItemMapper.toEntity(request, source);
-        return magicItemRepository.save(entity).getUrl();
+        return magicItemRepository.save(entity);
     }
 
     @Transactional
     @Override
-    public String updateItem(String url, MagicItemRequest request) {
+    public String updateMagicItem(String url, MagicItemRequest request) {
         findByUrl(url);
         if (!request.getUrl().equals(url)) {
             magicItemRepository.deleteById(url);
@@ -77,7 +77,7 @@ public class MagicItemServiceImpl implements MagicItemService {
     @Transactional
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
-    public String delete(String url) {
+    public String deleteMagicItem(String url) {
         var item = findByUrl(url);
         item.setHiddenEntity(true);
         return magicItemRepository.save(item).getUrl();

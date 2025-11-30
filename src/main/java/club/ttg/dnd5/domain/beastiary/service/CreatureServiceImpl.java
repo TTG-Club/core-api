@@ -82,7 +82,7 @@ public class CreatureServiceImpl implements CreatureService {
     @Secured("ADMIN")
     @Transactional
     @Override
-    public String update(final String url, final CreatureRequest request) {
+    public String updateCreature(final String url, final CreatureRequest request) {
         findByUrl(url);
         if (!url.equalsIgnoreCase(request.getUrl())) {
             creatureRepository.deleteById(url);
@@ -102,7 +102,7 @@ public class CreatureServiceImpl implements CreatureService {
     @Secured("ADMIN")
     @Transactional
     @Override
-    public String delete(final String url) {
+    public String deleteCreature(final String url) {
         Creature existing = findByUrl(url);
         existing.setHiddenEntity(true);
         return creatureRepository.save(existing).getUrl();
