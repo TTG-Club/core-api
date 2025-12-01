@@ -96,7 +96,7 @@ public class ClassService {
     }
 
     @Transactional
-    public String update(String url, ClassRequest request) {
+    public String updateClass(String url, ClassRequest request) {
         CharacterClass existingClass = findByUrl(url);
         CharacterClass parent = null;
 

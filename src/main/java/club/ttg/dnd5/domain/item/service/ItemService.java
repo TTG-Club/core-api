@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.item.service;
 
+import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -12,11 +13,11 @@ public interface ItemService {
 
     Collection<ItemShortResponse> getItems(String searchLine, final SearchBody searchBody);
 
-    String addItem(ItemRequest itemDto);
+    Item addItem(ItemRequest itemDto);
 
     String updateItem(String itemUrl, ItemRequest itemDto);
 
-    String delete(String itemUrl);
+    String deleteItem(String itemUrl);
 
     boolean existOrThrow(String url);
 

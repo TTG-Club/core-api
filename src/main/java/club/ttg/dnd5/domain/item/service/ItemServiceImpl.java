@@ -1,15 +1,15 @@
 package club.ttg.dnd5.domain.item.service;
 
-import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
-import club.ttg.dnd5.domain.item.model.*;
+import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -56,10 +56,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
-    public String addItem(final ItemRequest request) {
+    public Item addItem(final ItemRequest request) {
         exist(request.getUrl());
         var item = toItem(request);
-        return itemRepository.save(item).getUrl();
+        return itemRepository.save(item);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
-    public String delete(final String itemUrl) {
+    public String deleteItem(final String itemUrl) {
         Item item = findByUrl(itemUrl);
         item.setHiddenEntity(true);
         return itemRepository.save(item).getUrl();

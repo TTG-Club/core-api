@@ -121,7 +121,7 @@ public class SpellService {
     }
 
     @Transactional
-    public String update(String oldUrl, @Valid SpellRequest request) {
+    public String updateSpell(String oldUrl, @Valid SpellRequest request) {
         Spell existingSpell = findByUrl(oldUrl);
         List<Species> species = getSpecieses(request);
         List<Species> lineages = getLineages(request);
@@ -138,12 +138,12 @@ public class SpellService {
             spellRepository.deleteById(oldUrl);
             spellRepository.flush();
         }
-        return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
+        return spellRepository.save(spell).getUrl();
     }
 
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
-    public void delete(String url) {
+    public void deleteSpell(String url) {
         Spell existingSpell = findByUrl(url);
         existingSpell.setHiddenEntity(true);
         spellRepository.save(existingSpell);

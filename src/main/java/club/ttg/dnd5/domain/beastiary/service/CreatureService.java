@@ -18,9 +18,9 @@ public interface CreatureService {
 
     String save(CreatureRequest request);
 
-    String update(String url, CreatureRequest request);
+    String updateCreature(String url, CreatureRequest request);
 
-    String delete(String url);
+    String deleteCreature(String url);
 
     CreatureDetailResponse preview(CreatureRequest request);
 }
