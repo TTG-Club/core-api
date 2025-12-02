@@ -10,6 +10,7 @@ import lombok.Setter;
 public class RoadmapRequest {
     private String url;
     private String name;
+    private String preview;
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;
     private boolean visible;

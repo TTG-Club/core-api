@@ -17,6 +17,7 @@ public class Roadmap {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String url;
     private String name;
+    private String preview;
     private String description;
     private boolean visible;
 }
