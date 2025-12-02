@@ -15,4 +15,6 @@ public interface RoadmapMapper {
     Roadmap toEntity(RoadmapRequest roadmapRequest);
 
     void update(@MappingTarget Roadmap target, RoadmapRequest source);
+
+    RoadmapRequest toRequest(Roadmap roadmap);
 }

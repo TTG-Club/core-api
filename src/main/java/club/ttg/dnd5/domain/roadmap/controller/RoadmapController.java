@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapRequest;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapResponse;
 import club.ttg.dnd5.domain.roadmap.service.RoadmapService;
 import club.ttg.dnd5.security.SecurityUtils;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
@@ -22,6 +23,7 @@ public class RoadmapController {
 
     private final RoadmapService roadmapService;
 
+    @Operation(summary = "Получение списка дорожных карт")
     @GetMapping
     public Collection<RoadmapResponse> findAll() {
         var allVisible = SecurityUtils.getUser().getAuthorities().stream()
@@ -30,15 +32,31 @@ public class RoadmapController {
         return roadmapService.findAll(allVisible);
     }
 
+    @Operation(summary = "Получение дорожной карты по url")
     @GetMapping("/{url}")
     public RoadmapResponse finOne(@PathVariable String url) {
         return roadmapService.findOne(url);
     }
 
+    @Operation(summary = "Получения реквеста дорожной карты")
+    @Secured("ADMIN")
+    @GetMapping("/{url}/raw")
+    public RoadmapRequest getClassFormByUrl(@PathVariable String url) {
+        return roadmapService.findFormByUrl(url);
+    }
+
+    @Operation(summary = "Добавление дорожной карты")
     @Secured("ADMIN")
     @PostMapping
     public String save(@RequestBody RoadmapRequest roadmap) {
         return roadmapService.save(roadmap);
+    }
+
+    @Operation(summary = "Предпросмотр дорожной карты")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public RoadmapResponse preview(@RequestBody RoadmapRequest request) {
+        return roadmapService.preview(request);
     }
 
     @Secured("ADMIN")
