@@ -61,4 +61,13 @@ public class RoadmapService {
         roadmapRepository.deleteById(url);
         return url;
     }
+
+    public RoadmapRequest findFormByUrl(final String url) {
+        return roadmapMapper.toRequest(roadmapRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException("Roadmap not found")));
+    }
+
+    public RoadmapResponse preview(final RoadmapRequest request) {
+        return roadmapMapper.toResponse(roadmapMapper.toEntity(request));
+    }
 }
