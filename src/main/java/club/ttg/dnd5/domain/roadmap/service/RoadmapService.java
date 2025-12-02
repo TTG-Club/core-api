@@ -46,10 +46,13 @@ public class RoadmapService {
     }
 
     @Transactional
-    public String update(final RoadmapRequest roadmap) {
-        var entity = roadmapRepository.findById(roadmap.getUrl())
+    public String update(final String url, final RoadmapRequest roadmap) {
+        var entity = roadmapRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Roadmap not found"));
         roadmapMapper.update(entity, roadmap);
+        if (url.equals(roadmap.getUrl())) {
+            roadmapRepository.deleteById(url);
+        }
         return roadmapRepository.save(entity).getUrl();
     }
 

@@ -42,9 +42,9 @@ public class RoadmapController {
     }
 
     @Secured("ADMIN")
-    @PutMapping
-    public String update(@RequestBody RoadmapRequest roadmap) {
-        return roadmapService.update(roadmap);
+    @PutMapping("/{url}")
+    public String update(String url, @RequestBody RoadmapRequest roadmap) {
+        return roadmapService.update(url, roadmap);
     }
 
     @Secured("ADMIN")

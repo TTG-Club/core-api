@@ -11,6 +11,7 @@ import lombok.Setter;
 public class RoadmapResponse {
     private String url;
     private String name;
+    private String  preview;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
     private RatingResponse rate;
