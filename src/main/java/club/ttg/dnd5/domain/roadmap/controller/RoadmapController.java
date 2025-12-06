@@ -61,7 +61,7 @@ public class RoadmapController {
 
     @Secured("ADMIN")
     @PutMapping("/{url}")
-    public String update(String url, @RequestBody RoadmapRequest roadmap) {
+    public String update(@PathVariable String url, @RequestBody RoadmapRequest roadmap) {
         return roadmapService.update(url, roadmap);
     }
 
