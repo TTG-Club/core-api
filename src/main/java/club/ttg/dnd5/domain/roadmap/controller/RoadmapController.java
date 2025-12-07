@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -26,8 +25,7 @@ public class RoadmapController {
     @Operation(summary = "Получение списка дорожных карт")
     @GetMapping
     public Collection<RoadmapResponse> findAll() {
-        var allVisible = SecurityUtils.getUser().getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+        var allVisible = SecurityUtils.userRoles()
                 .anyMatch(ROLES::contains);
         return roadmapService.findAll(allVisible);
     }
