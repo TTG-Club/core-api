@@ -10,7 +10,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Класс утилита для работы с аутентифицированным пользователем
@@ -38,6 +40,20 @@ public final class SecurityUtils {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Пользователь не авторизован");
         }
     }
+
+    /**
+     * Метод возвращает стрим ролей пользователя расшифрованные из токена.
+     *
+     * @return Роли пользователя.
+     */
+    public static Stream<String> userRoles() {
+        return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+                .stream()
+                .flatMap(a -> a.getAuthorities().stream())
+                .map(GrantedAuthority::getAuthority);
+    }
+
+
 
     /**
      * Получение объекта с данными пользователя, получаемые при авторизации

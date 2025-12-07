@@ -50,7 +50,7 @@ public class RoadmapService {
         var entity = roadmapRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Roadmap not found"));
         roadmapMapper.update(entity, roadmap);
-        if (url.equals(roadmap.getUrl())) {
+        if (!url.equals(roadmap.getUrl())) {
             roadmapRepository.deleteById(url);
         }
         return roadmapRepository.save(entity).getUrl();
