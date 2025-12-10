@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,7 @@ public class RoadmapService {
         return roadmaps.stream()
                 .map(roadmapMapper::toResponse)
                 .peek(r -> r.setRate(ratingService.getRating("ROADMAP", r.getUrl())))
+                .sorted(Comparator.comparingLong((RoadmapResponse r) -> r.getRate().getTotal()).reversed())
                 .collect(Collectors.toList());
     }
 
