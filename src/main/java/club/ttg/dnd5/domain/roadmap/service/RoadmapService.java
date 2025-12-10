@@ -33,8 +33,10 @@ public class RoadmapService {
         return roadmaps.stream()
                 .map(roadmapMapper::toResponse)
                 .peek(r -> r.setRate(ratingService.getRating("ROADMAP", r.getUrl())))
-                .sorted(Comparator.comparingLong((RoadmapResponse r) -> r.getRate().getTotal()).reversed()
-                        .thenComparing(roadmapResponse -> roadmapResponse.getRate().getValue()).reversed())
+                .sorted(
+                        Comparator.comparingLong((RoadmapResponse r) -> r.getRate().getTotal())
+                                .thenComparingDouble(r -> -r.getRate().getValue())
+                )
                 .collect(Collectors.toList());
     }
 
