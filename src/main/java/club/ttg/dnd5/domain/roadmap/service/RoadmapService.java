@@ -36,6 +36,7 @@ public class RoadmapService {
                 .sorted(
                         Comparator.comparingLong((RoadmapResponse r) -> r.getRate().getTotal())
                                 .thenComparingDouble(r -> -r.getRate().getValue())
+                                .reversed()
                 )
                 .collect(Collectors.toList());
     }
