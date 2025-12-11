@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.source.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
-import club.ttg.dnd5.dto.base.TranslationDto;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

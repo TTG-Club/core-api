@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
 import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
@@ -266,7 +267,7 @@ public class DictionariesService {
     public Collection<SelectOptionDto> getCoins() {
         return Arrays.stream(Coin.values())
                 .map(type -> SelectOptionDto.builder()
-                        .label(type.getName())
+                        .label(type.getShortName())
                         .value(type.name())
                         .build())
                 .collect(Collectors.toList());
@@ -330,6 +331,15 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getWeaponAmmunitionType() {
         return Arrays.stream(AmmunitionType.values())
+                .map(weaponCategory -> SelectOptionDto.builder()
+                        .label(weaponCategory.getName())
+                        .value(weaponCategory.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getSourceTypes() {
+        return Arrays.stream(SourceType.values())
                 .map(weaponCategory -> SelectOptionDto.builder()
                         .label(weaponCategory.getName())
                         .value(weaponCategory.name())
