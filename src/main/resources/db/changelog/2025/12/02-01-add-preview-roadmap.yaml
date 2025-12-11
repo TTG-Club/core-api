@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: spell-add-condition
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: roadmap
+            columns:
+              - column:
+                  name: preview
+                  type: TEXT

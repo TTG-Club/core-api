@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collection;
 
 @RestController
-@RequestMapping("/api/v2/books")
+@RequestMapping("/api/v2/source")
 @RequiredArgsConstructor
 @Tag(name = "Источники", description = "Контроллер для управления источниками и их поиском")
 public class SourceController {
@@ -57,13 +57,13 @@ public class SourceController {
 
     @PostMapping
     @Operation(summary = "Добавить источник", description = "Добавление нового источника")
-    public String create(SourceRequest request) {
+    public String create(@RequestBody SourceRequest request) {
         return sourceService.save(request);
     }
 
-    @PutMapping
+    @PutMapping("/{url}")
     @Operation(summary = "Обновить источник", description = "Обновление источника")
-    public String update(SourceRequest request) {
-        return sourceService.update(request);
+    public String update(@PathVariable  String url, @RequestBody SourceRequest request) {
+        return sourceService.update(url, request);
     }
 }
