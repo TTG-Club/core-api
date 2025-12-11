@@ -47,4 +47,9 @@ public interface SourceMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = "acronym", target = "name.label")
     SourceRequest toRequest(Source source);
+
+    @Named("toPublishedString")
+    default String toPublishedString(LocalDate date) {
+        return date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    }
 }
