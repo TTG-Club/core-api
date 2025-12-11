@@ -1,0 +1,71 @@
+package club.ttg.dnd5.domain.roadmap.controller;
+
+import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapRequest;
+import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapResponse;
+import club.ttg.dnd5.domain.roadmap.service.RoadmapService;
+import club.ttg.dnd5.security.SecurityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Collection;
+import java.util.Set;
+
+@Tag(name = "Дорожная карта")
+@RestController
+@RequestMapping("/api/v2/roadmap")
+@RequiredArgsConstructor
+public class RoadmapController {
+    private static final Set<String> ROLES = Set.of("ADMIN", "MODERATOR");
+
+    private final RoadmapService roadmapService;
+
+    @Operation(summary = "Получение списка дорожных карт")
+    @GetMapping
+    public Collection<RoadmapResponse> findAll() {
+        var allVisible = SecurityUtils.userRoles()
+                .anyMatch(ROLES::contains);
+        return roadmapService.findAll(allVisible);
+    }
+
+    @Operation(summary = "Получение дорожной карты по url")
+    @GetMapping("/{url}")
+    public RoadmapResponse finOne(@PathVariable String url) {
+        return roadmapService.findOne(url);
+    }
+
+    @Operation(summary = "Получения реквеста дорожной карты")
+    @Secured("ADMIN")
+    @GetMapping("/{url}/raw")
+    public RoadmapRequest getClassFormByUrl(@PathVariable String url) {
+        return roadmapService.findFormByUrl(url);
+    }
+
+    @Operation(summary = "Добавление дорожной карты")
+    @Secured("ADMIN")
+    @PostMapping
+    public String save(@RequestBody RoadmapRequest roadmap) {
+        return roadmapService.save(roadmap);
+    }
+
+    @Operation(summary = "Предпросмотр дорожной карты")
+    @Secured("ADMIN")
+    @PostMapping("/preview")
+    public RoadmapResponse preview(@RequestBody RoadmapRequest request) {
+        return roadmapService.preview(request);
+    }
+
+    @Secured("ADMIN")
+    @PutMapping("/{url}")
+    public String update(@PathVariable String url, @RequestBody RoadmapRequest roadmap) {
+        return roadmapService.update(url, roadmap);
+    }
+
+    @Secured("ADMIN")
+    @DeleteMapping("/{url}")
+    public String remove(@PathVariable String url) {
+        return roadmapService.remove(url);
+    }
+}

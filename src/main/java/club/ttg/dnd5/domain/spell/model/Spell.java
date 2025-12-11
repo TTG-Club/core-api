@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.spell.model;
 
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -81,4 +82,8 @@ public class Spell extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private List<DamageType> damageType;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<Condition> condition;
 }
