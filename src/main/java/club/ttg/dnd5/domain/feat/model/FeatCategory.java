@@ -10,7 +10,8 @@ public enum FeatCategory {
     ORIGIN("черта происхождения"),
     GENERAL("общая черта"),
     EPIC_BOON("эпическая черта"),
-    FIGHTING_STYLE("боевой стиль") ;
+    FIGHTING_STYLE("боевой стиль"),
+    DRAGONMARK("метка дракона");
 
     private final String name;
 }
