@@ -219,21 +219,56 @@ public class ClassService {
     public ClassDetailedResponse getMulticlass(final MulticlassRequest request) {
         var multiclass = new CharacterClass();
         var mainClass = findByUrl(request.getUrl());
-        var features = new ArrayList<>(mainClass.getFeatures().stream()
-                .filter(f -> f.getLevel() < request.getLevel())
-                .toList());
+        boolean spellcasting = false;
+        List<ClassFeature> mainClassFeatures = new ArrayList<>();
+        for (ClassFeature classFeature : mainClass.getFeatures()) {
+            if (classFeature.getName().equals("Использование заклинаний")) {
+                classFeature.setDescription(getSpellcastingMulticlass());
+                spellcasting = true;
+            }
+            if (classFeature.getLevel() < request.getLevel()) {
+                mainClassFeatures.add(classFeature);
+            }
+        }
+        var features = new ArrayList<>(mainClassFeatures);
+        var mainSubClass = findByUrl(request.getSubclass());
+        List<ClassFeature> result = new ArrayList<>();
+        for (ClassFeature classFeature : mainSubClass.getFeatures()) {
+            if (classFeature.getName().equals("Использование заклинаний")) {
+                classFeature.setDescription(getSpellcastingMulticlass());
+                spellcasting = true;
+            }
+            if (classFeature.getLevel() < request.getLevel()) {
+                result.add(classFeature);
+            }
+        }
+        features.addAll(result);
         var spellMulticlass = mainClass.getCasterType() != CasterType.NONE;
         var names = new ArrayList<String>(request.getClasses().size());
+        int personLevel = request.getLevel();
         for (var multiclassRequest :  request.getClasses()) {
-            var clazz = findByUrl(multiclassRequest.getUrl());
+            var multiClass = findByUrl(multiclassRequest.getUrl());
             var level = multiclassRequest.getLevel();
-            features.addAll(clazz.getFeatures().stream()
-                    .filter(f -> f.getLevel() < level)
-                    .map(f -> createMulticlassFeature(f , level))
-                    .toList());
-            names.add(clazz.getName());
-            spellMulticlass |= clazz.getCasterType() != CasterType.NONE;
+            List<ClassFeature> list = new ArrayList<>();
+            for (ClassFeature multiclassFeature : multiClass.getFeatures()) {
+                if (multiclassFeature.getName().equals("Использование заклинаний")) {
+                    if (spellcasting) {
+                        continue;
+                    }
+                    multiclassFeature.setDescription(getSpellcastingMulticlass());
+                }
+                if (multiclassFeature.getLevel() < level) {
+                    ClassFeature classFeature = filterMulticlassScalingFeature(multiclassFeature, level);
+                    classFeature.setLevel(multiclassFeature.getLevel() + personLevel);
+                    list.add(classFeature);
+                }
+            }
+            features.addAll(list);
+            names.add(multiClass.getName());
+            personLevel += multiclassRequest.getLevel();
+            spellMulticlass |= multiClass.getCasterType() != CasterType.NONE;
         }
+        features.sort(Comparator.comparing(ClassFeature::getLevel));
         if (spellMulticlass) {
             multiclass.setCasterType(CasterType.MULTICLASS);
         }
@@ -244,14 +279,65 @@ public class ClassService {
         multiclass.setPrimaryCharacteristics(mainClass.getPrimaryCharacteristics());
         features.sort(Comparator.comparing(ClassFeature::getLevel));
         multiclass.setFeatures(features);
-
         return classMapper.toDetailedResponse(multiclass);
     }
 
-    private ClassFeature createMulticlassFeature(ClassFeature classFeature, final int level) {
+    private ClassFeature filterMulticlassScalingFeature(ClassFeature classFeature, final int level) {
         classFeature.setScaling(classFeature.getScaling().stream()
                 .filter(f -> f.getLevel() < level)
                 .toList());
         return classFeature;
+    }
+
+    private String getSpellcastingMulticlass() {
+        return """
+                [
+                  "Ваши возможности для накладывания заклинаний зависят частично от ваших комбинированных уровней во всех ваших классах, умеющих накладывать {@glossary заклинания|url:spell-phb}, и частично от ваших индивидуальных уровней в этих классах. Как только вы получаете умение {@glossary Использование заклинаний|url:spellcasting-phb} более чем из одного класса, используйте приведённые ниже правила. Если вы персонаж с мультиклассом, но у вас есть особенность {@glossary Использование заклинаний|url:spellcasting-phb} только из одного класса, следуйте правилам для этого класса.",
+                  "{@b Подготовленные заклинания.} Вы определяете, какие заклинания можете подготовить для каждого класса отдельно, как если бы вы были персонажем только этого класса. Например, если вы следопыт 4 уровня / чародей 3 уровня, то вы можете подготовить 5 заклинаний следопыта 1 уровня и 6 заклинаний чародея 1 или 2 уровня (а также четыре заговора чародея). Каждое заклинание, которое вы подготовили, связано с одним из ваших классов, и вы используете заклинательную характеристику этого класса, когда накладываете это заклинание.",
+                  "{@b Заговоры.} Если заговор усиливается на более высоких уровнях, это усиление основано на общем уровне вашего персонажа, а не на уровне в конкретном классе, если в описании заклинания не указано иное.",
+                  {
+                    "type": "table",
+                    "caption": "Мультиклассовый заклинатель: ячейки заклинаний по уровням заклинаний",
+                    "colLabels": ["Уровень", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    "colStyles": ["w-10 text-center", "w-10 text-center", "w-10 text-center", "w-10 text-center", "w-10 text-center", "w-10 text-center", "w-10 text-center", "w-10 text-center", "w-10 text-center", "w-10 text-center"],
+                    "rows": [
+                      ["1", "2", "—", "—", "—", "—", "—", "—", "—", "—"],
+                      ["2", "3", "—", "—", "—", "—", "—", "—", "—", "—"],
+                      ["3", "4", "2", "—", "—", "—", "—", "—", "—", "—"],
+                      ["4", "4", "3", "—", "—", "—", "—", "—", "—", "—"],
+                      ["5", "4", "3", "2", "—", "—", "—", "—", "—", "—"],
+                      ["6", "4", "3", "3", "—", "—", "—", "—", "—", "—"],
+                      ["7", "4", "3", "3", "1", "—", "—", "—", "—", "—"],
+                      ["8", "4", "3", "3", "2", "—", "—", "—", "—", "—"],
+                      ["9", "4", "3", "3", "3", "1", "—", "—", "—", "—"],
+                      ["10", "4", "3", "3", "3", "2", "—", "—", "—", "—"],
+                      ["11", "4", "3", "3", "3", "2", "1", "—", "—", "—"],
+                      ["12", "4", "3", "3", "3", "2", "1", "—", "—", "—"],
+                      ["13", "4", "3", "3", "3", "2", "1", "1", "—", "—"],
+                      ["14", "4", "3", "3", "3", "2", "1", "1", "—", "—"],
+                      ["15", "4", "3", "3", "3", "2", "1", "1", "1", "—"],
+                      ["16", "4", "3", "3", "3", "2", "1", "1", "1", "—"],
+                      ["17", "4", "3", "3", "3", "2", "1", "1", "1", "1"],
+                      ["18", "4", "3", "3", "3", "3", "1", "1", "1", "1"],
+                      ["19", "4", "3", "3", "3", "3", "2", "1", "1", "1"],
+                      ["20", "4", "3", "3", "3", "3", "2", "2", "1", "1"]
+                    ]
+                  },
+                  "{@b Ячейки заклинаний.} Вы определяете доступные вам ячейки заклинаний, суммируя следующие показатели:",
+                  {
+                    "type": "list",
+                    "attrs": { "type": "unordered" },
+                    "content": [
+                      "Все ваши уровни в классах барда, жреца, друида, чародея и волшебника.",
+                      "Половину ваших уровней (округляя вверх) в классах паладина и следопыта.",
+                      "Одну треть ваших уровней (округляя вниз) в классах воина или плута, если у вас есть подклассы Магический рыцарь или Мистический ловкач."
+                    ]
+                  },
+                  "Затем найдите этот суммарный уровень в колонке «Уровень» таблицы «Мультиклассовый заклинатель». Вы используете ячейки заклинаний этого уровня, чтобы накладывать заклинания соответствующего уровня из любого класса, у которого есть способность {@glossary Использование заклинаний|url:spellcasting-phb}.",
+                  "Эта таблица может дать вам ячейки заклинаний более высокого уровня, чем заклинания, которые вы можете подготовить. Вы можете использовать такие ячейки только для наложения заклинаний более низкого уровня. Если заклинание имеет усиленный эффект при использовании ячейки более высокого уровня, вы можете применять этот эффект как обычно.",
+                  "Например, если вы следопыт 4 уровня / чародей 3 уровня, вы считаетесь персонажем 5 уровня при определении ячеек заклинаний. У вас есть 4 ячейки заклинаний 1 уровня, 3 ячейки 2 уровня и 2 ячейки 3 уровня. Однако вы не можете подготовить заклинания 3 уровня и не можете подготовить заклинания 2 уровня следопыта. Вы всё равно можете использовать эти ячейки для накладывания подготовленных заклинаний и усиливать их эффекты.",
+                  "{@b Магия договора.} Если у вас есть умение {@glossary Магия договора|url:pact-magic-phb} из класса колдуна и умение {@glossary Использование заклинаний|url:spellcasting-phb}, вы можете использовать ячейки заклинаний, полученные от Магии договора, для накладывания заклинаний других классов, и наоборот — использовать ячейки Использования заклинаний для сотворения заклинаний колдуна."
+                ]
+               """;
     }
 }
