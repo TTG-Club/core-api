@@ -226,7 +226,7 @@ public class ClassService {
                 classFeature.setDescription(getSpellcastingMulticlass());
                 spellcasting = true;
             }
-            if (classFeature.getLevel() < request.getLevel()) {
+            if (classFeature.getLevel() <= request.getLevel()) {
                 mainClassFeatures.add(classFeature);
             }
         }
@@ -257,9 +257,17 @@ public class ClassService {
                     }
                     multiclassFeature.setDescription(getSpellcastingMulticlass());
                 }
-                if (multiclassFeature.getLevel() < level) {
+                if (multiclassFeature.getLevel() <= level) {
                     ClassFeature classFeature = filterMulticlassScalingFeature(multiclassFeature, level);
                     classFeature.setLevel(multiclassFeature.getLevel() + personLevel);
+                    list.add(classFeature);
+                }
+            }
+            var multiSubclass = findByUrl(multiclassRequest.getSubclass());
+            for (ClassFeature multiSubclassFeature : multiSubclass.getFeatures()) {
+                if (multiSubclassFeature.getLevel() <= level) {
+                    ClassFeature classFeature = filterMulticlassScalingFeature(multiSubclassFeature, level);
+                    classFeature.setLevel(multiSubclassFeature.getLevel() + personLevel);
                     list.add(classFeature);
                 }
             }
