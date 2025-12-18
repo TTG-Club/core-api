@@ -268,17 +268,15 @@ public class ClassService {
         if (mainClass.getCasterType() == CasterType.NONE) {
             spellcastLevel += calculateSpellCastingLevel(mainSubClass.getCasterType(), request.getLevel());
         }
-        List<ClassFeature> result = new ArrayList<>();
-        for (ClassFeature classFeature : mainSubClass.getFeatures()) {
-            if (classFeature.getName().equals("Использование заклинаний")) {
-                classFeature.setDescription(getSpellcastingMulticlass());
+        for (ClassFeature subclassFeature : mainSubClass.getFeatures()) {
+            if (subclassFeature.getName().equals("Использование заклинаний")) {
+                subclassFeature.setDescription(getSpellcastingMulticlass());
                 spellcasting = true;
             }
-            if (classFeature.getLevel() < request.getLevel()) {
-                result.add(classFeature);
+            if (subclassFeature.getLevel() < request.getLevel()) {
+                features.add(subclassFeature);
             }
         }
-        features.addAll(result);
         var spellMulticlass = mainClass.getCasterType() != CasterType.NONE;
         var names = new ArrayList<String>(request.getClasses().size());
         for (var multiclassRequest :  request.getClasses()) {
@@ -296,7 +294,6 @@ public class ClassService {
             }
             spellcastLevel += calculateSpellCastingLevel(multiClass.getCasterType(), multiclassRequest.getLevel());
             var level = multiclassRequest.getLevel();
-            List<ClassFeature> list = new ArrayList<>();
             for (ClassFeature multiclassFeature : multiClass.getFeatures()) {
                 if (multiclassFeature.isHideInSubclasses()) {
                     continue;
@@ -312,7 +309,7 @@ public class ClassService {
                             level,
                             charachterLevel);
                     classFeature.setLevel(multiclassFeature.getLevel() + charachterLevel);
-                    list.add(classFeature);
+                    features.add(classFeature);
                 }
             }
             var multiSubclass = findByUrl(multiclassRequest.getSubclass());
@@ -320,7 +317,7 @@ public class ClassService {
                 if (multiSubclassFeature.getLevel() <= level) {
                     ClassFeature classFeature = filterMulticlassScalingFeature(multiSubclassFeature, level, charachterLevel);
                     classFeature.setLevel(multiSubclassFeature.getLevel() + charachterLevel);
-                    list.add(classFeature);
+                    features.add(classFeature);
                 }
             }
             multiclassInfo.add(MulticlassInfo.builder()
@@ -329,7 +326,6 @@ public class ClassService {
                     .subclass(multiSubclass.getName())
                     .level(multiclassRequest.getLevel())
                     .build());
-            features.addAll(list);
             names.add(multiClass.getName());
             charachterLevel += multiclassRequest.getLevel();
             spellMulticlass |= multiClass.getCasterType() != CasterType.NONE;
