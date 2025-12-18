@@ -1,6 +1,9 @@
 package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
+import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
+import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
+import club.ttg.dnd5.domain.common.rest.dto.MulticlassDto;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
@@ -223,7 +226,19 @@ public class ClassService {
 
         boolean spellcasting = false;
         int charachterLevel = request.getLevel();
+        int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
 
+        List<ClassTableColumn> table = new ArrayList<>();
+        for (var column :mainClass.getTable()) {
+            List<ClassTableItem> list = new ArrayList<>();
+            for (ClassTableItem classTableItem : column.getScaling()) {
+                if (classTableItem.getLevel() <= request.getLevel()) {
+                    list.add(classTableItem);
+                }
+            }
+            column.setScaling(list);
+            table.add(column);
+        }
         List<ClassFeature> mainClassFeatures = new ArrayList<>();
         for (ClassFeature classFeature : mainClass.getFeatures()) {
             var classFilterFeature = filterMulticlassScalingFeature(classFeature, request.getLevel(), 0);
@@ -240,6 +255,9 @@ public class ClassService {
         }
         var features = new ArrayList<>(mainClassFeatures);
         var mainSubClass = findByUrl(request.getSubclass());
+        if (mainClass.getCasterType() == CasterType.NONE) {
+            spellcastLevel += calculateSpellCastingLevel(mainSubClass.getCasterType(), request.getLevel());
+        }
         List<ClassFeature> result = new ArrayList<>();
         for (ClassFeature classFeature : mainSubClass.getFeatures()) {
             if (classFeature.getName().equals("Использование заклинаний")) {
@@ -255,6 +273,18 @@ public class ClassService {
         var names = new ArrayList<String>(request.getClasses().size());
         for (var multiclassRequest :  request.getClasses()) {
             var multiClass = findByUrl(multiclassRequest.getUrl());
+            for (var column :multiClass.getTable()) {
+                List<ClassTableItem> list = new ArrayList<>();
+                for (ClassTableItem classTableItem : column.getScaling()) {
+                    if (classTableItem.getLevel() <= multiclassRequest.getLevel()) {
+                        list.add(classTableItem);
+                    }
+                    classTableItem.setLevel(classTableItem.getLevel() + charachterLevel);
+                }
+                column.setScaling(list);
+                table.add(column);
+            }
+            spellcastLevel += calculateSpellCastingLevel(multiClass.getCasterType(), multiclassRequest.getLevel());
             var level = multiclassRequest.getLevel();
             List<ClassFeature> list = new ArrayList<>();
             for (ClassFeature multiclassFeature : multiClass.getFeatures()) {
@@ -299,7 +329,14 @@ public class ClassService {
         multiclass.setPrimaryCharacteristics(mainClass.getPrimaryCharacteristics());
         features.sort(Comparator.comparing(ClassFeature::getLevel));
         multiclass.setFeatures(features);
-        return classMapper.toDetailedResponse(multiclass);
+
+        multiclass.setTable(table);
+
+        var multiclassResponse =  classMapper.toMulticlassResponse(multiclass);
+        multiclassResponse.setCharacterLevel(request.getLevel()
+                + request.getClasses().stream().mapToInt(MulticlassDto::getLevel).sum());
+        multiclassResponse.setSpellcastingLevel(spellcastLevel);
+        return multiclassResponse;
     }
 
     private ClassFeature filterMulticlassScalingFeature(final ClassFeature classFeature,
@@ -314,6 +351,15 @@ public class ClassService {
         }
         classFeature.setScaling(list);
         return classFeature;
+    }
+
+    private int calculateSpellCastingLevel(CasterType casterType, int level) {
+        return switch (casterType) {
+            case FULL -> level;
+            case HALF -> (int) Math.ceil(level / 2.);
+            case THIRD -> (int) Math.floor(level / 3.);
+            default -> 0;
+        };
     }
 
     private String getSpellcastingMulticlass() {
