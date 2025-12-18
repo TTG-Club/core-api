@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.character_class.service;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
+import club.ttg.dnd5.domain.character_class.rest.dto.MulticlassInfo;
 import club.ttg.dnd5.domain.common.rest.dto.MulticlassDto;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -228,6 +229,9 @@ public class ClassService {
         int charachterLevel = request.getLevel();
         int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
 
+
+
+
         List<ClassTableColumn> table = new ArrayList<>();
         for (var column :mainClass.getTable()) {
             List<ClassTableItem> list = new ArrayList<>();
@@ -255,6 +259,15 @@ public class ClassService {
         }
         var features = new ArrayList<>(mainClassFeatures);
         var mainSubClass = findByUrl(request.getSubclass());
+
+        List<MulticlassInfo> multiclassInfo = new ArrayList<>();
+        multiclassInfo.add(MulticlassInfo.builder()
+                .hitDice(mainClass.getHitDice().getName() + "за каждый уровень")
+                .name(mainClass.getName())
+                .subclass(mainSubClass.getName())
+                .level(request.getLevel())
+                .build());
+
         if (mainClass.getCasterType() == CasterType.NONE) {
             spellcastLevel += calculateSpellCastingLevel(mainSubClass.getCasterType(), request.getLevel());
         }
@@ -313,6 +326,12 @@ public class ClassService {
                     list.add(classFeature);
                 }
             }
+            multiclassInfo.add(MulticlassInfo.builder()
+                    .hitDice(multiClass.getHitDice().getName() + "за каждый уровень")
+                    .name(multiClass.getName())
+                    .subclass(multiSubclass.getName())
+                    .level(multiclassRequest.getLevel())
+                    .build());
             features.addAll(list);
             names.add(multiClass.getName());
             charachterLevel += multiclassRequest.getLevel();
@@ -336,6 +355,8 @@ public class ClassService {
         multiclassResponse.setCharacterLevel(request.getLevel()
                 + request.getClasses().stream().mapToInt(MulticlassDto::getLevel).sum());
         multiclassResponse.setSpellcastingLevel(spellcastLevel);
+
+        multiclassResponse.setMulticlass(multiclassInfo);
         return multiclassResponse;
     }
 
