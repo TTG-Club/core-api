@@ -229,9 +229,6 @@ public class ClassService {
         int charachterLevel = request.getLevel();
         int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
 
-
-
-
         List<ClassTableColumn> table = new ArrayList<>();
         for (var column :mainClass.getTable()) {
             List<ClassTableItem> list = new ArrayList<>();
