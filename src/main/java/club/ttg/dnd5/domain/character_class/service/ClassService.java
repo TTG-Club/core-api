@@ -262,7 +262,7 @@ public class ClassService {
 
         List<MulticlassInfo> multiclassInfo = new ArrayList<>();
         multiclassInfo.add(MulticlassInfo.builder()
-                .hitDice(mainClass.getHitDice().getName() + "за каждый уровень")
+                .hitDice(mainClass.getHitDice().getName() + " за каждый уровень")
                 .name(mainClass.getName())
                 .subclass(mainSubClass.getName())
                 .level(request.getLevel())
@@ -327,7 +327,7 @@ public class ClassService {
                 }
             }
             multiclassInfo.add(MulticlassInfo.builder()
-                    .hitDice(multiClass.getHitDice().getName() + "за каждый уровень")
+                    .hitDice(multiClass.getHitDice().getName() + " за каждый уровень")
                     .name(multiClass.getName())
                     .subclass(multiSubclass.getName())
                     .level(multiclassRequest.getLevel())
