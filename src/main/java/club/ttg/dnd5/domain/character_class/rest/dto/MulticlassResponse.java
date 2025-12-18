@@ -14,5 +14,5 @@ import java.util.List;
 public class MulticlassResponse extends ClassDetailedResponse {
     private int characterLevel;
     private int spellcastingLevel;
-    private List<MulticlassDto> multiclass;
+    private List<MulticlassInfo> multiclass;
 }
