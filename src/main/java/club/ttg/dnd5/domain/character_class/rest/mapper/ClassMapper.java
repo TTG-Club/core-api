@@ -41,6 +41,25 @@ public interface ClassMapper {
     @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(target = "userId", source = "username")
+    @Mapping(target = "gallery", ignore = true)
+    @Mapping(target = "features", source = ".")
+    @Mapping(target = "proficiency.armor", source = "armorProficiency", qualifiedByName = "armorProficiencyToString")
+    @Mapping(target = "proficiency.weapon", source = "weaponProficiency", qualifiedByName = "weaponProficiencyToString")
+    @Mapping(target = "proficiency.tool", source = "toolProficiency")
+    @Mapping(target = "proficiency.skill", source = "skillProficiency", qualifiedByName = "skillProficiencyToString")
+    @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
+    @Mapping(target = "primaryCharacteristics", source = "primaryCharacteristics", qualifiedByName = "toPrimaryCharacteristics")
+    @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
+    @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
+    @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
+    @Mapping(target = "characterLevel", ignore = true)
+    @Mapping(target = "spellcastingLevel", ignore = true)
+    @Mapping(target = "multiclass", ignore = true)
+    MulticlassResponse toMulticlassResponse(CharacterClass characterClass);
+
     @BaseMapping.BaseEntityNameMapping
     @Mapping(target = "parent", source = "parent")
     @Mapping(target = "subclasses", ignore = true)
