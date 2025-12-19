@@ -65,7 +65,7 @@ public class MulticlassService {
             }
             if (classFilterFeature.getLevel() <= request.getLevel()) {
                 var feature = classFeatureMapper.toDto(classFilterFeature, false);
-                feature.setAdditional(mainClass.getName().toLowerCase());
+                feature.setAdditional(mainClass.getName());
                 features.add(feature);
             }
         }
@@ -89,7 +89,7 @@ public class MulticlassService {
             }
             if (subclassFeature.getLevel() <= request.getLevel()) {
                 var feature = classFeatureMapper.toDto(subclassFeature, true);
-                feature.setAdditional(mainSubClass.getName().toLowerCase());
+                feature.setAdditional(mainSubClass.getName());
                 features.add(feature);
             }
         }
@@ -125,7 +125,9 @@ public class MulticlassService {
                             level,
                             charachterLevel);
                     classFeature.setLevel(multiclassFeature.getLevel() + charachterLevel);
-                    features.add(classFeatureMapper.toDto(classFeature, false));
+                    var feature = classFeatureMapper.toDto(classFeature, false);
+                    feature.setAdditional(mainClass.getName());
+                    features.add(feature);
                 }
             }
             var multiSubclass = findByUrl(multiclassRequest.getSubclass());
@@ -133,7 +135,9 @@ public class MulticlassService {
                 if (multiSubclassFeature.getLevel() <= level) {
                     ClassFeature classFeature = filterMulticlassScalingFeature(multiSubclassFeature, level, charachterLevel);
                     classFeature.setLevel(multiSubclassFeature.getLevel() + charachterLevel);
-                    features.add(classFeatureMapper.toDto(classFeature, true));
+                    var feature = classFeatureMapper.toDto(classFeature, true);
+                    feature.setAdditional(multiSubclass.getName());
+                    features.add(feature);
                 }
             }
             multiclassInfo.add(MulticlassInfo.builder()
