@@ -126,7 +126,7 @@ public class MulticlassService {
                             charachterLevel);
                     classFeature.setLevel(multiclassFeature.getLevel() + charachterLevel);
                     var feature = classFeatureMapper.toDto(classFeature, false);
-                    feature.setAdditional(mainClass.getName());
+                    feature.setAdditional(multiClass.getName());
                     features.add(feature);
                 }
             }
