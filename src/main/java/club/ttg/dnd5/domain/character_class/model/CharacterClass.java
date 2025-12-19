@@ -64,6 +64,10 @@ public class CharacterClass extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private SkillProficiency skillProficiency;
 
+    //@Type(JsonType.class)
+    //@Column(columnDefinition = "jsonb")
+    //private MulticlassProficiency multiclassProficiency;
+
     @Column(columnDefinition = "TEXT")
     private String equipment;
 
