@@ -64,7 +64,9 @@ public class MulticlassService {
                 spellcasting = true;
             }
             if (classFilterFeature.getLevel() <= request.getLevel()) {
-                features.add(classFeatureMapper.toDto(classFilterFeature, false));
+                var feature = classFeatureMapper.toDto(classFilterFeature, false);
+                feature.setAdditional(mainClass.getName().toLowerCase());
+                features.add(feature);
             }
         }
         var mainSubClass = findByUrl(request.getSubclass());
@@ -86,7 +88,9 @@ public class MulticlassService {
                 spellcasting = true;
             }
             if (subclassFeature.getLevel() <= request.getLevel()) {
-                features.add(classFeatureMapper.toDto(subclassFeature, true));
+                var feature = classFeatureMapper.toDto(subclassFeature, true);
+                feature.setAdditional(mainSubClass.getName().toLowerCase());
+                features.add(feature);
             }
         }
         var spellMulticlass = mainClass.getCasterType() != CasterType.NONE;
