@@ -64,7 +64,7 @@ public class MulticlassService {
                 spellcasting = true;
             }
             if (classFilterFeature.getLevel() <= request.getLevel()) {
-                features.add(classFeatureMapper.toDto(classFilterFeature, false));
+                features.add(classFeatureMapper.toDto(classFilterFeature, true));
             }
         }
         var mainSubClass = findByUrl(request.getSubclass());
