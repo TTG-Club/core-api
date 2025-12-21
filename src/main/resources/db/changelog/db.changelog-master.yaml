@@ -150,4 +150,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/2025/12/02-01-add-preview-roadmap.yaml
   - include:
-      file: db/changelog/2025/12/16-01-create-article-table.yaml
+      file: db/changelog/2025/12/21-01-create-article-table.yaml

@@ -84,7 +84,14 @@ public class ArticleController {
     @Operation(summary = "Получить cnt последних новостей")
     @GetMapping("/search")
     public List<ArticleShortResponse> search(@RequestParam(required = false) @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
-        return articleService.search(cnt);
+        return articleService.searchPublished(cnt);
+    }
+
+    @Operation(summary = "Получить cnt последних новостей")
+    @GetMapping("/search/unpublished")
+    @Secured("ADMIN")
+    public List<ArticleShortResponse> searchUnpublished(@RequestParam(required = false) @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
+        return articleService.searchUnpublished(cnt);
     }
 
 }

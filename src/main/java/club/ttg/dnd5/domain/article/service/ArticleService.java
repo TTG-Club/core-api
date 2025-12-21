@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -84,7 +85,16 @@ public class ArticleService {
         return articleRepository.save(toDelete).getUrl();
     }
 
-    public List<ArticleShortResponse> search(Integer cnt) {
+
+    public List<ArticleShortResponse> searchPublished(Integer cnt) {
+        return articleMapper.toShortResponseList(articleRepository.findAllByDeletedFalseAndPublishDateTimeBeforeOrderByPublishDateTimeDesc(
+                Instant.now(),
+                Optional.ofNullable(cnt)
+                        .map(Limit::of)
+                        .orElseGet(() -> Limit.of(DEFAULT_SEARCH_SIZE))));
+    }
+
+    public List<ArticleShortResponse> searchUnpublished(Integer cnt) {
         return articleMapper.toShortResponseList(articleRepository.findAllByDeletedFalseOrderByCreatedAtDesc(Optional.ofNullable(cnt)
                 .map(Limit::of)
                 .orElseGet(() -> Limit.of(DEFAULT_SEARCH_SIZE))));

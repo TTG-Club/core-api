@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -26,6 +28,10 @@ public class ArticleRequest {
     @Schema(description = "Cсылка на превью-изображение")
     @Nullable
     private String previewImageUrl;
+
+    @Nullable
+    @Schema(description = "Дата и время публикации")
+    private Instant publishDateTime;
 
     @Schema(description = "Текст превью")
     @NotNull

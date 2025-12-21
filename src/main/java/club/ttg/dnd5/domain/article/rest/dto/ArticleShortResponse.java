@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.UUID;
 
 
@@ -27,6 +28,10 @@ public class ArticleShortResponse {
     @NotNull
     @Schema(description = "Заголовок")
     private String title;
+
+    @Nullable
+    @Schema(description = "Дата и время публикации")
+    private Instant publishDateTime;
 
     @Schema(description = "Cсылка на превью-изображение")
     @Nullable

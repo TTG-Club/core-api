@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.UUID;
 
 
@@ -38,6 +39,7 @@ public class Article extends Timestamped {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    private Instant publishDateTime;
 
     @Column(columnDefinition = "TEXT")
     private String preview;

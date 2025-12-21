@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.UUID;
 
 
@@ -25,6 +26,10 @@ public class ArticleDetailedResponse {
 
     @NotNull
     private String url;
+
+    @Nullable
+    @Schema(description = "Дата и время публикации")
+    private Instant publishDateTime;
 
     @NotNull
     @Schema(description = "Заголовок")
