@@ -151,7 +151,11 @@ public class ClassService {
     }
 
     public ClassDetailedResponse findDetailedByUrl(String url) {
-        var response = classMapper.toDetailedResponse(findByUrl(url));
+        var charClass = findByUrl(url);
+        if (charClass.getParent() != null) {
+            fillFieldFromParentClass(charClass);
+        }
+        var response = classMapper.toDetailedResponse(charClass);
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)
@@ -166,6 +170,36 @@ public class ClassService {
                 .map(Gallery::getImage)
                 .toList());
         return request;
+    }
+
+    private void fillFieldFromParentClass(CharacterClass characterClass) {
+        if (characterClass.getPrimaryCharacteristics() == null) {
+            characterClass.setPrimaryCharacteristics(characterClass.getParent().getPrimaryCharacteristics());
+        }
+        if (characterClass.getSavingThrows() == null) {
+            characterClass.setSavingThrows(characterClass.getParent().getSavingThrows());
+        }
+        if (characterClass.getHitDice() == null) {
+            characterClass.setHitDice(characterClass.getParent().getHitDice());
+        }
+        if (characterClass.getEquipment() == null) {
+            characterClass.setEquipment(characterClass.getParent().getEquipment());
+        }
+        if (characterClass.getArmorProficiency() == null) {
+            characterClass.setArmorProficiency(characterClass.getParent().getArmorProficiency());
+        }
+        if (characterClass.getWeaponProficiency() == null) {
+            characterClass.setWeaponProficiency(characterClass.getParent().getWeaponProficiency());
+        }
+        if (characterClass.getSkillProficiency() == null) {
+            characterClass.setSkillProficiency(characterClass.getParent().getSkillProficiency());
+        }
+        if (characterClass.getToolProficiency() == null) {
+            characterClass.setToolProficiency(characterClass.getParent().getToolProficiency());
+        }
+        if (characterClass.getTable() == null) {
+            characterClass.setTable(characterClass.getParent().getTable());
+        }
     }
 
     public ClassDetailedResponse preview(ClassRequest request) {
