@@ -15,8 +15,9 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR,  componentModel = "spring")
-public interface MulticlassMapper {
+@Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, componentModel = "spring")
+public interface MulticlassMapper
+{
     @Mapping(target = "features", ignore = true)
     @Mapping(target = "proficiency.armor", source = "armorProficiency", qualifiedByName = "armorProficiencyToString")
     @Mapping(target = "proficiency.weapon", source = "weaponProficiency", qualifiedByName = "weaponProficiencyToString")
@@ -30,43 +31,60 @@ public interface MulticlassMapper {
     MulticlassResponse toMulticlassResponse(CharacterClass characterClass);
 
     @Named("toPrimaryCharacteristics")
-    default String toPrimaryCharacteristics(Set<Ability> abilities) {
-        var list = abilities.stream().toList();
-        if (list.isEmpty()) {
+    default String toPrimaryCharacteristics(Set<Ability> abilities)
+    {
+        if (abilities == null || abilities.isEmpty())
+        {
             return "";
         }
-        if (list.size() == 1) {
+
+        var list = abilities.stream().toList();
+
+        if (list.size() == 1)
+        {
             return list.getFirst().getName();
         }
-        if (abilities.size() == 2) {
+        if (list.size() == 2)
+        {
             return list.getFirst().getName() + " или " + list.get(1).getName();
         }
 
-        String prefix = abilities.stream()
+        String prefix = list.stream()
+                .limit(list.size() - 1)
                 .map(Ability::getName)
-                .limit(abilities.size() - 1)
                 .collect(Collectors.joining(", "));
 
         return prefix + " или " + list.getLast().getName();
     }
 
     @Named("toSavingThrowsString")
-    default String toSavingThrowsString(Collection<Ability> savingThrows) {
-        return savingThrows.stream().map(Ability::getName).collect(Collectors.joining(", "));
+    default String toSavingThrowsString(Collection<Ability> savingThrows)
+    {
+        if (savingThrows == null || savingThrows.isEmpty())
+        {
+            return "";
+        }
+
+        return savingThrows.stream()
+                .map(Ability::getName)
+                .collect(Collectors.joining(", "));
     }
 
     @Named("armorProficiencyToString")
-    default String armorProficiencyToString(ArmorProficiency proficiency) {
+    default String armorProficiencyToString(ArmorProficiency proficiency)
+    {
         return proficiency == null ? "" : proficiency.toString();
     }
 
     @Named("weaponProficiencyToString")
-    default String weaponProficiencyToString(WeaponProficiency proficiency) {
+    default String weaponProficiencyToString(WeaponProficiency proficiency)
+    {
         return proficiency == null ? "" : proficiency.toString();
     }
 
     @Named("skillProficiencyToString")
-    default String skillProficiencyToString(SkillProficiency proficiency) {
+    default String skillProficiencyToString(SkillProficiency proficiency)
+    {
         return proficiency == null ? "" : proficiency.toString();
     }
 }

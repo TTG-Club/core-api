@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
+import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
@@ -21,7 +22,6 @@ import java.util.Set;
 @Getter
 @Setter
 public class ClassRequest extends BaseRequest {
-
     @Schema(description = "URL родительского класса (если есть наследование)")
     private String parentUrl;
 
@@ -38,7 +38,7 @@ public class ClassRequest extends BaseRequest {
     private ClassProficiencyRequest proficiency;
 
     @Schema(description = "Владения мультикласса")
-    private ClassProficiencyRequest multiclassProficiency;
+    private MulticlassProficiency multiclassProficiency;
 
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "Снаряжение класса в формате Markdown")
