@@ -38,7 +38,7 @@ public class MulticlassService {
         var multiclass = new CharacterClass();
         var mainClass = findByUrl(request.getUrl());
         List<ClassFeatureDto> features = new ArrayList<>();
-
+        int extraAttack = 1;
         boolean spellcasting = false;
         int charachterLevel = request.getLevel();
         int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
@@ -55,6 +55,11 @@ public class MulticlassService {
             table.add(column);
         }
         for (ClassFeature classFeature : mainClass.getFeatures()) {
+            if (classFeature.getName().equals("Дополнительная атака")
+                    || classFeature.getName().contains("дополнительные атаки")
+                    || classFeature.getName().contains("дополнительных атак")) {
+                extraAttack++;
+            }
             var classFilterFeature = filterMulticlassScalingFeature(classFeature, request.getLevel(), 0);
             if (classFilterFeature.isHideInSubclasses()) {
                 continue;
@@ -83,6 +88,11 @@ public class MulticlassService {
             spellcastLevel += calculateSpellCastingLevel(mainSubClass.getCasterType(), request.getLevel());
         }
         for (ClassFeature subclassFeature : mainSubClass.getFeatures()) {
+            if (subclassFeature.getName().equals("Дополнительная атака")
+                    || subclassFeature.getName().contains("дополнительные атаки")
+                    || subclassFeature.getName().contains("дополнительных атак")) {
+                extraAttack++;
+            }
             if (subclassFeature.getName().equals("Использование заклинаний")) {
                 subclassFeature.setDescription(getSpellcastingMulticlass());
                 spellcasting = true;
@@ -119,6 +129,17 @@ public class MulticlassService {
                         continue;
                     }
                     multiclassFeature.setDescription(getSpellcastingMulticlass());
+                }
+                if (multiclassFeature.getName().equals("Дополнительная атака")
+                        || multiclassFeature.getName().contains("дополнительные атаки")
+                        || multiclassFeature.getName().contains("дополнительных атак")) {
+                    if (extraAttack > 1) {
+                        multiclassFeature.setDescription(getExtraAttackName(extraAttack));
+                        multiclassFeature.setDescription(
+                                "Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход."
+                                        .formatted(extraAttack + 1));
+                    }
+                    extraAttack++;
                 }
                 if (multiclassFeature.getLevel() <= level) {
                     ClassFeature classFeature = filterMulticlassScalingFeature(multiclassFeature,
@@ -171,6 +192,19 @@ public class MulticlassService {
         return multiclassResponse;
     }
 
+    private String getExtraAttackName(final int extraAttack)
+    {
+        return switch (extraAttack)
+        {
+            case 1 -> "Дополнительная атака";
+            case 2 -> "Две дополнительные атаки";
+            case 3 -> "Три дополнительные атаки";
+            default -> throw new IllegalArgumentException(
+                    "Unsupported extraAttack value: " + extraAttack
+            );
+        };
+    }
+
     private ClassFeature filterMulticlassScalingFeature(final ClassFeature classFeature,
                                                         final int level,
                                                         final int characterLevel) {
@@ -197,7 +231,7 @@ public class MulticlassService {
     private String getSpellcastingMulticlass() {
         return """
                 [
-                  "Ваши возможности для накладывания заклинаний зависят частично от ваших комбинированных уровней во всех ваших классах, умеющих накладывать {@glossary заклинания|url:spell-phb}, и частично от ваших индивидуальных уровней в этих классах. Как только вы получаете умение {@glossary Использование заклинаний|url:spellcasting-phb} более чем из одного класса, используйте приведённые ниже правила. Если вы персонаж с мультиклассом, но у вас есть особенность {@glossary Использование заклинаний|url:spellcasting-phb} только из одного класса, следуйте правилам для этого класса.",
+                  "Ваши возможности для накладывания заклинаний зависят частично от ваших комбинированных уровней во всех ваших классах, умеющих накладывать заклинания, и частично от ваших индивидуальных уровней в этих классах. Как только вы получаете умение {@i Использование заклинаний} более чем из одного класса, используйте приведённые ниже правила. Если вы персонаж с мультиклассом, но у вас есть особенность {@i Использование заклинаний} только из одного класса, следуйте правилам для этого класса.",
                   "{@b Подготовленные заклинания.} Вы определяете, какие заклинания можете подготовить для каждого класса отдельно, как если бы вы были персонажем только этого класса. Например, если вы следопыт 4 уровня / чародей 3 уровня, то вы можете подготовить 5 заклинаний следопыта 1 уровня и 6 заклинаний чародея 1 или 2 уровня (а также четыре заговора чародея). Каждое заклинание, которое вы подготовили, связано с одним из ваших классов, и вы используете заклинательную характеристику этого класса, когда накладываете это заклинание.",
                   "{@b Заговоры.} Если заговор усиливается на более высоких уровнях, это усиление основано на общем уровне вашего персонажа, а не на уровне в конкретном классе, если в описании заклинания не указано иное.",
                   {
@@ -238,10 +272,10 @@ public class MulticlassService {
                       "Одну треть ваших уровней (округляя вниз) в классах воина или плута, если у вас есть подклассы Магический рыцарь или Мистический ловкач."
                     ]
                   },
-                  "Затем найдите этот суммарный уровень в колонке «Уровень» таблицы «Мультиклассовый заклинатель». Вы используете ячейки заклинаний этого уровня, чтобы накладывать заклинания соответствующего уровня из любого класса, у которого есть способность {@glossary Использование заклинаний|url:spellcasting-phb}.",
+                  "Затем найдите этот суммарный уровень в колонке «Уровень» таблицы «Мультиклассовый заклинатель». Вы используете ячейки заклинаний этого уровня, чтобы накладывать заклинания соответствующего уровня из любого класса, у которого есть способность {@i Использование заклинаний}.",
                   "Эта таблица может дать вам ячейки заклинаний более высокого уровня, чем заклинания, которые вы можете подготовить. Вы можете использовать такие ячейки только для наложения заклинаний более низкого уровня. Если заклинание имеет усиленный эффект при использовании ячейки более высокого уровня, вы можете применять этот эффект как обычно.",
                   "Например, если вы следопыт 4 уровня / чародей 3 уровня, вы считаетесь персонажем 5 уровня при определении ячеек заклинаний. У вас есть 4 ячейки заклинаний 1 уровня, 3 ячейки 2 уровня и 2 ячейки 3 уровня. Однако вы не можете подготовить заклинания 3 уровня и не можете подготовить заклинания 2 уровня следопыта. Вы всё равно можете использовать эти ячейки для накладывания подготовленных заклинаний и усиливать их эффекты.",
-                  "{@b Магия договора.} Если у вас есть умение {@glossary Магия договора|url:pact-magic-phb} из класса колдуна и умение {@glossary Использование заклинаний|url:spellcasting-phb}, вы можете использовать ячейки заклинаний, полученные от Магии договора, для накладывания заклинаний других классов, и наоборот — использовать ячейки Использования заклинаний для сотворения заклинаний колдуна."
+                  "{@b Магия договора.} Если у вас есть умение {@i Магия договора} из класса колдуна и умение {@i Использование заклинаний}, вы можете использовать ячейки заклинаний, полученные от Магии договора, для накладывания заклинаний других классов, и наоборот — использовать ячейки Использования заклинаний для сотворения заклинаний колдуна."
                 ]
                """;
     }
