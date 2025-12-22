@@ -37,6 +37,9 @@ public class ClassRequest extends BaseRequest {
     @Schema(description = "Владения класса")
     private ClassProficiencyRequest proficiency;
 
+    @Schema(description = "Владения мультикласса")
+    private ClassProficiencyRequest multiclassProficiency;
+
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "Снаряжение класса в формате Markdown")
     private String equipment;

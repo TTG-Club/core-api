@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-multiclass-class
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: multiclass
+                  type: jsonb

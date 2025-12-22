@@ -149,3 +149,5 @@ databaseChangeLog:
       file: db/changelog/2025/11/12-01-spell-add-condition.yaml
   - include:
       file: db/changelog/2025/12/02-01-add-preview-roadmap.yaml
+  - include:
+      file: db/changelog/2025/12/22-01-add-multiclass.yaml
