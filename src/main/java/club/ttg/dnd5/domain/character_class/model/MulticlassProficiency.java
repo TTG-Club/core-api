@@ -12,5 +12,5 @@ public class MulticlassProficiency {
 
     private String toolProficiency;
 
-    private String skills;
+    private int skills;
 }

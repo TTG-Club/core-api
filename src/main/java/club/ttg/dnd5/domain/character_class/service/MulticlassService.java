@@ -177,6 +177,18 @@ public class MulticlassService {
         multiclass.setHitDice(mainClass.getHitDice());
         multiclass.setSavingThrows(mainClass.getSavingThrows());
         multiclass.setArmorProficiency(mainClass.getArmorProficiency());
+        if (mainClass.getMulticlassProficiency() != null) {
+            if (mainClass.getMulticlassProficiency().getArmor() != null) {
+                multiclass.getArmorProficiency().getCategory().addAll(multiclass.getArmorProficiency().getCategory());
+            }
+            if (mainClass.getMulticlassProficiency().getWeapon() != null) {
+                multiclass.getWeaponProficiency().getCategory().addAll(multiclass.getWeaponProficiency().getCategory());
+            }
+            if (mainClass.getMulticlassProficiency().getToolProficiency() != null) {
+                multiclass.setToolProficiency(mainClass.getToolProficiency() + ", "+ mainClass.getMulticlassProficiency().getToolProficiency());
+            }
+            multiclass.getSkillProficiency().setCount(mainClass.getSkillProficiency().getCount() + mainClass.getMulticlassProficiency().getSkills());
+        }
         multiclass.setPrimaryCharacteristics(mainClass.getPrimaryCharacteristics());
 
         multiclass.setTable(table);
