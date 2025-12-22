@@ -38,7 +38,7 @@ public class MulticlassService {
         var multiclass = new CharacterClass();
         var mainClass = findByUrl(request.getUrl());
         List<ClassFeatureDto> features = new ArrayList<>();
-        int extraAttack = 1;
+        int extraAttack = 0;
         boolean spellcasting = false;
         int charachterLevel = request.getLevel();
         int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
@@ -55,20 +55,20 @@ public class MulticlassService {
             table.add(column);
         }
         for (ClassFeature classFeature : mainClass.getFeatures()) {
-            if (classFeature.getName().equals("Дополнительная атака")
-                    || classFeature.getName().contains("дополнительные атаки")
-                    || classFeature.getName().contains("дополнительных атак")) {
-                extraAttack++;
-            }
             var classFilterFeature = filterMulticlassScalingFeature(classFeature, request.getLevel(), 0);
             if (classFilterFeature.isHideInSubclasses()) {
                 continue;
             }
-            if (classFilterFeature.getName().equals("Использование заклинаний")) {
-                classFilterFeature.setDescription(getSpellcastingMulticlass());
-                spellcasting = true;
-            }
+
             if (classFilterFeature.getLevel() <= request.getLevel()) {
+                if (classFilterFeature.getName().equals("Использование заклинаний")) {
+                    classFilterFeature.setDescription(getSpellcastingMulticlass());
+                    spellcasting = true;
+                } else if (classFeature.getName().equals("Дополнительная атака")
+                        || classFeature.getName().contains("дополнительные атаки")
+                        || classFeature.getName().contains("дополнительных атак")) {
+                    extraAttack++;
+                }
                 var feature = classFeatureMapper.toDto(classFilterFeature, false);
                 feature.setAdditional(mainClass.getName());
                 features.add(feature);
@@ -88,16 +88,15 @@ public class MulticlassService {
             spellcastLevel += calculateSpellCastingLevel(mainSubClass.getCasterType(), request.getLevel());
         }
         for (ClassFeature subclassFeature : mainSubClass.getFeatures()) {
-            if (subclassFeature.getName().equals("Дополнительная атака")
-                    || subclassFeature.getName().contains("дополнительные атаки")
-                    || subclassFeature.getName().contains("дополнительных атак")) {
-                extraAttack++;
-            }
-            if (subclassFeature.getName().equals("Использование заклинаний")) {
-                subclassFeature.setDescription(getSpellcastingMulticlass());
-                spellcasting = true;
-            }
             if (subclassFeature.getLevel() <= request.getLevel()) {
+                if (subclassFeature.getName().equals("Использование заклинаний")) {
+                    subclassFeature.setDescription(getSpellcastingMulticlass());
+                    spellcasting = true;
+                } else if (subclassFeature.getName().equals("Дополнительная атака")
+                        || subclassFeature.getName().contains("дополнительные атаки")
+                        || subclassFeature.getName().contains("дополнительных атак")) {
+                    extraAttack++;
+                }
                 var feature = classFeatureMapper.toDto(subclassFeature, true);
                 feature.setAdditional(mainSubClass.getName());
                 features.add(feature);
@@ -124,24 +123,23 @@ public class MulticlassService {
                 if (multiclassFeature.isHideInSubclasses()) {
                     continue;
                 }
-                if (multiclassFeature.getName().equals("Использование заклинаний")) {
-                    if (spellcasting) {
-                        continue;
-                    }
-                    multiclassFeature.setDescription(getSpellcastingMulticlass());
-                }
-                if (multiclassFeature.getName().equals("Дополнительная атака")
-                        || multiclassFeature.getName().contains("дополнительные атаки")
-                        || multiclassFeature.getName().contains("дополнительных атак")) {
-                    if (extraAttack > 1) {
-                        multiclassFeature.setDescription(getExtraAttackName(extraAttack));
-                        multiclassFeature.setDescription(
-                                "Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход."
-                                        .formatted(extraAttack + 1));
-                    }
-                    extraAttack++;
-                }
                 if (multiclassFeature.getLevel() <= level) {
+                    if (multiclassFeature.getName().equals("Использование заклинаний")) {
+                        if (spellcasting) {
+                            continue;
+                        }
+                        multiclassFeature.setDescription(getSpellcastingMulticlass());
+                    } else if (multiclassFeature.getName().equals("Дополнительная атака")
+                            || multiclassFeature.getName().contains("дополнительные атаки")
+                            || multiclassFeature.getName().contains("дополнительных атак")) {
+                        if (extraAttack >= 1) {
+                            multiclassFeature.setName(getExtraAttackName(extraAttack));
+                            multiclassFeature.setDescription(
+                                    "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
+                                            .formatted(extraAttack + 2));
+                        }
+                        extraAttack++;
+                    }
                     ClassFeature classFeature = filterMulticlassScalingFeature(multiclassFeature,
                             level,
                             charachterLevel);
@@ -196,9 +194,9 @@ public class MulticlassService {
     {
         return switch (extraAttack)
         {
-            case 1 -> "Дополнительная атака";
-            case 2 -> "Две дополнительные атаки";
-            case 3 -> "Три дополнительные атаки";
+            case 1 -> "Две дополнительные атаки";
+            case 2 -> "Три дополнительные атаки";
+            case 3 -> "Четыре дополнительные атаки";
             default -> throw new IllegalArgumentException(
                     "Unsupported extraAttack value: " + extraAttack
             );
