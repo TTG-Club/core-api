@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Immutable;
 
+import java.time.Instant;
+
 @Entity
 @Immutable
 @Table(name = "full_name_search_view")
@@ -17,7 +19,6 @@ import org.hibernate.annotations.Immutable;
 @Getter
 @Setter
 public class FullTextSearchView {
-
     @Id
     private String url;
     private String name;
@@ -26,11 +27,14 @@ public class FullTextSearchView {
     @Enumerated(EnumType.STRING)
     private SectionType type;
     private Boolean isHiddenEntity;
-    private String bookAcronym;
-    private String bookName;
-    private String bookEnglishName;
+    private String acronym;
+    private String sourceName;
+    private String sourceEnglish;
     @Enumerated(EnumType.STRING)
-    private SourceType bookType;
+    private SourceType sourceType;
     private Integer page;
-
+    @Column(name = "created_at")
+    private Instant createdAt;
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 }
