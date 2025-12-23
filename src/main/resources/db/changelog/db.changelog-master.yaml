@@ -151,3 +151,5 @@ databaseChangeLog:
       file: db/changelog/2025/12/02-01-add-preview-roadmap.yaml
   - include:
       file: db/changelog/2025/12/22-01-add-multiclass.yaml
+  - include:
+      file: db/changelog/2025/12/23-01-update-full-name-search-view-timestamp.yaml

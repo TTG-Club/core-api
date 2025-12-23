@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface FullTextSearchViewRepository extends JpaRepository<FullTextSearchView, Long> {
 
@@ -25,5 +26,11 @@ public interface FullTextSearchViewRepository extends JpaRepository<FullTextSear
             case when ftsv.alternative ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end desc
         """)
     Collection<FullTextSearchView> findBySearchLine(String searchLine, String invertedSearchLine);
+
+    @Query("""
+        select ftsv from FullTextSearchView ftsv
+        order by coalesce(ftsv.updatedAt, ftsv.createdAt) desc
+        """)
+    List<FullTextSearchView> findTop10LatestUpdatedOrCreated(org.springframework.data.domain.Pageable pageable);
 
 }
