@@ -27,6 +27,7 @@ public class FullTextSearchViewService {
     //TODO доделать маппинг
     public FullTextSearchViewResponse findBySearchLine(String searchLine) {
         return Optional.ofNullable(searchLine)
+                .map(String::trim)
                 .filter(Predicate.not(String::isBlank))
                 .map(line -> fullTextSearchViewRepository.findBySearchLine(line, SwitchLayoutUtils.switchLayout(line)))
                 .map(this::getFullTextSearchViewResponse)
