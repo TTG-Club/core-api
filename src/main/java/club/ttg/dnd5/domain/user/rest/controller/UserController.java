@@ -30,7 +30,7 @@ public class UserController {
         return SecurityUtils.getUserDto();
     }
 
-    @Operation(summary = "Получение профиля пользователя")
+    @Operation(summary = "Получение расширенного профиля пользователя")
     @GetMapping("/profile/detailed")
     public UserProfileDetailedResponse getUserProfileDetailed() {
         return userService.getUserProfileDetailed();
