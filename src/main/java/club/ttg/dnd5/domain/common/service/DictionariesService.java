@@ -267,7 +267,7 @@ public class DictionariesService {
     public Collection<SelectOptionDto> getCoins() {
         return Arrays.stream(Coin.values())
                 .map(type -> SelectOptionDto.builder()
-                        .label(type.getShortName())
+                        .label(type.getName())
                         .value(type.name())
                         .build())
                 .collect(Collectors.toList());

@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: update-full-text-search-view
+      author: Magistrus
+      changes:
+        - sqlFile:
+            path: sql/01-update-full-name-search-view-timestamp.sql
+            relativeToChangelogFile: true

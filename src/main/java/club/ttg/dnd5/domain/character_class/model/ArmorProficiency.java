@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 @Getter
 @Setter
 public class ArmorProficiency {
-    private List<ArmorCategory> category;
+    private Set<ArmorCategory> category;
     private String custom;
 
     @Override
