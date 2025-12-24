@@ -13,4 +13,6 @@ public interface RatingRepository extends JpaRepository<Rating, String> {
     RatingStats getRating(String section, String url);
 
     Optional<Rating> findByUsernameAndSectionAndUrl(String username, String section, String url);
+
+    Long countByUsername(String username);
 }
