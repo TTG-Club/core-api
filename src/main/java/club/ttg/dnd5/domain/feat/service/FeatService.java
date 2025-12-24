@@ -25,4 +25,6 @@ public interface FeatService {
     FeatRequest findFormByUrl(String url);
 
     FeatDetailResponse preview(FeatRequest request);
+
+    Collection<FeatRequest> getFeatsSelect();
 }

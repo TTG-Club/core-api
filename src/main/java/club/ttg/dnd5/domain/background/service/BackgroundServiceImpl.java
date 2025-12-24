@@ -106,4 +106,10 @@ public class BackgroundServiceImpl implements BackgroundService {
         var feat = getFeat(request.getFeatUrl());
         return backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
     }
+
+    @Override
+    public Collection<BackgroundRequest> getBackgroundsRaw() {
+        return backgroundRepository.findAll().stream()
+                .map(backgroundMapper::toRequest).toList();
+    }
 }

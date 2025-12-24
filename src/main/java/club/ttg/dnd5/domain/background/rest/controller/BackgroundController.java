@@ -50,8 +50,13 @@ public class BackgroundController {
     }
 
     @GetMapping("/{url}/raw")
-    public BackgroundRequest getSpellFormByUrl(@PathVariable String url) {
+    public BackgroundRequest getBackgroundFormByUrl(@PathVariable String url) {
         return backgroundService.findFormByUrl(url);
+    }
+
+    @GetMapping("/select")
+    public Collection<BackgroundRequest> getBackgroundSelect() {
+        return backgroundService.getBackgroundsRaw();
     }
 
     @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")
