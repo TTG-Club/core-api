@@ -4,20 +4,20 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+@Getter
 @RequiredArgsConstructor
 public enum SectionType {
 
-    BACKGROUND("background"),
-    FEAT("feat"),
+    BACKGROUND("backgrounds"),
+    FEAT("feats"),
     SPECIES("species"),
-    SPELL("spell"),
+    SPELL("spells"),
     BESTIARY("bestiary"),
-    MAGIC_ITEM("magic-item"),
-    ITEM("item"),
+    MAGIC_ITEM("magic-items"),
+    ITEM("items"),
     GLOSSARY("glossary"),
-    CLASS("class");
+    CLASS("classes");
 
-    @Getter
     @JsonValue
     private final String value;
 }
