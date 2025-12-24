@@ -48,8 +48,13 @@ public class FeatController {
     }
 
     @GetMapping("/{url}/raw")
-    public FeatRequest getSpellFormByUrl(@PathVariable String url) {
+    public FeatRequest getFeatFormByUrl(@PathVariable String url) {
         return featService.findFormByUrl(url);
+    }
+
+    @GetMapping("/select")
+    public Collection<FeatRequest> getFeatFormByUrl() {
+        return featService.getFeatsSelect();
     }
 
     @Operation(summary = "Получение списка черт")

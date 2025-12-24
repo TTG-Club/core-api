@@ -101,4 +101,11 @@ public class FeatServiceImpl implements FeatService {
         var book = sourceService.findByUrl(request.getSource().getUrl());
         return featMapper.toDetail(featMapper.toEntity(request, book));
     }
+
+    @Override
+    public Collection<FeatRequest> getFeatsSelect() {
+        return featRepository.findAll().stream()
+                .map(featMapper::toRequest)
+                .toList();
+    }
 }

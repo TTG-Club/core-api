@@ -23,4 +23,6 @@ public interface BackgroundService {
     BackgroundRequest findFormByUrl(String url);
 
     BackgroundDetailResponse preview(BackgroundRequest request);
+
+    Collection<BackgroundRequest> getBackgroundsRaw();
 }
