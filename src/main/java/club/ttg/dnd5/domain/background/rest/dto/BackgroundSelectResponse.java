@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.background.rest.dto;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
-import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.dto.base.SourceResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -32,5 +32,5 @@ public class BackgroundSelectResponse {
     private Set<Skill> skillsProficiencies;
     @JsonProperty(value = "source")
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
-    private SourceRequest source;
+    private SourceResponse source;
 }

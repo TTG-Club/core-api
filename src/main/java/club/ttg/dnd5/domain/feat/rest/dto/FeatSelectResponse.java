@@ -2,8 +2,8 @@ package club.ttg.dnd5.domain.feat.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
-import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.dto.base.SourceResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -33,5 +33,5 @@ public class FeatSelectResponse{
     private int increase;
 
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
-    private SourceRequest source;
+    private SourceResponse source;
 }

@@ -41,11 +41,10 @@ public interface BackgroundMapper {
     BackgroundRequest toRequest(Background background);
 
     @BaseMapping.BaseShortResponseNameMapping
+    @BaseMapping.BaseSourceMapping
     @Mapping(source = "abilities", target = "abilityScores")
     @Mapping(source = "feat.url", target = "featUrl")
     @Mapping(source = "skillProficiencies", target = "skillsProficiencies")
-    @Mapping(source = "source.url", target = "source.url")
-    @Mapping(source = "sourcePage", target = "source.page")
     BackgroundSelectResponse toSelect(Background background);
 
     @BaseMapping.BaseEntityNameMapping
