@@ -1,8 +1,10 @@
 package club.ttg.dnd5.domain.feat.rest.controller;
 
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 
+import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.service.FeatFilterService;
 import club.ttg.dnd5.domain.feat.service.FeatService;
@@ -21,6 +23,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -52,11 +55,6 @@ public class FeatController {
         return featService.findFormByUrl(url);
     }
 
-    @GetMapping("/select")
-    public Collection<FeatRequest> getFeatFormByUrl() {
-        return featService.getFeatsSelect();
-    }
-
     @Operation(summary = "Получение списка черт")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черты успешно получена")
@@ -71,6 +69,19 @@ public class FeatController {
                                                   @RequestBody(required = false) SearchBody searchBody
     ) {
         return featService.getFeats(searchLine, searchBody);
+    }
+
+    @Operation(summary = "Получение списка черт для селекта")
+    @GetMapping("/select")
+    public Collection<FeatSelectResponse> getFeatSelect(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Size(min = 2)
+            @Schema( description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine,
+            @Schema( description = "Категория, если null-отдаются все черты")
+            @RequestParam(required = false) Set<FeatCategory> categories) {
+        return featService.getFeatsSelect(searchLine, categories);
     }
 
     @GetMapping("/filters")

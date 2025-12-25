@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.background.rest.mapper;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.model.Background;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -38,6 +39,14 @@ public interface BackgroundMapper {
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
     BackgroundRequest toRequest(Background background);
+
+    @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(source = "abilities", target = "abilityScores")
+    @Mapping(source = "feat.url", target = "featUrl")
+    @Mapping(source = "skillProficiencies", target = "skillsProficiencies")
+    @Mapping(source = "source.url", target = "source.url")
+    @Mapping(source = "sourcePage", target = "source.page")
+    BackgroundSelectResponse toSelect(Background background);
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
