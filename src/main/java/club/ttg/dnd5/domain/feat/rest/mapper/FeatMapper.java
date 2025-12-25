@@ -37,7 +37,7 @@ public interface FeatMapper {
     FeatRequest toRequest(Feat feat);
 
     @BaseMapping.BaseRequestNameMapping
-    @BaseMapping.BaseSourceRequestMapping
+    @BaseMapping.BaseSourceMapping
     @Mapping(source = ".", target = "increase", qualifiedByName = "getIncrease")
     FeatSelectResponse toSelect(Feat feat);
 
