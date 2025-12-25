@@ -2,8 +2,11 @@ package club.ttg.dnd5.domain.background.service;
 
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 
 import java.util.Collection;
 
@@ -24,5 +27,5 @@ public interface BackgroundService {
 
     BackgroundDetailResponse preview(BackgroundRequest request);
 
-    Collection<BackgroundRequest> getBackgroundsRaw();
+    Collection<BackgroundSelectResponse> getBackgroundsSelect(final @Valid @Size String searchLine);
 }

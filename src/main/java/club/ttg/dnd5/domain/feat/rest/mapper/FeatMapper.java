@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.mapper;
 
+import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
@@ -35,8 +36,24 @@ public interface FeatMapper {
     @BaseMapping.BaseSourceRequestMapping
     FeatRequest toRequest(Feat feat);
 
+    @BaseMapping.BaseRequestNameMapping
+    @BaseMapping.BaseSourceRequestMapping
+    @Mapping(source = ".", target = "increase", qualifiedByName = "getIncrease")
+    FeatSelectResponse toSelect(Feat feat);
+
     @Named("capitalize")
     default String capitalize(String string) {
         return StringUtils.capitalize(string);
+    }
+
+    @Named("getIncrease")
+    default int getIncrease(Feat feat) {
+        if (feat.getName().equals("Улучшение характеристик")) {
+            return 2;
+        }
+        if (feat.getAbilities() == null || feat.getAbilities().isEmpty()) {{
+            return 0;
+        }}
+        return 1;
     }
 }

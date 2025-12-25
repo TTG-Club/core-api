@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
@@ -10,16 +12,19 @@ import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
@@ -103,9 +108,15 @@ public class FeatServiceImpl implements FeatService {
     }
 
     @Override
-    public Collection<FeatRequest> getFeatsSelect() {
-        return featRepository.findAll().stream()
-                .map(featMapper::toRequest)
+    public Collection<FeatSelectResponse> getFeatsSelect(
+            final String searchLine,
+            final Set<FeatCategory> categories) {
+        return featRepository.findBySearchLine(searchLine,
+                        SwitchLayoutUtils.switchLayout(searchLine == null ? "" : searchLine),
+                        Sort.by("name"))
+                .stream()
+                .filter(f -> categories.contains(f.getCategory()))
+                .map(featMapper::toSelect)
                 .toList();
     }
 }
