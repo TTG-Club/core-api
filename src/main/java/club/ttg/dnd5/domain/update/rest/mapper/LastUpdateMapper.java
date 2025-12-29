@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.update.rest.mapper;
 
 import club.ttg.dnd5.domain.full_text_search.model.FullTextSearchView;
 import club.ttg.dnd5.domain.update.rest.dto.ChangeAction;
+import club.ttg.dnd5.domain.update.rest.dto.ChangeActionType;
 import club.ttg.dnd5.domain.update.rest.dto.LastUpdate;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
@@ -26,9 +27,9 @@ public interface LastUpdateMapper {
     @Named("getAction")
     default ChangeAction getAction(FullTextSearchView request) {
         if (request.getCreatedAt().equals(request.getUpdatedAt())) {
-            return ChangeAction.ADDED;
+            return new ChangeAction(ChangeActionType.ADDED);
         } else {
-            return ChangeAction.UPDATED;
+            return new ChangeAction(ChangeActionType.UPDATED);
         }
     }
 }
