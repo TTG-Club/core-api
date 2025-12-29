@@ -1,14 +1,16 @@
 package club.ttg.dnd5.domain.update.rest.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
-@AllArgsConstructor
+
 @Getter
-public enum ChangeAction {
-    ADDED("Добавлено"),
-    UPDATED("Обновлено"),
-    DELETED("Удалено");
-
-    private final String name;
+@Setter
+public class ChangeAction {
+    private ChangeActionType type;
+    private String name;
+    public ChangeAction(ChangeActionType type) {
+        this.type = type;
+        this.name = type.getName();
+    }
 }
