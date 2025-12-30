@@ -7,10 +7,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChangeAction {
-    private ChangeActionType type;
+    private String color;
     private String name;
     public ChangeAction(ChangeActionType type) {
-        this.type = type;
+        this.color = type.getColor();
         this.name = type.getName();
     }
 }
