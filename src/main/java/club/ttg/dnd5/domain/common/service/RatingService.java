@@ -16,6 +16,10 @@ public class RatingService {
     private final RatingRepository ratingRepository;
     private final RatingMapper ratingMapper;
 
+    public Long countUserRating(String username) {
+        return ratingRepository.countByUsername(username);
+    }
+
     @Transactional
     public RatingResponse addOrUpdate(final RatingRequest request) {
         var username = getCurrentUsername();

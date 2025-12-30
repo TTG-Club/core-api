@@ -32,7 +32,7 @@ public class ClassController {
             @ApiResponse(responseCode = "404", description = "Класс не существует")
     })
     @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
-    public Boolean isSpecieExist(@PathVariable String url) {
+    public Boolean isClassExist(@PathVariable String url) {
         if(!classService.exists(url)) {
             throw new EntityNotFoundException("URL класса не существует");
         }

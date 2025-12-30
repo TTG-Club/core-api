@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -12,9 +13,13 @@ import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -105,5 +110,16 @@ public class BackgroundServiceImpl implements BackgroundService {
         var book = sourceService.findByUrl(request.getSource().getUrl());
         var feat = getFeat(request.getFeatUrl());
         return backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
+    }
+
+    @Override
+    public Collection<BackgroundSelectResponse> getBackgroundsSelect(final @Valid @Size String searchLine) {
+        return backgroundRepository.findBySearchLine(searchLine,
+                        SwitchLayoutUtils.switchLayout(searchLine == null ? "" : searchLine),
+                        Sort.by("name"))
+                .stream()
+                .peek(b -> b.setDescription(null))
+                .map(backgroundMapper::toSelect)
+                .toList();
     }
 }
