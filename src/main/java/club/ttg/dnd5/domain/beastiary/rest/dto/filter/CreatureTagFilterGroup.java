@@ -1,10 +1,12 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
+import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.SimplePath;
+import com.querydsl.core.types.dsl.StringPath;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
@@ -21,8 +23,9 @@ import java.util.stream.Collectors;
 public class CreatureTagFilterGroup extends AbstractFilterGroup<String, CreatureTagFilterGroup.CreatureTagFilterItem>
 {
     private static final SimplePath<Object> PATH = Expressions.path(Object.class, "types");
+    private static final StringPath NAME_PATH = QCreature.creature.name;
 
-    public CreatureTagFilterGroup(List<CreatureTagFilterItem> filters)
+    public CreatureTagFilterGroup(final List<CreatureTagFilterItem> filters)
     {
         super(filters);
     }
@@ -38,15 +41,18 @@ public class CreatureTagFilterGroup extends AbstractFilterGroup<String, Creature
         final Set<String> positiveValues = getPositive();
         final Set<String> negativeValues = getNegative();
 
-        Function<String, BooleanExpression> positive = val -> Expressions.booleanTemplate(
+        final Function<String, BooleanExpression> typeTextContains = val -> Expressions.booleanTemplate(
                 "(COALESCE({0} ->> 'text', '') ILIKE ('%%' || {1} || '%%'))",
                 PATH, Expressions.constant(val)
         );
 
-        Function<String, BooleanExpression> negative = val -> Expressions.booleanTemplate(
-                "NOT (COALESCE({0} ->> 'text', '') ILIKE ('%%' || {1} || '%%'))",
-                PATH, Expressions.constant(val)
-        );
+        // positive: (types.text contains tag) OR (name contains tag)
+        final Function<String, BooleanExpression> positive = val ->
+                typeTextContains.apply(val).or(NAME_PATH.containsIgnoreCase(val));
+
+        // negative: NOT( (types.text contains tag) OR (name contains tag) )
+        final Function<String, BooleanExpression> negative = val ->
+                typeTextContains.apply(val).or(NAME_PATH.containsIgnoreCase(val)).not();
 
         final BooleanExpression positiveExpr = CollectionUtils.isEmpty(positiveValues)
                 ? TRUE_EXPRESSION
@@ -77,7 +83,7 @@ public class CreatureTagFilterGroup extends AbstractFilterGroup<String, Creature
 
     public static class CreatureTagFilterItem extends AbstractFilterItem<String>
     {
-        public CreatureTagFilterItem(String value)
+        public CreatureTagFilterItem(final String value)
         {
             super(StringUtils.capitalize(value), value, null);
         }

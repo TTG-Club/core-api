@@ -67,6 +67,7 @@ public interface ClassMapper {
     @Mapping(target = "proficiency.weapon", source = "weaponProficiency")
     @Mapping(target = "proficiency.tool", source = "toolProficiency")
     @Mapping(target = "proficiency.skill", source = "skillProficiency")
+    @Mapping(target = "multiclassProficiency", source = "multiclassProficiency")
     ClassRequest toRequest(CharacterClass entity);
 
     @Mapping(target = "url", source = "request.url")
@@ -85,6 +86,7 @@ public interface ClassMapper {
     @Mapping(target = "equipment", source = "request.equipment")
     @Mapping(target = "casterType", source = "request.casterType")
     @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics")
+    @Mapping(target = "multiclassProficiency", source = "request.multiclassProficiency")
     @interface ToEntityMapping {
     }
 

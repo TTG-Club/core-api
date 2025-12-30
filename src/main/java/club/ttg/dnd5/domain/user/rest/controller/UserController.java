@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.user.rest.controller;
 
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
+import club.ttg.dnd5.domain.user.rest.dto.UserProfileDetailedResponse;
+import club.ttg.dnd5.domain.user.service.UserService;
 import club.ttg.dnd5.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,10 +22,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
+    private final UserService userService;
+
     @Operation(summary = "Получение профиля пользователя")
     @GetMapping("/profile")
     public UserDto getUser() {
         return SecurityUtils.getUserDto();
+    }
+
+    @Operation(summary = "Получение расширенного профиля пользователя")
+    @GetMapping("/profile/detailed")
+    public UserProfileDetailedResponse getUserProfileDetailed() {
+        return userService.getUserProfileDetailed();
     }
 
     @Operation(summary = "Получение списка ролей")

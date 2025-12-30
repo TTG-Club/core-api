@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.background.rest.controller;
 
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.service.BackgroundFilterService;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
@@ -50,8 +51,17 @@ public class BackgroundController {
     }
 
     @GetMapping("/{url}/raw")
-    public BackgroundRequest getSpellFormByUrl(@PathVariable String url) {
+    public BackgroundRequest getBackgroundFormByUrl(@PathVariable String url) {
         return backgroundService.findFormByUrl(url);
+    }
+
+    @GetMapping("/select")
+    public Collection<BackgroundSelectResponse> getBackgroundSelect(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Schema( description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine) {
+        return backgroundService.getBackgroundsSelect(searchLine);
     }
 
     @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")

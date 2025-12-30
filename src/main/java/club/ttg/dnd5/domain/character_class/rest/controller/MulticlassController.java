@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.character_class.rest.controller;
 
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
-import club.ttg.dnd5.domain.character_class.service.ClassService;
+import club.ttg.dnd5.domain.character_class.rest.dto.MulticlassResponse;
+import club.ttg.dnd5.domain.character_class.service.MulticlassService;
 import club.ttg.dnd5.domain.common.rest.dto.MulticlassRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v2/multiclass")
 @Tag(name = "Мультиклассирование", description = "API для управления мультиклассами")
 public class MulticlassController {
-    private final ClassService classService;
+    private final MulticlassService multiclassService;
 
     @PostMapping
-    public ClassDetailedResponse getClassByUrl(@RequestBody MulticlassRequest request) {
-        return classService.getMulticlass(request);
+    public MulticlassResponse getClassByUrl(@RequestBody MulticlassRequest request) {
+        return multiclassService.getMulticlass(request);
     }
 }
