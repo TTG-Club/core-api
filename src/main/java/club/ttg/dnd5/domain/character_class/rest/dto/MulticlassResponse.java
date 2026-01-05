@@ -40,7 +40,14 @@ public class MulticlassResponse  {
     @Schema(description = "Тип заклинателя", example = "FULL")
     private CasterType casterType;
 
+    @Schema(description = "Требования к характеристикам", example = "Сила 13")
+    private String requirements;
+
+    @Schema(description = "Уровень персонажа")
     private int characterLevel;
+
+    @Schema(description = "Уровень заклинателя")
     private int spellcastingLevel;
+
     private List<MulticlassInfo> multiclass;
 }
