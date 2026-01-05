@@ -24,7 +24,7 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public String getNotification() {
+    public NotificationResponse getNotification() {
         return notificationService.getNotification();
     }
 
