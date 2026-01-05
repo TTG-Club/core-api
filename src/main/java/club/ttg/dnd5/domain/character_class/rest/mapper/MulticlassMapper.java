@@ -28,6 +28,7 @@ public interface MulticlassMapper
     @Mapping(target = "characterLevel", ignore = true)
     @Mapping(target = "spellcastingLevel", ignore = true)
     @Mapping(target = "multiclass", ignore = true)
+    @Mapping(target = "requirements", ignore = true)
     MulticlassResponse toMulticlassResponse(CharacterClass characterClass);
 
     @Named("toPrimaryCharacteristics")
