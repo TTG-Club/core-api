@@ -28,6 +28,9 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
         return new FilterInfo(List.of(
                 SpellClassFilterGroup.getDefault(
                         classService.findAllMagicClasses()
+                                .stream()
+                                .peek(c -> c.getName().setName(c.getName().getName() + " [%s]".formatted(c.getSource().getName().getLabel())))
+                                .toList()
                 ),
                 SpellSubclassFilterGroup.getDefault(
                         classService.findAllMagicSubclasses()
