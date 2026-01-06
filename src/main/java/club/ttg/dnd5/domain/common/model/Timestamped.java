@@ -29,6 +29,6 @@ public abstract class Timestamped {
     @Column(updatable = false)
     private String username;
     @LastModifiedBy
-    @Column(updatable = false)
+    @Column(name = "last_username")
     private String lastUsername;
 }
