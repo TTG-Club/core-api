@@ -218,6 +218,7 @@ public class ClassService {
         return response;
     }
 
+    @Transactional(readOnly = true)
     public List<CharacterClass> findAllById(List<String> urls)
     {
         if (urls == null || urls.isEmpty())

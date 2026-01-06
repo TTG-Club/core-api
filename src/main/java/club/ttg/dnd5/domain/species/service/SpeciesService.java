@@ -48,6 +48,7 @@ public class SpeciesService {
         return speciesMapper.toDetail(species);
     }
 
+    @Transactional(readOnly = true)
     public List<Species> findAllById(Collection<String> urls)
     {
         if (urls == null || urls.isEmpty())
