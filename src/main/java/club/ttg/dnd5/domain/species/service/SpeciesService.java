@@ -48,8 +48,15 @@ public class SpeciesService {
         return speciesMapper.toDetail(species);
     }
 
-    public List<Species> findAllById(Collection<String> urls) {
-        return speciesRepository.findAllById(urls);
+    public List<Species> findAllById(Collection<String> urls)
+    {
+        if (urls == null || urls.isEmpty())
+        {
+            return List.of();
+        }
+        return urls.stream()
+                .map(speciesRepository::getReferenceById)
+                .toList();
     }
 
     public List<SpeciesShortResponse> getSpecies(String searchLine, String[] sort) {

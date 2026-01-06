@@ -218,8 +218,15 @@ public class ClassService {
         return response;
     }
 
-    public List<CharacterClass> findAllById(List<String> urls) {
-        return classRepository.findAllById(urls);
+    public List<CharacterClass> findAllById(List<String> urls)
+    {
+        if (urls == null || urls.isEmpty())
+        {
+            return List.of();
+        }
+        return urls.stream()
+                .map(classRepository::getReferenceById)
+                .toList();
     }
 
     public List<ClassShortResponse> findAllMagicSubclasses() {
