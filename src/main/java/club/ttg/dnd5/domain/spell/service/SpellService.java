@@ -26,7 +26,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -132,13 +131,16 @@ public class SpellService {
                 .map(SourceRequest::getUrl)
                 .map(sourceService::findByUrl)
                 .orElse(null);
-        Spell spell = spellMapper.updateEntity(existingSpell, request, source, classes, subclasses, species, lineages);
-        spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
-        if (!Objects.equals(oldUrl, request.getUrl())) {
-            spellRepository.deleteById(oldUrl);
-            spellRepository.flush();
-        }
-        return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
+        spellMapper.updateEntity(existingSpell, request);
+
+        existingSpell.setSource(source);
+        existingSpell.setSpeciesAffiliation(species);
+        existingSpell.setLineagesAffiliation(lineages);
+        existingSpell.setClassAffiliation(classes);
+        existingSpell.setSubclassAffiliation(subclasses);
+
+        existingSpell.setUpcastable(existingSpell.getLevel() > 0 && StringUtils.hasText(existingSpell.getUpper()));
+        return existingSpell.getUrl();
     }
 
     @Transactional

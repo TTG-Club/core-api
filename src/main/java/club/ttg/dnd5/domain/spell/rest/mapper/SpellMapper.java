@@ -18,28 +18,33 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Mapper(uses = {SpellComponentsMapper.class, SpellAffiliationMapper.class, BaseMapping.class}, componentModel = "spring")
-public interface SpellMapper {
-
+public interface SpellMapper
+{
     @ToEntityMapping
-    Spell toEntity(SpellRequest request, Source source,
-                   List<CharacterClass> classes, List<CharacterClass> subclasses,
-                   List<Species> species, List<Species> lineages);
+    Spell toEntity(SpellRequest request,
+                   Source source,
+                   java.util.List<CharacterClass> classes,
+                   java.util.List<CharacterClass> subclasses,
+                   java.util.List<Species> species,
+                   java.util.List<Species> lineages);
 
-    @ToEntityMapping
-    Spell updateEntity(@MappingTarget Spell target, SpellRequest request, Source source,
-                       List<CharacterClass> classes, List<CharacterClass> subclasses,
-                       List<Species> species, List<Species> lineages);
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "name", source = "request.name.name")
+    @Mapping(target = "english", source = "request.name.english")
+    @Mapping(target = "alternative", source = "request.name.alternative", qualifiedByName = "joinAlternative")
+    void updateEntity(@MappingTarget Spell target, SpellRequest request);
 
     @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
     @Mapping(target = "additionalType", source = "school.additionalType")
@@ -51,7 +56,6 @@ public interface SpellMapper {
 
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
-
     @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
     @Mapping(target = "additionalType", source = "school.additionalType")
     @Mapping(target = "castingTime", source = ".", qualifiedByName = "castingTimeToString")
@@ -61,35 +65,40 @@ public interface SpellMapper {
     SpellDetailedResponse toDetail(Spell spell);
 
     @Named("isConcentration")
-    default Boolean isConcentration(Collection<SpellDuration> durations) {
+    default Boolean isConcentration(Collection<SpellDuration> durations)
+    {
         return durations.stream()
                 .map(SpellDuration::getConcentration)
                 .anyMatch(Predicate.isEqual(true));
     }
 
     @Named("isRitual")
-    default Boolean isRitual(Collection<SpellCastingTime> castingTimes) {
+    default Boolean isRitual(Collection<SpellCastingTime> castingTimes)
+    {
         return castingTimes.stream()
                 .map(SpellCastingTime::getUnit)
                 .anyMatch(u -> CastingUnit.RITUAL == u);
     }
 
     @Named("castingTimeToString")
-    default String castingTimeToString(Spell spell) {
+    default String castingTimeToString(Spell spell)
+    {
         return spell.getCastingTime().stream()
                 .map(SpellCastingTime::toString)
                 .collect(Collectors.joining(" или "));
     }
 
     @Named("durationToString")
-    default String durationToString(Spell spell) {
+    default String durationToString(Spell spell)
+    {
         return spell.getDuration().stream()
                 .map(SpellDuration::toString)
                 .collect(Collectors.joining(" или "));
     }
 
     @Named("distanceToString")
-    default String distanceToString(Spell spell) {
+    default String distanceToString(Spell spell)
+    {
         return spell.getRange().stream()
                 .map(SpellDistance::toString)
                 .collect(Collectors.joining(" или "));
@@ -113,27 +122,50 @@ public interface SpellMapper {
     @Mapping(target = "castingTime", source = "request.castingTime")
     @Mapping(target = "duration", source = "request.duration")
     @Mapping(target = "upper", source = "request.upper")
-
     @Mapping(target = "source", source = "source")
     @Mapping(target = "speciesAffiliation", source = "species")
     @Mapping(target = "lineagesAffiliation", source = "lineages")
     @Mapping(target = "classAffiliation", source = "classes")
     @Mapping(target = "subclassAffiliation", source = "subclasses")
-    @interface ToEntityMapping {
+    @interface ToEntityMapping
+    {
     }
 
     @Named("setNull")
-    default SpellComponents setNull(SpellComponents components) {
+    default SpellComponents setNull(SpellComponents components)
+    {
+        if (components == null)
+        {
+            return null;
+        }
+
         if (Optional.ofNullable(components.getM())
                 .map(MaterialComponent::getText)
-                .orElse("").isEmpty()) {
+                .orElse("")
+                .isEmpty())
+        {
             components.setM(null);
         }
+
         return components;
     }
 
     @Named("capitalize")
-    default String capitalize(String string) {
+    default String capitalize(String string)
+    {
         return StringUtils.capitalize(string);
     }
+
+    @Named("joinAlternative")
+    default String joinAlternative(Collection<String> values)
+    {
+        if (values == null || values.isEmpty())
+        {
+            return null;
+        }
+        return values.stream()
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining("; "));
+    }
+
 }
