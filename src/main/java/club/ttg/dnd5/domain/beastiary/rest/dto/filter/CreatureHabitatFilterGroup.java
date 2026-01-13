@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("c-hab")
 public class CreatureHabitatFilterGroup extends AbstractFilterGroup<Habitat, CreatureHabitatFilterGroup.CreatureHabitatFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("section");
@@ -81,6 +83,7 @@ public class CreatureHabitatFilterGroup extends AbstractFilterGroup<Habitat, Cre
                         .collect(Collectors.toList()));
     }
 
+    @JsonTypeName("c-hab-i")
     public static class CreatureHabitatFilterItem extends AbstractFilterItem<Habitat> {
         public CreatureHabitatFilterItem(Habitat value) {
             super(value.getName(), value, null);

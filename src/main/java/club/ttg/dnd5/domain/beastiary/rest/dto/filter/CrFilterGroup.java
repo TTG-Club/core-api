@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberPath;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("c-cr")
 public class CrFilterGroup extends AbstractFilterGroup<Long, CrFilterGroup.CrFilterItem> {
 
     private static final NumberPath<Long> PATH = QCreature.creature.experience;
@@ -48,6 +50,7 @@ public class CrFilterGroup extends AbstractFilterGroup<Long, CrFilterGroup.CrFil
                 .collect(Collectors.toList()));
     }
 
+    @JsonTypeName("c-cr-i")
     public static class CrFilterItem extends AbstractFilterItem<Long> {
         public CrFilterItem(String name, Long value) {
             super(name, value, null);

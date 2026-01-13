@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import org.apache.commons.collections4.CollectionUtils;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@JsonTypeName("s-ct")
 public class SpellCastingTimeFilterRange extends AbstractFilterGroup<SpellCastingTime, SpellCastingTimeFilterRange.SpellCastingTimeFilterItem> {
 
     private static final String NAME = "Время накладывания";

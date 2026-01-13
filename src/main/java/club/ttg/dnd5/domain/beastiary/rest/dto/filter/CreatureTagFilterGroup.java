@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.SimplePath;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("c-tag")
 public class CreatureTagFilterGroup extends AbstractFilterGroup<String, CreatureTagFilterGroup.CreatureTagFilterItem>
 {
     private static final SimplePath<Object> PATH = Expressions.path(Object.class, "types");
@@ -81,6 +83,7 @@ public class CreatureTagFilterGroup extends AbstractFilterGroup<String, Creature
         );
     }
 
+    @JsonTypeName("c-tag-i")
     public static class CreatureTagFilterItem extends AbstractFilterItem<String>
     {
         public CreatureTagFilterItem(final String value)

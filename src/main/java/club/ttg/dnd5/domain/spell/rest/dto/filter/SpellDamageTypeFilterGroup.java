@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.spell.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("s-dmg")
 public class SpellDamageTypeFilterGroup extends AbstractFilterGroup<DamageType, SpellDamageTypeFilterGroup.SpellDamageTypeFilterItem> {
 
     private final static Set<DamageType> DAMAGE_TYPES = Set.of(
@@ -66,6 +68,7 @@ public class SpellDamageTypeFilterGroup extends AbstractFilterGroup<DamageType, 
                 .collect(Collectors.toList()));
     }
 
+    @JsonTypeName("s-dmg-i")
     public static class SpellDamageTypeFilterItem extends AbstractFilterItem<DamageType> {
         public SpellDamageTypeFilterItem(DamageType value) {
             super(value.getName(), value, null);

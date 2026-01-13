@@ -8,8 +8,13 @@ import com.querydsl.core.types.dsl.Expressions;
 /**
  * Интерфейс, определяющий контракт для фильтров
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS, include = JsonTypeInfo.As.PROPERTY, property = "key")
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "key"
+)
 public interface Filter {
+
     /**
      * Значение по умолчанию для вырожденных фильтров
      */

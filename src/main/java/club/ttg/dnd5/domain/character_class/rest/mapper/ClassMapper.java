@@ -42,19 +42,19 @@ public interface ClassMapper {
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping
-    @Mapping(target = "parent", source = "parent")
+    @Mapping(target = "parent", ignore = true)
     @Mapping(target = "subclasses", ignore = true)
-
+    @Mapping(target = "hiddenEntity", ignore = true)
     @ToEntityMapping
-    CharacterClass toEntity(ClassRequest request, CharacterClass parent, Source source);
+    CharacterClass toEntity(ClassRequest request, Source source);
 
     @BaseMapping.BaseEntityNameMapping
-    @Mapping(target = "parent", source = "parent")
+    @Mapping(target = "parent", ignore = true)
     @Mapping(target = "subclasses", ignore = true)
+    @Mapping(target = "hiddenEntity", ignore = true)
 
     @ToEntityMapping
-    CharacterClass updateEntity(@MappingTarget CharacterClass existingClass,
-                                CharacterClass parent,
+    void updateEntity(@MappingTarget CharacterClass existingClass,
                                 ClassRequest request,
                                 Source source);
 

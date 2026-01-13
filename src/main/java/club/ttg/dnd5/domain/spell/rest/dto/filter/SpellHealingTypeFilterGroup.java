@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.spell.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import lombok.Getter;
@@ -16,8 +17,8 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("s-heal")
 public class SpellHealingTypeFilterGroup extends AbstractFilterGroup<HealingType, SpellHealingTypeFilterGroup.SpellHealingTypeFilterItem> {
-
 
     public SpellHealingTypeFilterGroup(List<SpellHealingTypeFilterItem> filters) {
         super(filters);
@@ -53,6 +54,7 @@ public class SpellHealingTypeFilterGroup extends AbstractFilterGroup<HealingType
                 .collect(Collectors.toList()));
     }
 
+    @JsonTypeName("s-heal-i")
     public static class SpellHealingTypeFilterItem extends AbstractFilterItem<HealingType> {
         public SpellHealingTypeFilterItem(HealingType value) {
             super(value.getName(), value, null);

@@ -3,12 +3,14 @@ package club.ttg.dnd5.domain.spell.rest.dto.filter;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.BooleanPath;
 import com.querydsl.core.types.dsl.Expressions;
 
 import java.util.List;
 
+@JsonTypeName("s-oth")
 public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
     public static final String NAME = "Прочее";
 
@@ -21,13 +23,13 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
         super(filters);
     }
 
-
     public static SpellOtherFilterGroup getDefault() {
         return new SpellOtherFilterGroup(List.of(new SpellRitualFilterSingleton(),
                 new SpellConcentrationFilterSingleton(),
                 new SpellUpcastableFilterSingleton()));
     }
 
+    @JsonTypeName("s-oth-rtl")
     public static class SpellRitualFilterSingleton extends AbstractCustomQueryFilterItem {
 
         private static final String NAME = "Ритуал";
@@ -47,6 +49,7 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
         }
     }
 
+    @JsonTypeName("s-oth-con")
     public static class SpellConcentrationFilterSingleton extends AbstractCustomQueryFilterItem {
 
         private static final String NAME = "Концентрация";
@@ -66,8 +69,8 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
         }
     }
 
+    @JsonTypeName("s-oth-upc")
     public static class SpellUpcastableFilterSingleton extends AbstractCustomQueryFilterItem {
-
         private static final String NAME = "Улучшается с уровнем ячейки";
         private static final BooleanPath PATH = QSpell.spell.upcastable;
 
@@ -86,5 +89,4 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
             return PATH.isFalse();
         }
     }
-
 }

@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +47,17 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
 
     List<CharacterClass> findAllByParentIsNullAndCasterTypeNot(CasterType casterType);
 
-    List<CharacterClass> findAllByParentIsNotNullAndCasterTypeNot(CasterType casterType);
-
+    @Query("""
+    SELECT distinct cc
+    FROM CharacterClass cc
+    WHERE cc.parent is not null
+      AND cc.casterType <> :casterType
+      AND EXISTS (
+          SELECT 1
+          FROM Spell s
+          JOIN s.subclassAffiliation sub
+          WHERE sub = cc
+      )
+    """)
+    List<CharacterClass> findAllSubclassesWithSpellAffiliationAndCasterTypeNot(@Param("casterType") CasterType casterType);
 }

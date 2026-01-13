@@ -3,11 +3,17 @@ package club.ttg.dnd5.domain.feat.rest.dto.filter;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemOtherFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
+@Getter
+@Setter
+@JsonTypeName("f-oth")
 public class FeatOtherFilterGroup extends AbstractCustomQueryFilterGroup
 {
     public static final String NAME = "Прочее";
@@ -31,7 +37,7 @@ public class FeatOtherFilterGroup extends AbstractCustomQueryFilterGroup
                 )
         );
     }
-
+    @JsonTypeName("f-oth-s")
     public static class RepeatableFilterSingleton extends AbstractCustomQueryFilterItem
     {
         private static final String NAME = "Повторяемая";

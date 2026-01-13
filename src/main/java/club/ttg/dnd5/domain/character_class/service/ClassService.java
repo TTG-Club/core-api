@@ -25,10 +25,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -59,6 +57,10 @@ public class ClassService {
         return classRepository.existsById(url);
     }
 
+    public CharacterClass findReferenceByUrl(String url) {
+        return classRepository.getReferenceById(url);
+    }
+
     public CharacterClass findByUrl(String url) {
         return classRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Класс с url %s не существует", url)));
@@ -71,15 +73,22 @@ public class ClassService {
         }
 
         CharacterClass parent = Optional.ofNullable(request.getParentUrl())
-                .map(this::findByUrl)
+                .map(this::findReferenceByUrl)
                 .orElse(null);
 
-        Source source = Optional.ofNullable(request.getSource())
-                .map(SourceRequest::getUrl)
-                .map(sourceService::findByUrl)
-                .orElse(null);
-
-        CharacterClass toSave = classMapper.toEntity(request, parent, source);
+        CharacterClass toSave = classMapper.toEntity(request, getSource(request.getSource()));
+        toSave.setParent(parent);
+        if (parent != null) {
+            if (CollectionUtils.isEmpty(toSave.getPrimaryCharacteristics())) {
+                toSave.setPrimaryCharacteristics(parent.getPrimaryCharacteristics());
+            }
+            if (CollectionUtils.isEmpty(toSave.getSavingThrows())) {
+                toSave.setSavingThrows(parent.getSavingThrows());
+            }
+            if (toSave.getSkillProficiency() == null) {
+                toSave.setSkillProficiency(parent.getSkillProficiency());
+            }
+        }
         saveGallery(request.getUrl(), request.getGallery());
         return classMapper.toDetailedResponse(classRepository.save(toSave));
     }
@@ -95,36 +104,19 @@ public class ClassService {
     @Transactional
     public String update(String url, ClassRequest request) {
         CharacterClass existingClass = findByUrl(url);
-        CharacterClass parent = null;
-
         if (request.getParentUrl() != null) {
-            try {
-                parent = classRepository.getReferenceById(request.getParentUrl());
-
-            } catch (EntityNotFoundException e) {
-                throw new EntityNotFoundException(String.format("Родительского класса с url %s не существует", request.getParentUrl()));
-            }
+            existingClass.setParent(findReferenceByUrl(request.getParentUrl()));
         }
 
-        Source source = Optional.ofNullable(request.getSource())
-                .map(SourceRequest::getUrl)
-                .map(sourceService::findByUrl)
-                .orElse(null);
+        classMapper.updateEntity(existingClass,
+                request,
+                getSource(request.getSource())
+        );
 
-        CharacterClass characterClass = classMapper.updateEntity(existingClass, parent, request, source);
-        if (!existingClass.getSubclasses().isEmpty()) {
-            characterClass.setSubclasses(existingClass.getSubclasses());
-            existingClass.setSubclasses(Collections.emptyList());
-            classRepository.save(existingClass);
-        }
-        if (!Objects.equals(url, request.getUrl())) {
-            classRepository.deleteById(url);
-            classRepository.flush();
-        }
         galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.CLASS);
 
         saveGallery(request.getUrl(), request.getGallery());
-        return classRepository.save(characterClass).getUrl();
+        return existingClass.getUrl();
     }
 
     public List<ClassShortResponse> getSubclasses() {
@@ -203,6 +195,7 @@ public class ClassService {
         }
     }
 
+    @Transactional(readOnly = true)
     public ClassDetailedResponse preview(ClassRequest request) {
         CharacterClass parent = Optional.ofNullable(request.getParentUrl())
                 .map(this::findByUrl)
@@ -211,7 +204,9 @@ public class ClassService {
                 .map(SourceRequest::getUrl)
                 .map(sourceService::findByUrl)
                 .orElse(null);
-        var response = classMapper.toDetailedResponse(classMapper.toEntity(request, parent, source));
+        var entity = classMapper.toEntity(request, source);
+        entity.setParent(parent);
+        var response = classMapper.toDetailedResponse(entity);
         response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)
@@ -231,18 +226,21 @@ public class ClassService {
                 .toList();
     }
 
-    public List<ClassShortResponse> findAllMagicSubclasses() {
-        return classRepository.findAllByParentIsNotNullAndCasterTypeNot(CasterType.NONE)
-                .stream()
-                .map(classMapper::toShortResponse)
-        .toList();
+    @Transactional(readOnly = true)
+    public List<CharacterClass> findAllMagicSubclasses() {
+        return classRepository.findAllSubclassesWithSpellAffiliationAndCasterTypeNot(CasterType.NONE);
     }
 
-    public List<ClassShortResponse> findAllMagicClasses() {
-        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE)
-                .stream()
-                .map(classMapper::toShortResponse)
-                .toList();
+    private Source getSource(SourceRequest source) {
+        return Optional.ofNullable(source)
+                .map(SourceRequest::getUrl)
+                .map(sourceService::findByUrl)
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CharacterClass> findAllMagicClasses() {
+        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE);
     }
 
     private void saveGallery(String url, List<String> gallery) {
