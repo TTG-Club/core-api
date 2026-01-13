@@ -67,7 +67,7 @@ public class SkillFilterGroup extends AbstractFilterGroup<Skill, SkillFilterGrou
     }
 
     @FilterRegistry
-    @JsonTypeName("b-abl-i")
+    @JsonTypeName("b-skl-i")
     public static class AbilityFilterItem extends AbstractFilterItem<Skill> {
         public AbilityFilterItem(Skill value) {
             super(value.getName(), value, null);
