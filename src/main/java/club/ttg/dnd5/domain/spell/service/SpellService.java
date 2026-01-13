@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.spell.service;
 
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
@@ -17,7 +18,11 @@ import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.UrlParameterConverter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -38,6 +43,8 @@ public class SpellService {
     private final SpellRepository spellRepository;
     private final SpellMapper spellMapper;
     private final SpellQueryDslSearchService spellQueryDslSearchService;
+
+    private final ObjectMapper objectMapper;
 
     public boolean existOrThrow(String url) {
         if (!spellRepository.existsById(url)) {
@@ -160,5 +167,47 @@ public class SpellService {
         return spellMapper.toDetail(
                 spellMapper.toEntity(request, book, classes, subclasses, species, lineages)
         );
+    }
+
+    public List<SpellShortResponse> search(final @Valid @Size(min = 2) String searchLine,
+                                           final String filter) {
+
+        SearchBody searchBody = parseFilter(filter);
+        return spellQueryDslSearchService.search(searchLine, searchBody).stream()
+                .map(spellMapper::toShort)
+                .collect(Collectors.toList());
+    }
+
+    private SearchBody parseFilter(final String filter)
+    {
+        if (!StringUtils.hasText(filter))
+        {
+            return new SearchBody(new FilterInfo());
+        }
+
+        final String json;
+        try
+        {
+            json = UrlParameterConverter.decompression(filter);
+        }
+        catch (Exception e)
+        {
+            return new SearchBody(new FilterInfo());
+        }
+
+        if (!StringUtils.hasText(json))
+        {
+            return new SearchBody(new FilterInfo());
+        }
+
+        try
+        {
+            FilterInfo filterInfo = objectMapper.readValue(json, FilterInfo.class);
+            return new SearchBody(filterInfo);
+        }
+        catch (JsonProcessingException e)
+        {
+            return new SearchBody(new FilterInfo());
+        }
     }
 }

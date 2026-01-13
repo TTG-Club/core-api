@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
@@ -24,7 +25,7 @@ public class FilterInfo
             include = JsonTypeInfo.As.PROPERTY,
             property = "key"
     )
-    private List<Filter> groups;
+    private List<Filter> groups = new ArrayList<>();
 
     private String version;
 
