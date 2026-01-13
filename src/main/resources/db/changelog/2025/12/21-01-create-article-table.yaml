@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1766329661113-1
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_article
+                  name: id
+                  type: UUID
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+              - column:
+                  name: preview_image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: content
+                  type: TEXT
+              - column:
+                  name: publish_date_time
+                  type: DATETIME
+              - column:
+                  name: preview
+                  type: TEXT
+              - column:
+                  name: deleted
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+            tableName: article
+  - changeSet:
+      id: 1766329661113-2
+      author: ylp
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: url
+            indexName: article_url_index
+            tableName: article
+            unique: true
+        - createIndex:
+            columns:
+              - column:
+                  name: publish_date_time
+            indexName: publish_date_time_index
+            tableName: article
