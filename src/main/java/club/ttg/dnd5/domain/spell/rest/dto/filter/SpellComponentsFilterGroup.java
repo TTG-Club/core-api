@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.spell.model.MaterialComponent;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.BooleanPath;
 import com.querydsl.core.types.dsl.Expressions;
@@ -11,6 +12,7 @@ import com.querydsl.core.types.dsl.SimplePath;
 
 import java.util.List;
 
+@JsonTypeName("s-comp")
 public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
     public static final String NAME = "Компоненты";
     protected static final BooleanPath vPath = Expressions.booleanPath(QSpell.spell, "v");
@@ -33,6 +35,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
                 new SpellMaterialWithCostFilterItem()));
     }
 
+    @JsonTypeName("s-comp-s")
     public static class SpellSomaticComponentFilterItem extends AbstractCustomQueryFilterItem {
         public static final String NAME = "Соматический";
 
@@ -51,6 +54,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
         }
     }
 
+    @JsonTypeName("s-comp-v")
     public static class SpellVerbalComponentFilterItem extends AbstractCustomQueryFilterItem {
         public static final String NAME = "Вербальный";
 
@@ -68,7 +72,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
             return vPath.isFalse();
         }
     }
-
+    @JsonTypeName("s-comp-s")
     public static class SpellMaterialComponentFilterItem extends AbstractCustomQueryFilterItem {
         public static final String NAME = "Материальный";
 
@@ -86,7 +90,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
             return mPath.isNull();
         }
     }
-
+    @JsonTypeName("s-comp-c")
     public static class SpellMaterialConsumableFilterItem extends AbstractCustomQueryFilterItem {
         public static final String NAME = "Расходуемый";
         public static final String EXPRESSION_TEMPLATE = "%s  @> '{\"consumable\": %s}'";
@@ -107,7 +111,7 @@ public class SpellComponentsFilterGroup extends AbstractCustomQueryFilterGroup {
         }
 
     }
-
+    @JsonTypeName("s-comp-wc")
     public static class SpellMaterialWithCostFilterItem extends AbstractCustomQueryFilterItem {
         public static final String NAME = "со стоимостью";
         public static final String EXPRESSION_TEMPLATE = "%s  @> '{\"withCost\": %s}'";
