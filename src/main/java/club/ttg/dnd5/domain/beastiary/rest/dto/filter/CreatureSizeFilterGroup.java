@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
@@ -17,7 +19,8 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-
+@FilterRegistry
+@JsonTypeName("c-sze")
 public class CreatureSizeFilterGroup extends AbstractFilterGroup<Size, CreatureSizeFilterGroup.SizeFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("sizes");
@@ -79,7 +82,8 @@ public class CreatureSizeFilterGroup extends AbstractFilterGroup<Size, CreatureS
                         .map(CreatureSizeFilterGroup.SizeFilterItem::new)
                         .collect(Collectors.toList()));
     }
-
+    @FilterRegistry
+    @JsonTypeName("c-sze-i")
     public static class SizeFilterItem extends AbstractFilterItem<Size> {
         public SizeFilterItem(Size value) {
             super(value.getName(), value, null);

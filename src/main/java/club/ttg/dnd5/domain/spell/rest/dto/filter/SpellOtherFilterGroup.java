@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.spell.rest.dto.filter;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.BooleanPath;
@@ -10,6 +11,7 @@ import com.querydsl.core.types.dsl.Expressions;
 
 import java.util.List;
 
+@FilterRegistry
 @JsonTypeName("s-oth")
 public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
     public static final String NAME = "Прочее";
@@ -29,6 +31,7 @@ public class SpellOtherFilterGroup extends AbstractCustomQueryFilterGroup {
                 new SpellUpcastableFilterSingleton()));
     }
 
+    @FilterRegistry
     @JsonTypeName("s-oth-rtl")
     public static class SpellRitualFilterSingleton extends AbstractCustomQueryFilterItem {
 

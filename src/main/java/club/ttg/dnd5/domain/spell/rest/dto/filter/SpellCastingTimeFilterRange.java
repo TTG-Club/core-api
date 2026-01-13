@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@FilterRegistry
 @JsonTypeName("s-ct")
 public class SpellCastingTimeFilterRange extends AbstractFilterGroup<SpellCastingTime, SpellCastingTimeFilterRange.SpellCastingTimeFilterItem> {
 
@@ -66,6 +68,8 @@ public class SpellCastingTimeFilterRange extends AbstractFilterGroup<SpellCastin
         return NAME;
     }
 
+    @FilterRegistry
+    @JsonTypeName("s-ct-i")
     public static class SpellCastingTimeFilterItem extends AbstractFilterItem<SpellCastingTime> {
 
         public SpellCastingTimeFilterItem(SpellCastingTime value) {

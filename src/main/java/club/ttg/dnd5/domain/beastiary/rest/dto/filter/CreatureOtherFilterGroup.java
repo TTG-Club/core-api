@@ -3,12 +3,14 @@ package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 
 import java.util.List;
 
+@FilterRegistry
 @JsonTypeName("c-oth")
 public class CreatureOtherFilterGroup extends AbstractCustomQueryFilterGroup {
     public static final String NAME = "Прочее";
@@ -47,6 +49,7 @@ public class CreatureOtherFilterGroup extends AbstractCustomQueryFilterGroup {
         }
     }
 
+    @FilterRegistry
     @JsonTypeName("c-oth-l")
     public static class CreatureLairFilterSingleton extends AbstractCustomQueryFilterItem {
         private static final String NAME = "Логово";

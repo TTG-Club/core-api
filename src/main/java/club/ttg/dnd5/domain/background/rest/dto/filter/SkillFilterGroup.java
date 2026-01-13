@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.background.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("b-skl")
 public class SkillFilterGroup extends AbstractFilterGroup<Skill, SkillFilterGroup.AbilityFilterItem> {
     public SkillFilterGroup(List<AbilityFilterItem> filters) {
@@ -64,6 +66,7 @@ public class SkillFilterGroup extends AbstractFilterGroup<Skill, SkillFilterGrou
                         .collect(Collectors.toList()));
     }
 
+    @FilterRegistry
     @JsonTypeName("b-abl-i")
     public static class AbilityFilterItem extends AbstractFilterItem<Skill> {
         public AbilityFilterItem(Skill value) {

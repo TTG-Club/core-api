@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.feat.rest.dto.filter;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemOtherFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("f-oth")
 public class FeatOtherFilterGroup extends AbstractCustomQueryFilterGroup
 {
@@ -37,6 +39,8 @@ public class FeatOtherFilterGroup extends AbstractCustomQueryFilterGroup
                 )
         );
     }
+
+    @FilterRegistry
     @JsonTypeName("f-oth-s")
     public static class RepeatableFilterSingleton extends AbstractCustomQueryFilterItem
     {

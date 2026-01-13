@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.filter.model;
 
 import club.ttg.dnd5.dto.base.filters.Filter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,17 +13,26 @@ import java.util.List;
 
 import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
 
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class FilterInfo {
-    List<Filter> groups;
-    String version;
+public class FilterInfo
+{
+    @JsonTypeInfo(
+            use = JsonTypeInfo.Id.NAME,
+            include = JsonTypeInfo.As.PROPERTY,
+            property = "key"
+    )
+    private List<Filter> groups;
+
+    private String version;
+
     @JsonIgnore
-    public BooleanExpression getQuery() {
-        return groups.stream().map(Filter::getQuery)
+    public BooleanExpression getQuery()
+    {
+        return groups.stream()
+                .map(Filter::getQuery)
                 .filter(q -> !q.equals(TRUE_EXPRESSION))
                 .reduce(BooleanExpression::and)
                 .orElse(TRUE_EXPRESSION);

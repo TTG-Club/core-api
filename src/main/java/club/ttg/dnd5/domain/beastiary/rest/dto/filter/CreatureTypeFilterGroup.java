@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("c-typ")
 public class CreatureTypeFilterGroup extends AbstractFilterGroup<CreatureType, CreatureTypeFilterGroup.CreatureTypeFilterItem> {
     private static final StringPath PATH = Expressions.stringPath("types");
@@ -82,6 +84,7 @@ public class CreatureTypeFilterGroup extends AbstractFilterGroup<CreatureType, C
                         .collect(Collectors.toList()));
     }
 
+    @FilterRegistry
     @JsonTypeName("c-typ-i")
     public static class CreatureTypeFilterItem extends AbstractFilterItem<CreatureType> {
         public CreatureTypeFilterItem(CreatureType value) {

@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@FilterRegistry
 @JsonTypeName("s-dur")
 public class SpellDurationFilterRange extends AbstractFilterGroup<SpellDuration, SpellDurationFilterRange.SpellDurationFilterItem> {
 
@@ -72,6 +74,7 @@ public class SpellDurationFilterRange extends AbstractFilterGroup<SpellDuration,
         return NAME;
     }
 
+    @FilterRegistry
     @JsonTypeName("s-dur-i")
     public static class SpellDurationFilterItem extends AbstractFilterItem<SpellDuration> {
 

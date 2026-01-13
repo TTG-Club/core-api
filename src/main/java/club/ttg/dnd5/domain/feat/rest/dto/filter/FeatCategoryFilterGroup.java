@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.feat.rest.dto.filter;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("f-ctg")
 public class FeatCategoryFilterGroup extends AbstractFilterGroup<FeatCategory, FeatCategoryFilterGroup.FeatCategoryFilterItem> {
 
@@ -50,6 +52,7 @@ public class FeatCategoryFilterGroup extends AbstractFilterGroup<FeatCategory, F
                         .collect(Collectors.toList()));
     }
 
+    @FilterRegistry
     @JsonTypeName("f-ctg-i")
     public static class FeatCategoryFilterItem extends AbstractFilterItem<FeatCategory> {
         public FeatCategoryFilterItem(FeatCategory value) {

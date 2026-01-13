@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@FilterRegistry
 @JsonTypeName("s-dis")
 public class SpellDistanceFilterRange extends AbstractFilterGroup<SpellDistance, SpellDistanceFilterRange.SpellCastingTimeFilterItem> {
 
@@ -77,6 +79,7 @@ public class SpellDistanceFilterRange extends AbstractFilterGroup<SpellDistance,
         return NAME;
     }
 
+    @FilterRegistry
     @JsonTypeName("s-dis-i")
     public static class SpellCastingTimeFilterItem extends AbstractFilterItem<SpellDistance> {
 
