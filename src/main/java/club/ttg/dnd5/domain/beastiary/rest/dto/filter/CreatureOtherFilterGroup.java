@@ -7,9 +7,13 @@ import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
+@Setter
+@Getter
 @FilterRegistry
 @JsonTypeName("c-oth")
 public class CreatureOtherFilterGroup extends AbstractCustomQueryFilterGroup {
