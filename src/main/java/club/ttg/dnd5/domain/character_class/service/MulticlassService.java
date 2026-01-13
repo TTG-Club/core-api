@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -42,7 +43,7 @@ public class MulticlassService {
         boolean spellcasting = false;
         int charachterLevel = request.getLevel();
         int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
-
+        List<String> requirements = new ArrayList<>();
         List<ClassTableColumn> table = new ArrayList<>();
         for (var column :mainClass.getTable()) {
             List<ClassTableItem> list = new ArrayList<>();
@@ -106,6 +107,10 @@ public class MulticlassService {
         var names = new ArrayList<String>(request.getClasses().size());
         for (var multiclassRequest :  request.getClasses()) {
             var multiClass = findByUrl(multiclassRequest.getUrl());
+            requirements.add(multiClass.getPrimaryCharacteristics()
+                    .stream()
+                    .map(ability -> ability.getName() + " 13")
+                    .collect(Collectors.joining(" или ")));
             for (var column :multiClass.getTable()) {
                 List<ClassTableItem> list = new ArrayList<>();
                 for (ClassTableItem classTableItem : column.getScaling()) {
@@ -199,6 +204,7 @@ public class MulticlassService {
         multiclassResponse.setSpellcastingLevel(spellcastLevel);
         multiclassResponse.setFeatures(features);
         multiclassResponse.setMulticlass(multiclassInfo);
+        multiclassResponse.setRequirements(String.join(", ", requirements));
         return multiclassResponse;
     }
 

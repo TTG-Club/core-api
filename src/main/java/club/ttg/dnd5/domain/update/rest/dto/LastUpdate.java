@@ -9,5 +9,5 @@ import lombok.Setter;
 @Setter
 public class LastUpdate extends BaseResponse {
     @Schema(description = "Обновлено или добавлено")
-    private String action;
+    private ChangeAction action;
 }

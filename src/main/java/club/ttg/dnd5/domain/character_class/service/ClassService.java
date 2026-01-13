@@ -99,7 +99,8 @@ public class ClassService {
 
         if (request.getParentUrl() != null) {
             try {
-                parent = findByUrl(request.getParentUrl());
+                parent = classRepository.getReferenceById(request.getParentUrl());
+
             } catch (EntityNotFoundException e) {
                 throw new EntityNotFoundException(String.format("Родительского класса с url %s не существует", request.getParentUrl()));
             }
@@ -218,8 +219,16 @@ public class ClassService {
         return response;
     }
 
-    public List<CharacterClass> findAllById(List<String> urls) {
-        return classRepository.findAllById(urls);
+    @Transactional(readOnly = true)
+    public List<CharacterClass> findAllById(List<String> urls)
+    {
+        if (urls == null || urls.isEmpty())
+        {
+            return List.of();
+        }
+        return urls.stream()
+                .map(classRepository::getReferenceById)
+                .toList();
     }
 
     public List<ClassShortResponse> findAllMagicSubclasses() {

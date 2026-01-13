@@ -309,6 +309,9 @@ public interface CreatureMapper {
         if (fly.isHover()) {
             return "(парит)";
         }
+        if (StringUtils.hasText(fly.getText())) {
+            return fly.getText();
+        }
         return "";
     }
 
