@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.item.rest.dto.filter;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.SimplePath;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("i-typ")
 public class ItemTypeFilterGroup extends AbstractFilterGroup<ItemType, ItemTypeFilterGroup.FilterItem>
 {
     /** jsonb-колонка в таблице item */
@@ -84,6 +86,7 @@ public class ItemTypeFilterGroup extends AbstractFilterGroup<ItemType, ItemTypeF
         );
     }
 
+    @JsonTypeName("i-typ-i")
     public static class FilterItem extends AbstractFilterItem<ItemType>
     {
         public FilterItem(ItemType value)

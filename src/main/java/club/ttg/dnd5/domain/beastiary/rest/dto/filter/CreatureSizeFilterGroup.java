@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+
 public class CreatureSizeFilterGroup extends AbstractFilterGroup<Size, CreatureSizeFilterGroup.SizeFilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("sizes");

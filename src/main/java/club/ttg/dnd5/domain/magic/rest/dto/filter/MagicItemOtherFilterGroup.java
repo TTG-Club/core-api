@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.magic.rest.dto.filter;
 
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@JsonTypeName("mi-oth")
 public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
 {
     public static final String NAME = "Прочее";
@@ -65,6 +67,7 @@ public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
     }
 
     /** Filters by charges count */
+    @JsonTypeName("mi-oth-chr")
     public static class ChargesFilterSingleton extends AbstractCustomQueryFilterItem
     {
         private static final String NAME = "Заряды";
@@ -87,6 +90,7 @@ public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
         }
     }
 
+    @JsonTypeName("mi-oth-cur")
     public static class CurseFilterSingleton extends AbstractCustomQueryFilterItem
     {
         private static final String NAME = "Проклятие";
@@ -111,6 +115,7 @@ public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
         }
     }
 
+    @JsonTypeName("mi-oth-cons")
     public static class ConsumableFilterSingleton extends AbstractCustomQueryFilterItem
     {
         private static final String NAME = "Расходуемый";

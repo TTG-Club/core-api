@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.magic.rest.dto.filter;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("mi-cat")
 public class MagicItemCategoryFilterGroup extends AbstractFilterGroup<MagicItemCategory, MagicItemCategoryFilterGroup.FilterItem> {
 
     private static final StringPath PATH = Expressions.stringPath("category");
@@ -51,6 +53,7 @@ public class MagicItemCategoryFilterGroup extends AbstractFilterGroup<MagicItemC
                         .collect(Collectors.toList()));
     }
 
+    @JsonTypeName("mi-cat-i")
     public static class FilterItem extends AbstractFilterItem<MagicItemCategory> {
         public FilterItem(MagicItemCategory value) {
             super(value.getName(), value, null);

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.spell.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import lombok.Getter;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@JsonTypeName("s-stw")
 public class SpellSavingThrowFilterGroup extends AbstractFilterGroup<Ability, SpellSavingThrowFilterGroup.SpellSavingThrowFilterItem> {
 
     public SpellSavingThrowFilterGroup(List<SpellSavingThrowFilterItem> filters) {
@@ -52,6 +54,7 @@ public class SpellSavingThrowFilterGroup extends AbstractFilterGroup<Ability, Sp
                 .collect(Collectors.toList()));
     }
 
+    @JsonTypeName("s-stw-i")
     public static class SpellSavingThrowFilterItem extends AbstractFilterItem<Ability> {
         public SpellSavingThrowFilterItem(Ability value) {
             super(value.getName(), value, null);
