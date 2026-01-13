@@ -79,9 +79,11 @@ public class SpellClassFilterGroup extends AbstractFilterGroup<String, SpellClas
         final List<SpellClassFilterItem> items = allClasses
                 .stream()
                 .filter(Objects::nonNull)
-                .peek(c -> c.setName(c.getName() + " [%s]".formatted(c.getSource().getAcronym())))
+
                 .map(c -> new SpellClassFilterItem(
-                        c.getName(), c.getUrl())
+                        "%s [%s]".formatted(c.getName(), c.getSource().getAcronym()),
+                        c.getUrl()
+                    )
                 )
                 .collect(Collectors.toList());
 

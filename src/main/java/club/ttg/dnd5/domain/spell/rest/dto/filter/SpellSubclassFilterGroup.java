@@ -83,7 +83,8 @@ public class SpellSubclassFilterGroup extends AbstractFilterGroup<String, SpellS
                 .stream()
                 .filter(Objects::nonNull)
                 .map(c -> new SpellSubclassFilterItem(
-                        c.getName(), c.getUrl())
+                        "%s [%s]".formatted(c.getName(), c.getSource().getAcronym()),
+                        c.getUrl())
                 )
                 .sorted(Comparator.comparing(AbstractFilterItem::getName))
                 .collect(Collectors.toList());
