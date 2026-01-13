@@ -51,6 +51,12 @@ public interface BaseMapping {
     @Mapping(source = "source.url", target = "source.url")
     @interface BaseSourceRequestMapping{}
 
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "lastUsername", ignore = true)
+    @interface TimestampedMappingIgnore{}
+
     @Named("collectToString")
     default String collectToString(Collection<String> names) {
         return Optional.ofNullable(names).map(name -> String.join(";", name)).orElse("");

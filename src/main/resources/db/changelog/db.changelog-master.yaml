@@ -153,3 +153,5 @@ databaseChangeLog:
       file: db/changelog/2025/12/22-01-add-multiclass.yaml
   - include:
       file: db/changelog/2025/12/23-01-update-full-name-search-view-timestamp.yaml
+  - include:
+      file: db/changelog/2025/12/21-01-create-article-table.yaml
