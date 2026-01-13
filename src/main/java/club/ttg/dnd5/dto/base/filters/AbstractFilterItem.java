@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Objects;
@@ -15,6 +16,7 @@ import java.util.Objects;
  * @param <T> тип значения элемента фильтра
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "key")
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
@@ -49,8 +51,10 @@ public class AbstractFilterItem<T> {
      *         NEGATIVE - если selected равен false
      */
     @JsonIgnore
-    public State getState() {
-        if (Objects.isNull(selected)) {
+    public State getState()
+    {
+        if (Objects.isNull(selected))
+        {
             return State.UNCHECKED;
         }
         return selected ? State.POSITIVE : State.NEGATIVE;

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.spell.rest.dto.filter;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("s-sch")
 public class SpellSchoolFilterGroup extends AbstractFilterGroup<MagicSchool, SpellSchoolFilterGroup.SpellSchoolFilterItem> {
 
@@ -51,6 +53,7 @@ public class SpellSchoolFilterGroup extends AbstractFilterGroup<MagicSchool, Spe
                         .collect(Collectors.toList()));
     }
 
+    @FilterRegistry
     @JsonTypeName("s-sch-i")
     public static class SpellSchoolFilterItem extends AbstractFilterItem<MagicSchool> {
         public SpellSchoolFilterItem(MagicSchool value) {

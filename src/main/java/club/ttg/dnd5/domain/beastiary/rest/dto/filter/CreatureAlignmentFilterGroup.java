@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("c-alm")
 public class CreatureAlignmentFilterGroup extends AbstractFilterGroup<Alignment, CreatureAlignmentFilterGroup.CreatureAlignmentFilterItem> {
 
@@ -51,6 +53,7 @@ public class CreatureAlignmentFilterGroup extends AbstractFilterGroup<Alignment,
                         .collect(Collectors.toList()));
     }
 
+    @FilterRegistry
     @JsonTypeName("c-alm-i")
     public static class CreatureAlignmentFilterItem extends AbstractFilterItem<Alignment> {
         public CreatureAlignmentFilterItem(Alignment value) {

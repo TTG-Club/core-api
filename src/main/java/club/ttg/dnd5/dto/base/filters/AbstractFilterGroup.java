@@ -3,9 +3,11 @@ package club.ttg.dnd5.dto.base.filters;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
  * @param <V> тип значений фильтров в группе
  * @param <I> тип элементов фильтров, должен наследоваться от {@link AbstractFilterItem}
  */
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
@@ -26,7 +29,7 @@ public abstract class AbstractFilterGroup<V, I extends AbstractFilterItem<V>> im
     /**
      * Список фильтров, входящих в данную группу.
      */
-    protected List<I> filters;
+    protected List<I> filters = new ArrayList<>();
 
     /**
      * Проверяет, является ли группа фильтров вырожденной.

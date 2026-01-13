@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.magic.rest.dto.filter;
 
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractCustomQueryFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("mi-oth")
 public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
 {
@@ -67,6 +69,7 @@ public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
     }
 
     /** Filters by charges count */
+    @FilterRegistry
     @JsonTypeName("mi-oth-chr")
     public static class ChargesFilterSingleton extends AbstractCustomQueryFilterItem
     {

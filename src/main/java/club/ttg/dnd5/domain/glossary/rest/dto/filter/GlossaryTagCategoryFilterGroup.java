@@ -3,14 +3,18 @@ package club.ttg.dnd5.domain.glossary.rest.dto.filter;
 import club.ttg.dnd5.domain.glossary.model.QGlossary;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import lombok.NoArgsConstructor;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@NoArgsConstructor
+@FilterRegistry
 @JsonTypeName("g-tag")
 public class GlossaryTagCategoryFilterGroup extends AbstractFilterGroup<String, GlossaryTagCategoryFilterGroup.GlossaryTagCategoryFilterItem> {
 
@@ -48,6 +52,7 @@ public class GlossaryTagCategoryFilterGroup extends AbstractFilterGroup<String, 
         );
     }
 
+    @FilterRegistry
     @JsonTypeName("g-tag-i")
     public static class GlossaryTagCategoryFilterItem extends AbstractFilterItem<String> {
         public GlossaryTagCategoryFilterItem(String value) {

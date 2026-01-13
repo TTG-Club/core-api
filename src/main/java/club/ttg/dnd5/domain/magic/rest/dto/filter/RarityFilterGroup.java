@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.magic.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("mi-rar")
 public class RarityFilterGroup extends AbstractFilterGroup<Rarity, RarityFilterGroup.RarityFilterItem> {
 
@@ -51,6 +53,7 @@ public class RarityFilterGroup extends AbstractFilterGroup<Rarity, RarityFilterG
                         .collect(Collectors.toList()));
     }
 
+    @FilterRegistry
     @JsonTypeName("mi-rar-i")
     public static class RarityFilterItem extends AbstractFilterItem<Rarity> {
         public RarityFilterItem(Rarity value) {

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.feat.rest.dto.filter;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("f-abl")
 public class FeatAbilityFilterGroup extends AbstractFilterGroup<Ability, FeatAbilityFilterGroup.FeatAbilityFilterItem>
 {
@@ -83,6 +85,7 @@ public class FeatAbilityFilterGroup extends AbstractFilterGroup<Ability, FeatAbi
                         .collect(Collectors.toList()));
     }
 
+    @FilterRegistry
     @JsonTypeName("f-abl-i")
     public static class FeatAbilityFilterItem extends AbstractFilterItem<Ability>
     {

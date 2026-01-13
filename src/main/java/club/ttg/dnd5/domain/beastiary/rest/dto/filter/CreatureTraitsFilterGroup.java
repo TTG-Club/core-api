@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.beastiary.rest.dto.filter;
 
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
+import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@FilterRegistry
 @JsonTypeName("c-tra")
 public class CreatureTraitsFilterGroup extends AbstractFilterGroup<String, CreatureTraitsFilterGroup.CreatureTraitsFilterItem> {
 
@@ -66,6 +68,7 @@ public class CreatureTraitsFilterGroup extends AbstractFilterGroup<String, Creat
         );
     }
 
+    @FilterRegistry
     @JsonTypeName("c-tra-i")
     public static class CreatureTraitsFilterItem extends AbstractFilterItem<String> {
         public CreatureTraitsFilterItem(String value) {
