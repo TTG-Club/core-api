@@ -42,6 +42,8 @@ public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
         );
     }
 
+    @FilterRegistry
+    @JsonTypeName("mi-oth-att")
     public static class AttunementTrueFilterSingleton extends AbstractCustomQueryFilterItem
     {
         private static final String NAME = "Настройка";
@@ -93,6 +95,7 @@ public class MagicItemOtherFilterGroup extends AbstractCustomQueryFilterGroup
         }
     }
 
+    @FilterRegistry
     @JsonTypeName("mi-oth-cur")
     public static class CurseFilterSingleton extends AbstractCustomQueryFilterItem
     {
