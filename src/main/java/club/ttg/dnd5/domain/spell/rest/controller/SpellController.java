@@ -42,11 +42,12 @@ public class SpellController {
 
     @Operation(summary = "Поиск заклинаний", description = "Поиск заклинания по именам")
     @GetMapping
-    public List<SpellShortResponse> getSpells(@RequestParam(name = "query", required = false)
+    public List<SpellShortResponse> getSpells(@RequestParam(name = "search", required = false)
                                               @Valid
                                               @Size(min = 2)
                                               @Schema(description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
+                                              @Schema(description = "упакованный в строку json фильтров")
                                               @RequestParam(required = false) String filter) {
         return spellService.search(searchLine, filter);
     }
