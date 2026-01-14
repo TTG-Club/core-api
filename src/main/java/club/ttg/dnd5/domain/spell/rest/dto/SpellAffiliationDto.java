@@ -12,5 +12,4 @@ import lombok.Setter;
 public class SpellAffiliationDto {
     private String url;
     private String name;
-    
 }
