@@ -42,7 +42,6 @@ public class SpellLevelFilterGroup extends AbstractFilterGroup<Long, SpellLevelF
         BooleanExpression result = CollectionUtils.isEmpty(positiveValues) ? TRUE_EXPRESSION : PATH.in(positiveValues);
         Set<Long> negativeValues = getNegative();
         return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(negativeValues));
-
     }
 
     public static SpellLevelFilterGroup getDefault() {
