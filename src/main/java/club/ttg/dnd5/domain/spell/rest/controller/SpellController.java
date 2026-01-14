@@ -105,5 +105,4 @@ public class SpellController {
     public void deleteSpell(@PathVariable String url) {
         spellService.delete(url);
     }
-
 }
