@@ -46,7 +46,7 @@ public class SpeciesController {
     @GetMapping
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
     public List<SpeciesShortResponse> getAllSpecies(
-            @RequestParam(name = "query", required = false)
+            @RequestParam(name = "search", required = false)
             @Valid
             @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
