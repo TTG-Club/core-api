@@ -41,9 +41,23 @@ public class ClassController {
         }
     }
 
-    @PostMapping("/search")
+    @GetMapping
     @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
     public List<ClassShortResponse> getAllClasses(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Size(min = 2)
+            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine,
+            @Parameter(description = "Сортировка")
+            @RequestParam(required = false, defaultValue = "name")
+            String[] sort) {
+        return classService.findAllClasses(searchLine, sort);
+    }
+
+    @PostMapping("/search")
+    @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
+    public List<ClassShortResponse> getAllClassesOld(
             @RequestParam(name = "query", required = false)
             @Valid
             @Size(min = 2)

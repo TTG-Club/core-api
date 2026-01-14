@@ -43,9 +43,23 @@ public class SpeciesController {
         }
     }
 
-    @PostMapping("/search")
+    @GetMapping
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
     public List<SpeciesShortResponse> getAllSpecies(
+            @RequestParam(name = "query", required = false)
+            @Valid
+            @Size(min = 2)
+            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine,
+            @Parameter(description = "Сортировка")
+            @RequestParam(required = false, defaultValue = "name")
+            String[] sort) {
+        return speciesService.getSpecies(searchLine, sort);
+    }
+
+    @PostMapping("/search")
+    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
+    public List<SpeciesShortResponse> getAllSpeciesOld(
             @RequestParam(name = "query", required = false)
             @Valid
             @Size(min = 2)
