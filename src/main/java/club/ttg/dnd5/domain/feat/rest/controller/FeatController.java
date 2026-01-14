@@ -55,6 +55,19 @@ public class FeatController {
         return featService.findFormByUrl(url);
     }
 
+    @Operation(summary = "Список черт", description = "Список черт, поиск и фильтрация")
+    @GetMapping
+    public Collection<FeatShortResponse> getFeats(
+                                              @RequestParam(name = "search", required = false)
+                                              @Valid
+                                              @Size(min = 2)
+                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                              String searchLine,
+                                              @Schema(description = "упакованный в строку json фильтров")
+                                              @RequestParam(required = false) String filter) {
+        return featService.search(searchLine, filter);
+    }
+
     @Operation(summary = "Получение списка черт")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черты успешно получена")

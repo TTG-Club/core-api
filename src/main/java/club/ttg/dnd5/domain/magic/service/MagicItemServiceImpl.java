@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.rest.mapper.MagicItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,8 @@ public class MagicItemServiceImpl implements MagicItemService {
     private final MagicItemMapper magicItemMapper;
     private final MagicItemQueryDslSearchService magicItemQueryDslSearchService;
     private final SourceService sourceService;
+    private final ObjectMapper objectMapper;
+
 
     @Override
     public boolean existsByUrl(String url) {
@@ -42,6 +45,12 @@ public class MagicItemServiceImpl implements MagicItemService {
     @Override
     public MagicItemRequest findFormByUrl(final String url) {
         return magicItemMapper.toRequest(findByUrl(url));
+    }
+
+    @Override
+    public Collection<MagicItemShortResponse> getItems(final String searchLine, final String filters) {
+        var searchBody = SearchBody.parse(filters, objectMapper);
+        return getItems(searchLine, searchBody);
     }
 
     @Override

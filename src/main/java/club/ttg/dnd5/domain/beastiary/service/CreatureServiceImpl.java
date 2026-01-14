@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class CreatureServiceImpl implements CreatureService {
     private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
     private final CreatureMapper creatureMapper;
+    private final ObjectMapper objectMapper;
 
     @Override
     public Boolean existOrThrow(final String url) {
@@ -38,6 +40,12 @@ public class CreatureServiceImpl implements CreatureService {
             throw new EntityNotFoundException(String.format("Существо с url %s не существует", url));
         }
         return true;
+    }
+
+    @Override
+    public List<CreatureShortResponse> search(final String searchLine, final String filters) {
+        var searchBody = SearchBody.parse(filters, objectMapper);
+        return search(searchLine, searchBody);
     }
 
     @Override

@@ -66,6 +66,21 @@ public class MagicItemController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
     })
+    @GetMapping
+    public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "search", required = false)
+                                                       @Valid
+                                                       @Size(min = 2)
+                                                       @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                                       String searchLine,
+                                                       @RequestParam(required = false) String searchBody
+    ) {
+        return magicItemService.getItems(searchLine, searchBody);
+    }
+
+    @Operation(summary = "Получение списка краткого описания предметов")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
+    })
     @PostMapping("/search")
     public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "query", required = false)
                                                        @Valid

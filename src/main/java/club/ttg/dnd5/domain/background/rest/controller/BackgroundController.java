@@ -63,6 +63,18 @@ public class BackgroundController {
             String searchLine) {
         return backgroundService.getBackgroundsSelect(searchLine);
     }
+    @Operation(summary = "Список предысторий", description = "Список предысторий, поиск и фильтрация")
+    @GetMapping
+    public Collection<BackgroundShortResponse> findBackgrounds(
+            @RequestParam(name = "search", required = false)
+            @Valid
+            @Size(min = 2)
+            @Schema( description = "Строка поиска, если null-отдаются все сущности")
+            String searchLine,
+            @Schema(description = "упакованный в строку json фильтров")
+            @RequestParam(required = false) String searchBody) {
+        return backgroundService.getBackgrounds(searchLine, searchBody);
+    }
 
     @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")
     @PostMapping("/search")

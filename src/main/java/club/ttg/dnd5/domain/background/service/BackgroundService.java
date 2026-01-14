@@ -28,4 +28,6 @@ public interface BackgroundService {
     BackgroundDetailResponse preview(BackgroundRequest request);
 
     Collection<BackgroundSelectResponse> getBackgroundsSelect(final @Valid @Size String searchLine);
+
+    Collection<BackgroundShortResponse> getBackgrounds(@Valid @Size(min = 2) String searchLine, String searchBody);
 }
