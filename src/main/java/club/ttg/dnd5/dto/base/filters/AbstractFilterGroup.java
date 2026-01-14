@@ -10,7 +10,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -35,18 +34,13 @@ public abstract class AbstractFilterGroup<V, I extends AbstractFilterItem<V>> im
      * Проверяет, является ли группа фильтров вырожденной.
      * Группа считается вырожденной если:
      * - список фильтров пуст
-     * - все фильтры в состоянии UNCHECKED (не выбраны)
-     * - все фильтры в состоянии POSITIVE (выбраны)
-     * - все фильтры в состоянии NEGATIVE (исключены)
      *
      * @return true - если группа вырождена, false - в противном случае
      */
     @Override
-    public Boolean isSingular() {
-        return CollectionUtils.isEmpty(filters)
-                || filters.stream().map(AbstractFilterItem::getState).allMatch(Predicate.isEqual(State.UNCHECKED))
-                || filters.stream().map(AbstractFilterItem::getState).allMatch(Predicate.isEqual(State.POSITIVE))
-                || filters.stream().map(AbstractFilterItem::getState).allMatch(Predicate.isEqual(State.NEGATIVE));
+    public Boolean isSingular()
+    {
+        return CollectionUtils.isEmpty(filters);
     }
 
     /**

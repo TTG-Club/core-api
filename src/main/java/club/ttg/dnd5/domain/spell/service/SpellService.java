@@ -53,8 +53,18 @@ public class SpellService {
         return true;
     }
 
+    public List<SpellShortResponse> search(final @Valid @Size(min = 2) String searchLine,
+                                           final String filter) {
+        SearchBody searchBody = parseFilter(filter);
+        return spellQueryDslSearchService.search(searchLine, searchBody)
+                .stream()
+                .map(spellMapper::toShort)
+                .collect(Collectors.toList());
+    }
+
     public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
-        return spellQueryDslSearchService.search(searchLine, searchBody).stream()
+        return spellQueryDslSearchService.search(searchLine, searchBody)
+                .stream()
                 .map(spellMapper::toShort)
                 .collect(Collectors.toList());
     }
@@ -167,15 +177,6 @@ public class SpellService {
         return spellMapper.toDetail(
                 spellMapper.toEntity(request, book, classes, subclasses, species, lineages)
         );
-    }
-
-    public List<SpellShortResponse> search(final @Valid @Size(min = 2) String searchLine,
-                                           final String filter) {
-
-        SearchBody searchBody = parseFilter(filter);
-        return spellQueryDslSearchService.search(searchLine, searchBody).stream()
-                .map(spellMapper::toShort)
-                .collect(Collectors.toList());
     }
 
     private SearchBody parseFilter(final String filter)
