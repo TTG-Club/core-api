@@ -72,9 +72,9 @@ public class MagicItemController {
                                                        @Size(min = 2)
                                                        @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                        String searchLine,
-                                                       @RequestParam(required = false) String searchBody
+                                                       @RequestParam(required = false) String filter
     ) {
-        return magicItemService.getItems(searchLine, searchBody);
+        return magicItemService.getItems(searchLine, filter);
     }
 
     @Operation(summary = "Получение списка краткого описания предметов")

@@ -74,8 +74,8 @@ public class ItemController {
                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                   String searchLine,
                                                   @Schema(description = "упакованный в строку json фильтров")
-                                                  @RequestParam(required = false) String searchBody) {
-        return itemService.getItems(searchLine, searchBody);
+                                                  @RequestParam(required = false) String filter) {
+        return itemService.getItems(searchLine, filter);
     }
 
 
