@@ -47,8 +47,8 @@ public class CreatureController {
                                               @Size(min = 2)
                                               @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                               String searchLine,
-                                              @RequestParam(required = false) String searchBody) {
-        return creatureService.search(searchLine, searchBody);
+                                              @RequestParam(required = false) String filter) {
+        return creatureService.search(searchLine, filter);
     }
 
     @Operation(summary = "Поиск существ", description = "Поиск существа по именам")

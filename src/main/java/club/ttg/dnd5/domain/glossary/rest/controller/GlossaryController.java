@@ -47,8 +47,8 @@ public class GlossaryController {
                                                    @Size(min = 2)
                                                    @Schema( description = "Строка поиска, если null-отдаются все сущности")
                                                    String searchLine,
-                                                   @RequestParam(required = false) String searchBody){
-        return glossaryService.search(searchLine, searchBody);
+                                                   @RequestParam(required = false) String filter){
+        return glossaryService.search(searchLine, filter);
     }
 
     @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
