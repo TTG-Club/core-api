@@ -41,6 +41,17 @@ public class CreatureController {
     }
 
     @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
+    @GetMapping
+    public List<CreatureShortResponse> search(@RequestParam(name = "search", required = false)
+                                              @Valid
+                                              @Size(min = 2)
+                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                              String searchLine,
+                                              @RequestParam(required = false) String searchBody) {
+        return creatureService.search(searchLine, searchBody);
+    }
+
+    @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
     @PostMapping("/search")
     public List<CreatureShortResponse> search(@RequestParam(name = "query", required = false)
                                               @Valid

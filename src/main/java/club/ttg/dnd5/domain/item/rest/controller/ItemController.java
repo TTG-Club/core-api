@@ -63,6 +63,22 @@ public class ItemController {
         return itemService.findFormByUrl(url);
     }
 
+    @Operation(summary = "Список предметов", description = "Список предметов, поиск и фильтрация")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
+    })
+    @GetMapping
+    public Collection<ItemShortResponse> getItems(@RequestParam(name = "search", required = false)
+                                                  @Valid
+                                                  @Size(min = 2)
+                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                                  String searchLine,
+                                                  @Schema(description = "упакованный в строку json фильтров")
+                                                  @RequestParam(required = false) String searchBody) {
+        return itemService.getItems(searchLine, searchBody);
+    }
+
+
     @Operation(summary = "Получение списка краткого описания предметов")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предметы успешно получены")

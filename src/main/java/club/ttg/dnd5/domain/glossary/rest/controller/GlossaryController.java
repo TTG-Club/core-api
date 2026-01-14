@@ -39,6 +39,18 @@ public class GlossaryController {
         return glossaryService.existOrThrow(url);
     }
 
+
+    @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
+    @GetMapping
+    public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "search", required = false)
+                                                   @Valid
+                                                   @Size(min = 2)
+                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                                   String searchLine,
+                                                   @RequestParam(required = false) String searchBody){
+        return glossaryService.search(searchLine, searchBody);
+    }
+
     @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
     @PostMapping("/search")
     public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "query", required = false)

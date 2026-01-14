@@ -15,6 +15,8 @@ import java.util.Set;
 public interface FeatService {
     FeatDetailResponse getFeat(String featUrl);
 
+    Collection<FeatShortResponse> search(@Valid @Size(min = 2) String searchLine, String filter);
+
     Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody);
 
     String addFeat(FeatRequest featDto);

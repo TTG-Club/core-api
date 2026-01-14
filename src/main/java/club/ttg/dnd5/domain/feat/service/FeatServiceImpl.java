@@ -13,6 +13,7 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -33,10 +34,17 @@ public class FeatServiceImpl implements FeatService {
     private final FeatQueryDslSearchService featQueryDslSearchService;
     private final SourceService sourceService;
     private final FeatMapper featMapper;
+    private final ObjectMapper objectMapper;
 
     @Override
     public FeatDetailResponse getFeat(final String featUrl) {
         return featMapper.toDetail(findByUrl(featUrl));
+    }
+
+    @Override
+    public Collection<FeatShortResponse> search(final String searchLine, final String filters) {
+        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
+        return getFeats(searchLine, searchBody);
     }
 
     @Override
