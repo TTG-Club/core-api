@@ -104,13 +104,16 @@ public class ClassService {
     @Transactional
     public String update(String url, ClassRequest request) {
         CharacterClass existingClass = findByUrl(url);
-        if (request.getParentUrl() != null) {
-            existingClass.setParent(findReferenceByUrl(request.getParentUrl()));
-        }
+
         if (!existingClass.getUrl().equals(request.getUrl())) {
-            classRepository.save(classMapper.toEntity(request, existingClass.getSource()));
+            var saved = classMapper.toEntity(request, existingClass.getSource());
+            saved.setParent(findReferenceByUrl(request.getParentUrl()));
+            classRepository.save(saved);
             classRepository.delete(existingClass);
         } else {
+            if (request.getParentUrl() != null) {
+                existingClass.setParent(findReferenceByUrl(request.getParentUrl()));
+            }
             classMapper.updateEntity(existingClass,
                     request,
                     getSource(request.getSource())
