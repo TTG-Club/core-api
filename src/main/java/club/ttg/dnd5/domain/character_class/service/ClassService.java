@@ -107,16 +107,20 @@ public class ClassService {
         if (request.getParentUrl() != null) {
             existingClass.setParent(findReferenceByUrl(request.getParentUrl()));
         }
-
-        classMapper.updateEntity(existingClass,
-                request,
-                getSource(request.getSource())
-        );
+        if (!existingClass.getUrl().equals(request.getUrl())) {
+            classRepository.save(classMapper.toEntity(request, existingClass.getSource()));
+            classRepository.delete(existingClass);
+        } else {
+            classMapper.updateEntity(existingClass,
+                    request,
+                    getSource(request.getSource())
+            );
+        }
 
         galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.CLASS);
 
         saveGallery(request.getUrl(), request.getGallery());
-        return existingClass.getUrl();
+        return request.getUrl();
     }
 
     public List<ClassShortResponse> getSubclasses() {
