@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.article.rest.controller;
 
-
 import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
@@ -84,15 +83,16 @@ public class ArticleController {
 
     @Operation(summary = "Получить cnt последних новостей")
     @GetMapping("/search")
-    public List<ArticleShortResponse> search(@RequestParam(required = false) @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
+    public List<ArticleShortResponse> search(@RequestParam(required = false)
+            @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
         return articleService.searchPublished(cnt);
     }
 
     @Operation(summary = "Получить cnt последних новостей")
     @GetMapping("/search/unpublished")
     @Secured("ADMIN")
-    public List<ArticleShortResponse> searchUnpublished(@RequestParam(required = false) @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
+    public List<ArticleShortResponse> searchUnpublished(@RequestParam(required = false)
+            @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
         return articleService.searchUnpublished(cnt);
     }
-
 }
