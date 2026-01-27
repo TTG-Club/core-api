@@ -71,11 +71,12 @@ public class TokenBorderService
     @Transactional
     public void updateOrder(final TokenBorderReorderRequest request)
     {
+        tokenBorderRepository.lockTokenBorderReorder();
+
         TokenBorder border = getById(request.getId());
 
         int currentOrder = border.getOrder();
         int maxOrder = tokenBorderRepository.findMaxOrder();
-
         int desiredOrder = clamp(request.getOrder(), maxOrder);
 
         if (desiredOrder == currentOrder)
@@ -83,34 +84,45 @@ public class TokenBorderService
             return;
         }
 
+        int bufferOrder = -1_000_000; // достаточно далеко
+        tokenBorderRepository.moveToBuffer(border.getId(), bufferOrder);
+
         if (desiredOrder < currentOrder)
         {
-            tokenBorderRepository.shiftUp(desiredOrder, currentOrder - 1);
+            int to = currentOrder - 1;
+
+            tokenBorderRepository.moveRangeToNegative(desiredOrder, to);
+            tokenBorderRepository.restoreRangeShiftUp(desiredOrder, to);
         }
         else
         {
-            tokenBorderRepository.shiftDown(currentOrder + 1, desiredOrder);
+            // нужно сдвинуть вниз диапазон [currentOrder+1, desiredOrder]
+            int from = currentOrder + 1;
+
+            tokenBorderRepository.moveRangeToNegative(from, desiredOrder);
+            tokenBorderRepository.restoreRangeShiftDown(from, desiredOrder);
         }
 
-        border.setOrder(desiredOrder);
-        tokenBorderRepository.save(border);
+        tokenBorderRepository.updateOrder(border.getId(), desiredOrder);
     }
 
+    @Transactional
     public void delete(final UUID id)
     {
         TokenBorder border = getById(id);
-
         String s3Key = extractKeyFromUrl(border.getUrl());
 
-        // 1) Сначала удаляем из S3. Если не получилось — БД не трогаем.
         deleteFromS3(s3Key);
 
-        // 2) Затем удаляем из БД + пересчитываем порядок (в реальной транзакции).
         transactionTemplate.executeWithoutResult(status ->
         {
-            int deletedOrder = border.getOrder();
-            tokenBorderRepository.delete(border);
-            tokenBorderRepository.decrementOrdersAfter(deletedOrder);
+            tokenBorderRepository.lockTokenBorderReorder();
+
+            TokenBorder lockedBorder = getById(id);
+            int deletedOrder = lockedBorder.getOrder();
+
+            tokenBorderRepository.delete(lockedBorder);
+            tokenBorderRepository.shiftAfterDelete(deletedOrder);
         });
     }
 
