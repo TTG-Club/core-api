@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.image.service;
 
 import club.ttg.dnd5.security.SecurityUtils;
+import club.ttg.dnd5.domain.image.service.ImageConverter.ConvertedImage;
+import club.ttg.dnd5.domain.image.service.ImageConverter.WebpOptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.annotation.Secured;
@@ -25,7 +27,8 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
-public class ImageService {
+public class ImageService
+{
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String s3Bucket;
@@ -42,44 +45,44 @@ public class ImageService {
     @Value("${image.validation.max-height:2048}")
     private int maxHeight;
 
-    @Value("${image.validation.allowed-types:png,jpg,jpeg,webp}")
-    private List<String> allowedContentTypes;
+    @Value("${image.validation.allowed-types:png,jpg,jpeg,webp,bmp}")
+    private List<String> allowedTypes;
+
+    @Value("${image.webp.quality:0.82}")
+    private float webpQuality;
+
+    @Value("${image.webp.lossless:false}")
+    private boolean webpLossless;
+
+    @Value("${image.webp.preserve-alpha:true}")
+    private boolean webpPreserveAlpha;
 
     private final S3Client s3Client;
 
     @Secured("ADMIN")
-    public String upload(final String prefix, final MultipartFile file) {
+    public String upload(final String prefix, final MultipartFile file)
+    {
         validateUpload(file);
 
-        String key = buildKey(prefix, file);
+        final ConvertedImage converted = convertToWebp(file);
 
-        String contentType = file.getContentType();
-        if (contentType == null || contentType.isBlank())
-        {
-            contentType = "application/octet-stream";
-        }
+        final String key = buildKey(prefix, file);
 
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(s3Bucket)
                 .key(key)
-                .contentType(contentType)
+                .contentType("image/webp")
                 .acl(ObjectCannedACL.PUBLIC_READ)
                 .build();
 
-        try (InputStream inputStream = file.getInputStream())
-        {
-            s3Client.putObject(request, RequestBody.fromInputStream(inputStream, file.getSize()));
-        }
-        catch (IOException exception)
-        {
-            throw new IllegalStateException("Failed to read uploaded file", exception);
-        }
+        s3Client.putObject(request, RequestBody.fromBytes(converted.bytes()));
 
         return buildPublicUrl(key);
     }
 
     @Secured("ADMIN")
-    public void delete(final String url) {
+    public void delete(final String url)
+    {
         String key = extractKeyFromUrl(url);
 
         try
@@ -103,7 +106,7 @@ public class ImageService {
         }
 
         validateBytes(file);
-        validateContentType(file);
+        validateType(file);
         validateDimensions(file);
     }
 
@@ -113,24 +116,54 @@ public class ImageService {
 
         if (size <= 0)
         {
-            throw new ImageValidationException("File size is 0 bytes");
+            throw new ImageValidationException("Размер изображения 0 байт");
         }
 
         if (size > maxBytes)
         {
             throw new ImageValidationException(
-                    "File is too large: " + size + " bytes (max " + maxBytes + ")"
+                    "Размер изображения выше допустимого: " + size + " байт (максимально " + maxBytes + " байт)"
             );
         }
     }
 
-    private void validateContentType(final MultipartFile file)
+    private void validateType(final MultipartFile file)
     {
-        final String contentType = file.getContentType();
+        final String originalFilename = file.getOriginalFilename();
+        final String ext = extractExtension(originalFilename);
 
-        if (contentType == null || !allowedContentTypes.contains(contentType))
+        if (!ext.isBlank() && allowedTypes.contains(ext.toLowerCase()))
         {
-            throw new ImageValidationException("Unsupported content type: " + contentType);
+            return;
+        }
+
+        final ImageConverter.SourceFormat detected = detectFormat(file);
+        final String detectedExt = switch (detected)
+        {
+            case JPEG -> "jpg";
+            case PNG -> "png";
+            case BMP -> "bmp";
+            case WEBP -> "webp";
+            default -> "";
+        };
+
+        if (detectedExt.isBlank() || !allowedTypes.contains(detectedExt))
+        {
+            throw new ImageValidationException("Не поддерживаемый тип изображения: " + detected);
+        }
+    }
+
+    private ImageConverter.SourceFormat detectFormat(final MultipartFile file)
+    {
+        try (InputStream in = file.getInputStream())
+        {
+            byte[] head = in.readNBytes(32);
+            return ImageConverter.SourceFormat.fromSignature(head)
+                    .orElse(ImageConverter.SourceFormat.UNKNOWN);
+        }
+        catch (IOException e)
+        {
+            throw new ImageValidationException("Ошибка чтения заголовка изображения", e);
         }
     }
 
@@ -141,16 +174,53 @@ public class ImageService {
         if (dims.width() <= 0 || dims.height() <= 0)
         {
             throw new ImageValidationException(
-                    "Invalid image dimensions: " + dims.width() + "x" + dims.height()
+                    "Неверный размер изображения: " + dims.width() + "x" + dims.height()
             );
         }
 
         if (dims.width() > maxWidth || dims.height() > maxHeight)
         {
             throw new ImageValidationException(
-                    "Image is too large: " + dims.width() + "x" + dims.height()
+                    "Изображение велико: " + dims.width() + "x" + dims.height()
                             + " (max " + maxWidth + "x" + maxHeight + ")"
             );
+        }
+    }
+
+    private ConvertedImage convertToWebp(final MultipartFile file)
+    {
+        final byte[] bytes;
+        try
+        {
+            bytes = file.getBytes();
+        }
+        catch (IOException exception)
+        {
+            throw new IllegalStateException("Ошибка чтения изображения", exception);
+        }
+
+        WebpOptions options;
+        if (webpLossless)
+        {
+            options = WebpOptions.lossless();
+        }
+        else
+        {
+            options = WebpOptions.lossy(webpQuality);
+        }
+
+        if (!webpPreserveAlpha)
+        {
+            options = options.withoutAlpha();
+        }
+
+        try
+        {
+            return ImageConverter.toWebp(bytes, file.getContentType(), file.getOriginalFilename(), options);
+        }
+        catch (IOException e)
+        {
+            throw new ImageValidationException("Failed to convert image to WebP", e);
         }
     }
 
@@ -165,17 +235,11 @@ public class ImageService {
             originalName = "file";
         }
 
-        String extension = extractExtension(file.getOriginalFilename());
-        if (extension.isBlank())
-        {
-            extension = "webp";
-        }
-
         return normalizedPrefix
                 + "/" + username
                 + "/" + UUID.randomUUID()
                 + "-" + originalName
-                + "." + extension;
+                + ".webp";
     }
 
     private String buildPublicUrl(final String key)
@@ -188,7 +252,7 @@ public class ImageService {
     {
         if (prefix == null || prefix.isBlank())
         {
-            throw new IllegalArgumentException("Prefix must not be empty");
+            throw new IllegalArgumentException("Префикс должен быть задан");
         }
 
         String result = prefix.trim();
@@ -263,22 +327,22 @@ public class ImageService {
     {
         if (url == null || url.isBlank())
         {
-            throw new IllegalArgumentException("Image url is empty");
+            throw new IllegalArgumentException("URL изображения пустой");
         }
 
         URI uri = URI.create(url);
-        String path = uri.getPath(); // "/<bucket>/<key>"
+        String path = uri.getPath();
 
         String expectedPrefix = "/" + s3Bucket + "/";
         if (!path.startsWith(expectedPrefix))
         {
-            throw new IllegalArgumentException("Url does not match bucket '" + s3Bucket + "': " + url);
+            throw new IllegalArgumentException("Url изображения отсутствует в S3 '" + s3Bucket + "': " + url);
         }
 
         String key = path.substring(expectedPrefix.length());
         if (key.isBlank())
         {
-            throw new IllegalArgumentException("Could not extract S3 key from url: " + url);
+            throw new IllegalArgumentException("Не удалось получить ключ изображения из S3: " + url);
         }
 
         return key;
@@ -291,7 +355,7 @@ public class ImageService {
         {
             if (iis == null)
             {
-                throw new ImageValidationException("Unable to open image stream");
+                throw new ImageValidationException("Не доступен стрим изображения");
             }
 
             final Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
@@ -316,7 +380,7 @@ public class ImageService {
         }
         catch (IOException e)
         {
-            throw new ImageValidationException("Failed to read image dimensions", e);
+            throw new ImageValidationException("Ошибка чтения размеров изображения", e);
         }
     }
 
@@ -327,14 +391,14 @@ public class ImageService {
             final BufferedImage img = ImageIO.read(in);
             if (img == null)
             {
-                throw new ImageValidationException("File is not a valid image");
+                throw new ImageValidationException("Файл не является изображением");
             }
 
             return new ImageDimensions(img.getWidth(), img.getHeight());
         }
         catch (IOException e)
         {
-            throw new ImageValidationException("Failed to decode image", e);
+            throw new ImageValidationException("Ошибка декодирования изображения", e);
         }
     }
 
