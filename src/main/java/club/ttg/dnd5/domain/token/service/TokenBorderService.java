@@ -10,6 +10,7 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,13 +44,15 @@ public class TokenBorderService
         return tokenBorderMapper.toResponse(tokenBorderRepository.save(border));
     }
 
+    @Transactional
     public void updateOrder(final TokenBorderReorderRequest request)
     {
+        tokenBorderRepository.lockTokenBorderReorder();
+
         TokenBorder border = getById(request.getId());
 
         int currentOrder = border.getOrder();
         int maxOrder = tokenBorderRepository.findMaxOrder();
-
         int desiredOrder = clamp(request.getOrder(), maxOrder);
 
         if (desiredOrder == currentOrder)
@@ -57,29 +60,47 @@ public class TokenBorderService
             return;
         }
 
+        int bufferOrder = -1_000_000; // достаточно далеко
+        tokenBorderRepository.moveToBuffer(border.getId(), bufferOrder);
+
         if (desiredOrder < currentOrder)
         {
-            tokenBorderRepository.shiftUp(desiredOrder, currentOrder - 1);
+            int to = currentOrder - 1;
+
+            tokenBorderRepository.moveRangeToNegative(desiredOrder, to);
+            tokenBorderRepository.restoreRangeShiftUp(desiredOrder, to);
         }
         else
         {
-            tokenBorderRepository.shiftDown(currentOrder + 1, desiredOrder);
+            // нужно сдвинуть вниз диапазон [currentOrder+1, desiredOrder]
+            int from = currentOrder + 1;
+
+            tokenBorderRepository.moveRangeToNegative(from, desiredOrder);
+            tokenBorderRepository.restoreRangeShiftDown(from, desiredOrder);
         }
 
         border.setOrder(desiredOrder);
         tokenBorderRepository.save(border);
     }
 
+    @Transactional
     public void delete(final UUID id)
     {
         TokenBorder border = getById(id);
+        String s3Key = extractKeyFromUrl(border.getUrl());
         imageService.delete(border.getUrl());
+
+        deleteFromS3(s3Key);
 
         transactionTemplate.executeWithoutResult(status ->
         {
-            int deletedOrder = border.getOrder();
-            tokenBorderRepository.delete(border);
-            tokenBorderRepository.decrementOrdersAfter(deletedOrder);
+            tokenBorderRepository.lockTokenBorderReorder();
+
+            TokenBorder lockedBorder = getById(id);
+            int deletedOrder = lockedBorder.getOrder();
+
+            tokenBorderRepository.delete(lockedBorder);
+            tokenBorderRepository.shiftAfterDelete(deletedOrder);
         });
     }
 
