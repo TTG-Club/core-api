@@ -246,7 +246,7 @@ public final class ImageConverter
         }
         if (!writers.hasNext())
         {
-            throw new IllegalStateException("No WebP ImageWriter found. Add com.twelvemonkeys.imageio:imageio-webp.");
+            throw new IllegalStateException("Не найден WebP ImageWriter.");
         }
         return writers.next();
     }

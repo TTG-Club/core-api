@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.image.service;
 import club.ttg.dnd5.security.SecurityUtils;
 import club.ttg.dnd5.domain.image.service.ImageConverter.ConvertedImage;
 import club.ttg.dnd5.domain.image.service.ImageConverter.WebpOptions;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.annotation.Secured;
@@ -29,7 +30,6 @@ import java.util.UUID;
 @Service
 public class ImageService
 {
-
     @Value("${spring.cloud.aws.s3.bucket}")
     private String s3Bucket;
 
@@ -58,6 +58,11 @@ public class ImageService
     private boolean webpPreserveAlpha;
 
     private final S3Client s3Client;
+
+    @PostConstruct
+    public void init() {
+        ImageIO.scanForPlugins();
+    }
 
     @Secured("ADMIN")
     public String upload(final String prefix, final MultipartFile file)
