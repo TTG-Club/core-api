@@ -87,10 +87,6 @@ public class TokenBorderService
     public void delete(final UUID id)
     {
         TokenBorder border = getById(id);
-        String s3Key = extractKeyFromUrl(border.getUrl());
-        imageService.delete(border.getUrl());
-
-        deleteFromS3(s3Key);
 
         transactionTemplate.executeWithoutResult(status ->
         {
@@ -99,7 +95,7 @@ public class TokenBorderService
             TokenBorder lockedBorder = getById(id);
             int deletedOrder = lockedBorder.getOrder();
 
-            tokenBorderRepository.delete(lockedBorder);
+            imageService.delete(border.getUrl());
             tokenBorderRepository.shiftAfterDelete(deletedOrder);
         });
     }

@@ -12,9 +12,15 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -27,10 +33,24 @@ public class ImageService {
     @Value("${spring.cloud.aws.s3.endpoint}")
     private String s3Endpoint;
 
+    @Value("${image.validation.max-bytes:1048576}")
+    private long maxBytes;
+
+    @Value("${image.validation.max-width:2048}")
+    private int maxWidth;
+
+    @Value("${image.validation.max-height:2048}")
+    private int maxHeight;
+
+    @Value("${image.validation.allowed-types:png,jpg,jpeg,webp}")
+    private List<String> allowedContentTypes;
+
     private final S3Client s3Client;
 
     @Secured("ADMIN")
     public String upload(final String prefix, final MultipartFile file) {
+        validateUpload(file);
+
         String key = buildKey(prefix, file);
 
         String contentType = file.getContentType();
@@ -75,9 +95,65 @@ public class ImageService {
         }
     }
 
-    /**
-     * <prefix>/<username>/<uuid>-<original-name>.<ext>
-     */
+    public void validateUpload(final MultipartFile file)
+    {
+        if (file == null || file.isEmpty())
+        {
+            throw new IllegalArgumentException("Файл пустой");
+        }
+
+        validateBytes(file);
+        validateContentType(file);
+        validateDimensions(file);
+    }
+
+    private void validateBytes(final MultipartFile file)
+    {
+        final long size = file.getSize();
+
+        if (size <= 0)
+        {
+            throw new ImageValidationException("File size is 0 bytes");
+        }
+
+        if (size > maxBytes)
+        {
+            throw new ImageValidationException(
+                    "File is too large: " + size + " bytes (max " + maxBytes + ")"
+            );
+        }
+    }
+
+    private void validateContentType(final MultipartFile file)
+    {
+        final String contentType = file.getContentType();
+
+        if (contentType == null || !allowedContentTypes.contains(contentType))
+        {
+            throw new ImageValidationException("Unsupported content type: " + contentType);
+        }
+    }
+
+    private void validateDimensions(final MultipartFile file)
+    {
+        final ImageDimensions dims = readDimensions(file);
+
+        if (dims.width() <= 0 || dims.height() <= 0)
+        {
+            throw new ImageValidationException(
+                    "Invalid image dimensions: " + dims.width() + "x" + dims.height()
+            );
+        }
+
+        if (dims.width() > maxWidth || dims.height() > maxHeight)
+        {
+            throw new ImageValidationException(
+                    "Image is too large: " + dims.width() + "x" + dims.height()
+                            + " (max " + maxWidth + "x" + maxHeight + ")"
+            );
+        }
+    }
+
     private String buildKey(final String prefix, final MultipartFile file)
     {
         String normalizedPrefix = normalizePrefix(prefix);
@@ -206,5 +282,76 @@ public class ImageService {
         }
 
         return key;
+    }
+
+    private ImageDimensions readDimensions(final MultipartFile file)
+    {
+        try (InputStream in = file.getInputStream();
+             ImageInputStream iis = ImageIO.createImageInputStream(in))
+        {
+            if (iis == null)
+            {
+                throw new ImageValidationException("Unable to open image stream");
+            }
+
+            final Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+            if (!readers.hasNext())
+            {
+                return readDimensionsByDecoding(file);
+            }
+
+            final ImageReader reader = readers.next();
+            try
+            {
+                reader.setInput(iis, true, true);
+                return new ImageDimensions(
+                        reader.getWidth(0),
+                        reader.getHeight(0)
+                );
+            }
+            finally
+            {
+                reader.dispose();
+            }
+        }
+        catch (IOException e)
+        {
+            throw new ImageValidationException("Failed to read image dimensions", e);
+        }
+    }
+
+    private ImageDimensions readDimensionsByDecoding(final MultipartFile file)
+    {
+        try (InputStream in = file.getInputStream())
+        {
+            final BufferedImage img = ImageIO.read(in);
+            if (img == null)
+            {
+                throw new ImageValidationException("File is not a valid image");
+            }
+
+            return new ImageDimensions(img.getWidth(), img.getHeight());
+        }
+        catch (IOException e)
+        {
+            throw new ImageValidationException("Failed to decode image", e);
+        }
+    }
+
+    public record ImageDimensions(int width, int height)
+    {
+    }
+
+    public static class ImageValidationException extends RuntimeException
+    {
+        public ImageValidationException(final String message)
+        {
+            super(message);
+        }
+
+        public ImageValidationException(final String message, final Throwable cause)
+        {
+            super(message, cause);
+        }
     }
 }
