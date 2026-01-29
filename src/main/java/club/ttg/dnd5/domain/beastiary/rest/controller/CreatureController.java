@@ -1,10 +1,12 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
+import club.ttg.dnd5.domain.beastiary.CreatureGroupType;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
+import club.ttg.dnd5.domain.common.rest.dto.container.ContainerResponse;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +40,25 @@ public class CreatureController {
     @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
     public Boolean isSpellExist(@PathVariable String url) {
         return creatureService.existOrThrow(url);
+    }
+
+    @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
+    @GetMapping("/search")
+    public ContainerResponse<CreatureShortResponse> searchGroupSort(@RequestParam(name = "search", required = false)
+                                              @Valid
+                                              @Size(min = 2)
+                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
+                                              String searchLine,
+                                              @RequestParam(required = false)
+                                              String filter,
+                                              @RequestParam(required = false)
+                                              CreatureGroupType group,
+                                              @RequestParam(required = false)
+                                              String sort,
+                                              long limit,
+                                              long skip
+    ) {
+        return creatureService.search(searchLine, filter, group, sort, limit, skip);
     }
 
     @Operation(summary = "Поиск существ", description = "Поиск существа по именам")

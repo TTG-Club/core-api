@@ -37,6 +37,14 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
             """;
 
     public List<E> search(String searchLine, SearchBody searchBody) {
+        return search(searchLine, searchBody, getOrder(), 0, Long.MAX_VALUE);
+    }
+
+    public List<E> search(String searchLine,
+                          SearchBody searchBody,
+                          OrderSpecifier<?>[] orders,
+                          long skip,
+                          long limit) {
         BooleanExpression predicate = Optional.ofNullable(searchLine)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
@@ -49,9 +57,13 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                         .orElseGet(savedFilterService::getDefaultFilterInfo).getQuery());
 
         JPASQLQuery<?> query = new JPASQLQuery<Void>(entityManager, dialect);
-        return query.select(entityPath).from(entityPath).where(predicate).orderBy(getOrder()).fetch();
-
+        return query.select(entityPath)
+                .from(entityPath)
+                .where(predicate)
+                .orderBy(orders)
+                .offset(skip)
+                .limit(limit)
+                .fetch();
     }
-
     protected abstract OrderSpecifier<?>[] getOrder();
 }
