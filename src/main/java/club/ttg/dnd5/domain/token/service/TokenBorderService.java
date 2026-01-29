@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.token.service;
 
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.image.service.ImageService;
 import club.ttg.dnd5.domain.token.model.TokenBorder;
 import club.ttg.dnd5.domain.token.repository.TokenBorderRepository;
@@ -21,7 +22,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TokenBorderService
 {
-    private static final String KEY_PREFIX = "token-borders/";
 
     private final TokenBorderRepository tokenBorderRepository;
     private final TokenBorderMapper tokenBorderMapper;
@@ -33,7 +33,7 @@ public class TokenBorderService
     {
         validateFile(file);
 
-        String url = imageService.upload(KEY_PREFIX, file);
+        String url = imageService.upload(SectionType.TOKEN_BORDER, file);
 
         TokenBorder border = new TokenBorder();
         border.setUrl(url);

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.image.rest.controller;
 
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.image.service.ImageService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class ImageController {
     private final ImageService imageService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String upload(String prefix, @RequestPart("file") MultipartFile file) {
+    public String upload(SectionType prefix, @RequestPart("file") MultipartFile file) {
         return imageService.upload(prefix, file);
     }
 

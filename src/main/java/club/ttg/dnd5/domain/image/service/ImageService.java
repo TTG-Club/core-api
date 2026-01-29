@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.image.service;
 
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.security.SecurityUtils;
 import club.ttg.dnd5.domain.image.service.ImageConverter.ConvertedImage;
 import club.ttg.dnd5.domain.image.service.ImageConverter.WebpOptions;
@@ -65,13 +66,13 @@ public class ImageService
     }
 
     @Secured("ADMIN")
-    public String upload(final String prefix, final MultipartFile file)
+    public String upload(final SectionType prefix, final MultipartFile file)
     {
         validateUpload(file);
 
         final ConvertedImage converted = convertToWebp(file);
 
-        final String key = buildKey(prefix, file);
+        final String key = buildKey(prefix.getValue(), file);
 
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(s3Bucket)
