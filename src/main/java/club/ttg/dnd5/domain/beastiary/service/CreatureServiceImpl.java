@@ -1,28 +1,40 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
+import club.ttg.dnd5.domain.beastiary.CreatureGroupType;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
-import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
+import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
+import club.ttg.dnd5.domain.common.rest.dto.container.ContainerResponse;
+import club.ttg.dnd5.domain.common.rest.dto.container.MetadataResponse;
+import club.ttg.dnd5.domain.common.rest.dto.container.OrderResponse;
+import club.ttg.dnd5.domain.common.rest.dto.container.PaginationResponse;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
+import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.querydsl.core.types.OrderSpecifier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 @RequiredArgsConstructor
 @Service
@@ -49,6 +61,83 @@ public class CreatureServiceImpl implements CreatureService {
     }
 
     @Override
+    public ContainerResponse<CreatureShortResponse> search(final String searchLine,
+                                                           final String filters,
+                                                           final CreatureGroupType group,
+                                                           final String sort,
+                                                           final long limit,
+                                                           final long skip) {
+        var searchBody = SearchBody.parse(filters, objectMapper);
+
+        var builder = ContainerResponse.<CreatureShortResponse>builder();
+        Map<String, OrderResponse<CreatureShortResponse>> result = new TreeMap<>(CrComparator.INSTANCE);
+        switch (group)
+        {
+            case CR ->
+                creatureQueryDslSearchService
+                        .search(searchLine, searchBody, new OrderSpecifier[] { QCreature.creature.experience.asc(), QCreature.creature.name.asc() }, skip, limit)
+                        .forEach(creature ->
+                        {
+                            String cr = ChallengeRating.getCr(creature.getExperience());
+
+                            OrderResponse<CreatureShortResponse> bucket = result.computeIfAbsent(
+                                    cr,
+                                    k -> OrderResponse.<CreatureShortResponse>builder()
+                                            .items(new ArrayList<>())
+                                            .build()
+                            );
+                            bucket.setOrder(ChallengeRating.getCr(cr).ordinal());
+                            bucket.setLabel(group.getName() + ": " + cr);
+                            bucket.getItems().add(creatureMapper.toShort(creature));
+                        });
+            case SIZE -> creatureQueryDslSearchService
+                    .search(searchLine, searchBody, new OrderSpecifier[] {  }, skip, limit)
+                    .forEach(creature ->
+                    {
+                        for (Size size: creature.getSizes().getValues())
+                        {
+                            OrderResponse<CreatureShortResponse> bucket = result.computeIfAbsent(
+                                    size.getName(),
+                                    k -> OrderResponse.<CreatureShortResponse>builder()
+                                            .items(new ArrayList<>())
+                                            .build()
+                            );
+                            bucket.setOrder(size.ordinal());
+                            bucket.setLabel(group.getName() + ": " + size.getName());
+                            bucket.getItems().add(creatureMapper.toShort(creature));
+                        }
+                    });
+            case TYPE -> creatureQueryDslSearchService
+                    .search(searchLine, searchBody, new OrderSpecifier[] { }, skip, limit)
+                    .forEach(creature ->
+                    {
+                        for (var type: creature.getTypes().getValues())
+                        {
+                            OrderResponse<CreatureShortResponse> bucket = result.computeIfAbsent(
+                                    type.getName(),
+                                    k -> OrderResponse.<CreatureShortResponse>builder()
+                                            .items(new ArrayList<>())
+                                            .build()
+                            );
+                            bucket.setOrder(type.ordinal());
+                            bucket.setLabel(group.getName() + ": " + type.getName());
+                            bucket.getItems().add(creatureMapper.toShort(creature));
+                        }
+                    });
+            default -> throw new UnsupportedOperationException("Не поддерживаемый тип группировки");
+        }
+        builder.data(result.values());
+        return builder
+                .metadata(MetadataResponse.builder()
+                        .pagination(PaginationResponse.builder()
+                                .skip(skip)
+                                .limit(limit)
+                                .build())
+                        .build())
+                .build();
+    }
+
+    @Override
     public List<CreatureShortResponse> search(final String searchLine, final SearchBody searchBody) {
         return creatureQueryDslSearchService.search(searchLine, searchBody)
                 .stream()
@@ -58,7 +147,7 @@ public class CreatureServiceImpl implements CreatureService {
 
     @Override
     public CreatureDetailResponse findDetailedByUrl(final String url) {
-        var response =   creatureMapper.toDetail(findByUrl(url));
+        var response = creatureMapper.toDetail(findByUrl(url));
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.BESTIARY)
                 .stream()
                 .map(Gallery::getImage)

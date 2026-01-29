@@ -3,6 +3,9 @@ package club.ttg.dnd5.domain.common.dictionary;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 @AllArgsConstructor
 public enum ChallengeRating {
@@ -42,6 +45,15 @@ public enum ChallengeRating {
     CR_29("29", 135_000, 9),
     CR_30("30", 155_000, 9);
 
+
+    private static final Map<String, ChallengeRating> mapping = new HashMap<>();
+
+    static {
+        for (ChallengeRating cr: values()) {
+            mapping.put(cr.getName(), cr);
+        }
+    }
+
     private final String name;
     private final long experience;
     private final int proficiencyBonus;
@@ -53,6 +65,10 @@ public enum ChallengeRating {
             }
         }
         return CR_UNKNOWN.name;
+    }
+
+    public static ChallengeRating getCr(String cr) {
+        return mapping.get(cr);
     }
 
     public static int getPb(long experience) {
