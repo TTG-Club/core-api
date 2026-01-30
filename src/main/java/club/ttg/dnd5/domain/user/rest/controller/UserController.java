@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.user.rest.controller;
 
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
-import club.ttg.dnd5.domain.user.rest.dto.UserProfileDetailedResponse;
+import club.ttg.dnd5.domain.user.rest.dto.UserProfileShortResponse;
 import club.ttg.dnd5.domain.user.service.UserService;
 import club.ttg.dnd5.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,10 +30,10 @@ public class UserController {
         return SecurityUtils.getUserDto();
     }
 
-    @Operation(summary = "Получение расширенного профиля пользователя")
-    @GetMapping("/profile/detailed")
-    public UserProfileDetailedResponse getUserProfileDetailed() {
-        return userService.getUserProfileDetailed();
+    @Operation(summary = "Получение профиля пользователя для бокового меню")
+    @GetMapping("/profile/short")
+    public UserProfileShortResponse getUserProfileShort() {
+        return userService.getUserProfileShort();
     }
 
     @Operation(summary = "Получение списка ролей")
