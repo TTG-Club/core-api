@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-token-border-table
+      author: ttg
+      changes:
+        - createTable:
+            tableName: token_border
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: url
+                  type: varchar(512)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: order_index
+                  type: int
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: created
+                  type: timestamp
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: username
+                  type: varchar(128)
+
+        - createIndex:
+            tableName: token_border
+            indexName: idx_token_border_order
+            columns:
+              - column:
+                  name: order_index
+
+        - createIndex:
+            tableName: token_border
+            indexName: idx_token_border_created
+            columns:
+              - column:
+                  name: created
