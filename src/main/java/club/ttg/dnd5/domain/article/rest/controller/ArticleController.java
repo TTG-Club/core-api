@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.article.rest.controller;
 
-
 import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -56,7 +56,7 @@ public class ArticleController {
 
     @Operation(summary = "Обновление новости")
     @Secured("ADMIN")
-    @PostMapping("/{id}")
+    @PutMapping("/{id}")
     public String updateArticle(@PathVariable final UUID id, @RequestBody final ArticleRequest request) {
         return articleService.update(id, request);
     }
@@ -83,15 +83,16 @@ public class ArticleController {
 
     @Operation(summary = "Получить cnt последних новостей")
     @GetMapping("/search")
-    public List<ArticleShortResponse> search(@RequestParam(required = false) @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
+    public List<ArticleShortResponse> search(@RequestParam(required = false)
+            @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
         return articleService.searchPublished(cnt);
     }
 
     @Operation(summary = "Получить cnt последних новостей")
     @GetMapping("/search/unpublished")
     @Secured("ADMIN")
-    public List<ArticleShortResponse> searchUnpublished(@RequestParam(required = false) @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
+    public List<ArticleShortResponse> searchUnpublished(@RequestParam(required = false)
+            @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
         return articleService.searchUnpublished(cnt);
     }
-
 }

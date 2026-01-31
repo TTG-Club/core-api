@@ -16,7 +16,8 @@ public enum SectionType {
     MAGIC_ITEM("magic-items"),
     ITEM("items"),
     GLOSSARY("glossary"),
-    CLASS("classes");
+    CLASS("classes"),
+    TOKEN_BORDER("token-border");
 
     @JsonValue
     private final String value;
