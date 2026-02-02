@@ -1,12 +1,15 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
 import club.ttg.dnd5.domain.beastiary.CreatureGroupType;
+import club.ttg.dnd5.domain.beastiary.CreatureSortType;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
 import club.ttg.dnd5.domain.common.rest.dto.container.ContainerResponse;
+import club.ttg.dnd5.domain.common.rest.dto.container.PageMetadata;
+import club.ttg.dnd5.domain.common.rest.dto.select.SelectOptionDto;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Tag(name = "Бестиарий", description = "REST API для существ из бестиария")
@@ -97,6 +101,20 @@ public class CreatureController {
     @GetMapping("/filters")
     public FilterInfo getFilters() {
         return creatureFilterService.getDefaultFilterInfo();
+    }
+
+    @Operation(summary = "Получение метаданных по разделу", description = "Получение доступных сортировок, группировок и фильтров.")
+    @GetMapping("/metadata")
+    public PageMetadata getMetadata() {
+        PageMetadata pageMetadata = new PageMetadata();
+        pageMetadata.setGroup(Arrays.stream(CreatureGroupType.values())
+                .map(t -> new SelectOptionDto(t.getName(), t.name()))
+                .toList());
+        pageMetadata.setSort(Arrays.stream(CreatureSortType.values())
+                .map(t -> new SelectOptionDto(t.getName(), t.name()))
+                .toList());
+        pageMetadata.setFilter(creatureFilterService.getDefaultFilterInfo());
+        return pageMetadata;
     }
 
     @Operation(summary = "Добавление существа")

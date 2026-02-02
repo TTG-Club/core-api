@@ -71,6 +71,7 @@ public class CreatureServiceImpl implements CreatureService {
 
         var builder = ContainerResponse.<CreatureShortResponse>builder();
         Map<String, OrderResponse<CreatureShortResponse>> result = new TreeMap<>(CrComparator.INSTANCE);
+
         switch (group)
         {
             case CR ->
