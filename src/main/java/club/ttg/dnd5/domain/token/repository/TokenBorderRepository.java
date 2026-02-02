@@ -17,50 +17,55 @@ public interface TokenBorderRepository extends JpaRepository<TokenBorder, UUID>
     @Query(value = "update token_border set order_index = :order where id = :id", nativeQuery = true)
     void updateOrder(@Param("id") UUID id, @Param("order") int order);
 
-    @Modifying
-    @Query(value = """
-        update token_border
-           set order_index = order_index - 1
-         where order_index > :deletedOrder
-        """, nativeQuery = true)
-    void shiftAfterDelete(@Param("deletedOrder") int deletedOrder);
-
-    @Query(value = "select 1 where pg_advisory_xact_lock(734562341) is not null", nativeQuery = true)
-    Long lockTokenBorderReorder();
+    /**
+     * Transaction-scoped advisory lock.
+     * NB: это SELECT, поэтому НЕ @Modifying.
+     */
+    @Query(value = "select pg_advisory_xact_lock(734562341)", nativeQuery = true)
+    void lockTokenBorderReorder();
 
     /**
-     * Переместить запись в "буфер" (отрицательные значения),
-     * чтобы избежать коллизий unique индекса при массовых shift-апдейтах.
+     * Увести одну запись в отрицательный буфер (чтобы освободить слот).
      */
     @Modifying
     @Query(value = "update token_border set order_index = :bufferOrder where id = :id", nativeQuery = true)
     void moveToBuffer(@Param("id") UUID id, @Param("bufferOrder") int bufferOrder);
 
+    /**
+     * Увести диапазон в отрицательные значения: k -> -k
+     */
     @Modifying
     @Query(value = """
-    update token_border
-       set order_index = -(order_index)
-     where order_index >= :from
-       and order_index <= :to
-    """, nativeQuery = true)
+        update token_border
+           set order_index = -order_index
+         where order_index >= :from
+           and order_index <= :to
+        """, nativeQuery = true)
     void moveRangeToNegative(@Param("from") int from, @Param("to") int to);
 
+    /**
+     * Вернуть диапазон после moveRangeToNegative с сдвигом ВВЕРХ ( +1 ):
+     * -k -> k + 1
+     */
     @Modifying
     @Query(value = """
-    update token_border
-       set order_index = -order_index + 1
-     where order_index <= -:from
-       and order_index >= -:to
-    """, nativeQuery = true)
+        update token_border
+           set order_index = -order_index + 1
+         where order_index <= -:from
+           and order_index >= -:to
+        """, nativeQuery = true)
     void restoreRangeShiftUp(@Param("from") int from, @Param("to") int to);
 
+    /**
+     * Вернуть диапазон после moveRangeToNegative с сдвигом ВНИЗ ( -1 ):
+     * -k -> k - 1
+     */
     @Modifying
     @Query(value = """
-    update token_border
-       set order_index = -order_index - 1
-     where order_index <= -:from
-       and order_index >= -:to
-    """, nativeQuery = true)
+        update token_border
+           set order_index = -order_index - 1
+         where order_index <= -:from
+           and order_index >= -:to
+        """, nativeQuery = true)
     void restoreRangeShiftDown(@Param("from") int from, @Param("to") int to);
-
 }
