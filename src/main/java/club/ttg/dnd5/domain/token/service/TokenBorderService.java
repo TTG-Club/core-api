@@ -39,9 +39,6 @@ public class TokenBorderService
     @Value("${spring.cloud.aws.s3.bucket}")
     private String s3Bucket;
 
-    @Value("${spring.cloud.aws.s3.endpoint}")
-    private String s3Endpoint;
-
     private final TokenBorderRepository tokenBorderRepository;
     private final TokenBorderMapper tokenBorderMapper;
     private final S3Client s3Client;
@@ -51,14 +48,13 @@ public class TokenBorderService
         validateFile(file);
 
         String key = buildKey(file);
-        String url = buildPublicUrl(key);
 
         try
         {
             uploadToS3(file, key);
 
             TokenBorder border = new TokenBorder();
-            border.setUrl(url);
+            border.setUrl(key);
 
             int nextOrder = tokenBorderRepository.findMaxOrder() + 1;
             border.setOrder(nextOrder);
@@ -221,13 +217,7 @@ public class TokenBorderService
             extension = "webp";
         }
 
-        return KEY_PREFIX + UUID.randomUUID() + "." + extension;
-    }
-
-    private String buildPublicUrl(final String key)
-    {
-        String endpoint = trimTrailingSlash(s3Endpoint);
-        return endpoint + "/" + s3Bucket + "/" + key;
+        return "/s3/" + KEY_PREFIX + UUID.randomUUID() + "." + extension;
     }
 
     private void validateFile(final MultipartFile file)
@@ -258,21 +248,6 @@ public class TokenBorderService
         }
 
         return filename.substring(dot + 1).toLowerCase();
-    }
-
-    private String trimTrailingSlash(final String value)
-    {
-        if (value == null)
-        {
-            return "";
-        }
-
-        String result = value.trim();
-        while (result.endsWith("/"))
-        {
-            result = result.substring(0, result.length() - 1);
-        }
-        return result;
     }
 
     private String extractKeyFromUrl(final String url)
