@@ -17,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
-import java.net.URI;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -189,25 +188,9 @@ public class TokenBorderService
             throw new IllegalArgumentException("TokenBorder url is empty");
         }
 
-        URI uri = URI.create(url);
-        String path = uri.getPath();
-        if (path == null)
-        {
-            throw new IllegalArgumentException("Invalid url: " + url);
-        }
-
-        String expectedPrefix = "/" + s3Bucket + "/";
-        if (!path.startsWith(expectedPrefix))
-        {
-            int idx = path.indexOf(expectedPrefix);
-            if (idx < 0)
-            {
-                throw new IllegalArgumentException("Url does not match bucket '" + s3Bucket + "': " + url);
-            }
-            path = path.substring(idx);
-        }
-
-        String key = path.substring(expectedPrefix.length());
+        String key = url.startsWith("/s3/")
+                ? url.substring("/s3/".length())
+                : url;
         if (key.isBlank())
         {
             throw new IllegalArgumentException("Could not extract S3 key from url: " + url);
