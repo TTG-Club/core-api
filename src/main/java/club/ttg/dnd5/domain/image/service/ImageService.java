@@ -242,7 +242,7 @@ public class ImageService
         }
     }
 
-    private String buildKey(final String prefix, final MultipartFile file)
+    public String buildKey(final String prefix, final MultipartFile file)
     {
         String normalizedPrefix = normalizePrefix(prefix);
         String username = SecurityUtils.getUser().getUsername();

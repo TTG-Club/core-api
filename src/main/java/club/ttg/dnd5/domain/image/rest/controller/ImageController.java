@@ -32,7 +32,6 @@ public class ImageController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = "image/webp"
     )
-
     public ResponseEntity<byte[]> convert(@RequestPart("file") MultipartFile file)
     {
         byte[] webp = imageService.convert(file);

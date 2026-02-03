@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.token.service;
 
+import club.ttg.dnd5.domain.common.model.SectionType;
+import club.ttg.dnd5.domain.image.service.ImageService;
 import club.ttg.dnd5.domain.token.model.TokenBorder;
 import club.ttg.dnd5.domain.token.repository.TokenBorderRepository;
 import club.ttg.dnd5.domain.token.rest.dto.TokenBorderReorderRequest;
@@ -12,14 +14,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.util.Collection;
 import java.util.UUID;
@@ -42,6 +39,7 @@ public class TokenBorderService
     private final TokenBorderRepository tokenBorderRepository;
     private final TokenBorderMapper tokenBorderMapper;
     private final S3Client s3Client;
+    private final ImageService imageService;
 
     public TokenBorderResponse createAndUpload(final MultipartFile file)
     {
@@ -51,11 +49,9 @@ public class TokenBorderService
 
         try
         {
-            uploadToS3(file, key);
+            imageService.upload(SectionType.TOKEN_BORDER, file);
 
             TokenBorder border = new TokenBorder();
-            border.setUrl(key);
-
             int nextOrder = tokenBorderRepository.findMaxOrder() + 1;
             border.setOrder(nextOrder);
 
@@ -117,7 +113,7 @@ public class TokenBorderService
         String s3Key = extractKeyFromUrl(border.getUrl());
 
         // Сначала S3: если не получилось — БД не трогаем.
-        deleteFromS3(s3Key);
+        imageService.delete(s3Key);
 
         int deletedOrder = border.getOrder();
         int maxOrder = tokenBorderRepository.findMaxOrder();
@@ -161,31 +157,6 @@ public class TokenBorderService
         return Math.min(value, max);
     }
 
-    private void uploadToS3(final MultipartFile file, final String key)
-    {
-        String contentType = file.getContentType();
-        if (contentType == null || contentType.isBlank())
-        {
-            contentType = "application/octet-stream";
-        }
-
-        PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(s3Bucket)
-                .key(key)
-                .contentType(contentType)
-                .acl(ObjectCannedACL.PUBLIC_READ)
-                .build();
-
-        try (InputStream inputStream = file.getInputStream())
-        {
-            s3Client.putObject(request, RequestBody.fromInputStream(inputStream, file.getSize()));
-        }
-        catch (IOException exception)
-        {
-            throw new IllegalStateException("Failed to read uploaded file", exception);
-        }
-    }
-
     private void safeDeleteFromS3(final String key)
     {
         try
@@ -201,14 +172,6 @@ public class TokenBorderService
         }
     }
 
-    private void deleteFromS3(final String key)
-    {
-        s3Client.deleteObject(DeleteObjectRequest.builder()
-                .bucket(s3Bucket)
-                .key(key)
-                .build());
-    }
-
     private String buildKey(final MultipartFile file)
     {
         String extension = extractExtension(file.getOriginalFilename());
@@ -217,7 +180,7 @@ public class TokenBorderService
             extension = "webp";
         }
 
-        return "/s3/" + KEY_PREFIX + UUID.randomUUID() + "." + extension;
+        return KEY_PREFIX + UUID.randomUUID() + "." + extension;
     }
 
     private void validateFile(final MultipartFile file)
