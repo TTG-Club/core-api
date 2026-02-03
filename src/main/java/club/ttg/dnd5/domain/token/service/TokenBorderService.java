@@ -25,8 +25,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TokenBorderService
 {
-    private static final String KEY_PREFIX = "token-borders/";
-
     /**
      * Отрицательный “далёкий” буфер.
      * Главное — чтобы никогда не пересекался с диапазоном реальных order_index (1..N).
@@ -45,16 +43,14 @@ public class TokenBorderService
     {
         validateFile(file);
 
-        String key = buildKey(file);
+        String key = imageService.upload(SectionType.TOKEN_BORDER, file);
 
         try
         {
-            imageService.upload(SectionType.TOKEN_BORDER, file);
-
             TokenBorder border = new TokenBorder();
             int nextOrder = tokenBorderRepository.findMaxOrder() + 1;
             border.setOrder(nextOrder);
-
+            border.setUrl(key);
             return tokenBorderMapper.toResponse(tokenBorderRepository.save(border));
         }
         catch (RuntimeException ex)
@@ -172,17 +168,6 @@ public class TokenBorderService
         }
     }
 
-    private String buildKey(final MultipartFile file)
-    {
-        String extension = extractExtension(file.getOriginalFilename());
-        if (extension.isBlank())
-        {
-            extension = "webp";
-        }
-
-        return KEY_PREFIX + UUID.randomUUID() + "." + extension;
-    }
-
     private void validateFile(final MultipartFile file)
     {
         if (file == null || file.isEmpty())
@@ -195,22 +180,6 @@ public class TokenBorderService
         {
             throw new IllegalArgumentException("Загружены могут быть только изображения");
         }
-    }
-
-    private String extractExtension(final String filename)
-    {
-        if (filename == null)
-        {
-            return "";
-        }
-
-        int dot = filename.lastIndexOf('.');
-        if (dot < 0 || dot == filename.length() - 1)
-        {
-            return "";
-        }
-
-        return filename.substring(dot + 1).toLowerCase();
     }
 
     private String extractKeyFromUrl(final String url)
