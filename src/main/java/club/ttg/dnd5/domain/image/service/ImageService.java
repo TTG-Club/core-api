@@ -33,7 +33,7 @@ public class ImageService
     @Value("${spring.cloud.aws.s3.bucket}")
     private String s3Bucket;
 
-     @Value("${image.validation.max-bytes:1048576}")
+     @Value("${image.validation.max-bytes:2097152}")
     private long maxBytes;
 
     @Value("${image.validation.max-width:2048}")
@@ -242,7 +242,7 @@ public class ImageService
         }
     }
 
-    private String buildKey(final String prefix, final MultipartFile file)
+    public String buildKey(final String prefix, final MultipartFile file)
     {
         String normalizedPrefix = normalizePrefix(prefix);
         String username = SecurityUtils.getUser().getUsername();
