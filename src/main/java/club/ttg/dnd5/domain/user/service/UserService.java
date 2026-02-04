@@ -79,4 +79,8 @@ public class UserService {
                 .value(userRatingCount)
                 .build());
     }
+
+    public long count() {
+        return userRepository.count();
+    }
 }
