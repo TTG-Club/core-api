@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.security.SecurityUtils;
 import club.ttg.dnd5.domain.image.service.ImageConverter.ConvertedImage;
 import club.ttg.dnd5.domain.image.service.ImageConverter.WebpOptions;
+import club.ttg.dnd5.util.SlugifyUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,10 +23,10 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -34,10 +35,7 @@ public class ImageService
     @Value("${spring.cloud.aws.s3.bucket}")
     private String s3Bucket;
 
-    @Value("${spring.cloud.aws.s3.endpoint}")
-    private String s3Endpoint;
-
-    @Value("${image.validation.max-bytes:1048576}")
+     @Value("${image.validation.max-bytes:2097152}")
     private long maxBytes;
 
     @Value("${image.validation.max-width:2048}")
@@ -83,14 +81,30 @@ public class ImageService
 
         s3Client.putObject(request, RequestBody.fromBytes(converted.bytes()));
 
-        return buildPublicUrl(key);
+        return "/s3/" + key;
+    }
+
+    /**
+     * Конвертирует изображение в WebP без сохранения в S3.
+     * Возвращает готовые байты WebP.
+     */
+    public byte[] convert(final MultipartFile file)
+    {
+        validateUpload(file);
+
+        final ConvertedImage converted = convertToWebp(file);
+
+        if (converted.bytes() == null || converted.bytes().length == 0)
+        {
+            throw new ImageValidationException("Не удалось сконвертировать изображение в WebP");
+        }
+
+        return converted.bytes();
     }
 
     @Secured("ADMIN")
-    public void delete(final String url)
+    public void delete(final String key)
     {
-        String key = extractKeyFromUrl(url);
-
         try
         {
             s3Client.deleteObject(DeleteObjectRequest.builder()
@@ -230,7 +244,7 @@ public class ImageService
         }
     }
 
-    private String buildKey(final String prefix, final MultipartFile file)
+    public String buildKey(final String prefix, final MultipartFile file)
     {
         String normalizedPrefix = normalizePrefix(prefix);
         String username = SecurityUtils.getUser().getUsername();
@@ -242,16 +256,9 @@ public class ImageService
         }
 
         return normalizedPrefix
-                + "/" + username
-                + "/" + UUID.randomUUID()
-                + "-" + originalName
-                + ".webp";
-    }
-
-    private String buildPublicUrl(final String key)
-    {
-        String endpoint = trimTrailingSlash(s3Endpoint);
-        return endpoint + "/" + s3Bucket + "/" + key;
+                + "/" + username.toLowerCase() + "/"
+                + LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+                + "-" + SlugifyUtil.getFileName(originalName.toLowerCase() + ".webp");
     }
 
     private String normalizePrefix(final String prefix)
@@ -266,21 +273,6 @@ public class ImageService
         {
             result = result.substring(1);
         }
-        while (result.endsWith("/"))
-        {
-            result = result.substring(0, result.length() - 1);
-        }
-        return result;
-    }
-
-    private String trimTrailingSlash(final String value)
-    {
-        if (value == null)
-        {
-            return "";
-        }
-
-        String result = value.trim();
         while (result.endsWith("/"))
         {
             result = result.substring(0, result.length() - 1);
@@ -327,31 +319,6 @@ public class ImageService
         return name
                 .trim()
                 .replaceAll("[^a-zA-Z0-9-_]", "_");
-    }
-
-    private String extractKeyFromUrl(final String url)
-    {
-        if (url == null || url.isBlank())
-        {
-            throw new IllegalArgumentException("URL изображения пустой");
-        }
-
-        URI uri = URI.create(url);
-        String path = uri.getPath();
-
-        String expectedPrefix = "/" + s3Bucket + "/";
-        if (!path.startsWith(expectedPrefix))
-        {
-            throw new IllegalArgumentException("Url изображения отсутствует в S3 '" + s3Bucket + "': " + url);
-        }
-
-        String key = path.substring(expectedPrefix.length());
-        if (key.isBlank())
-        {
-            throw new IllegalArgumentException("Не удалось получить ключ изображения из S3: " + url);
-        }
-
-        return key;
     }
 
     private ImageDimensions readDimensions(final MultipartFile file)
