@@ -49,6 +49,6 @@ public class SlugifyUtil {
         }
 
         // Собираем обратно: имя-слаг.расширение
-        return slugName + "." + extension.toLowerCase();
+        return (slugName + "." + extension).toLowerCase();
     }
 }
