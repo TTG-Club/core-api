@@ -254,11 +254,11 @@ public class ImageService
             originalName = "file";
         }
 
-        return normalizedPrefix
+        return SlugifyUtil.getFileName(normalizedPrefix
                 + "/" + username
                 + "/" + UUID.randomUUID()
-                + "-" + SlugifyUtil.getSlug(originalName.toLowerCase())
-                + ".webp";
+                + "-" + originalName.toLowerCase()
+                + ".webp");
     }
 
     private String normalizePrefix(final String prefix)
