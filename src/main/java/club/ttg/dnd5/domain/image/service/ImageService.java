@@ -256,7 +256,7 @@ public class ImageService
         }
 
         return normalizedPrefix
-                + "/" + username + "/"
+                + "/" + username.toLowerCase() + "/"
                 + LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
                 + "-" + SlugifyUtil.getFileName(originalName.toLowerCase() + ".webp");
     }
