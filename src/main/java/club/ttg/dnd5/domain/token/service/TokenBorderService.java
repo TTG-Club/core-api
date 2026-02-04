@@ -9,11 +9,13 @@ import club.ttg.dnd5.domain.token.rest.dto.TokenBorderResponse;
 import club.ttg.dnd5.domain.token.rest.mapper.TokenBorderMapper;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -22,26 +24,39 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TokenBorderService
 {
+    /**
+     * Отрицательный “далёкий” буфер.
+     * Главное — чтобы никогда не пересекался с диапазоном реальных order_index (1..N).
+     */
+    private static final int BUFFER_ORDER = -1_000_000;
+
+    @Value("${spring.cloud.aws.s3.bucket}")
+    private String s3Bucket;
 
     private final TokenBorderRepository tokenBorderRepository;
     private final TokenBorderMapper tokenBorderMapper;
-
-    private final TransactionTemplate transactionTemplate;
+    private final S3Client s3Client;
     private final ImageService imageService;
 
     public TokenBorderResponse createAndUpload(final MultipartFile file)
     {
         validateFile(file);
 
-        String url = imageService.upload(SectionType.TOKEN_BORDER, file);
+        String key = imageService.upload(SectionType.TOKEN_BORDER, file);
 
-        TokenBorder border = new TokenBorder();
-        border.setUrl(url);
-
-        int nextOrder = tokenBorderRepository.findMaxOrder() + 1;
-        border.setOrder(nextOrder);
-
-        return tokenBorderMapper.toResponse(tokenBorderRepository.save(border));
+        try
+        {
+            TokenBorder border = new TokenBorder();
+            int nextOrder = tokenBorderRepository.findMaxOrder() + 1;
+            border.setOrder(nextOrder);
+            border.setUrl(key);
+            return tokenBorderMapper.toResponse(tokenBorderRepository.save(border));
+        }
+        catch (RuntimeException ex)
+        {
+            safeDeleteFromS3(key);
+            throw ex;
+        }
     }
 
     @Transactional
@@ -60,11 +75,12 @@ public class TokenBorderService
             return;
         }
 
-        int bufferOrder = -1_000_000; // достаточно далеко
-        tokenBorderRepository.moveToBuffer(border.getId(), bufferOrder);
+        // 1) освобождаем текущую позицию, убрав перемещаемую рамку в буфер
+        tokenBorderRepository.moveToBuffer(border.getId(), BUFFER_ORDER);
 
         if (desiredOrder < currentOrder)
         {
+            // диапазон, который надо сдвинуть вверх: [desiredOrder, currentOrder - 1]
             int to = currentOrder - 1;
 
             tokenBorderRepository.moveRangeToNegative(desiredOrder, to);
@@ -72,32 +88,53 @@ public class TokenBorderService
         }
         else
         {
-            // нужно сдвинуть вниз диапазон [currentOrder+1, desiredOrder]
+            // диапазон, который надо сдвинуть вниз: [currentOrder + 1, desiredOrder]
             int from = currentOrder + 1;
 
             tokenBorderRepository.moveRangeToNegative(from, desiredOrder);
             tokenBorderRepository.restoreRangeShiftDown(from, desiredOrder);
         }
 
-        border.setOrder(desiredOrder);
-        tokenBorderRepository.save(border);
+        // 2) ставим рамку на целевую позицию
+        tokenBorderRepository.updateOrder(border.getId(), desiredOrder);
     }
 
     @Transactional
     public void delete(final UUID id)
     {
+        tokenBorderRepository.lockTokenBorderReorder();
+
         TokenBorder border = getById(id);
+        String s3Key = extractKeyFromUrl(border.getUrl());
 
-        transactionTemplate.executeWithoutResult(status ->
+        // Сначала S3: если не получилось — БД не трогаем.
+        imageService.delete(s3Key);
+
+        int deletedOrder = border.getOrder();
+        int maxOrder = tokenBorderRepository.findMaxOrder();
+
+        // 1) уводим удаляемую запись в буфер, чтобы освободить deletedOrder и убрать конфликты
+        tokenBorderRepository.moveToBuffer(border.getId(), BUFFER_ORDER);
+
+        // 2) удаляем запись (у неё уже уникальный order_index в буфере)
+        tokenBorderRepository.deleteById(border.getId());
+
+        // 3) сдвигаем хвост (deletedOrder+1 .. maxOrder) вниз на 1 через отрицательный буфер
+        if (deletedOrder < maxOrder)
         {
-            tokenBorderRepository.lockTokenBorderReorder();
+            int from = deletedOrder + 1;
 
-            TokenBorder lockedBorder = getById(id);
-            int deletedOrder = lockedBorder.getOrder();
+            tokenBorderRepository.moveRangeToNegative(from, maxOrder);
+            tokenBorderRepository.restoreRangeShiftDown(from, maxOrder);
+        }
+    }
 
-            imageService.delete(border.getUrl());
-            tokenBorderRepository.shiftAfterDelete(deletedOrder);
-        });
+    public Collection<TokenBorderResponse> findAll()
+    {
+        return tokenBorderRepository.findAll(Sort.by(Sort.Direction.ASC, "order"))
+                .stream()
+                .map(tokenBorderMapper::toResponse)
+                .toList();
     }
 
     private TokenBorder getById(final UUID id)
@@ -115,6 +152,21 @@ public class TokenBorderService
         return Math.min(value, max);
     }
 
+    private void safeDeleteFromS3(final String key)
+    {
+        try
+        {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(s3Bucket)
+                    .key(key)
+                    .build());
+        }
+        catch (Exception ignored)
+        {
+            // cleanup best-effort
+        }
+    }
+
     private void validateFile(final MultipartFile file)
     {
         if (file == null || file.isEmpty())
@@ -129,11 +181,21 @@ public class TokenBorderService
         }
     }
 
-    public Collection<TokenBorderResponse> findAll()
+    private String extractKeyFromUrl(final String url)
     {
-        return tokenBorderRepository.findAll(Sort.by(Sort.Direction.ASC, "order"))
-                .stream()
-                .map(tokenBorderMapper::toResponse)
-                .toList();
+        if (url == null || url.isBlank())
+        {
+            throw new IllegalArgumentException("TokenBorder url is empty");
+        }
+
+        String key = url.startsWith("/s3/")
+                ? url.substring("/s3/".length())
+                : url;
+        if (key.isBlank())
+        {
+            throw new IllegalArgumentException("Could not extract S3 key from url: " + url);
+        }
+
+        return key;
     }
 }
