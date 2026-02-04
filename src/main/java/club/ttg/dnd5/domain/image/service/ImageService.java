@@ -256,7 +256,7 @@ public class ImageService
         return normalizedPrefix
                 + "/" + username
                 + "/" + UUID.randomUUID()
-                + "-" + originalName
+                + "-" + originalName.toLowerCase()
                 + ".webp";
     }
 
