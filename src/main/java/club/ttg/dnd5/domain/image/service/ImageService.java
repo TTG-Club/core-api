@@ -23,9 +23,10 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -254,11 +255,10 @@ public class ImageService
             originalName = "file";
         }
 
-        return SlugifyUtil.getFileName(normalizedPrefix
-                + "/" + username
-                + "/" + UUID.randomUUID()
-                + "-" + originalName.toLowerCase()
-                + ".webp");
+        return normalizedPrefix
+                + "/" + username + "/"
+                + LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+                + "-" + SlugifyUtil.getFileName(originalName.toLowerCase() + ".webp");
     }
 
     private String normalizePrefix(final String prefix)
