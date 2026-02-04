@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.security.SecurityUtils;
 import club.ttg.dnd5.domain.image.service.ImageConverter.ConvertedImage;
 import club.ttg.dnd5.domain.image.service.ImageConverter.WebpOptions;
+import club.ttg.dnd5.util.SlugifyUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -256,7 +257,7 @@ public class ImageService
         return normalizedPrefix
                 + "/" + username
                 + "/" + UUID.randomUUID()
-                + "-" + originalName.toLowerCase()
+                + "-" + SlugifyUtil.getSlug(originalName.toLowerCase())
                 + ".webp";
     }
 
