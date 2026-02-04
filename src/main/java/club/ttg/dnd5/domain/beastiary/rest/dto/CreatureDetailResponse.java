@@ -17,7 +17,7 @@ public class CreatureDetailResponse extends BaseResponse {
     @Schema(description = "Класс доспеха", examples = {"18"})
     private String armorClass;
     @Schema(description = "Инициатива", examples = {"+12 (22)"})
-    private String initiative;
+    private BonusDto initiative;
     @Schema(description = "Хиты")
     private HitResponse hit;
     @Schema(description = "Скорость")
@@ -26,7 +26,7 @@ public class CreatureDetailResponse extends BaseResponse {
     @Schema(description = "Характеристики")
     private AbilitiesResponse abilities;
     @Schema(description = "Навыки")
-    private String skills;
+    private Collection<BonusDto> skills;
     @Schema(description = "Уязвимости")
     private String vulnerability;
     @Schema(description = "Сопротивление")

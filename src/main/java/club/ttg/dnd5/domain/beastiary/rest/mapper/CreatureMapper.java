@@ -12,6 +12,7 @@ import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
 import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
+import club.ttg.dnd5.domain.beastiary.rest.dto.BonusDto;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -234,14 +235,15 @@ public interface CreatureMapper {
     }
 
     @Named("toInit")
-    default String toInit(Creature creature) {
+    default BonusDto toInit(Creature creature) {
         var mod = creature.getAbilities().getMod(Ability.DEXTERITY);
         var pb = ChallengeRating.getPb(creature.getExperience());
         var initiative = mod + pb * creature.getInitiative().getMultiplier();
         String sign = initiative >= 0 ? "+" : "";
-        return String.format("%s%d (%d)",
-                sign, initiative,
-                10 + initiative);
+        return BonusDto.builder()
+                .value(String.format("%s%d", sign, initiative))
+                .label(String.valueOf(10 + initiative))
+                .build();
     }
 
     @Named("toHit")
@@ -326,28 +328,26 @@ public interface CreatureMapper {
     }
 
     @Named("toSkills")
-    default String toSkills(Creature creature) {
+    default Collection<BonusDto> toSkills(Creature creature) {
         if (CollectionUtils.isEmpty(creature.getSkills())) {
-            return "";
+            return null;
         }
         return creature.getSkills().stream()
-                .map(skill -> getSkill(creature, skill))
-                .collect(Collectors.joining(", "));
+                .map(skill -> BonusDto.builder()
+                    .label(skill.getSkill().getName())
+                    .value(getSkillBonus(skill, creature.getAbilities(), creature.getExperience()))
+                    .text(StringUtils.hasText(skill.getText()) ? " (" + skill.getText() + ")" : null)
+                    .build())
+                .collect(Collectors.toList());
     }
 
-    private String getSkill(Creature creature, CreatureSkill skill) {
-        return  skill.getSkill().getName()
-                + " +"
-                + getSkillBonus(skill, creature.getAbilities(), creature.getExperience())
-                + (StringUtils.hasText(skill.getText()) ? " (" + skill.getText() + ")" : "");
-    }
-
-    private int getSkillBonus(final CreatureSkill skill,
+    private String getSkillBonus(final CreatureSkill skill,
                               final CreatureAbilities abilities,
                               final long experience) {
-        return abilities.getMod(skill.getSkill().getAbility())
+        var bonus = abilities.getMod(skill.getSkill().getAbility())
                 + ChallengeRating.getPb(experience) * skill.getMultiplier()
                 + (skill.getBonus() == null ? 0 : skill.getBonus());
+        return bonus >=0 ? "+" + bonus : "" + bonus;
     }
 
     @Named("toVulnerabilities")
