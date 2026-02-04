@@ -42,10 +42,4 @@ public class UserController {
         UserDto userDto = SecurityUtils.getUserDto();
         return userDto.getRoles();
     }
-
-    @Operation(summary = "Количество зарегистрированных пользователей")
-    @GetMapping("/count")
-    public long getCount() {
-        return userService.count();
-    }
 }
