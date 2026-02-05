@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.statistics.rest.controller;
 
 
 import club.ttg.dnd5.domain.statistics.service.StatisticsService;
+import club.ttg.dnd5.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class StatisticsController {
     private final StatisticsService statisticsService;
+    private final UserService userService;
 
     @Operation(summary = "Количество материалов")
     @GetMapping("/count-all")
@@ -36,5 +38,11 @@ public class StatisticsController {
     )
     public Long countAllMaterials() {
         return statisticsService.countAllMaterials();
+    }
+
+    @Operation(summary = "Количество зарегистрированных пользователей")
+    @GetMapping("/count-user")
+    public long getCount() {
+        return userService.count();
     }
 }

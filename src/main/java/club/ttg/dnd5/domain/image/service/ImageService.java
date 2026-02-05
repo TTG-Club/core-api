@@ -249,8 +249,8 @@ public class ImageService
         String normalizedPrefix = normalizePrefix(prefix);
         String username = SecurityUtils.getUser().getUsername();
 
-        String originalName = extractBaseName(file.getOriginalFilename());
-        if (originalName.isBlank())
+        String originalName = file.getOriginalFilename();
+        if (originalName == null || originalName.isBlank())
         {
             originalName = "file";
         }
