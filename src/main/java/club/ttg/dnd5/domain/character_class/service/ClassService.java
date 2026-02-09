@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.service;
 
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
@@ -259,5 +260,11 @@ public class ClassService {
                             .image(image)
                             .build()));
         }
+    }
+
+    public List<ClassAbilityImprovementResponse> getAbilityImprovements() {
+        return classRepository.findAllByParentIsNull(Sort.by("name")).stream()
+                .map(classMapper::toAbilityResponse)
+                .toList();
     }
 }

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.controller;
 
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
@@ -82,6 +83,11 @@ public class ClassController {
     @GetMapping("/{parentUrl}/subclasses")
     public List<ClassShortResponse> getSubClassesByParentUrl(@PathVariable String parentUrl) {
         return classService.getSubclasses(parentUrl);
+    }
+
+    @GetMapping("/ability-improvement")
+    public List<ClassAbilityImprovementResponse> getAbilityImprovements() {
+        return classService.getAbilityImprovements();
     }
 
     @Secured("ADMIN")

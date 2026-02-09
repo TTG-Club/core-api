@@ -27,6 +27,11 @@ public interface ClassMapper {
 
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(target = "levels", source = "features", qualifiedByName = "getLevels")
+    ClassAbilityImprovementResponse toAbilityResponse(CharacterClass characterClass);
+
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "userId", source = "username")
     @Mapping(target = "gallery", ignore = true)
     @Mapping(target = "features", source = ".")
@@ -174,5 +179,20 @@ public interface ClassMapper {
             return characterClass.getImageUrl();
         }
         return characterClass.getParent().getImageUrl();
+    }
+
+    @Named("getLevels")
+    default List<Integer> getLevels(List<ClassFeature> features) {
+        for (ClassFeature classFeature : features) {
+            if (classFeature.getName().equals("Улучшение характеристик")) {
+                List<Integer> levels = new ArrayList<>(classFeature.getScaling().size() + 1);
+                levels.add(classFeature.getLevel());
+                for (var sub : classFeature.getScaling()) {
+                    levels.add(sub.getLevel());
+                }
+                return levels;
+            }
+        }
+        return Collections.emptyList();
     }
 }
