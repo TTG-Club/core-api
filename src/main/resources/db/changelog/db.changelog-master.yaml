@@ -157,3 +157,5 @@ databaseChangeLog:
       file: db/changelog/2025/12/21-01-create-article-table.yaml
   - include:
       file: db/changelog/2026/01/token-borders-create.yaml
+  - include:
+      file: db/changelog/2026/02/09-01-add-ability-improvement-to-class.yaml
