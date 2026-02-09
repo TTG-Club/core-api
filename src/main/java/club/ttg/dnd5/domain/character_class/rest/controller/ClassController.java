@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/classes")
-@Tag(name = "API для Классов", description = "API для управления классами")
+@Tag(name = "Классы", description = "API для управления классами")
 public class ClassController {
     private final ClassService classService;
 

@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/species")
-@Tag(name = "API для Видов", description = "API для управления видами")
+@Tag(name = "Виды", description = "API для управления видами")
 public class SpeciesController {
     private final SpeciesService speciesService;
 
