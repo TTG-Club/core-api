@@ -85,6 +85,7 @@ public class ClassController {
         return classService.getSubclasses(parentUrl);
     }
 
+    @Operation(summary = "Получение уровней улучшения характеристик класса")
     @GetMapping("/ability-improvement")
     public List<ClassAbilityImprovementResponse> getAbilityImprovements() {
         return classService.getAbilityImprovements();
