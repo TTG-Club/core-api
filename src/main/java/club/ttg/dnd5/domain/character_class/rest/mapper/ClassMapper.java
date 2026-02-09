@@ -184,7 +184,7 @@ public interface ClassMapper {
     @Named("getLevels")
     default List<Integer> getLevels(List<ClassFeature> features) {
         for (ClassFeature classFeature : features) {
-            if (classFeature.getName().equalsIgnoreCase("Улучшение характеристик")) {
+            if (classFeature.isAbilityImprovement()) {
                 List<Integer> levels = new ArrayList<>(classFeature.getScaling().size() + 1);
                 levels.add(classFeature.getLevel());
                 for (var sub : classFeature.getScaling()) {
