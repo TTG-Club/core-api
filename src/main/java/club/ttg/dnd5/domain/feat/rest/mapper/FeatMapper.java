@@ -38,7 +38,7 @@ public interface FeatMapper {
 
     @BaseMapping.BaseRequestNameMapping
     @BaseMapping.BaseSourceMapping
-    @Mapping(source = ".", target = "increase", qualifiedByName = "getIncrease")
+    @Mapping(source = ".", target = "abilityScoreIncreaseOptions", qualifiedByName = "getAbilityScoreIncreaseOptions")
     FeatSelectResponse toSelect(Feat feat);
 
     @Named("capitalize")
@@ -46,8 +46,8 @@ public interface FeatMapper {
         return StringUtils.capitalize(string);
     }
 
-    @Named("getIncrease")
-    default int getIncrease(Feat feat) {
+    @Named("getAbilityScoreIncreaseOptions")
+    default int getAbilityScoreIncreaseOptions(Feat feat) {
         if (feat.getName().equals("Улучшение характеристик")) {
             return 2;
         }
