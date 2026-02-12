@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
+import club.ttg.dnd5.domain.character_class.model.AbilityBonus;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -35,6 +36,9 @@ public class ClassFeatureRequest {
 
     @Schema(description = "Умение увеличивает характеристики")
     private boolean abilityImprovement;
+
+    @Schema(description = "Бонус к увеличивает характеристик")
+    private AbilityBonus abilityBonus;
 
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;

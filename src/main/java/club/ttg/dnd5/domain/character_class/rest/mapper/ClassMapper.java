@@ -28,6 +28,7 @@ public interface ClassMapper {
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "levels", source = "features", qualifiedByName = "getLevels")
+    @Mapping(target = "abilityBonus", source = "features", qualifiedByName = "getAbilityBonus")
     ClassAbilityImprovementResponse toAbilityResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseSourceMapping
@@ -194,5 +195,18 @@ public interface ClassMapper {
             }
         }
         return Collections.emptyList();
+    }
+
+    @Named("getAbilityBonus")
+    default List<AbilityBonusResponse> getAbilityBonus(List<ClassFeature> features) {
+        return features.stream()
+                .filter(f -> f.getAbilityBonus() != null && !f.getAbilityBonus().getAbilities().isEmpty())
+                .map(f -> AbilityBonusResponse.builder()
+                                .level(f.getLevel())
+                                .bonus(f.getAbilityBonus().getBonus())
+                                .abilities(f.getAbilityBonus().getAbilities())
+                                .upto(f.getAbilityBonus().getUpto())
+                        .build())
+                .toList();
     }
 }
