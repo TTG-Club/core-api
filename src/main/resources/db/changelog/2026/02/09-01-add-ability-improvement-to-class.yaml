@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-02-09-class-features-add-abilityImprovement
+      author: ttg
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE "class" c
+              SET features =
+              (
+                SELECT jsonb_agg(
+                  CASE
+                    WHEN (elem->>'name' = 'Улучшение характеристик')
+                         AND (elem->'abilityImprovement') IS NULL
+                      THEN elem || jsonb_build_object('abilityImprovement', true)
+                    ELSE elem
+                  END
+                )
+                FROM jsonb_array_elements(c.features) AS elem
+              )
+              WHERE c.features IS NOT NULL
+                AND jsonb_typeof(c.features) = 'array'
+                AND EXISTS (
+                  SELECT 1
+                  FROM jsonb_array_elements(c.features) AS e
+                  WHERE e->>'name' = 'Улучшение характеристик'
+                );
+
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE "class" c
+              SET features =
+              (
+                SELECT jsonb_agg(
+                  CASE
+                    WHEN (elem->>'name' = 'Улучшение характеристик')
+                      THEN (elem - 'abilityImprovement')
+                    ELSE elem
+                  END
+                )
+                FROM jsonb_array_elements(c.features) AS elem
+              )
+              WHERE c.features IS NOT NULL
+                AND jsonb_typeof(c.features) = 'array'
+                AND EXISTS (
+                  SELECT 1
+                  FROM jsonb_array_elements(c.features) AS e
+                  WHERE e->>'name' = 'Улучшение характеристик'
+                    AND (e->'abilityImprovement') IS NOT NULL
+                );
