@@ -52,4 +52,7 @@ public class ClassRequest extends BaseRequest {
 
     @Schema(description = "Тип заклинателя для отрисовки таблицы ячеек")
     private CasterType casterType;
+
+    @Schema(description = "Шаблон распределения характеристик")
+    private List<Integer> abilityTemplate;
 }

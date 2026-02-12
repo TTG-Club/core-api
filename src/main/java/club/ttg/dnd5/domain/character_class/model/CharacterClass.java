@@ -87,6 +87,10 @@ public class CharacterClass extends NamedEntity {
     @Column(columnDefinition = "jsonb", name = "class_table")
     private List<ClassTableColumn> table;
 
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", name = "ability_template")
+    private List<Integer> abilityTemplate;
+
     @ManyToOne
     @JoinColumn(name = "source")
     private Source source;
