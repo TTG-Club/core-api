@@ -56,5 +56,6 @@ public class ClassFeature {
         this.scaling = classFeatureRequest.getScaling();
         this.key = SlugifyUtil.getSlug(this.name);
         this.hideInSubclasses = classFeatureRequest.isHideInSubclasses();
+        this.abilityBonus = classFeatureRequest.getAbilityBonus();
     }
 }
