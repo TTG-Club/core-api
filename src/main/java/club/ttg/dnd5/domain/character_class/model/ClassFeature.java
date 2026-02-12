@@ -45,6 +45,9 @@ public class ClassFeature {
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
 
+    @Schema(description = "Бонус к увеличивает характеристик")
+    private AbilityBonus abilityBonus;
+
     public ClassFeature(ClassFeatureRequest classFeatureRequest) {
         this.level = classFeatureRequest.getLevel();
         this.name = classFeatureRequest.getName();
