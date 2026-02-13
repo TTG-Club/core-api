@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.controller;
 
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
@@ -22,7 +23,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/classes")
-@Tag(name = "API для Классов", description = "API для управления классами")
+@Tag(name = "Классы", description = "API для управления классами")
 public class ClassController {
     private final ClassService classService;
 
@@ -82,6 +83,12 @@ public class ClassController {
     @GetMapping("/{parentUrl}/subclasses")
     public List<ClassShortResponse> getSubClassesByParentUrl(@PathVariable String parentUrl) {
         return classService.getSubclasses(parentUrl);
+    }
+
+    @Operation(summary = "Получение уровней улучшения характеристик класса")
+    @GetMapping("/ability-improvement")
+    public List<ClassAbilityImprovementResponse> getAbilityImprovements() {
+        return classService.getAbilityImprovements();
     }
 
     @Secured("ADMIN")

@@ -30,7 +30,7 @@ public class FeatSelectResponse{
     @Schema(description = "Улучшаемые характеристики", examples = {"STRENGTH", "DEXTERITY", "CONSTITUTION"})
     private Collection<Ability> abilities;
     @Schema(description = "Количество улучшаемых характеристик")
-    private int increase;
+    private int abilityScoreIncreaseOptions;
 
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
     private SourceResponse source;

@@ -39,6 +39,9 @@ public class ClassFeature {
     @Schema(description = "Масштабирование особенности по уровням")
     List<ClassFeatureScaling> scaling;
 
+    @Schema(description = "Умение увеличивает характеристики")
+    private boolean abilityImprovement;
+
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
 
