@@ -296,31 +296,6 @@ public class ImageService
         return filename.substring(dot + 1).toLowerCase();
     }
 
-    private String extractBaseName(final String filename)
-    {
-        if (filename == null)
-        {
-            return "";
-        }
-
-        String name = filename;
-        int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
-        if (slash >= 0)
-        {
-            name = name.substring(slash + 1);
-        }
-
-        int dot = name.lastIndexOf('.');
-        if (dot > 0)
-        {
-            name = name.substring(0, dot);
-        }
-
-        return name
-                .trim()
-                .replaceAll("[^a-zA-Z0-9-_]", "_");
-    }
-
     private ImageDimensions readDimensions(final MultipartFile file)
     {
         try (InputStream in = file.getInputStream();

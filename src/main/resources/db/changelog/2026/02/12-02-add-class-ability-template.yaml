@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 12-02-add-class-ability-template
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: ability_template
+                  type: jsonb
