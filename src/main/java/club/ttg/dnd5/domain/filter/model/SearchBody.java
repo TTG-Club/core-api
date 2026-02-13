@@ -15,38 +15,30 @@ import org.springframework.util.StringUtils;
 @Setter
 public class SearchBody {
 
-    FilterInfo filter;
+    private FilterInfo sources;
+    private FilterInfo filter;
 
-    public static SearchBody parse(final String filter, ObjectMapper objectMapper)
-    {
-        if (!StringUtils.hasText(filter))
-        {
-            return new SearchBody(new FilterInfo());
+
+    public static SearchBody parse(final String filter, ObjectMapper objectMapper) {
+        if (!StringUtils.hasText(filter)) {
+            return new SearchBody(new FilterInfo(), new FilterInfo());
         }
 
         final String json;
-        try
-        {
+        try {
             json = UrlParameterConverter.decompression(filter);
-        }
-        catch (Exception e)
-        {
-            return new SearchBody(new FilterInfo());
+        } catch (Exception e) {
+            return new SearchBody(new FilterInfo(), new FilterInfo());
         }
 
-        if (!StringUtils.hasText(json))
-        {
-            return new SearchBody(new FilterInfo());
+        if (!StringUtils.hasText(json)) {
+            return new SearchBody(new FilterInfo(), new FilterInfo());
         }
 
-        try
-        {
-            FilterInfo filterInfo = objectMapper.readValue(json, FilterInfo.class);
-            return new SearchBody(filterInfo);
-        }
-        catch (JsonProcessingException e)
-        {
-            return new SearchBody(new FilterInfo());
+        try {
+            return objectMapper.readValue(json, SearchBody.class);
+        } catch (JsonProcessingException e) {
+            return new SearchBody(new FilterInfo(), new FilterInfo());
         }
     }
 }

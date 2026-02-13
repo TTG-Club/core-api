@@ -46,6 +46,9 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                 .orElse((BooleanTemplate) TRUE_EXPRESSION)
                 .and(Optional.ofNullable(searchBody)
                         .map(SearchBody::getFilter)
+                        .orElseGet(savedFilterService::getDefaultFilterInfo).getQuery())
+                .and(Optional.ofNullable(searchBody)
+                        .map(SearchBody::getSources)
                         .orElseGet(savedFilterService::getDefaultFilterInfo).getQuery());
 
         JPASQLQuery<?> query = new JPASQLQuery<Void>(entityManager, dialect);
