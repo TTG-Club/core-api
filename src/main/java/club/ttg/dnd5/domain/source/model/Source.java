@@ -8,8 +8,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
-import java.time.LocalDate;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -40,10 +38,6 @@ public class Source extends Timestamped {
     @Column(columnDefinition = "jsonb")
     private PublisherDto publisher;
 
-    /**
-     * Дата публикации
-     */
-    private LocalDate published;
     /**
      * Перевод
      */
