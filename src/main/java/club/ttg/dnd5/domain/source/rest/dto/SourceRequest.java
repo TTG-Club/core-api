@@ -14,8 +14,10 @@ public class SourceRequest extends BaseRequest {
     private String acronym;
     @Schema(description = "тип источника")
     private SourceType type;
-    @Schema(description = "дата выхода книги")
-    private String published;
+    @Schema(description = "Издатель")
+    private PublisherDto publisher;
+    @Schema(description = "Перевод")
+    private TranslationDto translation;
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "список авторов")
     private String authors;

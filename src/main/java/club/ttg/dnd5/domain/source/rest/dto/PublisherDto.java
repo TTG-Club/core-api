@@ -12,9 +12,9 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TranslationDto {
-    @Schema(description = "Переводчики")
-    private String authors;
-    @Schema(description = "Дата перевода")
-    private LocalDate translationDate;
+public class PublisherDto {
+    @Schema(description = "Издатель")
+    private String name;
+    @Schema(description = "Дата издания")
+    private LocalDate published;
 }

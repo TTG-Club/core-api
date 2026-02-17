@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 17-01-source-columns
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: publisher
+                  type: jsonb
+              - column:
+                  name: translation
+                  type: jsonb
+        - dropColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: published
