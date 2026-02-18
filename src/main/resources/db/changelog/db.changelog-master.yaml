@@ -163,3 +163,5 @@ databaseChangeLog:
       file: db/changelog/2026/02/12-02-add-class-ability-template.yaml
   - include:
       file: db/changelog/2026/02/17-01-source-columns.yaml
+  - include:
+      file: db/changelog/2026/02/18-01-add-primary-ability-delimiter.yaml

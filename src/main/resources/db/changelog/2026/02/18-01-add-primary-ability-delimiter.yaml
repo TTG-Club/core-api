@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 18-01-add-primary-ability-delimiter
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: delimiter_primary
+                  type: varchar2(30)

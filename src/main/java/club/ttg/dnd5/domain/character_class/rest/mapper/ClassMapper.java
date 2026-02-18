@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.mapper;
 
+import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.*;
 import club.ttg.dnd5.domain.character_class.rest.dto.*;
@@ -41,7 +42,7 @@ public interface ClassMapper {
     @Mapping(target = "proficiency.tool", source = "toolProficiency")
     @Mapping(target = "proficiency.skill", source = "skillProficiency", qualifiedByName = "skillProficiencyToString")
     @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
-    @Mapping(target = "primaryCharacteristics", source = "primaryCharacteristics", qualifiedByName = "toPrimaryCharacteristics")
+    @Mapping(target = "primaryCharacteristics", source = ".", qualifiedByName = "toPrimaryCharacteristics")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
     @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
@@ -97,24 +98,35 @@ public interface ClassMapper {
     }
 
     @Named("toPrimaryCharacteristics")
-    default String toPrimaryCharacteristics(Set<Ability> abilities) {
-        var list = abilities.stream().toList();
+    default String toPrimaryCharacteristics(CharacterClass characterClass) {
+        var list = characterClass.getPrimaryCharacteristics().stream().toList();
+
         if (list.isEmpty()) {
             return "";
         }
         if (list.size() == 1) {
             return list.getFirst().getName();
         }
-        if (abilities.size() == 2) {
-            return list.getFirst().getName() + " или " + list.get(1).getName();
+        var primaryDelimiter = characterClass.getDelimiterPrimary() == null
+                ? characterClass.getParent() == null
+                ? Delimiter.AND : characterClass.getParent().getDelimiterPrimary()
+                : characterClass.getDelimiterPrimary();
+        if (list.size() == 2) {
+            return "%s %s %s".formatted(
+                    list.getFirst().getName(),
+                    primaryDelimiter.getName(),
+                    list.get(1).getName());
         }
-
-        String prefix = abilities.stream()
+        var delimiter = primaryDelimiter == Delimiter.AND
+                ? ", " : primaryDelimiter.getName() + " " ;
+        String prefix = list.stream()
                 .map(Ability::getName)
-                .limit(abilities.size() - 1)
-                .collect(Collectors.joining(", "));
+                .limit(list.size() - 1)
+                .collect(Collectors.joining(delimiter));
 
-        return prefix + " или " + list.getLast().getName();
+        return "%s %s %s".formatted(prefix,
+                primaryDelimiter.getName(),
+                list.getLast().getName());
     }
 
     @Named("toSavingThrowsString")
