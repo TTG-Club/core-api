@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
@@ -30,6 +31,9 @@ public class ClassRequest extends BaseRequest {
 
     @Schema(description = "Основные характеристики")
     private Set<Ability> primaryCharacteristics;
+
+    @Schema(description = "Разделитель для основные характеристик")
+    private Delimiter delimiterPrimary;
 
     @Schema(description = "Владение спасбросками")
     private Set<Ability> savingThrows;
