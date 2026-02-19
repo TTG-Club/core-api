@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.filter.model;
 
 public enum FilterType {
-    SPELL_FILTER
+    SPELL_FILTER,
+    SOURCE_FILTER
 }
