@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.model;
 
+import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
@@ -37,30 +38,60 @@ import java.util.Set;
         }
 )
 public class CharacterClass extends NamedEntity {
-
+    /**
+     * Родительский класс для подкласса
+     */
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "parent_url")
     private CharacterClass parent;
 
+    /**
+     * Подклассы
+     */
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     private List<CharacterClass> subclasses;
 
+    /**
+     * Кость хитов
+     */
     private Dice hitDice;
 
+    /**
+     * Основные характеристики
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Set<Ability> primaryCharacteristics;
 
+    /**
+     * Разделитель для основных характеристик
+     */
+    @Column(name = "delimiter_primary")
+    @Enumerated(EnumType.STRING)
+    private Delimiter delimiterPrimary;
+
+    /**
+     * Умение ношение доспехов
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private ArmorProficiency armorProficiency;
 
+    /**
+     * Умение обращения с оружием
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private WeaponProficiency weaponProficiency;
 
+    /**
+     * Умение обращения с инструментами
+     */
     private String toolProficiency;
 
+    /**
+     * Умение в навыках
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private SkillProficiency skillProficiency;
@@ -69,23 +100,45 @@ public class CharacterClass extends NamedEntity {
     @Column(name = "multiclass", columnDefinition = "jsonb")
     private MulticlassProficiency multiclassProficiency;
 
+    /**
+     * Снаряжение
+     */
     @Column(columnDefinition = "TEXT")
     private String equipment;
 
+    /**
+     * Тип заклинателя
+     */
     @Enumerated(EnumType.STRING)
     private CasterType casterType;
 
+    /**
+     * Спасброски
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Set<Ability> savingThrows;
 
+    /**
+     * Умения класса
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private List<ClassFeature> features;
 
+    /**
+     * Таблица класса
+     */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb", name = "class_table")
     private List<ClassTableColumn> table;
+
+    /**
+     * Шаблон характеристик для стандартного набора
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", name = "ability_template")
+    private List<Integer> abilityTemplate;
 
     @ManyToOne
     @JoinColumn(name = "source")

@@ -39,8 +39,14 @@ public class ClassFeature {
     @Schema(description = "Масштабирование особенности по уровням")
     List<ClassFeatureScaling> scaling;
 
+    @Schema(description = "Умение увеличивает характеристики")
+    private boolean abilityImprovement;
+
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
+
+    @Schema(description = "Бонус к увеличивает характеристик")
+    private AbilityBonus abilityBonus;
 
     public ClassFeature(ClassFeatureRequest classFeatureRequest) {
         this.level = classFeatureRequest.getLevel();
@@ -50,5 +56,7 @@ public class ClassFeature {
         this.scaling = classFeatureRequest.getScaling();
         this.key = SlugifyUtil.getSlug(this.name);
         this.hideInSubclasses = classFeatureRequest.isHideInSubclasses();
+        this.abilityImprovement = classFeatureRequest.isAbilityImprovement();
+        this.abilityBonus = classFeatureRequest.getAbilityBonus();
     }
 }
