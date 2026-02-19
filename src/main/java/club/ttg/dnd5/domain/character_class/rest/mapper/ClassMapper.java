@@ -59,7 +59,6 @@ public interface ClassMapper {
     @Mapping(target = "parent", ignore = true)
     @Mapping(target = "subclasses", ignore = true)
     @Mapping(target = "hiddenEntity", ignore = true)
-
     @ToEntityMapping
     void updateEntity(@MappingTarget CharacterClass existingClass,
                                 ClassRequest request,
@@ -75,6 +74,8 @@ public interface ClassMapper {
     @Mapping(target = "proficiency.tool", source = "toolProficiency")
     @Mapping(target = "proficiency.skill", source = "skillProficiency")
     @Mapping(target = "multiclassProficiency", source = "multiclassProficiency")
+    @Mapping(target = "primaryCharacteristics.values", source = "primaryCharacteristics")
+    @Mapping(target = "primaryCharacteristics.delimiter", source = "delimiterPrimary")
     ClassRequest toRequest(CharacterClass entity);
 
     @Mapping(target = "url", source = "request.url")
@@ -92,7 +93,8 @@ public interface ClassMapper {
     @Mapping(target = "skillProficiency", source = "request.proficiency.skill")
     @Mapping(target = "equipment", source = "request.equipment")
     @Mapping(target = "casterType", source = "request.casterType")
-    @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics")
+    @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics.values")
+    @Mapping(target = "delimiterPrimary", source = "request.primaryCharacteristics.delimiter")
     @Mapping(target = "multiclassProficiency", source = "request.multiclassProficiency")
     @interface ToEntityMapping {
     }
