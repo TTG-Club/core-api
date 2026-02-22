@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 @AllArgsConstructor
 @Getter
 @Setter
-public class SearchBody {
+public class SearchBody{
 
     private FilterInfo sources;
     private FilterInfo filter;

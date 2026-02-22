@@ -1,12 +1,12 @@
 package club.ttg.dnd5.domain.source.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
-
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +31,24 @@ public class SourceController {
     @GetMapping("/filters")
     public FilterInfo getFilter() {
         return sourceSavedFilterService.getDefaultFilterInfo();
+    }
+
+    @Operation(summary = "Получить сохраненный фильтр по умолчанию")
+    @GetMapping("/saved-filter")
+    public SourceSavedFilterResponse SourceSavedFilter(){
+        return sourceSavedFilterService.getSavedFilter();
+    }
+
+    @Operation(summary = "Создать сохраненный фильтр")
+    @PostMapping("/saved-filter")
+    public SourceSavedFilterResponse saveSourceFilter(@RequestBody FilterInfo sourceFilter){
+        return sourceSavedFilterService.createFilter(sourceFilter);
+    }
+
+    @Operation(summary = "Обновить сохраненный фильтр")
+    @PutMapping("/saved-filter")
+    public SourceSavedFilterResponse updateSourceFilter(@RequestBody FilterInfo sourceFilter){
+        return sourceSavedFilterService.updateFilter(sourceFilter);
     }
 
     @Operation(summary = "Получить источник", description = "Возвращает детальную информацию об источнике")
