@@ -3,10 +3,10 @@ package club.ttg.dnd5.domain.source.rest.controller;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -58,7 +58,7 @@ public class SourceController {
      */
     @PostMapping("/search")
     @Operation(summary = "Получить источники", description = "Возвращает список источников")
-    public Collection<ShortResponse> search(@RequestParam(name = "query", required = false)
+    public Collection<SourceShortResponse> search(@RequestParam(name = "query", required = false)
                                             @Valid
                                             @Size(min = 2)
                                             @Schema(description = "Строка поиска, если null-отдаются все сущности")

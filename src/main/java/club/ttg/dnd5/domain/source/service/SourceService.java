@@ -4,8 +4,8 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.repository.SourceRepository;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
 import club.ttg.dnd5.domain.source.rest.mapper.SourceMapper;
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
@@ -28,7 +28,7 @@ public class SourceService {
         return sourceRepository.findAll();
     }
 
-    public List<ShortResponse> search(String searchLine) {
+    public List<SourceShortResponse> search(String searchLine) {
         if (StringUtils.hasText(searchLine)) {
             var invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
             return sourceRepository.findBySearchLine(searchLine, invertedSearchLine, Sort.by("name"))
