@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -14,7 +15,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class TranslationDto {
     @Schema(description = "Переводчики")
-    private String authors;
+    private List<String> authors;
     @Schema(description = "Дата перевода")
-    private LocalDate translationDate;
+    private LocalDate date;
 }
