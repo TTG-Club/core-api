@@ -4,9 +4,11 @@ import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,19 +37,19 @@ public class SourceController {
 
     @Operation(summary = "Получить сохраненный фильтр по умолчанию")
     @GetMapping("/saved-filter")
-    public SourceSavedFilterResponse SourceSavedFilter(){
+    public SourceSavedFilterResponse SourceSavedFilter() {
         return sourceSavedFilterService.getSavedFilter();
     }
 
     @Operation(summary = "Создать сохраненный фильтр")
     @PostMapping("/saved-filter")
-    public SourceSavedFilterResponse saveSourceFilter(@RequestBody FilterInfo sourceFilter){
+    public SourceSavedFilterResponse saveSourceFilter(@RequestBody FilterInfo sourceFilter) {
         return sourceSavedFilterService.createFilter(sourceFilter);
     }
 
     @Operation(summary = "Обновить сохраненный фильтр")
     @PutMapping("/saved-filter")
-    public SourceSavedFilterResponse updateSourceFilter(@RequestBody FilterInfo sourceFilter){
+    public SourceSavedFilterResponse updateSourceFilter(@RequestBody FilterInfo sourceFilter) {
         return sourceSavedFilterService.updateFilter(sourceFilter);
     }
 
@@ -76,11 +78,11 @@ public class SourceController {
      */
     @PostMapping("/search")
     @Operation(summary = "Получить источники", description = "Возвращает список источников")
-    public Collection<ShortResponse> search(@RequestParam(name = "query", required = false)
-                                            @Valid
-                                            @Size(min = 2)
-                                            @Schema(description = "Строка поиска, если null-отдаются все сущности")
-                                            String searchLine) {
+    public Collection<SourceShortResponse> search(@RequestParam(name = "query", required = false)
+                                                  @Valid
+                                                  @Size(min = 2)
+                                                  @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                                  String searchLine) {
         return sourceService.search(searchLine);
     }
 
@@ -90,9 +92,9 @@ public class SourceController {
         return sourceService.save(request);
     }
 
-    @PutMapping("/{url}")
+    @PutMapping
     @Operation(summary = "Обновить источник", description = "Обновление источника")
-    public String update(@PathVariable String url, @RequestBody SourceRequest request) {
-        return sourceService.update(url, request);
+    public String update(@RequestBody SourceRequest request) {
+        return sourceService.update(request);
     }
 }

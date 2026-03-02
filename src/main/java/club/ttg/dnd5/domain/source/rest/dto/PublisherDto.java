@@ -16,5 +16,5 @@ public class PublisherDto {
     @Schema(description = "Издатель")
     private String name;
     @Schema(description = "Дата издания")
-    private LocalDate published;
+    private LocalDate date;
 }
