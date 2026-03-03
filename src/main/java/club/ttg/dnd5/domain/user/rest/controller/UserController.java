@@ -1,7 +1,5 @@
 package club.ttg.dnd5.domain.user.rest.controller;
 
-import club.ttg.dnd5.domain.user.model.Role;
-import club.ttg.dnd5.domain.user.repository.RoleRepository;
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
 import club.ttg.dnd5.domain.user.rest.dto.UserProfileShortResponse;
 import club.ttg.dnd5.domain.user.service.UserService;
@@ -24,7 +22,6 @@ import java.util.UUID;
 public class UserController
 {
     private final UserService userService;
-    private final RoleRepository roleRepository;
 
     @Secured("ADMIN")
     @Operation(summary = "Получение пользователей")
@@ -34,14 +31,6 @@ public class UserController
     )
     {
         return userService.getUsers(search);
-    }
-
-    @Secured("ADMIN")
-    @Operation(summary = "Получение списка всех ролей")
-    @GetMapping("/roles")
-    public Collection<String> getUserRoles()
-    {
-        return roleRepository.findAll().stream().map(Role::getName).toList();
     }
 
     @Secured("USER")
@@ -62,7 +51,7 @@ public class UserController
 
     @Secured("USER")
     @Operation(summary = "Получение списка ролей текущего пользователя")
-    @GetMapping("/current/roles")
+    @GetMapping("/roles")
     public List<String> getRoles()
     {
         UserDto userDto = SecurityUtils.getUserDto();
