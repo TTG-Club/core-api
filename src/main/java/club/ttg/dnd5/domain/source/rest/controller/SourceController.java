@@ -1,9 +1,11 @@
 package club.ttg.dnd5.domain.source.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
+import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 
@@ -33,6 +35,24 @@ public class SourceController {
         return sourceSavedFilterService.getDefaultFilterInfo();
     }
 
+    @Operation(summary = "Получить сохраненный фильтр по умолчанию")
+    @GetMapping("/saved-filter")
+    public SourceSavedFilterResponse SourceSavedFilter() {
+        return sourceSavedFilterService.getSavedFilter();
+    }
+
+    @Operation(summary = "Создать сохраненный фильтр")
+    @PostMapping("/saved-filter")
+    public SourceSavedFilterResponse saveSourceFilter(@RequestBody FilterInfo sourceFilter) {
+        return sourceSavedFilterService.createFilter(sourceFilter);
+    }
+
+    @Operation(summary = "Обновить сохраненный фильтр")
+    @PutMapping("/saved-filter")
+    public SourceSavedFilterResponse updateSourceFilter(@RequestBody FilterInfo sourceFilter) {
+        return sourceSavedFilterService.updateFilter(sourceFilter);
+    }
+
     @Operation(summary = "Получить источник", description = "Возвращает детальную информацию об источнике")
     @GetMapping("/{url}")
     public SourceDetailResponse getByAcronym(@PathVariable String url) {
@@ -59,10 +79,10 @@ public class SourceController {
     @PostMapping("/search")
     @Operation(summary = "Получить источники", description = "Возвращает список источников")
     public Collection<SourceShortResponse> search(@RequestParam(name = "query", required = false)
-                                            @Valid
-                                            @Size(min = 2)
-                                            @Schema(description = "Строка поиска, если null-отдаются все сущности")
-                                            String searchLine) {
+                                                  @Valid
+                                                  @Size(min = 2)
+                                                  @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                                  String searchLine) {
         return sourceService.search(searchLine);
     }
 

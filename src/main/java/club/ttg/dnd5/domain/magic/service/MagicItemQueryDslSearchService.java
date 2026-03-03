@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.magic.service;
 import club.ttg.dnd5.domain.filter.service.AbstractQueryDslSearchService;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.QMagicItem;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.Expressions;
@@ -14,8 +15,10 @@ import org.springframework.stereotype.Service;
 public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchService<MagicItem, QMagicItem> {
     private static final QMagicItem MAGIC_ITEM = QMagicItem.magicItem;
 
-    public MagicItemQueryDslSearchService(MagicItemFilterService filterService, EntityManager entityManager) {
-        super(filterService, entityManager, MAGIC_ITEM);
+    public MagicItemQueryDslSearchService(MagicItemFilterService filterService,
+                                          SourceSavedFilterService sourceSavedFilterService,
+                                          EntityManager entityManager) {
+        super(filterService, sourceSavedFilterService, entityManager, MAGIC_ITEM);
     }
 
     @Override

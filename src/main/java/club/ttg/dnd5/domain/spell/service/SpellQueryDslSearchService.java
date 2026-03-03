@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.filter.service.AbstractQueryDslSearchService;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import com.querydsl.core.types.OrderSpecifier;
@@ -12,8 +13,10 @@ public class SpellQueryDslSearchService extends AbstractQueryDslSearchService<Sp
     private static final QSpell SPELL = QSpell.spell;
     private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{SPELL.level.asc(), SPELL.name.asc()};
 
-    public SpellQueryDslSearchService(SpellFilterService spellFilterService, EntityManager entityManager) {
-        super(spellFilterService, entityManager, SPELL);
+    public SpellQueryDslSearchService(SpellFilterService spellFilterService,
+                                      SourceSavedFilterService sourceSavedFilterService,
+                                      EntityManager entityManager) {
+        super(spellFilterService, sourceSavedFilterService, entityManager, SPELL);
     }
 
     @Override
