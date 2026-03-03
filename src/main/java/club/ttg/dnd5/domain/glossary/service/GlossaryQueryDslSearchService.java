@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.glossary.service;
 import club.ttg.dnd5.domain.filter.service.AbstractQueryDslSearchService;
 import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.glossary.model.QGlossary;
-import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import com.querydsl.core.types.OrderSpecifier;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
@@ -13,10 +12,8 @@ public class GlossaryQueryDslSearchService extends AbstractQueryDslSearchService
     private static final QGlossary GLOSSARY = QGlossary.glossary;
     private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{GLOSSARY.tagCategory.asc(), GLOSSARY.name.asc()};
 
-    public GlossaryQueryDslSearchService(GlossaryFilterService glossaryFilterService,
-                                         SourceSavedFilterService sourceSavedFilterService,
-                                         EntityManager entityManager) {
-        super(glossaryFilterService, sourceSavedFilterService, entityManager, GLOSSARY);
+    public GlossaryQueryDslSearchService(EntityManager entityManager) {
+        super(entityManager, GLOSSARY);
     }
 
     @Override
