@@ -62,7 +62,7 @@ public class UserController
 
     @Secured("USER")
     @Operation(summary = "Получение списка ролей текущего пользователя")
-    @GetMapping("/roles")
+    @GetMapping("/current/roles")
     public List<String> getRoles()
     {
         UserDto userDto = SecurityUtils.getUserDto();
