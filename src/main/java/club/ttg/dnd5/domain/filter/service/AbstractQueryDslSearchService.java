@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.filter.service;
 
 import club.ttg.dnd5.domain.filter.model.SearchBody;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -23,6 +24,7 @@ import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
 @RequiredArgsConstructor
 public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<E>> {
     protected final AbstractSavedFilterService<?> savedFilterService;
+    protected final SourceSavedFilterService sourceSavedFilterService;
     protected final EntityManager entityManager;
     protected final Q entityPath;
     protected static final SQLTemplates dialect = new PostgreSQLTemplates();
@@ -49,7 +51,7 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                         .orElseGet(savedFilterService::getDefaultFilterInfo).getQuery())
                 .and(Optional.ofNullable(searchBody)
                         .map(SearchBody::getSources)
-                        .orElseGet(savedFilterService::getDefaultFilterInfo).getQuery());
+                        .orElseGet(sourceSavedFilterService::getDefaultFilterInfo).getQuery());
 
         JPASQLQuery<?> query = new JPASQLQuery<Void>(entityManager, dialect);
         return query.select(entityPath).from(entityPath).where(predicate).orderBy(getOrder()).fetch();

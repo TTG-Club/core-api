@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.beastiary.service;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.domain.filter.service.AbstractQueryDslSearchService;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import com.querydsl.core.types.OrderSpecifier;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
@@ -13,8 +14,9 @@ public class CreatureQueryDslSearchService extends AbstractQueryDslSearchService
     private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{CREATURE.experience.asc(), CREATURE.name.asc()};
 
     public CreatureQueryDslSearchService(CreatureFilterService creatureFilterService,
+                                         SourceSavedFilterService sourceSavedFilterService,
                                          EntityManager entityManager) {
-        super(creatureFilterService, entityManager, CREATURE);
+        super(creatureFilterService,sourceSavedFilterService, entityManager, CREATURE);
     }
 
     @Override
