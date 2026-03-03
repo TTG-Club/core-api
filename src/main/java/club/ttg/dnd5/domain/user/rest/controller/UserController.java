@@ -38,7 +38,7 @@ public class UserController
 
     @Secured("ADMIN")
     @Operation(summary = "Получение списка всех ролей")
-    @GetMapping
+    @GetMapping("/roles")
     public Collection<String> getUserRoles()
     {
         return roleRepository.findAll().stream().map(Role::getName).toList();
