@@ -39,7 +39,7 @@ public class UserService
     {
         return userRepository.findAll(
                         UserSpecifications.nicknameOrEmailContains(search),
-                        Sort.by("name")
+                        Sort.by("username")
                 ).stream()
                 .map(userMapper::toDto)
                 .toList();
