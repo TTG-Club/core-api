@@ -3,25 +3,21 @@ package club.ttg.dnd5.domain.spell.service;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-import club.ttg.dnd5.domain.spell.model.filter.SpellSavedFilter;
-import club.ttg.dnd5.domain.spell.repository.SpellSavedFilterRepository;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.spell.rest.dto.filter.*;
-import club.ttg.dnd5.domain.user.service.UserService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFilter> {
-    private static final String FILTER_VERSION = "1.0";
+public class SpellFilterService extends AbstractSavedFilterService {
     private final ClassService classService;
 
-    public SpellFilterService(ClassService classService,
-            SpellSavedFilterRepository spellSavedFilterRepository,
-            UserService userService) {
-        super(spellSavedFilterRepository, userService);
+    public SpellFilterService(SourceSavedFilterService sourceSavedFilterService, ClassService classService) {
+        super(sourceSavedFilterService);
         this.classService = classService;
     }
+
 
     @Override
     protected FilterInfo buildDefaultFilterInfo() {
@@ -43,6 +39,6 @@ public class SpellFilterService extends AbstractSavedFilterService<SpellSavedFil
                 SpellDurationFilterRange.getDefault(),
                 SpellComponentsFilterGroup.getDefault(),
                 SpellConditionFilterGroup.getDefault()
-        ), FILTER_VERSION);
+        ));
     }
 }

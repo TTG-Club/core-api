@@ -1,11 +1,10 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
-import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -74,7 +73,7 @@ public class CreatureController {
     }
 
     @GetMapping("/filters")
-    public FilterInfo getFilters() {
+    public SearchBody getFilters() {
         return creatureFilterService.getDefaultFilterInfo();
     }
 

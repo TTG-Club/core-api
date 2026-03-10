@@ -1,5 +1,8 @@
 package club.ttg.dnd5.domain.user.rest.controller;
 
+import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
+import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
 import club.ttg.dnd5.domain.user.rest.dto.UserProfileShortResponse;
 import club.ttg.dnd5.domain.user.service.UserService;
@@ -19,41 +22,55 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-public class UserController
-{
+public class UserController {
     private final UserService userService;
+    private final SourceSavedFilterService sourceSavedFilterService;
 
     @Secured("ADMIN")
     @Operation(summary = "Получение пользователей")
     @GetMapping
     public Collection<UserDto> getUsers(
             @RequestParam(required = false) String search
-    )
-    {
+    ) {
         return userService.getUsers(search);
     }
 
     @Secured("USER")
     @Operation(summary = "Получение профиля пользователя")
     @GetMapping("/profile")
-    public UserDto getUser()
-    {
+    public UserDto getUser() {
         return SecurityUtils.getUserDto();
     }
 
     @Secured("USER")
     @Operation(summary = "Получение профиля пользователя для бокового меню")
     @GetMapping("/profile/short")
-    public UserProfileShortResponse getUserProfileShort()
-    {
+    public UserProfileShortResponse getUserProfileShort() {
         return userService.getUserProfileShort();
+    }
+
+    @Operation(summary = "Получить сохраненный фильтр по умолчанию")
+    @GetMapping("/profile/saved-filter")
+    public SourceSavedFilterResponse SourceSavedFilter() {
+        return sourceSavedFilterService.getSavedFilterResponse();
+    }
+
+    @Operation(summary = "Создать сохраненный фильтр")
+    @PostMapping("/profile/saved-filter")
+    public SourceSavedFilterResponse saveSourceFilter(@RequestBody SourceFilterInfo sourceFilter) {
+        return sourceSavedFilterService.createFilter(sourceFilter);
+    }
+
+    @Operation(summary = "Обновить сохраненный фильтр")
+    @PutMapping("/profile/saved-filter")
+    public SourceSavedFilterResponse updateSourceFilter(@RequestBody SourceFilterInfo sourceFilter) {
+        return sourceSavedFilterService.updateFilter(sourceFilter);
     }
 
     @Secured("USER")
     @Operation(summary = "Получение списка ролей текущего пользователя")
     @GetMapping("/roles")
-    public List<String> getRoles()
-    {
+    public List<String> getRoles() {
         UserDto userDto = SecurityUtils.getUserDto();
         return userDto.getRoles();
     }
@@ -64,8 +81,7 @@ public class UserController
     public UserDto updateUserRoles(
             @PathVariable UUID userId,
             @RequestBody List<String> roles
-    )
-    {
+    ) {
         return userService.updateUserRoles(userId, Set.copyOf(roles));
     }
 }
