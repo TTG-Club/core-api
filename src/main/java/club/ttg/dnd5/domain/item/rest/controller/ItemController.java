@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.item.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -107,7 +106,7 @@ public class ItemController {
     }
 
     @GetMapping("/filters")
-    public FilterInfo getFilters() {
+    public SearchBody getFilters() {
         return itemFilterService.getDefaultFilterInfo();
     }
 

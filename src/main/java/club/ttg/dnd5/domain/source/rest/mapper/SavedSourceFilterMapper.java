@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.source.rest.mapper;
 
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
 import club.ttg.dnd5.domain.source.model.filter.SourceSavedFilter;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
@@ -22,10 +22,10 @@ public interface SavedSourceFilterMapper {
     @Mapping(target = "type", constant = "SOURCE_FILTER")
     @Mapping(target = "filter", source = "filterInfo")
     @Mapping(target = "userId", source = "userId")
-    SourceSavedFilter toEntity(FilterInfo filterInfo, UUID userId);
+    SourceSavedFilter toEntity(SourceFilterInfo filterInfo, UUID userId);
 
     @Mapping(target = "defaultFilter", constant = "true")
     @Mapping(target = "type", constant = "SOURCE_FILTER")
     @Mapping(target = "filter", source="filterInfo")
-    SourceSavedFilter update(@MappingTarget SourceSavedFilter filter, FilterInfo filterInfo);
+    SourceSavedFilter update(@MappingTarget SourceSavedFilter filter, SourceFilterInfo filterInfo);
 }

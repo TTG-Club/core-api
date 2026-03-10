@@ -5,10 +5,9 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.service.BackgroundFilterService;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.background.service.BackgroundService;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.domain.background.service.BackgroundService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -90,7 +89,7 @@ public class BackgroundController {
     }
 
     @GetMapping("/filters")
-    public FilterInfo getFilters() {
+    public SearchBody getFilters() {
         return backgroundFilterService.getDefaultFilterInfo();
     }
 

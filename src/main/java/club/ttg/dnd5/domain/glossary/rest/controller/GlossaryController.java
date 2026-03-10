@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.glossary.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 
 import java.util.List;
 
@@ -99,7 +98,7 @@ public class GlossaryController {
     }
 
     @GetMapping("/filters")
-    public FilterInfo getFilters() {
+    public SearchBody getFilters() {
         return glossaryFilterService.getDefaultFilterInfo();
     }
 }

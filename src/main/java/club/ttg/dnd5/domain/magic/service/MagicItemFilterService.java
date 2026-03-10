@@ -2,23 +2,20 @@ package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-import club.ttg.dnd5.domain.magic.model.filter.MagicItemSavedFilter;
-import club.ttg.dnd5.domain.magic.repository.MagicItemSavedFilterRepository;
-import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemOtherFilterGroup;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemCategoryFilterGroup;
+import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemOtherFilterGroup;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.RarityFilterGroup;
-import club.ttg.dnd5.domain.user.service.UserService;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class MagicItemFilterService extends AbstractSavedFilterService<MagicItemSavedFilter> {
-    private static final String FILTER_VERSION = "1.0";
+public class MagicItemFilterService extends AbstractSavedFilterService {
 
-    public MagicItemFilterService(MagicItemSavedFilterRepository savedFilterRepository,
-                                  UserService userService) {
-        super(savedFilterRepository, userService);
+
+    public MagicItemFilterService(SourceSavedFilterService sourceSavedFilterService) {
+        super(sourceSavedFilterService);
     }
 
     @Override
@@ -26,7 +23,6 @@ public class MagicItemFilterService extends AbstractSavedFilterService<MagicItem
         return new FilterInfo(List.of(
                 MagicItemCategoryFilterGroup.getDefault(),
                 RarityFilterGroup.getDefault(),
-                MagicItemOtherFilterGroup.getDefault()
-        ), FILTER_VERSION);
+                MagicItemOtherFilterGroup.getDefault()));
     }
 }

@@ -20,15 +20,21 @@ import java.util.Set;
 @Setter
 @FilterRegistry
 @JsonTypeName("src")
-public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFilter.SpellSourceFilter> {
+public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFilter.SourceFilterItem> {
 
     private String name;
 
     private static final StringPath PATH = Expressions.stringPath("source.acronym");
 
-    public SourceGroupFilter(List<SpellSourceFilter> filters, String name) {
+    public SourceGroupFilter(List<SourceFilterItem> filters, String name) {
         super(filters);
         this.name = name;
+    }
+
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -43,8 +49,8 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
     }
 
     @JsonTypeName("src-i")
-    public static class SpellSourceFilter extends AbstractFilterItem<String> {
-        public SpellSourceFilter(String label, String value) {
+    public static class SourceFilterItem extends AbstractFilterItem<String> {
+        public SourceFilterItem(String label, String value) {
             super(label, value, null);
         }
     }

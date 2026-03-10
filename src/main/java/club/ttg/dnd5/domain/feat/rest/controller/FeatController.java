@@ -3,12 +3,10 @@ package club.ttg.dnd5.domain.feat.rest.controller;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
-
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.service.FeatFilterService;
 import club.ttg.dnd5.domain.feat.service.FeatService;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -98,7 +96,7 @@ public class FeatController {
     }
 
     @GetMapping("/filters")
-    public FilterInfo getFilters() {
+    public SearchBody getFilters() {
         return featFilterService.getDefaultFilterInfo();
     }
 

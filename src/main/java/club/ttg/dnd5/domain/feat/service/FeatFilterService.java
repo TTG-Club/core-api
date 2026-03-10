@@ -1,24 +1,21 @@
 package club.ttg.dnd5.domain.feat.service;
 
-import club.ttg.dnd5.domain.feat.model.filter.FeatSavedFilter;
-import club.ttg.dnd5.domain.feat.repository.FeatSavedFilterRepository;
 import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatAbilityFilterGroup;
 import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatCategoryFilterGroup;
 import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatOtherFilterGroup;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-import club.ttg.dnd5.domain.user.service.UserService;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class FeatFilterService extends AbstractSavedFilterService<FeatSavedFilter> {
-    private static final String FILTER_VERSION = "1.0";
+public class FeatFilterService extends AbstractSavedFilterService  {
 
-    public FeatFilterService(FeatSavedFilterRepository featSavedFilterRepository,
-                             UserService userService) {
-        super(featSavedFilterRepository, userService);
+
+    public FeatFilterService(SourceSavedFilterService sourceSavedFilterService) {
+        super(sourceSavedFilterService);
     }
 
     @Override
@@ -27,6 +24,6 @@ public class FeatFilterService extends AbstractSavedFilterService<FeatSavedFilte
                 FeatCategoryFilterGroup.getDefault(),
                 FeatAbilityFilterGroup.getDefault(),
                 FeatOtherFilterGroup.getDefault()
-        ), FILTER_VERSION);
+        ));
     }
 }
