@@ -100,6 +100,9 @@ public class SourceSavedFilterService {
     }
 
     public SourceFilterInfo getDefaultFilterInfo() {
-        return getSavedFilter().getFilter();
+        if (userService.getCurrentUserId().isPresent()){
+            return getSavedFilter().getFilter();
+        }
+        return buildDefaultFilterInfo();
     }
 }

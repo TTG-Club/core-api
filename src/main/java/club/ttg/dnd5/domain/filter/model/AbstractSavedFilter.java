@@ -23,6 +23,7 @@ import java.util.UUID;
 public class AbstractSavedFilter<T extends FilterInfo> extends Timestamped {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
     UUID userId;
