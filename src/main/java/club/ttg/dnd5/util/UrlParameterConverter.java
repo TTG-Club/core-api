@@ -1,7 +1,6 @@
 package club.ttg.dnd5.util;
 
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URLDecoder;
@@ -10,7 +9,6 @@ import java.util.Base64;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-@Slf4j
 @UtilityClass
 public class UrlParameterConverter
 {
@@ -25,8 +23,8 @@ public class UrlParameterConverter
 
         try
         {
-            String decodedUrlValue = URLDecoder.decode(compressedString, StandardCharsets.UTF_8);
-            byte[] compressed = Base64.getDecoder().decode(decodedUrlValue);
+            String decoded = URLDecoder.decode(compressedString, StandardCharsets.UTF_8);
+            byte[] compressed = Base64.getDecoder().decode(decoded);
 
             inflater.setInput(compressed);
 
@@ -57,17 +55,13 @@ public class UrlParameterConverter
 
             return outputStream.toString(StandardCharsets.UTF_8);
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalArgumentException exception)
         {
-            throw new RuntimeException("Invalid Base64 value in URL parameter", e);
+            throw new RuntimeException("Invalid Base64 value", exception);
         }
-        catch (DataFormatException e)
+        catch (DataFormatException exception)
         {
-            throw new RuntimeException("Invalid compressed data format", e);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Error decompressing filters", e);
+            throw new RuntimeException("Invalid compressed data format", exception);
         }
         finally
         {
