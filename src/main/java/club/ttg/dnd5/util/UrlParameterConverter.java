@@ -18,12 +18,22 @@ public class UrlParameterConverter
             return null;
         }
 
+        String normalized = normalizeBase64String(compressedString);
+
+        byte[] compressed;
+        try
+        {
+            compressed = Base64.getDecoder().decode(normalized);
+        }
+        catch (IllegalArgumentException exception)
+        {
+            throw new RuntimeException("Invalid Base64 value: [" + normalized + "]", exception);
+        }
+
         Inflater inflater = new Inflater();
 
         try
         {
-            byte[] compressed = Base64.getDecoder().decode(compressedString);
-
             inflater.setInput(compressed);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -37,7 +47,7 @@ public class UrlParameterConverter
                 {
                     if (inflater.needsInput())
                     {
-                        break;
+                        throw new RuntimeException("Inflater needs more input");
                     }
 
                     if (inflater.needsDictionary())
@@ -53,10 +63,6 @@ public class UrlParameterConverter
 
             return outputStream.toString(StandardCharsets.UTF_8);
         }
-        catch (IllegalArgumentException exception)
-        {
-            throw new RuntimeException("Invalid Base64 value", exception);
-        }
         catch (DataFormatException exception)
         {
             throw new RuntimeException("Invalid compressed data format", exception);
@@ -65,5 +71,16 @@ public class UrlParameterConverter
         {
             inflater.end();
         }
+    }
+
+    private String normalizeBase64String(String value)
+    {
+        return value.trim()
+                .replace("%2B", "+")
+                .replace("%2b", "+")
+                .replace("%2F", "/")
+                .replace("%2f", "/")
+                .replace("%3D", "=")
+                .replace("%3d", "=");
     }
 }
