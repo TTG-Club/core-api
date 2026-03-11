@@ -3,7 +3,6 @@ package club.ttg.dnd5.util;
 import lombok.experimental.UtilityClass;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.zip.DataFormatException;
@@ -23,8 +22,7 @@ public class UrlParameterConverter
 
         try
         {
-            String decoded = URLDecoder.decode(compressedString, StandardCharsets.UTF_8);
-            byte[] compressed = Base64.getDecoder().decode(decoded);
+            byte[] compressed = Base64.getDecoder().decode(compressedString);
 
             inflater.setInput(compressed);
 
