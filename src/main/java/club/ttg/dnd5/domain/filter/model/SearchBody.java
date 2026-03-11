@@ -27,7 +27,7 @@ public class SearchBody {
         final String json;
         try
         {
-            json = UrlParameterConverter.decompression(filter);
+            json = UrlParameterConverter.decompress(filter);
         }
         catch (Exception e)
         {
