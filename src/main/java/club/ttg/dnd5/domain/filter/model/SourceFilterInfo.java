@@ -13,15 +13,11 @@ import java.util.function.BinaryOperator;
 @Getter
 @Setter
 @NoArgsConstructor
-public class SourceFilterInfo extends FilterInfo {
+public final class SourceFilterInfo extends FilterInfo<SourceGroupFilter> {
 
     public SourceFilterInfo(List<SourceGroupFilter> groups) {
         super();
         setGroups(groups);
-    }
-
-    public List<SourceGroupFilter> getGroups() {
-        return (List<SourceGroupFilter>) groups;
     }
 
     @JsonIgnore

@@ -19,14 +19,14 @@ import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
 @AllArgsConstructor
 @Getter
 @Setter
-public class FilterInfo
+public class FilterInfo<T extends Filter>
 {
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             include = JsonTypeInfo.As.PROPERTY,
             property = "key"
     )
-    protected List<? extends Filter> groups = new ArrayList<>();
+    protected List<T> groups = new ArrayList<>();
 
     @JsonIgnore
     protected BinaryOperator<BooleanExpression> getReduceOperator(){
