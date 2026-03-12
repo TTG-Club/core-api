@@ -22,7 +22,7 @@ public class UrlParameterConverter
 
         byte[] compressed;
         try  {
-            compressed = Base64.getUrlDecoder().decode(normalized);
+            compressed = Base64.getDecoder().decode(normalized);
         }
         catch (IllegalArgumentException exception) {
             throw new RuntimeException("Invalid Base64 value: [" + normalized + "]", exception);
