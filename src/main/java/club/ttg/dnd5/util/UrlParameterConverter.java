@@ -1,41 +1,65 @@
 package club.ttg.dnd5.util;
 
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-@Slf4j
 @UtilityClass
-public class UrlParameterConverter {
-
-    public String decompression(String compressedString) {
-        if (compressedString == null || compressedString.isEmpty()) {
+public class UrlParameterConverter
+{
+    public String decompress(String compressedString)
+    {
+        if (compressedString == null || compressedString.isBlank())
+        {
             return null;
         }
 
-        try {
-            byte[] compressed = Base64.getDecoder().decode(compressedString);
 
-            Inflater inflater = new Inflater();
+        byte[] compressed;
+        try  {
+            compressed = Base64.getUrlDecoder().decode(compressedString);
+        }
+        catch (IllegalArgumentException exception) {
+            throw new RuntimeException("Invalid Base64 value: [" + compressedString + "]", exception);
+        }
+
+        Inflater inflater = new Inflater();
+
+        try {
             inflater.setInput(compressed);
 
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
-            StringBuilder result = new StringBuilder();
 
             while (!inflater.finished()) {
                 int count = inflater.inflate(buffer);
-                result.append(new String(buffer, 0, count, StandardCharsets.UTF_8));
+
+                if (count == 0) {
+                    if (inflater.needsInput()) {
+                        throw new RuntimeException("Inflater needs more input");
+                    }
+
+                    if (inflater.needsDictionary()) {
+                        throw new RuntimeException("Dictionary is required for decompression");
+                    }
+
+                    throw new RuntimeException("Unable to decompress input data");
+                }
+
+                outputStream.write(buffer, 0, count);
             }
 
+            return outputStream.toString(StandardCharsets.UTF_8);
+        }
+        catch (DataFormatException exception) {
+            throw new RuntimeException("Invalid compressed data format", exception);
+        }
+        finally {
             inflater.end();
-            return result.toString();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error decompressing filters", e);
         }
     }
 }
-
