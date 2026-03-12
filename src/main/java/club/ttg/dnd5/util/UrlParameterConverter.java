@@ -21,37 +21,30 @@ public class UrlParameterConverter
         String normalized = normalizeBase64String(compressedString);
 
         byte[] compressed;
-        try
-        {
-            compressed = Base64.getDecoder().decode(normalized);
+        try  {
+            compressed = Base64.getUrlDecoder().decode(normalized);
         }
-        catch (IllegalArgumentException exception)
-        {
+        catch (IllegalArgumentException exception) {
             throw new RuntimeException("Invalid Base64 value: [" + normalized + "]", exception);
         }
 
         Inflater inflater = new Inflater();
 
-        try
-        {
+        try {
             inflater.setInput(compressed);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
 
-            while (!inflater.finished())
-            {
+            while (!inflater.finished()) {
                 int count = inflater.inflate(buffer);
 
-                if (count == 0)
-                {
-                    if (inflater.needsInput())
-                    {
+                if (count == 0) {
+                    if (inflater.needsInput()) {
                         throw new RuntimeException("Inflater needs more input");
                     }
 
-                    if (inflater.needsDictionary())
-                    {
+                    if (inflater.needsDictionary()) {
                         throw new RuntimeException("Dictionary is required for decompression");
                     }
 
@@ -63,18 +56,15 @@ public class UrlParameterConverter
 
             return outputStream.toString(StandardCharsets.UTF_8);
         }
-        catch (DataFormatException exception)
-        {
+        catch (DataFormatException exception) {
             throw new RuntimeException("Invalid compressed data format", exception);
         }
-        finally
-        {
+        finally {
             inflater.end();
         }
     }
 
-    private String normalizeBase64String(String value)
-    {
+    private String normalizeBase64String(String value) {
         return value.trim()
                 .replace("%2B", "+")
                 .replace("%2b", "+")
