@@ -18,14 +18,13 @@ public class UrlParameterConverter
             return null;
         }
 
-        String normalized = normalizeBase64String(compressedString);
 
         byte[] compressed;
         try  {
-            compressed = Base64.getDecoder().decode(normalized);
+            compressed = Base64.getUrlDecoder().decode(compressedString);
         }
         catch (IllegalArgumentException exception) {
-            throw new RuntimeException("Invalid Base64 value: [" + normalized + "]", exception);
+            throw new RuntimeException("Invalid Base64 value: [" + compressedString + "]", exception);
         }
 
         Inflater inflater = new Inflater();
@@ -62,15 +61,5 @@ public class UrlParameterConverter
         finally {
             inflater.end();
         }
-    }
-
-    private String normalizeBase64String(String value) {
-        return value.trim()
-                .replace("%2B", "+")
-                .replace("%2b", "+")
-                .replace("%2F", "/")
-                .replace("%2f", "/")
-                .replace("%3D", "=")
-                .replace("%3d", "=");
     }
 }
