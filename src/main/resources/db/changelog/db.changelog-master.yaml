@@ -165,3 +165,5 @@ databaseChangeLog:
       file: db/changelog/2026/02/17-01-source-columns.yaml
   - include:
       file: db/changelog/2026/02/18-01-add-primary-ability-delimiter.yaml
+  - include:
+      file: db/changelog/2026/03/18-01-add-feat-suffix-background-table.yaml

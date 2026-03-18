@@ -42,6 +42,11 @@ public class Background extends NamedEntity {
     @JoinColumn(name = "feat_id")
     private Feat feat;
 
+    /**
+     * Уточнение черты (например для просвещенный в магию)
+     */
+    private String featSuffix;
+
     /** Владение инструментами */
     private String toolProficiency;
     /** Снаряжение */
