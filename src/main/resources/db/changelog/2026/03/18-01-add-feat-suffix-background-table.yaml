@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 18-01-add-feat-suffix-background-table
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: background
+            columns:
+              - column:
+                  name: feat_suffix
+                  type: varchar2(255)
