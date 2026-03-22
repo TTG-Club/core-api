@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.source.rest.dto.filter;
 
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.dto.base.filters.FilterRegistry;
@@ -25,6 +26,7 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
 {
     private static final PathBuilder<Object> SPELL = new PathBuilder<>(Object.class, "spell");
     private static final StringPath PATH = SPELL.getString("source");
+    private static final String DEFAULT_NAME = "Источники";
 
     private String name;
 
@@ -32,6 +34,17 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
     {
         super(filters);
         this.name = name;
+    }
+
+    public static SourceGroupFilter getDefault(List<Source> sources)
+    {
+        List<SourceFilterItem> items = sources == null
+                ? List.of()
+                : sources.stream()
+                .map(source -> new SourceFilterItem(source.getName(), source.getUrl()))
+                .toList();
+
+        return new SourceGroupFilter(items, DEFAULT_NAME);
     }
 
     @Override
