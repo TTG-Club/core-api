@@ -2,16 +2,12 @@ package club.ttg.dnd5.domain.filter.service;
 
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
-import club.ttg.dnd5.domain.source.model.QSource;
-import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.BooleanTemplate;
 import com.querydsl.core.types.dsl.EntityPathBase;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.PathBuilder;
-import com.querydsl.core.types.dsl.StringPath;
 import com.querydsl.jpa.sql.JPASQLQuery;
 import com.querydsl.sql.PostgreSQLTemplates;
 import com.querydsl.sql.SQLTemplates;
@@ -65,21 +61,8 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
 
         JPASQLQuery<E> query = new JPASQLQuery<>(entityManager, dialect);
 
-        query.from(entityPath);
-
-        if (entityPath instanceof QSpell)
-        {
-            QSource source = QSource.source;
-            PathBuilder<Object> spell = new PathBuilder<>(Object.class, "spell");
-            PathBuilder<Object> sourcePath = new PathBuilder<>(Object.class, "source");
-
-            StringPath spellSourcePath = spell.getString("source");
-            StringPath sourceUrlPath = sourcePath.getString("url");
-
-            query.leftJoin(source).on(spellSourcePath.eq(sourceUrlPath));
-        }
-
         return query.select(entityPath)
+                .from(entityPath)
                 .where(predicate)
                 .orderBy(getOrder())
                 .fetch();

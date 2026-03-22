@@ -23,8 +23,8 @@ import java.util.Set;
 @JsonTypeName("src")
 public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFilter.SourceFilterItem>
 {
-    private static final PathBuilder<Object> SOURCE = new PathBuilder<>(Object.class, "source");
-    private static final StringPath PATH = SOURCE.getString("acronym");
+    private static final PathBuilder<Object> SPELL = new PathBuilder<>(Object.class, "spell");
+    private static final StringPath PATH = SPELL.getString("source");
 
     private String name;
 
