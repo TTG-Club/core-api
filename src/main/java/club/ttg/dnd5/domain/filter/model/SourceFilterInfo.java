@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.filter.model;
 
-import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
+import club.ttg.dnd5.dto.base.filters.Filter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.Getter;
@@ -13,9 +13,9 @@ import java.util.function.BinaryOperator;
 @Getter
 @Setter
 @NoArgsConstructor
-public final class SourceFilterInfo extends FilterInfo<SourceGroupFilter> {
+public final class SourceFilterInfo extends FilterInfo {
 
-    public SourceFilterInfo(List<SourceGroupFilter> groups) {
+    public SourceFilterInfo(List<Filter> groups) {
         super();
         setGroups(groups);
     }
