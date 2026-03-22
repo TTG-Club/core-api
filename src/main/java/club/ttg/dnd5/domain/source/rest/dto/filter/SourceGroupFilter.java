@@ -9,6 +9,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -16,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@NoArgsConstructor
 @Getter
 @Setter
 @FilterRegistry
@@ -48,6 +50,7 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
         return result.and(CollectionUtils.isEmpty(negativeValues) ? (TRUE_EXPRESSION) : PATH.notIn(new HashSet<>(negativeValues)));
     }
 
+    @NoArgsConstructor
     @JsonTypeName("src-i")
     public static class SourceFilterItem extends AbstractFilterItem<String> {
         public SourceFilterItem(String label, String value) {

@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.filter.model;
 
 import club.ttg.dnd5.dto.base.filters.Filter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,14 +18,9 @@ import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
 @AllArgsConstructor
 @Getter
 @Setter
-public class FilterInfo<T extends Filter>
+public class FilterInfo
 {
-    @JsonTypeInfo(
-            use = JsonTypeInfo.Id.NAME,
-            include = JsonTypeInfo.As.PROPERTY,
-            property = "key"
-    )
-    protected List<T> groups = new ArrayList<>();
+    protected List<Filter> groups = new ArrayList<>();
 
     @JsonIgnore
     protected BinaryOperator<BooleanExpression> getReduceOperator(){

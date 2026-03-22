@@ -20,7 +20,7 @@ import java.util.UUID;
 @DiscriminatorColumn(name = "type")
 @Getter
 @Setter
-public class AbstractSavedFilter<T extends FilterInfo> extends Timestamped {
+public class AbstractSavedFilter extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -36,5 +36,5 @@ public class AbstractSavedFilter<T extends FilterInfo> extends Timestamped {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    T filter;
+    FilterInfo filter;
 }

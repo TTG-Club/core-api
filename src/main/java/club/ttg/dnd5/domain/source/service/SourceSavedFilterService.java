@@ -14,42 +14,58 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class SourceSavedFilterService {
-
+public class SourceSavedFilterService
+{
     private final SourceService sourceService;
     private final SavedSourceFilterMapper savedSourceFilterMapper;
     private final SourceSavedFilterRepository sourceSavedFilterRepository;
     private final UserService userService;
 
-    public Optional<SourceSavedFilter> findSavedFilter() {
+    public Optional<SourceSavedFilter> findSavedFilter()
+    {
         return userService.getCurrentUserId()
                 .flatMap(sourceSavedFilterRepository::findByUserIdAndDefaultFilterTrue);
     }
 
-    public SourceSavedFilter getSavedFilter() {
+    public SourceSavedFilter getSavedFilter()
+    {
         return findSavedFilter()
                 .map(this::updateToActualAndSave)
                 .orElseGet(this::createActualAndSave);
     }
 
-    public SourceSavedFilterResponse getSavedFilterResponse() {
+    public SourceSavedFilterResponse getSavedFilterResponse()
+    {
         return savedSourceFilterMapper.toResponse(getSavedFilter());
     }
 
-    private SourceSavedFilter updateToActualAndSave(SourceSavedFilter sourceSavedFilter) {
-        Map<String, Boolean> sourceMap = sourceSavedFilter.getFilter().getGroups().stream()
+    private SourceSavedFilter updateToActualAndSave(SourceSavedFilter sourceSavedFilter)
+    {
+        Map<String, Boolean> sourceMap = new HashMap<>();
+
+        sourceSavedFilter.getFilter().getGroups().stream()
+                .filter(SourceGroupFilter.class::isInstance)
+                .map(SourceGroupFilter.class::cast)
                 .map(SourceGroupFilter::getFilters)
                 .flatMap(Collection::stream)
-                .collect(Collectors.toMap(SourceGroupFilter.SourceFilterItem::getValue, SourceGroupFilter.SourceFilterItem::getSelected));
+                .forEach(item -> sourceMap.put(item.getValue(), item.getSelected()));
 
         SourceFilterInfo filter = buildDefaultFilterInfo();
 
         filter.getGroups().stream()
+                .filter(SourceGroupFilter.class::isInstance)
+                .map(SourceGroupFilter.class::cast)
                 .map(SourceGroupFilter::getFilters)
                 .flatMap(Collection::stream)
                 .forEach(item -> item.setSelected(sourceMap.get(item.getValue())));
@@ -58,51 +74,67 @@ public class SourceSavedFilterService {
         return save(sourceSavedFilter);
     }
 
-    private SourceSavedFilter createActualAndSave() {
+    private SourceSavedFilter createActualAndSave()
+    {
         UUID userId = userService.getCurrentUserId().get();
         return save(savedSourceFilterMapper.toEntity(buildDefaultFilterInfo(), userId));
     }
 
-    public SourceSavedFilter save(SourceSavedFilter entity) {
+    public SourceSavedFilter save(SourceSavedFilter entity)
+    {
         return sourceSavedFilterRepository.save(entity);
     }
 
-    public SourceSavedFilterResponse createFilter(SourceFilterInfo filter) {
-        if (findSavedFilter().isEmpty()) {
+    public SourceSavedFilterResponse createFilter(SourceFilterInfo filter)
+    {
+        if (findSavedFilter().isEmpty())
+        {
             return userService.getCurrentUserId()
                     .map(uuid -> savedSourceFilterMapper.toEntity(filter, uuid))
                     .map(this::save)
                     .map(savedSourceFilterMapper::toResponse)
                     .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
-        } else {
-            throw new EntityExistException("Фильр для пользователя уже существует");
         }
+
+        throw new EntityExistException("Фильтр для пользователя уже существует");
     }
 
-    public SourceSavedFilterResponse updateFilter(SourceFilterInfo filter) {
+    public SourceSavedFilterResponse updateFilter(SourceFilterInfo filter)
+    {
         return findSavedFilter()
                 .map(saved -> savedSourceFilterMapper.update(saved, filter))
                 .map(savedSourceFilterMapper::toResponse)
-                .orElseThrow(() -> new EntityNotFoundException("Фильр для пользователя не существует"));
+                .orElseThrow(() -> new EntityNotFoundException("Фильтр для пользователя не существует"));
     }
 
-    protected SourceFilterInfo buildDefaultFilterInfo() {
+    protected SourceFilterInfo buildDefaultFilterInfo()
+    {
         Map<SourceType, List<Source>> sourceMap = sourceService.findAll().stream()
                 .collect(Collectors.groupingBy(Source::getType));
-        return new SourceFilterInfo(Arrays.stream(SourceType.values())
-                .filter(sourceMap::containsKey)
-                .map(type -> new SourceGroupFilter(
-                        sourceMap.get(type).stream()
-                                .map(src -> new SourceGroupFilter.SourceFilterItem(src.getName(), src.getAcronym()))
-                                .toList(),
-                        type.getName()
-                )).collect(Collectors.toList()));
+
+        return new SourceFilterInfo(
+                Arrays.stream(SourceType.values())
+                        .filter(sourceMap::containsKey)
+                        .map(type -> new SourceGroupFilter(
+                                sourceMap.get(type).stream()
+                                        .map(src -> new SourceGroupFilter.SourceFilterItem(
+                                                src.getName(),
+                                                src.getAcronym())
+                                        )
+                                        .toList(),
+                                type.getName()
+                        ))
+                        .collect(Collectors.toList())
+        );
     }
 
-    public SourceFilterInfo getDefaultFilterInfo() {
-        if (userService.getCurrentUserId().isPresent()){
-            return getSavedFilter().getFilter();
+    public SourceFilterInfo getDefaultFilterInfo()
+    {
+        if (userService.getCurrentUserId().isPresent())
+        {
+            return (SourceFilterInfo) getSavedFilter().getFilter();
         }
+
         return buildDefaultFilterInfo();
     }
 }
