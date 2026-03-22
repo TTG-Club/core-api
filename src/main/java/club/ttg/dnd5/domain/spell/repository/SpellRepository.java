@@ -21,5 +21,12 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     )
     List<Spell> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
-    Integer countByUsername(String username);
+    @Query(value = """
+        select distinct s.source
+        from spell s
+        where s.source is not null
+        order by s.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
+
 }

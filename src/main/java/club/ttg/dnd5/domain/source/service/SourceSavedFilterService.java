@@ -17,9 +17,11 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -109,7 +111,35 @@ public class SourceSavedFilterService
 
     protected SourceFilterInfo buildDefaultFilterInfo()
     {
-        Map<SourceType, List<Source>> sourceMap = sourceService.findAll().stream()
+        return buildDefaultFilterInfoFromSources(sourceService.findAll());
+    }
+
+    protected SourceFilterInfo buildDefaultFilterInfo(List<String> sourceCodes)
+    {
+        if (sourceCodes == null || sourceCodes.isEmpty())
+        {
+            return new SourceFilterInfo(List.of());
+        }
+
+        Set<String> allowedCodes = sourceCodes.stream()
+                .filter(code -> code != null && !code.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (allowedCodes.isEmpty())
+        {
+            return new SourceFilterInfo(List.of());
+        }
+
+        List<Source> filteredSources = sourceService.findAll().stream()
+                .filter(source -> allowedCodes.contains(source.getAcronym()))
+                .toList();
+
+        return buildDefaultFilterInfoFromSources(filteredSources);
+    }
+
+    private SourceFilterInfo buildDefaultFilterInfoFromSources(List<Source> sources)
+    {
+        Map<SourceType, List<Source>> sourceMap = sources.stream()
                 .collect(Collectors.groupingBy(Source::getType));
 
         return new SourceFilterInfo(
@@ -117,6 +147,7 @@ public class SourceSavedFilterService
                         .filter(sourceMap::containsKey)
                         .map(type -> new SourceGroupFilter(
                                 sourceMap.get(type).stream()
+                                        .sorted((left, right) -> left.getName().compareToIgnoreCase(right.getName()))
                                         .map(src -> new SourceGroupFilter.SourceFilterItem(
                                                 src.getName(),
                                                 src.getAcronym())
@@ -136,5 +167,40 @@ public class SourceSavedFilterService
         }
 
         return buildDefaultFilterInfo();
+    }
+
+    public SourceFilterInfo getDefaultFilterInfo(List<String> sourceCodes)
+    {
+        SourceFilterInfo actualFilter = buildDefaultFilterInfo(sourceCodes);
+
+        if (userService.getCurrentUserId().isEmpty())
+        {
+            return actualFilter;
+        }
+
+        Optional<SourceSavedFilter> savedFilterOptional = findSavedFilter();
+
+        if (savedFilterOptional.isEmpty())
+        {
+            return actualFilter;
+        }
+
+        Map<String, Boolean> selectedMap = new HashMap<>();
+
+        savedFilterOptional.get().getFilter().getGroups().stream()
+                .filter(SourceGroupFilter.class::isInstance)
+                .map(SourceGroupFilter.class::cast)
+                .map(SourceGroupFilter::getFilters)
+                .flatMap(Collection::stream)
+                .forEach(item -> selectedMap.put(item.getValue(), item.getSelected()));
+
+        actualFilter.getGroups().stream()
+                .filter(SourceGroupFilter.class::isInstance)
+                .map(SourceGroupFilter.class::cast)
+                .map(SourceGroupFilter::getFilters)
+                .flatMap(Collection::stream)
+                .forEach(item -> item.setSelected(selectedMap.get(item.getValue())));
+
+        return actualFilter;
     }
 }
