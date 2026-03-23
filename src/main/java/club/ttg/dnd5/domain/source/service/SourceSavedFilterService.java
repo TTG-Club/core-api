@@ -150,7 +150,8 @@ public class SourceSavedFilterService
                                         .sorted((left, right) -> left.getName().compareToIgnoreCase(right.getName()))
                                         .map(src -> new SourceGroupFilter.SourceFilterItem(
                                                 src.getName(),
-                                                src.getAcronym())
+                                                src.getAcronym(),
+                                                true)
                                         )
                                         .toList(),
                                 type.getName()

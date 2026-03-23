@@ -10,5 +10,5 @@ import java.util.UUID;
 @NoArgsConstructor
 public class SourceSavedFilterResponse {
     private UUID id;
-    private FilterInfo filterInfo;
+    private FilterInfo filter;
 }

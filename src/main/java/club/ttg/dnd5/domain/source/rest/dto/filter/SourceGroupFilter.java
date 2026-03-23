@@ -41,7 +41,7 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
         List<SourceFilterItem> items = sources == null
                 ? List.of()
                 : sources.stream()
-                .map(source -> new SourceFilterItem(source.getName(), source.getUrl()))
+                .map(source -> new SourceFilterItem(source.getName(), source.getUrl(), true))
                 .toList();
 
         return new SourceGroupFilter(items, DEFAULT_NAME);
@@ -77,9 +77,9 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
     @JsonTypeName("src-i")
     public static class SourceFilterItem extends AbstractFilterItem<String>
     {
-        public SourceFilterItem(String label, String value)
+        public SourceFilterItem(String label, String value, boolean selected)
         {
-            super(label, value, null);
+            super(label, value, selected);
         }
     }
 }
