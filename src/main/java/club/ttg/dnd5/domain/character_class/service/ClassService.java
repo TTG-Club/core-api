@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
@@ -16,19 +17,18 @@ import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import club.ttg.dnd5.util.SwitchLayoutUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -36,22 +36,23 @@ public class ClassService {
 
     private final ClassRepository classRepository;
     private final ClassMapper classMapper;
+    private final ClassQueryDslSearchService classQueryDslSearchService;
     private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
 
-    public List<ClassShortResponse> findAllClasses(String searchLine, String... sort) {
-        Collection<CharacterClass> classes;
+    private final ObjectMapper objectMapper;
 
-        if (StringUtils.hasText(searchLine)) {
-            String invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
-            classes = classRepository.findAllSearch(searchLine, invertedSearchLine, Sort.by(sort));
-        } else {
-            classes = classRepository.findAllByParentIsNull(Sort.by(sort));
-        }
+    public List<ClassShortResponse> search(String searchLine, String filters) {
+        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
+        return search(searchLine, searchBody);
+     }
 
-        return classes.stream()
-                .map(classMapper::toShortResponse)
-                .toList();
+    public List<ClassShortResponse> search(String searchLine, SearchBody searchBody) {
+        return classQueryDslSearchService.search(searchLine, searchBody)
+                .stream()
+                .filter(c -> (searchLine != null && !searchLine.isEmpty()) || c.getParent() == null)
+                .map(classMapper::toShort)
+                .collect(Collectors.toList());
     }
 
     public boolean exists(String url) {
@@ -130,7 +131,7 @@ public class ClassService {
     public List<ClassShortResponse> getSubclasses() {
         return classRepository.findAllByParentIsNotNull().stream()
                 .filter(characterClass -> !characterClass.isHiddenEntity())
-                .map(classMapper::toShortResponse)
+                .map(classMapper::toShort)
                 .toList();
     }
 
@@ -147,7 +148,7 @@ public class ClassService {
                         .comparing((CharacterClass c) -> c.getSource().getType().ordinal())
                         .thenComparing(CharacterClass::getName)
                 )
-                .map(classMapper::toShortResponse)
+                .map(classMapper::toShort)
                 .toList();
     }
 
