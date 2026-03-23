@@ -16,6 +16,7 @@ import java.util.UUID;
 })
 public interface SavedSourceFilterMapper {
 
+    @Mapping(target = "filter", source = "filter")
     SourceSavedFilterResponse toResponse(SourceSavedFilter filter);
 
     @Mapping(target = "defaultFilter", constant = "true")
