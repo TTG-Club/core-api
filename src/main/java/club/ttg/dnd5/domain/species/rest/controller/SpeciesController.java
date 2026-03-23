@@ -1,12 +1,15 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
+import club.ttg.dnd5.domain.species.service.SpeciesFilterService;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +29,7 @@ import java.util.List;
 @Tag(name = "Виды", description = "API для управления видами")
 public class SpeciesController {
     private final SpeciesService speciesService;
+    private final SpeciesFilterService speciesFilterService;
 
     @Operation(summary = "Проверить вид по URL", description = "Проверка вида по его уникальному URL.")
     @ApiResponses(value = {
@@ -43,6 +47,11 @@ public class SpeciesController {
         }
     }
 
+    @GetMapping("/filters")
+    public SearchBody getFilters() {
+        return speciesFilterService.getDefaultFilterInfo();
+    }
+
     @GetMapping
     @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
     public List<SpeciesShortResponse> getAllSpecies(
@@ -51,10 +60,9 @@ public class SpeciesController {
             @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
-            @Parameter(description = "Сортировка")
-            @RequestParam(required = false, defaultValue = "name")
-            String[] sort) {
-        return speciesService.getSpecies(searchLine, sort);
+            @Schema(description = "упакованный в строку json фильтров")
+            @RequestParam(required = false) String filter) {
+        return speciesService.search(searchLine, filter);
     }
 
     @PostMapping("/search")
@@ -65,10 +73,8 @@ public class SpeciesController {
             @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
-            @Parameter(description = "Сортировка")
-            @RequestParam(required = false, defaultValue = "name")
-            String[] sort) {
-        return speciesService.getSpecies(searchLine, sort);
+            @RequestBody SearchBody searchBody) {
+        return speciesService.search(searchLine, searchBody);
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")
