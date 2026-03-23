@@ -4,10 +4,13 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResp
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
+import club.ttg.dnd5.domain.character_class.service.ClassFilterService;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +29,7 @@ import java.util.List;
 @Tag(name = "Классы", description = "API для управления классами")
 public class ClassController {
     private final ClassService classService;
+    private final ClassFilterService classFilterService;
 
     @Operation(summary = "Проверить класс по URL", description = "Проверка класса по его уникальному URL.")
     @ApiResponses(value = {
@@ -50,10 +54,9 @@ public class ClassController {
             @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
-            @Parameter(description = "Сортировка")
-            @RequestParam(required = false, defaultValue = "name")
-            String[] sort) {
-        return classService.findAllClasses(searchLine, sort);
+            @Schema(description = "упакованный в строку json фильтров")
+            @RequestParam(required = false) String filter) {
+        return classService.search(searchLine, filter);
     }
 
     @PostMapping("/search")
@@ -64,15 +67,18 @@ public class ClassController {
             @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
-            @Parameter(description = "Сортировка")
-            @RequestParam(required = false, defaultValue = "name")
-            String[] sort) {
-        return classService.findAllClasses(searchLine, sort);
+            @RequestBody SearchBody searchBody) {
+        return classService.search(searchLine, searchBody);
     }
 
     @GetMapping("/{url}")
     public ClassDetailedResponse getClassByUrl(@PathVariable String url) {
         return classService.findDetailedByUrl(url);
+    }
+
+    @GetMapping("/filters")
+    public SearchBody getFilters() {
+        return classFilterService.getDefaultFilterInfo();
     }
 
     @GetMapping("/subclasses")
