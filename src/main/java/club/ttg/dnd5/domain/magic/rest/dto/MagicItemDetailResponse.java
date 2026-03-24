@@ -10,4 +10,5 @@ import lombok.Setter;
 public class MagicItemDetailResponse extends BaseResponse {
     @Schema(description = "Подзаголовок")
     private String subtitle;
+    private String cost;
 }

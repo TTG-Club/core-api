@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.magic.rest.mapper;
 
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
@@ -10,6 +11,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 @Mapper(componentModel = "spring", uses = {BaseMapping.class})
 public interface MagicItemMapper
@@ -23,6 +28,7 @@ public interface MagicItemMapper
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = ".", target = "subtitle", qualifiedByName = "toSubtitle")
+    @Mapping(source = "rarity", target = "cost", qualifiedByName = "toCost")
     MagicItemDetailResponse toDetail(MagicItem magicItem);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -70,5 +76,14 @@ public interface MagicItemMapper
             }
         }
         return builder.toString();
+    }
+
+    @Named("toCost")
+    default String toCost(Rarity rarity) {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
+        symbols.setGroupingSeparator(' ');
+
+        DecimalFormat df = new DecimalFormat("#,###", symbols);
+        return df.format(rarity.getBaseCost()) + " зм.";
     }
 }

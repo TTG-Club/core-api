@@ -46,7 +46,7 @@ public class CreatureTypeFilterGroup extends AbstractFilterGroup<CreatureType, C
 
     @Override
     public String getName() {
-        return "Школа";
+        return "Тип существа";
     }
 
     public static CreatureTypeFilterGroup getDefault() {

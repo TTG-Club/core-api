@@ -4,8 +4,12 @@ import club.ttg.dnd5.domain.filter.service.AbstractQueryDslSearchService;
 import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.glossary.model.QGlossary;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.PathBuilder;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class GlossaryQueryDslSearchService extends AbstractQueryDslSearchService<Glossary, QGlossary> {
@@ -15,6 +19,11 @@ public class GlossaryQueryDslSearchService extends AbstractQueryDslSearchService
     public GlossaryQueryDslSearchService(EntityManager entityManager) {
         super(entityManager, GLOSSARY);
     }
+
+    @Override
+    protected BooleanExpression buildSourcePredicate(final List<String> values) {
+        PathBuilder<Object> magicItem = new PathBuilder<>(Object.class, "glossary");
+        return magicItem.getString("source").in(values);    }
 
     @Override
     protected OrderSpecifier<?>[] getOrder() {
