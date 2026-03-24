@@ -78,7 +78,7 @@ public class SourceSavedFilterService
 
     private SourceSavedFilter createActualAndSave()
     {
-        UUID userId = userService.getCurrentUserId().get();
+        UUID userId = userService.getCurrentUserId().orElseThrow(() -> new EntityExistException("ID пользователя не найден"));
         return save(savedSourceFilterMapper.toEntity(buildDefaultFilterInfo(), userId));
     }
 
