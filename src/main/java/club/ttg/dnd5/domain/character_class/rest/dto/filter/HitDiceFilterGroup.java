@@ -48,7 +48,7 @@ public class HitDiceFilterGroup extends AbstractFilterGroup<Dice, HitDiceFilterG
 
     @Override
     public String getName() {
-        return "Школа";
+        return "Кость хитов";
     }
 
     public static HitDiceFilterGroup getDefault() {

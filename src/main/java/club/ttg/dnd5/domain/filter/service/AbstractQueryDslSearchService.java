@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.filter.service;
 
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
+import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
+import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -18,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static club.ttg.dnd5.dto.base.filters.Filter.TRUE_EXPRESSION;
 
@@ -54,10 +57,7 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                         .map(SearchBody::getFilter)
                         .map(FilterInfo::getQuery)
                         .orElse(TRUE_EXPRESSION))
-                .and(Optional.ofNullable(searchBody)
-                        .map(SearchBody::getSources)
-                        .map(FilterInfo::getQuery)
-                        .orElse(TRUE_EXPRESSION));
+                .and(buildSourcesPredicate(searchBody));
 
         JPASQLQuery<E> query = new JPASQLQuery<>(entityManager, dialect);
 
@@ -67,6 +67,30 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                 .orderBy(getOrder())
                 .fetch();
     }
+
+    private BooleanExpression buildSourcesPredicate(SearchBody searchBody)
+    {
+        return Optional.ofNullable(searchBody)
+                .map(SearchBody::getSources)
+                .map(this::extractSelectedSourceValues)
+                .filter(values -> !values.isEmpty())
+                .map(this::buildSourcePredicate)
+                .orElse(TRUE_EXPRESSION);
+    }
+
+    private List<String> extractSelectedSourceValues(FilterInfo filterInfo)
+    {
+        return filterInfo.getGroups().stream()
+                .map(group -> (AbstractFilterGroup<?, ?>) group)
+                .map(AbstractFilterGroup::getFilters)
+                .flatMap(List::stream)
+                .map(filter -> (SourceGroupFilter.SourceFilterItem) filter)
+                .filter(filter -> Boolean.TRUE.equals(filter.getSelected()))
+                .map(SourceGroupFilter.SourceFilterItem::getValue)
+                .collect(Collectors.toList());
+    }
+
+    protected abstract BooleanExpression buildSourcePredicate(List<String> values);
 
     protected abstract OrderSpecifier<?>[] getOrder();
 }

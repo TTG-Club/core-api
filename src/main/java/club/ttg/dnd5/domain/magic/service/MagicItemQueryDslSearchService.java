@@ -5,21 +5,35 @@ import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.QMagicItem;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.core.types.dsl.PathBuilder;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
-public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchService<MagicItem, QMagicItem> {
+public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchService<MagicItem, QMagicItem>
+{
     private static final QMagicItem MAGIC_ITEM = QMagicItem.magicItem;
 
-    public MagicItemQueryDslSearchService(EntityManager entityManager) {
+    public MagicItemQueryDslSearchService(EntityManager entityManager)
+    {
         super(entityManager, MAGIC_ITEM);
     }
 
     @Override
-    protected OrderSpecifier<?>[] getOrder() {
+    protected BooleanExpression buildSourcePredicate(final List<String> values)
+    {
+        PathBuilder<Object> magicItem = new PathBuilder<>(Object.class, "magic_item");
+        return magicItem.getString("source").in(values);
+    }
+
+    @Override
+    protected OrderSpecifier<?>[] getOrder()
+    {
         NumberExpression<Integer> rarityRank = Expressions.numberTemplate(
                 Integer.class,
                 """
@@ -37,8 +51,7 @@ public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchServic
                 MAGIC_ITEM.rarity
         );
 
-        OrderSpecifier<Integer> rarityOrder =
-                new OrderSpecifier<>(Order.ASC, rarityRank);
+        OrderSpecifier<Integer> rarityOrder = new OrderSpecifier<>(Order.ASC, rarityRank);
 
         return new OrderSpecifier<?>[]{
                 rarityOrder,
