@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.character_class.service;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
@@ -15,6 +17,7 @@ import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +43,7 @@ public class ClassService {
     private final ClassQueryDslSearchService classQueryDslSearchService;
     private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
+    private final SourceSavedFilterService sourceSavedFilterService;
 
     private final ObjectMapper objectMapper;
 
@@ -129,7 +134,9 @@ public class ClassService {
     }
 
     public List<ClassShortResponse> getSubclasses() {
-        return classRepository.findAllByParentIsNotNull().stream()
+
+        return classRepository.findAllByParentIsNotNull()
+                .stream()
                 .filter(characterClass -> !characterClass.isHiddenEntity())
                 .map(classMapper::toShort)
                 .toList();
@@ -138,12 +145,20 @@ public class ClassService {
     public List<ClassShortResponse> getSubclasses(String parentUrl) {
         CharacterClass characterClass = classRepository.findByUrl(parentUrl)
                 .orElseThrow(() -> new EntityNotFoundException("Класс не найден для URL:" + parentUrl));
-
+        var sources = sourceSavedFilterService.getSavedFilter().getFilter().getGroups()
+                .stream()
+                .map(SourceGroupFilter.class::cast)
+                .map(SourceGroupFilter::getFilters)
+                .flatMap(Collection::stream)
+                .map(AbstractFilterItem::getValue)
+                .collect(Collectors.toSet());
         if (characterClass.isHiddenEntity()) {
             throw new EntityNotFoundException("Класс не найден для URL:" + parentUrl);
         }
 
-        return characterClass.getSubclasses().stream()
+        return characterClass.getSubclasses()
+                .stream()
+                .filter(characterClass1 -> sources.contains(characterClass.getSource().getAcronym()))
                 .sorted(Comparator
                         .comparing((CharacterClass c) -> c.getSource().getType().ordinal())
                         .thenComparing(CharacterClass::getName)
