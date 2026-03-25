@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.species.service;
 
 import club.ttg.dnd5.domain.filter.model.SearchBody;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
@@ -32,6 +33,7 @@ public class SpeciesService {
     private final SourceService sourceService;
     private final SpeciesQueryDslSearchService speciesQueryDslSearchService;
     private final SpeciesMapper speciesMapper;
+    private final SourceSavedFilterService sourceSavedFilterService;
 
     private final ObjectMapper objectMapper;
 
@@ -104,9 +106,12 @@ public class SpeciesService {
     }
 
     public Collection<SpeciesShortResponse> getAllLineages(String url) {
+        var sources = sourceSavedFilterService.getSavedSources();
+
         Species species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Вид не найден URL: " + url));
         return species.getLineages().stream()
+            .filter(lineages -> sources.contains(lineages.getSource().getAcronym()))
             .map(speciesMapper::toShort)
             .toList();
     }
