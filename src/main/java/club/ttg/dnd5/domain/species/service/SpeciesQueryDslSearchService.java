@@ -22,7 +22,7 @@ public class SpeciesQueryDslSearchService extends AbstractQueryDslSearchService<
 
     @Override
     protected BooleanExpression buildSourcePredicate(final List<String> values) {
-        PathBuilder<Object> magicItem = new PathBuilder<>(Object.class, "species");
+        PathBuilder<Object> magicItem = new PathBuilder<>(Object.class, SPECIES.getMetadata());
         return magicItem.getString("source").in(values);    }
 
     @Override

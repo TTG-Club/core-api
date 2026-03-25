@@ -22,8 +22,9 @@ public class ClassQueryDslSearchService extends AbstractQueryDslSearchService<Ch
 
     @Override
     protected BooleanExpression buildSourcePredicate(final List<String> values) {
-        PathBuilder<Object> magicItem = new PathBuilder<>(Object.class, "class");
-        return magicItem.getString("source").in(values);    }
+        PathBuilder<Object> characterClass = new PathBuilder<>(Object.class, CLASS.getMetadata());
+        return characterClass.getString("source").in(values);
+    }
 
     @Override
     protected OrderSpecifier<?>[] getOrder() {
