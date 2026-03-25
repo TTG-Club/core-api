@@ -224,6 +224,6 @@ public class SourceSavedFilterService
     }
 
     public SearchBody getFilter() {
-        return new SearchBody(getDefaultFilterInfo(), null);
+        return new SearchBody(getDefaultFilterInfo(), getDefaultFilterInfo());
     }
 }
