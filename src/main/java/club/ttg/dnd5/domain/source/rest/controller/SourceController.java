@@ -1,10 +1,8 @@
 package club.ttg.dnd5.domain.source.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
-import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,13 +22,6 @@ import java.util.Collection;
 public class SourceController {
 
     private final SourceService sourceService;
-    private final SourceSavedFilterService sourceSavedFilterService;
-
-    @Operation(summary = "Получить фильтр", description = "Возвращает фильтр по источникам")
-    @GetMapping("/filters")
-    public SearchBody getFilter() {
-        return sourceSavedFilterService.getFilter();
-    }
 
     @Operation(summary = "Получить источник", description = "Возвращает детальную информацию об источнике")
     @GetMapping("/{url}")
