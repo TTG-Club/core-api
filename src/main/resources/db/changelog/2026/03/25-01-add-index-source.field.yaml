@@ -1,0 +1,67 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-source-indexes
+      author: Magistrus
+      changes:
+        - createIndex:
+            indexName: idx_class_source
+            tableName: class
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_species_source
+            tableName: species
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_feat_source
+            tableName: feat
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_background_source
+            tableName: background
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_spell_source
+            tableName: spell
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_item_source
+            tableName: item
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_magic_item_source
+            tableName: magic_item
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_bestiary_source
+            tableName: bestiary
+            columns:
+              - column:
+                  name: source
+
+        - createIndex:
+            indexName: idx_glossary_source
+            tableName: glossary
+            columns:
+              - column:
+                  name: source
