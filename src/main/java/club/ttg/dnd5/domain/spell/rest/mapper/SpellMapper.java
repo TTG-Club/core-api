@@ -167,5 +167,4 @@ public interface SpellMapper
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining("; "));
     }
-
 }
