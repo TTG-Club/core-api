@@ -6,20 +6,21 @@ import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellSearchRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -42,8 +43,6 @@ public class SpellService {
     private final SpellQueryDslSearchService spellQueryDslSearchService;
     private final SourceSavedFilterService sourceSavedFilterService;
 
-    private final ObjectMapper objectMapper;
-
     public boolean existOrThrow(String url) {
         if (!spellRepository.existsById(url)) {
             throw new EntityNotFoundException(String.format("Заклинание с url %s не существует", url));
@@ -51,13 +50,15 @@ public class SpellService {
         return true;
     }
 
-    public List<SpellShortResponse> search(String searchLine, final String filters) {
-        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
-        return search(searchLine, searchBody);
-    }
 
-    public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
-        return spellQueryDslSearchService.search(searchLine, searchBody)
+
+    /**
+     * Поиск заклинаний через новую систему фильтрации v2.
+     */
+    public List<SpellShortResponse> searchV2(final SpellSearchRequest request)
+    {
+        var predicate = SpellPredicateBuilder.build(request);
+        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
                 .stream()
                 .map(spellMapper::toShort)
                 .collect(Collectors.toList());

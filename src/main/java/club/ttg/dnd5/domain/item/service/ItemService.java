@@ -12,7 +12,7 @@ import java.util.Collection;
 public interface ItemService {
     ItemDetailResponse getItem(String itemUtl);
 
-    Collection<ItemShortResponse> getItems(String searchLine, final SearchBody searchBody);
+
 
     String addItem(ItemRequest itemDto);
 
@@ -26,5 +26,7 @@ public interface ItemService {
 
     ItemDetailResponse preview(ItemRequest request);
 
-    Collection<ItemShortResponse> getItems(@Valid @Size(min = 2) String searchLine, String searchBody);
+
+
+    Collection<ItemShortResponse> searchV2(club.ttg.dnd5.domain.item.rest.dto.ItemSearchRequest request);
 }

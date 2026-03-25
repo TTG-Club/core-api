@@ -20,4 +20,8 @@ public abstract class AbstractSavedFilterService {
     }
 
     protected abstract FilterInfo buildDefaultFilterInfo();
+
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
+        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(getDefaultFilterInfo());
+    }
 }

@@ -5,14 +5,13 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -39,26 +38,20 @@ public class CreatureController {
         return creatureService.existOrThrow(url);
     }
 
-    @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
-    @GetMapping
-    public List<CreatureShortResponse> search(@RequestParam(name = "search", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestParam(required = false) String filter) {
-        return creatureService.search(searchLine, filter);
-    }
 
-    @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
-    @PostMapping("/search")
-    public List<CreatureShortResponse> search(@RequestParam(name = "query", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestBody(required = false) SearchBody searchBody) {
-        return creatureService.search(searchLine, searchBody);
+
+    @Operation(summary = "Поиск существ v2", description = "Поиск существ с Base64url-encoded фильтрами и пагинацией")
+    @GetMapping("/search/v2")
+    public List<CreatureShortResponse> searchV2(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "f", required = false)
+            @Schema(description = "Base64url-encoded JSON фильтров") String f,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size)
+    {
+        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
+                f, search, page, size, club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSearchRequest.class);
+        return creatureService.searchV2(request);
     }
 
     @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")
@@ -72,9 +65,12 @@ public class CreatureController {
         return creatureService.findFormByUrl(url);
     }
 
-    @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return creatureFilterService.getDefaultFilterInfo();
+
+
+    @Operation(summary = "Получить метаданные фильтров v2", description = "Возвращает JSON для построения UI фильтров и использования в SearchRequest")
+    @GetMapping("/filters/v2")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+        return creatureFilterService.getFilterMetadata();
     }
 
     @Operation(summary = "Добавление существа")

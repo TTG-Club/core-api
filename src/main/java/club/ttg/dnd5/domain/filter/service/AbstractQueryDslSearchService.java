@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.BooleanTemplate;
@@ -40,6 +41,27 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                or {0}.alternative ilike ''%%{2}%%'')
             """;
 
+    /**
+     * Новый метод поиска: принимает готовый предикат от PredicateBuilder,
+     * с поддержкой пагинации.
+     */
+    public List<E> search(final BooleanBuilder predicate, final int page, final int size)
+    {
+        JPASQLQuery<E> query = new JPASQLQuery<>(entityManager, dialect);
+
+        return query.select(entityPath)
+                .from(entityPath)
+                .where(predicate)
+                .orderBy(getOrder())
+                .offset((long) page * size)
+                .limit(size)
+                .fetch();
+    }
+
+    /**
+     * @deprecated Используйте {@link #search(BooleanBuilder, int, int)} с PredicateBuilder
+     */
+    @Deprecated
     public List<E> search(String searchLine, SearchBody searchBody)
     {
         BooleanExpression predicate = Optional.ofNullable(searchLine)

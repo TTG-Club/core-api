@@ -6,7 +6,6 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.service.BackgroundFilterService;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -63,34 +61,28 @@ public class BackgroundController {
         return backgroundService.getBackgroundsSelect(searchLine);
     }
 
-    @Operation(summary = "Список предысторий", description = "Список предысторий, поиск и фильтрация")
-    @GetMapping
-    public Collection<BackgroundShortResponse> findBackgrounds(
-            @RequestParam(name = "search", required = false)
-            @Valid
-            @Size(min = 2)
-            @Schema( description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @Schema(description = "упакованный в строку json фильтров")
-            @RequestParam(required = false) String filter) {
-        return backgroundService.getBackgrounds(searchLine, filter);
+
+
+    @Operation(summary = "Поиск предысторий v2", description = "Поиск предысторий с Base64url-encoded фильтрами и пагинацией")
+    @GetMapping("/search/v2")
+    public Collection<BackgroundShortResponse> searchV2(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "f", required = false)
+            @Schema(description = "Base64url-encoded JSON фильтров") String f,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size)
+    {
+        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
+                f, search, page, size, club.ttg.dnd5.domain.background.rest.dto.BackgroundSearchRequest.class);
+        return backgroundService.searchV2(request);
     }
 
-    @Operation(summary = "Краткой информации о предысториях", description = "Возвращает коллекцию с предысториями в кратком виде")
-    @PostMapping("/search")
-    public Collection<BackgroundShortResponse> findBackgrounds(
-            @RequestParam(name = "query", required = false)
-            @Valid
-            @Size(min = 2)
-            @Schema( description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @RequestBody(required = false) SearchBody searchBody) {
-        return backgroundService.getBackgrounds(searchLine, searchBody);
-    }
 
-    @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return backgroundFilterService.getDefaultFilterInfo();
+
+    @Operation(summary = "Получить метаданные фильтров v2")
+    @GetMapping("/filters/v2")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+        return backgroundFilterService.getFilterMetadata();
     }
 
     @Operation(summary = "Создание предыстории", description = "Возвращает ссылку на созданную предысторию")

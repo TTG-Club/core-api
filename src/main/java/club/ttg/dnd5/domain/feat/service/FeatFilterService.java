@@ -1,9 +1,7 @@
 package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatAbilityFilterGroup;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatCategoryFilterGroup;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatOtherFilterGroup;
+
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
@@ -22,23 +20,47 @@ public class FeatFilterService extends AbstractSavedFilterService  {
         this.featRepository = featRepository;
     }
 
+    // legacy (deprecated)
     @Override
+    @Deprecated
     public SearchBody getDefaultFilterInfo()
     {
-        List<String> usedSourceCodes = featRepository.findAllUsedSourceCodes();
-
         return new SearchBody(
-                sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes),
+                sourceSavedFilterService.getDefaultFilterInfo(),
                 buildDefaultFilterInfo()
         );
     }
 
     @Override
+    @Deprecated
     protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(List.of(
-                FeatCategoryFilterGroup.getDefault(),
-                FeatAbilityFilterGroup.getDefault(),
-                FeatOtherFilterGroup.getDefault()
-        ));
+        return new FilterInfo(java.util.Collections.emptyList());
+    }
+
+    @Override
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
+        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.builder()
+                .sources(club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(sourceSavedFilterService.getFilter()).getSources())
+                .filters(List.of(
+                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                                .key("category")
+                                .name("Категория")
+                                .type("threeState")
+                                .values(java.util.Arrays.stream(club.ttg.dnd5.domain.feat.model.FeatCategory.values())
+                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
+                                                .name(v.getName()).value(v.name()).build())
+                                        .toList())
+                                .build(),
+                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                                .key("ability")
+                                .name("Характеристика")
+                                .type("threeState")
+                                .values(java.util.Arrays.stream(club.ttg.dnd5.domain.common.dictionary.Ability.values())
+                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
+                                                .name(v.getShortName()).value(v.name()).build())
+                                        .toList())
+                                .build()
+                ))
+                .build();
     }
 }

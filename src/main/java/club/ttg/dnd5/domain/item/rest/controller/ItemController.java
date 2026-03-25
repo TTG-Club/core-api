@@ -11,8 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -62,34 +60,19 @@ public class ItemController {
         return itemService.findFormByUrl(url);
     }
 
-    @Operation(summary = "Список предметов", description = "Список предметов, поиск и фильтрация")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
-    })
-    @GetMapping
-    public Collection<ItemShortResponse> getItems(@RequestParam(name = "search", required = false)
-                                                  @Valid
-                                                  @Size(min = 2)
-                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine,
-                                                  @Schema(description = "упакованный в строку json фильтров")
-                                                  @RequestParam(required = false) String filter) {
-        return itemService.getItems(searchLine, filter);
-    }
 
-
-    @Operation(summary = "Получение списка краткого описания предметов")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
-    })
-    @PostMapping("/search")
-    public Collection<ItemShortResponse> getItems(@RequestParam(name = "query", required = false)
-                                                  @Valid
-                                                  @Size(min = 2)
-                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine,
-                                                  @RequestBody(required = false) SearchBody searchBody) {
-        return itemService.getItems(searchLine, searchBody);
+    @Operation(summary = "Поиск предметов v2", description = "Поиск предметов с Base64url-encoded фильтрами и пагинацией")
+    @GetMapping("/search/v2")
+    public Collection<ItemShortResponse> searchV2(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "f", required = false)
+            @Schema(description = "Base64url-encoded JSON фильтров") String f,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size)
+    {
+        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
+                f, search, page, size, club.ttg.dnd5.domain.item.rest.dto.ItemSearchRequest.class);
+        return itemService.searchV2(request);
     }
 
     @Secured("ADMIN")
@@ -105,9 +88,11 @@ public class ItemController {
         return itemService.addItem(itemDto);
     }
 
-    @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return itemFilterService.getDefaultFilterInfo();
+
+    @Operation(summary = "Получить метаданные фильтров v2")
+    @GetMapping("/filters/v2")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+        return itemFilterService.getFilterMetadata();
     }
 
     @Operation(summary = "Предпросмотр предмета")

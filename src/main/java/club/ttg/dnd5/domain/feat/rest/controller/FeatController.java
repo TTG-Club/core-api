@@ -53,33 +53,20 @@ public class FeatController {
         return featService.findFormByUrl(url);
     }
 
-    @Operation(summary = "Список черт", description = "Список черт, поиск и фильтрация")
-    @GetMapping
-    public Collection<FeatShortResponse> getFeats(
-                                              @RequestParam(name = "search", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @Schema(description = "упакованный в строку json фильтров")
-                                              @RequestParam(required = false) String filter) {
-        return featService.search(searchLine, filter);
-    }
 
-    @Operation(summary = "Получение списка черт")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Черты успешно получена")
-    })
-    @ResponseStatus(HttpStatus.OK)
-    @PostMapping("/search")
-    public Collection<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
-                                                  @Valid
-                                                  @Size(min = 2)
-                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine,
-                                                  @RequestBody(required = false) SearchBody searchBody
-    ) {
-        return featService.getFeats(searchLine, searchBody);
+
+    @Operation(summary = "Поиск черт v2", description = "Поиск черт с Base64url-encoded фильтрами и пагинацией")
+    @GetMapping("/search/v2")
+    public Collection<FeatShortResponse> searchV2(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "f", required = false)
+            @Schema(description = "Base64url-encoded JSON фильтров") String f,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size)
+    {
+        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
+                f, search, page, size, club.ttg.dnd5.domain.feat.rest.dto.FeatSearchRequest.class);
+        return featService.searchV2(request);
     }
 
     @Operation(summary = "Получение списка черт для селекта")
@@ -95,9 +82,11 @@ public class FeatController {
         return featService.getFeatsSelect(searchLine, categories);
     }
 
-    @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return featFilterService.getDefaultFilterInfo();
+
+    @Operation(summary = "Получить метаданные фильтров v2", description = "Возвращает JSON для построения UI фильтров")
+    @GetMapping("/filters/v2")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+        return featFilterService.getFilterMetadata();
     }
 
     @Secured("ADMIN")
