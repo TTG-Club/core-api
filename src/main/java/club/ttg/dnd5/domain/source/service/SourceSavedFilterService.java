@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.source.model.filter.SourceSavedFilter;
 import club.ttg.dnd5.domain.source.repository.SourceSavedFilterRepository;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
+import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterRequest;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.rest.mapper.SavedSourceFilterMapper;
 import club.ttg.dnd5.domain.user.service.UserService;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,16 +65,16 @@ public class SourceSavedFilterService
                 .flatMap(Collection::stream)
                 .forEach(item -> sourceMap.put(item.getValue(), item.getSelected()));
 
-        SourceFilterInfo filter = buildDefaultFilterInfo();
+        SourceSavedFilterRequest filter = buildDefaultFilterInfo();
 
-        filter.getGroups().stream()
+        filter.getFilter().getGroups().stream()
                 .filter(SourceGroupFilter.class::isInstance)
                 .map(SourceGroupFilter.class::cast)
                 .map(SourceGroupFilter::getFilters)
                 .flatMap(Collection::stream)
                 .forEach(item -> item.setSelected(sourceMap.get(item.getValue())));
 
-        sourceSavedFilter.setFilter(filter);
+        sourceSavedFilter.setFilter(filter.getFilter());
         return save(sourceSavedFilter);
     }
 
@@ -87,7 +89,7 @@ public class SourceSavedFilterService
         return sourceSavedFilterRepository.save(entity);
     }
 
-    public SourceSavedFilterResponse createFilter(SourceFilterInfo filter)
+    public SourceSavedFilterResponse createFilter(SourceSavedFilterRequest filter)
     {
         if (findSavedFilter().isEmpty())
         {
@@ -101,24 +103,25 @@ public class SourceSavedFilterService
         throw new EntityExistException("Фильтр для пользователя уже существует");
     }
 
-    public SourceSavedFilterResponse updateFilter(SourceFilterInfo filter)
+    public SourceSavedFilterResponse updateFilter(SourceSavedFilterRequest filter)
     {
-        return findSavedFilter()
+        var savedFilter = findSavedFilter();
+        return savedFilter
                 .map(saved -> savedSourceFilterMapper.update(saved, filter))
                 .map(savedSourceFilterMapper::toResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Фильтр для пользователя не существует"));
     }
 
-    protected SourceFilterInfo buildDefaultFilterInfo()
+    protected SourceSavedFilterRequest buildDefaultFilterInfo()
     {
         return buildDefaultFilterInfoFromSources(sourceService.findAll());
     }
 
-    protected SourceFilterInfo buildDefaultFilterInfo(List<String> sourceCodes)
+    protected SourceSavedFilterRequest buildDefaultFilterInfo(List<String> sourceCodes)
     {
         if (sourceCodes == null || sourceCodes.isEmpty())
         {
-            return new SourceFilterInfo(List.of());
+            return new SourceSavedFilterRequest();
         }
 
         Set<String> allowedCodes = sourceCodes.stream()
@@ -127,7 +130,7 @@ public class SourceSavedFilterService
 
         if (allowedCodes.isEmpty())
         {
-            return new SourceFilterInfo(List.of());
+            return new SourceSavedFilterRequest();
         }
 
         List<Source> filteredSources = sourceService.findAll().stream()
@@ -137,12 +140,20 @@ public class SourceSavedFilterService
         return buildDefaultFilterInfoFromSources(filteredSources);
     }
 
-    private SourceFilterInfo buildDefaultFilterInfoFromSources(List<Source> sources)
+    private SourceSavedFilterRequest buildDefaultFilterInfoFromSources(List<Source> sources)
     {
+        if (sources == null || sources.isEmpty())
+        {
+            return SourceSavedFilterRequest.builder()
+                    .filter(new SourceFilterInfo(Collections.emptyList()))
+                    .build();
+        }
+
         Map<SourceType, List<Source>> sourceMap = sources.stream()
+                .filter(source -> source != null && source.getType() != null)
                 .collect(Collectors.groupingBy(Source::getType));
 
-        return new SourceFilterInfo(
+        SourceFilterInfo filterInfo = new SourceFilterInfo(
                 Arrays.stream(SourceType.values())
                         .filter(sourceMap::containsKey)
                         .map(type -> new SourceGroupFilter(
@@ -151,28 +162,35 @@ public class SourceSavedFilterService
                                         .map(src -> new SourceGroupFilter.SourceFilterItem(
                                                 src.getName(),
                                                 src.getAcronym(),
-                                                true)
-                                        )
-                                        .toList(),
+                                                true
+                                        ))
+                                        .collect(Collectors.toList()),
                                 type.getName()
                         ))
                         .collect(Collectors.toList())
         );
+
+        return SourceSavedFilterRequest.builder()
+                .filter(filterInfo)
+                .build();
     }
 
-    public SourceFilterInfo getDefaultFilterInfo()
+    public SourceSavedFilterRequest getDefaultFilterInfo()
     {
         if (userService.getCurrentUserId().isPresent())
         {
-            return (SourceFilterInfo) getSavedFilter().getFilter();
+            return SourceSavedFilterRequest.builder()
+                    .id(userService.getCurrentUserId().get())
+                    .filter(getSavedFilter().getFilter())
+                    .build();
         }
 
         return buildDefaultFilterInfo();
     }
 
-    public SourceFilterInfo getDefaultFilterInfo(List<String> sourceCodes)
+    public SourceSavedFilterRequest getDefaultFilterInfo(List<String> sourceCodes)
     {
-        SourceFilterInfo actualFilter = buildDefaultFilterInfo(sourceCodes);
+        SourceSavedFilterRequest actualFilter = buildDefaultFilterInfo(sourceCodes);
 
         if (userService.getCurrentUserId().isEmpty())
         {
@@ -195,7 +213,7 @@ public class SourceSavedFilterService
                 .flatMap(Collection::stream)
                 .forEach(item -> selectedMap.put(item.getValue(), item.getSelected()));
 
-        actualFilter.getGroups().stream()
+        actualFilter.getFilter().getGroups().stream()
                 .filter(SourceGroupFilter.class::isInstance)
                 .map(SourceGroupFilter.class::cast)
                 .map(SourceGroupFilter::getFilters)
