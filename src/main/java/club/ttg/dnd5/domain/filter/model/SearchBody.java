@@ -14,10 +14,8 @@ import org.springframework.util.StringUtils;
 @Getter
 @Setter
 public class SearchBody {
-
     private SourceFilterInfo sources;
     private FilterInfo filter;
-
 
     public static SearchBody parse(final String filter, ObjectMapper objectMapper) {
         if (!StringUtils.hasText(filter)) {

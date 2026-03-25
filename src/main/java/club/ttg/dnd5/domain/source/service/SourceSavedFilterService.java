@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.source.service;
 
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.model.SourceType;
@@ -220,5 +221,9 @@ public class SourceSavedFilterService
                 .forEach(item -> item.setSelected(selectedMap.get(item.getValue())));
 
         return new SourceFilterInfo(actualFilter.getFilter().getGroups());
+    }
+
+    public SearchBody getFilter() {
+        return new SearchBody(getDefaultFilterInfo(), null);
     }
 }
