@@ -175,33 +175,30 @@ public class SourceSavedFilterService
                 .build();
     }
 
-    public SourceSavedFilterRequest getDefaultFilterInfo()
+    public SourceFilterInfo getDefaultFilterInfo()
     {
         if (userService.getCurrentUserId().isPresent())
         {
-            return SourceSavedFilterRequest.builder()
-                    .id(userService.getCurrentUserId().get())
-                    .filter(getSavedFilter().getFilter())
-                    .build();
+            return new SourceFilterInfo(getSavedFilter().getFilter().getGroups());
         }
 
-        return buildDefaultFilterInfo();
+        return new SourceFilterInfo(buildDefaultFilterInfo().getFilter().getGroups());
     }
 
-    public SourceSavedFilterRequest getDefaultFilterInfo(List<String> sourceCodes)
+    public SourceFilterInfo getDefaultFilterInfo(List<String> sourceCodes)
     {
         SourceSavedFilterRequest actualFilter = buildDefaultFilterInfo(sourceCodes);
 
         if (userService.getCurrentUserId().isEmpty())
         {
-            return actualFilter;
+            return new SourceFilterInfo(actualFilter.getFilter().getGroups());
         }
 
         Optional<SourceSavedFilter> savedFilterOptional = findSavedFilter();
 
         if (savedFilterOptional.isEmpty())
         {
-            return actualFilter;
+            return new SourceFilterInfo(actualFilter.getFilter().getGroups());
         }
 
         Map<String, Boolean> selectedMap = new HashMap<>();
@@ -220,6 +217,6 @@ public class SourceSavedFilterService
                 .flatMap(Collection::stream)
                 .forEach(item -> item.setSelected(selectedMap.get(item.getValue())));
 
-        return actualFilter;
+        return new SourceFilterInfo(actualFilter.getFilter().getGroups());
     }
 }
