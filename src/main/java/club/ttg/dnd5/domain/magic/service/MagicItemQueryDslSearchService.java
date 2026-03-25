@@ -27,7 +27,7 @@ public class MagicItemQueryDslSearchService extends AbstractQueryDslSearchServic
     @Override
     protected BooleanExpression buildSourcePredicate(final List<String> values)
     {
-        PathBuilder<Object> magicItem = new PathBuilder<>(Object.class, "magic_item");
+        PathBuilder<Object> magicItem = new PathBuilder<>(Object.class, MAGIC_ITEM.getMetadata());
         return magicItem.getString("source").in(values);
     }
 
