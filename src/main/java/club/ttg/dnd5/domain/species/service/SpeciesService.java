@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.service;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -12,7 +12,7 @@ import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
@@ -35,7 +35,7 @@ public class SpeciesService {
     private final SpeciesMapper speciesMapper;
     private final SourceSavedFilterService sourceSavedFilterService;
 
-    private final ObjectMapper objectMapper;
+
 
     public boolean exists(String url) {
         return speciesRepository.existsById(url);
@@ -66,15 +66,13 @@ public class SpeciesService {
                 .toList();
     }
 
-    public List<SpeciesShortResponse> search(String searchLine, String filters) {
-        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
-        return search(searchLine, searchBody);
-    }
 
-    public List<SpeciesShortResponse> search(String searchLine, SearchBody searchBody) {
-        return speciesQueryDslSearchService.search(searchLine, searchBody)
+
+    public List<SpeciesShortResponse> searchV2(final club.ttg.dnd5.domain.species.rest.dto.SpeciesSearchRequest request)
+    {
+        var predicate = SpeciesPredicateBuilder.build(request);
+        return speciesQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
                 .stream()
-                .filter(s -> (searchLine != null && !searchLine.isEmpty()) || s.getParent() == null)
                 .map(speciesMapper::toShort)
                 .collect(Collectors.toList());
     }

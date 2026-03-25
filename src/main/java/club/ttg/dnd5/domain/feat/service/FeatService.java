@@ -15,9 +15,7 @@ import java.util.Set;
 public interface FeatService {
     FeatDetailResponse getFeat(String featUrl);
 
-    Collection<FeatShortResponse> search(@Valid @Size(min = 2) String searchLine, String filter);
 
-    Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody);
 
     String addFeat(FeatRequest featDto);
 
@@ -32,4 +30,6 @@ public interface FeatService {
     FeatDetailResponse preview(FeatRequest request);
 
     Collection<FeatSelectResponse> getFeatsSelect(final @Valid @Size String searchLine, final Set<FeatCategory> categories);
+
+    Collection<FeatShortResponse> searchV2(club.ttg.dnd5.domain.feat.rest.dto.FeatSearchRequest request);
 }

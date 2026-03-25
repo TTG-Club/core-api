@@ -1,8 +1,5 @@
 package club.ttg.dnd5.domain.character_class.service;
 
-import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
-import club.ttg.dnd5.domain.character_class.rest.dto.filter.HitDiceFilterGroup;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
@@ -15,34 +12,52 @@ import java.util.List;
 public class ClassFilterService extends AbstractSavedFilterService
 {
     private final SourceSavedFilterService sourceSavedFilterService;
-    private final ClassRepository classRepository;
 
     public ClassFilterService(
-            SourceSavedFilterService sourceSavedFilterService,
-            ClassRepository classRepository
+            SourceSavedFilterService sourceSavedFilterService
     )
     {
         super(sourceSavedFilterService);
         this.sourceSavedFilterService = sourceSavedFilterService;
-        this.classRepository = classRepository;
     }
 
+    // legacy (deprecated)
     @Override
+    @Deprecated
     public SearchBody getDefaultFilterInfo()
     {
-        List<String> usedSourceCodes = classRepository.findAllUsedSourceCodes();
-
         return new SearchBody(
-                sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes),
+                sourceSavedFilterService.getDefaultFilterInfo(),
                 buildDefaultFilterInfo()
         );
     }
 
     @Override
-    protected FilterInfo buildDefaultFilterInfo()
+    @Deprecated
+    protected club.ttg.dnd5.domain.filter.model.FilterInfo buildDefaultFilterInfo()
     {
-        return new FilterInfo(List.of(
-                HitDiceFilterGroup.getDefault()
-        ));
+        return new club.ttg.dnd5.domain.filter.model.FilterInfo(java.util.Collections.emptyList());
+    }
+
+    @Override
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
+        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.builder()
+                .sources(club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(sourceSavedFilterService.getFilter()).getSources())
+                .filters(List.of(
+                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                                .key("hitDie")
+                                .name("Кость хитов")
+                                .type("threeState")
+                                .values(java.util.stream.Stream.of(
+                                                club.ttg.dnd5.domain.common.dictionary.Dice.d6,
+                                                club.ttg.dnd5.domain.common.dictionary.Dice.d8,
+                                                club.ttg.dnd5.domain.common.dictionary.Dice.d10,
+                                                club.ttg.dnd5.domain.common.dictionary.Dice.d12)
+                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
+                                                .name(v.getName()).value(v.name()).build())
+                                        .toList())
+                                .build()
+                ))
+                .build();
     }
 }

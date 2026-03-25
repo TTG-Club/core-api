@@ -27,6 +27,7 @@ public class SpeciesFilterService extends AbstractSavedFilterService
     }
 
     @Override
+    @Deprecated
     public SearchBody getDefaultFilterInfo()
     {
         List<String> usedSourceCodes = speciesRepository.findAllUsedSourceCodes();
@@ -38,10 +39,16 @@ public class SpeciesFilterService extends AbstractSavedFilterService
     }
 
     @Override
+    @Deprecated
     protected FilterInfo buildDefaultFilterInfo()
     {
         return new FilterInfo(List.of(
                 CreatureTypeFilterGroup.getDefault()
         ));
+    }
+
+    @Override
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
+        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(getDefaultFilterInfo());
     }
 }

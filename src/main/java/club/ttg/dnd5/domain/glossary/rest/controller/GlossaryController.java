@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.glossary.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -39,26 +38,19 @@ public class GlossaryController {
     }
 
 
-    @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
-    @GetMapping
-    public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "search", required = false)
-                                                   @Valid
-                                                   @Size(min = 2)
-                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                   String searchLine,
-                                                   @RequestParam(required = false) String filter){
-        return glossaryService.search(searchLine, filter);
-    }
 
-    @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
-    @PostMapping("/search")
-    public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "query", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestBody(required = false) SearchBody searchBody){
-        return glossaryService.search(searchLine, searchBody);
+    @Operation(summary = "Поиск записей глоссария v2", description = "Поиск записей глоссария с Base64url-encoded фильтрами и пагинацией")
+    @GetMapping("/search/v2")
+    public List<GlossaryShortResponse> searchV2(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "f", required = false)
+            @Schema(description = "Base64url-encoded JSON фильтров") String f,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size)
+    {
+        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
+                f, search, page, size, club.ttg.dnd5.domain.glossary.rest.dto.GlossarySearchRequest.class);
+        return glossaryService.searchV2(request);
     }
 
     @GetMapping("/{url}")
@@ -97,8 +89,11 @@ public class GlossaryController {
         glossaryService.delete(url);
     }
 
-    @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return glossaryFilterService.getDefaultFilterInfo();
+
+
+    @Operation(summary = "Получить метаданные фильтров v2")
+    @GetMapping("/filters/v2")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+        return glossaryFilterService.getFilterMetadata();
     }
 }

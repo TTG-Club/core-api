@@ -43,6 +43,7 @@ public class SpellFilterService extends AbstractSavedFilterService
     }
 
     @Override
+    @Deprecated
     public SearchBody getDefaultFilterInfo()
     {
         List<String> usedSourceCodes = spellRepository.findAllUsedSourceCodes();
@@ -54,6 +55,7 @@ public class SpellFilterService extends AbstractSavedFilterService
     }
 
     @Override
+    @Deprecated
     protected FilterInfo buildDefaultFilterInfo()
     {
         return new FilterInfo(List.of(
@@ -75,5 +77,10 @@ public class SpellFilterService extends AbstractSavedFilterService
                 SpellComponentsFilterGroup.getDefault(),
                 SpellConditionFilterGroup.getDefault()
         ));
+    }
+
+    @Override
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
+        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(getDefaultFilterInfo());
     }
 }

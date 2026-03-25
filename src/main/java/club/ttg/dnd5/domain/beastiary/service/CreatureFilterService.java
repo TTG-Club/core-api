@@ -41,6 +41,7 @@ public class CreatureFilterService extends AbstractSavedFilterService
     }
 
     @Override
+    @Deprecated
     public SearchBody getDefaultFilterInfo()
     {
         List<String> usedSourceCodes = creatureRepository.findAllUsedSourceCodes();
@@ -52,6 +53,7 @@ public class CreatureFilterService extends AbstractSavedFilterService
     }
 
     @Override
+    @Deprecated
     protected FilterInfo buildDefaultFilterInfo()
     {
         List<Creature> creatures = creatureRepository.findAll();
@@ -78,5 +80,10 @@ public class CreatureFilterService extends AbstractSavedFilterService
                 CreatureSensesFilterGroup.getDefault(),
                 CreatureHabitatFilterGroup.getDefault()
         ));
+    }
+
+    @Override
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
+        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(getDefaultFilterInfo());
     }
 }

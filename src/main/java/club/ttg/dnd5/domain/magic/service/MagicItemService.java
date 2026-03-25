@@ -14,7 +14,7 @@ public interface MagicItemService {
 
     MagicItemDetailResponse getItem(String url);
 
-    Collection<MagicItemShortResponse> getItems(String searchLine, final SearchBody searchBody);
+
 
     String addItem(MagicItemRequest itemDto);
 
@@ -26,5 +26,7 @@ public interface MagicItemService {
 
     MagicItemDetailResponse preview(MagicItemRequest request);
 
-    Collection<MagicItemShortResponse> getItems(@Valid @Size(min = 2) String searchLine, String searchBody);
+
+
+    Collection<MagicItemShortResponse> searchV2(club.ttg.dnd5.domain.magic.rest.dto.MagicItemSearchRequest request);
 }
