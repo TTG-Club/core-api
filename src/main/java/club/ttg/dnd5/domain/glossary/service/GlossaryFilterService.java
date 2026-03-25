@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.glossary.service;
 
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
 import club.ttg.dnd5.domain.glossary.repository.GlossaryFilterRepository;
 import club.ttg.dnd5.domain.glossary.rest.dto.filter.GlossaryTagCategoryFilterGroup;
@@ -18,6 +19,16 @@ public class GlossaryFilterService extends AbstractSavedFilterService {
         this.glossaryFilterRepository = glossaryFilterRepository;
     }
 
+    @Override
+    public SearchBody getDefaultFilterInfo()
+    {
+        List<String> usedSourceCodes = glossaryFilterRepository.findAllUsedSourceCodes();
+
+        return new SearchBody(
+                sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes),
+                buildDefaultFilterInfo()
+        );
+    }
 
     @Override
     protected FilterInfo buildDefaultFilterInfo() {

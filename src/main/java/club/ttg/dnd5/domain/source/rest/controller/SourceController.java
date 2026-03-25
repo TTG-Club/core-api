@@ -32,8 +32,6 @@ public class SourceController {
         return sourceSavedFilterService.getDefaultFilterInfo();
     }
 
-
-
     @Operation(summary = "Получить источник", description = "Возвращает детальную информацию об источнике")
     @GetMapping("/{url}")
     public SourceDetailResponse getByAcronym(@PathVariable String url) {
