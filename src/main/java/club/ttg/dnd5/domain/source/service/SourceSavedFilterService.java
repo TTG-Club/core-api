@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.source.service;
 
+import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
 import club.ttg.dnd5.domain.source.model.Source;
@@ -51,15 +52,30 @@ public class SourceSavedFilterService
                 .map(this::updateToActualAndSave)
                 .orElseGet(this::createActualAndSave);
     }
-    public Set<String > getSavedSources()
+
+    public Set<String> getSavedSources()
     {
-        return getSavedFilter().getFilter().getGroups()
+        return findSavedFilter()
+            .map(SourceSavedFilter::getFilter)
+            .map(FilterInfo::getGroups)
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(SourceGroupFilter.class::isInstance)
+            .map(SourceGroupFilter.class::cast)
+            .flatMap(group -> group.getFilters().stream())
+            .filter(filter -> Boolean.TRUE.equals(filter.getSelected()))
+            .map(AbstractFilterItem::getValue)
+            .collect(Collectors.collectingAndThen(
+                    Collectors.toSet(),
+                    result -> result.isEmpty() ? getAllSourceAcronyms() : result
+            ));
+    }
+
+    private Set<String> getAllSourceAcronyms()
+    {
+        return sourceService.findAll()
                 .stream()
-                .map(SourceGroupFilter.class::cast)
-                .map(SourceGroupFilter::getFilters)
-                .flatMap(Collection::stream)
-                .filter(f -> f.getSelected() != null && f.getSelected())
-                .map(AbstractFilterItem::getValue)
+                .map(Source::getAcronym)
                 .collect(Collectors.toSet());
     }
 
