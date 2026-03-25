@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.user.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
+import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterRequest;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
@@ -57,13 +57,13 @@ public class UserController {
 
     @Operation(summary = "Создать сохраненный фильтр")
     @PostMapping("/profile/saved-filter")
-    public SourceSavedFilterResponse saveSourceFilter(@RequestBody SourceFilterInfo sourceFilter) {
+    public SourceSavedFilterResponse saveSourceFilter(@RequestBody SourceSavedFilterRequest sourceFilter) {
         return sourceSavedFilterService.createFilter(sourceFilter);
     }
 
     @Operation(summary = "Обновить сохраненный фильтр")
     @PutMapping("/profile/saved-filter")
-    public SourceSavedFilterResponse updateSourceFilter(@RequestBody SourceFilterInfo sourceFilter) {
+    public SourceSavedFilterResponse updateSourceFilter(@RequestBody SourceSavedFilterRequest sourceFilter) {
         return sourceSavedFilterService.updateFilter(sourceFilter);
     }
 
