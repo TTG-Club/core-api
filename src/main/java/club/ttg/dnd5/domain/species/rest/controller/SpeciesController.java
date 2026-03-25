@@ -73,7 +73,7 @@ public class SpeciesController {
             @Size(min = 2)
             @Parameter(description = "Строка поиска, если null-отдаются все сущности")
             String searchLine,
-            @RequestBody SearchBody searchBody) {
+            @RequestBody(required = false) SearchBody searchBody) {
         return speciesService.search(searchLine, searchBody);
     }
 
