@@ -14,6 +14,7 @@ import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -103,6 +104,7 @@ public class SourceSavedFilterService
         throw new EntityExistException("Фильтр для пользователя уже существует");
     }
 
+    @Transactional
     public SourceSavedFilterResponse updateFilter(SourceSavedFilterRequest filter)
     {
         var savedFilter = findSavedFilter();
