@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
@@ -39,6 +40,7 @@ public class SpellService {
     private final SpellRepository spellRepository;
     private final SpellMapper spellMapper;
     private final SpellQueryDslSearchService spellQueryDslSearchService;
+    private final SourceSavedFilterService sourceSavedFilterService;
 
     private final ObjectMapper objectMapper;
 
@@ -70,8 +72,14 @@ public class SpellService {
     }
 
     public Spell findByUrl(String url) {
-        return spellRepository.findById(url)
+        var sources = sourceSavedFilterService.getSavedSources();
+        var spell =  spellRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Заклинание с url %s не существует", url)));
+        spell.getClassAffiliation().removeIf(characterClass -> !sources.contains(characterClass.getSource().getAcronym()));
+        spell.getSubclassAffiliation().removeIf(characterClass -> !sources.contains(characterClass.getSource().getAcronym()));
+        spell.getSpeciesAffiliation().removeIf(species -> !sources.contains(species.getSource().getAcronym()));
+        spell.getLineagesAffiliation().removeIf(lineages -> !sources.contains(lineages.getSource().getAcronym()));
+        return spell;
     }
 
     public boolean existsByUrl(String url) {
