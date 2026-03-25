@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterRequest;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.rest.mapper.SavedSourceFilterMapper;
 import club.ttg.dnd5.domain.user.service.UserService;
+import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,17 @@ public class SourceSavedFilterService
         return findSavedFilter()
                 .map(this::updateToActualAndSave)
                 .orElseGet(this::createActualAndSave);
+    }
+    public Set<String > getSavedSources()
+    {
+        return getSavedFilter().getFilter().getGroups()
+                .stream()
+                .map(SourceGroupFilter.class::cast)
+                .map(SourceGroupFilter::getFilters)
+                .flatMap(Collection::stream)
+                .filter(f -> f.getSelected() != null && f.getSelected())
+                .map(AbstractFilterItem::getValue)
+                .collect(Collectors.toSet());
     }
 
     public SourceSavedFilterResponse getSavedFilterResponse()
