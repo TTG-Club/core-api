@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface FeatRepository extends JpaRepository<Feat, String> {
@@ -22,5 +23,11 @@ public interface FeatRepository extends JpaRepository<Feat, String> {
     )
     Collection<Feat> findBySearchLine(String searchLine, String invertedSearchLine, Sort defaultSort);
 
-    Integer countByUsername(String username);
+    @Query(value = """
+        select distinct f.source
+        from feat f
+        where f.source is not null
+        order by f.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
 }

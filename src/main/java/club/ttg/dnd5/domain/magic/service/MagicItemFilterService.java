@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
+import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
+import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemCategoryFilterGroup;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemOtherFilterGroup;
 import club.ttg.dnd5.domain.magic.rest.dto.filter.RarityFilterGroup;
@@ -12,10 +14,23 @@ import java.util.List;
 
 @Service
 public class MagicItemFilterService extends AbstractSavedFilterService {
+    private final MagicItemRepository magicItemRepository;
 
-
-    public MagicItemFilterService(SourceSavedFilterService sourceSavedFilterService) {
+    public MagicItemFilterService(SourceSavedFilterService sourceSavedFilterService,
+                                  MagicItemRepository magicItemRepository) {
         super(sourceSavedFilterService);
+        this.magicItemRepository = magicItemRepository;
+    }
+
+    @Override
+    public SearchBody getDefaultFilterInfo()
+    {
+        List<String> usedSourceCodes = magicItemRepository.findAllUsedSourceCodes();
+
+        return new SearchBody(
+                sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes),
+                buildDefaultFilterInfo()
+        );
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface ItemRepository extends JpaRepository<Item, String>,
@@ -24,5 +25,11 @@ public interface ItemRepository extends JpaRepository<Item, String>,
     )
     Collection<Item> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
-    Integer countByUsername(String username);
+    @Query(value = """
+        select distinct i.source
+        from item i
+        where i.source is not null
+        order by i.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
 }

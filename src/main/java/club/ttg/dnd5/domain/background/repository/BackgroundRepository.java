@@ -24,5 +24,11 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
     )
     List<Background> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
-    Integer countByUsername(String username);
+    @Query(value = """
+        select distinct b.source
+        from background b
+        where b.source is not null
+        order by b.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
 }

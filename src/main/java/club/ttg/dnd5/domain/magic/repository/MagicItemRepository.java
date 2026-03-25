@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
     @Query(value = """
@@ -19,5 +20,11 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
     )
     Collection<MagicItem> findBySearchLine(String searchLine, String invertedSearchLine);
 
-    Integer countByUsername(String username);
+    @Query(value = """
+        select distinct mi.source
+        from magic_item mi
+        where mi.source is not null
+        order by mi.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
 }
