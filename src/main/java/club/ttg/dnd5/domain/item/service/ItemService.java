@@ -1,11 +1,8 @@
 package club.ttg.dnd5.domain.item.service;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 
 import java.util.Collection;
 

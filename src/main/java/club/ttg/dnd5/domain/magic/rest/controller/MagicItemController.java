@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;

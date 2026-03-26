@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.magic.service;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import org.springframework.stereotype.Service;
@@ -12,12 +11,9 @@ import java.util.List;
 
 @Service
 public class MagicItemFilterService extends AbstractSavedFilterService {
-    private final MagicItemRepository magicItemRepository;
 
-    public MagicItemFilterService(SourceSavedFilterService sourceSavedFilterService,
-                                  MagicItemRepository magicItemRepository) {
+    public MagicItemFilterService(SourceSavedFilterService sourceSavedFilterService) {
         super(sourceSavedFilterService);
-        this.magicItemRepository = magicItemRepository;
     }
 
     // legacy (deprecated)

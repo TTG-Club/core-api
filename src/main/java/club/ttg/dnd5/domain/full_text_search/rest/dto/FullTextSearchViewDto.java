@@ -13,6 +13,7 @@ import lombok.*;
 public class FullTextSearchViewDto {
 
     private String url;
+    @Builder.Default
     private NameResponse name = new NameResponse();
     private SectionType type;
     private SourceResponse source;

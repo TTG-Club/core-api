@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.source.service.SourceService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
@@ -10,7 +9,6 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.rest.mapper.MagicItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -26,7 +24,6 @@ public class MagicItemServiceImpl implements MagicItemService {
     private final MagicItemMapper magicItemMapper;
     private final MagicItemQueryDslSearchService magicItemQueryDslSearchService;
     private final SourceService sourceService;
-    private final ObjectMapper objectMapper;
 
 
     @Override

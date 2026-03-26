@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.item.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;

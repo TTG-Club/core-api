@@ -11,14 +11,11 @@ import java.util.List;
 @Service
 public class ClassFilterService extends AbstractSavedFilterService
 {
-    private final SourceSavedFilterService sourceSavedFilterService;
-
     public ClassFilterService(
             SourceSavedFilterService sourceSavedFilterService
     )
     {
         super(sourceSavedFilterService);
-        this.sourceSavedFilterService = sourceSavedFilterService;
     }
 
     // legacy (deprecated)

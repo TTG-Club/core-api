@@ -13,7 +13,6 @@ import java.util.List;
 @Service
 public class SpeciesFilterService extends AbstractSavedFilterService
 {
-    private final SourceSavedFilterService sourceSavedFilterService;
     private final SpeciesRepository speciesRepository;
 
     public SpeciesFilterService(
@@ -22,7 +21,6 @@ public class SpeciesFilterService extends AbstractSavedFilterService
     )
     {
         super(sourceSavedFilterService);
-        this.sourceSavedFilterService = sourceSavedFilterService;
         this.speciesRepository = speciesRepository;
     }
 

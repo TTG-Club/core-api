@@ -7,7 +7,7 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.service.FeatFilterService;
 import club.ttg.dnd5.domain.feat.service.FeatService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

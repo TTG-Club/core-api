@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.background.service;
 
-import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
@@ -11,12 +10,9 @@ import java.util.List;
 
 @Service
 public class BackgroundFilterService extends AbstractSavedFilterService {
-    private final BackgroundRepository backgroundRepository;
 
-    public BackgroundFilterService(SourceSavedFilterService sourceSavedFilterService,
-                                  BackgroundRepository backgroundRepository) {
+    public BackgroundFilterService(SourceSavedFilterService sourceSavedFilterService) {
         super(sourceSavedFilterService);
-        this.backgroundRepository = backgroundRepository;
     }
 
     // legacy (deprecated)

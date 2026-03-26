@@ -3,19 +3,18 @@ package club.ttg.dnd5.domain.glossary.service;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.glossary.repository.GlossaryRepository;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
+import club.ttg.dnd5.domain.glossary.rest.dto.GlossarySearchRequest;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.rest.mapper.GlossaryMapper;
+
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -30,17 +29,10 @@ public class GlossaryService {
     private final SourceService sourceService;
     private final GlossaryMapper glossaryMapper;
     private final GlossaryQueryDslSearchService glossaryQueryDslSearchService;
-    private final ObjectMapper objectMapper;
 
-    public List<GlossaryShortResponse> search(final @Valid @Size(min = 2) String searchLine, final String filters) {
-        var searchBody = SearchBody.parse(filters, objectMapper);
-        return glossaryQueryDslSearchService.search(searchLine, searchBody).stream()
-                .map(glossaryMapper::toShort)
-                .collect(Collectors.toList());
-    }
-
-    public List<GlossaryShortResponse> search(String searchLine, SearchBody searchBody) {
-        return glossaryQueryDslSearchService.search(searchLine, searchBody).stream()
+    public List<GlossaryShortResponse> searchV2(final GlossarySearchRequest request) {
+        var predicate = GlossaryPredicateBuilder.build(request);
+        return glossaryQueryDslSearchService.search(predicate, request.getPage(), request.getSize()).stream()
                 .map(glossaryMapper::toShort)
                 .collect(Collectors.toList());
     }

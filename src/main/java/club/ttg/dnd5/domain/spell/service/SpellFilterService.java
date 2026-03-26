@@ -27,7 +27,6 @@ import java.util.List;
 public class SpellFilterService extends AbstractSavedFilterService
 {
     private final ClassService classService;
-    private final SourceSavedFilterService sourceSavedFilterService;
     private final SpellRepository spellRepository;
 
     public SpellFilterService(
@@ -38,7 +37,6 @@ public class SpellFilterService extends AbstractSavedFilterService
     {
         super(sourceSavedFilterService);
         this.classService = classService;
-        this.sourceSavedFilterService = sourceSavedFilterService;
         this.spellRepository = spellRepository;
     }
 

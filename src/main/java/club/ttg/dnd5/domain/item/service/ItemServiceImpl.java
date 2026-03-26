@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.source.service.SourceService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -10,14 +9,12 @@ import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -26,7 +23,6 @@ public class ItemServiceImpl implements ItemService {
     private final ItemQueryDslService itemQueryDslService;
     private final SourceService sourceService;
     private final ItemMapper itemMapper;
-    private final ObjectMapper objectMapper;
 
     @Override
     public boolean existOrThrow(final String url) {

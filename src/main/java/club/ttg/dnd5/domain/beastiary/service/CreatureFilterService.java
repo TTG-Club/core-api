@@ -28,7 +28,6 @@ public class CreatureFilterService extends AbstractSavedFilterService
     private static final int TOP_TRAITS = 10;
 
     private final CreatureRepository creatureRepository;
-    private final SourceSavedFilterService sourceSavedFilterService;
 
     public CreatureFilterService(
             SourceSavedFilterService sourceSavedFilterService,
@@ -36,7 +35,6 @@ public class CreatureFilterService extends AbstractSavedFilterService
     )
     {
         super(sourceSavedFilterService);
-        this.sourceSavedFilterService = sourceSavedFilterService;
         this.creatureRepository = creatureRepository;
     }
 
