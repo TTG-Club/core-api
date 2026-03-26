@@ -6,16 +6,16 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.character_class.service.ClassFilterService;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -46,29 +46,20 @@ public class ClassController {
         }
     }
 
-    @GetMapping
-    @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<ClassShortResponse> getAllClasses(
-            @RequestParam(name = "search", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @Schema(description = "упакованный в строку json фильтров")
-            @RequestParam(required = false) String filter) {
-        return classService.search(searchLine, filter);
-    }
 
-    @PostMapping("/search")
-    @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<ClassShortResponse> getAllClassesOld(
-            @RequestParam(name = "query", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @RequestBody(required = false) SearchBody searchBody) {
-        return classService.search(searchLine, searchBody);
+
+    @Operation(summary = "Поиск классов v2", description = "Поиск классов с Base64url-encoded фильтрами и пагинацией")
+    @GetMapping("/search/v2")
+    public List<ClassShortResponse> searchV2(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "f", required = false)
+            @Schema(description = "Base64url-encoded JSON фильтров") String f,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size)
+    {
+        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
+                f, search, page, size, club.ttg.dnd5.domain.character_class.rest.dto.ClassSearchRequest.class);
+        return classService.searchV2(request);
     }
 
     @GetMapping("/{url}")
@@ -76,9 +67,12 @@ public class ClassController {
         return classService.findDetailedByUrl(url);
     }
 
-    @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return classFilterService.getDefaultFilterInfo();
+
+
+    @Operation(summary = "Получить метаданные фильтров v2")
+    @GetMapping("/filters/v2")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+        return classFilterService.getFilterMetadata();
     }
 
     @GetMapping("/subclasses")

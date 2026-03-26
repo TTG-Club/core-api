@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
@@ -13,8 +13,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -47,34 +45,28 @@ public class SpeciesController {
         }
     }
 
-    @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return speciesFilterService.getDefaultFilterInfo();
+
+
+    @Operation(summary = "Получить метаданные фильтров v2")
+    @GetMapping("/filters/v2")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+        return speciesFilterService.getFilterMetadata();
     }
 
-    @GetMapping
-    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<SpeciesShortResponse> getAllSpecies(
-            @RequestParam(name = "search", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @Schema(description = "упакованный в строку json фильтров")
-            @RequestParam(required = false) String filter) {
-        return speciesService.search(searchLine, filter);
-    }
 
-    @PostMapping("/search")
-    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<SpeciesShortResponse> getAllSpeciesOld(
-            @RequestParam(name = "query", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @RequestBody(required = false) SearchBody searchBody) {
-        return speciesService.search(searchLine, searchBody);
+
+    @Operation(summary = "Поиск видов v2", description = "Поиск видов с Base64url-encoded фильтрами и пагинацией")
+    @GetMapping("/search/v2")
+    public List<SpeciesShortResponse> searchV2(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "f", required = false)
+            @Schema(description = "Base64url-encoded JSON фильтров") String f,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size)
+    {
+        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
+                f, search, page, size, club.ttg.dnd5.domain.species.rest.dto.SpeciesSearchRequest.class);
+        return speciesService.searchV2(request);
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")

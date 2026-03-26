@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSearchRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -11,10 +12,10 @@ import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class CreatureServiceImpl implements CreatureService {
     private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
     private final CreatureMapper creatureMapper;
-    private final ObjectMapper objectMapper;
+
 
     @Override
     public Boolean existOrThrow(final String url) {
@@ -42,15 +43,13 @@ public class CreatureServiceImpl implements CreatureService {
         return true;
     }
 
-    @Override
-    public List<CreatureShortResponse> search(final String searchLine, final String filters) {
-        var searchBody = SearchBody.parse(filters, objectMapper);
-        return search(searchLine, searchBody);
-    }
+
 
     @Override
-    public List<CreatureShortResponse> search(final String searchLine, final SearchBody searchBody) {
-        return creatureQueryDslSearchService.search(searchLine, searchBody)
+    public List<CreatureShortResponse> searchV2(final CreatureSearchRequest request)
+    {
+        var predicate = CreaturePredicateBuilder.build(request);
+        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
                 .stream()
                 .map(creatureMapper::toShort)
                 .toList();

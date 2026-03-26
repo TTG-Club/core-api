@@ -48,19 +48,6 @@ public class ItemServiceImpl implements ItemService {
         return itemMapper.toDetailResponse(item);
     }
 
-    @Override
-    public Collection<ItemShortResponse> getItems(final String searchLine, final String filters) {
-        var searchBody = SearchBody.parse(filters, objectMapper);
-        return getItems(searchLine, searchBody);
-    }
-
-    @Override
-    public Collection<ItemShortResponse> getItems(String searchLine, final SearchBody searchBody) {
-        return itemQueryDslService.search(searchLine, searchBody)
-                .stream()
-                .map(itemMapper::toShortResponse)
-                .collect(Collectors.toList());
-    }
 
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
@@ -107,5 +94,15 @@ public class ItemServiceImpl implements ItemService {
 
     public ItemDetailResponse preview(final ItemRequest request) {
         return itemMapper.toDetailResponse(toItem(request));
+    }
+
+    @Override
+    public Collection<ItemShortResponse> searchV2(final club.ttg.dnd5.domain.item.rest.dto.ItemSearchRequest request)
+    {
+        var predicate = ItemPredicateBuilder.build(request);
+        return itemQueryDslService.search(predicate, request.getPage(), request.getSize())
+                .stream()
+                .map(itemMapper::toShortResponse)
+                .toList();
     }
 }

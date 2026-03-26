@@ -47,19 +47,7 @@ public class MagicItemServiceImpl implements MagicItemService {
         return magicItemMapper.toRequest(findByUrl(url));
     }
 
-    @Override
-    public Collection<MagicItemShortResponse> getItems(final String searchLine, final String filters) {
-        var searchBody = SearchBody.parse(filters, objectMapper);
-        return getItems(searchLine, searchBody);
-    }
 
-    @Override
-    public Collection<MagicItemShortResponse> getItems(final String searchLine, final SearchBody searchBody) {
-        return magicItemQueryDslSearchService.search(searchLine, searchBody)
-                .stream()
-                .map(magicItemMapper::toShort)
-                .toList();
-    }
 
     @Transactional
     @Override
@@ -106,5 +94,15 @@ public class MagicItemServiceImpl implements MagicItemService {
     public MagicItemDetailResponse preview(final MagicItemRequest request) {
         var source = sourceService.findByUrl(request.getSource().getUrl());
         return magicItemMapper.toDetail(magicItemMapper.toEntity(request, source));
+    }
+
+    @Override
+    public Collection<MagicItemShortResponse> searchV2(final club.ttg.dnd5.domain.magic.rest.dto.MagicItemSearchRequest request)
+    {
+        var predicate = MagicItemPredicateBuilder.build(request);
+        return magicItemQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+                .stream()
+                .map(magicItemMapper::toShort)
+                .toList();
     }
 }

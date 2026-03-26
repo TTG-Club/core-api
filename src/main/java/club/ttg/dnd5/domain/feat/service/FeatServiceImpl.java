@@ -41,19 +41,6 @@ public class FeatServiceImpl implements FeatService {
         return featMapper.toDetail(findByUrl(featUrl));
     }
 
-    @Override
-    public Collection<FeatShortResponse> search(final String searchLine, final String filters) {
-        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
-        return getFeats(searchLine, searchBody);
-    }
-
-    @Override
-    public Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody) {
-        return featQueryDslSearchService.search(searchLine, searchBody)
-                .stream()
-                .map(featMapper::toShort)
-                .toList();
-    }
 
     @Secured("ADMIN")
     @Transactional
@@ -125,6 +112,15 @@ public class FeatServiceImpl implements FeatService {
                 .stream()
                 .filter(f -> categories.contains(f.getCategory()))
                 .map(featMapper::toSelect)
+                .toList();
+    }
+    @Override
+    public Collection<FeatShortResponse> searchV2(final club.ttg.dnd5.domain.feat.rest.dto.FeatSearchRequest request)
+    {
+        var predicate = FeatPredicateBuilder.build(request);
+        return featQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+                .stream()
+                .map(featMapper::toShort)
                 .toList();
     }
 }
