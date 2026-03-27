@@ -1,71 +1,77 @@
 package club.ttg.dnd5.domain.magic.service;
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
+import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
-public class MagicItemFilterService extends AbstractSavedFilterService {
+@RequiredArgsConstructor
+public class MagicItemFilterService
+{
+    private final SourceSavedFilterService sourceSavedFilterService;
 
-    public MagicItemFilterService(SourceSavedFilterService sourceSavedFilterService) {
-        super(sourceSavedFilterService);
-    }
-
-    // legacy (deprecated)
-    @Override
-    @Deprecated
-    public SearchBody getDefaultFilterInfo()
+    public FilterMetadataResponse getFilterMetadata()
     {
-        return new SearchBody(
-                sourceSavedFilterService.getDefaultFilterInfo(),
-                buildDefaultFilterInfo()
-        );
-    }
-
-    @Override
-    @Deprecated
-    protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(java.util.Collections.emptyList());
-    }
-
-    @Override
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
-        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.builder()
-                .sources(club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(sourceSavedFilterService.getFilter()).getSources())
+        return FilterMetadataResponse.builder()
+                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
-                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                        FilterGroupMeta.builder()
                                 .key("category")
                                 .name("Категории")
-                                .type("threeState")
-                                .values(java.util.Arrays.stream(club.ttg.dnd5.domain.magic.model.MagicItemCategory.values())
-                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
-                                                .name(v.getName()).value(v.name()).build())
+                                .type("filter")
+                                .supportsMode(true)
+                                .supportsUnion(true)
+                                .values(Arrays.stream(MagicItemCategory.values())
+                                        .map(v -> FilterValueMeta.builder()
+                                                .id(v.name())
+                                                .value(v.name())
+                                                .name(v.getName())
+                                                .build())
                                         .toList())
                                 .build(),
-                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                        FilterGroupMeta.builder()
                                 .key("rarity")
                                 .name("Редкость")
-                                .type("threeState")
-                                .values(java.util.Arrays.stream(club.ttg.dnd5.domain.common.dictionary.Rarity.values())
-                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
-                                                .name(v.getName()).value(v.name()).build())
+                                .type("filter")
+                                .supportsMode(true)
+                                .supportsUnion(true)
+                                .values(Arrays.stream(Rarity.values())
+                                        .map(v -> FilterValueMeta.builder()
+                                                .id(v.name())
+                                                .value(v.name())
+                                                .name(v.getName())
+                                                .build())
                                         .toList())
                                 .build(),
-                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
-                                .key("other")
-                                .name("Прочее")
-                                .type("threeState")
-                                .values(List.of(
-                                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder().name("Настройка").value("attunement").build(),
-                                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder().name("Заряды").value("charges").build(),
-                                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder().name("Проклятие").value("curse").build(),
-                                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder().name("Расходуемый").value("consumable").build()
-                                ))
+                        FilterGroupMeta.builder()
+                                .key("attunement")
+                                .name("Настройка")
+                                .type("singleton")
+                                .supportsMode(false)
+                                .supportsUnion(false)
+                                .build(),
+                        FilterGroupMeta.builder()
+                                .key("charges")
+                                .name("Заряды")
+                                .type("singleton")
+                                .supportsMode(false)
+                                .supportsUnion(false)
+                                .build(),
+                        FilterGroupMeta.builder()
+                                .key("curse")
+                                .name("Проклятие")
+                                .type("singleton")
+                                .supportsMode(false)
+                                .supportsUnion(false)
                                 .build()
                 ))
                 .build();

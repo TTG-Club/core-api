@@ -31,7 +31,7 @@ public class MagicItemPredicateBuilder
         PredicateUtils.applySingletonFilter(builder, request.getCurse(),
                 "curse = true",
                 "curse = false or curse is null");
-        PredicateUtils.applySourcesFilter(builder, request.getSource(), "magic_item", "source");
+        PredicateUtils.applySourcesFilter(builder, request.getSource(), "magicItem", "source");
         return builder;
     }
 }

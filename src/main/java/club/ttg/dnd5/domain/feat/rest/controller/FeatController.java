@@ -61,8 +61,9 @@ public class FeatController {
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam java.util.Map<String, String[]> params)
+            jakarta.servlet.http.HttpServletRequest httpRequest)
     {
+        var params = httpRequest.getParameterMap();
         var request = new club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest();
         request.setSearch(search);
         if (page != null) request.setPage(page);

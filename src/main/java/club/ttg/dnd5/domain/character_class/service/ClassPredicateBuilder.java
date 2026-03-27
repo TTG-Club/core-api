@@ -20,7 +20,7 @@ public class ClassPredicateBuilder
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyFilterEnum(builder, request.getHitDice(), HIT_DICE_PATH);
-        PredicateUtils.applySourcesFilter(builder, request.getSource(), "character_class", "source");
+        PredicateUtils.applySourcesFilter(builder, request.getSource(), "characterClass", "source");
         return builder;
     }
 }

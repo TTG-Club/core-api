@@ -1,52 +1,63 @@
 package club.ttg.dnd5.domain.species.service;
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.SourceGroupMeta;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
-import club.ttg.dnd5.domain.species.rest.dto.filter.CreatureTypeFilterGroup;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Сервис метаданных фильтров видов.
+ * Строит {@link FilterMetadataResponse} напрямую, без legacy FilterGroup.
+ */
 @Service
-public class SpeciesFilterService extends AbstractSavedFilterService
+@RequiredArgsConstructor
+public class SpeciesFilterService
 {
     private final SpeciesRepository speciesRepository;
+    private final SourceSavedFilterService sourceSavedFilterService;
 
-    public SpeciesFilterService(
-            SourceSavedFilterService sourceSavedFilterService,
-            SpeciesRepository speciesRepository
-    )
+    public FilterMetadataResponse getFilterMetadata()
     {
-        super(sourceSavedFilterService);
-        this.speciesRepository = speciesRepository;
+        return FilterMetadataResponse.builder()
+                .filters(buildFilterGroups())
+                .sources(buildSourceGroups())
+                .build();
     }
 
-    @Override
-    @Deprecated
-    public SearchBody getDefaultFilterInfo()
+    private List<FilterGroupMeta> buildFilterGroups()
     {
-        List<String> usedSourceCodes = speciesRepository.findAllUsedSourceCodes();
-
-        return new SearchBody(
-                sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes),
-                buildDefaultFilterInfo()
+        return List.of(
+                FilterGroupMeta.builder()
+                        .key("creatureType")
+                        .name("Тип существа")
+                        .type("filter")
+                        .supportsMode(true)
+                        .supportsUnion(true)
+                        .values(Arrays.stream(CreatureType.values())
+                                .map(ct -> FilterValueMeta.builder()
+                                        .id(ct.name())
+                                        .value(ct.name())
+                                        .name(ct.getName())
+                                        .build())
+                                .toList())
+                        .build()
         );
     }
 
-    @Override
-    @Deprecated
-    protected FilterInfo buildDefaultFilterInfo()
+    private List<SourceGroupMeta> buildSourceGroups()
     {
-        return new FilterInfo(List.of(
-                CreatureTypeFilterGroup.getDefault()
-        ));
-    }
+        List<String> usedSourceCodes = speciesRepository.findAllUsedSourceCodes();
+        var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes);
 
-    @Override
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
-        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(getDefaultFilterInfo());
+        return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
     }
 }

@@ -23,6 +23,14 @@ public class FilterMetadataMapper {
     }
 
     private List<FilterMetadataResponse.SourceGroupMeta> mapSources(FilterInfo sources) {
+        return mapSourcesFromFilterInfo(sources);
+    }
+
+    /**
+     * Маппит {@link FilterInfo} с группами источников в {@code List<SourceGroupMeta>}.
+     * Используется FilterService-ами для построения секции sources в {@link FilterMetadataResponse}.
+     */
+    public List<FilterMetadataResponse.SourceGroupMeta> mapSourcesFromFilterInfo(FilterInfo sources) {
         if (sources == null || sources.getGroups() == null) {
             return List.of();
         }
@@ -31,7 +39,7 @@ public class FilterMetadataMapper {
                 .map(SourceGroupFilter.class::cast)
                 .map(group -> FilterMetadataResponse.SourceGroupMeta.builder()
                         .name(group.getName())
-                        .key(getKey(group))
+                        .key("source")
                         .values(group.getFilters().stream()
                                 .map(item -> FilterMetadataResponse.FilterValueMeta.builder()
                                         .id(String.valueOf(item.getValue()))

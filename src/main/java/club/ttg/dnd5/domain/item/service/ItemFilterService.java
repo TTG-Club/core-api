@@ -1,51 +1,42 @@
 package club.ttg.dnd5.domain.item.service;
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
+import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
-public class ItemFilterService extends AbstractSavedFilterService {
+@RequiredArgsConstructor
+public class ItemFilterService
+{
+    private final SourceSavedFilterService sourceSavedFilterService;
 
-    public ItemFilterService(SourceSavedFilterService sourceSavedFilterService) {
-        super(sourceSavedFilterService);
-    }
-
-    // legacy (deprecated)
-    @Override
-    @Deprecated
-    public SearchBody getDefaultFilterInfo()
+    public FilterMetadataResponse getFilterMetadata()
     {
-        return new SearchBody(
-                sourceSavedFilterService.getDefaultFilterInfo(),
-                buildDefaultFilterInfo()
-        );
-    }
-
-    @Override
-    @Deprecated
-    protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(java.util.Collections.emptyList());
-    }
-
-    @Override
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
-        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.builder()
-                .sources(club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(sourceSavedFilterService.getFilter()).getSources())
+        return FilterMetadataResponse.builder()
+                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
-                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                        FilterGroupMeta.builder()
                                 .key("types")
                                 .name("Категория")
-                                .type("threeState")
-                                .values(java.util.Arrays.stream(club.ttg.dnd5.domain.item.model.ItemType.values())
-                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
-                                                .name(v.getName()).value(v.name()).build())
-                                        .sorted(java.util.Comparator.comparing(club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta::getName))
+                                .type("filter")
+                                .supportsMode(true)
+                                .supportsUnion(true)
+                                .values(Arrays.stream(ItemType.values())
+                                        .map(v -> FilterValueMeta.builder()
+                                                .id(v.name())
+                                                .value(v.name())
+                                                .name(v.getName())
+                                                .build())
+                                        .sorted(Comparator.comparing(FilterValueMeta::getName))
                                         .toList())
                                 .build()
                 ))

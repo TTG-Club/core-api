@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
 import club.ttg.dnd5.domain.filter.model.FilterHashMapping;
 import club.ttg.dnd5.domain.filter.repository.FilterHashMappingRepository;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
@@ -239,29 +240,9 @@ public class CreatureFilterService
     private List<SourceGroupMeta> buildSourceGroups()
     {
         List<String> usedSourceCodes = creatureRepository.findAllUsedSourceCodes();
-        // Делегируем в существующий сервис и маппим в новый формат
         var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes);
 
-        if (legacySources == null || legacySources.getGroups() == null)
-        {
-            return List.of();
-        }
-
-        return legacySources.getGroups().stream()
-                .filter(club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter.class::isInstance)
-                .map(club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter.class::cast)
-                .map(group -> SourceGroupMeta.builder()
-                        .key(group.getClass().getSimpleName())
-                        .name(group.getName())
-                        .values(group.getFilters().stream()
-                                .map(item -> FilterValueMeta.builder()
-                                        .id(String.valueOf(item.getValue()))
-                                        .name(item.getName())
-                                        .value(item.getValue())
-                                        .build())
-                                .toList())
-                        .build())
-                .toList();
+        return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
     }
 
     /**

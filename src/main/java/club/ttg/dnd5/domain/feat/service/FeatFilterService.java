@@ -1,60 +1,63 @@
 package club.ttg.dnd5.domain.feat.service;
 
-
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
-public class FeatFilterService extends AbstractSavedFilterService {
+@RequiredArgsConstructor
+public class FeatFilterService
+{
+    private final SourceSavedFilterService sourceSavedFilterService;
 
-    public FeatFilterService(SourceSavedFilterService sourceSavedFilterService) {
-        super(sourceSavedFilterService);
-    }
-
-    // legacy (deprecated)
-    @Override
-    @Deprecated
-    public SearchBody getDefaultFilterInfo()
+    public FilterMetadataResponse getFilterMetadata()
     {
-        return new SearchBody(
-                sourceSavedFilterService.getDefaultFilterInfo(),
-                buildDefaultFilterInfo()
-        );
-    }
-
-    @Override
-    @Deprecated
-    protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(java.util.Collections.emptyList());
-    }
-
-    @Override
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilterMetadata() {
-        return club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.builder()
-                .sources(club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper.map(sourceSavedFilterService.getFilter()).getSources())
+        return FilterMetadataResponse.builder()
+                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
-                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                        FilterGroupMeta.builder()
                                 .key("category")
                                 .name("Категория")
-                                .type("threeState")
-                                .values(java.util.Arrays.stream(club.ttg.dnd5.domain.feat.model.FeatCategory.values())
-                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
-                                                .name(v.getName()).value(v.name()).build())
+                                .type("filter")
+                                .supportsMode(true)
+                                .supportsUnion(true)
+                                .values(Arrays.stream(FeatCategory.values())
+                                        .map(v -> FilterValueMeta.builder()
+                                                .id(v.name())
+                                                .value(v.name())
+                                                .name(v.getName())
+                                                .build())
                                         .toList())
                                 .build(),
-                        club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta.builder()
+                        FilterGroupMeta.builder()
                                 .key("ability")
                                 .name("Характеристика")
-                                .type("threeState")
-                                .values(java.util.Arrays.stream(club.ttg.dnd5.domain.common.dictionary.Ability.values())
-                                        .map(v -> club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta.builder()
-                                                .name(v.getShortName()).value(v.name()).build())
+                                .type("filter")
+                                .supportsMode(true)
+                                .supportsUnion(true)
+                                .values(Arrays.stream(Ability.values())
+                                        .map(v -> FilterValueMeta.builder()
+                                                .id(v.name())
+                                                .value(v.name())
+                                                .name(v.getShortName())
+                                                .build())
                                         .toList())
+                                .build(),
+                        FilterGroupMeta.builder()
+                                .key("repeatability")
+                                .name("Повторяемость")
+                                .type("singleton")
+                                .supportsMode(false)
+                                .supportsUnion(false)
                                 .build()
                 ))
                 .build();
