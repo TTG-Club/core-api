@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
@@ -27,9 +29,8 @@ public class MagicItemFilterService
                         FilterGroupMeta.builder()
                                 .key("category")
                                 .name("Категории")
-                                .type("filter")
-                                .supportsMode(true)
-                                .supportsUnion(true)
+                                .type(FilterGroupType.FILTER)
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(MagicItemCategory.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())
@@ -41,9 +42,8 @@ public class MagicItemFilterService
                         FilterGroupMeta.builder()
                                 .key("rarity")
                                 .name("Редкость")
-                                .type("filter")
-                                .supportsMode(true)
-                                .supportsUnion(true)
+                                .type(FilterGroupType.FILTER)
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Rarity.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())
@@ -55,23 +55,20 @@ public class MagicItemFilterService
                         FilterGroupMeta.builder()
                                 .key("attunement")
                                 .name("Настройка")
-                                .type("singleton")
-                                .supportsMode(false)
-                                .supportsUnion(false)
+                                .type(FilterGroupType.SINGLETON)
+                                .supports(SupportsConfig.builder().mode(false).union(false).build())
                                 .build(),
                         FilterGroupMeta.builder()
                                 .key("charges")
                                 .name("Заряды")
-                                .type("singleton")
-                                .supportsMode(false)
-                                .supportsUnion(false)
+                                .type(FilterGroupType.SINGLETON)
+                                .supports(SupportsConfig.builder().mode(false).union(false).build())
                                 .build(),
                         FilterGroupMeta.builder()
                                 .key("curse")
                                 .name("Проклятие")
-                                .type("singleton")
-                                .supportsMode(false)
-                                .supportsUnion(false)
+                                .type(FilterGroupType.SINGLETON)
+                                .supports(SupportsConfig.builder().mode(false).union(false).build())
                                 .build()
                 ))
                 .build();

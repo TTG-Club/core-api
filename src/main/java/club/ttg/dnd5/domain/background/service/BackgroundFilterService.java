@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.background.service;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
@@ -27,9 +29,8 @@ public class BackgroundFilterService
                         FilterGroupMeta.builder()
                                 .key("ability")
                                 .name("Характеристики")
-                                .type("filter")
-                                .supportsMode(true)
-                                .supportsUnion(true)
+                                .type(FilterGroupType.FILTER)
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Ability.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())
@@ -41,9 +42,8 @@ public class BackgroundFilterService
                         FilterGroupMeta.builder()
                                 .key("skill")
                                 .name("Навыки")
-                                .type("filter")
-                                .supportsMode(true)
-                                .supportsUnion(true)
+                                .type(FilterGroupType.FILTER)
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Skill.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())

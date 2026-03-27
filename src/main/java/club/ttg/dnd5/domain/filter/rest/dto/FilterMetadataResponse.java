@@ -22,9 +22,8 @@ public class FilterMetadataResponse {
     public static class FilterGroupMeta {
         private String key;                     // e.g. "school"
         private String name;                    // e.g. "Школа магии"
-        private String type;                    // e.g. "filter" or "singleton"
-        private boolean supportsMode;           // поддерживает _mode
-        private boolean supportsUnion;          // поддерживает _union
+        private FilterGroupType type;           // FILTER or SINGLETON
+        private SupportsConfig supports;        // { mode, union }
         private List<FilterValueMeta> values;   // for filter
     }
 
@@ -47,6 +46,4 @@ public class FilterMetadataResponse {
         private String name;    // e.g. "Официальные"
         private List<FilterValueMeta> values;
     }
-
-
 }

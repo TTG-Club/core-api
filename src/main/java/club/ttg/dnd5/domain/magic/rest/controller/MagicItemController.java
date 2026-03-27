@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.magic.rest.controller;
 
 
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.service.MagicItemFilterService;
@@ -62,23 +63,8 @@ public class MagicItemController {
 
     @Operation(summary = "Поиск магических предметов", description = "Поиск магических предметов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<MagicItemShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public Collection<MagicItemShortResponse> search(MagicItemQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        var request = new club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-        request.setCategory(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "category", club.ttg.dnd5.domain.magic.model.MagicItemCategory.class));
-        request.setRarity(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "rarity", club.ttg.dnd5.domain.common.dictionary.Rarity.class));
-        request.setAttunement(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "attunement"));
-        request.setCharges(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "charges"));
-        request.setCurse(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "curse"));
-        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
         return magicItemService.search(request);
     }
 

@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.glossary.rest.controller;
 
 
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
+import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryQueryRequest;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.service.GlossaryFilterService;
@@ -40,18 +41,8 @@ public class GlossaryController {
 
     @Operation(summary = "Поиск записей глоссария", description = "Поиск записей глоссария с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<GlossaryShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public List<GlossaryShortResponse> search(GlossaryQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        var request = new club.ttg.dnd5.domain.glossary.rest.dto.GlossaryQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-        request.setTagCategory(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveString(params, "tagCategory"));
         return glossaryService.search(request);
     }
 

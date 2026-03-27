@@ -1,12 +1,6 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
-import club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
-import club.ttg.dnd5.domain.common.dictionary.Ability;
-import club.ttg.dnd5.domain.common.dictionary.Condition;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.HealingType;
-import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
@@ -48,33 +42,8 @@ public class SpellController {
 
     @Operation(summary = "Поиск заклинаний", description = "Поиск заклинаний с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<SpellShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public List<SpellShortResponse> search(SpellQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        SpellQueryRequest request = new SpellQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-
-        request.setSchool(QueryParamFilterResolver.resolveEnum(params, "school", MagicSchool.class));
-        request.setLevel(QueryParamFilterResolver.resolveLong(params, "level"));
-        request.setClassName(QueryParamFilterResolver.resolveString(params, "className"));
-        request.setSubclassName(QueryParamFilterResolver.resolveString(params, "subclassName"));
-        request.setDamageType(QueryParamFilterResolver.resolveEnum(params, "damageType", DamageType.class));
-        request.setHealingType(QueryParamFilterResolver.resolveEnum(params, "healingType", HealingType.class));
-        request.setCondition(QueryParamFilterResolver.resolveEnum(params, "condition", Condition.class));
-        request.setSavingThrow(QueryParamFilterResolver.resolveEnum(params, "savingThrow", Ability.class));
-        request.setRitual(QueryParamFilterResolver.resolveSingleton(params, "ritual"));
-        request.setConcentration(QueryParamFilterResolver.resolveSingleton(params, "concentration"));
-        request.setUpcastable(QueryParamFilterResolver.resolveSingleton(params, "upcastable"));
-        request.setCastingTime(QueryParamFilterResolver.resolveString(params, "castingTime"));
-        request.setDuration(QueryParamFilterResolver.resolveString(params, "duration"));
-        request.setSource(QueryParamFilterResolver.resolveSources(params, "source"));
-
         return spellService.search(request);
     }
 

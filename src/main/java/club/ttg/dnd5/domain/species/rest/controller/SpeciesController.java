@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.species.rest.controller;
 
 
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.service.SpeciesFilterService;
@@ -56,19 +57,8 @@ public class SpeciesController {
 
     @Operation(summary = "Поиск видов", description = "Поиск видов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<SpeciesShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public List<SpeciesShortResponse> search(SpeciesQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        var request = new club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-        request.setCreatureType(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "creatureType", club.ttg.dnd5.domain.common.dictionary.CreatureType.class));
-        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
         return speciesService.search(request);
     }
 

@@ -2,20 +2,21 @@ package club.ttg.dnd5.domain.background.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.filter.rest.FilterParam;
+import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
-public class BackgroundQueryRequest
+@EqualsAndHashCode(callSuper = true)
+public class BackgroundQueryRequest extends AbstractQueryRequest
 {
-    private String search;
+    @FilterParam(enumClass = Ability.class)
     private QueryFilter<Ability> ability;
+
+    @FilterParam(enumClass = Skill.class)
     private QueryFilter<Skill> skill;
-    private Set<String> source = Set.of();
-    private int page = 0;
-    private int pageSize = 10000;
 }

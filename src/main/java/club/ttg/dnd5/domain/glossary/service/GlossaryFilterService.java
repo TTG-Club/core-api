@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.glossary.service;
 
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
@@ -28,9 +30,8 @@ public class GlossaryFilterService
                         FilterGroupMeta.builder()
                                 .key("tagCategory")
                                 .name("Категория тега")
-                                .type("filter")
-                                .supportsMode(true)
-                                .supportsUnion(true)
+                                .type(FilterGroupType.FILTER)
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(categories.stream()
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v)

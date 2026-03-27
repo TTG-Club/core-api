@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.character_class.rest.controller;
 
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.character_class.service.ClassFilterService;
@@ -49,19 +50,8 @@ public class ClassController {
 
     @Operation(summary = "Поиск классов", description = "Поиск классов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<ClassShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public List<ClassShortResponse> search(ClassQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        var request = new club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-        request.setHitDice(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "hitDice", club.ttg.dnd5.domain.common.dictionary.Dice.class));
-        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
         return classService.search(request);
     }
 

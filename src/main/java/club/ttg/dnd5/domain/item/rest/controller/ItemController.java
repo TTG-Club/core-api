@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.item.rest.controller;
 
 
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
+import club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.item.service.ItemFilterService;
@@ -62,19 +63,8 @@ public class ItemController {
 
     @Operation(summary = "Поиск предметов", description = "Поиск предметов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<ItemShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public Collection<ItemShortResponse> search(ItemQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        var request = new club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-        request.setItemType(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "itemType", club.ttg.dnd5.domain.item.model.ItemType.class));
-        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
         return itemService.search(request);
     }
 

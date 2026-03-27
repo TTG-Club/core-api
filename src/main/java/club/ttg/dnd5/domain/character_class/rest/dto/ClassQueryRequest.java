@@ -1,19 +1,18 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Dice;
+import club.ttg.dnd5.domain.filter.rest.FilterParam;
+import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
-public class ClassQueryRequest
+@EqualsAndHashCode(callSuper = true)
+public class ClassQueryRequest extends AbstractQueryRequest
 {
-    private String search;
+    @FilterParam(enumClass = Dice.class)
     private QueryFilter<Dice> hitDice;
-    private Set<String> source = Set.of();
-    private int page = 0;
-    private int pageSize = 10000;
 }

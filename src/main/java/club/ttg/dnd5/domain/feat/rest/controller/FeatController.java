@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.feat.rest.controller;
 
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
@@ -57,21 +58,8 @@ public class FeatController {
 
     @Operation(summary = "Поиск черт", description = "Поиск черт с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<FeatShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public Collection<FeatShortResponse> search(FeatQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        var request = new club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-        request.setCategory(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "category", club.ttg.dnd5.domain.feat.model.FeatCategory.class));
-        request.setAbility(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "ability", club.ttg.dnd5.domain.common.dictionary.Ability.class));
-        request.setRepeatability(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "repeatability"));
-        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
         return featService.search(request);
     }
 

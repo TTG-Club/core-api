@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.feat.service;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
@@ -27,9 +29,8 @@ public class FeatFilterService
                         FilterGroupMeta.builder()
                                 .key("category")
                                 .name("Категория")
-                                .type("filter")
-                                .supportsMode(true)
-                                .supportsUnion(true)
+                                .type(FilterGroupType.FILTER)
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(FeatCategory.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())
@@ -41,9 +42,8 @@ public class FeatFilterService
                         FilterGroupMeta.builder()
                                 .key("ability")
                                 .name("Характеристика")
-                                .type("filter")
-                                .supportsMode(true)
-                                .supportsUnion(true)
+                                .type(FilterGroupType.FILTER)
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Ability.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())
@@ -55,9 +55,8 @@ public class FeatFilterService
                         FilterGroupMeta.builder()
                                 .key("repeatability")
                                 .name("Повторяемость")
-                                .type("singleton")
-                                .supportsMode(false)
-                                .supportsUnion(false)
+                                .type(FilterGroupType.SINGLETON)
+                                .supports(SupportsConfig.builder().mode(false).union(false).build())
                                 .build()
                 ))
                 .build();

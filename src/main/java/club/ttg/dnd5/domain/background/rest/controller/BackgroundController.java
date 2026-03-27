@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.background.rest.controller;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.service.BackgroundFilterService;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
@@ -65,20 +66,8 @@ public class BackgroundController {
 
     @Operation(summary = "Поиск предысторий", description = "Поиск предысторий с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<BackgroundShortResponse> search(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            jakarta.servlet.http.HttpServletRequest httpRequest)
+    public Collection<BackgroundShortResponse> search(BackgroundQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-        var request = new club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-        request.setAbility(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "ability", club.ttg.dnd5.domain.common.dictionary.Ability.class));
-        request.setSkill(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "skill", club.ttg.dnd5.domain.common.dictionary.Skill.class));
-        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
         return backgroundService.search(request);
     }
 

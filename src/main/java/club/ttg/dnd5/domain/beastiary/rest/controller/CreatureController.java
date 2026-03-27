@@ -6,18 +6,11 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
-import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
-import club.ttg.dnd5.domain.common.dictionary.Alignment;
-import club.ttg.dnd5.domain.common.dictionary.CreatureType;
-import club.ttg.dnd5.domain.common.dictionary.Habitat;
-import club.ttg.dnd5.domain.common.dictionary.Size;
-import club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,31 +40,8 @@ public class CreatureController {
 
     @Operation(summary = "Поиск существ", description = "Поиск существ с GET-параметрами фильтрации и пагинацией")
     @GetMapping("/search")
-    public List<CreatureShortResponse> search(
-            HttpServletRequest httpRequest,
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+    public List<CreatureShortResponse> search(CreatureQueryRequest request)
     {
-        var params = httpRequest.getParameterMap();
-
-        var request = new CreatureQueryRequest();
-        request.setSearch(search);
-        if (page != null) request.setPage(page);
-        if (size != null) request.setPageSize(size);
-
-        request.setCr(QueryParamFilterResolver.resolveLong(params, "cr"));
-        request.setType(QueryParamFilterResolver.resolveEnum(params, "type", CreatureType.class));
-        request.setSize(QueryParamFilterResolver.resolveEnum(params, "size", Size.class));
-        request.setAlignment(QueryParamFilterResolver.resolveEnum(params, "alignment", Alignment.class));
-        request.setHabitat(QueryParamFilterResolver.resolveEnum(params, "habitat", Habitat.class));
-        request.setSenses(QueryParamFilterResolver.resolveEnum(params, "senses", CreatureSenses.class));
-        request.setTraits(QueryParamFilterResolver.resolveString(params, "traits"));
-        request.setTag(QueryParamFilterResolver.resolveString(params, "tag"));
-        request.setLair(QueryParamFilterResolver.resolveSingleton(params, "lair"));
-        request.setLegendaryAction(QueryParamFilterResolver.resolveSingleton(params, "legendaryAction"));
-        request.setSource(QueryParamFilterResolver.resolveSources(params, "source"));
-
         return creatureService.search(request);
     }
 
