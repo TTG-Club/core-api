@@ -123,8 +123,7 @@ public class PredicateUtils
             String values = filter.getInclude().stream()
                     .map(Enum::name)
                     .map(s -> "\"" + s + "\"")
-                    .reduce((a, b) -> a + "," + b)
-                    .orElse("");
+                    .collect(java.util.stream.Collectors.joining(","));
 
             builder.and(Expressions.booleanTemplate(
                     "jsonb_exists_any(" + columnName + ", array[" + values + "]::text[])"
@@ -136,8 +135,7 @@ public class PredicateUtils
             String values = filter.getExclude().stream()
                     .map(Enum::name)
                     .map(s -> "\"" + s + "\"")
-                    .reduce((a, b) -> a + "," + b)
-                    .orElse("");
+                    .collect(java.util.stream.Collectors.joining(","));
 
             builder.and(Expressions.booleanTemplate(
                     "NOT jsonb_exists_any(" + columnName + ", array[" + values + "]::text[])"
@@ -184,24 +182,10 @@ public class PredicateUtils
     {
         if (enabledSources != null && !enabledSources.isEmpty())
         {
+            @SuppressWarnings({"unchecked", "rawtypes"})
             com.querydsl.core.types.dsl.PathBuilder<Object> path =
-                    new com.querydsl.core.types.dsl.PathBuilder<>(Object.class, entityAlias);
+                    new com.querydsl.core.types.dsl.PathBuilder(Object.class, entityAlias);
             builder.and(path.getString(columnName).in(enabledSources));
-        }
-    }
-
-    /**
-     * @deprecated Используйте {@link #applySources(BooleanBuilder, Set, String, String)}.
-     *             StringPath через JPA-ассоциацию (Q.source.acronym) несовместим с JPASQLQuery.
-     */
-    @Deprecated
-    public void applySources(final BooleanBuilder builder,
-                              final Set<String> enabledSources,
-                              final StringPath sourcePath)
-    {
-        if (enabledSources != null && !enabledSources.isEmpty())
-        {
-            builder.and(sourcePath.in(enabledSources));
         }
     }
 
@@ -324,8 +308,7 @@ public class PredicateUtils
         {
             String condition = filter.getInclude().stream()
                     .map(v -> "elem->>'" + jsonFieldName + "' = '" + escapeSql(v) + "'")
-                    .reduce((a, b) -> a + " or " + b)
-                    .orElse("false");
+                    .collect(java.util.stream.Collectors.joining(" or "));
 
             builder.and(Expressions.booleanTemplate(
                     "(" + columnName + " is not null and exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where " + condition + "))"
@@ -336,8 +319,7 @@ public class PredicateUtils
         {
             String condition = filter.getExclude().stream()
                     .map(v -> "elem->>'" + jsonFieldName + "' = '" + escapeSql(v) + "'")
-                    .reduce((a, b) -> a + " or " + b)
-                    .orElse("false");
+                    .collect(java.util.stream.Collectors.joining(" or "));
 
             builder.and(Expressions.booleanTemplate(
                     "(" + columnName + " is not null and not exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where " + condition + "))"
@@ -521,8 +503,7 @@ public class PredicateUtils
         String values = filter.getValues().stream()
                 .map(Enum::name)
                 .map(s -> "\"" + s + "\"")
-                .reduce((a, b) -> a + "," + b)
-                .orElse("");
+                .collect(java.util.stream.Collectors.joining(","));
 
         if (filter.isExclude())
         {
@@ -648,8 +629,7 @@ public class PredicateUtils
         {
             String condition = resolvedValues.stream()
                     .map(v -> "elem->>'" + jsonFieldName + "' = '" + escapeSql(v) + "'")
-                    .reduce((a, b) -> a + " or " + b)
-                    .orElse("false");
+                    .collect(java.util.stream.Collectors.joining(" or "));
 
             builder.and(Expressions.booleanTemplate(
                     "(" + columnName + " is not null and not exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where " + condition + "))"
@@ -659,8 +639,7 @@ public class PredicateUtils
         {
             String condition = resolvedValues.stream()
                     .map(v -> "elem->>'" + jsonFieldName + "' = '" + escapeSql(v) + "'")
-                    .reduce((a, b) -> a + " or " + b)
-                    .orElse("false");
+                    .collect(java.util.stream.Collectors.joining(" or "));
 
             builder.and(Expressions.booleanTemplate(
                     "(" + columnName + " is not null and exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where " + condition + "))"
@@ -741,8 +720,9 @@ public class PredicateUtils
     {
         if (enabledSources != null && !enabledSources.isEmpty())
         {
+            @SuppressWarnings({"unchecked", "rawtypes"})
             com.querydsl.core.types.dsl.PathBuilder<Object> path =
-                    new com.querydsl.core.types.dsl.PathBuilder<>(Object.class, entityAlias);
+                    new com.querydsl.core.types.dsl.PathBuilder(Object.class, entityAlias);
             builder.and(path.getString(columnName).in(enabledSources));
         }
     }

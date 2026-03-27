@@ -13,7 +13,9 @@ import lombok.*;
 @JsonRootName("source")
 @Builder
 public class SourceResponse {
+    @Builder.Default
     private NameResponse name = new NameResponse();
+    @Builder.Default
     private NameResponse group = new NameResponse();
     private int page;
 }

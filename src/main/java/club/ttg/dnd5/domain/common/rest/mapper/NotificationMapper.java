@@ -6,7 +6,9 @@ import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring")
 public interface NotificationMapper {
     @Mapping(source = "persona.name", target = "persona")
     @Mapping(source = "persona.image", target = "image")
