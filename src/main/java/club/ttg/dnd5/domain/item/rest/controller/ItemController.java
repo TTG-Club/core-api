@@ -7,7 +7,6 @@ import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.domain.item.service.ItemFilterService;
 import club.ttg.dnd5.domain.item.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,18 +60,21 @@ public class ItemController {
     }
 
 
-    @Operation(summary = "Поиск предметов v2", description = "Поиск предметов с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public Collection<ItemShortResponse> searchV2(
+    @Operation(summary = "Поиск предметов", description = "Поиск предметов с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public Collection<ItemShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.item.rest.dto.ItemSearchRequest.class);
-        return itemService.searchV2(request);
+        var request = new club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+        request.setItemType(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "itemType", club.ttg.dnd5.domain.item.model.ItemType.class));
+        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
+        return itemService.search(request);
     }
 
     @Secured("ADMIN")
@@ -89,9 +91,9 @@ public class ItemController {
     }
 
 
-    @Operation(summary = "Получить метаданные фильтров v2")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return itemFilterService.getFilterMetadata();
     }
 

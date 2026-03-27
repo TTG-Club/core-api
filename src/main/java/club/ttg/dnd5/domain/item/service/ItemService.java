@@ -25,5 +25,5 @@ public interface ItemService {
 
 
 
-    Collection<ItemShortResponse> searchV2(club.ttg.dnd5.domain.item.rest.dto.ItemSearchRequest request);
+    Collection<ItemShortResponse> search(club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest request);
 }

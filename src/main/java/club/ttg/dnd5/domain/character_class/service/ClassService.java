@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassSearchRequest;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -44,11 +44,11 @@ public class ClassService {
 
 
 
-    public List<ClassShortResponse> searchV2(ClassSearchRequest request) {
+    public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
-        return classQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+        return classQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
-                .filter(c -> (request.getText() != null && !request.getText().isEmpty()) || c.getParent() == null)
+                .filter(c -> (request.getSearch() != null && !request.getSearch().isEmpty()) || c.getParent() == null)
                 .map(classMapper::toShort)
                 .collect(Collectors.toList());
     }

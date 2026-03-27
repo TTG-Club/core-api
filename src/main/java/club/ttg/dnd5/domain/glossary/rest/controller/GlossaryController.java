@@ -7,7 +7,6 @@ import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.service.GlossaryFilterService;
 import club.ttg.dnd5.domain.glossary.service.GlossaryService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,18 +38,20 @@ public class GlossaryController {
 
 
 
-    @Operation(summary = "Поиск записей глоссария v2", description = "Поиск записей глоссария с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public List<GlossaryShortResponse> searchV2(
+    @Operation(summary = "Поиск записей глоссария", description = "Поиск записей глоссария с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<GlossaryShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.glossary.rest.dto.GlossarySearchRequest.class);
-        return glossaryService.searchV2(request);
+        var request = new club.ttg.dnd5.domain.glossary.rest.dto.GlossaryQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+        request.setTagCategory(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveString(params, "tagCategory"));
+        return glossaryService.search(request);
     }
 
     @GetMapping("/{url}")
@@ -91,9 +92,9 @@ public class GlossaryController {
 
 
 
-    @Operation(summary = "Получить метаданные фильтров v2")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return glossaryFilterService.getFilterMetadata();
     }
 }

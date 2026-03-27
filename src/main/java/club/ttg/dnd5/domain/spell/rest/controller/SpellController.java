@@ -1,14 +1,18 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
-import club.ttg.dnd5.domain.filter.rest.SearchRequestResolver;
+import club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.HealingType;
+import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
-import club.ttg.dnd5.domain.spell.rest.dto.SpellSearchRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.service.SpellFilterService;
 import club.ttg.dnd5.domain.spell.service.SpellService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,17 +46,33 @@ public class SpellController {
 
 
 
-    @Operation(summary = "Поиск заклинаний v2", description = "Поиск заклинаний с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public List<SpellShortResponse> searchV2(
+    @Operation(summary = "Поиск заклинаний", description = "Поиск заклинаний с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<SpellShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        SpellSearchRequest request = SearchRequestResolver.resolve(f, search, page, size, SpellSearchRequest.class);
-        return spellService.searchV2(request);
+        SpellQueryRequest request = new SpellQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+
+        request.setSchool(QueryParamFilterResolver.resolveEnum(params, "school", MagicSchool.class));
+        request.setLevel(QueryParamFilterResolver.resolveLong(params, "level"));
+        request.setClassName(QueryParamFilterResolver.resolveString(params, "className"));
+        request.setSubclassName(QueryParamFilterResolver.resolveString(params, "subclassName"));
+        request.setDamageType(QueryParamFilterResolver.resolveEnum(params, "damageType", DamageType.class));
+        request.setHealingType(QueryParamFilterResolver.resolveEnum(params, "healingType", HealingType.class));
+        request.setCondition(QueryParamFilterResolver.resolveEnum(params, "condition", Condition.class));
+        request.setSavingThrow(QueryParamFilterResolver.resolveEnum(params, "savingThrow", Ability.class));
+        request.setRitual(QueryParamFilterResolver.resolveSingleton(params, "ritual"));
+        request.setConcentration(QueryParamFilterResolver.resolveSingleton(params, "concentration"));
+        request.setUpcastable(QueryParamFilterResolver.resolveSingleton(params, "upcastable"));
+        request.setSource(QueryParamFilterResolver.resolveSources(params, "source"));
+
+        return spellService.search(request);
     }
 
     @GetMapping("/{url}")
@@ -67,9 +87,9 @@ public class SpellController {
 
 
 
-    @Operation(summary = "Получить метаданные фильтров v2", description = "Возвращает JSON для построения UI фильтров и использования в SearchRequest")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return spellFilterService.getFilterMetadata();
     }
 

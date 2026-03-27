@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
-import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSearchRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -13,6 +13,8 @@ import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 
+import club.ttg.dnd5.domain.filter.model.FilterHashMapping;
+import club.ttg.dnd5.domain.filter.repository.FilterHashMappingRepository;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 
@@ -33,6 +35,7 @@ public class CreatureServiceImpl implements CreatureService {
     private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
     private final CreatureMapper creatureMapper;
+    private final FilterHashMappingRepository filterHashMappingRepository;
 
 
     @Override
@@ -46,12 +49,29 @@ public class CreatureServiceImpl implements CreatureService {
 
 
     @Override
-    public List<CreatureShortResponse> searchV2(final CreatureSearchRequest request)
+    public List<CreatureShortResponse> search(final CreatureQueryRequest request)
     {
-        var predicate = CreaturePredicateBuilder.build(request);
-        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+        // Резолв хэшей traits → оригинальные значения
+        var traitValues = resolveHashes(request.getTraits());
+        // Резолв хэшей tags → оригинальные значения
+        var tagValues = resolveHashes(request.getTag());
+
+        var predicate = CreaturePredicateBuilder.build(request, traitValues, tagValues);
+        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(creatureMapper::toShort)
+                .toList();
+    }
+
+    private List<String> resolveHashes(final club.ttg.dnd5.dto.base.filters.QueryFilter<String> filter)
+    {
+        if (filter == null || !filter.isActive())
+        {
+            return List.of();
+        }
+        return filterHashMappingRepository.findAllByHashIn(filter.getValues())
+                .stream()
+                .map(FilterHashMapping::getValue)
                 .toList();
     }
 

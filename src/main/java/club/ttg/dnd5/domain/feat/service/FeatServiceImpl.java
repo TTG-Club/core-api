@@ -110,10 +110,10 @@ public class FeatServiceImpl implements FeatService {
                 .toList();
     }
     @Override
-    public Collection<FeatShortResponse> searchV2(final club.ttg.dnd5.domain.feat.rest.dto.FeatSearchRequest request)
+    public Collection<FeatShortResponse> search(final club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest request)
     {
         var predicate = FeatPredicateBuilder.build(request);
-        return featQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+        return featQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(featMapper::toShort)
                 .toList();

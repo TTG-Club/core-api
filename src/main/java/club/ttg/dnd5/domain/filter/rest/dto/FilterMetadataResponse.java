@@ -22,9 +22,10 @@ public class FilterMetadataResponse {
     public static class FilterGroupMeta {
         private String key;                     // e.g. "school"
         private String name;                    // e.g. "Школа магии"
-        private String type;                    // e.g. "threeState" or "singleton"
-        private List<FilterValueMeta> values;   // for threeState
-        private Boolean state;                  // for singleton (true/false/null)
+        private String type;                    // e.g. "filter" or "singleton"
+        private boolean supportsMode;           // поддерживает _mode
+        private boolean supportsUnion;          // поддерживает _union
+        private List<FilterValueMeta> values;   // for filter
     }
 
     @Data
@@ -32,9 +33,9 @@ public class FilterMetadataResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class FilterValueMeta {
-        private Object value;   // Enum name, id, etc.
+        private String id;      // SHA-256 short hash, enum name, or number
+        private Object value;   // Full value for display
         private String name;    // Human readable name
-        private Boolean state;  // true=positive, false=negative, null=unchecked
     }
 
     @Data
@@ -44,16 +45,8 @@ public class FilterMetadataResponse {
     public static class SourceGroupMeta {
         private String key;     // e.g. "official"
         private String name;    // e.g. "Официальные"
-        private List<SourceValueMeta> values;
+        private List<FilterValueMeta> values;
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SourceValueMeta {
-        private String value;   // Acronym e.g. "PHB"
-        private String name;    // e.g. "Player's Handbook"
-        private Boolean enabled; // true/false (or null meaning disabled)
-    }
+
 }

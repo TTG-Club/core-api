@@ -55,18 +55,23 @@ public class FeatController {
 
 
 
-    @Operation(summary = "Поиск черт v2", description = "Поиск черт с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public Collection<FeatShortResponse> searchV2(
+    @Operation(summary = "Поиск черт", description = "Поиск черт с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public Collection<FeatShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.feat.rest.dto.FeatSearchRequest.class);
-        return featService.searchV2(request);
+        var request = new club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+        request.setCategory(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "category", club.ttg.dnd5.domain.feat.model.FeatCategory.class));
+        request.setAbility(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "ability", club.ttg.dnd5.domain.common.dictionary.Ability.class));
+        request.setRepeatability(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "repeatability"));
+        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
+        return featService.search(request);
     }
 
     @Operation(summary = "Получение списка черт для селекта")
@@ -83,9 +88,9 @@ public class FeatController {
     }
 
 
-    @Operation(summary = "Получить метаданные фильтров v2", description = "Возвращает JSON для построения UI фильтров")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return featFilterService.getFilterMetadata();
     }
 

@@ -118,10 +118,10 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     @Override
-    public Collection<BackgroundShortResponse> searchV2(final club.ttg.dnd5.domain.background.rest.dto.BackgroundSearchRequest request)
+    public Collection<BackgroundShortResponse> search(final club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest request)
     {
         var predicate = BackgroundPredicateBuilder.build(request);
-        return backgroundQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+        return backgroundQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(backgroundMapper::toShort)
                 .toList();

@@ -25,5 +25,5 @@ public interface MagicItemService {
 
 
 
-    Collection<MagicItemShortResponse> searchV2(club.ttg.dnd5.domain.magic.rest.dto.MagicItemSearchRequest request);
+    Collection<MagicItemShortResponse> search(club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest request);
 }

@@ -93,10 +93,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemShortResponse> searchV2(final club.ttg.dnd5.domain.item.rest.dto.ItemSearchRequest request)
+    public Collection<ItemShortResponse> search(final club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest request)
     {
         var predicate = ItemPredicateBuilder.build(request);
-        return itemQueryDslService.search(predicate, request.getPage(), request.getSize())
+        return itemQueryDslService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(itemMapper::toShortResponse)
                 .toList();

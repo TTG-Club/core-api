@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.species.service;
 
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
-import club.ttg.dnd5.domain.species.rest.dto.SpeciesSearchRequest;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
@@ -63,11 +63,11 @@ public class SpeciesService {
                 .toList();
     }
 
-    public List<SpeciesShortResponse> searchV2(SpeciesSearchRequest request) {
+    public List<SpeciesShortResponse> search(SpeciesQueryRequest request) {
         var predicate = SpeciesPredicateBuilder.build(request);
-        return speciesQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+        return speciesQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
-                .filter(s -> (request.getText() != null && !request.getText().isEmpty()) || s.getParent() == null)
+                .filter(s -> (request.getSearch() != null && !request.getSearch().isEmpty()) || s.getParent() == null)
                 .map(speciesMapper::toShort)
                 .collect(Collectors.toList());
     }

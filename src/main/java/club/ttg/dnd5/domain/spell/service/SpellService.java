@@ -12,7 +12,7 @@ import club.ttg.dnd5.domain.species.service.SpeciesService;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
-import club.ttg.dnd5.domain.spell.rest.dto.SpellSearchRequest;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
@@ -55,10 +55,10 @@ public class SpellService {
     /**
      * Поиск заклинаний через новую систему фильтрации v2.
      */
-    public List<SpellShortResponse> searchV2(final SpellSearchRequest request)
+    public List<SpellShortResponse> search(final SpellQueryRequest request)
     {
         var predicate = SpellPredicateBuilder.build(request);
-        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(spellMapper::toShort)
                 .collect(Collectors.toList());

@@ -63,25 +63,29 @@ public class BackgroundController {
 
 
 
-    @Operation(summary = "Поиск предысторий v2", description = "Поиск предысторий с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public Collection<BackgroundShortResponse> searchV2(
+    @Operation(summary = "Поиск предысторий", description = "Поиск предысторий с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public Collection<BackgroundShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.background.rest.dto.BackgroundSearchRequest.class);
-        return backgroundService.searchV2(request);
+        var request = new club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+        request.setAbility(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "ability", club.ttg.dnd5.domain.common.dictionary.Ability.class));
+        request.setSkill(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "skill", club.ttg.dnd5.domain.common.dictionary.Skill.class));
+        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
+        return backgroundService.search(request);
     }
 
 
 
-    @Operation(summary = "Получить метаданные фильтров v2")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return backgroundFilterService.getFilterMetadata();
     }
 

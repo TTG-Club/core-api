@@ -10,7 +10,6 @@ import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,18 +47,21 @@ public class ClassController {
 
 
 
-    @Operation(summary = "Поиск классов v2", description = "Поиск классов с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public List<ClassShortResponse> searchV2(
+    @Operation(summary = "Поиск классов", description = "Поиск классов с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<ClassShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.character_class.rest.dto.ClassSearchRequest.class);
-        return classService.searchV2(request);
+        var request = new club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+        request.setHitDice(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "hitDice", club.ttg.dnd5.domain.common.dictionary.Dice.class));
+        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
+        return classService.search(request);
     }
 
     @GetMapping("/{url}")
@@ -69,9 +71,9 @@ public class ClassController {
 
 
 
-    @Operation(summary = "Получить метаданные фильтров v2")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return classFilterService.getFilterMetadata();
     }
 

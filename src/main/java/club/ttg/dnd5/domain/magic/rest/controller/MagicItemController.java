@@ -7,7 +7,6 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.service.MagicItemFilterService;
 import club.ttg.dnd5.domain.magic.service.MagicItemService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,25 +60,32 @@ public class MagicItemController {
 
 
 
-    @Operation(summary = "Поиск предметов v2", description = "Поиск магических предметов с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public Collection<MagicItemShortResponse> searchV2(
+    @Operation(summary = "Поиск магических предметов", description = "Поиск магических предметов с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public Collection<MagicItemShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.magic.rest.dto.MagicItemSearchRequest.class);
-        return magicItemService.searchV2(request);
+        var request = new club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+        request.setCategory(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "category", club.ttg.dnd5.domain.magic.model.MagicItemCategory.class));
+        request.setRarity(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "rarity", club.ttg.dnd5.domain.common.dictionary.Rarity.class));
+        request.setAttunement(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "attunement"));
+        request.setCharges(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "charges"));
+        request.setCurse(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSingleton(params, "curse"));
+        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
+        return magicItemService.search(request);
     }
 
 
 
-    @Operation(summary = "Получить метаданные фильтров v2", description = "Возвращает JSON для построения UI фильтров")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return magicItemFilterService.getFilterMetadata();
     }
 

@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.beastiary.service;
 
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
-import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSearchRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
 public interface CreatureService {
     Boolean existOrThrow(String url);
 
-    List<CreatureShortResponse> searchV2(CreatureSearchRequest request);
+    List<CreatureShortResponse> search(CreatureQueryRequest request);
 
     CreatureDetailResponse findDetailedByUrl(String url);
 

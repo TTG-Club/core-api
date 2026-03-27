@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.background.service;
 
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
-import club.ttg.dnd5.domain.background.rest.dto.BackgroundSearchRequest;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 
@@ -25,6 +25,6 @@ public interface BackgroundService {
 
     Collection<BackgroundSelectResponse> getBackgroundsSelect(final String searchLine);
 
-    Collection<BackgroundShortResponse> searchV2(BackgroundSearchRequest request);
+    Collection<BackgroundShortResponse> search(BackgroundQueryRequest request);
 }
 

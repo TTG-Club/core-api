@@ -8,7 +8,7 @@ import club.ttg.dnd5.domain.glossary.model.Glossary;
 import club.ttg.dnd5.domain.glossary.repository.GlossaryRepository;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
-import club.ttg.dnd5.domain.glossary.rest.dto.GlossarySearchRequest;
+import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryQueryRequest;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.rest.mapper.GlossaryMapper;
 
@@ -30,9 +30,9 @@ public class GlossaryService {
     private final GlossaryMapper glossaryMapper;
     private final GlossaryQueryDslSearchService glossaryQueryDslSearchService;
 
-    public List<GlossaryShortResponse> searchV2(final GlossarySearchRequest request) {
+    public List<GlossaryShortResponse> search(final GlossaryQueryRequest request) {
         var predicate = GlossaryPredicateBuilder.build(request);
-        return glossaryQueryDslSearchService.search(predicate, request.getPage(), request.getSize()).stream()
+        return glossaryQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize()).stream()
                 .map(glossaryMapper::toShort)
                 .collect(Collectors.toList());
     }

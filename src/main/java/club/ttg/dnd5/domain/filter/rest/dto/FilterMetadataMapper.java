@@ -5,7 +5,7 @@ import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.Filter;
-import club.ttg.dnd5.dto.base.filters.State;
+import club.ttg.dnd5.dto.base.filters.FilterIdUtils;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.experimental.UtilityClass;
 
@@ -33,10 +33,10 @@ public class FilterMetadataMapper {
                         .name(group.getName())
                         .key(getKey(group))
                         .values(group.getFilters().stream()
-                                .map(item -> FilterMetadataResponse.SourceValueMeta.builder()
+                                .map(item -> FilterMetadataResponse.FilterValueMeta.builder()
+                                        .id(String.valueOf(item.getValue()))
                                         .name(item.getName())
                                         .value(item.getValue())
-                                        .enabled(item.getSelected() != null ? item.getSelected() : false)
                                         .build())
                                 .collect(Collectors.toList()))
                         .build())
@@ -53,44 +53,45 @@ public class FilterMetadataMapper {
                 .map(group -> FilterMetadataResponse.FilterGroupMeta.builder()
                         .name(group.getName())
                         .key(getKey(group))
-                        .type(isSingletonType(group) ? "singleton" : "threeState")
-                        .values(isSingletonType(group) ? null : group.getFilters().stream()
-                                .map(item -> FilterMetadataResponse.FilterValueMeta.builder()
-                                        .name(item.getName())
-                                        .value(item.getValue())
-                                        // positive -> true, negative -> false, unchecked -> null
-                                        .state(mapState(item.getState()))
-                                        .build())
+                        .type("filter")
+                        .supportsMode(true)
+                        .supportsUnion(true)
+                        .values(group.getFilters().stream()
+                                .map(item -> {
+                                    String id = computeId(item.getValue(), item.getName());
+                                    return FilterMetadataResponse.FilterValueMeta.builder()
+                                            .id(id)
+                                            .name(item.getName())
+                                            .value(item.getValue())
+                                            .build();
+                                })
                                 .collect(Collectors.toList()))
-                        .state(isSingletonType(group) ? getSingletonState(group) : null)
                         .build())
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Вычисляет id для значения фильтра:
+     * - Enum / числовое значение → toString()
+     * - Строковое значение → short hash
+     */
+    private String computeId(Object value, String name) {
+        if (value == null) {
+            return name != null ? FilterIdUtils.shortHash(name) : "";
+        }
+
+        if (value instanceof Enum<?> || value instanceof Number) {
+            return String.valueOf(value);
+        }
+
+        return FilterIdUtils.shortHash(String.valueOf(value));
+    }
+
     private String getKey(Filter filter) {
-        // Try getting key from @JsonTypeName
         JsonTypeName annotation = filter.getClass().getAnnotation(JsonTypeName.class);
         if (annotation != null) {
             return annotation.value();
         }
         return filter.getClass().getSimpleName();
-    }
-
-    private Boolean mapState(State state) {
-        if (state == State.POSITIVE) return true;
-        if (state == State.NEGATIVE) return false;
-        return null;
-    }
-
-    private boolean isSingletonType(AbstractFilterGroup<?, ?> group) {
-        // Simple heuristic: if the group has only one boolean value option or is marked logically singleton
-        // Actually, many old singletons like "Ritual" are just typical groups where one item is selected.
-        // Let's keep them as threeState with 1 element for now, or detect if they have "isSingleton" property.
-        // The frontend can still process threeState with 1 element.
-        return false;
-    }
-
-    private Boolean getSingletonState(AbstractFilterGroup<?, ?> group) {
-        return null;
     }
 }

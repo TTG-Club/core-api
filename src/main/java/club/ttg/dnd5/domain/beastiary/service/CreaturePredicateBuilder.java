@@ -1,16 +1,18 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
 import club.ttg.dnd5.domain.beastiary.model.QCreature;
-import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSearchRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 
+import java.util.Collection;
+
 /**
  * Построитель предикатов QueryDSL для поиска существ.
- * Заменяет 9 legacy FilterGroup классов.
+ * Использует {@link club.ttg.dnd5.dto.base.filters.QueryFilter}-based API.
  */
 @UtilityClass
 public class CreaturePredicateBuilder
@@ -18,7 +20,17 @@ public class CreaturePredicateBuilder
     private static final QCreature Q = QCreature.creature;
     private static final StringPath ALIGNMENT_PATH = Expressions.stringPath("alignment");
 
-    public BooleanBuilder build(final CreatureSearchRequest request)
+    /**
+     * Строит полный предикат на основе {@link CreatureQueryRequest}.
+     *
+     * @param request     типизированный запрос фильтрации
+     * @param traitValues резолвленные оригинальные значения traits (из хэшей)
+     * @param tagValues   резолвленные оригинальные значения tags (из хэшей)
+     * @return {@link BooleanBuilder} для передачи в SearchService
+     */
+    public BooleanBuilder build(final CreatureQueryRequest request,
+                                 final Collection<String> traitValues,
+                                 final Collection<String> tagValues)
     {
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -27,48 +39,48 @@ public class CreaturePredicateBuilder
 
         // Текстовый поиск
         builder.and(PredicateUtils.buildTextSearch(
-                request.getText(),
+                request.getSearch(),
                 Q.name, Q.english, Q.alternative
         ));
 
         // Тип существа (JSONB: types->'values' @> '["BEAST"]'::jsonb)
-        PredicateUtils.applyJsonbNestedEnumArray(builder, request.getCreatureType(), "types", "values");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getType(), "types", "values");
 
         // Размер (JSONB: sizes->'values' @> '["MEDIUM"]'::jsonb)
-        PredicateUtils.applyJsonbNestedEnumArray(builder, request.getCreatureSize(), "sizes", "values");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getSize(), "sizes", "values");
 
         // Мировоззрение (enum as STRING column)
-        PredicateUtils.applyThreeStateEnum(builder, request.getAlignment(), ALIGNMENT_PATH);
+        PredicateUtils.applyFilterEnum(builder, request.getAlignment(), ALIGNMENT_PATH);
 
         // Уровень опасности (по experience)
-        PredicateUtils.applyThreeState(builder, request.getChallengeRating(), Q.experience);
+        PredicateUtils.applyFilter(builder, request.getCr(), Q.experience);
 
         // Место обитания (JSONB: section->'habitats' @> '["FOREST"]'::jsonb)
-        PredicateUtils.applyJsonbNestedEnumArray(builder, request.getHabitat(), "section", "habitats");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getHabitat(), "section", "habitats");
 
         // Чувства (JSONB: senses->>'key')
-        PredicateUtils.applyJsonbSenseFilter(builder, request.getSenses(), "senses");
+        PredicateUtils.applyJsonbSenseFilterQuery(builder, request.getSenses(), "senses");
 
-        // Умения (JSONB: traits[].name)
-        PredicateUtils.applyJsonbNamedArray(builder, request.getTraits(), "traits", "name");
+        // Умения (JSONB: traits[].name) — хэши резолвлены в traitValues
+        PredicateUtils.applyJsonbNamedArrayFilter(builder, request.getTraits(), "traits", "name", traitValues);
 
-        // Тег типа (JSONB types->text + name ILIKE)
-        PredicateUtils.applyJsonbTagFilter(builder, request.getTag(), "types", Q.name);
+        // Тег типа (JSONB types->text + name ILIKE) — хэши резолвлены в tagValues
+        PredicateUtils.applyJsonbTagFilterQuery(builder, request.getTag(), "types", Q.name, tagValues);
 
-        // Логово (singleton JSONB lair)
-        PredicateUtils.applySingletonNative(builder, request.getLair(),
+        // Логово (singleton)
+        PredicateUtils.applySingletonFilter(builder, request.getLair(),
                 "lair is not null and lair ->> 'name' is not null and btrim(lair ->> 'name') <> ''",
                 "lair is null or lair ->> 'name' is null or btrim(lair ->> 'name') = ''"
         );
 
         // Легендарное действие (singleton)
-        PredicateUtils.applySingletonNative(builder, request.getLegendaryAction(),
+        PredicateUtils.applySingletonFilter(builder, request.getLegendaryAction(),
                 "legendary_action >= 1",
                 "legendary_action < 1 or legendary_action is null"
         );
 
         // 2-state источники
-        PredicateUtils.applySources(builder, request.getEnabledSources(), "creature", "source");
+        PredicateUtils.applySourcesFilter(builder, request.getSource(), "creature", "source");
 
         return builder;
     }

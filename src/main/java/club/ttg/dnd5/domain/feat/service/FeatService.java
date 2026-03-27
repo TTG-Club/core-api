@@ -29,5 +29,5 @@ public interface FeatService {
 
     Collection<FeatSelectResponse> getFeatsSelect(final String searchLine, final Set<FeatCategory> categories);
 
-    Collection<FeatShortResponse> searchV2(club.ttg.dnd5.domain.feat.rest.dto.FeatSearchRequest request);
+    Collection<FeatShortResponse> search(club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest request);
 }

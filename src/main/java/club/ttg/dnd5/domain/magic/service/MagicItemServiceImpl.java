@@ -94,10 +94,10 @@ public class MagicItemServiceImpl implements MagicItemService {
     }
 
     @Override
-    public Collection<MagicItemShortResponse> searchV2(final club.ttg.dnd5.domain.magic.rest.dto.MagicItemSearchRequest request)
+    public Collection<MagicItemShortResponse> search(final club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest request)
     {
         var predicate = MagicItemPredicateBuilder.build(request);
-        return magicItemQueryDslSearchService.search(predicate, request.getPage(), request.getSize())
+        return magicItemQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(magicItemMapper::toShort)
                 .toList();

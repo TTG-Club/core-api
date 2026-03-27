@@ -9,7 +9,6 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,26 +46,29 @@ public class SpeciesController {
 
 
 
-    @Operation(summary = "Получить метаданные фильтров v2")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return speciesFilterService.getFilterMetadata();
     }
 
 
 
-    @Operation(summary = "Поиск видов v2", description = "Поиск видов с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public List<SpeciesShortResponse> searchV2(
+    @Operation(summary = "Поиск видов", description = "Поиск видов с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<SpeciesShortResponse> search(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size)
+            @RequestParam(required = false) Integer size,
+            @RequestParam java.util.Map<String, String[]> params)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.species.rest.dto.SpeciesSearchRequest.class);
-        return speciesService.searchV2(request);
+        var request = new club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+        request.setCreatureType(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveEnum(params, "creatureType", club.ttg.dnd5.domain.common.dictionary.CreatureType.class));
+        request.setSource(club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver.resolveSources(params, "source"));
+        return speciesService.search(request);
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")

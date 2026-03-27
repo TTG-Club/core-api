@@ -169,3 +169,5 @@ databaseChangeLog:
       file: db/changelog/2026/03/18-01-add-feat-suffix-background-table.yaml
   - include:
       file: db/changelog/2026/03/25-01-add-index-source.field.yaml
+  - include:
+      file: db/changelog/2026/03/26-01-add-filter-hash-mapping.yaml

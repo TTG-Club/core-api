@@ -1,16 +1,23 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
+import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
+import club.ttg.dnd5.domain.common.dictionary.Alignment;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
+import club.ttg.dnd5.domain.common.dictionary.Size;
+import club.ttg.dnd5.domain.filter.rest.QueryParamFilterResolver;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -38,20 +45,34 @@ public class CreatureController {
         return creatureService.existOrThrow(url);
     }
 
-
-
-    @Operation(summary = "Поиск существ v2", description = "Поиск существ с Base64url-encoded фильтрами и пагинацией")
-    @GetMapping("/search/v2")
-    public List<CreatureShortResponse> searchV2(
+    @Operation(summary = "Поиск существ", description = "Поиск существ с GET-параметрами фильтрации и пагинацией")
+    @GetMapping("/search")
+    public List<CreatureShortResponse> search(
+            HttpServletRequest httpRequest,
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "f", required = false)
-            @Schema(description = "Base64url-encoded JSON фильтров") String f,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size)
     {
-        var request = club.ttg.dnd5.domain.filter.rest.SearchRequestResolver.resolve(
-                f, search, page, size, club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSearchRequest.class);
-        return creatureService.searchV2(request);
+        var params = httpRequest.getParameterMap();
+
+        var request = new CreatureQueryRequest();
+        request.setSearch(search);
+        if (page != null) request.setPage(page);
+        if (size != null) request.setPageSize(size);
+
+        request.setCr(QueryParamFilterResolver.resolveLong(params, "cr"));
+        request.setType(QueryParamFilterResolver.resolveEnum(params, "type", CreatureType.class));
+        request.setSize(QueryParamFilterResolver.resolveEnum(params, "size", Size.class));
+        request.setAlignment(QueryParamFilterResolver.resolveEnum(params, "alignment", Alignment.class));
+        request.setHabitat(QueryParamFilterResolver.resolveEnum(params, "habitat", Habitat.class));
+        request.setSenses(QueryParamFilterResolver.resolveEnum(params, "senses", CreatureSenses.class));
+        request.setTraits(QueryParamFilterResolver.resolveString(params, "traits"));
+        request.setTag(QueryParamFilterResolver.resolveString(params, "tag"));
+        request.setLair(QueryParamFilterResolver.resolveSingleton(params, "lair"));
+        request.setLegendaryAction(QueryParamFilterResolver.resolveSingleton(params, "legendaryAction"));
+        request.setSource(QueryParamFilterResolver.resolveSources(params, "source"));
+
+        return creatureService.search(request);
     }
 
     @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")
@@ -67,9 +88,9 @@ public class CreatureController {
 
 
 
-    @Operation(summary = "Получить метаданные фильтров v2", description = "Возвращает JSON для построения UI фильтров и использования в SearchRequest")
-    @GetMapping("/filters/v2")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFiltersV2() {
+    @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
+    @GetMapping("/filters")
+    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
         return creatureFilterService.getFilterMetadata();
     }
 
