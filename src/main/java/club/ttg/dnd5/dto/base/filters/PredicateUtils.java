@@ -148,7 +148,7 @@ public class PredicateUtils
     /**
      * Текстовый поиск (ILIKE с экранированием спецсимволов и переключением раскладки).
      */
-    public BooleanExpression buildTextSearch(final String text,
+    public com.querydsl.core.types.Predicate buildTextSearch(final String text,
                                               final StringPath... paths)
     {
         if (!StringUtils.hasText(text))
@@ -167,7 +167,7 @@ public class PredicateUtils
             textBuilder.or(path.likeIgnoreCase("%" + switched + "%"));
         }
 
-        return (BooleanExpression) textBuilder.getValue();
+        return textBuilder.getValue();
     }
 
     /**
