@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.filter.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -11,7 +13,7 @@ import lombok.Setter;
 
 /**
  * Маппинг короткого SHA-256 хэша (8 символов) к оригинальному строковому значению.
- * Используется для фильтров с длинными строковыми идентификаторами (traits, tags и т.п.).
+ * Используется для фильтров с длинными строковыми идентификаторами (tags и т.п.).
  */
 @Entity
 @Table(name = "filter_hash_mapping")
@@ -25,8 +27,9 @@ public class FilterHashMapping
     @Column(length = 8)
     private String hash;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 64, nullable = false)
-    private String category;
+    private FilterHashCategory category;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String value;

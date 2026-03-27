@@ -12,6 +12,10 @@ import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMe
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.SourceGroupMeta;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
+import club.ttg.dnd5.domain.spell.model.SpellDuration;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
+import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.dto.base.filters.FilterIdUtils;
@@ -36,6 +40,45 @@ public class SpellFilterService
     private final ClassService classService;
     private final SpellRepository spellRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
+
+    /**
+     * Предопределённые значения для фильтра «Время накладывания».
+     */
+    private record CastingTimeOption(Long value, CastingUnit unit) {}
+
+    private static final List<CastingTimeOption> CASTING_TIME_OPTIONS = List.of(
+            new CastingTimeOption(null, CastingUnit.BONUS),
+            new CastingTimeOption(null, CastingUnit.REACTION),
+            new CastingTimeOption(null, CastingUnit.ACTION),
+            new CastingTimeOption(1L,  CastingUnit.MINUTE),
+            new CastingTimeOption(10L, CastingUnit.MINUTE),
+            new CastingTimeOption(1L,  CastingUnit.HOUR),
+            new CastingTimeOption(8L,  CastingUnit.HOUR),
+            new CastingTimeOption(12L, CastingUnit.HOUR),
+            new CastingTimeOption(24L, CastingUnit.HOUR)
+    );
+
+    /**
+     * Предопределённые значения для фильтра «Длительность».
+     */
+    private record DurationOption(Long value, DurationUnit unit) {}
+
+    private static final List<DurationOption> DURATION_OPTIONS = List.of(
+            new DurationOption(null, DurationUnit.INSTANT),
+            new DurationOption(null, DurationUnit.ROUND),
+            new DurationOption(1L,  DurationUnit.MINUTE),
+            new DurationOption(10L, DurationUnit.MINUTE),
+            new DurationOption(1L,  DurationUnit.HOUR),
+            new DurationOption(8L,  DurationUnit.HOUR),
+            new DurationOption(12L, DurationUnit.HOUR),
+            new DurationOption(24L, DurationUnit.HOUR),
+            new DurationOption(1L,  DurationUnit.DAY),
+            new DurationOption(7L,  DurationUnit.DAY),
+            new DurationOption(10L, DurationUnit.DAY),
+            new DurationOption(1L,  DurationUnit.YEAR),
+            new DurationOption(null, DurationUnit.UNTIL_DISPEL),
+            new DurationOption(null, DurationUnit.PERMANENT)
+    );
 
     public FilterMetadataResponse getFilterMetadata()
     {
@@ -182,6 +225,26 @@ public class SpellFilterService
                         .toList())
                 .build());
 
+        // Время накладывания
+        groups.add(FilterGroupMeta.builder()
+                .key("castingTime")
+                .name("Время накладывания")
+                .type("filter")
+                .supportsMode(true)
+                .supportsUnion(true)
+                .values(buildCastingTimeValues())
+                .build());
+
+        // Длительность
+        groups.add(FilterGroupMeta.builder()
+                .key("duration")
+                .name("Длительность")
+                .type("filter")
+                .supportsMode(true)
+                .supportsUnion(true)
+                .values(buildDurationValues())
+                .build());
+
         // Ритуал (singleton)
         groups.add(FilterGroupMeta.builder()
                 .key("ritual")
@@ -210,6 +273,40 @@ public class SpellFilterService
                 .build());
 
         return groups;
+    }
+
+    private List<FilterValueMeta> buildCastingTimeValues()
+    {
+        return CASTING_TIME_OPTIONS.stream()
+                .map(opt -> {
+                    String id = opt.value() == null
+                            ? opt.unit().name()
+                            : opt.value() + "_" + opt.unit().name();
+                    String name = SpellCastingTime.of(opt.value(), opt.unit()).toString();
+                    return FilterValueMeta.builder()
+                            .id(id)
+                            .value(id)
+                            .name(name)
+                            .build();
+                })
+                .toList();
+    }
+
+    private List<FilterValueMeta> buildDurationValues()
+    {
+        return DURATION_OPTIONS.stream()
+                .map(opt -> {
+                    String id = opt.value() == null
+                            ? opt.unit().name()
+                            : opt.value() + "_" + opt.unit().name();
+                    String name = SpellDuration.of(opt.value(), opt.unit()).toString();
+                    return FilterValueMeta.builder()
+                            .id(id)
+                            .value(id)
+                            .name(name)
+                            .build();
+                })
+                .toList();
     }
 
     private List<SourceGroupMeta> buildSourceGroups()

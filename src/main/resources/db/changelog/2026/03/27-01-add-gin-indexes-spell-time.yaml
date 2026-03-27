@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-gin-indexes-spell-casting-time-duration
+      author: Magistrus
+      changes:
+        - sqlFile:
+            path: sql/27-01-add-gin-indexes-spell-time.sql
+            relativeToChangelogFile: true

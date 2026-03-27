@@ -7,6 +7,8 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
+import club.ttg.dnd5.domain.filter.model.FilterHashCategory;
+import club.ttg.dnd5.domain.filter.service.FilterHashService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.model.Gallery;
@@ -15,6 +17,7 @@ import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 
 import club.ttg.dnd5.domain.filter.model.FilterHashMapping;
 import club.ttg.dnd5.domain.filter.repository.FilterHashMappingRepository;
+import org.springframework.util.StringUtils;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 
@@ -36,6 +39,7 @@ public class CreatureServiceImpl implements CreatureService {
     private final GalleryRepository galleryRepository;
     private final CreatureMapper creatureMapper;
     private final FilterHashMappingRepository filterHashMappingRepository;
+    private final FilterHashService filterHashService;
 
 
     @Override
@@ -103,6 +107,7 @@ public class CreatureServiceImpl implements CreatureService {
         saveGallery(request.getUrl(), request.getGallery());
         var book = sourceService.findByUrl(request.getSource().getUrl());
         var beast = creatureMapper.toEntity(request, book);
+        persistTagHash(beast);
         return creatureRepository.save(beast).getUrl();
     }
 
@@ -123,6 +128,7 @@ public class CreatureServiceImpl implements CreatureService {
         galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.BESTIARY);
 
         saveGallery(request.getUrl(), request.getGallery());
+        persistTagHash(beast);
         return creatureRepository.save(beast).getUrl();
     }
 
@@ -152,6 +158,17 @@ public class CreatureServiceImpl implements CreatureService {
                             .type(SectionType.BESTIARY)
                             .image(image)
                             .build()));
+        }
+    }
+
+    /**
+     * Сохраняет хэш тега существа в filter_hash_mapping при создании/обновлении.
+     */
+    private void persistTagHash(final Creature creature)
+    {
+        if (creature.getTypes() != null && StringUtils.hasText(creature.getTypes().getText()))
+        {
+            filterHashService.ensureHash(FilterHashCategory.TAG, creature.getTypes().getText().toLowerCase());
         }
     }
 

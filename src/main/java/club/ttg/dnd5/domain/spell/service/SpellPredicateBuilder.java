@@ -95,6 +95,12 @@ public class SpellPredicateBuilder
         // Улучшается с уровнем ячейки
         PredicateUtils.applySingletonFilter(builder, request.getUpcastable(), Q.upcastable);
 
+        // Время накладывания (JSONB-массив)
+        PredicateUtils.applyJsonbTimeFilter(builder, request.getCastingTime(), "casting_time");
+
+        // Длительность (JSONB-массив)
+        PredicateUtils.applyJsonbTimeFilter(builder, request.getDuration(), "duration");
+
         // Источники
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "spell", "source");
 

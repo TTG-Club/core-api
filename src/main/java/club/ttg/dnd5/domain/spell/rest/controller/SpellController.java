@@ -71,6 +71,8 @@ public class SpellController {
         request.setRitual(QueryParamFilterResolver.resolveSingleton(params, "ritual"));
         request.setConcentration(QueryParamFilterResolver.resolveSingleton(params, "concentration"));
         request.setUpcastable(QueryParamFilterResolver.resolveSingleton(params, "upcastable"));
+        request.setCastingTime(QueryParamFilterResolver.resolveString(params, "castingTime"));
+        request.setDuration(QueryParamFilterResolver.resolveString(params, "duration"));
         request.setSource(QueryParamFilterResolver.resolveSources(params, "source"));
 
         return spellService.search(request);

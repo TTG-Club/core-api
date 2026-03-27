@@ -28,6 +28,8 @@ public class SpellQueryRequest
     private QuerySingleton ritual;
     private QuerySingleton concentration;
     private QuerySingleton upcastable;
+    private QueryFilter<String> castingTime;
+    private QueryFilter<String> duration;
     private Set<String> source = Set.of();
     private int page = 0;
     private int pageSize = 10000;

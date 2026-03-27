@@ -1,7 +1,5 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
-import club.ttg.dnd5.domain.beastiary.model.Creature;
-import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
@@ -16,11 +14,11 @@ import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.SourceGroupMeta;
+import club.ttg.dnd5.domain.filter.model.FilterHashCategory;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.dto.base.filters.FilterIdUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,23 +35,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CreatureFilterService
 {
-    private static final int TOP_TRAITS = 10;
-
     private final CreatureRepository creatureRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
     private final FilterHashMappingRepository filterHashMappingRepository;
 
     public FilterMetadataResponse getFilterMetadata()
     {
-        List<Creature> creatures = creatureRepository.findAll();
-
         return FilterMetadataResponse.builder()
-                .filters(buildFilterGroups(creatures))
+                .filters(buildFilterGroups())
                 .sources(buildSourceGroups())
                 .build();
     }
 
-    private List<FilterGroupMeta> buildFilterGroups(List<Creature> creatures)
+    private List<FilterGroupMeta> buildFilterGroups()
     {
         List<FilterGroupMeta> groups = new ArrayList<>();
 
@@ -154,15 +148,12 @@ public class CreatureFilterService
                         .toList())
                 .build());
 
-        // Теги (из данных)
-        List<String> tags = creatures.stream()
-                .map(Creature::getTypes)
-                .map(CreatureCategory::getText)
-                .filter(StringUtils::hasText)
-                .map(String::toLowerCase)
-                .distinct()
-                .sorted()
-                .toList();
+        // Теги — из DISTINCT-запроса + pre-persisted хэши
+        Map<String, String> tagHashes = filterHashMappingRepository.findAllByCategory(FilterHashCategory.TAG)
+                .stream()
+                .collect(Collectors.toMap(FilterHashMapping::getValue, FilterHashMapping::getHash));
+
+        List<String> tags = creatureRepository.findDistinctTags();
 
         groups.add(FilterGroupMeta.builder()
                 .key("tag")
@@ -172,45 +163,11 @@ public class CreatureFilterService
                 .supportsUnion(true)
                 .values(tags.stream()
                         .map(tag -> {
-                            String hash = persistHash("tag", tag);
+                            String hash = tagHashes.getOrDefault(tag, FilterIdUtils.shortHash(tag));
                             return FilterValueMeta.builder()
                                     .id(hash)
                                     .value(tag)
                                     .name(tag)
-                                    .build();
-                        })
-                        .toList())
-                .build());
-
-        // Умения (top traits из данных)
-        Map<String, Long> traitCounts = creatures.stream()
-                .filter(c -> c.getTraits() != null)
-                .flatMap(c -> c.getTraits().stream())
-                .filter(t -> t.getName() != null)
-                .collect(Collectors.groupingBy(
-                        t -> t.getName(),
-                        Collectors.counting()));
-
-        List<String> topTraits = traitCounts.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(TOP_TRAITS)
-                .map(Map.Entry::getKey)
-                .sorted()
-                .toList();
-
-        groups.add(FilterGroupMeta.builder()
-                .key("traits")
-                .name("Умения")
-                .type("filter")
-                .supportsMode(true)
-                .supportsUnion(true)
-                .values(topTraits.stream()
-                        .map(trait -> {
-                            String hash = persistHash("trait", trait);
-                            return FilterValueMeta.builder()
-                                    .id(hash)
-                                    .value(trait)
-                                    .name(trait)
                                     .build();
                         })
                         .toList())
@@ -243,20 +200,5 @@ public class CreatureFilterService
         var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes);
 
         return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
-    }
-
-    /**
-     * Сохраняет хэш → значение в БД (если ещё не существует) и возвращает хэш.
-     */
-    private String persistHash(String category, String value)
-    {
-        String hash = FilterIdUtils.shortHash(value);
-
-        if (!filterHashMappingRepository.existsById(hash))
-        {
-            filterHashMappingRepository.save(new FilterHashMapping(hash, category, value));
-        }
-
-        return hash;
     }
 }

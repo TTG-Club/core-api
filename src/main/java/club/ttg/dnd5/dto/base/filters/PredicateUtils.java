@@ -726,5 +726,75 @@ public class PredicateUtils
             builder.and(path.getString(columnName).in(enabledSources));
         }
     }
+
+    /**
+     * Фильтр по JSONB-массиву временных объектов {value, unit}.
+     * <p>
+     * id формата {@code "UNIT"} (только unit, без числа: "ACTION", "BONUS") или
+     * {@code "VALUE_UNIT"} (число + unit: "10_MINUTE", "1_HOUR").
+     *
+     * @param columnName имя JSONB-колонки (например, "casting_time" или "duration")
+     */
+    public void applyJsonbTimeFilter(final BooleanBuilder builder,
+                                      final QueryFilter<String> filter,
+                                      final String columnName)
+    {
+        if (filter == null || !filter.isActive())
+        {
+            return;
+        }
+
+        BooleanBuilder inner = new BooleanBuilder();
+        for (String id : filter.getValues())
+        {
+            String sql = buildTimePredicate(id, columnName);
+            if (sql != null)
+            {
+                inner.or(Expressions.booleanTemplate(sql));
+            }
+        }
+
+        if (filter.isExclude())
+        {
+            builder.and(inner.not());
+        }
+        else
+        {
+            builder.and(inner);
+        }
+    }
+
+    /**
+     * Строит SQL-предикат для одного значения time-фильтра.
+     *
+     * @param id     формат "UNIT" или "VALUE_UNIT"
+     * @param column имя JSONB-колонки
+     */
+    private String buildTimePredicate(final String id, final String column)
+    {
+        String[] parts = id.split("_", 2);
+
+        if (parts.length == 1)
+        {
+            // Только unit: "ACTION", "BONUS", "INSTANT"
+            return "exists (select 1 from jsonb_array_elements(%s) as elem where (elem->>'unit') = '%s')"
+                    .formatted(column, escapeSql(parts[0]));
+        }
+        else
+        {
+            // value + unit: "10_MINUTE", "1_HOUR"
+            try
+            {
+                Long.parseLong(parts[0]);
+            }
+            catch (NumberFormatException e)
+            {
+                return null;
+            }
+
+            return "exists (select 1 from jsonb_array_elements(%s) as elem where (elem->>'unit') = '%s' AND (elem->>'value')::bigint = %s)"
+                    .formatted(column, escapeSql(parts[1]), parts[0]);
+        }
+    }
 }
 
