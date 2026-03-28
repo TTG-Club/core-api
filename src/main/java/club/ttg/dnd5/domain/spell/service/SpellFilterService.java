@@ -21,7 +21,6 @@ import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
-import club.ttg.dnd5.dto.base.filters.FilterIdUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -132,7 +131,7 @@ public class SpellFilterService
                 .values(magicClasses.stream()
                         .filter(Objects::nonNull)
                         .map(c -> FilterValueMeta.builder()
-                                .id(FilterIdUtils.shortHash(c.getUrl()))
+                                .id(c.getUrl())
                                 .value(c.getUrl())
                                 .name("%s [%s]".formatted(c.getName(), c.getSource().getAcronym()))
                                 .build())
@@ -149,7 +148,7 @@ public class SpellFilterService
                         .filter(Objects::nonNull)
                         .sorted(Comparator.comparing(CharacterClass::getName))
                         .map(c -> FilterValueMeta.builder()
-                                .id(FilterIdUtils.shortHash(c.getUrl()))
+                                .id(c.getUrl())
                                 .value(c.getUrl())
                                 .name("%s [%s]".formatted(c.getName(), c.getSource().getAcronym()))
                                 .build())

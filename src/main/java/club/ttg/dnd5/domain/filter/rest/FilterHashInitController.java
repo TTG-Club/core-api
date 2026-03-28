@@ -1,8 +1,6 @@
 package club.ttg.dnd5.domain.filter.rest;
 
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
-import club.ttg.dnd5.domain.character_class.model.CharacterClass;
-import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.domain.filter.model.FilterHashCategory;
 import club.ttg.dnd5.domain.filter.service.FilterHashService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +25,10 @@ public class FilterHashInitController
 {
     private final FilterHashService hashService;
     private final CreatureRepository creatureRepository;
-    private final ClassService classService;
+
 
     @Secured("ADMIN")
-    @Operation(summary = "Массовая инициализация хэшей", description = "Генерирует короткие хэши для существующих тегов и классов, записывая их в БД")
+    @Operation(summary = "Массовая инициализация хэшей", description = "Генерирует короткие хэши для существующих тегов, записывая их в БД")
     @PostMapping("/init")
     public Map<String, Integer> initAllHashes()
     {
@@ -54,23 +51,6 @@ public class FilterHashInitController
         } catch (Exception e) {
             log.error("Failed to init TAG hashes", e);
             results.put("TAG_ERROR", 0);
-        }
-
-        // 2. Инициализация URL классов и подклассов
-        try {
-            List<String> classUrls = new ArrayList<>();
-            classService.findAllMagicClasses().stream().map(CharacterClass::getUrl).forEach(classUrls::add);
-            classService.findAllMagicSubclasses().stream().map(CharacterClass::getUrl).forEach(classUrls::add);
-
-            // Также нужно добавить базовые не-магические классы как возможные источники? 
-            // Заклинания обычно привязаны ко всем классам через getUrl().
-            
-            int addedClasses = hashService.initHashes(FilterHashCategory.CLASS_URL, classUrls);
-            results.put("CLASS_URL", addedClasses);
-            log.info("Initialized {} hashes for CLASS_URL", addedClasses);
-        } catch (Exception e) {
-            log.error("Failed to init CLASS_URL hashes", e);
-            results.put("CLASS_URL_ERROR", 0);
         }
 
         return results;

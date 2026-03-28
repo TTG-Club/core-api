@@ -16,8 +16,6 @@ import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
-import club.ttg.dnd5.domain.filter.model.FilterHashCategory;
-import club.ttg.dnd5.domain.filter.service.FilterHashService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 
@@ -43,7 +41,7 @@ public class ClassService {
     private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
-    private final FilterHashService filterHashService;
+
 
 
 
@@ -94,7 +92,6 @@ public class ClassService {
         }
         saveGallery(request.getUrl(), request.getGallery());
         CharacterClass saved = classRepository.save(toSave);
-        filterHashService.ensureHash(FilterHashCategory.CLASS_URL, saved.getUrl());
         return classMapper.toDetailedResponse(saved);
     }
 
@@ -128,7 +125,6 @@ public class ClassService {
         galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.CLASS);
 
         saveGallery(request.getUrl(), request.getGallery());
-        filterHashService.ensureHash(FilterHashCategory.CLASS_URL, request.getUrl());
         return request.getUrl();
     }
 
