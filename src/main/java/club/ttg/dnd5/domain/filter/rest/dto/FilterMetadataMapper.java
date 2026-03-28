@@ -61,7 +61,6 @@ public class FilterMetadataMapper {
                 .map(group -> FilterMetadataResponse.FilterGroupMeta.builder()
                         .name(group.getName())
                         .key(getKey(group))
-                        .type(FilterGroupType.FILTER)
                         .supports(SupportsConfig.builder().mode(true).union(true).build())
                         .values(group.getFilters().stream()
                                 .map(item -> {

@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.spell.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -7,7 +9,6 @@ import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -96,9 +97,8 @@ public class SpellFilterService
 
         // Школа магии
         groups.add(FilterGroupMeta.builder()
-                .key("school")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "school"))
                 .name("Школа")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(MagicSchool.values())
                         .map(s -> FilterValueMeta.builder()
@@ -111,9 +111,8 @@ public class SpellFilterService
 
         // Уровень
         groups.add(FilterGroupMeta.builder()
-                .key("level")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "level"))
                 .name("Уровень")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(LongStream.range(0, 10)
                         .mapToObj(i -> FilterValueMeta.builder()
@@ -127,9 +126,8 @@ public class SpellFilterService
         // Классы
         List<CharacterClass> magicClasses = classService.findAllMagicClasses();
         groups.add(FilterGroupMeta.builder()
-                .key("className")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "className"))
                 .name("Классы")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(magicClasses.stream()
                         .filter(Objects::nonNull)
@@ -144,9 +142,8 @@ public class SpellFilterService
         // Подклассы
         List<CharacterClass> magicSubclasses = classService.findAllMagicSubclasses();
         groups.add(FilterGroupMeta.builder()
-                .key("subclassName")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "subclassName"))
                 .name("Подклассы")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(magicSubclasses.stream()
                         .filter(Objects::nonNull)
@@ -161,9 +158,8 @@ public class SpellFilterService
 
         // Тип урона
         groups.add(FilterGroupMeta.builder()
-                .key("damageType")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "damageType"))
                 .name("Тип урона")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(DamageType.values())
                         .map(d -> FilterValueMeta.builder()
@@ -176,9 +172,8 @@ public class SpellFilterService
 
         // Тип лечения
         groups.add(FilterGroupMeta.builder()
-                .key("healingType")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "healingType"))
                 .name("Тип лечения")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(HealingType.values())
                         .map(h -> FilterValueMeta.builder()
@@ -191,9 +186,8 @@ public class SpellFilterService
 
         // Накладываемые состояния
         groups.add(FilterGroupMeta.builder()
-                .key("condition")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "condition"))
                 .name("Накладываемые состояния")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(Condition.values())
                         .map(c -> FilterValueMeta.builder()
@@ -206,9 +200,8 @@ public class SpellFilterService
 
         // Спасброски
         groups.add(FilterGroupMeta.builder()
-                .key("savingThrow")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "savingThrow"))
                 .name("Спасброски")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(Ability.values())
                         .map(a -> FilterValueMeta.builder()
@@ -221,27 +214,24 @@ public class SpellFilterService
 
         // Время накладывания
         groups.add(FilterGroupMeta.builder()
-                .key("castingTime")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "castingTime"))
                 .name("Время накладывания")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(buildCastingTimeValues())
                 .build());
 
         // Длительность
         groups.add(FilterGroupMeta.builder()
-                .key("duration")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "duration"))
                 .name("Длительность")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(buildDurationValues())
                 .build());
 
         // Ритуал
         groups.add(FilterGroupMeta.builder()
-                .key("ritual")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "ritual"))
                 .name("Ритуал")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                 .values(List.of(FilterValueMeta.builder()
                         .id("1")
@@ -252,9 +242,8 @@ public class SpellFilterService
 
         // Концентрация
         groups.add(FilterGroupMeta.builder()
-                .key("concentration")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "concentration"))
                 .name("Концентрация")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                 .values(List.of(FilterValueMeta.builder()
                         .id("1")
@@ -265,9 +254,8 @@ public class SpellFilterService
 
         // Улучшается с уровнем ячейки
         groups.add(FilterGroupMeta.builder()
-                .key("upcastable")
+                .key(FilterKeys.keyOf(SpellQueryRequest.class, "upcastable"))
                 .name("Улучшается с уровнем ячейки")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                 .values(List.of(FilterValueMeta.builder()
                         .id("1")

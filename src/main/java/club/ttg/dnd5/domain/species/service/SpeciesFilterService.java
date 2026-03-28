@@ -1,8 +1,9 @@
 package club.ttg.dnd5.domain.species.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -39,9 +40,8 @@ public class SpeciesFilterService
     {
         return List.of(
                 FilterGroupMeta.builder()
-                        .key("creatureType")
+                        .key(FilterKeys.keyOf(SpeciesQueryRequest.class, "creatureType"))
                         .name("Тип существа")
-                        .type(FilterGroupType.FILTER)
                         .supports(SupportsConfig.builder().mode(true).union(true).build())
                         .values(Arrays.stream(CreatureType.values())
                                 .map(ct -> FilterValueMeta.builder()

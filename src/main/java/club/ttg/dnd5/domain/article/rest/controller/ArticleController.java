@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.article.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;

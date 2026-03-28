@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.glossary.rest.controller;
 
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryQueryRequest;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
@@ -41,7 +43,7 @@ public class GlossaryController {
 
     @Operation(summary = "Поиск записей глоссария", description = "Поиск записей глоссария с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<GlossaryShortResponse> search(GlossaryQueryRequest request)
+    public List<GlossaryShortResponse> search(@ParameterObject GlossaryQueryRequest request)
     {
         return glossaryService.search(request);
     }
@@ -86,7 +88,7 @@ public class GlossaryController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return glossaryFilterService.getFilterMetadata();
     }
 }

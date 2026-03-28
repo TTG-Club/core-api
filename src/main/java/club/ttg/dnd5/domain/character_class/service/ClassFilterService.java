@@ -1,8 +1,9 @@
 package club.ttg.dnd5.domain.character_class.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -26,9 +27,8 @@ public class ClassFilterService
                 .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
                         FilterGroupMeta.builder()
-                                .key("hitDie")
+                                .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDie"))
                                 .name("Кость хитов")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Stream.of(Dice.d6, Dice.d8, Dice.d10, Dice.d12)
                                         .map(v -> FilterValueMeta.builder()

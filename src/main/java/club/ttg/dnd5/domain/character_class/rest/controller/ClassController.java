@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.character_class.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
@@ -50,7 +52,7 @@ public class ClassController {
 
     @Operation(summary = "Поиск классов", description = "Поиск классов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<ClassShortResponse> search(ClassQueryRequest request)
+    public List<ClassShortResponse> search(@ParameterObject ClassQueryRequest request)
     {
         return classService.search(request);
     }
@@ -64,7 +66,7 @@ public class ClassController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return classFilterService.getFilterMetadata();
     }
 

@@ -6,5 +6,6 @@ package club.ttg.dnd5.domain.filter.model;
  */
 public enum FilterHashCategory
 {
-    TAG
+    TAG,
+    CLASS_URL
 }

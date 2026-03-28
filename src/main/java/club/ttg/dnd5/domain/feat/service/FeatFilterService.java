@@ -1,9 +1,10 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -27,9 +28,8 @@ public class FeatFilterService
                 .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
                         FilterGroupMeta.builder()
-                                .key("category")
+                                .key(FilterKeys.keyOf(FeatQueryRequest.class, "category"))
                                 .name("Категория")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(FeatCategory.values())
                                         .map(v -> FilterValueMeta.builder()
@@ -40,9 +40,8 @@ public class FeatFilterService
                                         .toList())
                                 .build(),
                         FilterGroupMeta.builder()
-                                .key("ability")
+                                .key(FilterKeys.keyOf(FeatQueryRequest.class, "ability"))
                                 .name("Характеристика")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Ability.values())
                                         .map(v -> FilterValueMeta.builder()
@@ -53,9 +52,8 @@ public class FeatFilterService
                                         .toList())
                                 .build(),
                         FilterGroupMeta.builder()
-                                .key("repeatability")
+                                .key(FilterKeys.keyOf(FeatQueryRequest.class, "repeatability"))
                                 .name("Повторяемость")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(List.of(FilterValueMeta.builder()
                                         .id("1")

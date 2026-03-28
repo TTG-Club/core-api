@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.feat.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest;
@@ -58,7 +60,7 @@ public class FeatController {
 
     @Operation(summary = "Поиск черт", description = "Поиск черт с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<FeatShortResponse> search(FeatQueryRequest request)
+    public Collection<FeatShortResponse> search(@ParameterObject FeatQueryRequest request)
     {
         return featService.search(request);
     }
@@ -79,7 +81,7 @@ public class FeatController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return featFilterService.getFilterMetadata();
     }
 

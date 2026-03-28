@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
@@ -40,7 +42,7 @@ public class CreatureController {
 
     @Operation(summary = "Поиск существ", description = "Поиск существ с GET-параметрами фильтрации и пагинацией")
     @GetMapping("/search")
-    public List<CreatureShortResponse> search(CreatureQueryRequest request)
+    public List<CreatureShortResponse> search(@ParameterObject CreatureQueryRequest request)
     {
         return creatureService.search(request);
     }
@@ -60,7 +62,7 @@ public class CreatureController {
 
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return creatureFilterService.getFilterMetadata();
     }
 

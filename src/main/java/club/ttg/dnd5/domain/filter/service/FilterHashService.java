@@ -34,4 +34,29 @@ public class FilterHashService
             repository.save(new FilterHashMapping(hash, category, value));
         }
     }
+
+    /**
+     * Создает маппинги для всех переданных значений в указанной категории.
+     * Возвращает количество реально добавленных записей.
+     *
+     * @param category категория фильтра
+     * @param values   оригинальные строковые значения
+     * @return количество добавленных хэшей
+     */
+    @Transactional
+    public int initHashes(final FilterHashCategory category, final java.util.Collection<String> values)
+    {
+        int added = 0;
+        for (String value : values)
+        {
+            if (value == null || value.isBlank()) continue;
+            String hash = FilterIdUtils.shortHash(value);
+            if (!repository.existsById(hash))
+            {
+                repository.save(new FilterHashMapping(hash, category, value));
+                added++;
+            }
+        }
+        return added;
+    }
 }

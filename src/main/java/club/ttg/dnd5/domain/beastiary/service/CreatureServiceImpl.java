@@ -168,14 +168,14 @@ public class CreatureServiceImpl implements CreatureService {
         }
     }
 
-    /**
-     * Сохраняет хэш тега существа в filter_hash_mapping при создании/обновлении.
-     */
     private void persistTagHash(final Creature creature)
     {
         if (creature.getTypes() != null && StringUtils.hasText(creature.getTypes().getText()))
         {
-            filterHashService.ensureHash(FilterHashCategory.TAG, creature.getTypes().getText().toLowerCase());
+             java.util.Arrays.stream(creature.getTypes().getText().split(","))
+                    .map(String::trim)
+                    .filter(t -> !t.isEmpty())
+                    .forEach(tag -> filterHashService.ensureHash(FilterHashCategory.TAG, tag.toLowerCase()));
         }
     }
 

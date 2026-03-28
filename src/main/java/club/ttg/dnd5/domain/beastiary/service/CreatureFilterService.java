@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
@@ -10,7 +12,6 @@ import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
 import club.ttg.dnd5.domain.filter.model.FilterHashMapping;
 import club.ttg.dnd5.domain.filter.repository.FilterHashMappingRepository;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -55,9 +56,8 @@ public class CreatureFilterService
 
         // CR
         groups.add(FilterGroupMeta.builder()
-                .key("cr")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "cr"))
                 .name("Уровень опасности")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(ChallengeRating.values())
                         .map(cr -> FilterValueMeta.builder()
@@ -70,9 +70,8 @@ public class CreatureFilterService
 
         // Тип существа
         groups.add(FilterGroupMeta.builder()
-                .key("type")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "type"))
                 .name("Тип")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(CreatureType.values())
                         .sorted(Comparator.comparing(CreatureType::getName))
@@ -86,9 +85,8 @@ public class CreatureFilterService
 
         // Размер
         groups.add(FilterGroupMeta.builder()
-                .key("size")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "size"))
                 .name("Размер")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(Size.values())
                         .map(s -> FilterValueMeta.builder()
@@ -101,9 +99,8 @@ public class CreatureFilterService
 
         // Мировоззрение
         groups.add(FilterGroupMeta.builder()
-                .key("alignment")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "alignment"))
                 .name("Мировоззрение")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(Alignment.values())
                         .map(a -> FilterValueMeta.builder()
@@ -116,9 +113,8 @@ public class CreatureFilterService
 
         // Место обитания
         groups.add(FilterGroupMeta.builder()
-                .key("habitat")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "habitat"))
                 .name("Место обитания")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(Habitat.values())
                         .map(h -> FilterValueMeta.builder()
@@ -131,9 +127,8 @@ public class CreatureFilterService
 
         // Чувства
         groups.add(FilterGroupMeta.builder()
-                .key("senses")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "senses"))
                 .name("Чувства")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(CreatureSenses.values())
                         .map(s -> FilterValueMeta.builder()
@@ -152,9 +147,8 @@ public class CreatureFilterService
         List<String> tags = creatureRepository.findDistinctTags();
 
         groups.add(FilterGroupMeta.builder()
-                .key("tag")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "tag"))
                 .name("Тег типа")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(tags.stream()
                         .map(tag -> {
@@ -170,9 +164,8 @@ public class CreatureFilterService
 
         // Логово
         groups.add(FilterGroupMeta.builder()
-                .key("lair")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "lair"))
                 .name("Логово")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                 .values(List.of(FilterValueMeta.builder()
                         .id("1")
@@ -183,9 +176,8 @@ public class CreatureFilterService
 
         // Легендарное действие
         groups.add(FilterGroupMeta.builder()
-                .key("legendaryAction")
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "legendaryAction"))
                 .name("Легендарное действие")
-                .type(FilterGroupType.FILTER)
                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                 .values(List.of(FilterValueMeta.builder()
                         .id("1")

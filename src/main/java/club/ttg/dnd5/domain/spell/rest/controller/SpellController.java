@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
@@ -42,7 +44,7 @@ public class SpellController {
 
     @Operation(summary = "Поиск заклинаний", description = "Поиск заклинаний с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<SpellShortResponse> search(SpellQueryRequest request)
+    public List<SpellShortResponse> search(@ParameterObject SpellQueryRequest request)
     {
         return spellService.search(request);
     }
@@ -61,7 +63,7 @@ public class SpellController {
 
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return spellFilterService.getFilterMetadata();
     }
 

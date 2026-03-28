@@ -1,8 +1,9 @@
 package club.ttg.dnd5.domain.magic.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -27,9 +28,8 @@ public class MagicItemFilterService
                 .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
                         FilterGroupMeta.builder()
-                                .key("category")
+                                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "category"))
                                 .name("Категории")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(MagicItemCategory.values())
                                         .map(v -> FilterValueMeta.builder()
@@ -40,9 +40,8 @@ public class MagicItemFilterService
                                         .toList())
                                 .build(),
                         FilterGroupMeta.builder()
-                                .key("rarity")
+                                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "rarity"))
                                 .name("Редкость")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Rarity.values())
                                         .map(v -> FilterValueMeta.builder()
@@ -53,9 +52,8 @@ public class MagicItemFilterService
                                         .toList())
                                 .build(),
                         FilterGroupMeta.builder()
-                                .key("attunement")
+                                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "attunement"))
                                 .name("Настройка")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(List.of(FilterValueMeta.builder()
                                         .id("1")
@@ -64,9 +62,8 @@ public class MagicItemFilterService
                                         .build()))
                                 .build(),
                         FilterGroupMeta.builder()
-                                .key("charges")
+                                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "charges"))
                                 .name("Заряды")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(List.of(FilterValueMeta.builder()
                                         .id("1")
@@ -75,9 +72,8 @@ public class MagicItemFilterService
                                         .build()))
                                 .build(),
                         FilterGroupMeta.builder()
-                                .key("curse")
+                                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "curse"))
                                 .name("Проклятие")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(List.of(FilterValueMeta.builder()
                                         .id("1")

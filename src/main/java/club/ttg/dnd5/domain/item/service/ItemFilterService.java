@@ -1,7 +1,8 @@
 package club.ttg.dnd5.domain.item.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -27,9 +28,8 @@ public class ItemFilterService
                 .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
                         FilterGroupMeta.builder()
-                                .key("types")
+                                .key(FilterKeys.keyOf(ItemQueryRequest.class, "types"))
                                 .name("Категория")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(ItemType.values())
                                         .map(v -> FilterValueMeta.builder()

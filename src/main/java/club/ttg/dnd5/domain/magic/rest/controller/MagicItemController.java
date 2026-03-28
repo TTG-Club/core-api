@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
@@ -63,7 +65,7 @@ public class MagicItemController {
 
     @Operation(summary = "Поиск магических предметов", description = "Поиск магических предметов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<MagicItemShortResponse> search(MagicItemQueryRequest request)
+    public Collection<MagicItemShortResponse> search(@ParameterObject MagicItemQueryRequest request)
     {
         return magicItemService.search(request);
     }
@@ -72,7 +74,7 @@ public class MagicItemController {
 
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return magicItemFilterService.getFilterMetadata();
     }
 

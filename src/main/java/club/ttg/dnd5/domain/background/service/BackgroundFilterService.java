@@ -1,9 +1,10 @@
 package club.ttg.dnd5.domain.background.service;
 
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
-import club.ttg.dnd5.domain.filter.rest.dto.FilterGroupType;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
@@ -27,9 +28,8 @@ public class BackgroundFilterService
                 .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
                 .filters(List.of(
                         FilterGroupMeta.builder()
-                                .key("ability")
+                                .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "ability"))
                                 .name("Характеристики")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Ability.values())
                                         .map(v -> FilterValueMeta.builder()
@@ -40,9 +40,8 @@ public class BackgroundFilterService
                                         .toList())
                                 .build(),
                         FilterGroupMeta.builder()
-                                .key("skill")
+                                .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "skill"))
                                 .name("Навыки")
-                                .type(FilterGroupType.FILTER)
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(Skill.values())
                                         .map(v -> FilterValueMeta.builder()

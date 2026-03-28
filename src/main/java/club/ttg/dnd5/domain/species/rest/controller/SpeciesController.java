@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
@@ -49,7 +51,7 @@ public class SpeciesController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return speciesFilterService.getFilterMetadata();
     }
 
@@ -57,7 +59,7 @@ public class SpeciesController {
 
     @Operation(summary = "Поиск видов", description = "Поиск видов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<SpeciesShortResponse> search(SpeciesQueryRequest request)
+    public List<SpeciesShortResponse> search(@ParameterObject SpeciesQueryRequest request)
     {
         return speciesService.search(request);
     }

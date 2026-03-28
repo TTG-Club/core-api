@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.background.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
@@ -66,7 +68,7 @@ public class BackgroundController {
 
     @Operation(summary = "Поиск предысторий", description = "Поиск предысторий с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<BackgroundShortResponse> search(BackgroundQueryRequest request)
+    public Collection<BackgroundShortResponse> search(@ParameterObject BackgroundQueryRequest request)
     {
         return backgroundService.search(request);
     }
@@ -75,7 +77,7 @@ public class BackgroundController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return backgroundFilterService.getFilterMetadata();
     }
 

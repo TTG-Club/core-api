@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.item.rest.controller;
 
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -63,7 +65,7 @@ public class ItemController {
 
     @Operation(summary = "Поиск предметов", description = "Поиск предметов с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public Collection<ItemShortResponse> search(ItemQueryRequest request)
+    public Collection<ItemShortResponse> search(@ParameterObject ItemQueryRequest request)
     {
         return itemService.search(request);
     }
@@ -84,7 +86,7 @@ public class ItemController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse getFilters() {
+    public FilterMetadataResponse getFilters() {
         return itemFilterService.getFilterMetadata();
     }
 
