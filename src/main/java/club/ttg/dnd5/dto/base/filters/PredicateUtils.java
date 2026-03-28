@@ -3,7 +3,6 @@ package club.ttg.dnd5.dto.base.filters;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.BooleanPath;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.SimpleExpression;
 import com.querydsl.core.types.dsl.StringPath;
@@ -131,38 +130,7 @@ public class PredicateUtils
         }
     }
 
-    /**
-     * Singleton фильтр для {@link QuerySingleton} с нативным SQL.
-     */
-    public void applySingletonFilter(final BooleanBuilder builder,
-                                      final QuerySingleton singleton,
-                                      final String positiveSql,
-                                      final String negativeSql)
-    {
-        if (singleton == null || !singleton.isActive())
-        {
-            return;
-        }
 
-        builder.and(Expressions.booleanTemplate(
-                singleton.isPositive() ? positiveSql : negativeSql
-        ));
-    }
-
-    /**
-     * Singleton фильтр для {@link QuerySingleton} по boolean-полю.
-     */
-    public void applySingletonFilter(final BooleanBuilder builder,
-                                      final QuerySingleton singleton,
-                                      final BooleanPath path)
-    {
-        if (singleton == null || !singleton.isActive())
-        {
-            return;
-        }
-
-        builder.and(singleton.isPositive() ? path.isTrue() : path.isFalse());
-    }
 
     /**
      * JSONB enum-массив для {@link QueryFilter}: {@code jsonb_exists_any}.

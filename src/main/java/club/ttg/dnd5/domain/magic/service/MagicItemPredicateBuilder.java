@@ -22,15 +22,47 @@ public class MagicItemPredicateBuilder
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH);
         PredicateUtils.applyFilterEnum(builder, request.getRarity(), RARITY_PATH);
-        PredicateUtils.applySingletonFilter(builder, request.getAttunement(),
-                "attunement is not null and (attunement->>'required') = 'true'",
-                "attunement is null or (attunement->>'required') != 'true'");
-        PredicateUtils.applySingletonFilter(builder, request.getCharges(),
-                "charges is not null and charges > 0",
-                "charges is null or charges <= 0");
-        PredicateUtils.applySingletonFilter(builder, request.getCurse(),
-                "curse = true",
-                "curse = false or curse is null");
+        if (request.getAttunement() != null && request.getAttunement().isActive())
+        {
+            if (request.getAttunement().isExclude())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "attunement is null or (attunement->>'required') != 'true'"));
+            }
+            else
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "attunement is not null and (attunement->>'required') = 'true'"));
+            }
+        }
+
+        if (request.getCharges() != null && request.getCharges().isActive())
+        {
+            if (request.getCharges().isExclude())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "charges is null or charges <= 0"));
+            }
+            else
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "charges is not null and charges > 0"));
+            }
+        }
+
+        if (request.getCurse() != null && request.getCurse().isActive())
+        {
+            if (request.getCurse().isExclude())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "curse = false or curse is null"));
+            }
+            else
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "curse = true"));
+            }
+        }
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "magicItem", "source");
         return builder;
     }

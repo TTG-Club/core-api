@@ -8,7 +8,6 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.filter.rest.FilterParam;
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
-import club.ttg.dnd5.dto.base.filters.QuerySingleton;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -46,8 +45,8 @@ public class CreatureQueryRequest extends AbstractQueryRequest
     private QueryFilter<String> tag;
 
     @FilterParam
-    private QuerySingleton lair;
+    private QueryFilter<String> lair;
 
     @FilterParam
-    private QuerySingleton legendaryAction;
+    private QueryFilter<String> legendaryAction;
 }

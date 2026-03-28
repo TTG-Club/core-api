@@ -237,28 +237,43 @@ public class SpellFilterService
                 .values(buildDurationValues())
                 .build());
 
-        // Ритуал (singleton)
+        // Ритуал
         groups.add(FilterGroupMeta.builder()
                 .key("ritual")
                 .name("Ритуал")
-                .type(FilterGroupType.SINGLETON)
-                .supports(SupportsConfig.builder().mode(false).union(false).build())
+                .type(FilterGroupType.FILTER)
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Требуется")
+                        .build()))
                 .build());
 
-        // Концентрация (singleton)
+        // Концентрация
         groups.add(FilterGroupMeta.builder()
                 .key("concentration")
                 .name("Концентрация")
-                .type(FilterGroupType.SINGLETON)
-                .supports(SupportsConfig.builder().mode(false).union(false).build())
+                .type(FilterGroupType.FILTER)
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Требуется")
+                        .build()))
                 .build());
 
-        // Улучшается с уровнем ячейки (singleton)
+        // Улучшается с уровнем ячейки
         groups.add(FilterGroupMeta.builder()
                 .key("upcastable")
                 .name("Улучшается с уровнем ячейки")
-                .type(FilterGroupType.SINGLETON)
-                .supports(SupportsConfig.builder().mode(false).union(false).build())
+                .type(FilterGroupType.FILTER)
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Требуется")
+                        .build()))
                 .build());
 
         return groups;

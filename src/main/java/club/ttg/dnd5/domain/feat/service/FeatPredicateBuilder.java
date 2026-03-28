@@ -21,7 +21,17 @@ public class FeatPredicateBuilder
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH);
         PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getAbility(), "abilities");
-        PredicateUtils.applySingletonFilter(builder, request.getRepeatability(), Q.repeatability);
+        if (request.getRepeatability() != null && request.getRepeatability().isActive())
+        {
+            if (request.getRepeatability().isExclude())
+            {
+                builder.and(Q.repeatability.isFalse());
+            }
+            else
+            {
+                builder.and(Q.repeatability.isTrue());
+            }
+        }
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "feat", "source");
         return builder;
     }

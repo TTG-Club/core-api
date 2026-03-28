@@ -5,7 +5,6 @@ import club.ttg.dnd5.domain.filter.rest.FilterParam;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
-import club.ttg.dnd5.dto.base.filters.QuerySingleton;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -22,11 +21,11 @@ public class MagicItemQueryRequest extends AbstractQueryRequest
     private QueryFilter<Rarity> rarity;
 
     @FilterParam
-    private QuerySingleton attunement;
+    private QueryFilter<String> attunement;
 
     @FilterParam
-    private QuerySingleton charges;
+    private QueryFilter<String> charges;
 
     @FilterParam
-    private QuerySingleton curse;
+    private QueryFilter<String> curse;
 }

@@ -8,7 +8,6 @@ import club.ttg.dnd5.domain.filter.rest.FilterParam;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
-import club.ttg.dnd5.dto.base.filters.QuerySingleton;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -43,13 +42,13 @@ public class SpellQueryRequest extends AbstractQueryRequest
     private QueryFilter<Ability> savingThrow;
 
     @FilterParam
-    private QuerySingleton ritual;
+    private QueryFilter<String> ritual;
 
     @FilterParam
-    private QuerySingleton concentration;
+    private QueryFilter<String> concentration;
 
     @FilterParam
-    private QuerySingleton upcastable;
+    private QueryFilter<String> upcastable;
 
     @FilterParam
     private QueryFilter<String> castingTime;

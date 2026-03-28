@@ -239,11 +239,7 @@ public class ClassService {
 
     @Transactional(readOnly = true)
     public List<CharacterClass> findAllMagicSubclasses() {
-        var sources  =sourceSavedFilterService.getSavedSources();
-        return classRepository.findAllSubclassesWithSpellAffiliationAndCasterTypeNot(CasterType.NONE)
-                .stream()
-                .filter(c -> sources.contains(c.getSource().getAcronym()))
-                .toList();
+        return classRepository.findAllSubclassesWithSpellAffiliationAndCasterTypeNot(CasterType.NONE);
     }
 
     private Source getSource(SourceRequest source) {
@@ -255,11 +251,7 @@ public class ClassService {
 
     @Transactional(readOnly = true)
     public List<CharacterClass> findAllMagicClasses() {
-        var sources = sourceSavedFilterService.getSavedSources();
-        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE)
-                .stream()
-                .filter(c -> sources.contains(c.getSource().getAcronym()))
-                .toList();
+        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE);
     }
 
     private void saveGallery(String url, List<String> gallery) {

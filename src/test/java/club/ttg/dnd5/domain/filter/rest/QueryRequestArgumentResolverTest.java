@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.filter.rest;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
-import club.ttg.dnd5.dto.base.filters.QuerySingleton;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -192,19 +191,21 @@ class QueryRequestArgumentResolverTest
         void singletonPositive() throws Exception
         {
             SpellQueryRequest request = resolve("ritual=1");
-            QuerySingleton singleton = request.getRitual();
-            assertNotNull(singleton);
-            assertTrue(singleton.getValue());
+            QueryFilter<String> filter = request.getRitual();
+            assertNotNull(filter);
+            assertTrue(filter.getValues().contains("1"));
+            assertFalse(filter.isExclude());
         }
 
         @Test
-        @DisplayName("singleton отрицание: concentration=0")
+        @DisplayName("singleton исключение: concentration=1&concentration_mode=1")
         void singletonNegative() throws Exception
         {
-            SpellQueryRequest request = resolve("concentration=0");
-            QuerySingleton singleton = request.getConcentration();
-            assertNotNull(singleton);
-            assertFalse(singleton.getValue());
+            SpellQueryRequest request = resolve("concentration=1&concentration_mode=1");
+            QueryFilter<String> filter = request.getConcentration();
+            assertNotNull(filter);
+            assertTrue(filter.getValues().contains("1"));
+            assertTrue(filter.isExclude());
         }
 
         @Test
@@ -244,14 +245,15 @@ class QueryRequestArgumentResolverTest
         void combinedQuery() throws Exception
         {
             SpellQueryRequest request = resolve(
-                    "search=fire&source=PHB&school=EVOCATION&level=1,3&ritual=1&concentration=0&className=Wizard&duration=INSTANT"
+                    "search=fire&source=PHB&school=EVOCATION&level=1,3&ritual=1&concentration=1&concentration_mode=1&className=Wizard&duration=INSTANT"
             );
             assertEquals("fire", request.getSearch());
             assertEquals(Set.of("PHB"), request.getSource());
             assertNotNull(request.getSchool());
             assertNotNull(request.getLevel());
-            assertTrue(request.getRitual().getValue());
-            assertFalse(request.getConcentration().getValue());
+            assertTrue(request.getRitual().getValues().contains("1"));
+            assertTrue(request.getConcentration().getValues().contains("1"));
+            assertTrue(request.getConcentration().isExclude());
             assertEquals(Set.of("Wizard"), request.getClassName().getValues());
             assertEquals(Set.of("INSTANT"), request.getDuration().getValues());
         }

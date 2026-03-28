@@ -22,7 +22,7 @@ public class FilterMetadataResponse {
     public static class FilterGroupMeta {
         private String key;                     // e.g. "school"
         private String name;                    // e.g. "Школа магии"
-        private FilterGroupType type;           // FILTER or SINGLETON
+        private FilterGroupType type;           // FILTER
         private SupportsConfig supports;        // { mode, union }
         private List<FilterValueMeta> values;   // for filter
     }

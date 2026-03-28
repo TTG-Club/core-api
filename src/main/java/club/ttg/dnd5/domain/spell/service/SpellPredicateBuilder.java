@@ -82,18 +82,48 @@ public class SpellPredicateBuilder
         // Спасброски (JSONB-массив)
         PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getSavingThrow(), "saving_throw");
 
-        // Ритуал
-        PredicateUtils.applySingletonFilter(builder, request.getRitual(),
-                "exists (select 1 from jsonb_array_elements(casting_time) as elem where (elem @> '{\"unit\": \"RITUAL\"}'))",
-                "NOT exists (select 1 from jsonb_array_elements(casting_time) as elem where (elem @> '{\"unit\": \"RITUAL\"}'))");
+        // Ритуал (QueryFilter: ritual=1 / ritual=1&ritual_mode=1)
+        if (request.getRitual() != null && request.getRitual().isActive())
+        {
+            if (request.getRitual().isExclude())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "NOT exists (select 1 from jsonb_array_elements(casting_time) as elem where (elem @> '{\"unit\": \"RITUAL\"}'))"));
+            }
+            else
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "exists (select 1 from jsonb_array_elements(casting_time) as elem where (elem @> '{\"unit\": \"RITUAL\"}'))"));
+            }
+        }
 
-        // Концентрация
-        PredicateUtils.applySingletonFilter(builder, request.getConcentration(),
-                "exists (select 1 from jsonb_array_elements(duration) as elem where (elem @> '{\"concentration\": true}'))",
-                "NOT exists (select 1 from jsonb_array_elements(duration) as elem where (elem @> '{\"concentration\": true}'))");
+        // Концентрация (QueryFilter: concentration=1 / concentration=1&concentration_mode=1)
+        if (request.getConcentration() != null && request.getConcentration().isActive())
+        {
+            if (request.getConcentration().isExclude())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "NOT exists (select 1 from jsonb_array_elements(duration) as elem where (elem @> '{\"concentration\": true}'))"));
+            }
+            else
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "exists (select 1 from jsonb_array_elements(duration) as elem where (elem @> '{\"concentration\": true}'))"));
+            }
+        }
 
-        // Улучшается с уровнем ячейки
-        PredicateUtils.applySingletonFilter(builder, request.getUpcastable(), Q.upcastable);
+        // Улучшается с уровнем ячейки (QueryFilter: upcastable=1 / upcastable=1&upcastable_mode=1)
+        if (request.getUpcastable() != null && request.getUpcastable().isActive())
+        {
+            if (request.getUpcastable().isExclude())
+            {
+                builder.and(Q.upcastable.isFalse());
+            }
+            else
+            {
+                builder.and(Q.upcastable.isTrue());
+            }
+        }
 
         // Время накладывания (JSONB-массив)
         PredicateUtils.applyJsonbTimeFilter(builder, request.getCastingTime(), "casting_time");

@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.filter.rest;
 
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
-import club.ttg.dnd5.dto.base.filters.QuerySingleton;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -101,22 +100,6 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
             {
                 QueryFilter<?> filter = buildQueryFilter(raw, modeFlag, unionFlag, field, ann);
                 field.set(request, filter);
-            }
-            else if (QuerySingleton.class.isAssignableFrom(field.getType()))
-            {
-                QuerySingleton singleton = new QuerySingleton();
-                String trimmed = raw.trim();
-
-                if (FLAG_ON.equals(trimmed))
-                {
-                    singleton.setValue(true);
-                }
-                else if ("0".equals(trimmed))
-                {
-                    singleton.setValue(false);
-                }
-
-                field.set(request, singleton);
             }
         }
 

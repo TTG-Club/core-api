@@ -15,7 +15,6 @@ import java.lang.annotation.Target;
  *   <li>{@code QueryFilter<Enum>}  → resolveEnum</li>
  *   <li>{@code QueryFilter<Long>}  → resolveLong</li>
  *   <li>{@code QueryFilter<String>}→ resolveString</li>
- *   <li>{@code QuerySingleton}     → resolveSingleton</li>
  * </ul>
  */
 @Target(ElementType.FIELD)

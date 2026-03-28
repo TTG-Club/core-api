@@ -8,8 +8,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum FilterGroupType
 {
-    FILTER("filter"),
-    SINGLETON("singleton");
+    FILTER("filter");
 
     private final String value;
 

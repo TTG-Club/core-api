@@ -168,20 +168,30 @@ public class CreatureFilterService
                         .toList())
                 .build());
 
-        // Логово (singleton)
+        // Логово
         groups.add(FilterGroupMeta.builder()
                 .key("lair")
                 .name("Логово")
-                .type(FilterGroupType.SINGLETON)
-                .supports(SupportsConfig.builder().mode(false).union(false).build())
+                .type(FilterGroupType.FILTER)
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Есть")
+                        .build()))
                 .build());
 
-        // Легендарное действие (singleton)
+        // Легендарное действие
         groups.add(FilterGroupMeta.builder()
                 .key("legendaryAction")
                 .name("Легендарное действие")
-                .type(FilterGroupType.SINGLETON)
-                .supports(SupportsConfig.builder().mode(false).union(false).build())
+                .type(FilterGroupType.FILTER)
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Есть")
+                        .build()))
                 .build());
 
         return groups;

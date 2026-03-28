@@ -67,17 +67,35 @@ public class CreaturePredicateBuilder
         // Тег типа (JSONB types->text + name ILIKE) — хэши резолвлены в tagValues
         PredicateUtils.applyJsonbTagFilterQuery(builder, request.getTag(), "types", Q.name, tagValues);
 
-        // Логово (singleton)
-        PredicateUtils.applySingletonFilter(builder, request.getLair(),
-                "lair is not null and lair ->> 'name' is not null and btrim(lair ->> 'name') <> ''",
-                "lair is null or lair ->> 'name' is null or btrim(lair ->> 'name') = ''"
-        );
+        // Логово
+        if (request.getLair() != null && request.getLair().isActive())
+        {
+            if (request.getLair().isExclude())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "lair is null or lair ->> 'name' is null or btrim(lair ->> 'name') = ''"));
+            }
+            else
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "lair is not null and lair ->> 'name' is not null and btrim(lair ->> 'name') <> ''"));
+            }
+        }
 
-        // Легендарное действие (singleton)
-        PredicateUtils.applySingletonFilter(builder, request.getLegendaryAction(),
-                "legendary_action >= 1",
-                "legendary_action < 1 or legendary_action is null"
-        );
+        // Легендарное действие
+        if (request.getLegendaryAction() != null && request.getLegendaryAction().isActive())
+        {
+            if (request.getLegendaryAction().isExclude())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "legendary_action < 1 or legendary_action is null"));
+            }
+            else
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "legendary_action >= 1"));
+            }
+        }
 
         // 2-state источники
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "creature", "source");
