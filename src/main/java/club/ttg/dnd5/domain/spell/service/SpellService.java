@@ -57,10 +57,33 @@ public class SpellService {
      */
     public List<SpellShortResponse> search(final SpellQueryRequest request)
     {
-        var predicate = SpellPredicateBuilder.build(request);
+        var classUrls = resolveClassHashes(request.getClassName());
+        var subclassUrls = resolveSubclassHashes(request.getSubclassName());
+
+        var predicate = SpellPredicateBuilder.build(request, classUrls, subclassUrls);
         return spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(spellMapper::toShort)
+                .collect(Collectors.toList());
+    }
+
+    private List<String> resolveClassHashes(club.ttg.dnd5.dto.base.filters.QueryFilter<String> filter) {
+        if (filter == null || !filter.isActive() || filter.getValues() == null || filter.getValues().isEmpty()) {
+            return List.of();
+        }
+        return classService.findAllMagicClasses().stream()
+                .filter(clazz -> filter.getValues().contains(club.ttg.dnd5.dto.base.filters.FilterIdUtils.shortHash(clazz.getUrl())) || filter.getValues().contains(clazz.getUrl()))
+                .map(club.ttg.dnd5.domain.character_class.model.CharacterClass::getUrl)
+                .collect(Collectors.toList());
+    }
+
+    private List<String> resolveSubclassHashes(club.ttg.dnd5.dto.base.filters.QueryFilter<String> filter) {
+        if (filter == null || !filter.isActive() || filter.getValues() == null || filter.getValues().isEmpty()) {
+            return List.of();
+        }
+        return classService.findAllMagicSubclasses().stream()
+                .filter(clazz -> filter.getValues().contains(club.ttg.dnd5.dto.base.filters.FilterIdUtils.shortHash(clazz.getUrl())) || filter.getValues().contains(clazz.getUrl()))
+                .map(club.ttg.dnd5.domain.character_class.model.CharacterClass::getUrl)
                 .collect(Collectors.toList());
     }
 

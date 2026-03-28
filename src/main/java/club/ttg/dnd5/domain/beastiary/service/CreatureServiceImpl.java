@@ -69,14 +69,21 @@ public class CreatureServiceImpl implements CreatureService {
 
     private List<String> resolveHashes(final club.ttg.dnd5.dto.base.filters.QueryFilter<String> filter)
     {
-        if (filter == null || !filter.isActive())
+        if (filter == null || !filter.isActive() || filter.getValues() == null || filter.getValues().isEmpty())
         {
             return List.of();
         }
-        return filterHashMappingRepository.findAllByHashIn(filter.getValues())
+        var resolved = filterHashMappingRepository.findAllByHashIn(filter.getValues())
                 .stream()
                 .map(FilterHashMapping::getValue)
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
+
+        for (String val : filter.getValues()) {
+            if (val.length() != 8) {
+                resolved.add(val);
+            }
+        }
+        return resolved;
     }
 
     @Override

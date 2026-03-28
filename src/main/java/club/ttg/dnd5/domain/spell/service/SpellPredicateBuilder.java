@@ -14,7 +14,9 @@ public class SpellPredicateBuilder
     private static final QSpell Q = QSpell.spell;
     private static final StringPath SCHOOL_PATH = Expressions.stringPath("school");
 
-    public BooleanBuilder build(final SpellQueryRequest request)
+    public BooleanBuilder build(final SpellQueryRequest request, 
+                                java.util.Collection<String> classes, 
+                                java.util.Collection<String> subclasses)
     {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
@@ -26,47 +28,53 @@ public class SpellPredicateBuilder
         // Уровень заклинания
         PredicateUtils.applyFilter(builder, request.getLevel(), Q.level);
 
-        // Классы (ManyToMany: classAffiliation.url)
-        if (request.getClassName() != null && request.getClassName().isActive())
+        // Классы (ManyToMany: classAffiliation)
+        if (request.getClassName() != null && request.getClassName().isActive() && !classes.isEmpty())
         {
             if (request.getClassName().isExclude())
             {
-                builder.and(Q.classAffiliation.any().url.notIn(request.getClassName().getValues()));
+                for (String url : classes) {
+                    builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                            "not exists (select 1 from spell_class_affiliation sca where sca.spell_url = {0}.url and sca.class_affiliation_url = {1})", Q, url));
+                }
             }
             else if (request.getClassName().isUnion())
             {
-                BooleanBuilder orBuilder = new BooleanBuilder();
-                for (String url : request.getClassName().getValues())
-                {
-                    orBuilder.or(Q.classAffiliation.any().url.eq(url));
-                }
-                builder.and(orBuilder);
+                String inClause = classes.stream().map(u -> "'" + u.replace("'", "''") + "'").collect(java.util.stream.Collectors.joining(","));
+                builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                        "exists (select 1 from spell_class_affiliation sca where sca.spell_url = {0}.url and sca.class_affiliation_url in (" + inClause + "))", Q));
             }
             else
             {
-                builder.and(Q.classAffiliation.any().url.in(request.getClassName().getValues()));
+                for (String url : classes) {
+                    builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                            "exists (select 1 from spell_class_affiliation sca where sca.spell_url = {0}.url and sca.class_affiliation_url = {1})", Q, url));
+                }
             }
         }
 
-        // Подклассы (ManyToMany: subclassAffiliation.url)
-        if (request.getSubclassName() != null && request.getSubclassName().isActive())
+        // Подклассы (ManyToMany: subclassAffiliation)
+        if (request.getSubclassName() != null && request.getSubclassName().isActive() && !subclasses.isEmpty())
         {
             if (request.getSubclassName().isExclude())
             {
-                builder.and(Q.subclassAffiliation.any().url.notIn(request.getSubclassName().getValues()));
+                for (String url : subclasses) {
+                    builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                            "not exists (select 1 from spell_subclass_affiliation ssa where ssa.spell_url = {0}.url and ssa.subclass_affiliation_url = {1})", Q, url));
+                }
             }
             else if (request.getSubclassName().isUnion())
             {
-                BooleanBuilder orBuilder = new BooleanBuilder();
-                for (String url : request.getSubclassName().getValues())
-                {
-                    orBuilder.or(Q.subclassAffiliation.any().url.eq(url));
-                }
-                builder.and(orBuilder);
+                String inClause = subclasses.stream().map(u -> "'" + u.replace("'", "''") + "'").collect(java.util.stream.Collectors.joining(","));
+                builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                        "exists (select 1 from spell_subclass_affiliation ssa where ssa.spell_url = {0}.url and ssa.subclass_affiliation_url in (" + inClause + "))", Q));
             }
             else
             {
-                builder.and(Q.subclassAffiliation.any().url.in(request.getSubclassName().getValues()));
+                for (String url : subclasses) {
+                    builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                            "exists (select 1 from spell_subclass_affiliation ssa where ssa.spell_url = {0}.url and ssa.subclass_affiliation_url = {1})", Q, url));
+                }
             }
         }
 

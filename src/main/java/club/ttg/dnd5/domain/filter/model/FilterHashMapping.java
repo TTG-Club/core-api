@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,7 @@ public class FilterHashMapping
     @Column(length = 8)
     private String hash;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = FilterHashCategoryConverter.class)
     @Column(length = 64, nullable = false)
     private FilterHashCategory category;
 
