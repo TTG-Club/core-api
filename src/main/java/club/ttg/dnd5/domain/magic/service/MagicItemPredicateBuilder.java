@@ -27,12 +27,12 @@ public class MagicItemPredicateBuilder
             if (request.getAttunement().isExclude())
             {
                 builder.and(Expressions.booleanTemplate(
-                        "attunement is null or (attunement->>'required') != 'true'"));
+                        "attunement is null or (attunement->>'requires') != 'true'"));
             }
             else
             {
                 builder.and(Expressions.booleanTemplate(
-                        "attunement is not null and (attunement->>'required') = 'true'"));
+                        "attunement is not null and (attunement->>'requires') = 'true'"));
             }
         }
 

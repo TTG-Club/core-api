@@ -66,6 +66,7 @@ public class PredicateUtils
 
     /**
      * Простой фильтр: IN / NOT IN для {@link QueryFilter}.
+     * По умолчанию — ИЛИ (IN), при union=true — И (каждое значение должно совпасть).
      */
     public <T> void applyFilter(final BooleanBuilder builder,
                                  final QueryFilter<T> filter,
@@ -82,12 +83,10 @@ public class PredicateUtils
         }
         else if (filter.isUnion())
         {
-            BooleanBuilder orBuilder = new BooleanBuilder();
             for (T val : filter.getValues())
             {
-                orBuilder.or(path.eq(val));
+                builder.and(path.eq(val));
             }
-            builder.and(orBuilder);
         }
         else
         {
@@ -97,6 +96,7 @@ public class PredicateUtils
 
     /**
      * Enum фильтр для {@link QueryFilter}: сравнение как String (Enum → name()).
+     * По умолчанию — ИЛИ (IN), при union=true — И.
      */
     public <E extends Enum<E>> void applyFilterEnum(final BooleanBuilder builder,
                                                       final QueryFilter<E> filter,
@@ -117,12 +117,10 @@ public class PredicateUtils
         }
         else if (filter.isUnion())
         {
-            BooleanBuilder orBuilder = new BooleanBuilder();
             for (String name : names)
             {
-                orBuilder.or(path.eq(name));
+                builder.and(path.eq(name));
             }
-            builder.and(orBuilder);
         }
         else
         {
@@ -134,6 +132,7 @@ public class PredicateUtils
 
     /**
      * JSONB enum-массив для {@link QueryFilter}: {@code jsonb_exists_any}.
+     * По умолчанию — ИЛИ (jsonb_exists_any), при union=true — И (jsonb_exists для каждого).
      */
     public <E extends Enum<E>> void applyJsonbEnumArrayFilter(final BooleanBuilder builder,
                                                                 final QueryFilter<E> filter,
@@ -144,19 +143,31 @@ public class PredicateUtils
             return;
         }
 
-        String values = filter.getValues().stream()
-                .map(Enum::name)
-                .map(s -> "\"" + s + "\"")
-                .collect(java.util.stream.Collectors.joining(","));
-
         if (filter.isExclude())
         {
+            String values = filter.getValues().stream()
+                    .map(Enum::name)
+                    .map(s -> "'" + s + "'")
+                    .collect(java.util.stream.Collectors.joining(","));
             builder.and(Expressions.booleanTemplate(
                     "NOT jsonb_exists_any(" + columnName + ", array[" + values + "]::text[])"
             ));
         }
+        else if (filter.isUnion())
+        {
+            for (E val : filter.getValues())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "jsonb_exists(" + columnName + ", '" + val.name() + "')"
+                ));
+            }
+        }
         else
         {
+            String values = filter.getValues().stream()
+                    .map(Enum::name)
+                    .map(s -> "'" + s + "'")
+                    .collect(java.util.stream.Collectors.joining(","));
             builder.and(Expressions.booleanTemplate(
                     "jsonb_exists_any(" + columnName + ", array[" + values + "]::text[])"
             ));
@@ -188,6 +199,15 @@ public class PredicateUtils
         }
         else if (filter.isUnion())
         {
+            for (E val : filter.getValues())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "(" + columnName + "->'" + jsonKey + "') @> '[\"" + val.name() + "\"]'::jsonb"
+                ));
+            }
+        }
+        else
+        {
             BooleanBuilder orBuilder = new BooleanBuilder();
             for (E val : filter.getValues())
             {
@@ -196,15 +216,6 @@ public class PredicateUtils
                 ));
             }
             builder.and(orBuilder);
-        }
-        else
-        {
-            for (E val : filter.getValues())
-            {
-                builder.and(Expressions.booleanTemplate(
-                        "(" + columnName + "->'" + jsonKey + "') @> '[\"" + val.name() + "\"]'::jsonb"
-                ));
-            }
         }
     }
 
@@ -243,13 +254,13 @@ public class PredicateUtils
             }
             else if (filter.isUnion())
             {
-                BooleanBuilder orBuilder = new BooleanBuilder();
-                orBuilder.or(Expressions.booleanTemplate(existsSql));
-                builder.and(orBuilder);
+                builder.and(Expressions.booleanTemplate(existsSql));
             }
             else
             {
-                builder.and(Expressions.booleanTemplate(existsSql));
+                BooleanBuilder orBuilder = new BooleanBuilder();
+                orBuilder.or(Expressions.booleanTemplate(existsSql));
+                builder.and(orBuilder);
             }
         }
     }
@@ -281,6 +292,15 @@ public class PredicateUtils
         }
         else if (filter.isUnion())
         {
+            for (String val : resolvedValues)
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "(" + columnName + " is not null and exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where elem->>'" + jsonFieldName + "' = '" + escapeSql(val) + "'))"
+                ));
+            }
+        }
+        else
+        {
             String condition = resolvedValues.stream()
                     .map(v -> "elem->>'" + jsonFieldName + "' = '" + escapeSql(v) + "'")
                     .collect(java.util.stream.Collectors.joining(" or "));
@@ -288,15 +308,6 @@ public class PredicateUtils
             builder.and(Expressions.booleanTemplate(
                     "(" + columnName + " is not null and exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where " + condition + "))"
             ));
-        }
-        else
-        {
-            for (String val : resolvedValues)
-            {
-                builder.and(Expressions.booleanTemplate(
-                        "(" + columnName + " is not null and exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where elem->>'" + jsonFieldName + "' = '" + escapeSql(val) + "'))"
-                ));
-            }
         }
     }
 
@@ -328,19 +339,6 @@ public class PredicateUtils
         }
         else if (filter.isUnion())
         {
-            BooleanBuilder orBuilder = new BooleanBuilder();
-            for (String val : resolvedValues)
-            {
-                String safe = escapeSql(val);
-                orBuilder.or(Expressions.booleanTemplate(
-                        "(COALESCE(" + jsonColumnName + "->>'text', '') ILIKE '%" + safe + "%')"
-                ));
-                orBuilder.or(namePath.containsIgnoreCase(val));
-            }
-            builder.and(orBuilder);
-        }
-        else
-        {
             for (String val : resolvedValues)
             {
                 String safe = escapeSql(val);
@@ -351,6 +349,19 @@ public class PredicateUtils
                 andBuilder.or(namePath.containsIgnoreCase(val));
                 builder.and(andBuilder);
             }
+        }
+        else
+        {
+            BooleanBuilder orBuilder = new BooleanBuilder();
+            for (String val : resolvedValues)
+            {
+                String safe = escapeSql(val);
+                orBuilder.or(Expressions.booleanTemplate(
+                        "(COALESCE(" + jsonColumnName + "->>'text', '') ILIKE '%" + safe + "%')"
+                ));
+                orBuilder.or(namePath.containsIgnoreCase(val));
+            }
+            builder.and(orBuilder);
         }
     }
 
