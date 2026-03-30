@@ -1,9 +1,11 @@
 package club.ttg.dnd5.domain.source.rest.dto.filter;
 
 import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.dto.base.filters.FilterRegistry;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.Getter;
@@ -23,10 +25,25 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
 
     private String name;
 
+    /**
+     * Тип группы источников.
+     * Не сериализуется в JSON (не попадает в saved filter в БД).
+     * Используется маппером для построения key в FilterMetadataResponse.
+     */
+    @JsonIgnore
+    private SourceType sourceType;
+
     public SourceGroupFilter(List<SourceFilterItem> filters, String name)
     {
         super(filters);
         this.name = name;
+    }
+
+    public SourceGroupFilter(List<SourceFilterItem> filters, String name, SourceType sourceType)
+    {
+        super(filters);
+        this.name = name;
+        this.sourceType = sourceType;
     }
 
     public static SourceGroupFilter getDefault(List<Source> sources)

@@ -17,6 +17,7 @@ public class SpellDuration {
     private Long value;
     private DurationUnit unit;
     private String custom;
+    @Builder.Default
     private Boolean concentration = false;
 
 

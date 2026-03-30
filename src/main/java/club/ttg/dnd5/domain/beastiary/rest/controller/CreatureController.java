@@ -1,24 +1,26 @@
 package club.ttg.dnd5.domain.beastiary.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Бестиарий", description = "REST API для существ из бестиария")
 
@@ -39,26 +41,11 @@ public class CreatureController {
         return creatureService.existOrThrow(url);
     }
 
-    @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
-    @GetMapping
-    public List<CreatureShortResponse> search(@RequestParam(name = "search", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestParam(required = false) String filter) {
-        return creatureService.search(searchLine, filter);
-    }
-
-    @Operation(summary = "Поиск существ", description = "Поиск существа по именам")
-    @PostMapping("/search")
-    public List<CreatureShortResponse> search(@RequestParam(name = "query", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestBody(required = false) SearchBody searchBody) {
-        return creatureService.search(searchLine, searchBody);
+    @Operation(summary = "Поиск существ", description = "Поиск существ с GET-параметрами фильтрации и пагинацией")
+    @GetMapping("/search")
+    public List<CreatureShortResponse> search(@ParameterObject CreatureQueryRequest request)
+    {
+        return creatureService.search(request);
     }
 
     @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")
@@ -72,9 +59,12 @@ public class CreatureController {
         return creatureService.findFormByUrl(url);
     }
 
+
+
+    @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return creatureFilterService.getDefaultFilterInfo();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return creatureFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Operation(summary = "Добавление существа")

@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -18,7 +18,7 @@ import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
@@ -42,17 +42,14 @@ public class ClassService {
     private final GalleryRepository galleryRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
 
-    private final ObjectMapper objectMapper;
 
-    public List<ClassShortResponse> search(String searchLine, String filters) {
-        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
-        return search(searchLine, searchBody);
-     }
 
-    public List<ClassShortResponse> search(String searchLine, SearchBody searchBody) {
-        return classQueryDslSearchService.search(searchLine, searchBody)
+
+    public List<ClassShortResponse> search(ClassQueryRequest request) {
+        var predicate = ClassPredicateBuilder.build(request);
+        return classQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
-                .filter(c -> (searchLine != null && !searchLine.isEmpty()) || c.getParent() == null)
+                .filter(c -> (request.getSearch() != null && !request.getSearch().isEmpty()) || c.getParent() == null)
                 .map(classMapper::toShort)
                 .collect(Collectors.toList());
     }
@@ -94,7 +91,8 @@ public class ClassService {
             }
         }
         saveGallery(request.getUrl(), request.getGallery());
-        return classMapper.toDetailedResponse(classRepository.save(toSave));
+        CharacterClass saved = classRepository.save(toSave);
+        return classMapper.toDetailedResponse(saved);
     }
 
     @Transactional
@@ -243,11 +241,7 @@ public class ClassService {
 
     @Transactional(readOnly = true)
     public List<CharacterClass> findAllMagicSubclasses() {
-        var sources  =sourceSavedFilterService.getSavedSources();
-        return classRepository.findAllSubclassesWithSpellAffiliationAndCasterTypeNot(CasterType.NONE)
-                .stream()
-                .filter(c -> sources.contains(c.getSource().getAcronym()))
-                .toList();
+        return classRepository.findAllSubclassesWithSpellAffiliationAndCasterTypeNot(CasterType.NONE);
     }
 
     private Source getSource(SourceRequest source) {
@@ -259,11 +253,7 @@ public class ClassService {
 
     @Transactional(readOnly = true)
     public List<CharacterClass> findAllMagicClasses() {
-        var sources = sourceSavedFilterService.getSavedSources();
-        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE)
-                .stream()
-                .filter(c -> sources.contains(c.getSource().getAcronym()))
-                .toList();
+        return classRepository.findAllByParentIsNullAndCasterTypeNot(CasterType.NONE);
     }
 
     private void saveGallery(String url, List<String> gallery) {

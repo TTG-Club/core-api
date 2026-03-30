@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.spell.model;
 
-@Deprecated
 public enum ComparisonOperator {
     LESS("<"),
     GREATER(">"),

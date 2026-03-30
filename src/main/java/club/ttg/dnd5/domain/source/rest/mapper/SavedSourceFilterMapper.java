@@ -11,7 +11,9 @@ import org.mapstruct.MappingTarget;
 
 import java.util.UUID;
 
-@Mapper(componentModel = "spring", uses = {
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {
         BaseMapping.class
 })
 public interface SavedSourceFilterMapper {

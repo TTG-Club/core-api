@@ -11,7 +11,9 @@ import org.mapstruct.Named;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {BaseMapping.class})
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {BaseMapping.class})
 public interface SpeciesFeatureMapper {
     @Mapping(target = "name.name", source = "name")
     @Mapping(target = "name.english", source = "english")

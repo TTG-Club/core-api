@@ -7,16 +7,12 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.rest.mapper.FeatMapper;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
@@ -34,26 +30,12 @@ public class FeatServiceImpl implements FeatService {
     private final FeatQueryDslSearchService featQueryDslSearchService;
     private final SourceService sourceService;
     private final FeatMapper featMapper;
-    private final ObjectMapper objectMapper;
 
     @Override
     public FeatDetailResponse getFeat(final String featUrl) {
         return featMapper.toDetail(findByUrl(featUrl));
     }
 
-    @Override
-    public Collection<FeatShortResponse> search(final String searchLine, final String filters) {
-        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
-        return getFeats(searchLine, searchBody);
-    }
-
-    @Override
-    public Collection<FeatShortResponse> getFeats(final @Valid @Size String searchLine, final SearchBody searchBody) {
-        return featQueryDslSearchService.search(searchLine, searchBody)
-                .stream()
-                .map(featMapper::toShort)
-                .toList();
-    }
 
     @Secured("ADMIN")
     @Transactional
@@ -125,6 +107,15 @@ public class FeatServiceImpl implements FeatService {
                 .stream()
                 .filter(f -> categories.contains(f.getCategory()))
                 .map(featMapper::toSelect)
+                .toList();
+    }
+    @Override
+    public Collection<FeatShortResponse> search(final club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest request)
+    {
+        var predicate = FeatPredicateBuilder.build(request);
+        return featQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+                .stream()
+                .map(featMapper::toShort)
                 .toList();
     }
 }

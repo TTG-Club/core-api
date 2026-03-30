@@ -1,24 +1,26 @@
 package club.ttg.dnd5.domain.glossary.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryDetailedResponse;
+import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryQueryRequest;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.service.GlossaryFilterService;
 import club.ttg.dnd5.domain.glossary.service.GlossaryService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Глоссарий", description = "REST API глоссарий")
 @RestController
@@ -39,26 +41,12 @@ public class GlossaryController {
     }
 
 
-    @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
-    @GetMapping
-    public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "search", required = false)
-                                                   @Valid
-                                                   @Size(min = 2)
-                                                   @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                   String searchLine,
-                                                   @RequestParam(required = false) String filter){
-        return glossaryService.search(searchLine, filter);
-    }
 
-    @Operation(summary = "Поиск записи глоссария", description = "Поиск записи глоссария по именам")
-    @PostMapping("/search")
-    public List<GlossaryShortResponse> getGlossary(@RequestParam(name = "query", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestBody(required = false) SearchBody searchBody){
-        return glossaryService.search(searchLine, searchBody);
+    @Operation(summary = "Поиск записей глоссария", description = "Поиск записей глоссария с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<GlossaryShortResponse> search(@ParameterObject GlossaryQueryRequest request)
+    {
+        return glossaryService.search(request);
     }
 
     @GetMapping("/{url}")
@@ -97,8 +85,11 @@ public class GlossaryController {
         glossaryService.delete(url);
     }
 
+
+
+    @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return glossaryFilterService.getDefaultFilterInfo();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return glossaryFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 }

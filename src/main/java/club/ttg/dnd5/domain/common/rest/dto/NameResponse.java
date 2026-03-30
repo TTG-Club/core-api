@@ -14,9 +14,11 @@ import lombok.*;
 @JsonRootName("name")
 @Builder
 public class NameResponse {
+    @Builder.Default
     @JsonProperty(value = "rus")
     @Schema(description = "русское название", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name = "";
+    @Builder.Default
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "eng")
     @Schema(description = "английское название", requiredMode = Schema.RequiredMode.REQUIRED)

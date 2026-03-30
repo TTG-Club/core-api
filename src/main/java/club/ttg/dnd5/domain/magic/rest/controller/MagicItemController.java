@@ -1,24 +1,25 @@
 package club.ttg.dnd5.domain.magic.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.service.MagicItemFilterService;
 import club.ttg.dnd5.domain.magic.service.MagicItemService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -61,39 +62,21 @@ public class MagicItemController {
         return magicItemService.findFormByUrl(url);
     }
 
-    @Operation(summary = "Получение списка краткого описания предметов")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
-    })
-    @GetMapping
-    public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "search", required = false)
-                                                       @Valid
-                                                       @Size(min = 2)
-                                                       @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                       String searchLine,
-                                                       @RequestParam(required = false) String filter
-    ) {
-        return magicItemService.getItems(searchLine, filter);
+
+
+    @Operation(summary = "Поиск магических предметов", description = "Поиск магических предметов с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public Collection<MagicItemShortResponse> search(@ParameterObject MagicItemQueryRequest request)
+    {
+        return magicItemService.search(request);
     }
 
-    @Operation(summary = "Получение списка краткого описания предметов")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Предметы успешно получены")
-    })
-    @PostMapping("/search")
-    public Collection<MagicItemShortResponse> getItems(@RequestParam(name = "query", required = false)
-                                                       @Valid
-                                                       @Size(min = 2)
-                                                       @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                       String searchLine,
-                                                       @RequestBody(required = false) SearchBody searchBody
-    ) {
-        return magicItemService.getItems(searchLine, searchBody);
-    }
 
+
+    @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return magicItemFilterService.getDefaultFilterInfo();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return magicItemFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Secured("ADMIN")

@@ -1,24 +1,26 @@
 package club.ttg.dnd5.domain.spell.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.service.SpellFilterService;
 import club.ttg.dnd5.domain.spell.service.SpellService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Заклинания", description = "REST API заклинаний")
 
@@ -39,27 +41,13 @@ public class SpellController {
         return spellService.existOrThrow(url);
     }
 
-    @Operation(summary = "Поиск заклинаний", description = "Поиск заклинания по именам")
-    @GetMapping
-    public List<SpellShortResponse> getSpells(@RequestParam(name = "search", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @Schema(description = "упакованный в строку json фильтров")
-                                              @RequestParam(required = false) String filter) {
-        return spellService.search(searchLine, filter);
-    }
 
-    @Operation(summary = "Поиск заклинаний", description = "Поиск заклинания по именам")
-    @PostMapping("/search")
-    public List<SpellShortResponse> getSpells(@RequestParam(name = "query", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @RequestBody(required = false) SearchBody searchBody) {
-        return spellService.search(searchLine, searchBody);
+
+    @Operation(summary = "Поиск заклинаний", description = "Поиск заклинаний с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<SpellShortResponse> search(@ParameterObject SpellQueryRequest request)
+    {
+        return spellService.search(request);
     }
 
     @GetMapping("/{url}")
@@ -72,9 +60,12 @@ public class SpellController {
         return spellService.findFormByUrl(url);
     }
 
+
+
+    @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return spellFilterService.getDefaultFilterInfo();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return spellFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Secured("ADMIN")

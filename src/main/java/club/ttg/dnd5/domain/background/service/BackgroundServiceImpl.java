@@ -10,11 +10,9 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -34,26 +32,14 @@ public class BackgroundServiceImpl implements BackgroundService {
     private final FeatRepository featRepository;
     private final SourceService sourceService;
     private final BackgroundMapper backgroundMapper;
-    private final ObjectMapper objectMapper;
+
 
     @Override
     public BackgroundDetailResponse getBackground(final String backgroundUrl) {
         return backgroundMapper.toDetail(findByUrl(backgroundUrl));
     }
 
-    @Override
-    public Collection<BackgroundShortResponse> getBackgrounds(String searchLine, final SearchBody searchBody) {
-        return backgroundQueryDslSearchService.search(searchLine, searchBody)
-                .stream()
-                .map(backgroundMapper::toShort)
-                .toList();
-    }
 
-    @Override
-    public Collection<BackgroundShortResponse> getBackgrounds(final String searchLine, final String filter) {
-        var searchBody = SearchBody.parse(filter, objectMapper);
-        return getBackgrounds(searchLine, searchBody);
-    }
 
     @Transactional
     @Override
@@ -128,6 +114,16 @@ public class BackgroundServiceImpl implements BackgroundService {
                 .stream()
                 .peek(b -> b.setDescription(null))
                 .map(backgroundMapper::toSelect)
+                .toList();
+    }
+
+    @Override
+    public Collection<BackgroundShortResponse> search(final club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest request)
+    {
+        var predicate = BackgroundPredicateBuilder.build(request);
+        return backgroundQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+                .stream()
+                .map(backgroundMapper::toShort)
                 .toList();
     }
 }

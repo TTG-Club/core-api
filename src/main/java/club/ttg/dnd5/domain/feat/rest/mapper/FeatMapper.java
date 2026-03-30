@@ -12,7 +12,9 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
-@Mapper(componentModel = "spring", uses = {BaseMapping.class})
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {BaseMapping.class})
 public interface FeatMapper {
 
     @BaseMapping.BaseShortResponseNameMapping

@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-03-26-add-filter-hash-mapping
+      author: antigravity
+      changes:
+        - createTable:
+            tableName: filter_hash_mapping
+            columns:
+              - column:
+                  name: hash
+                  type: VARCHAR(8)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: category
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: TEXT
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_filter_hash_mapping_category
+            tableName: filter_hash_mapping
+            columns:
+              - column:
+                  name: category

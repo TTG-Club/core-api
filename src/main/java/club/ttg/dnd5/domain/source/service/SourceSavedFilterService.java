@@ -196,7 +196,8 @@ public class SourceSavedFilterService
                                                 true
                                         ))
                                         .collect(Collectors.toList()),
-                                type.getName()
+                                type.getName(),
+                                type
                         ))
                         .collect(Collectors.toList())
         );
@@ -208,20 +209,42 @@ public class SourceSavedFilterService
 
     public SourceFilterInfo getDefaultFilterInfo()
     {
+        return getDefaultFilterInfo(Set.of());
+    }
+
+    public SourceFilterInfo getDefaultFilterInfo(Set<String> selectedSources)
+    {
         if (userService.getCurrentUserId().isPresent())
         {
             return new SourceFilterInfo(getSavedFilter().getFilter().getGroups());
         }
 
-        return new SourceFilterInfo(buildDefaultFilterInfo().getFilter().getGroups());
+        SourceSavedFilterRequest defaultFilter = buildDefaultFilterInfo();
+
+        if (!selectedSources.isEmpty())
+        {
+            applySelection(defaultFilter, selectedSources);
+        }
+
+        return new SourceFilterInfo(defaultFilter.getFilter().getGroups());
     }
 
     public SourceFilterInfo getDefaultFilterInfo(List<String> sourceCodes)
+    {
+        return getDefaultFilterInfo(sourceCodes, Set.of());
+    }
+
+    public SourceFilterInfo getDefaultFilterInfo(List<String> sourceCodes, Set<String> selectedSources)
     {
         SourceSavedFilterRequest actualFilter = buildDefaultFilterInfo(sourceCodes);
 
         if (userService.getCurrentUserId().isEmpty())
         {
+            if (!selectedSources.isEmpty())
+            {
+                applySelection(actualFilter, selectedSources);
+            }
+
             return new SourceFilterInfo(actualFilter.getFilter().getGroups());
         }
 
@@ -249,6 +272,22 @@ public class SourceSavedFilterService
                 .forEach(item -> item.setSelected(selectedMap.get(item.getValue())));
 
         return new SourceFilterInfo(actualFilter.getFilter().getGroups());
+    }
+
+    /**
+     * Применяет выборку из GET-параметров: selected=true для источников из selectedSources,
+     * selected=null для остальных.
+     */
+    private void applySelection(SourceSavedFilterRequest filter, Set<String> selectedSources)
+    {
+        filter.getFilter().getGroups().stream()
+                .filter(SourceGroupFilter.class::isInstance)
+                .map(SourceGroupFilter.class::cast)
+                .map(SourceGroupFilter::getFilters)
+                .flatMap(Collection::stream)
+                .forEach(item -> item.setSelected(
+                        selectedSources.contains(item.getValue()) ? true : null
+                ));
     }
 
     public SearchBody getFilter() {

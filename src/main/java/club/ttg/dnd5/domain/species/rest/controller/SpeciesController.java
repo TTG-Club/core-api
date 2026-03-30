@@ -1,7 +1,10 @@
 package club.ttg.dnd5.domain.species.rest.controller;
 
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.service.SpeciesFilterService;
@@ -9,12 +12,9 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,34 +48,21 @@ public class SpeciesController {
         }
     }
 
+
+
+    @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return speciesFilterService.getDefaultFilterInfo();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return speciesFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
-    @GetMapping
-    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<SpeciesShortResponse> getAllSpecies(
-            @RequestParam(name = "search", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @Schema(description = "упакованный в строку json фильтров")
-            @RequestParam(required = false) String filter) {
-        return speciesService.search(searchLine, filter);
-    }
 
-    @PostMapping("/search")
-    @Operation(summary = "Получение всех видов", description = "Виды будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<SpeciesShortResponse> getAllSpeciesOld(
-            @RequestParam(name = "query", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @RequestBody(required = false) SearchBody searchBody) {
-        return speciesService.search(searchLine, searchBody);
+
+    @Operation(summary = "Поиск видов", description = "Поиск видов с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<SpeciesShortResponse> search(@ParameterObject SpeciesQueryRequest request)
+    {
+        return speciesService.search(request);
     }
 
     @Operation(summary = "Получить вид по URL", description = "Получение вида по его уникальному URL.")

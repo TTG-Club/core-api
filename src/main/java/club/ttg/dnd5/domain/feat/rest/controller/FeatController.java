@@ -1,13 +1,16 @@
 package club.ttg.dnd5.domain.feat.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.service.FeatFilterService;
 import club.ttg.dnd5.domain.feat.service.FeatService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,33 +56,13 @@ public class FeatController {
         return featService.findFormByUrl(url);
     }
 
-    @Operation(summary = "Список черт", description = "Список черт, поиск и фильтрация")
-    @GetMapping
-    public Collection<FeatShortResponse> getFeats(
-                                              @RequestParam(name = "search", required = false)
-                                              @Valid
-                                              @Size(min = 2)
-                                              @Schema(description = "Строка поиска, если null-отдаются все сущности")
-                                              String searchLine,
-                                              @Schema(description = "упакованный в строку json фильтров")
-                                              @RequestParam(required = false) String filter) {
-        return featService.search(searchLine, filter);
-    }
 
-    @Operation(summary = "Получение списка черт")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Черты успешно получена")
-    })
-    @ResponseStatus(HttpStatus.OK)
-    @PostMapping("/search")
-    public Collection<FeatShortResponse> getFeats(@RequestParam(name = "query", required = false)
-                                                  @Valid
-                                                  @Size(min = 2)
-                                                  @Schema( description = "Строка поиска, если null-отдаются все сущности")
-                                                  String searchLine,
-                                                  @RequestBody(required = false) SearchBody searchBody
-    ) {
-        return featService.getFeats(searchLine, searchBody);
+
+    @Operation(summary = "Поиск черт", description = "Поиск черт с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public Collection<FeatShortResponse> search(@ParameterObject FeatQueryRequest request)
+    {
+        return featService.search(request);
     }
 
     @Operation(summary = "Получение списка черт для селекта")
@@ -95,9 +78,11 @@ public class FeatController {
         return featService.getFeatsSelect(searchLine, categories);
     }
 
+
+    @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return featFilterService.getDefaultFilterInfo();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return featFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Secured("ADMIN")

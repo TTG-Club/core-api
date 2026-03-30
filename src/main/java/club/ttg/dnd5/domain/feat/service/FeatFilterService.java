@@ -1,44 +1,68 @@
 package club.ttg.dnd5.domain.feat.service;
 
-import club.ttg.dnd5.domain.feat.repository.FeatRepository;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatAbilityFilterGroup;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatCategoryFilterGroup;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatOtherFilterGroup;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Service
-public class FeatFilterService extends AbstractSavedFilterService  {
-    private final FeatRepository featRepository;
+@RequiredArgsConstructor
+public class FeatFilterService
+{
+    private final SourceSavedFilterService sourceSavedFilterService;
 
-    public FeatFilterService(SourceSavedFilterService sourceSavedFilterService,
-                             FeatRepository featRepository) {
-        super(sourceSavedFilterService);
-        this.featRepository = featRepository;
-    }
-
-    @Override
-    public SearchBody getDefaultFilterInfo()
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
     {
-        List<String> usedSourceCodes = featRepository.findAllUsedSourceCodes();
-
-        return new SearchBody(
-                sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes),
-                buildDefaultFilterInfo()
-        );
-    }
-
-    @Override
-    protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(List.of(
-                FeatCategoryFilterGroup.getDefault(),
-                FeatAbilityFilterGroup.getDefault(),
-                FeatOtherFilterGroup.getDefault()
-        ));
+        return FilterMetadataResponse.builder()
+                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo(selectedSources)))
+                .filters(List.of(
+                        FilterGroupMeta.builder()
+                                .key(FilterKeys.keyOf(FeatQueryRequest.class, "category"))
+                                .name("Категория")
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                                .values(Arrays.stream(FeatCategory.values())
+                                        .map(v -> FilterValueMeta.builder()
+                                                .id(v.name())
+                                                .value(v.name())
+                                                .name(v.getName())
+                                                .build())
+                                        .toList())
+                                .build(),
+                        FilterGroupMeta.builder()
+                                .key(FilterKeys.keyOf(FeatQueryRequest.class, "ability"))
+                                .name("Характеристика")
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                                .values(Arrays.stream(Ability.values())
+                                        .map(v -> FilterValueMeta.builder()
+                                                .id(v.name())
+                                                .value(v.name())
+                                                .name(v.getShortName())
+                                                .build())
+                                        .toList())
+                                .build(),
+                        FilterGroupMeta.builder()
+                                .key(FilterKeys.keyOf(FeatQueryRequest.class, "repeatability"))
+                                .name("Повторяемость")
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                                .values(List.of(FilterValueMeta.builder()
+                                        .id("1")
+                                        .value("1")
+                                        .name("Да")
+                                        .build()))
+                                .build()
+                ))
+                .build();
     }
 }

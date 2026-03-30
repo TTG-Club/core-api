@@ -1,27 +1,30 @@
 package club.ttg.dnd5.domain.character_class.rest.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.character_class.service.ClassFilterService;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
+
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -46,29 +49,13 @@ public class ClassController {
         }
     }
 
-    @GetMapping
-    @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<ClassShortResponse> getAllClasses(
-            @RequestParam(name = "search", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @Schema(description = "упакованный в строку json фильтров")
-            @RequestParam(required = false) String filter) {
-        return classService.search(searchLine, filter);
-    }
 
-    @PostMapping("/search")
-    @Operation(summary = "Получение всех классов", description = "Классы будут не детальные, будет возвращать списков с указанным имени и url")
-    public List<ClassShortResponse> getAllClassesOld(
-            @RequestParam(name = "query", required = false)
-            @Valid
-            @Size(min = 2)
-            @Parameter(description = "Строка поиска, если null-отдаются все сущности")
-            String searchLine,
-            @RequestBody(required = false) SearchBody searchBody) {
-        return classService.search(searchLine, searchBody);
+
+    @Operation(summary = "Поиск классов", description = "Поиск классов с GET-параметрами фильтрации")
+    @GetMapping("/search")
+    public List<ClassShortResponse> search(@ParameterObject ClassQueryRequest request)
+    {
+        return classService.search(request);
     }
 
     @GetMapping("/{url}")
@@ -76,9 +63,12 @@ public class ClassController {
         return classService.findDetailedByUrl(url);
     }
 
+
+
+    @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public SearchBody getFilters() {
-        return classFilterService.getDefaultFilterInfo();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return classFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @GetMapping("/subclasses")
