@@ -28,7 +28,7 @@ public class ClassFilterService
                 .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo(selectedSources)))
                 .filters(List.of(
                         FilterGroupMeta.builder()
-                                .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDie"))
+                                .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDice"))
                                 .name("Кость хитов")
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Stream.of(Dice.d6, Dice.d8, Dice.d10, Dice.d12)

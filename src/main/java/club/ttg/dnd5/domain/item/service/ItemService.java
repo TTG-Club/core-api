@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.item.service;
 
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
+import club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 
@@ -8,8 +9,6 @@ import java.util.Collection;
 
 public interface ItemService {
     ItemDetailResponse getItem(String itemUtl);
-
-
 
     String addItem(ItemRequest itemDto);
 
@@ -23,7 +22,5 @@ public interface ItemService {
 
     ItemDetailResponse preview(ItemRequest request);
 
-
-
-    Collection<ItemShortResponse> search(club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest request);
+    Collection<ItemShortResponse> search(ItemQueryRequest request);
 }

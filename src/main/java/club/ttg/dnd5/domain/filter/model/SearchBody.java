@@ -35,7 +35,7 @@ public class SearchBody {
 
         try {
             return objectMapper.readValue(json, SearchBody.class);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException exception) {
             return new SearchBody();
         }
     }

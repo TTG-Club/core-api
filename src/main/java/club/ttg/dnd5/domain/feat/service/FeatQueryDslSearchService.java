@@ -30,6 +30,4 @@ public class FeatQueryDslSearchService extends AbstractQueryDslSearchService<Fea
     protected OrderSpecifier<?>[] getOrder() {
         return ORDER;
     }
-
-
 }

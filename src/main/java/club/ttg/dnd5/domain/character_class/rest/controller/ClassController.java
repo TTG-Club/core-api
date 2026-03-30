@@ -49,8 +49,6 @@ public class ClassController {
         }
     }
 
-
-
     @Operation(summary = "Поиск классов", description = "Поиск классов с GET-параметрами фильтрации")
     @GetMapping("/search")
     public List<ClassShortResponse> search(@ParameterObject ClassQueryRequest request)
@@ -62,8 +60,6 @@ public class ClassController {
     public ClassDetailedResponse getClassByUrl(@PathVariable String url) {
         return classService.findDetailedByUrl(url);
     }
-
-
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")

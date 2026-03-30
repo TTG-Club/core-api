@@ -42,9 +42,6 @@ public class ClassService {
     private final GalleryRepository galleryRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
 
-
-
-
     public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
         return classQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())

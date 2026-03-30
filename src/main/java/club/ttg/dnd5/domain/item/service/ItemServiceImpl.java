@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.item.service;
 
+import club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
@@ -93,7 +94,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Collection<ItemShortResponse> search(final club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest request)
+    public Collection<ItemShortResponse> search(final ItemQueryRequest request)
     {
         var predicate = ItemPredicateBuilder.build(request);
         return itemQueryDslService.search(predicate, request.getPage(), request.getPageSize())

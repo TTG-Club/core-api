@@ -13,8 +13,6 @@ import java.util.Set;
 public interface FeatService {
     FeatDetailResponse getFeat(String featUrl);
 
-
-
     String addFeat(FeatRequest featDto);
 
     String updateFeat(final String featUrl, FeatRequest featDto);

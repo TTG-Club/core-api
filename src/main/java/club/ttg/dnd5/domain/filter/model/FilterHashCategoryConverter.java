@@ -21,10 +21,10 @@ public class FilterHashCategoryConverter implements AttributeConverter<FilterHas
         }
         try {
             return FilterHashCategory.valueOf(dbData.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException exception) {
             // Разрешаем принудительное чтение, даже если Enum не найден (вернув null или подходящий default), 
             // но в нашем случае достаточно toUpperCase() для исправления старой базы.
-            throw new IllegalArgumentException("Unknown filter hash category in DB: " + dbData, e);
+            throw new IllegalArgumentException("Unknown filter hash category in DB: " + dbData, exception);
         }
     }
 }
