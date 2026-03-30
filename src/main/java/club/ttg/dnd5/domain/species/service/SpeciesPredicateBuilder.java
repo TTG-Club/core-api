@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.service;
 
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.species.model.QSpecies;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
@@ -19,7 +20,7 @@ public class SpeciesPredicateBuilder
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
-        PredicateUtils.applyFilterEnum(builder, request.getCreatureType(), TYPE_PATH);
+        PredicateUtils.applyFilterEnum(builder, request.getCreatureType(), TYPE_PATH, CreatureType.class);
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "species", "source");
         return builder;
     }

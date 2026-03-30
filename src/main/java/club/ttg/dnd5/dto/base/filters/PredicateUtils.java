@@ -9,6 +9,7 @@ import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -83,10 +84,12 @@ public class PredicateUtils
         }
         else if (filter.isUnion())
         {
+            BooleanBuilder orBuilder = new BooleanBuilder();
             for (T val : filter.getValues())
             {
                 builder.and(path.eq(val));
             }
+            builder.and(orBuilder);
         }
         else
         {
@@ -98,17 +101,19 @@ public class PredicateUtils
      * Enum фильтр для {@link QueryFilter}: сравнение как String (Enum → name()).
      * По умолчанию — ИЛИ (IN), при union=true — И.
      */
-    public <E extends Enum<E>> void applyFilterEnum(final BooleanBuilder builder,
-                                                      final QueryFilter<E> filter,
-                                                      final StringPath path)
+    public <E extends Enum<E>> void applyFilterEnum(
+            final BooleanBuilder builder,
+            final QueryFilter<?> filter,
+            final StringPath path,
+            final Class<E> enumClass)
     {
         if (filter == null || !filter.isActive())
         {
             return;
         }
 
-        java.util.List<String> names = filter.getValues().stream()
-                .map(Enum::name)
+        List<String> names = filter.getValues().stream()
+                .map(value -> toEnum(value, enumClass).name())
                 .toList();
 
         if (filter.isExclude())
@@ -128,7 +133,23 @@ public class PredicateUtils
         }
     }
 
+    private <E extends Enum<E>> E toEnum(final Object value, final Class<E> enumClass)
+    {
+        if (value instanceof String str)
+        {
+            return Enum.valueOf(enumClass, str);
+        }
 
+        if (enumClass.isInstance(value))
+        {
+            return enumClass.cast(value);
+        }
+
+        throw new IllegalArgumentException(
+                "Unsupported enum filter value type: " + value + ", class: "
+                        + (value == null ? "null" : value.getClass().getName())
+        );
+    }
 
     /**
      * JSONB enum-массив для {@link QueryFilter}: {@code jsonb_exists_any}.
