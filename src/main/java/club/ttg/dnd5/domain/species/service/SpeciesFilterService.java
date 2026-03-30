@@ -43,7 +43,7 @@ public class SpeciesFilterService
                 FilterGroupMeta.builder()
                         .key(FilterKeys.keyOf(SpeciesQueryRequest.class, "creatureType"))
                         .name("Тип существа")
-                        .supports(SupportsConfig.builder().mode(true).union(true).build())
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
                         .values(Arrays.stream(CreatureType.values())
                                 .map(ct -> FilterValueMeta.builder()
                                         .id(ct.name())
