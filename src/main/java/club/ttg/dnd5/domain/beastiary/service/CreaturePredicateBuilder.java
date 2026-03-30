@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.beastiary.service;
 
 import club.ttg.dnd5.domain.beastiary.model.QCreature;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
+import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
@@ -50,7 +51,7 @@ public class CreaturePredicateBuilder
         PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getSize(), "sizes", "values");
 
         // Мировоззрение (enum as STRING column)
-        PredicateUtils.applyFilterEnum(builder, request.getAlignment(), ALIGNMENT_PATH);
+        PredicateUtils.applyFilterEnum(builder, request.getAlignment(), ALIGNMENT_PATH, Alignment.class);
 
         // Уровень опасности (по experience)
         PredicateUtils.applyFilter(builder, request.getCr(), Q.experience);

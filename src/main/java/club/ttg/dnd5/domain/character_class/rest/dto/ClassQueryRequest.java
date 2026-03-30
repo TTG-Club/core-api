@@ -13,6 +13,9 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class ClassQueryRequest extends AbstractQueryRequest
 {
-    @FilterParam(enumClass = Dice.class)
+    @FilterParam(
+            enumClass = Dice.class,
+            description = "Кости хитов класса"
+    )
     private QueryFilter<Dice> hitDice;
 }

@@ -33,4 +33,6 @@ public @interface FilterParam
      */
     @SuppressWarnings("rawtypes")
     Class enumClass() default Enum.class;
+
+    String description() default "";
 }

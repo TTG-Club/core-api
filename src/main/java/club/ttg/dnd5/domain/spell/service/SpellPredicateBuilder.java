@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.spell.model.QSpell;
+import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
 import com.querydsl.core.BooleanBuilder;
@@ -23,7 +24,7 @@ public class SpellPredicateBuilder
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
 
         // Школа магии (enum as STRING column)
-        PredicateUtils.applyFilterEnum(builder, request.getSchool(), SCHOOL_PATH);
+        PredicateUtils.applyFilterEnum(builder, request.getSchool(), SCHOOL_PATH, MagicSchool.class);
 
         // Уровень заклинания
         PredicateUtils.applyFilter(builder, request.getLevel(), Q.level);

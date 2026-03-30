@@ -98,9 +98,11 @@ public class PredicateUtils
     /**
      * Enum фильтр для {@link QueryFilter}: сравнение как String (Enum → name()).
      */
-    public <E extends Enum<E>> void applyFilterEnum(final BooleanBuilder builder,
-                                                      final QueryFilter<E> filter,
-                                                      final StringPath path)
+    public <E extends Enum<E>> void applyFilterEnum(
+            final BooleanBuilder builder,
+            final QueryFilter<?> filter,
+            final StringPath path,
+            final Class<E> enumClass)
     {
         if (filter == null || !filter.isActive())
         {
@@ -108,7 +110,7 @@ public class PredicateUtils
         }
 
         java.util.List<String> names = filter.getValues().stream()
-                .map(Enum::name)
+                .map(value -> toEnum(value, enumClass).name())
                 .toList();
 
         if (filter.isExclude())
@@ -130,7 +132,23 @@ public class PredicateUtils
         }
     }
 
+    private <E extends Enum<E>> E toEnum(final Object value, final Class<E> enumClass)
+    {
+        if (value instanceof String str)
+        {
+            return Enum.valueOf(enumClass, str);
+        }
 
+        if (enumClass.isInstance(value))
+        {
+            return enumClass.cast(value);
+        }
+
+        throw new IllegalArgumentException(
+                "Unsupported enum filter value type: " + value + ", class: "
+                        + (value == null ? "null" : value.getClass().getName())
+        );
+    }
 
     /**
      * JSONB enum-массив для {@link QueryFilter}: {@code jsonb_exists_any}.

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.model.QFeat;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
@@ -19,7 +20,7 @@ public class FeatPredicateBuilder
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
-        PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH);
+        PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH, FeatCategory.class);
         PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getAbility(), "abilities");
         if (request.getRepeatability() != null && request.getRepeatability().isActive())
         {

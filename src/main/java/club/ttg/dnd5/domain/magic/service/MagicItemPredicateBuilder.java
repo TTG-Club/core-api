@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.magic.service;
 
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
+import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.magic.model.QMagicItem;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
@@ -20,8 +22,8 @@ public class MagicItemPredicateBuilder
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
-        PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH);
-        PredicateUtils.applyFilterEnum(builder, request.getRarity(), RARITY_PATH);
+        PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH, MagicItemCategory.class);
+        PredicateUtils.applyFilterEnum(builder, request.getRarity(), RARITY_PATH, Rarity.class);
         if (request.getAttunement() != null && request.getAttunement().isActive())
         {
             if (request.getAttunement().isExclude())
