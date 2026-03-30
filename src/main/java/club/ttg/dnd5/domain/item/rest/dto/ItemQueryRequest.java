@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class ItemQueryRequest extends AbstractQueryRequest
 {
-    @FilterParam(value = "category", enumClass = ItemType.class)
+    @FilterParam(value = "itemType", enumClass = ItemType.class)
     private QueryFilter<ItemType> itemType;
 }

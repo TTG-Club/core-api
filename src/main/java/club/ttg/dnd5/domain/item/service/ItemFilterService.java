@@ -29,7 +29,7 @@ public class ItemFilterService
                 .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo(selectedSources)))
                 .filters(List.of(
                         FilterGroupMeta.builder()
-                                .key(FilterKeys.keyOf(ItemQueryRequest.class, "types"))
+                                .key(FilterKeys.keyOf(ItemQueryRequest.class, "itemType"))
                                 .name("Категория")
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(Arrays.stream(ItemType.values())
