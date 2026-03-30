@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.service;
 
+import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
@@ -21,25 +22,39 @@ import java.util.stream.Stream;
 public class ClassFilterService
 {
     private final SourceSavedFilterService sourceSavedFilterService;
+    private final ClassRepository classRepository;
 
     public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
     {
         return FilterMetadataResponse.builder()
-                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo(selectedSources)))
-                .filters(List.of(
-                        FilterGroupMeta.builder()
-                                .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDice"))
-                                .name("Кость хитов")
-                                .supports(SupportsConfig.builder().mode(true).union(true).build())
-                                .values(Stream.of(Dice.d6, Dice.d8, Dice.d10, Dice.d12)
-                                        .map(v -> FilterValueMeta.builder()
-                                                .id(v.name())
-                                                .value(v.name())
-                                                .name(v.getName())
-                                                .build())
-                                        .toList())
-                                .build()
-                ))
+                .filters(buildFilterGroups())
+                .sources(buildSourceGroups(selectedSources))
                 .build();
+    }
+
+    private List<FilterGroupMeta> buildFilterGroups()
+    {
+        return List.of(
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDice"))
+                        .name("Кость хитов")
+                        .supports(SupportsConfig.builder().mode(true).union(true).build())
+                        .values(Stream.of(Dice.d6, Dice.d8, Dice.d10, Dice.d12)
+                                .map(v -> FilterValueMeta.builder()
+                                        .id(v.name())
+                                        .value(v.name())
+                                        .name(v.getName())
+                                        .build())
+                                .toList())
+                        .build()
+        );
+    }
+
+    private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)
+    {
+        List<String> usedSourceCodes = classRepository.findAllUsedSourceCodes();
+        var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes, selectedSources);
+
+        return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
     }
 }
