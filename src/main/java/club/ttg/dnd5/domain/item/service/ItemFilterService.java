@@ -31,7 +31,7 @@ public class ItemFilterService
                         FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(ItemQueryRequest.class, "itemType"))
                                 .name("Категория")
-                                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(Arrays.stream(ItemType.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())

@@ -31,7 +31,7 @@ public class FeatFilterService
                         FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(FeatQueryRequest.class, "category"))
                                 .name("Категория")
-                                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(Arrays.stream(FeatCategory.values())
                                         .map(v -> FilterValueMeta.builder()
                                                 .id(v.name())
