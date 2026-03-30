@@ -20,6 +20,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Глоссарий", description = "REST API глоссарий")
 @RestController
@@ -88,7 +89,7 @@ public class GlossaryController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return glossaryFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return glossaryFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 }

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -51,8 +52,8 @@ public class SpeciesController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return speciesFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return speciesFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
 

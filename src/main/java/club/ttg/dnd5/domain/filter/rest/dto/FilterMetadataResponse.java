@@ -34,6 +34,7 @@ public class FilterMetadataResponse {
         private String id;      // SHA-256 short hash, enum name, or number
         private Object value;   // Full value for display
         private String name;    // Human readable name
+        private Boolean selected; // Selection state (for sources)
     }
 
     @Data

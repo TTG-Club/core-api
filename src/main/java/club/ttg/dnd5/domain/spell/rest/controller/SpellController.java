@@ -20,6 +20,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Заклинания", description = "REST API заклинаний")
 
@@ -63,8 +64,8 @@ public class SpellController {
 
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return spellFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return spellFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Secured("ADMIN")

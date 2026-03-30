@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +23,10 @@ public class MagicItemFilterService
 {
     private final SourceSavedFilterService sourceSavedFilterService;
 
-    public FilterMetadataResponse getFilterMetadata()
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
     {
         return FilterMetadataResponse.builder()
-                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
+                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo(selectedSources)))
                 .filters(List.of(
                         FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "category"))

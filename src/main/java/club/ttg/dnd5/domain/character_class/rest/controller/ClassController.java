@@ -24,6 +24,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -66,8 +67,8 @@ public class ClassController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return classFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return classFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @GetMapping("/subclasses")

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Сервис метаданных фильтров видов.
@@ -28,11 +29,11 @@ public class SpeciesFilterService
     private final SpeciesRepository speciesRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
 
-    public FilterMetadataResponse getFilterMetadata()
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
     {
         return FilterMetadataResponse.builder()
                 .filters(buildFilterGroups())
-                .sources(buildSourceGroups())
+                .sources(buildSourceGroups(selectedSources))
                 .build();
     }
 
@@ -54,10 +55,10 @@ public class SpeciesFilterService
         );
     }
 
-    private List<SourceGroupMeta> buildSourceGroups()
+    private List<SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)
     {
         List<String> usedSourceCodes = speciesRepository.findAllUsedSourceCodes();
-        var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes);
+        var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes, selectedSources);
 
         return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
     }

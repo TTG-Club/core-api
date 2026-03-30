@@ -19,6 +19,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -74,8 +75,8 @@ public class MagicItemController {
 
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return magicItemFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return magicItemFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Secured("ADMIN")

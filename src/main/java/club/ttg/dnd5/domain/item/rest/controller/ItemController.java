@@ -19,6 +19,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -86,8 +87,8 @@ public class ItemController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return itemFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return itemFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Operation(summary = "Предпросмотр предмета")

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +22,12 @@ public class GlossaryFilterService
     private final SourceSavedFilterService sourceSavedFilterService;
     private final GlossaryFilterRepository glossaryFilterRepository;
 
-    public FilterMetadataResponse getFilterMetadata()
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
     {
         List<String> categories = glossaryFilterRepository.findDistinctTagCategories();
 
         return FilterMetadataResponse.builder()
-                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
+                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo(selectedSources)))
                 .filters(List.of(
                         FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(GlossaryQueryRequest.class, "tagCategory"))

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Service
@@ -21,10 +22,10 @@ public class ClassFilterService
 {
     private final SourceSavedFilterService sourceSavedFilterService;
 
-    public FilterMetadataResponse getFilterMetadata()
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
     {
         return FilterMetadataResponse.builder()
-                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo()))
+                .sources(FilterMetadataMapper.mapSourcesFromFilterInfo(sourceSavedFilterService.getDefaultFilterInfo(selectedSources)))
                 .filters(List.of(
                         FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDie"))

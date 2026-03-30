@@ -81,8 +81,8 @@ public class FeatController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return featFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return featFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Secured("ADMIN")

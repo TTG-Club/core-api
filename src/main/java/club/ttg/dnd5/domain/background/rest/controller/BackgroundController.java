@@ -22,6 +22,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @RestController
@@ -77,8 +78,8 @@ public class BackgroundController {
 
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return backgroundFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return backgroundFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Operation(summary = "Создание предыстории", description = "Возвращает ссылку на созданную предысторию")

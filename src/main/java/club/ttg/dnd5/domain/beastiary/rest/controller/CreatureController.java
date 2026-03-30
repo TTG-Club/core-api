@@ -20,6 +20,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Бестиарий", description = "REST API для существ из бестиария")
 
@@ -62,8 +63,8 @@ public class CreatureController {
 
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
-    public FilterMetadataResponse getFilters() {
-        return creatureFilterService.getFilterMetadata();
+    public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
+        return creatureFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
     @Operation(summary = "Добавление существа")
