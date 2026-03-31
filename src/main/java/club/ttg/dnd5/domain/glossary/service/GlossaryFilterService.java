@@ -40,7 +40,7 @@ public class GlossaryFilterService
                 FilterGroupMeta.builder()
                         .key(FilterKeys.keyOf(GlossaryQueryRequest.class, "tagCategory"))
                         .name("Категория тега")
-                        .supports(SupportsConfig.builder().mode(true).union(true).build())
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
                         .values(categories.stream()
                                 .map(v -> FilterValueMeta.builder()
                                         .id(v)
