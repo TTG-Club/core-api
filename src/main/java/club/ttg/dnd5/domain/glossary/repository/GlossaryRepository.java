@@ -19,5 +19,11 @@ public interface GlossaryRepository extends JpaRepository<Glossary, String> {
     )
     List<Glossary> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
-    Integer countByUsername(String username);
+    @Query(value = """
+        select distinct g.source
+        from glossary g
+        where g.source is not null
+        order by g.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
 }
