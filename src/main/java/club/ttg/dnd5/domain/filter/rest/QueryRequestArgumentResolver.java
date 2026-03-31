@@ -255,16 +255,21 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
         return null;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private <E extends Enum<E>> E parseEnum(String value, Class<E> enumClass)
     {
-        try
-        {
-            return Enum.valueOf(enumClass, value.toUpperCase());
-        }
-        catch (IllegalArgumentException e)
+        if (value == null || value.isBlank())
         {
             return null;
         }
+
+        for (E constant : enumClass.getEnumConstants())
+        {
+            if (constant.name().equalsIgnoreCase(value))
+            {
+                return constant;
+            }
+        }
+
+        return null;
     }
 }

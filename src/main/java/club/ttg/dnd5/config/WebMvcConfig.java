@@ -1,21 +1,41 @@
 package club.ttg.dnd5.config;
 
 import club.ttg.dnd5.domain.filter.rest.QueryRequestArgumentResolver;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-/**
- * Конфигурация Spring MVC: регистрация кастомных аргумент-резолверов.
- */
 @Configuration
-public class WebMvcConfig implements WebMvcConfigurer
+public class WebMvcConfig
 {
-    @Override
-    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers)
+    @Bean
+    public BeanPostProcessor queryRequestArgumentResolverPostProcessor()
     {
-        resolvers.add(new QueryRequestArgumentResolver());
+        return new BeanPostProcessor()
+        {
+            @Override
+            public Object postProcessAfterInitialization(@NonNull Object bean, @NonNull String beanName) throws BeansException
+            {
+                if (bean instanceof RequestMappingHandlerAdapter adapter)
+                {
+                    List<HandlerMethodArgumentResolver> resolvers =
+                            new ArrayList<>(Objects.requireNonNull(adapter.getArgumentResolvers()));
+
+                    resolvers.addFirst(new QueryRequestArgumentResolver());
+
+                    adapter.setArgumentResolvers(resolvers);
+                }
+
+                return bean;
+            }
+        };
     }
 }

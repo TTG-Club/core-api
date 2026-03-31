@@ -48,15 +48,11 @@ public class SpeciesController {
         }
     }
 
-
-
     @Operation(summary = "Получить метаданные фильтров")
     @GetMapping("/filters")
     public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
         return speciesFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
-
-
 
     @Operation(summary = "Поиск видов", description = "Поиск видов с GET-параметрами фильтрации")
     @GetMapping("/search")

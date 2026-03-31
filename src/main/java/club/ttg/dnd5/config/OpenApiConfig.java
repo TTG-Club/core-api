@@ -7,7 +7,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
@@ -23,14 +22,14 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Configuration
 public class OpenApiConfig
 {
+    private static final String MODE_SUFFIX = "_mode";
+    private static final String UNION_SUFFIX = "_union";
+
     @Bean
     public OpenAPI openAPI()
     {
@@ -39,13 +38,14 @@ public class OpenApiConfig
                 .components(new Components()
                         .addSecuritySchemes("Bearer Authentication", createApiKeyScheme()))
                 .info(createApiInfo())
-                .addServersItem(new Server().url("/").description("Default Server URL"));
+                .addServersItem(new Server().url("/").description("Базовый URL сервера"));
     }
 
     @Bean
     public OperationCustomizer queryFilterOperationCustomizer()
     {
-        return (operation, handlerMethod) -> {
+        return (operation, handlerMethod) ->
+        {
             if (operation == null)
             {
                 return null;
@@ -84,8 +84,8 @@ public class OpenApiConfig
 
             parameters.removeIf(parameter -> isBrokenFilterParameter(parameter, filterName));
 
-            parameters.add(buildValuesParameter(field, filterName, filterParam));
-            parameters.add(buildExcludeParameter(filterName));
+            parameters.add(buildMainFilterParameter(field, filterName, filterParam));
+            parameters.add(buildModeParameter(filterName));
             parameters.add(buildUnionParameter(filterName));
         }
     }
@@ -115,42 +115,59 @@ public class OpenApiConfig
         return field.getName();
     }
 
-    private Parameter buildValuesParameter(Field field, String filterName, FilterParam filterParam)
+    private Parameter buildMainFilterParameter(Field field, String filterName, FilterParam filterParam)
     {
         ArraySchema schema = new ArraySchema();
         schema.setItems(resolveItemSchema(field, filterParam));
 
         Parameter parameter = new Parameter();
-        parameter.setName(filterName + ".values");
+        parameter.setName(filterName);
         parameter.setIn("query");
         parameter.setRequired(false);
         parameter.setDescription(buildValuesDescription(filterName, filterParam));
         parameter.setSchema(schema);
-        parameter.setExplode(true);
+        parameter.setStyle(Parameter.StyleEnum.FORM);
+        parameter.setExplode(false);
+
+        Object example = resolveExampleValue(filterParam);
+        if (example != null)
+        {
+            parameter.setExample(example);
+        }
 
         return parameter;
     }
 
-    private Parameter buildExcludeParameter(String filterName)
+    private Parameter buildModeParameter(String filterName)
     {
+        Schema<String> schema = new Schema<>();
+        schema.setType("string");
+        schema.setEnum(List.of("1"));
+
         Parameter parameter = new Parameter();
-        parameter.setName(filterName + ".exclude");
+        parameter.setName(filterName + MODE_SUFFIX);
         parameter.setIn("query");
         parameter.setRequired(false);
-        parameter.setDescription("Exclude mode for filter " + filterName);
-        parameter.setSchema(new BooleanSchema()._default(false));
+        parameter.setDescription("Режим исключения. Укажите 1, чтобы исключить выбранные значения.");
+        parameter.setSchema(schema);
+        parameter.setExample("1");
 
         return parameter;
     }
 
     private Parameter buildUnionParameter(String filterName)
     {
+        Schema<String> schema = new Schema<>();
+        schema.setType("string");
+        schema.setEnum(List.of("1"));
+
         Parameter parameter = new Parameter();
-        parameter.setName(filterName + ".union");
+        parameter.setName(filterName + UNION_SUFFIX);
         parameter.setIn("query");
         parameter.setRequired(false);
-        parameter.setDescription("OR mode for filter " + filterName);
-        parameter.setSchema(new BooleanSchema()._default(false));
+        parameter.setDescription("Режим объединения (ИЛИ). Укажите 1, чтобы искать по любому из значений.");
+        parameter.setSchema(schema);
+        parameter.setExample("1");
 
         return parameter;
     }
@@ -185,25 +202,33 @@ public class OpenApiConfig
         return schema;
     }
 
+    private Object resolveExampleValue(FilterParam filterParam)
+    {
+        Class<?> enumClass = filterParam != null ? filterParam.enumClass() : Enum.class;
+
+        if (enumClass != null && enumClass != Enum.class && enumClass.isEnum())
+        {
+            Object[] constants = enumClass.getEnumConstants();
+            if (constants.length > 0)
+            {
+                return constants[0].toString();
+            }
+        }
+
+        return null;
+    }
+
     private Class<?> resolveQueryFilterGenericType(Field field)
     {
         Type genericType = field.getGenericType();
 
-        if (!(genericType instanceof ParameterizedType parameterizedType))
+        if (genericType instanceof ParameterizedType pt)
         {
-            return null;
-        }
-
-        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-        if (actualTypeArguments.length == 0)
-        {
-            return null;
-        }
-
-        Type firstArgument = actualTypeArguments[0];
-        if (firstArgument instanceof Class<?> clazz)
-        {
-            return clazz;
+            Type[] args = pt.getActualTypeArguments();
+            if (args.length > 0 && args[0] instanceof Class<?> clazz)
+            {
+                return clazz;
+            }
         }
 
         return null;
@@ -211,12 +236,14 @@ public class OpenApiConfig
 
     private String buildValuesDescription(String filterName, FilterParam filterParam)
     {
-        if (filterParam != null && filterParam.enumClass() != null && filterParam.enumClass() != Enum.class)
+        String base = "Значения фильтра '" + filterName + "'. Можно передать одно значение или список через запятую.";
+
+        if (filterParam != null && filterParam.description() != null && !filterParam.description().isBlank())
         {
-            return "Values of filter " + filterName + " (" + filterParam.enumClass().getSimpleName() + ")";
+            return filterParam.description() + ". Можно передать одно значение или список через запятую.";
         }
 
-        return "Values of filter " + filterName;
+        return base;
     }
 
     private boolean isBrokenFilterParameter(Parameter parameter, String filterName)
@@ -230,7 +257,9 @@ public class OpenApiConfig
         return Objects.equals(name, filterName)
                 || Objects.equals(name, filterName + ".values")
                 || Objects.equals(name, filterName + ".exclude")
-                || Objects.equals(name, filterName + ".union");
+                || Objects.equals(name, filterName + ".union")
+                || Objects.equals(name, filterName + MODE_SUFFIX)
+                || Objects.equals(name, filterName + UNION_SUFFIX);
     }
 
     private List<Field> getAllFields(Class<?> type)
@@ -260,9 +289,9 @@ public class OpenApiConfig
         return new Info()
                 .title("TTG REST API")
                 .version("2.0")
-                .description("This is the API documentation for the TTG application.")
+                .description("Документация API проекта TTG.")
                 .contact(new Contact()
-                        .name("Support Team")
+                        .name("Команда поддержки")
                         .email("support@ttg.club")
                         .url("https://ttg.club"));
     }
