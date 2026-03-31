@@ -1,24 +1,44 @@
 package club.ttg.dnd5.domain.character_class.rest.mapper;
 
-import club.ttg.dnd5.domain.common.dictionary.Delimiter;
-import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.character_class.model.*;
-import club.ttg.dnd5.domain.character_class.rest.dto.*;
+import club.ttg.dnd5.domain.character_class.model.AbilityBonusResponse;
+import club.ttg.dnd5.domain.character_class.model.ArmorProficiency;
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
+import club.ttg.dnd5.domain.character_class.model.ClassFeature;
+import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
+import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureRequest;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
+import org.mapstruct.ReportingPolicy;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, uses = {BaseMapping.class}, componentModel = "spring")
-public interface ClassMapper {
-
+public interface ClassMapper
+{
     @Named("toShortResponse")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
@@ -60,9 +80,11 @@ public interface ClassMapper {
     @Mapping(target = "subclasses", ignore = true)
     @Mapping(target = "hiddenEntity", ignore = true)
     @ToEntityMapping
-    void updateEntity(@MappingTarget CharacterClass existingClass,
-                                ClassRequest request,
-                                Source source);
+    void updateEntity(
+            @MappingTarget CharacterClass existingClass,
+            ClassRequest request,
+            Source source
+    );
 
     @BaseMapping.BaseRequestNameMapping
     @Mapping(target = "gallery", ignore = true)
@@ -96,47 +118,77 @@ public interface ClassMapper {
     @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics.values")
     @Mapping(target = "delimiterPrimary", source = "request.primaryCharacteristics.delimiter")
     @Mapping(target = "multiclassProficiency", source = "request.multiclassProficiency")
-    @interface ToEntityMapping {
+    @interface ToEntityMapping
+    {
     }
 
     @Named("toPrimaryCharacteristics")
-    default String toPrimaryCharacteristics(CharacterClass characterClass) {
-        var list = characterClass.getPrimaryCharacteristics().stream().toList();
+    default String toPrimaryCharacteristics(CharacterClass characterClass)
+    {
+        List<Ability> abilities = Optional.ofNullable(characterClass.getPrimaryCharacteristics())
+                .orElse(Collections.emptySet())
+                .stream()
+                .toList();
 
-        if (list.isEmpty()) {
+        if (abilities.isEmpty())
+        {
             return "";
         }
-        if (list.size() == 1) {
-            return list.getFirst().getName();
-        }
-        var primaryDelimiter = characterClass.getDelimiterPrimary() == null
-                ? characterClass.getParent() == null
-                ? Delimiter.AND : characterClass.getParent().getDelimiterPrimary()
-                : characterClass.getDelimiterPrimary();
-        if (list.size() == 2) {
-            return "%s %s %s".formatted(
-                    list.getFirst().getName(),
-                    primaryDelimiter.getName(),
-                    list.get(1).getName());
-        }
-        var delimiter = primaryDelimiter == Delimiter.AND
-                ? ", " : primaryDelimiter.getName() + " " ;
-        String prefix = list.stream()
-                .map(Ability::getName)
-                .limit(list.size() - 1)
-                .collect(Collectors.joining(delimiter));
 
-        return "%s %s %s".formatted(prefix,
-                primaryDelimiter.getName(),
-                list.getLast().getName());
+        if (abilities.size() == 1)
+        {
+            return abilities.getFirst().getName();
+        }
+
+        Delimiter delimiter = resolvePrimaryDelimiter(characterClass);
+
+        if (abilities.size() == 2)
+        {
+            return abilities.getFirst().getName()
+                    + " "
+                    + delimiter.getName()
+                    + " "
+                    + abilities.get(1).getName();
+        }
+
+        String joinDelimiter = delimiter == Delimiter.AND
+                ? ", "
+                : delimiter.getName() + " ";
+
+        String prefix = abilities.stream()
+                .limit(abilities.size() - 1L)
+                .map(Ability::getName)
+                .collect(Collectors.joining(joinDelimiter));
+
+        return prefix + " " + delimiter.getName() + " " + abilities.getLast().getName();
+    }
+
+    default Delimiter resolvePrimaryDelimiter(CharacterClass characterClass)
+    {
+        if (characterClass.getDelimiterPrimary() != null)
+        {
+            return characterClass.getDelimiterPrimary();
+        }
+
+        CharacterClass parent = characterClass.getParent();
+        if (parent != null && parent.getDelimiterPrimary() != null)
+        {
+            return parent.getDelimiterPrimary();
+        }
+
+        return Delimiter.AND;
     }
 
     @Named("toSavingThrowsString")
-    default String toSavingThrowsString(Collection<Ability> savingThrows) {
-        return savingThrows.stream().map(Ability::getName).collect(Collectors.joining(", "));
+    default String toSavingThrowsString(Collection<Ability> savingThrows)
+    {
+        return savingThrows.stream()
+                .map(Ability::getName)
+                .collect(Collectors.joining(", "));
     }
 
-    default DiceOptionDto toDiceOptionDto(Dice dice) {
+    default DiceOptionDto toDiceOptionDto(Dice dice)
+    {
         return DiceOptionDto.builder()
                 .label(dice.getName())
                 .value(dice.name())
@@ -146,35 +198,45 @@ public interface ClassMapper {
     }
 
     @Named("armorProficiencyToString")
-    default String armorProficiencyToString(ArmorProficiency proficiency) {
+    default String armorProficiencyToString(ArmorProficiency proficiency)
+    {
         return proficiency == null ? "" : proficiency.toString();
     }
 
     @Named("weaponProficiencyToString")
-    default String weaponProficiencyToString(WeaponProficiency proficiency) {
+    default String weaponProficiencyToString(WeaponProficiency proficiency)
+    {
         return proficiency == null ? "" : proficiency.toString();
     }
 
     @Named("skillProficiencyToString")
-    default String skillProficiencyToString(SkillProficiency proficiency) {
+    default String skillProficiencyToString(SkillProficiency proficiency)
+    {
         return proficiency == null ? "" : proficiency.toString();
     }
 
     @Named("toFeatureEntities")
-    default List<ClassFeature> toFeatureEntities(List<ClassFeatureRequest> features) {
-        return features.stream().map(ClassFeature::new).toList();
+    default List<ClassFeature> toFeatureEntities(List<ClassFeatureRequest> features)
+    {
+        return features.stream()
+                .map(ClassFeature::new)
+                .toList();
     }
 
-    default List<ClassFeatureDto> toFeaturesDto(CharacterClass characterClass) {
+    default List<ClassFeatureDto> toFeaturesDto(CharacterClass characterClass)
+    {
         boolean isSubclass = !Objects.isNull(characterClass.getParent());
+
         List<ClassFeatureDto> parentFeaturesDtos = Optional.ofNullable(characterClass.getParent())
                 .map(CharacterClass::getFeatures)
-                .orElse(List.of()).stream()
+                .orElse(List.of())
+                .stream()
                 .filter(classFeature -> !classFeature.isHideInSubclasses())
-                .map(f -> new ClassFeatureDto(f, false))
+                .map(feature -> new ClassFeatureDto(feature, false))
                 .collect(Collectors.toList());
+
         List<ClassFeatureDto> classFeatureDtos = characterClass.getFeatures().stream()
-                .map(f -> new ClassFeatureDto(f, isSubclass))
+                .map(feature -> new ClassFeatureDto(feature, isSubclass))
                 .collect(Collectors.toList());
 
         return Stream.of(parentFeaturesDtos, classFeatureDtos)
@@ -184,42 +246,54 @@ public interface ClassMapper {
     }
 
     @Named("hasSubclasses")
-    default boolean hasSubclasses(Collection<CharacterClass> subclasses) {
+    default boolean hasSubclasses(Collection<CharacterClass> subclasses)
+    {
         return !CollectionUtils.isEmpty(subclasses);
     }
 
     @Named("toImageUrl")
-    default String toImageUrl(CharacterClass characterClass) {
-        if (characterClass.getParent() == null || StringUtils.hasText(characterClass.getImageUrl())) {
+    default String toImageUrl(CharacterClass characterClass)
+    {
+        if (characterClass.getParent() == null || StringUtils.hasText(characterClass.getImageUrl()))
+        {
             return characterClass.getImageUrl();
         }
+
         return characterClass.getParent().getImageUrl();
     }
 
     @Named("getLevels")
-    default List<Integer> getLevels(List<ClassFeature> features) {
-        for (ClassFeature classFeature : features) {
-            if (classFeature.isAbilityImprovement()) {
+    default List<Integer> getLevels(List<ClassFeature> features)
+    {
+        for (ClassFeature classFeature : features)
+        {
+            if (classFeature.isAbilityImprovement())
+            {
                 List<Integer> levels = new ArrayList<>(classFeature.getScaling().size() + 1);
                 levels.add(classFeature.getLevel());
-                for (var sub : classFeature.getScaling()) {
+
+                for (var sub : classFeature.getScaling())
+                {
                     levels.add(sub.getLevel());
                 }
+
                 return levels;
             }
         }
+
         return Collections.emptyList();
     }
 
     @Named("getAbilityBonus")
-    default List<AbilityBonusResponse> getAbilityBonus(List<ClassFeature> features) {
+    default List<AbilityBonusResponse> getAbilityBonus(List<ClassFeature> features)
+    {
         return features.stream()
-                .filter(f -> f.getAbilityBonus() != null && !f.getAbilityBonus().getAbilities().isEmpty())
-                .map(f -> AbilityBonusResponse.builder()
-                                .level(f.getLevel())
-                                .bonus(f.getAbilityBonus().getBonus())
-                                .abilities(f.getAbilityBonus().getAbilities())
-                                .upto(f.getAbilityBonus().getUpto())
+                .filter(feature -> feature.getAbilityBonus() != null && !feature.getAbilityBonus().getAbilities().isEmpty())
+                .map(feature -> AbilityBonusResponse.builder()
+                        .level(feature.getLevel())
+                        .bonus(feature.getAbilityBonus().getBonus())
+                        .abilities(feature.getAbilityBonus().getAbilities())
+                        .upto(feature.getAbilityBonus().getUpto())
                         .build())
                 .toList();
     }
