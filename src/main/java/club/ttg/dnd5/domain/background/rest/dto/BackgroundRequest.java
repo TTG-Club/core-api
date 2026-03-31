@@ -23,6 +23,8 @@ public class BackgroundRequest extends BaseRequest {
     private Set<Ability> abilityScores;
     @Schema(description = "URL черты")
     private String featUrl;
+    @Schema(description = "Суффикс для черты (например просвещенный в магию)")
+    private String featSuffix;
     @Schema(description = "Навыки", examples = {"ACROBATICS", "ATHLETICS"})
     private Set<Skill> skillsProficiencies;
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)

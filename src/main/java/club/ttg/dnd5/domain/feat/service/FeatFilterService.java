@@ -1,32 +1,83 @@
 package club.ttg.dnd5.domain.feat.service;
 
-import club.ttg.dnd5.domain.feat.model.filter.FeatSavedFilter;
-import club.ttg.dnd5.domain.feat.repository.FeatSavedFilterRepository;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatAbilityFilterGroup;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatCategoryFilterGroup;
-import club.ttg.dnd5.domain.feat.rest.dto.filter.FeatOtherFilterGroup;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-import club.ttg.dnd5.domain.user.service.UserService;
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Service
-public class FeatFilterService extends AbstractSavedFilterService<FeatSavedFilter> {
-    private static final String FILTER_VERSION = "1.0";
+@RequiredArgsConstructor
+public class FeatFilterService
+{
+    private final SourceSavedFilterService sourceSavedFilterService;
+    private final FeatRepository featRepository;
 
-    public FeatFilterService(FeatSavedFilterRepository featSavedFilterRepository,
-                             UserService userService) {
-        super(featSavedFilterRepository, userService);
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
+    {
+        return FilterMetadataResponse.builder()
+                .filters(buildFilterGroups())
+                .sources(buildSourceGroups(selectedSources))
+                .build();
     }
 
-    @Override
-    protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(List.of(
-                FeatCategoryFilterGroup.getDefault(),
-                FeatAbilityFilterGroup.getDefault(),
-                FeatOtherFilterGroup.getDefault()
-        ), FILTER_VERSION);
+    private List<FilterGroupMeta> buildFilterGroups()
+    {
+        return List.of(
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(FeatQueryRequest.class, "category"))
+                        .name("Категория")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(Arrays.stream(FeatCategory.values())
+                                .map(v -> FilterValueMeta.builder()
+                                        .id(v.name())
+                                        .value(v.name())
+                                        .name(v.getName())
+                                        .build())
+                                .toList())
+                        .build(),
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(FeatQueryRequest.class, "ability"))
+                        .name("Характеристика")
+                        .supports(SupportsConfig.builder().mode(true).union(true).build())
+                        .values(Arrays.stream(Ability.values())
+                                .map(v -> FilterValueMeta.builder()
+                                        .id(v.name())
+                                        .value(v.name())
+                                        .name(v.getShortName())
+                                        .build())
+                                .toList())
+                        .build(),
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(FeatQueryRequest.class, "repeatability"))
+                        .name("Повторяемость")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(List.of(FilterValueMeta.builder()
+                                .id("1")
+                                .value("1")
+                                .name("Да")
+                                .build()))
+                        .build()
+        );
+    }
+
+    private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)
+    {
+        List<String> usedSourceCodes = featRepository.findAllUsedSourceCodes();
+        var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes, selectedSources);
+
+        return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
     }
 }

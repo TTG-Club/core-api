@@ -9,7 +9,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-@Mapper(componentModel = "spring", uses = {BaseMapping.class})
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {BaseMapping.class})
 public interface LastUpdateMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = "sourceName", target = "source.name.name")

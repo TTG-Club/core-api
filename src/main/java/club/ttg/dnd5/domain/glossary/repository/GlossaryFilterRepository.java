@@ -10,4 +10,12 @@ public interface GlossaryFilterRepository extends JpaRepository<Glossary, Long> 
 
     @Query("SELECT DISTINCT g.tagCategory FROM Glossary g WHERE g.tagCategory IS NOT NULL")
     List<String> findDistinctTagCategories();
+
+    @Query(value = """
+        select distinct g.source
+        from glossary g
+        where g.source is not null
+        order by g.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
 }

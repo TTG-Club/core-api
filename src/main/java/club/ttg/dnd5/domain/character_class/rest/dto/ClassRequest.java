@@ -29,7 +29,7 @@ public class ClassRequest extends BaseRequest {
     private Dice hitDice;
 
     @Schema(description = "Основные характеристики")
-    private Set<Ability> primaryCharacteristics;
+    private PrimaryAbilitiesDto primaryCharacteristics;
 
     @Schema(description = "Владение спасбросками")
     private Set<Ability> savingThrows;

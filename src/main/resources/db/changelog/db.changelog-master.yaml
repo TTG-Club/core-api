@@ -161,3 +161,15 @@ databaseChangeLog:
       file: db/changelog/2026/02/09-01-add-ability-improvement-to-class.yaml
   - include:
       file: db/changelog/2026/02/12-02-add-class-ability-template.yaml
+  - include:
+      file: db/changelog/2026/02/17-01-source-columns.yaml
+  - include:
+      file: db/changelog/2026/02/18-01-add-primary-ability-delimiter.yaml
+  - include:
+      file: db/changelog/2026/03/18-01-add-feat-suffix-background-table.yaml
+  - include:
+      file: db/changelog/2026/03/25-01-add-index-source.field.yaml
+  - include:
+      file: db/changelog/2026/03/26-01-add-filter-hash-mapping.yaml
+  - include:
+      file: db/changelog/2026/03/27-01-add-gin-indexes-spell-time.yaml

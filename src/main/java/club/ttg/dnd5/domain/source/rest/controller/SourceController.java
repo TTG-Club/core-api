@@ -2,9 +2,8 @@ package club.ttg.dnd5.domain.source.rest.controller;
 
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
-
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +20,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @Tag(name = "Источники", description = "Контроллер для управления источниками и их поиском")
 public class SourceController {
+
     private final SourceService sourceService;
 
     @Operation(summary = "Получить источник", description = "Возвращает детальную информацию об источнике")
@@ -43,15 +43,16 @@ public class SourceController {
 
     /**
      * Получение всех источников.
+     *
      * @return список источников
      */
     @PostMapping("/search")
     @Operation(summary = "Получить источники", description = "Возвращает список источников")
-    public Collection<ShortResponse> search(@RequestParam(name = "query", required = false)
-                                                @Valid
-                                                @Size(min = 2)
-                                                @Schema(description = "Строка поиска, если null-отдаются все сущности")
-                                                String searchLine) {
+    public Collection<SourceShortResponse> search(@RequestParam(name = "query", required = false)
+                                                  @Valid
+                                                  @Size(min = 2)
+                                                  @Schema(description = "Строка поиска, если null-отдаются все сущности")
+                                                  String searchLine) {
         return sourceService.search(searchLine);
     }
 
@@ -61,9 +62,9 @@ public class SourceController {
         return sourceService.save(request);
     }
 
-    @PutMapping("/{url}")
+    @PutMapping
     @Operation(summary = "Обновить источник", description = "Обновление источника")
-    public String update(@PathVariable  String url, @RequestBody SourceRequest request) {
-        return sourceService.update(url, request);
+    public String update(@RequestBody SourceRequest request) {
+        return sourceService.update(request);
     }
 }

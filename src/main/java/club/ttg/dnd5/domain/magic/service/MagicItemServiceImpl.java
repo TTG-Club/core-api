@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.source.service.SourceService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
@@ -10,7 +9,6 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.rest.mapper.MagicItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -26,7 +24,6 @@ public class MagicItemServiceImpl implements MagicItemService {
     private final MagicItemMapper magicItemMapper;
     private final MagicItemQueryDslSearchService magicItemQueryDslSearchService;
     private final SourceService sourceService;
-    private final ObjectMapper objectMapper;
 
 
     @Override
@@ -47,19 +44,7 @@ public class MagicItemServiceImpl implements MagicItemService {
         return magicItemMapper.toRequest(findByUrl(url));
     }
 
-    @Override
-    public Collection<MagicItemShortResponse> getItems(final String searchLine, final String filters) {
-        var searchBody = SearchBody.parse(filters, objectMapper);
-        return getItems(searchLine, searchBody);
-    }
 
-    @Override
-    public Collection<MagicItemShortResponse> getItems(final String searchLine, final SearchBody searchBody) {
-        return magicItemQueryDslSearchService.search(searchLine, searchBody)
-                .stream()
-                .map(magicItemMapper::toShort)
-                .toList();
-    }
 
     @Transactional
     @Override
@@ -106,5 +91,15 @@ public class MagicItemServiceImpl implements MagicItemService {
     public MagicItemDetailResponse preview(final MagicItemRequest request) {
         var source = sourceService.findByUrl(request.getSource().getUrl());
         return magicItemMapper.toDetail(magicItemMapper.toEntity(request, source));
+    }
+
+    @Override
+    public Collection<MagicItemShortResponse> search(final club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest request)
+    {
+        var predicate = MagicItemPredicateBuilder.build(request);
+        return magicItemQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+                .stream()
+                .map(magicItemMapper::toShort)
+                .toList();
     }
 }

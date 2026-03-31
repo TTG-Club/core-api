@@ -23,6 +23,7 @@ import java.util.UUID;
 public class AbstractSavedFilter extends Timestamped {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
     UUID userId;
@@ -36,5 +37,4 @@ public class AbstractSavedFilter extends Timestamped {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     FilterInfo filter;
-
 }

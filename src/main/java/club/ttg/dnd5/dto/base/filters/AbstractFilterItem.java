@@ -1,7 +1,7 @@
 package club.ttg.dnd5.dto.base.filters;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +15,7 @@ import java.util.Objects;
  *
  * @param <T> тип значения элемента фильтра
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "key")
+@JsonIgnoreProperties(value = "key")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

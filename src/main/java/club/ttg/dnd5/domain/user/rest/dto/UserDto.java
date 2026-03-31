@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDto extends TimestampDto {
+    private String id;
     private String username;
     private String email;
     private List<String> roles;

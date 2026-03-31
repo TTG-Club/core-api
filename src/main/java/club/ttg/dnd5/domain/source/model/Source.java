@@ -1,10 +1,12 @@
 package club.ttg.dnd5.domain.source.model;
 
 import club.ttg.dnd5.domain.common.model.Timestamped;
+import club.ttg.dnd5.domain.source.rest.dto.PublisherDto;
+import club.ttg.dnd5.domain.source.rest.dto.TranslationDto;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDate;
+import org.hibernate.annotations.Type;
 
 @Getter
 @Setter
@@ -30,9 +32,19 @@ public class Source extends Timestamped {
     @Enumerated(EnumType.STRING)
     private SourceType type;
     /**
-     * Дата публикации
+     * Издатель
      */
-    private LocalDate published;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private PublisherDto publisher;
+
+    /**
+     * Перевод
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private TranslationDto translation;
+
     private String image;
 
     /**

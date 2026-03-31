@@ -1,32 +1,103 @@
 package club.ttg.dnd5.domain.magic.service;
 
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-import club.ttg.dnd5.domain.magic.model.filter.MagicItemSavedFilter;
-import club.ttg.dnd5.domain.magic.repository.MagicItemSavedFilterRepository;
-import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemOtherFilterGroup;
-import club.ttg.dnd5.domain.magic.rest.dto.filter.MagicItemCategoryFilterGroup;
-import club.ttg.dnd5.domain.magic.rest.dto.filter.RarityFilterGroup;
-import club.ttg.dnd5.domain.user.service.UserService;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
+import club.ttg.dnd5.domain.common.dictionary.Rarity;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
+import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Service
-public class MagicItemFilterService extends AbstractSavedFilterService<MagicItemSavedFilter> {
-    private static final String FILTER_VERSION = "1.0";
+@RequiredArgsConstructor
+public class MagicItemFilterService
+{
+    private final SourceSavedFilterService sourceSavedFilterService;
+    private final MagicItemRepository itemRepository;
 
-    public MagicItemFilterService(MagicItemSavedFilterRepository savedFilterRepository,
-                                  UserService userService) {
-        super(savedFilterRepository, userService);
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
+    {
+        return FilterMetadataResponse.builder()
+                .filters(buildFilterGroups())
+                .sources(buildSourceGroups(selectedSources))
+                .build();
     }
 
-    @Override
-    protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(List.of(
-                MagicItemCategoryFilterGroup.getDefault(),
-                RarityFilterGroup.getDefault(),
-                MagicItemOtherFilterGroup.getDefault()
-        ), FILTER_VERSION);
+    private List<FilterGroupMeta> buildFilterGroups()
+    {
+        return List.of(
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "category"))
+                        .name("Категории")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(Arrays.stream(MagicItemCategory.values())
+                                .map(v -> FilterValueMeta.builder()
+                                        .id(v.name())
+                                        .value(v.name())
+                                        .name(v.getName())
+                                        .build())
+                                .toList())
+                        .build(),
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "rarity"))
+                        .name("Редкость")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(Arrays.stream(Rarity.values())
+                                .map(v -> FilterValueMeta.builder()
+                                        .id(v.name())
+                                        .value(v.name())
+                                        .name(v.getName())
+                                        .build())
+                                .toList())
+                        .build(),
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "attunement"))
+                        .name("Настройка")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(List.of(FilterValueMeta.builder()
+                                .id("1")
+                                .value("1")
+                                .name("Требуется")
+                                .build()))
+                        .build(),
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "charges"))
+                        .name("Заряды")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(List.of(FilterValueMeta.builder()
+                                .id("1")
+                                .value("1")
+                                .name("Есть")
+                                .build()))
+                        .build(),
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "curse"))
+                        .name("Проклятие")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(List.of(FilterValueMeta.builder()
+                                .id("1")
+                                .value("1")
+                                .name("Есть")
+                                .build()))
+                        .build()
+        );
+    }
+
+    private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)
+    {
+        List<String> usedSourceCodes = itemRepository.findAllUsedSourceCodes();
+        var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes, selectedSources);
+
+        return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
     }
 }

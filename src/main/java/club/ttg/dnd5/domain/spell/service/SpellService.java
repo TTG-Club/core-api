@@ -1,24 +1,26 @@
 package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
+
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -39,8 +41,7 @@ public class SpellService {
     private final SpellRepository spellRepository;
     private final SpellMapper spellMapper;
     private final SpellQueryDslSearchService spellQueryDslSearchService;
-
-    private final ObjectMapper objectMapper;
+    private final SourceSavedFilterService sourceSavedFilterService;
 
     public boolean existOrThrow(String url) {
         if (!spellRepository.existsById(url)) {
@@ -49,17 +50,26 @@ public class SpellService {
         return true;
     }
 
-    public List<SpellShortResponse> search(String searchLine, final String filters) {
-        SearchBody searchBody = SearchBody.parse(filters, objectMapper);
-        return search(searchLine, searchBody);
-    }
 
-    public List<SpellShortResponse> search(String searchLine, SearchBody searchBody) {
-        return spellQueryDslSearchService.search(searchLine, searchBody)
+
+    /**
+     * Поиск заклинаний через новую систему фильтрации v2.
+     */
+    public List<SpellShortResponse> search(final SpellQueryRequest request)
+    {
+        var classUrls = request.getClassName() != null && request.getClassName().isActive() && request.getClassName().getValues() != null 
+                ? request.getClassName().getValues() : List.<String>of();
+        var subclassUrls = request.getSubclassName() != null && request.getSubclassName().isActive() && request.getSubclassName().getValues() != null 
+                ? request.getSubclassName().getValues() : List.<String>of();
+
+        var predicate = SpellPredicateBuilder.build(request, classUrls, subclassUrls);
+        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
                 .map(spellMapper::toShort)
                 .collect(Collectors.toList());
     }
+
+
 
     public SpellDetailedResponse findDetailedByUrl(String url) {
         return spellMapper.toDetail(findByUrl(url));
@@ -70,8 +80,14 @@ public class SpellService {
     }
 
     public Spell findByUrl(String url) {
-        return spellRepository.findById(url)
+        var sources = sourceSavedFilterService.getSavedSources();
+        var spell =  spellRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Заклинание с url %s не существует", url)));
+        spell.getClassAffiliation().removeIf(characterClass -> !sources.contains(characterClass.getSource().getAcronym()));
+        spell.getSubclassAffiliation().removeIf(characterClass -> !sources.contains(characterClass.getSource().getAcronym()));
+        spell.getSpeciesAffiliation().removeIf(species -> !sources.contains(species.getSource().getAcronym()));
+        spell.getLineagesAffiliation().removeIf(lineages -> !sources.contains(lineages.getSource().getAcronym()));
+        return spell;
     }
 
     public boolean existsByUrl(String url) {

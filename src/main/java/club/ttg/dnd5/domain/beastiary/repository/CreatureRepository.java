@@ -22,5 +22,25 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
     )
     List<Creature> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
-    Integer countByUsername(String username);
+    @Query(value = """
+        select distinct s.source
+        from bestiary s
+        where s.source is not null
+        order by s.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
+
+    /**
+     * Уникальные теги (types->>'text') напрямую из JSONB, без загрузки сущностей.
+     */
+    @Query(value = """
+        SELECT DISTINCT LOWER(b.types->>'text')
+        FROM bestiary b
+        WHERE b.types->>'text' IS NOT NULL
+          AND b.types->>'text' != ''
+        ORDER BY 1
+        """, nativeQuery = true)
+    List<String> findDistinctTags();
+
 }
+

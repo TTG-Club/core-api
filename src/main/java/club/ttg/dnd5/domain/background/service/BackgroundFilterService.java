@@ -1,30 +1,73 @@
 package club.ttg.dnd5.domain.background.service;
 
-import club.ttg.dnd5.domain.background.model.filter.BackgroundSavedFilter;
-import club.ttg.dnd5.domain.background.repository.BackgroundSavedFilterRepository;
-import club.ttg.dnd5.domain.background.rest.dto.filter.AbilityFilterGroup;
-import club.ttg.dnd5.domain.background.rest.dto.filter.SkillFilterGroup;
-import club.ttg.dnd5.domain.filter.model.FilterInfo;
-import club.ttg.dnd5.domain.filter.service.AbstractSavedFilterService;
-import club.ttg.dnd5.domain.user.service.UserService;
+import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.background.rest.dto.BackgroundQueryRequest;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataMapper;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
+import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Service
-public class BackgroundFilterService extends AbstractSavedFilterService<BackgroundSavedFilter> {
-    private static final String FILTER_VERSION = "1.0";
+@RequiredArgsConstructor
+public class BackgroundFilterService
+{
+    private final SourceSavedFilterService sourceSavedFilterService;
+    private final BackgroundRepository backgroundRepository;
 
-    public BackgroundFilterService(BackgroundSavedFilterRepository savedFilterRepository,
-                                   UserService userService) {
-        super(savedFilterRepository, userService);
+    public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources)
+    {
+        return FilterMetadataResponse.builder()
+                .filters(buildFilterGroups())
+                .sources(buildSourceGroups(selectedSources))
+                .build();
     }
 
-    @Override
-    protected FilterInfo buildDefaultFilterInfo() {
-        return new FilterInfo(List.of(
-                AbilityFilterGroup.getDefault(),
-                SkillFilterGroup.getDefault()
-        ), FILTER_VERSION);
+    private List<FilterGroupMeta> buildFilterGroups()
+    {
+        return List.of(
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "ability"))
+                        .name("Характеристики")
+                        .supports(SupportsConfig.builder().mode(true).union(true).build())
+                        .values(Arrays.stream(Ability.values())
+                                .map(v -> FilterValueMeta.builder()
+                                        .id(v.name())
+                                        .value(v.name())
+                                        .name(v.getName())
+                                        .build())
+                                .toList())
+                        .build(),
+                FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "skill"))
+                        .name("Навыки")
+                        .supports(SupportsConfig.builder().mode(true).union(true).build())
+                        .values(Arrays.stream(Skill.values())
+                                .map(v -> FilterValueMeta.builder()
+                                        .id(v.name())
+                                        .value(v.name())
+                                        .name(v.getName())
+                                        .build())
+                                .toList())
+                        .build()
+        );
+    }
+
+    private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)
+    {
+        List<String> usedSourceCodes = backgroundRepository.findAllUsedSourceCodes();
+        var legacySources = sourceSavedFilterService.getDefaultFilterInfo(usedSourceCodes, selectedSources);
+
+        return FilterMetadataMapper.mapSourcesFromFilterInfo(legacySources);
     }
 }

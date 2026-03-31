@@ -21,6 +21,7 @@ public class Translation {
             joinColumns = @JoinColumn(name = "translation_id") // Foreign key linking to the translation
     )
     @Column(name = "author_name") // Column for the author names
+    @Builder.Default
     private Set<String> authors = new HashSet<>();
 
     @Column(name = "translation_date")

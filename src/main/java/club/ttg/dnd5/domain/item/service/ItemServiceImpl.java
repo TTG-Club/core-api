@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.item.service;
 
+import club.ttg.dnd5.domain.item.rest.dto.ItemQueryRequest;
 import club.ttg.dnd5.domain.source.service.SourceService;
-import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.item.model.*;
 import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
@@ -10,14 +10,12 @@ import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -26,7 +24,6 @@ public class ItemServiceImpl implements ItemService {
     private final ItemQueryDslService itemQueryDslService;
     private final SourceService sourceService;
     private final ItemMapper itemMapper;
-    private final ObjectMapper objectMapper;
 
     @Override
     public boolean existOrThrow(final String url) {
@@ -48,19 +45,6 @@ public class ItemServiceImpl implements ItemService {
         return itemMapper.toDetailResponse(item);
     }
 
-    @Override
-    public Collection<ItemShortResponse> getItems(final String searchLine, final String filters) {
-        var searchBody = SearchBody.parse(filters, objectMapper);
-        return getItems(searchLine, searchBody);
-    }
-
-    @Override
-    public Collection<ItemShortResponse> getItems(String searchLine, final SearchBody searchBody) {
-        return itemQueryDslService.search(searchLine, searchBody)
-                .stream()
-                .map(itemMapper::toShortResponse)
-                .collect(Collectors.toList());
-    }
 
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
@@ -107,5 +91,15 @@ public class ItemServiceImpl implements ItemService {
 
     public ItemDetailResponse preview(final ItemRequest request) {
         return itemMapper.toDetailResponse(toItem(request));
+    }
+
+    @Override
+    public Collection<ItemShortResponse> search(final ItemQueryRequest request)
+    {
+        var predicate = ItemPredicateBuilder.build(request);
+        return itemQueryDslService.search(predicate, request.getPage(), request.getPageSize())
+                .stream()
+                .map(itemMapper::toShortResponse)
+                .toList();
     }
 }

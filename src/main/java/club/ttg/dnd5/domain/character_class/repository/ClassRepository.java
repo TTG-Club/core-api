@@ -32,17 +32,6 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
     """)
     Collection<CharacterClass> findAllByParentIsNotNull();
 
-    @Query(value = """
-        select c from CharacterClass c
-        where c.name ilike concat('%', :searchLine, '%')
-            or c.english ilike concat('%', :searchLine, '%')
-            or c.alternative ilike concat('%', :searchLine, '%')
-            or c.name ilike concat('%', :invertedSearchLine, '%')
-            or c.english ilike concat('%', :invertedSearchLine, '%')
-            or c.alternative ilike concat('%', :invertedSearchLine, '%')
-    """)
-    List<CharacterClass> findAllSearch(String searchLine, String invertedSearchLine, Sort sort);
-
     Optional<CharacterClass> findByUrl(String url);
 
     List<CharacterClass> findAllByParentIsNullAndCasterTypeNot(CasterType casterType);
@@ -60,4 +49,12 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
       )
     """)
     List<CharacterClass> findAllSubclassesWithSpellAffiliationAndCasterTypeNot(@Param("casterType") CasterType casterType);
+
+    @Query(value = """
+        select distinct c.source
+        from class c
+        where c.source is not null
+        order by c.source
+        """, nativeQuery = true)
+    List<String> findAllUsedSourceCodes();
 }

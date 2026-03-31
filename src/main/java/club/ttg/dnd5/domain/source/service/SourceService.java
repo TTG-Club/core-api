@@ -4,8 +4,8 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.repository.SourceRepository;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
 import club.ttg.dnd5.domain.source.rest.mapper.SourceMapper;
-import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
@@ -24,7 +24,11 @@ public class SourceService {
     private final SourceRepository sourceRepository;
     private final SourceMapper sourceMapper;
 
-    public List<ShortResponse> search(String searchLine) {
+    public List<Source> findAll() {
+        return sourceRepository.findAll();
+    }
+
+    public List<SourceShortResponse> search(String searchLine) {
         if (StringUtils.hasText(searchLine)) {
             var invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
             return sourceRepository.findBySearchLine(searchLine, invertedSearchLine, Sort.by("name"))
@@ -42,14 +46,14 @@ public class SourceService {
     public Source findByUrl(String url) {
         return sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        String.format("Источник с url %s не существует" , url))
+                        String.format("Источник с url %s не существует", url))
                 );
     }
 
     public SourceDetailResponse findDetailByUrl(String url) {
         return sourceMapper.toDetail(sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        String.format("Источник с акронимом %s не существует" , url)))
+                        String.format("Источник с акронимом %s не существует", url)))
         );
     }
 
@@ -70,10 +74,10 @@ public class SourceService {
     }
 
     @Transactional
-    public String update(final String url, final SourceRequest request) {
-        var source = sourceRepository.findByUrl(url)
+    public String update( final SourceRequest request) {
+        var source = sourceRepository.findByUrl(request.getUrl())
                 .orElseThrow(() -> new EntityNotFoundException(
-                                String.format("Источник с url %s не существует" , request.getUrl())));
+                        String.format("Источник с url %s не существует", request.getUrl())));
         sourceMapper.toEntity(request, source);
         return sourceRepository.save(source).getUrl();
     }
@@ -81,7 +85,7 @@ public class SourceService {
     public SourceRequest findFormByUrl(final String url) {
         return sourceMapper.toRequest(sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
-                String.format("Источник с url %s не существует" , url))));
+                        String.format("Источник с url %s не существует", url))));
     }
 
     public SourceDetailResponse preview(final SourceRequest request) {

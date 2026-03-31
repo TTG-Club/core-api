@@ -6,7 +6,9 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.ActionResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring")
 public interface ActionMapper {
     @Mapping(source = "name.name", target = "name")
     @Mapping(source = "name.english", target = "english")

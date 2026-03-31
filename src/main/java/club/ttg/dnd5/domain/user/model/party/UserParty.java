@@ -31,6 +31,7 @@ public class UserParty extends Timestamped {
 		joinColumns = @JoinColumn(name = "user_party_id"),
 		inverseJoinColumns = @JoinColumn(name = "user_uuid")
 	)
+	@Builder.Default
 	private List<User> userList = new ArrayList<>();
 	@ManyToMany
 	@JoinTable(
@@ -38,6 +39,7 @@ public class UserParty extends Timestamped {
 		joinColumns = @JoinColumn(name = "user_party_id"),
 		inverseJoinColumns = @JoinColumn(name = "user_uuid")
 	)
+	@Builder.Default
 	private List<User> userWaitList = new ArrayList<>();
 	@OneToOne(mappedBy = "userParty", cascade = CascadeType.REMOVE)
 	private Invitation invitation;

@@ -29,7 +29,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Mapper(uses = {SpellComponentsMapper.class, SpellAffiliationMapper.class, BaseMapping.class}, componentModel = "spring")
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {SpellComponentsMapper.class, SpellAffiliationMapper.class, BaseMapping.class}, componentModel = "spring")
 public interface SpellMapper
 {
     @ToEntityMapping
@@ -167,5 +169,4 @@ public interface SpellMapper
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining("; "));
     }
-
 }

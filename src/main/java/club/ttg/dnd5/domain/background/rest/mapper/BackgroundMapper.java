@@ -15,10 +15,13 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring")
 public interface BackgroundMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
@@ -27,7 +30,7 @@ public interface BackgroundMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
-    @Mapping(source = "feat", target = "feat", qualifiedByName = "featToMarkup")
+    @Mapping(source = ".", target = "feat", qualifiedByName = "featToMarkup")
     @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
     @Mapping(source = "skillProficiencies", target = "skillProficiencies", qualifiedByName = "skillsToString")
     BackgroundDetailResponse toDetail(Background background);
@@ -59,13 +62,16 @@ public interface BackgroundMapper {
     Background toEntity(BackgroundRequest request, Feat feat, Source source);
 
     @Named("featToMarkup")
-    default String featToMarkup(Feat feat) {
-        return "\"{@feat %s [%s]|url:%s}\"".formatted(feat.getName(), feat.getEnglish(), feat.getUrl());
+    default String featToMarkup(Background background) {
+        Feat feat = background.getFeat();
+        return "\"{@feat %s [%s]|url:%s}%s\"".formatted(feat.getName(), feat.getEnglish(), feat.getUrl(),
+                background.getFeatSuffix() != null ? " " + background.getFeatSuffix() : "");
     }
 
     @Named("abilitiesToString")
     default String getAbilitiesToString(Set<Ability> skillProficiencies) {
         return skillProficiencies.stream()
+                .sorted(Comparator.comparing(Enum::ordinal))
                 .map(Ability::getName)
                 .collect(Collectors.joining(", "));
     }
@@ -73,6 +79,7 @@ public interface BackgroundMapper {
     @Named("skillsToString")
     default String getSkillToString(Set<Skill> skillProficiencies) {
         return skillProficiencies.stream()
+                .sorted(Comparator.comparing(Skill::ordinal))
                 .map(Skill::getName)
                 .collect(Collectors.joining(", "));
     }
