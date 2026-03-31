@@ -38,7 +38,7 @@ public class ClassFilterService
                 FilterGroupMeta.builder()
                         .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDice"))
                         .name("Кость хитов")
-                        .supports(SupportsConfig.builder().mode(true).union(true).build())
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
                         .values(Stream.of(Dice.d6, Dice.d8, Dice.d10, Dice.d12)
                                 .map(v -> FilterValueMeta.builder()
                                         .id(v.name())

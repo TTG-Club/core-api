@@ -215,7 +215,7 @@ public class SpellFilterService {
                 groups.add(FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(SpellQueryRequest.class, "castingTime"))
                                 .name("Время накладывания")
-                                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(buildCastingTimeValues())
                                 .build());
 
@@ -223,7 +223,7 @@ public class SpellFilterService {
                 groups.add(FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(SpellQueryRequest.class, "duration"))
                                 .name("Длительность")
-                                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(buildDurationValues())
                                 .build());
 
