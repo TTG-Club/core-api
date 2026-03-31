@@ -84,12 +84,10 @@ public class PredicateUtils
         }
         else if (filter.isUnion())
         {
-            BooleanBuilder orBuilder = new BooleanBuilder();
             for (T val : filter.getValues())
             {
                 builder.and(path.eq(val));
             }
-            builder.and(orBuilder);
         }
         else
         {
@@ -252,38 +250,49 @@ public class PredicateUtils
             return;
         }
 
-        for (E val : filter.getValues())
+        if (filter.isExclude())
         {
-            String key = val.name().toLowerCase();
-            String existsSql;
-            String notExistsSql;
-
-            if ("unimpeded".equals(key))
+            for (E val : filter.getValues())
             {
-                existsSql = "(" + columnName + "->>'" + key + "') = 'true'";
-                notExistsSql = "((" + columnName + "->>'" + key + "') IS NULL OR (" + columnName + "->>'" + key + "') != 'true')";
-            }
-            else
-            {
-                existsSql = "(" + columnName + "->>'" + key + "') ~ '^\\d+$' AND (" + columnName + "->>'" + key + "')::int > 0";
-                notExistsSql = "((" + columnName + "->>'" + key + "') IS NULL OR (" + columnName + "->>'" + key + "') !~ '^\\d+$' OR (" + columnName + "->>'" + key + "')::int <= 0)";
-            }
-
-            if (filter.isExclude())
-            {
-                builder.and(Expressions.booleanTemplate(notExistsSql));
-            }
-            else if (filter.isUnion())
-            {
-                builder.and(Expressions.booleanTemplate(existsSql));
-            }
-            else
-            {
-                BooleanBuilder orBuilder = new BooleanBuilder();
-                orBuilder.or(Expressions.booleanTemplate(existsSql));
-                builder.and(orBuilder);
+                builder.and(Expressions.booleanTemplate(buildSenseNotExistsSql(val, columnName)));
             }
         }
+        else if (filter.isUnion())
+        {
+            for (E val : filter.getValues())
+            {
+                builder.and(Expressions.booleanTemplate(buildSenseExistsSql(val, columnName)));
+            }
+        }
+        else
+        {
+            BooleanBuilder orBuilder = new BooleanBuilder();
+            for (E val : filter.getValues())
+            {
+                orBuilder.or(Expressions.booleanTemplate(buildSenseExistsSql(val, columnName)));
+            }
+            builder.and(orBuilder);
+        }
+    }
+
+    private <E extends Enum<E>> String buildSenseExistsSql(E val, String columnName)
+    {
+        String key = val.name().toLowerCase();
+        if ("unimpeded".equals(key))
+        {
+            return "(" + columnName + "->>'" + key + "') = 'true'";
+        }
+        return "(" + columnName + "->>'" + key + "') ~ '^\\d+$' AND (" + columnName + "->>'" + key + "')::int > 0";
+    }
+
+    private <E extends Enum<E>> String buildSenseNotExistsSql(E val, String columnName)
+    {
+        String key = val.name().toLowerCase();
+        if ("unimpeded".equals(key))
+        {
+            return "((" + columnName + "->>'" + key + "') IS NULL OR (" + columnName + "->>'" + key + "') != 'true')";
+        }
+        return "((" + columnName + "->>'" + key + "') IS NULL OR (" + columnName + "->>'" + key + "') !~ '^\\d+$' OR (" + columnName + "->>'" + key + "')::int <= 0)";
     }
 
     /**
