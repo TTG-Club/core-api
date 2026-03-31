@@ -130,6 +130,42 @@ public class PredicateUtils
             builder.and(path.in(names));
         }
     }
+    /**
+     * Enum фильтр для {@link QueryFilter}: сравнение как Enum (например, по ordinal или string, в зависимости от JPA маппинга).
+     * По умолчанию — ИЛИ (IN), при union=true — И.
+     */
+    public <E extends Enum<E>> void applyFilterEnum(
+            final BooleanBuilder builder,
+            final QueryFilter<?> filter,
+            final com.querydsl.core.types.dsl.EnumPath<E> path,
+            final Class<E> enumClass)
+    {
+        if (filter == null || !filter.isActive())
+        {
+            return;
+        }
+
+        List<E> values = filter.getValues().stream()
+                .map(value -> toEnum(value, enumClass))
+                .toList();
+
+        if (filter.isExclude())
+        {
+            builder.and(path.notIn(values));
+        }
+        else if (filter.isUnion())
+        {
+            for (E val : values)
+            {
+                builder.and(path.eq(val));
+            }
+        }
+        else
+        {
+            builder.and(path.in(values));
+        }
+    }
+
 
     private <E extends Enum<E>> E toEnum(final Object value, final Class<E> enumClass)
     {
