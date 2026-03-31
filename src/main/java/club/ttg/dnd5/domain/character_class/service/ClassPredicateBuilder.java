@@ -23,44 +23,13 @@ public class ClassPredicateBuilder
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
-        applyEnumOrdinalFilter(
-                builder,
-                request.getHitDice(),
-                Expressions.numberPath(Integer.class, Q, "hit_dice"),
+        PredicateUtils.applyFilterEnum(
+                builder, 
+                request.getHitDice(), 
+                Q.hitDice, 
                 Dice.class
         );
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "characterClass", "source");
         return builder;
-    }
-
-    public void applyEnumOrdinalFilter(
-            BooleanBuilder builder,
-            QueryFilter<?> filter,
-            NumberPath<Integer> path,
-            Class<? extends Enum<?>> enumClass)
-    {
-        if (filter == null || !filter.isActive())
-        {
-            return;
-        }
-
-        Set<Integer> ordinals = filter.getValues().stream()
-                .map(v -> {
-                    if (v instanceof String str)
-                    {
-                        return Enum.valueOf((Class) enumClass, str).ordinal();
-                    }
-                    return ((Enum<?>) v).ordinal();
-                })
-                .collect(Collectors.toSet());
-
-        if (filter.isExclude())
-        {
-            builder.and(path.notIn(ordinals));
-        }
-        else
-        {
-            builder.and(path.in(ordinals));
-        }
     }
 }
