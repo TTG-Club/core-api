@@ -15,6 +15,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,6 +71,7 @@ public interface BackgroundMapper {
     @Named("abilitiesToString")
     default String getAbilitiesToString(Set<Ability> skillProficiencies) {
         return skillProficiencies.stream()
+                .sorted(Comparator.comparing(Enum::ordinal))
                 .map(Ability::getName)
                 .collect(Collectors.joining(", "));
     }
@@ -77,6 +79,7 @@ public interface BackgroundMapper {
     @Named("skillsToString")
     default String getSkillToString(Set<Skill> skillProficiencies) {
         return skillProficiencies.stream()
+                .sorted(Comparator.comparing(Skill::ordinal))
                 .map(Skill::getName)
                 .collect(Collectors.joining(", "));
     }
