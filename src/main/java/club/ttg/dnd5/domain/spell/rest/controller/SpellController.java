@@ -41,8 +41,6 @@ public class SpellController {
         return spellService.existOrThrow(url);
     }
 
-
-
     @Operation(summary = "Поиск заклинаний", description = "Поиск заклинаний с GET-параметрами фильтрации")
     @GetMapping("/search")
     public List<SpellShortResponse> search(@ParameterObject SpellQueryRequest request)
