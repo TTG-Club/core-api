@@ -32,9 +32,9 @@ public class FilterIdUtils
             byte[] hash = md.digest(value.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash).substring(0, SHORT_HASH_LENGTH);
         }
-        catch (NoSuchAlgorithmException e)
+        catch (NoSuchAlgorithmException exception)
         {
-            throw new IllegalStateException("SHA-256 algorithm not available", e);
+            throw new IllegalStateException("SHA-256 algorithm not available", exception);
         }
     }
 }

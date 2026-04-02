@@ -24,10 +24,12 @@ public class SourceService {
     private final SourceRepository sourceRepository;
     private final SourceMapper sourceMapper;
 
+    @Transactional(readOnly = true)
     public List<Source> findAll() {
         return sourceRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<SourceShortResponse> search(String searchLine) {
         if (StringUtils.hasText(searchLine)) {
             var invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
@@ -43,6 +45,7 @@ public class SourceService {
 
     }
 
+    @Transactional(readOnly = true)
     public Source findByUrl(String url) {
         return sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -50,6 +53,7 @@ public class SourceService {
                 );
     }
 
+    @Transactional(readOnly = true)
     public SourceDetailResponse findDetailByUrl(String url) {
         return sourceMapper.toDetail(sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -74,14 +78,15 @@ public class SourceService {
     }
 
     @Transactional
-    public String update( final SourceRequest request) {
-        var source = sourceRepository.findByUrl(request.getUrl())
+    public String update(String url, final SourceRequest request) {
+        var source = sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Источник с url %s не существует", request.getUrl())));
         sourceMapper.toEntity(request, source);
         return sourceRepository.save(source).getUrl();
     }
 
+    @Transactional(readOnly = true)
     public SourceRequest findFormByUrl(final String url) {
         return sourceMapper.toRequest(sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(

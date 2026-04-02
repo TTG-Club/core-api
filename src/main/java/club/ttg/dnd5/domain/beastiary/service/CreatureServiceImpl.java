@@ -41,7 +41,6 @@ public class CreatureServiceImpl implements CreatureService {
     private final FilterHashMappingRepository filterHashMappingRepository;
     private final FilterHashService filterHashService;
 
-
     @Override
     public Boolean existOrThrow(final String url) {
         if (!creatureRepository.existsById(url)) {
@@ -49,8 +48,6 @@ public class CreatureServiceImpl implements CreatureService {
         }
         return true;
     }
-
-
 
     @Override
     public List<CreatureShortResponse> search(final CreatureQueryRequest request)
@@ -113,9 +110,9 @@ public class CreatureServiceImpl implements CreatureService {
         }
         saveGallery(request.getUrl(), request.getGallery());
         var book = sourceService.findByUrl(request.getSource().getUrl());
-        var beast = creatureMapper.toEntity(request, book);
-        persistTagHash(beast);
-        return creatureRepository.save(beast).getUrl();
+        var creature = creatureMapper.toEntity(request, book);
+        persistTagHash(creature);
+        return creatureRepository.save(creature).getUrl();
     }
 
     @Secured("ADMIN")
@@ -127,7 +124,7 @@ public class CreatureServiceImpl implements CreatureService {
             creatureRepository.deleteById(url);
         }
         var book = sourceService.findByUrl(request.getSource().getUrl());
-        var beast = creatureMapper.toEntity(request, book);
+        var creature = creatureMapper.toEntity(request, book);
         if (!Objects.equals(url, request.getUrl())) {
             creatureRepository.deleteById(url);
             creatureRepository.flush();
@@ -135,8 +132,8 @@ public class CreatureServiceImpl implements CreatureService {
         galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.BESTIARY);
 
         saveGallery(request.getUrl(), request.getGallery());
-        persistTagHash(beast);
-        return creatureRepository.save(beast).getUrl();
+        persistTagHash(creature);
+        return creatureRepository.save(creature).getUrl();
     }
 
     @Secured("ADMIN")
