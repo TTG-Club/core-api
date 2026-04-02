@@ -9,14 +9,16 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 
+import java.util.Collection;
+
 @UtilityClass
 public class SpellPredicateBuilder {
     private static final QSpell Q = QSpell.spell;
     private static final StringPath SCHOOL_PATH = Expressions.stringPath("school");
 
     public BooleanBuilder build(final SpellQueryRequest request,
-            java.util.Collection<String> classes,
-            java.util.Collection<String> subclasses) {
+            Collection<String> classes,
+            Collection<String> subclasses) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
