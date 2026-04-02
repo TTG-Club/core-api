@@ -27,6 +27,11 @@ public class SpellPredicateBuilder {
         // Уровень заклинания
         PredicateUtils.applyFilter(builder, request.getLevel(), Q.level);
 
+        // Классы + Подклассы: объединяются через ИЛИ (OR).
+        // Exclude-предикаты остаются через И (AND) в основном builder.
+        BooleanBuilder classInclude = new BooleanBuilder();
+        BooleanBuilder subclassInclude = new BooleanBuilder();
+
         // Классы (ManyToMany: classAffiliation)
         if (request.getClassName() != null && request.getClassName().isActive() && !classes.isEmpty()) {
             if (request.getClassName().isExclude()) {
@@ -37,14 +42,14 @@ public class SpellPredicateBuilder {
                 }
             } else if (request.getClassName().isUnion()) {
                 for (String url : classes) {
-                    builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                    classInclude.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
                             "exists (select 1 from spell_class_affiliation sca where sca.spell_url = {0}.url and sca.class_affiliation_url = {1})",
                             Q, url));
                 }
             } else {
                 String inClause = classes.stream().map(u -> "'" + u.replace("'", "''") + "'")
                         .collect(java.util.stream.Collectors.joining(","));
-                builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                classInclude.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
                         "exists (select 1 from spell_class_affiliation sca where sca.spell_url = {0}.url and sca.class_affiliation_url in ("
                                 + inClause + "))",
                         Q));
@@ -61,18 +66,30 @@ public class SpellPredicateBuilder {
                 }
             } else if (request.getSubclassName().isUnion()) {
                 for (String url : subclasses) {
-                    builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                    subclassInclude.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
                             "exists (select 1 from spell_subclass_affiliation ssa where ssa.spell_url = {0}.url and ssa.subclass_affiliation_url = {1})",
                             Q, url));
                 }
             } else {
                 String inClause = subclasses.stream().map(u -> "'" + u.replace("'", "''") + "'")
                         .collect(java.util.stream.Collectors.joining(","));
-                builder.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
+                subclassInclude.and(com.querydsl.core.types.dsl.Expressions.booleanTemplate(
                         "exists (select 1 from spell_subclass_affiliation ssa where ssa.spell_url = {0}.url and ssa.subclass_affiliation_url in ("
                                 + inClause + "))",
                         Q));
             }
+        }
+
+        // Объединение классов и подклассов через ИЛИ (OR)
+        if (classInclude.hasValue() || subclassInclude.hasValue()) {
+            BooleanBuilder combined = new BooleanBuilder();
+            if (classInclude.hasValue()) {
+                combined.or(classInclude);
+            }
+            if (subclassInclude.hasValue()) {
+                combined.or(subclassInclude);
+            }
+            builder.and(combined);
         }
 
         // Тип урона (JSONB-массив)
