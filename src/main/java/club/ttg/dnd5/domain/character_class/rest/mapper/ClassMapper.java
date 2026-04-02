@@ -1,22 +1,12 @@
 package club.ttg.dnd5.domain.character_class.rest.mapper;
 
-import club.ttg.dnd5.domain.character_class.model.AbilityBonusResponse;
-import club.ttg.dnd5.domain.character_class.model.ArmorProficiency;
-import club.ttg.dnd5.domain.character_class.model.CharacterClass;
-import club.ttg.dnd5.domain.character_class.model.ClassFeature;
-import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
-import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureRequest;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
+import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.character_class.model.*;
+import club.ttg.dnd5.domain.character_class.rest.dto.*;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

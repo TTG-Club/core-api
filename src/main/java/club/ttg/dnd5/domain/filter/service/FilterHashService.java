@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Сервис для управления хэш-маппингами фильтров.
- * Вызывается из lifecycle сущностей (save/update), а не из GET-запросов.
+ * Вызывается из lifecycle сущностей (save/update).
  */
 @Service
 @RequiredArgsConstructor

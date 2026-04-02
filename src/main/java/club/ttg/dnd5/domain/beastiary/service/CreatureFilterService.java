@@ -73,7 +73,7 @@ public class CreatureFilterService
         groups.add(FilterGroupMeta.builder()
                 .key(FilterKeys.keyOf(CreatureQueryRequest.class, "type"))
                 .name("Тип")
-                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(CreatureType.values())
                         .sorted(Comparator.comparing(CreatureType::getName))
                         .map(ct -> FilterValueMeta.builder()
@@ -152,6 +152,9 @@ public class CreatureFilterService
                 .name("Тег типа")
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(tags.stream()
+                        .flatMap(t -> Arrays.stream(t.split(",")))
+                        .distinct()
+                        .map(String::trim)
                         .map(tag -> {
                             String hash = tagHashes.getOrDefault(tag, FilterIdUtils.shortHash(tag));
                             return FilterValueMeta.builder()

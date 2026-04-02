@@ -36,7 +36,6 @@ public class FeatServiceImpl implements FeatService {
         return featMapper.toDetail(findByUrl(featUrl));
     }
 
-
     @Secured("ADMIN")
     @Transactional
     @Override

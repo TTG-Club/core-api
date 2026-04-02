@@ -42,7 +42,7 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
             """;
 
     /**
-     * Новый метод поиска: принимает готовый предикат от PredicateBuilder,
+     * Метод поиска: принимает готовый предикат от PredicateBuilder,
      * с поддержкой пагинации.
      */
     public List<E> search(final BooleanBuilder predicate, final int page, final int size)

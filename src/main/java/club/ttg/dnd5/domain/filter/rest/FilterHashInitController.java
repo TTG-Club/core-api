@@ -26,7 +26,6 @@ public class FilterHashInitController
     private final FilterHashService hashService;
     private final CreatureRepository creatureRepository;
 
-
     @Secured("ADMIN")
     @Operation(summary = "Массовая инициализация хэшей", description = "Генерирует короткие хэши для существующих тегов, записывая их в БД")
     @PostMapping("/init")

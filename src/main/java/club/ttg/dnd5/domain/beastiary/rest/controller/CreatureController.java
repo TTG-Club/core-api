@@ -59,8 +59,6 @@ public class CreatureController {
         return creatureService.findFormByUrl(url);
     }
 
-
-
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
     @GetMapping("/filters")
     public FilterMetadataResponse getFilters(@RequestParam(required = false) Set<String> source) {
