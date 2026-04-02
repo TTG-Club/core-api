@@ -153,6 +153,7 @@ public class CreatureFilterService
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(tags.stream()
                         .flatMap(t -> Arrays.stream(t.split(",")))
+                        .distinct()
                         .map(String::trim)
                         .map(tag -> {
                             String hash = tagHashes.getOrDefault(tag, FilterIdUtils.shortHash(tag));
