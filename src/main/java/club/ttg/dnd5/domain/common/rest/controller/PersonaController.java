@@ -27,7 +27,7 @@ public class PersonaController {
     @Operation(summary = "Получение списка всех персон")
     @GetMapping
     public List<PersonaResponse> getAll() {
-        return personaRepository.findAll().stream()
+        return personaRepository.findAllByOrderByCreatedAtAsc().stream()
                 .map(personaMapper::toResponse)
                 .toList();
     }
