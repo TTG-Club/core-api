@@ -12,17 +12,20 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.EntityListeners;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 public class Notification {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(targetEntity = Persona.class)
     private Persona persona;
@@ -40,7 +43,7 @@ public class Notification {
     /**
      * Количество показов
      */
-    private long view;
+    private Long view;
 
     @CreatedBy
     private String username;

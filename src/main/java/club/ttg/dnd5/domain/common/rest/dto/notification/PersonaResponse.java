@@ -10,4 +10,6 @@ public class PersonaResponse {
     private String name;
     private String image;
     private boolean disabled;
+    private String username;
+    private java.time.LocalDateTime createdAt;
 }

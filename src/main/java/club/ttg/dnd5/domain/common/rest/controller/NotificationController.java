@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
+import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationDetailResponse;
 import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationRequest;
 import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationResponse;
 import club.ttg.dnd5.domain.common.service.NotificationService;
@@ -12,6 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -23,28 +27,33 @@ import java.util.UUID;
 public class NotificationController {
     private final NotificationService notificationService;
 
+    @Operation(summary = "Получение текущей нотификации")
     @GetMapping
     public NotificationResponse getNotification() {
         return notificationService.getNotification();
     }
 
+    @Operation(summary = "Получение нотификаций по ID персоны (полная модель для админки)")
     @GetMapping("/persona/{id}")
-    public Collection<NotificationResponse> getNotificationsByPersona(@PathVariable("id") UUID personaId) {
+    public Collection<NotificationDetailResponse> getNotificationsByPersona(@PathVariable("id") UUID personaId) {
         return notificationService.getNotificationByPersona(personaId);
     }
 
+    @Operation(summary = "Создание новой нотификации")
     @PostMapping
-    public String save(NotificationRequest request) {
+    public String save(@RequestBody NotificationRequest request) {
         return notificationService.save(request);
     }
 
+    @Operation(summary = "Обновление существующей нотификации")
     @PutMapping
-    public String update(NotificationRequest request) {
+    public String update(@RequestBody NotificationRequest request) {
         return notificationService.update(request);
     }
 
+    @Operation(summary = "Удаление нотификации по ID")
     @DeleteMapping
-    public void delete(UUID id) {
+    public void delete(@RequestParam Long id) {
         notificationService.delete(id);
     }
 }
