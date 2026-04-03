@@ -1,10 +1,8 @@
 package club.ttg.dnd5.domain.common.rest.controller;
 
-import club.ttg.dnd5.domain.common.model.notification.NotificationType;
 import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationDetailResponse;
 import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationRequest;
 import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationResponse;
-import club.ttg.dnd5.domain.common.rest.dto.notification.NotificationTypeResponse;
 import club.ttg.dnd5.domain.common.service.NotificationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import io.swagger.v3.oas.annotations.Operation;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Tag(name = "Нотификации на главной", description = "API для нотификаций")
 @RequiredArgsConstructor
@@ -35,14 +31,6 @@ public class NotificationController {
     @GetMapping
     public NotificationResponse getNotification() {
         return notificationService.getNotification();
-    }
-
-    @Operation(summary = "Получение возможных типов нотификаций (с русскими названиями)")
-    @GetMapping("/types")
-    public Collection<NotificationTypeResponse> getNotificationTypes() {
-        return Arrays.stream(NotificationType.values())
-                     .map(NotificationTypeResponse::new)
-                     .collect(Collectors.toList());
     }
 
     @Operation(summary = "Получение нотификаций по ID персоны (полная модель для админки)")

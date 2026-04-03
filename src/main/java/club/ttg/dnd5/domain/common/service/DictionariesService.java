@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
 import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.common.model.notification.NotificationType;
 import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
@@ -343,6 +344,14 @@ public class DictionariesService {
                 .map(weaponCategory -> SelectOptionDto.builder()
                         .label(weaponCategory.getName())
                         .value(weaponCategory.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+    public Collection<SelectOptionDto> getNotificationTypes() {
+        return Arrays.stream(NotificationType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
                         .build())
                 .collect(Collectors.toList());
     }

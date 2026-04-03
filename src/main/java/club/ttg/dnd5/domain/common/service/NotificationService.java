@@ -10,17 +10,15 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Random;
 import java.util.UUID;
 
-import org.springframework.transaction.annotation.Transactional;
-
 @RequiredArgsConstructor
 @Service
-@Transactional
 public class NotificationService {
     private static final Random RND = new Random();
 
@@ -28,6 +26,7 @@ public class NotificationService {
     private final PersonaRepository personaRepository;
     private final NotificationMapper notificationMapper;
 
+    @Transactional
     public NotificationResponse getNotification() {
         var now = LocalDateTime.now();
         long total = notificationRepository.countEligible(now);
@@ -54,6 +53,7 @@ public class NotificationService {
         return notificationMapper.toResponse(notification);
     }
 
+    @Transactional
     public String save(final NotificationRequest request) {
         var persona = personaRepository.findById(UUID.fromString(request.getPersonaId()))
                 .orElseThrow(() -> new EntityNotFoundException("Персона не найдена"));
@@ -62,6 +62,7 @@ public class NotificationService {
         return notificationRepository.save(notification).getId().toString();
     }
 
+    @Transactional
     public String update(final NotificationRequest request) {
         var notification = notificationRepository.findById(Long.valueOf(request.getId()))
                 .orElseThrow(() -> new EntityNotFoundException("Нотификация не найдена"));
@@ -75,6 +76,7 @@ public class NotificationService {
         return notificationRepository.save(notification).getId().toString();
     }
 
+    @Transactional
     public void delete(final Long id) {
         notificationRepository.deleteById(id);
     }
