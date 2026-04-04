@@ -27,7 +27,7 @@ public class PersonaController {
     @Operation(summary = "Получение списка всех персон")
     @GetMapping
     public List<PersonaResponse> getAll() {
-        return personaRepository.findAll().stream()
+        return personaRepository.findAllByOrderByCreatedAtAsc().stream()
                 .map(personaMapper::toResponse)
                 .toList();
     }
@@ -47,14 +47,13 @@ public class PersonaController {
         return personaRepository.save(persona).getId().toString();
     }
 
-    @Operation(summary = "Обновление данных персоны по ID")
-    @PutMapping("/{id}")
+    @Operation(summary = "Частичное обновление данных персоны по ID")
+    @PatchMapping("/{id}")
     public String update(@PathVariable UUID id, @RequestBody PersonaRequest request) {
         return personaRepository.findById(Objects.requireNonNull(id))
                 .map(existing -> {
-                    Persona personaObj = Objects.requireNonNull(existing);
-                    personaMapper.updateEntity(request, personaObj);
-                    return personaRepository.save(personaObj);
+                    personaMapper.updateEntity(request, existing);
+                    return personaRepository.save(existing);
                 })
                 .orElseThrow(() -> new EntityNotFoundException("Персона не найдена"))
                 .getId().toString();
