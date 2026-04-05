@@ -65,28 +65,34 @@ public class ClassService {
     }
 
     @Transactional
-    public ClassDetailedResponse save(ClassRequest request) {
-        if (exists(request.getUrl())) {
+    public ClassDetailedResponse save(ClassRequest request)
+    {
+        if (exists(request.getUrl()))
+        {
             throw new EntityExistException(String.format("Класс с url %s уже существует", request.getUrl()));
         }
 
-        CharacterClass parent = Optional.ofNullable(request.getParentUrl())
-                .map(this::findReferenceByUrl)
-                .orElse(null);
-
         CharacterClass toSave = classMapper.toEntity(request, getSource(request.getSource()));
-        toSave.setParent(parent);
-        if (parent != null) {
-            if (CollectionUtils.isEmpty(toSave.getPrimaryCharacteristics())) {
+        toSave.setParentUrl(request.getParentUrl());
+
+        if (request.getParentUrl() != null)
+        {
+            CharacterClass parent = findByUrl(request.getParentUrl());
+
+            if (CollectionUtils.isEmpty(toSave.getPrimaryCharacteristics()))
+            {
                 toSave.setPrimaryCharacteristics(parent.getPrimaryCharacteristics());
             }
-            if (CollectionUtils.isEmpty(toSave.getSavingThrows())) {
+            if (CollectionUtils.isEmpty(toSave.getSavingThrows()))
+            {
                 toSave.setSavingThrows(parent.getSavingThrows());
             }
-            if (toSave.getSkillProficiency() == null) {
+            if (toSave.getSkillProficiency() == null)
+            {
                 toSave.setSkillProficiency(parent.getSkillProficiency());
             }
         }
+
         saveGallery(request.getUrl(), request.getGallery());
         CharacterClass saved = classRepository.save(toSave);
         return classMapper.toDetailedResponse(saved);

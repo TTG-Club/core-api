@@ -37,11 +37,14 @@ import java.util.Set;
         }
 )
 public class CharacterClass extends NamedEntity {
+    @Column(name = "parent_url")
+    private String parentUrl;
+
     /**
      * Родительский класс для подкласса
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_url")
+    @JoinColumn(name = "parent_url", insertable = false, updatable = false)
     private CharacterClass parent;
 
     /**
