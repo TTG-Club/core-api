@@ -92,6 +92,20 @@ public class SpellFilterService {
         private List<FilterGroupMeta> buildFilterGroups() {
                 List<FilterGroupMeta> groups = new ArrayList<>();
 
+                // Уровень
+                groups.add(FilterGroupMeta.builder()
+                        .key(FilterKeys.keyOf(SpellQueryRequest.class, "level"))
+                        .name("Уровень")
+                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                        .values(LongStream.range(0, 10)
+                                .mapToObj(i -> FilterValueMeta.builder()
+                                        .id(String.valueOf(i))
+                                        .value(i)
+                                        .name(i == 0 ? "заговор" : String.valueOf(i))
+                                        .build())
+                                .toList())
+                        .build());
+
                 // Школа магии
                 groups.add(FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(SpellQueryRequest.class, "school"))
@@ -102,20 +116,6 @@ public class SpellFilterService {
                                                                 .id(s.name())
                                                                 .value(s.name())
                                                                 .name(s.getName())
-                                                                .build())
-                                                .toList())
-                                .build());
-
-                // Уровень
-                groups.add(FilterGroupMeta.builder()
-                                .key(FilterKeys.keyOf(SpellQueryRequest.class, "level"))
-                                .name("Уровень")
-                                .supports(SupportsConfig.builder().mode(true).union(false).build())
-                                .values(LongStream.range(0, 10)
-                                                .mapToObj(i -> FilterValueMeta.builder()
-                                                                .id(String.valueOf(i))
-                                                                .value(i)
-                                                                .name(i == 0 ? "заговор" : String.valueOf(i))
                                                                 .build())
                                                 .toList())
                                 .build());
