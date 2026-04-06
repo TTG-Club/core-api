@@ -20,5 +20,6 @@ public class SourceRequest extends BaseRequest {
     private TranslationDto translation;
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @Schema(description = "список авторов")
+    private String authors;
     private String image;
 }

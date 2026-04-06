@@ -6,7 +6,6 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,11 +37,14 @@ import java.util.Set;
         }
 )
 public class CharacterClass extends NamedEntity {
+    @Column(name = "parent_url")
+    private String parentUrl;
+
     /**
      * Родительский класс для подкласса
      */
-    @ManyToOne(cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "parent_url")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_url", insertable = false, updatable = false)
     private CharacterClass parent;
 
     /**
