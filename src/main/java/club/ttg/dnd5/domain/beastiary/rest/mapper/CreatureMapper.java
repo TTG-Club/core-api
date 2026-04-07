@@ -168,8 +168,12 @@ public interface CreatureMapper {
                 .orElse(CreatureType.HUMANOID);
         builder.append(joinWithOr(creature.getSizes().getValues(), type));
         builder.append(" ");
-        builder.append(joinWithOr(creature.getTypes().getValues())
-        );
+        builder.append(joinWithOr(creature.getTypes().getValues()));
+        // добавление префикса к размеру
+        if (StringUtils.hasText(creature.getSizes().getText()))
+        {
+            builder.append(creature.getSizes().getText());
+        }
         if (StringUtils.hasText(creature.getTypes().getText())) {
             builder.append(" (");
             builder.append(creature.getTypes().getText());
