@@ -63,6 +63,7 @@ public interface SpellMapper
     @Mapping(target = "castingTime", source = ".", qualifiedByName = "castingTimeToString")
     @Mapping(target = "duration", source = ".", qualifiedByName = "durationToString")
     @Mapping(target = "range", source = ".", qualifiedByName = "distanceToString")
+    @Mapping(target = "source", source = "source.acronym")
     @Mapping(target = "affiliation", source = ".")
     SpellDetailedResponse toDetail(Spell spell);
 
