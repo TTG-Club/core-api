@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -68,6 +69,9 @@ public class Spell extends NamedEntity {
 
     @ManyToMany(fetch = FetchType.LAZY)
     private List<CharacterClass> subclassAffiliation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    private List<Feat> traitAffiliation;
 
     private Boolean upcastable;
 

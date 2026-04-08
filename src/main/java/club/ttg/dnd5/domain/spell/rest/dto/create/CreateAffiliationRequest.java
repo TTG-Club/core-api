@@ -23,4 +23,6 @@ public class CreateAffiliationRequest {
     private List<String> species;
     @Nullable
     private List<String> lineages;
+    @Nullable
+    private List<String> traits;
 }

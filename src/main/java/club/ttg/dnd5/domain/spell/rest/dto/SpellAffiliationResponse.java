@@ -16,4 +16,5 @@ public class SpellAffiliationResponse {
     private List<SpellAffiliationDto> subclasses;
     private List<SpellAffiliationDto> species;
     private List<SpellAffiliationDto> lineages;
+    private List<SpellAffiliationDto> traits;
 }
