@@ -27,7 +27,7 @@ import java.util.UUID;
 public class NotificationController {
     private final NotificationService notificationService;
 
-    @Operation(summary = "Получение текущей нотификации")
+    @Operation(summary = "Получение случайной нотификации")
     @GetMapping
     public NotificationResponse getNotification() {
         return notificationService.getNotification();

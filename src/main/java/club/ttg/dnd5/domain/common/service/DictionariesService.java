@@ -347,6 +347,7 @@ public class DictionariesService {
                         .build())
                 .collect(Collectors.toList());
     }
+
     public Collection<SelectOptionDto> getNotificationTypes() {
         return Arrays.stream(NotificationType.values())
                 .map(type -> SelectOptionDto.builder()
