@@ -15,6 +15,12 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface SpellAffiliationMapper {
+    @Mapping(target = "classes", source = "classAffiliation")
+    @Mapping(target = "subclasses", source = "subclassAffiliation")
+    @Mapping(target = "species", source = "speciesAffiliation")
+    @Mapping(target = "lineages", source = "lineagesAffiliation")
+    SpellAffiliationResponse toSpellAffiliationResponse(Spell spell);
+
     default SpellAffiliationDto toSpellAffiliationDto(NamedEntity entity) {
         if (entity == null) {
             return null;
@@ -29,10 +35,12 @@ public interface SpellAffiliationMapper {
         if (entity instanceof CharacterClass characterClass) {
             if (characterClass.getSource() != null && characterClass.getSource().getAcronym() != null) {
                 sourceAcronym = "[" + characterClass.getSource().getAcronym() + "]";
+                dto.setSource(characterClass.getSource().getAcronym());
             }
         } else if (entity instanceof Species species) {
             if (species.getSource() != null && species.getSource().getAcronym() != null) {
                 sourceAcronym = "[" + species.getSource().getAcronym() + "]";
+                dto.setSource(species.getSource().getAcronym());
             }
         }
 
@@ -44,12 +52,6 @@ public interface SpellAffiliationMapper {
 
         return dto;
     }
-
-    @Mapping(target = "classes", source = "classAffiliation")
-    @Mapping(target = "subclasses", source = "subclassAffiliation")
-    @Mapping(target = "species", source = "speciesAffiliation")
-    @Mapping(target = "lineages", source = "lineagesAffiliation")
-    SpellAffiliationResponse toSpellAffiliationResponse(Spell spell);
 
     default CreateAffiliationRequest toCreateAffiliationRequest(Spell spell) {
         return CreateAffiliationRequest.builder()
