@@ -73,7 +73,6 @@ public interface SpellMapper
     @Mapping(target = "castingTime", ignore = true)
     @Mapping(target = "duration", ignore = true)
     @Mapping(target = "range", ignore = true)
-    @Mapping(target = "source", source = "source.acronym")
     @Mapping(target = "affiliation", ignore = true)
     SpellDetailedResponse toDetail(Spell spell);
 
