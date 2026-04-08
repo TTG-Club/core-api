@@ -71,7 +71,7 @@ public class Spell extends NamedEntity {
     private List<CharacterClass> subclassAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<Feat> traitAffiliation;
+    private List<Feat> featAffiliation;
 
     private Boolean upcastable;
 

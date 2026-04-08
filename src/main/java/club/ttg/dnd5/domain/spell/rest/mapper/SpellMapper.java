@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.spell.rest.mapper;
 
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
@@ -94,6 +95,7 @@ public interface SpellMapper
         response.setSubclasses(mapAffiliations(spell.getSubclassAffiliation()));
         response.setSpecies(mapAffiliations(spell.getSpeciesAffiliation()));
         response.setLineages(mapAffiliations(spell.getLineagesAffiliation()));
+        response.setFeats(mapAffiliations(spell.getFeatAffiliation()));
         return response;
     }
 
@@ -131,18 +133,23 @@ public interface SpellMapper
         String name = entity.getName();
         String sourceAcronym = null;
 
-        if (entity instanceof CharacterClass characterClass)
-        {
-            if (characterClass.getSource() != null && StringUtils.hasText(characterClass.getSource().getAcronym()))
-            {
-                sourceAcronym = characterClass.getSource().getAcronym();
+        switch (entity) {
+            case CharacterClass characterClass -> {
+                if (characterClass.getSource() != null && StringUtils.hasText(characterClass.getSource().getAcronym())) {
+                    sourceAcronym = characterClass.getSource().getAcronym();
+                }
             }
-        }
-        else if (entity instanceof Species species)
-        {
-            if (species.getSource() != null && StringUtils.hasText(species.getSource().getAcronym()))
-            {
-                sourceAcronym = species.getSource().getAcronym();
+            case Species species -> {
+                if (species.getSource() != null && StringUtils.hasText(species.getSource().getAcronym())) {
+                    sourceAcronym = species.getSource().getAcronym();
+                }
+            }
+            case Feat feat -> {
+                if (feat.getSource() != null && StringUtils.hasText(feat.getSource().getAcronym())) {
+                    sourceAcronym = feat.getSource().getAcronym();
+                }
+            }
+            default -> {
             }
         }
 
