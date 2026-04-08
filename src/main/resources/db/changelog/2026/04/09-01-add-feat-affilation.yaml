@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-spell-feat-affiliation
+      author: you
+
+      changes:
+        - createTable:
+            tableName: spell_feat_affiliation
+            columns:
+              - column:
+                  name: spell_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: feat_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: spell_feat_affiliation
+            columnNames: spell_id, feat_id
+            constraintName: pk_spell_feat_affiliation
+
+        - addForeignKeyConstraint:
+            baseTableName: spell_feat_affiliation
+            baseColumnNames: spell_id
+            referencedTableName: spell
+            referencedColumnNames: url
+            constraintName: fk_spell_feat_spell
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: spell_feat_affiliation
+            baseColumnNames: feat_id
+            referencedTableName: feat
+            referencedColumnNames: url
+            constraintName: fk_spell_feat_feat
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: spell_feat_affiliation
+            indexName: idx_spell_feat_spell
+            columns:
+              - column:
+                  name: spell_id
+
+        - createIndex:
+            tableName: spell_feat_affiliation
+            indexName: idx_spell_feat_feat
+            columns:
+              - column:
+                  name: feat_id

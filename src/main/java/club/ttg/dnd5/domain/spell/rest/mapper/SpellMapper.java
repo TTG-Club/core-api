@@ -234,6 +234,7 @@ public interface SpellMapper
                 .lineages(extractUrls(spell.getLineagesAffiliation()))
                 .classes(extractUrls(spell.getClassAffiliation()))
                 .subclasses(extractUrls(spell.getSubclassAffiliation()))
+                .feats(extractUrls(spell.getFeatAffiliation()))
                 .build();
     }
 

@@ -71,6 +71,11 @@ public class Spell extends NamedEntity {
     private List<CharacterClass> subclassAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_feat_affiliation",
+            joinColumns = @JoinColumn(name = "spell_id"),
+            inverseJoinColumns = @JoinColumn(name = "feat_id")
+    )
     private List<Feat> featAffiliation;
 
     private Boolean upcastable;

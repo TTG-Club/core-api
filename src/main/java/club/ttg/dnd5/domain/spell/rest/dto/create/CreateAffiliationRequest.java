@@ -24,5 +24,5 @@ public class CreateAffiliationRequest {
     @Nullable
     private List<String> lineages;
     @Nullable
-    private List<String> traits;
+    private List<String> feats;
 }
