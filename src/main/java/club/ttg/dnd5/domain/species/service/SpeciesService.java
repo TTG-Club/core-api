@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,15 +53,15 @@ public class SpeciesService {
     }
 
     @Transactional(readOnly = true)
-    public List<Species> findAllById(Collection<String> urls)
+    public Set<Species> findAllById(Collection<String> urls)
     {
         if (urls == null || urls.isEmpty())
         {
-            return List.of();
+            return Set.of();
         }
         return urls.stream()
                 .map(speciesRepository::getReferenceById)
-                .toList();
+                .collect(Collectors.toSet());
     }
 
     public List<SpeciesShortResponse> search(SpeciesQueryRequest request) {

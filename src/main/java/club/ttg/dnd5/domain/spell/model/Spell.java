@@ -17,6 +17,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -59,16 +60,16 @@ public class Spell extends NamedEntity {
     private Long sourcePage;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<Species> speciesAffiliation;
+    private Set<Species> speciesAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<Species> lineagesAffiliation;
+    private Set<Species> lineagesAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<CharacterClass> classAffiliation;
+    private Set<CharacterClass> classAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<CharacterClass> subclassAffiliation;
+    private Set<CharacterClass> subclassAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -76,7 +77,7 @@ public class Spell extends NamedEntity {
             joinColumns = @JoinColumn(name = "spell_id"),
             inverseJoinColumns = @JoinColumn(name = "feat_id")
     )
-    private List<Feat> featAffiliation;
+    private Set<Feat> featAffiliation;
 
     private Boolean upcastable;
 

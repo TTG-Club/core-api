@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
@@ -28,4 +29,6 @@ public interface FeatService {
     Collection<FeatSelectResponse> getFeatsSelect(final String searchLine, final Set<FeatCategory> categories);
 
     Collection<FeatShortResponse> search(club.ttg.dnd5.domain.feat.rest.dto.FeatQueryRequest request);
+
+    Set<Feat> findAllById(Set<String> strings);
 }
