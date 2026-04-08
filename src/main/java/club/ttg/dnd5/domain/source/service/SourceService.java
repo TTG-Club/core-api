@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.source.service;
 
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.repository.SourceRepository;
+import club.ttg.dnd5.domain.source.rest.dto.PublisherDto;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
@@ -41,8 +42,12 @@ public class SourceService {
         }
         return sourceRepository.findAll()
                 .stream()
-                .sorted(Comparator.comparing(s -> s.getPublisher().getDate()))
-                .map(sourceMapper::toShort)
+                .sorted(Comparator.comparing(
+                        (Source s) -> Optional.ofNullable(s.getPublisher())
+                                .map(PublisherDto::getDate)
+                                .orElse(null),
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ))                .map(sourceMapper::toShort)
                 .toList();
 
     }
