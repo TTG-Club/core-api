@@ -9,27 +9,29 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, UUID> {
-    @Query("""
-        SELECT count(n) \
-        FROM Notification n
-        where n.disabled = false
-          AND (n.after is null or n.after <= :now)
-          AND (n.before is null or n.before >= :now)
-          AND n.view > 0
-        """)
-    long countEligible(@Param("now") LocalDateTime now);
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+  @Query("""
+      SELECT count(n) \
+      FROM Notification n
+      where n.disabled = false
+        AND n.persona.disabled = false
+        AND (n.after is null or n.after <= :now)
+        AND (n.before is null or n.before >= :now)
+        AND (n.view is null or n.view > 0)
+      """)
+  long countEligible(@Param("now") LocalDateTime now);
 
-    @Query("""
-        SELECT n
-        FROM Notification n
-        WHERE n.disabled = false
-          AND (n.after is null or n.after <= :now)
-          AND (n.before is null or n.before >= :now)
-          AND n.view > 0
-        """)
-    Page<Notification> findEligible(@Param("now") LocalDateTime now, Pageable pageable);
+  @Query("""
+      SELECT n
+      FROM Notification n
+      WHERE n.disabled = false
+        AND n.persona.disabled = false
+        AND (n.after is null or n.after <= :now)
+        AND (n.before is null or n.before >= :now)
+        AND (n.view is null or n.view > 0)
+      ORDER BY n.id
+      """)
+  Page<Notification> findEligible(@Param("now") LocalDateTime now, Pageable pageable);
 }

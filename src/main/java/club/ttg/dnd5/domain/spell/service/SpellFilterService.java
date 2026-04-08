@@ -119,9 +119,12 @@ public class SpellFilterService {
                                                                 .build())
                                                 .toList())
                                 .build());
-
+                var sources = sourceSavedFilterService.getSavedSources();
                 // Классы
-                List<CharacterClass> magicClasses = classService.findAllMagicClasses();
+                List<CharacterClass> magicClasses = classService.findAllMagicClasses()
+                        .stream()
+                        .filter(c -> sources.contains(c.getSource().getAcronym()))
+                        .toList();
                 groups.add(FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(SpellQueryRequest.class, "className"))
                                 .name("Классы")
@@ -138,7 +141,10 @@ public class SpellFilterService {
                                 .build());
 
                 // Подклассы
-                List<CharacterClass> magicSubclasses = classService.findAllMagicSubclasses();
+                List<CharacterClass> magicSubclasses = classService.findAllMagicSubclasses()
+                        .stream()
+                        .filter(c -> sources.contains(c.getSource().getAcronym()))
+                        .toList();
                 groups.add(FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(SpellQueryRequest.class, "subclassName"))
                                 .name("Подклассы")

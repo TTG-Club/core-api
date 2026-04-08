@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.source.service;
 
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.repository.SourceRepository;
+import club.ttg.dnd5.domain.source.rest.dto.PublisherDto;
 import club.ttg.dnd5.domain.source.rest.dto.SourceDetailResponse;
 import club.ttg.dnd5.domain.source.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.source.rest.dto.SourceShortResponse;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +42,12 @@ public class SourceService {
         }
         return sourceRepository.findAll()
                 .stream()
-                .map(sourceMapper::toShort)
+                .sorted(Comparator.comparing(
+                        (Source s) -> Optional.ofNullable(s.getPublisher())
+                                .map(PublisherDto::getDate)
+                                .orElse(null),
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ))                .map(sourceMapper::toShort)
                 .toList();
 
     }

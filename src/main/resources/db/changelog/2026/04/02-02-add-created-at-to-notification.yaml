@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-04-02-02-add-created-at-to-notification
+      author: antigravity
+      changes:
+        - addColumn:
+            tableName: notification
+            columns:
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: notification
+            columnName: created_at

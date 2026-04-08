@@ -783,4 +783,22 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getSourceTypes() {
         return dictionariesService.getSourceTypes();
     }
+
+    @Operation(summary = "Типы нотификаций")
+    @GetMapping("/notification/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Фраза", "value": "PHRASE" },
+                              { "label": "Новость", "value": "NEWS" },
+                              { "label": "Реклама", "value": "ADVERTISING" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getNotificationTypes() {
+        return dictionariesService.getNotificationTypes();
+    }
 }

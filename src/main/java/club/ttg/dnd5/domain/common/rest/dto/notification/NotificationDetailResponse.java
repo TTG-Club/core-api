@@ -4,16 +4,21 @@ import club.ttg.dnd5.domain.common.model.notification.NotificationType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
-public class NotificationRequest {
-    private String id;
+public class NotificationDetailResponse {
+    private Long id;
     private NotificationType type;
+    private String typeName;
     private String personaId;
     private String text;
-    private String before;
-    private String after;
-    private boolean disabled;
     private Long view;
+    private LocalDateTime after;
+    private LocalDateTime before;
+    private boolean disabled;
+    private String username;
+    private LocalDateTime createdAt;
 }
 
