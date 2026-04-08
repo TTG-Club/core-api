@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,11 +16,13 @@ import java.util.List;
 @Builder
 public class CreateAffiliationRequest {
     @Nullable
-    private List<String> classes;
+    private Set<String> classes;
     @Nullable
-    private List<String> subclasses;
+    private Set<String> subclasses;
     @Nullable
-    private List<String> species;
+    private Set<String> species;
     @Nullable
-    private List<String> lineages;
+    private Set<String> lineages;
+    @Nullable
+    private Set<String> feats;
 }

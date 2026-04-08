@@ -20,6 +20,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -116,5 +117,10 @@ public class FeatServiceImpl implements FeatService {
                 .stream()
                 .map(featMapper::toShort)
                 .toList();
+    }
+
+    @Override
+    public Set<Feat> findAllById(final Set<String> urls) {
+        return new LinkedHashSet<>(featRepository.findAllById(urls));
     }
 }

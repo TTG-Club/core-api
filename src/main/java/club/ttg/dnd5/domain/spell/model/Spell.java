@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -16,6 +17,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -58,16 +60,24 @@ public class Spell extends NamedEntity {
     private Long sourcePage;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<Species> speciesAffiliation;
+    private Set<Species> speciesAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<Species> lineagesAffiliation;
+    private Set<Species> lineagesAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<CharacterClass> classAffiliation;
+    private Set<CharacterClass> classAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<CharacterClass> subclassAffiliation;
+    private Set<CharacterClass> subclassAffiliation;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_feat_affiliation",
+            joinColumns = @JoinColumn(name = "spell_id"),
+            inverseJoinColumns = @JoinColumn(name = "feat_id")
+    )
+    private Set<Feat> featAffiliation;
 
     private Boolean upcastable;
 

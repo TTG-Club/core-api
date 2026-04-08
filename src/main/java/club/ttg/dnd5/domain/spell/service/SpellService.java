@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.spell.service;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.service.FeatService;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -28,6 +30,7 @@ import org.springframework.util.StringUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +39,7 @@ public class SpellService
 {
     private final ClassService classService;
     private final SpeciesService speciesService;
+    private final FeatService featService;
     private final SourceService sourceService;
     private final SpellRepository spellRepository;
     private final SpellMapper spellMapper;
@@ -52,9 +56,6 @@ public class SpellService
         return true;
     }
 
-    /**
-     * Поиск заклинаний через новую систему фильтрации v2.
-     */
     public List<SpellShortResponse> search(final SpellQueryRequest request)
     {
         var classUrls = request.getClassName() != null
@@ -77,22 +78,42 @@ public class SpellService
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public SpellDetailedResponse findDetailedByUrl(String url)
     {
-        Spell spell = getByUrl(url);
+        Spell spell = getDetailedByUrl(url);
         SpellDetailedResponse response = spellMapper.toDetail(spell);
         filterAffiliationsBySavedSources(response);
         return response;
     }
 
+    @Transactional(readOnly = true)
     public SpellRequest findFormByUrl(final String url)
     {
-        return spellMapper.toRequest(getByUrl(url));
+        return spellMapper.toRequest(getFormByUrl(url));
     }
 
     public Spell getByUrl(String url)
     {
         return spellRepository.findById(url)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Заклинание с url %s не существует", url)
+                ));
+    }
+
+    @Transactional(readOnly = true)
+    public Spell getDetailedByUrl(String url)
+    {
+        return spellRepository.findDetailedByUrl(url)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Заклинание с url %s не существует", url)
+                ));
+    }
+
+    @Transactional(readOnly = true)
+    public Spell getFormByUrl(String url)
+    {
+        return spellRepository.findFormByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Заклинание с url %s не существует", url)
                 ));
@@ -112,63 +133,73 @@ public class SpellService
             throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
         }
 
-        List<CharacterClass> classes = getClasses(request);
-        List<CharacterClass> subclasses = getSubclasses(request);
-        List<Species> species = getSpecieses(request);
-        List<Species> lineages = getLineages(request);
+        Set<CharacterClass> classes = getClasses(request);
+        Set<CharacterClass> subclasses = getSubclasses(request);
+        Set<Species> species = getSpecieses(request);
+        Set<Species> lineages = getLineages(request);
+        Set<Feat> feats = getFeats(request);
 
         Source source = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
                 .map(sourceService::findByUrl)
                 .orElse(null);
 
-        Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages);
+        Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
 
         return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
     }
 
-    private List<CharacterClass> getClasses(SpellRequest request)
+    private Set<CharacterClass> getClasses(SpellRequest request)
     {
         return Optional.ofNullable(request.getAffiliations())
                 .map(CreateAffiliationRequest::getClasses)
                 .map(classService::findAllById)
-                .orElseGet(Collections::emptyList);
+                .orElseGet(Collections::emptySet);
     }
 
-    private List<CharacterClass> getSubclasses(SpellRequest request)
+    private Set<CharacterClass> getSubclasses(SpellRequest request)
     {
         return Optional.ofNullable(request.getAffiliations())
                 .map(CreateAffiliationRequest::getSubclasses)
                 .map(classService::findAllById)
-                .orElseGet(Collections::emptyList);
+                .orElseGet(Collections::emptySet);
     }
 
-    private List<Species> getSpecieses(SpellRequest request)
+    private Set<Species> getSpecieses(SpellRequest request)
     {
         return Optional.ofNullable(request.getAffiliations())
                 .map(CreateAffiliationRequest::getSpecies)
                 .map(speciesService::findAllById)
-                .orElseGet(Collections::emptyList);
+                .orElseGet(Collections::emptySet);
     }
 
-    private List<Species> getLineages(SpellRequest request)
+    private Set<Species> getLineages(SpellRequest request)
     {
         return Optional.ofNullable(request.getAffiliations())
                 .map(CreateAffiliationRequest::getLineages)
                 .map(speciesService::findAllById)
-                .orElseGet(Collections::emptyList);
+                .orElseGet(Collections::emptySet);
+    }
+
+    private Set<Feat> getFeats(SpellRequest request)
+    {
+        return Optional.ofNullable(request.getAffiliations())
+                .map(CreateAffiliationRequest::getFeats)
+                .map(featService::findAllById)
+                .orElseGet(Collections::emptySet);
     }
 
     @Transactional
     public String update(String oldUrl, @Valid SpellRequest request)
     {
-        Spell existingSpell = getByUrl(oldUrl);
+        Spell existingSpell = getDetailedByUrl(oldUrl);
 
-        List<Species> species = getSpecieses(request);
-        List<Species> lineages = getLineages(request);
-        List<CharacterClass> classes = getClasses(request);
-        List<CharacterClass> subclasses = getSubclasses(request);
+        Set<Species> species = getSpecieses(request);
+        Set<Species> lineages = getLineages(request);
+        Set<CharacterClass> classes = getClasses(request);
+        Set<CharacterClass> subclasses = getSubclasses(request);
+        Set<Feat> feats = getFeats(request);
 
         Source source = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
@@ -201,6 +232,11 @@ public class SpellService
             {
                 existingSpell.setSubclassAffiliation(subclasses);
             }
+
+            if (affiliations.getFeats() != null)
+            {
+                existingSpell.setFeatAffiliation(feats);
+            }
         }
 
         existingSpell.setUpcastable(existingSpell.getLevel() > 0 && StringUtils.hasText(existingSpell.getUpper()));
@@ -219,13 +255,14 @@ public class SpellService
     public SpellDetailedResponse preview(final SpellRequest request)
     {
         var book = sourceService.findByUrl(request.getSource().getUrl());
-        List<CharacterClass> classes = getClasses(request);
-        List<CharacterClass> subclasses = getSubclasses(request);
-        List<Species> species = getSpecieses(request);
-        List<Species> lineages = getLineages(request);
+        Set<CharacterClass> classes = getClasses(request);
+        Set<CharacterClass> subclasses = getSubclasses(request);
+        Set<Species> species = getSpecieses(request);
+        Set<Species> lineages = getLineages(request);
+        Set<Feat> feats = getFeats(request);
 
         return spellMapper.toDetail(
-                spellMapper.toEntity(request, book, classes, subclasses, species, lineages)
+                spellMapper.toEntity(request, book, classes, subclasses, species, lineages, feats)
         );
     }
 
@@ -273,6 +310,16 @@ public class SpellService
         {
             affiliation.setLineages(
                     affiliation.getLineages().stream()
+                            .filter(item -> item.getSource() != null)
+                            .filter(item -> sources.contains(item.getSource()))
+                            .toList()
+            );
+        }
+
+        if (affiliation.getFeats() != null)
+        {
+            affiliation.setFeats(
+                    affiliation.getFeats().stream()
                             .filter(item -> item.getSource() != null)
                             .filter(item -> sources.contains(item.getSource()))
                             .toList()
