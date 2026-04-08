@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationDto;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
+import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.AfterMapping;
@@ -53,6 +54,7 @@ public interface SpellMapper
     );
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "url", ignore = true)
     @Mapping(target = "name", source = "request.name.name")
     @Mapping(target = "english", source = "request.name.english")
     @Mapping(target = "alternative", source = "request.name.alternative", qualifiedByName = "joinAlternative")
@@ -103,6 +105,7 @@ public interface SpellMapper
         }
 
         List<SpellAffiliationDto> result = new ArrayList<>(entities.size());
+
         for (NamedEntity entity : entities)
         {
             SpellAffiliationDto dto = toAffiliationDto(entity);
@@ -111,6 +114,7 @@ public interface SpellMapper
                 result.add(dto);
             }
         }
+
         return result;
     }
 
@@ -163,14 +167,17 @@ public interface SpellMapper
         }
 
         StringBuilder builder = new StringBuilder();
+
         for (int i = 0; i < values.size(); i++)
         {
             if (i > 0)
             {
                 builder.append(" или ");
             }
+
             builder.append(values.get(i));
         }
+
         return builder.toString();
     }
 
@@ -204,8 +211,44 @@ public interface SpellMapper
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
     @Mapping(source = "school.school", target = "school")
-    @Mapping(source = ".", target = "affiliations")
+    @Mapping(target = "affiliations", ignore = true)
     SpellRequest toRequest(Spell spell);
+
+    @AfterMapping
+    default void fillRequestFields(Spell spell, @MappingTarget SpellRequest target)
+    {
+        target.setAffiliations(buildCreateAffiliations(spell));
+    }
+
+    default CreateAffiliationRequest buildCreateAffiliations(Spell spell)
+    {
+        return CreateAffiliationRequest.builder()
+                .species(extractUrls(spell.getSpeciesAffiliation()))
+                .lineages(extractUrls(spell.getLineagesAffiliation()))
+                .classes(extractUrls(spell.getClassAffiliation()))
+                .subclasses(extractUrls(spell.getSubclassAffiliation()))
+                .build();
+    }
+
+    default List<String> extractUrls(List<? extends NamedEntity> entities)
+    {
+        if (entities == null || entities.isEmpty())
+        {
+            return List.of();
+        }
+
+        List<String> result = new ArrayList<>(entities.size());
+
+        for (NamedEntity entity : entities)
+        {
+            if (entity != null && StringUtils.hasText(entity.getUrl()))
+            {
+                result.add(entity.getUrl());
+            }
+        }
+
+        return result;
+    }
 
     @Retention(RetentionPolicy.SOURCE)
     @BaseMapping.BaseEntityNameMapping
