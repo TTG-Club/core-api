@@ -16,4 +16,5 @@ public class SourceRequest extends BaseRequest {
     private PublisherDto publisher;
     @Schema(description = "Перевод")
     private TranslationDto translation;
+    private String image;
 }
