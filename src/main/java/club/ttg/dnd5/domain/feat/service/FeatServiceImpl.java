@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -105,7 +106,7 @@ public class FeatServiceImpl implements FeatService {
                         SwitchLayoutUtils.switchLayout(searchLine == null ? "" : searchLine),
                         Sort.by("name"))
                 .stream()
-                .filter(f -> categories.contains(f.getCategory()))
+                .filter(f -> CollectionUtils.isEmpty(categories) || categories.contains(f.getCategory()))
                 .map(featMapper::toSelect)
                 .toList();
     }
