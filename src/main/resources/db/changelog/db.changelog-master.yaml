@@ -177,3 +177,5 @@ databaseChangeLog:
       file: db/changelog/2026/04/02-01-add-created-at-to-persona.yaml
   - include:
       file: db/changelog/2026/04/02-02-add-created-at-to-notification.yaml
+  - include:
+      file: db/changelog/2026/04/09-01-add-feat-affilation.yaml

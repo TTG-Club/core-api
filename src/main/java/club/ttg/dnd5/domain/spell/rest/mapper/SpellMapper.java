@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.spell.rest.mapper;
 
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
@@ -9,13 +10,13 @@ import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
-import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationDto;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
@@ -31,8 +32,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -47,10 +50,11 @@ public interface SpellMapper
     Spell toEntity(
             SpellRequest request,
             Source source,
-            List<CharacterClass> classes,
-            List<CharacterClass> subclasses,
-            List<Species> species,
-            List<Species> lineages
+            Set<CharacterClass> classes,
+            Set<CharacterClass> subclasses,
+            Set<Species> species,
+            Set<Species> lineages,
+            Set<Feat> feats
     );
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -94,10 +98,11 @@ public interface SpellMapper
         response.setSubclasses(mapAffiliations(spell.getSubclassAffiliation()));
         response.setSpecies(mapAffiliations(spell.getSpeciesAffiliation()));
         response.setLineages(mapAffiliations(spell.getLineagesAffiliation()));
+        response.setFeats(mapAffiliations(spell.getFeatAffiliation()));
         return response;
     }
 
-    default List<SpellAffiliationDto> mapAffiliations(List<? extends NamedEntity> entities)
+    default List<SpellAffiliationDto> mapAffiliations(Set<? extends NamedEntity> entities)
     {
         if (entities == null || entities.isEmpty())
         {
@@ -131,18 +136,34 @@ public interface SpellMapper
         String name = entity.getName();
         String sourceAcronym = null;
 
-        if (entity instanceof CharacterClass characterClass)
+        switch (entity)
         {
-            if (characterClass.getSource() != null && StringUtils.hasText(characterClass.getSource().getAcronym()))
+            case CharacterClass characterClass ->
             {
-                sourceAcronym = characterClass.getSource().getAcronym();
+                if (characterClass.getSource() != null
+                        && StringUtils.hasText(characterClass.getSource().getAcronym()))
+                {
+                    sourceAcronym = characterClass.getSource().getAcronym();
+                }
             }
-        }
-        else if (entity instanceof Species species)
-        {
-            if (species.getSource() != null && StringUtils.hasText(species.getSource().getAcronym()))
+            case Species species ->
             {
-                sourceAcronym = species.getSource().getAcronym();
+                if (species.getSource() != null
+                        && StringUtils.hasText(species.getSource().getAcronym()))
+                {
+                    sourceAcronym = species.getSource().getAcronym();
+                }
+            }
+            case Feat feat ->
+            {
+                if (feat.getSource() != null
+                        && StringUtils.hasText(feat.getSource().getAcronym()))
+                {
+                    sourceAcronym = feat.getSource().getAcronym();
+                }
+            }
+            default ->
+            {
             }
         }
 
@@ -227,17 +248,18 @@ public interface SpellMapper
                 .lineages(extractUrls(spell.getLineagesAffiliation()))
                 .classes(extractUrls(spell.getClassAffiliation()))
                 .subclasses(extractUrls(spell.getSubclassAffiliation()))
+                .feats(extractUrls(spell.getFeatAffiliation()))
                 .build();
     }
 
-    default List<String> extractUrls(List<? extends NamedEntity> entities)
+    default Set<String> extractUrls(Set<? extends NamedEntity> entities)
     {
         if (entities == null || entities.isEmpty())
         {
-            return List.of();
+            return Set.of();
         }
 
-        List<String> result = new ArrayList<>(entities.size());
+        Set<String> result = new HashSet<>(entities.size());
 
         for (NamedEntity entity : entities)
         {
@@ -266,6 +288,7 @@ public interface SpellMapper
     @Mapping(target = "lineagesAffiliation", source = "lineages")
     @Mapping(target = "classAffiliation", source = "classes")
     @Mapping(target = "subclassAffiliation", source = "subclasses")
+    @Mapping(target = "featAffiliation", source = "feats")
     @interface ToEntityMapping
     {
     }
