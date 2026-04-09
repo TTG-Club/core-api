@@ -29,6 +29,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -231,15 +232,15 @@ public class ClassService {
     }
 
     @Transactional(readOnly = true)
-    public List<CharacterClass> findAllById(List<String> urls)
+    public Set<CharacterClass> findAllById(Set<String> urls)
     {
         if (urls == null || urls.isEmpty())
         {
-            return List.of();
+            return Set.of();
         }
         return urls.stream()
                 .map(classRepository::getReferenceById)
-                .toList();
+                .collect(Collectors.toSet());
     }
 
     @Transactional(readOnly = true)
