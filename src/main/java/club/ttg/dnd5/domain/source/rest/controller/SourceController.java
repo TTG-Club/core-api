@@ -56,12 +56,14 @@ public class SourceController {
         return sourceService.search(searchLine);
     }
 
+    @Secured("ADMIN")
     @PostMapping
     @Operation(summary = "Добавить источник", description = "Добавление нового источника")
     public String create(@RequestBody SourceRequest request) {
         return sourceService.save(request);
     }
 
+    @Secured("ADMIN")
     @PutMapping("/{url}")
     @Operation(summary = "Обновить источник", description = "Обновление источника")
     public String update(@PathVariable String url, @RequestBody SourceRequest request) {

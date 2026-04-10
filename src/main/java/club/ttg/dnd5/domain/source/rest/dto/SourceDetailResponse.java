@@ -12,7 +12,6 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SourceDetailResponse extends BaseResponse {
-
     private String type;
     private String image;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)

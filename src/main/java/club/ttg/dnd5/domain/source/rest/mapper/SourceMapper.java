@@ -33,12 +33,15 @@ public interface SourceMapper {
     @Mapping(source = "english", target = "source.name.english")
     @Mapping(source = "acronym", target = "source.name.label")
     @Mapping(source = "type.name", target = "type")
+    @Mapping(target = "imageUrl", source = "image")
     SourceDetailResponse toDetail(Source source);
 
     @BaseMapping.BaseEntityNameMapping
+    @Mapping(source = "imageUrl", target = "image")
     Source toEntity(SourceRequest request);
 
     @BaseMapping.BaseEntityNameMapping
+    @Mapping(source = "imageUrl", target = "image")
     void toEntity(SourceRequest request, @MappingTarget Source source);
 
     @BaseMapping.BaseShortResponseNameMapping
