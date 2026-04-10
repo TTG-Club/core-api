@@ -41,6 +41,7 @@ public interface SourceMapper {
     Source toEntity(SourceRequest request);
 
     @BaseMapping.BaseEntityNameMapping
+    @Mapping(source = "imageUrl", target = "image")
     void toEntity(SourceRequest request, @MappingTarget Source source);
 
     @BaseMapping.BaseShortResponseNameMapping
