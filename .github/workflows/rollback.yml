@@ -61,5 +61,5 @@ jobs:
         with:
           api_token: ${{ secrets.DOKPLOY_API_KEY }}
           application_id: ${{ env.APP_ID }}
-          dokploy_url: ${{ vars.DOKPLOY_URL }}
+          dokploy_url: ${{ secrets.DOKPLOY_URL }}
           service_type: application
