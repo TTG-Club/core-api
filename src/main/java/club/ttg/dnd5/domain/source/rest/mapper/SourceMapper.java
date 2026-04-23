@@ -46,6 +46,7 @@ public interface SourceMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = "acronym", target = "name.label")
+    @Mapping(source = "image", target = "imageUrl")
     SourceRequest toRequest(Source source);
 
 }

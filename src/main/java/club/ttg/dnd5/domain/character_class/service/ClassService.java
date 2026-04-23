@@ -195,13 +195,16 @@ public class ClassService {
         if (characterClass.getEquipment() == null) {
             characterClass.setEquipment(characterClass.getParent().getEquipment());
         }
-        if (characterClass.getArmorProficiency() == null) {
+        if (characterClass.getArmorProficiency() == null
+                || CollectionUtils.isEmpty(characterClass.getArmorProficiency().getCategory())) {
             characterClass.setArmorProficiency(characterClass.getParent().getArmorProficiency());
         }
-        if (characterClass.getWeaponProficiency() == null) {
+        if (characterClass.getWeaponProficiency() == null
+                || CollectionUtils.isEmpty(characterClass.getWeaponProficiency().getCategory())) {
             characterClass.setWeaponProficiency(characterClass.getParent().getWeaponProficiency());
         }
-        if (characterClass.getSkillProficiency() == null) {
+        if (characterClass.getSkillProficiency() == null
+                || CollectionUtils.isEmpty(characterClass.getSkillProficiency().getSkills())) {
             characterClass.setSkillProficiency(characterClass.getParent().getSkillProficiency());
         }
         if (characterClass.getToolProficiency() == null) {
