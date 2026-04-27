@@ -17,10 +17,12 @@ import club.ttg.dnd5.domain.common.rest.dto.MulticlassRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -31,8 +33,21 @@ public class MulticlassService {
     private final ClassFeatureMapper classFeatureMapper;
 
     public CharacterClass findByUrl(String url) {
+        if (!StringUtils.hasText(url)) {
+            throw new EntityNotFoundException("Class url must not be empty");
+        }
         return classRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Класс с url %s не существует", url)));
+    }
+
+    private Optional<CharacterClass> findSubclass(String url, Integer level) {
+        if (level == null || level < 3) {
+            return Optional.empty();
+        }
+        if (!StringUtils.hasText(url)) {
+            return Optional.empty();
+        }
+        return Optional.of(findByUrl(url));
     }
 
     public MulticlassResponse getMulticlass(final MulticlassRequest request) {
@@ -75,20 +90,24 @@ public class MulticlassService {
                 features.add(feature);
             }
         }
-        var mainSubClass = findByUrl(request.getSubclass());
+        var mainSubClass = findSubclass(request.getSubclass(), request.getLevel());
 
         List<MulticlassInfo> multiclassInfo = new ArrayList<>();
         multiclassInfo.add(MulticlassInfo.builder()
                 .hitDice("1" + mainClass.getHitDice().getName() + " за каждый уровень")
                 .name(mainClass.getName())
-                .subclass(mainSubClass.getName())
+                .subclass(mainSubClass.map(CharacterClass::getName).orElse(null))
                 .level(request.getLevel())
                 .build());
 
         if (mainClass.getCasterType() == CasterType.NONE) {
-            spellcastLevel += calculateSpellCastingLevel(mainSubClass.getCasterType(), request.getLevel());
+            spellcastLevel += mainSubClass
+                    .map(subclass -> calculateSpellCastingLevel(subclass.getCasterType(), request.getLevel()))
+                    .orElse(0);
         }
-        for (ClassFeature subclassFeature : mainSubClass.getFeatures()) {
+        for (ClassFeature subclassFeature : mainSubClass
+                .map(CharacterClass::getFeatures)
+                .orElseGet(List::of)) {
             if (subclassFeature.getLevel() <= request.getLevel()) {
                 if (subclassFeature.getName().equals("Использование заклинаний")) {
                     subclassFeature.setDescription(getSpellcastingMulticlass());
@@ -99,7 +118,7 @@ public class MulticlassService {
                     extraAttack++;
                 }
                 var feature = classFeatureMapper.toDto(subclassFeature, true);
-                feature.setAdditional(mainSubClass.getName());
+                feature.setAdditional(mainSubClass.map(CharacterClass::getName).orElse(null));
                 features.add(feature);
             }
         }
@@ -154,20 +173,22 @@ public class MulticlassService {
                     features.add(feature);
                 }
             }
-            var multiSubclass = findByUrl(multiclassRequest.getSubclass());
-            for (ClassFeature multiSubclassFeature : multiSubclass.getFeatures()) {
+            var multiSubclass = findSubclass(multiclassRequest.getSubclass(), multiclassRequest.getLevel());
+            for (ClassFeature multiSubclassFeature : multiSubclass
+                    .map(CharacterClass::getFeatures)
+                    .orElseGet(List::of)) {
                 if (multiSubclassFeature.getLevel() <= level) {
                     ClassFeature classFeature = filterMulticlassScalingFeature(multiSubclassFeature, level, charachterLevel);
                     classFeature.setLevel(multiSubclassFeature.getLevel() + charachterLevel);
                     var feature = classFeatureMapper.toDto(classFeature, true);
-                    feature.setAdditional(multiSubclass.getName());
+                    feature.setAdditional(multiSubclass.map(CharacterClass::getName).orElse(null));
                     features.add(feature);
                 }
             }
             multiclassInfo.add(MulticlassInfo.builder()
                     .hitDice("1" + multiClass.getHitDice().getName() + " за каждый уровень")
                     .name(multiClass.getName())
-                    .subclass(multiSubclass.getName())
+                    .subclass(multiSubclass.map(CharacterClass::getName).orElse(null))
                     .level(multiclassRequest.getLevel())
                     .build());
             names.add(multiClass.getName());
