@@ -6,14 +6,20 @@ import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
 import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
 import club.ttg.dnd5.domain.character_class.rest.dto.MulticlassResponse;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, componentModel = "spring")
 public interface MulticlassMapper
@@ -80,7 +86,43 @@ public interface MulticlassMapper
     @Named("weaponProficiencyToString")
     default String weaponProficiencyToString(WeaponProficiency proficiency)
     {
-        return proficiency == null ? "" : proficiency.toString();
+        if (proficiency == null)
+        {
+            return "";
+        }
+
+        return Stream.of(formatWeaponCategories(proficiency.getCategory()), proficiency.getCustom())
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining(", "));
+    }
+
+    private String formatWeaponCategories(Set<WeaponCategory> categories)
+    {
+        Set<WeaponCategory> safeCategories = categories == null ? Collections.emptySet() : categories;
+        boolean hasSimpleWeapons = safeCategories.contains(WeaponCategory.SIMPLE_MELEE)
+                && safeCategories.contains(WeaponCategory.SIMPLE_RANGED);
+        boolean hasMaterialWeapons = safeCategories.contains(WeaponCategory.MATERIAL_MELEE)
+                && safeCategories.contains(WeaponCategory.MATERIAL_RANGED);
+
+        List<String> names = new ArrayList<>();
+        if (hasSimpleWeapons)
+        {
+            names.add("Простое оружие");
+        }
+        if (hasMaterialWeapons)
+        {
+            names.add("Воинское оружие");
+        }
+
+        safeCategories.stream()
+                .filter(category -> !hasSimpleWeapons
+                        || category != WeaponCategory.SIMPLE_MELEE && category != WeaponCategory.SIMPLE_RANGED)
+                .filter(category -> !hasMaterialWeapons
+                        || category != WeaponCategory.MATERIAL_MELEE && category != WeaponCategory.MATERIAL_RANGED)
+                .map(WeaponCategory::getName)
+                .forEach(names::add);
+
+        return String.join(", ", names);
     }
 
     @Named("skillProficiencyToString")
