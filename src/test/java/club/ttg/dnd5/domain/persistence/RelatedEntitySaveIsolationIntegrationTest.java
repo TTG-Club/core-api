@@ -298,6 +298,7 @@ class RelatedEntitySaveIsolationIntegrationTest {
         NameRequest name = new NameRequest();
         name.setName(value + " name");
         name.setEnglish(value + " english");
+        name.setAlternative(List.of());
         return name;
     }
 
