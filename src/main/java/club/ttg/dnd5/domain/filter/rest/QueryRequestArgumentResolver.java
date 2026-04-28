@@ -70,7 +70,7 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
             catch (NumberFormatException ignored) { /* дефолт */ }
         }
 
-        String sizeVal = tokens.get("size");
+        String sizeVal = tokens.getOrDefault("pageSize", tokens.get("size"));
         if (sizeVal != null)
         {
             try { request.setPageSize(Integer.parseInt(sizeVal)); }
