@@ -2,12 +2,14 @@ package club.ttg.dnd5.domain.species.service;
 
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
+import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
+import club.ttg.dnd5.domain.species.rest.mapper.SpeciesFeatureMapper;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
@@ -33,23 +35,27 @@ public class SpeciesService {
     private final SourceService sourceService;
     private final SpeciesQueryDslSearchService speciesQueryDslSearchService;
     private final SpeciesMapper speciesMapper;
+    private final SpeciesFeatureMapper speciesFeatureMapper;
     private final SourceSavedFilterService sourceSavedFilterService;
 
     public boolean exists(String url) {
         return speciesRepository.existsById(url);
     }
 
+    @Transactional(readOnly = true)
     public SpeciesDetailResponse findById(String url) {
         var species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
+        var response = speciesMapper.toDetail(species);
+
         if (species.getParent() != null) {
-            if (species.getFeatures() != null) {
-                species.getFeatures().addAll(species.getParent().getFeatures());
-            } else {
-                species.setFeatures(species.getParent().getFeatures());
-            }
+            var features = new ArrayList<SpeciesFeature>();
+            Optional.ofNullable(species.getFeatures()).ifPresent(features::addAll);
+            Optional.ofNullable(species.getParent().getFeatures()).ifPresent(features::addAll);
+            response.setFeatures(speciesFeatureMapper.toResponses(features));
         }
-        return speciesMapper.toDetail(species);
+
+        return response;
     }
 
     @Transactional(readOnly = true)

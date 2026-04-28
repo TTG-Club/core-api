@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.user.model;
 
-import club.ttg.dnd5.domain.common.model.Timestamped;
 import club.ttg.dnd5.domain.user.model.party.UserParty;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -37,7 +36,7 @@ public class User implements UserDetails {
 	@Column(nullable = false)
 	private String password;
 
-	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_uuid"), inverseJoinColumns = @JoinColumn(name = "role_id"))
 	private List<Role> roles;
 

@@ -141,13 +141,13 @@ public class SpellService
 
         Source source = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
-                .map(sourceService::findByUrl)
+                .map(sourceService::findReferenceByUrl)
                 .orElse(null);
 
         Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
 
-        return spellMapper.toDetail(spellRepository.save(spell)).getUrl();
+        return spellRepository.save(spell).getUrl();
     }
 
     private Set<CharacterClass> getClasses(SpellRequest request)
@@ -203,7 +203,7 @@ public class SpellService
 
         Source source = Optional.ofNullable(request.getSource())
                 .map(SourceRequest::getUrl)
-                .map(sourceService::findByUrl)
+                .map(sourceService::findReferenceByUrl)
                 .orElse(null);
 
         spellMapper.updateEntity(existingSpell, request);

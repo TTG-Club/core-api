@@ -9,6 +9,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.mapstruct.ReportingPolicy;
@@ -29,6 +30,8 @@ public interface SpeciesFeatureMapper {
     FeatureRequest toRequest(SpeciesFeature request);
 
     List<FeatureRequest> toRequests(List<SpeciesFeature> speciesFeatures);
+
+    List<SpeciesFeatureResponse> toResponses(Collection<SpeciesFeature> speciesFeatures);
 
     @Named("generateUrl")
     default String generateUrl(String name) {
