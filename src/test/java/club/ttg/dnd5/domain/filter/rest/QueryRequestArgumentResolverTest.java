@@ -164,6 +164,25 @@ class QueryRequestArgumentResolverTest
         }
 
         @Test
+        @DisplayName("pageSize parses as page size")
+        void pageSizeAlias() throws Exception
+        {
+            SpellQueryRequest request = resolve("search=fire&page=2&pageSize=25&source=PHB,DMG");
+            assertEquals("fire", request.getSearch());
+            assertEquals(2, request.getPage());
+            assertEquals(25, request.getPageSize());
+            assertEquals(Set.of("PHB", "DMG"), request.getSource());
+        }
+
+        @Test
+        @DisplayName("pageSize takes precedence over size")
+        void pageSizeTakesPrecedenceOverSize() throws Exception
+        {
+            SpellQueryRequest request = resolve("size=20&pageSize=25");
+            assertEquals(25, request.getPageSize());
+        }
+
+        @Test
         @DisplayName("enum фильтр: school=EVOCATION,ABJURATION&school_mode=1")
         void enumFilter() throws Exception
         {
