@@ -1,11 +1,15 @@
 package club.ttg.dnd5.domain.character_class.service;
 
+import club.ttg.dnd5.domain.character_class.model.ArmorProficiency;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
+import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
+import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
+import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.MulticlassInfo;
@@ -21,6 +25,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -124,8 +129,13 @@ public class MulticlassService {
         }
         var spellMulticlass = mainClass.getCasterType() != CasterType.NONE;
         var names = new ArrayList<String>(request.getClasses().size());
+        multiclass.setArmorProficiency(copyArmorProficiency(mainClass.getArmorProficiency()));
+        multiclass.setWeaponProficiency(copyWeaponProficiency(mainClass.getWeaponProficiency()));
+        multiclass.setToolProficiency(mainClass.getToolProficiency());
+        multiclass.setSkillProficiency(copySkillProficiency(mainClass.getSkillProficiency()));
         for (var multiclassRequest :  request.getClasses()) {
             var multiClass = findByUrl(multiclassRequest.getUrl());
+            mergeMulticlassProficiency(multiclass, multiClass.getMulticlassProficiency());
             requirements.add(multiClass.getPrimaryCharacteristics()
                     .stream()
                     .map(ability -> ability.getName() + " 13")
@@ -202,19 +212,6 @@ public class MulticlassService {
         multiclass.setName(mainClass.getName() + " / " + String.join("/", names));
         multiclass.setHitDice(mainClass.getHitDice());
         multiclass.setSavingThrows(mainClass.getSavingThrows());
-        multiclass.setArmorProficiency(mainClass.getArmorProficiency());
-        if (mainClass.getMulticlassProficiency() != null) {
-            if (mainClass.getMulticlassProficiency().getArmor() != null) {
-                multiclass.getArmorProficiency().getCategory().addAll(multiclass.getArmorProficiency().getCategory());
-            }
-            if (mainClass.getMulticlassProficiency().getWeapon() != null) {
-                multiclass.getWeaponProficiency().getCategory().addAll(multiclass.getWeaponProficiency().getCategory());
-            }
-            if (mainClass.getMulticlassProficiency().getToolProficiency() != null) {
-                multiclass.setToolProficiency(mainClass.getToolProficiency() + ", "+ mainClass.getMulticlassProficiency().getToolProficiency());
-            }
-            multiclass.getSkillProficiency().setCount(mainClass.getSkillProficiency().getCount() + mainClass.getMulticlassProficiency().getSkills());
-        }
         multiclass.setPrimaryCharacteristics(mainClass.getPrimaryCharacteristics());
 
         multiclass.setTable(table);
@@ -227,6 +224,102 @@ public class MulticlassService {
         multiclassResponse.setMulticlass(multiclassInfo);
         multiclassResponse.setRequirements(String.join(", ", requirements));
         return multiclassResponse;
+    }
+
+    private void mergeMulticlassProficiency(CharacterClass multiclass, MulticlassProficiency proficiency) {
+        if (proficiency == null) {
+            return;
+        }
+        mergeArmorProficiency(multiclass, proficiency.getArmor());
+        mergeWeaponProficiency(multiclass, proficiency.getWeapon());
+        multiclass.setToolProficiency(appendText(multiclass.getToolProficiency(), proficiency.getToolProficiency()));
+        if (proficiency.getSkills() > 0) {
+            if (multiclass.getSkillProficiency() == null) {
+                multiclass.setSkillProficiency(new SkillProficiency(0, new ArrayList<>()));
+            }
+            multiclass.getSkillProficiency().setCount(multiclass.getSkillProficiency().getCount() + proficiency.getSkills());
+        }
+    }
+
+    private void mergeArmorProficiency(CharacterClass multiclass, ArmorProficiency proficiency) {
+        if (proficiency == null) {
+            return;
+        }
+        if (multiclass.getArmorProficiency() == null) {
+            multiclass.setArmorProficiency(new ArmorProficiency(new LinkedHashSet<>(), null));
+        }
+        if (multiclass.getArmorProficiency().getCategory() == null) {
+            multiclass.getArmorProficiency().setCategory(new LinkedHashSet<>());
+        }
+        if (proficiency.getCategory() != null) {
+            multiclass.getArmorProficiency().getCategory().addAll(proficiency.getCategory());
+        }
+        multiclass.getArmorProficiency().setCustom(appendText(
+                multiclass.getArmorProficiency().getCustom(),
+                proficiency.getCustom()
+        ));
+    }
+
+    private void mergeWeaponProficiency(CharacterClass multiclass, WeaponProficiency proficiency) {
+        if (proficiency == null) {
+            return;
+        }
+        if (multiclass.getWeaponProficiency() == null) {
+            multiclass.setWeaponProficiency(new WeaponProficiency(new LinkedHashSet<>(), null));
+        }
+        if (multiclass.getWeaponProficiency().getCategory() == null) {
+            multiclass.getWeaponProficiency().setCategory(new LinkedHashSet<>());
+        }
+        if (proficiency.getCategory() != null) {
+            multiclass.getWeaponProficiency().getCategory().addAll(proficiency.getCategory());
+        }
+        multiclass.getWeaponProficiency().setCustom(appendText(
+                multiclass.getWeaponProficiency().getCustom(),
+                proficiency.getCustom()
+        ));
+    }
+
+    private ArmorProficiency copyArmorProficiency(ArmorProficiency proficiency) {
+        if (proficiency == null) {
+            return null;
+        }
+        return new ArmorProficiency(
+                proficiency.getCategory() == null ? null : new LinkedHashSet<>(proficiency.getCategory()),
+                proficiency.getCustom()
+        );
+    }
+
+    private WeaponProficiency copyWeaponProficiency(WeaponProficiency proficiency) {
+        if (proficiency == null) {
+            return null;
+        }
+        return new WeaponProficiency(
+                proficiency.getCategory() == null ? null : new LinkedHashSet<>(proficiency.getCategory()),
+                proficiency.getCustom()
+        );
+    }
+
+    private SkillProficiency copySkillProficiency(SkillProficiency proficiency) {
+        if (proficiency == null) {
+            return null;
+        }
+        return new SkillProficiency(
+                proficiency.getCount(),
+                proficiency.getSkills() == null ? new ArrayList<>() : new ArrayList<>(proficiency.getSkills())
+        );
+    }
+
+    private String appendText(String current, String addition) {
+        if (!StringUtils.hasText(addition)) {
+            return current;
+        }
+        if (!StringUtils.hasText(current)) {
+            return addition;
+        }
+        if (List.of(current.split(", ")).contains(addition)) {
+            return current;
+        }
+        return current + ", " + addition;
     }
 
     private String getExtraAttackName(final int extraAttack)
