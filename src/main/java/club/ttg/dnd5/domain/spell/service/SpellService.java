@@ -18,6 +18,7 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
+import club.ttg.dnd5.dto.base.PageResponse;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -56,7 +57,7 @@ public class SpellService
         return true;
     }
 
-    public List<SpellShortResponse> search(final SpellQueryRequest request)
+    public PageResponse<SpellShortResponse> search(final SpellQueryRequest request)
     {
         var classUrls = request.getClassName() != null
                 && request.getClassName().isActive()
@@ -72,10 +73,22 @@ public class SpellService
 
         var predicate = SpellPredicateBuilder.build(request, classUrls, subclassUrls);
 
-        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
-                .stream()
+        PageResponse<Spell> page = spellQueryDslSearchService.searchPage(
+                predicate,
+                request.getPage(),
+                request.getPageSize()
+        );
+        List<SpellShortResponse> items = page.items().stream()
                 .map(spellMapper::toShort)
                 .collect(Collectors.toList());
+
+        return new PageResponse<>(
+                items,
+                page.page(),
+                page.pageSize(),
+                page.total(),
+                page.hasNext()
+        );
     }
 
     @Transactional(readOnly = true)

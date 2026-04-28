@@ -17,7 +17,8 @@ public class SpellQueryDslSearchService extends AbstractQueryDslSearchService<Sp
     private static final QSpell SPELL = QSpell.spell;
     private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{
             SPELL.level.asc(),
-            SPELL.name.asc()
+            SPELL.name.asc(),
+            SPELL.url.asc()
     };
 
     public SpellQueryDslSearchService(EntityManager entityManager)

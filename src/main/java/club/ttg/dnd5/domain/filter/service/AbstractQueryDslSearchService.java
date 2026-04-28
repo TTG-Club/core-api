@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.filter.service;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
+import club.ttg.dnd5.dto.base.PageResponse;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import com.querydsl.core.BooleanBuilder;
@@ -11,6 +12,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.BooleanTemplate;
 import com.querydsl.core.types.dsl.EntityPathBase;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.sql.JPASQLQuery;
 import com.querydsl.sql.PostgreSQLTemplates;
 import com.querydsl.sql.SQLTemplates;
@@ -56,6 +58,23 @@ public abstract class AbstractQueryDslSearchService<E, Q extends EntityPathBase<
                 .offset((long) page * size)
                 .limit(size)
                 .fetch();
+    }
+
+    public PageResponse<E> searchPage(final BooleanBuilder predicate, final int page, final int size)
+    {
+        List<E> items = search(predicate, page, size);
+        return PageResponse.of(items, page, size, count(predicate));
+    }
+
+    public long count(final BooleanBuilder predicate)
+    {
+        JPASQLQuery<Long> query = new JPASQLQuery<>(entityManager, dialect);
+        Long total = query.select(Wildcard.count)
+                .from(entityPath)
+                .where(predicate)
+                .fetchOne();
+
+        return total != null ? total : 0L;
     }
 
     /**

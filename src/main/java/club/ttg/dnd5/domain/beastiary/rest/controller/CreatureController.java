@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.service.CreatureFilterService;
 import club.ttg.dnd5.domain.beastiary.service.CreatureService;
+import club.ttg.dnd5.dto.base.PageResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Set;
 
 @Tag(name = "Бестиарий", description = "REST API для существ из бестиария")
@@ -43,7 +43,7 @@ public class CreatureController {
 
     @Operation(summary = "Поиск существ", description = "Поиск существ с GET-параметрами фильтрации и пагинацией")
     @GetMapping("/search")
-    public List<CreatureShortResponse> search(@ParameterObject CreatureQueryRequest request)
+    public PageResponse<CreatureShortResponse> search(@ParameterObject CreatureQueryRequest request)
     {
         return creatureService.search(request);
     }

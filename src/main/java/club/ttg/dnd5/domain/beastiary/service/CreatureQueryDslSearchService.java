@@ -17,7 +17,8 @@ public class CreatureQueryDslSearchService extends AbstractQueryDslSearchService
     private static final QCreature CREATURE = QCreature.creature;
     private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{
             CREATURE.experience.asc(),
-            CREATURE.name.asc()
+            CREATURE.name.asc(),
+            CREATURE.url.asc()
     };
 
     public CreatureQueryDslSearchService(EntityManager entityManager)

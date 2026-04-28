@@ -145,7 +145,7 @@ class QueryRequestArgumentResolverTest
             SpellQueryRequest request = resolve(null);
             assertNull(request.getSearch());
             assertEquals(0, request.getPage());
-            assertEquals(10000, request.getPageSize());
+            assertEquals(100, request.getPageSize());
             assertTrue(request.getSource().isEmpty());
             assertNull(request.getSchool());
             assertNull(request.getLevel());
@@ -161,6 +161,15 @@ class QueryRequestArgumentResolverTest
             assertEquals(2, request.getPage());
             assertEquals(20, request.getPageSize());
             assertEquals(Set.of("PHB", "DMG"), request.getSource());
+        }
+
+        @Test
+        @DisplayName("pageSize alias and max limit")
+        void pageSizeAliasAndLimit() throws Exception
+        {
+            SpellQueryRequest request = resolve("page=-1&pageSize=500");
+            assertEquals(0, request.getPage());
+            assertEquals(200, request.getPageSize());
         }
 
         @Test

@@ -13,6 +13,9 @@ import java.util.Set;
 @NoArgsConstructor
 public abstract class AbstractQueryRequest
 {
+    public static final int DEFAULT_PAGE_SIZE = 100;
+    public static final int MAX_PAGE_SIZE = 200;
+
     /** Строка текстового поиска (по name, english, alternative). */
     private String search;
 
@@ -23,5 +26,21 @@ public abstract class AbstractQueryRequest
     private int page = 0;
 
     /** Размер страницы. */
-    private int pageSize = 10000;
+    private int pageSize = DEFAULT_PAGE_SIZE;
+
+    public void setPage(int page)
+    {
+        this.page = Math.max(0, page);
+    }
+
+    public void setPageSize(int pageSize)
+    {
+        if (pageSize <= 0)
+        {
+            this.pageSize = DEFAULT_PAGE_SIZE;
+            return;
+        }
+
+        this.pageSize = Math.min(pageSize, MAX_PAGE_SIZE);
+    }
 }

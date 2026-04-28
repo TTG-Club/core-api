@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.service.SpellFilterService;
 import club.ttg.dnd5.domain.spell.service.SpellService;
+import club.ttg.dnd5.dto.base.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -19,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Set;
 
 @Tag(name = "Заклинания", description = "REST API заклинаний")
@@ -43,7 +43,7 @@ public class SpellController {
 
     @Operation(summary = "Поиск заклинаний", description = "Поиск заклинаний с GET-параметрами фильтрации")
     @GetMapping("/search")
-    public List<SpellShortResponse> search(@ParameterObject SpellQueryRequest request)
+    public PageResponse<SpellShortResponse> search(@ParameterObject SpellQueryRequest request)
     {
         return spellService.search(request);
     }

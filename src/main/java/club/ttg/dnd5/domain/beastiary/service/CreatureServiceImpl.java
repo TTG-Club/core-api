@@ -17,6 +17,7 @@ import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 
 import club.ttg.dnd5.domain.filter.model.FilterHashMapping;
 import club.ttg.dnd5.domain.filter.repository.FilterHashMappingRepository;
+import club.ttg.dnd5.dto.base.PageResponse;
 import org.springframework.util.StringUtils;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -50,7 +51,7 @@ public class CreatureServiceImpl implements CreatureService {
     }
 
     @Override
-    public List<CreatureShortResponse> search(final CreatureQueryRequest request)
+    public PageResponse<CreatureShortResponse> search(final CreatureQueryRequest request)
     {
         // Резолв хэшей traits → оригинальные значения
         var traitValues = resolveHashes(request.getTraits());
@@ -58,10 +59,22 @@ public class CreatureServiceImpl implements CreatureService {
         var tagValues = resolveHashes(request.getTag());
 
         var predicate = CreaturePredicateBuilder.build(request, traitValues, tagValues);
-        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
-                .stream()
+        PageResponse<Creature> page = creatureQueryDslSearchService.searchPage(
+                predicate,
+                request.getPage(),
+                request.getPageSize()
+        );
+        List<CreatureShortResponse> items = page.items().stream()
                 .map(creatureMapper::toShort)
                 .toList();
+
+        return new PageResponse<>(
+                items,
+                page.page(),
+                page.pageSize(),
+                page.total(),
+                page.hasNext()
+        );
     }
 
     private List<String> resolveHashes(final club.ttg.dnd5.dto.base.filters.QueryFilter<String> filter)
