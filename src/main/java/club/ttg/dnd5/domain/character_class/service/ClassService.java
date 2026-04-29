@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassProficiencyDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
@@ -25,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -160,12 +162,11 @@ public class ClassService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public ClassDetailedResponse findDetailedByUrl(String url) {
         var charClass = findByUrl(url);
-        if (charClass.getParent() != null) {
-            fillFieldFromParentClass(charClass);
-        }
         var response = classMapper.toDetailedResponse(charClass);
+        fillResponseFieldsFromParentClass(charClass, response);
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)
@@ -182,36 +183,50 @@ public class ClassService {
         return request;
     }
 
-    private void fillFieldFromParentClass(CharacterClass characterClass) {
-        if (characterClass.getPrimaryCharacteristics() == null) {
-            characterClass.setPrimaryCharacteristics(characterClass.getParent().getPrimaryCharacteristics());
+    private void fillResponseFieldsFromParentClass(CharacterClass characterClass, ClassDetailedResponse response) {
+        CharacterClass parent = characterClass.getParent();
+        if (parent == null) {
+            return;
         }
-        if (characterClass.getSavingThrows() == null) {
-            characterClass.setSavingThrows(characterClass.getParent().getSavingThrows());
+
+        if (response.getHitDice() == null && parent.getHitDice() != null) {
+            response.setHitDice(classMapper.toDiceOptionDto(parent.getHitDice()));
         }
-        if (characterClass.getHitDice() == null) {
-            characterClass.setHitDice(characterClass.getParent().getHitDice());
+
+        if (!StringUtils.hasText(response.getPrimaryCharacteristics())) {
+            response.setPrimaryCharacteristics(classMapper.toPrimaryCharacteristics(parent));
         }
-        if (characterClass.getEquipment() == null) {
-            characterClass.setEquipment(characterClass.getParent().getEquipment());
+
+        if (!StringUtils.hasText(response.getSavingThrows()) && parent.getSavingThrows() != null) {
+            response.setSavingThrows(classMapper.toSavingThrowsString(parent.getSavingThrows()));
         }
+
+        if (!StringUtils.hasText(response.getEquipment())) {
+            response.setEquipment(parent.getEquipment());
+        }
+
+        if (response.getTable() == null) {
+            response.setTable(parent.getTable());
+        }
+
+        if (response.getProficiency() == null) {
+            response.setProficiency(new ClassProficiencyDto());
+        }
+
         if (characterClass.getArmorProficiency() == null
                 || CollectionUtils.isEmpty(characterClass.getArmorProficiency().getCategory())) {
-            characterClass.setArmorProficiency(characterClass.getParent().getArmorProficiency());
+            response.getProficiency().setArmor(classMapper.armorProficiencyToString(parent.getArmorProficiency()));
         }
         if (characterClass.getWeaponProficiency() == null
                 || CollectionUtils.isEmpty(characterClass.getWeaponProficiency().getCategory())) {
-            characterClass.setWeaponProficiency(characterClass.getParent().getWeaponProficiency());
+            response.getProficiency().setWeapon(classMapper.weaponProficiencyToString(parent.getWeaponProficiency()));
         }
         if (characterClass.getSkillProficiency() == null
                 || CollectionUtils.isEmpty(characterClass.getSkillProficiency().getSkills())) {
-            characterClass.setSkillProficiency(characterClass.getParent().getSkillProficiency());
+            response.getProficiency().setSkill(classMapper.skillProficiencyToString(parent.getSkillProficiency()));
         }
-        if (characterClass.getToolProficiency() == null) {
-            characterClass.setToolProficiency(characterClass.getParent().getToolProficiency());
-        }
-        if (characterClass.getTable() == null) {
-            characterClass.setTable(characterClass.getParent().getTable());
+        if (!StringUtils.hasText(characterClass.getToolProficiency())) {
+            response.getProficiency().setTool(parent.getToolProficiency());
         }
     }
 
