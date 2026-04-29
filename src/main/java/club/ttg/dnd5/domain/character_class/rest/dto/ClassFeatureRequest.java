@@ -34,6 +34,9 @@ public class ClassFeatureRequest {
     @Schema(description = "Масштабирование особенности по уровням")
     List<ClassFeatureScaling> scaling;
 
+    @Schema(description = "Options available for this feature")
+    private List<ClassFeatureOptionRequest> options;
+
     @Schema(description = "Умение увеличивает характеристики")
     private boolean abilityImprovement;
 

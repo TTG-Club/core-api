@@ -260,7 +260,7 @@ public interface ClassMapper
                 .orElse(List.of())
                 .stream()
                 .filter(classFeature -> !classFeature.isHideInSubclasses())
-                .map(feature -> new ClassFeatureDto(feature, false))
+                .map(feature -> new ClassFeatureDto(feature, false, isSubclass))
                 .collect(Collectors.toList());
 
         List<ClassFeatureDto> classFeatureDtos = characterClass.getFeatures().stream()

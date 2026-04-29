@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.character_class.model.ArmorProficiency;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
@@ -76,7 +77,7 @@ public class MulticlassService {
             table.add(column);
         }
         for (ClassFeature classFeature : mainClass.getFeatures()) {
-            var classFilterFeature = filterMulticlassScalingFeature(classFeature, request.getLevel(), 0);
+            var classFilterFeature = filterMulticlassFeature(classFeature, request.getLevel(), 0);
             if (classFilterFeature.isHideInSubclasses()) {
                 continue;
             }
@@ -122,7 +123,8 @@ public class MulticlassService {
                         || subclassFeature.getName().contains("дополнительных атак")) {
                     extraAttack++;
                 }
-                var feature = classFeatureMapper.toDto(subclassFeature, true);
+                ClassFeature filteredSubclassFeature = filterMulticlassFeature(subclassFeature, request.getLevel(), 0);
+                var feature = classFeatureMapper.toDto(filteredSubclassFeature, true);
                 feature.setAdditional(mainSubClass.map(CharacterClass::getName).orElse(null));
                 features.add(feature);
             }
@@ -158,25 +160,25 @@ public class MulticlassService {
                     continue;
                 }
                 if (multiclassFeature.getLevel() <= level) {
+                    ClassFeature classFeature = filterMulticlassFeature(multiclassFeature,
+                            level,
+                            charachterLevel);
                     if (multiclassFeature.getName().equals("Использование заклинаний")) {
                         if (spellcasting) {
                             continue;
                         }
-                        multiclassFeature.setDescription(getSpellcastingMulticlass());
+                        classFeature.setDescription(getSpellcastingMulticlass());
                     } else if (multiclassFeature.getName().equals("Дополнительная атака")
                             || multiclassFeature.getName().contains("дополнительные атаки")
                             || multiclassFeature.getName().contains("дополнительных атак")) {
                         if (extraAttack >= 1) {
-                            multiclassFeature.setName(getExtraAttackName(extraAttack));
-                            multiclassFeature.setDescription(
+                            classFeature.setName(getExtraAttackName(extraAttack));
+                            classFeature.setDescription(
                                     "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
                                             .formatted(extraAttack + 2));
                         }
                         extraAttack++;
                     }
-                    ClassFeature classFeature = filterMulticlassScalingFeature(multiclassFeature,
-                            level,
-                            charachterLevel);
                     classFeature.setLevel(multiclassFeature.getLevel() + charachterLevel);
                     var feature = classFeatureMapper.toDto(classFeature, false);
                     feature.setAdditional(multiClass.getName());
@@ -188,7 +190,7 @@ public class MulticlassService {
                     .map(CharacterClass::getFeatures)
                     .orElseGet(List::of)) {
                 if (multiSubclassFeature.getLevel() <= level) {
-                    ClassFeature classFeature = filterMulticlassScalingFeature(multiSubclassFeature, level, charachterLevel);
+                    ClassFeature classFeature = filterMulticlassFeature(multiSubclassFeature, level, charachterLevel);
                     classFeature.setLevel(multiSubclassFeature.getLevel() + charachterLevel);
                     var feature = classFeatureMapper.toDto(classFeature, true);
                     feature.setAdditional(multiSubclass.map(CharacterClass::getName).orElse(null));
@@ -335,18 +337,60 @@ public class MulticlassService {
         };
     }
 
-    private ClassFeature filterMulticlassScalingFeature(final ClassFeature classFeature,
-                                                        final int level,
-                                                        final int characterLevel) {
+    private ClassFeature filterMulticlassFeature(final ClassFeature classFeature,
+                                                 final int level,
+                                                 final int characterLevel) {
+        ClassFeature filteredFeature = copyClassFeature(classFeature);
         List<ClassFeatureScaling> list = new ArrayList<>();
-        for (ClassFeatureScaling classFeatureScaling : classFeature.getScaling()) {
+        for (ClassFeatureScaling classFeatureScaling : Optional.ofNullable(classFeature.getScaling()).orElse(List.of())) {
             if (classFeatureScaling.getLevel() <= level) {
-                classFeatureScaling.setLevel(classFeatureScaling.getLevel() + characterLevel);
-                list.add(classFeatureScaling);
+                list.add(new ClassFeatureScaling(
+                        classFeatureScaling.getLevel() + characterLevel,
+                        classFeatureScaling.getName(),
+                        classFeatureScaling.getDescription(),
+                        classFeatureScaling.getAdditional(),
+                        classFeatureScaling.isHideInSubclasses()
+                ));
             }
         }
-        classFeature.setScaling(list);
-        return classFeature;
+        filteredFeature.setScaling(list);
+        filteredFeature.setOptions(Optional.ofNullable(classFeature.getOptions())
+                .orElse(List.of())
+                .stream()
+                .filter(option -> !option.isHideInSubclasses())
+                .filter(option -> option.getRequiredClassLevel() == null || option.getRequiredClassLevel() <= level)
+                .map(ClassFeatureOption::new)
+                .toList());
+        return filteredFeature;
+    }
+
+    private ClassFeature copyClassFeature(final ClassFeature classFeature) {
+        ClassFeature copy = new ClassFeature();
+        copy.setKey(classFeature.getKey());
+        copy.setLevel(classFeature.getLevel());
+        copy.setName(classFeature.getName());
+        copy.setDescription(classFeature.getDescription());
+        copy.setAdditional(classFeature.getAdditional());
+        copy.setScaling(Optional.ofNullable(classFeature.getScaling())
+                .orElse(List.of())
+                .stream()
+                .map(scaling -> new ClassFeatureScaling(
+                        scaling.getLevel(),
+                        scaling.getName(),
+                        scaling.getDescription(),
+                        scaling.getAdditional(),
+                        scaling.isHideInSubclasses()
+                ))
+                .toList());
+        copy.setOptions(Optional.ofNullable(classFeature.getOptions())
+                .orElse(List.of())
+                .stream()
+                .map(ClassFeatureOption::new)
+                .toList());
+        copy.setAbilityImprovement(classFeature.isAbilityImprovement());
+        copy.setHideInSubclasses(classFeature.isHideInSubclasses());
+        copy.setAbilityBonus(classFeature.getAbilityBonus());
+        return copy;
     }
 
     private int calculateSpellCastingLevel(CasterType casterType, int level) {
