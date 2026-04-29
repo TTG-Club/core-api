@@ -115,7 +115,9 @@ public class ClassService {
 
         if (!existingClass.getUrl().equals(request.getUrl())) {
             var saved = classMapper.toEntity(request, existingClass.getSource());
-            saved.setParent(findReferenceByUrl(request.getParentUrl()));
+            saved.setParent(Optional.ofNullable(request.getParentUrl())
+                    .map(this::findReferenceByUrl)
+                    .orElse(null));
             classRepository.save(saved);
             classRepository.delete(existingClass);
         } else {
