@@ -24,6 +24,9 @@ public class ClassFeatureRequest {
     @Schema(description = "Название особенности", example = "Всплеск действий")
     private String name;
 
+    @Schema(description = "Options catalog name for this feature", example = "Maneuvers")
+    private String optionsName;
+
     @Schema(description = "Описание особенности")
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;

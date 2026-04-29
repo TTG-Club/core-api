@@ -30,6 +30,9 @@ public class ClassFeatureDto {
     @Schema(description = "Название особенности", example = "Всплеск действий")
     private String name;
 
+    @Schema(description = "Название опций для умения", example = "Таинственные воззвания")
+    private String optionsName;
+
     @Schema(description = "Описание особенности", requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
@@ -55,6 +58,7 @@ public class ClassFeatureDto {
         this.key = classFeature.getKey();
         this.level = classFeature.getLevel();
         this.name = classFeature.getName();
+        this.optionsName = classFeature.getOptionsName();
         this.description = classFeature.getDescription();
         this.additional = classFeature.getAdditional();
         this.hideInSubclasses = classFeature.isHideInSubclasses();
