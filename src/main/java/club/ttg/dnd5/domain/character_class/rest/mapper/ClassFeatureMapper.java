@@ -7,5 +7,7 @@ import org.mapstruct.ReportingPolicy;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, componentModel = "spring")
 public interface ClassFeatureMapper {
-    ClassFeatureDto toDto(ClassFeature classFeature, boolean isSubclass);
+    default ClassFeatureDto toDto(ClassFeature classFeature, boolean isSubclass) {
+        return new ClassFeatureDto(classFeature, isSubclass);
+    }
 }
