@@ -16,8 +16,10 @@ import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMe
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.SourceGroupMeta;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
+import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
+import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
@@ -28,8 +30,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.LongStream;
 
 /**
@@ -60,6 +64,33 @@ public class SpellFilterService {
                         new CastingTimeOption(12L, CastingUnit.HOUR),
                         new CastingTimeOption(24L, CastingUnit.HOUR));
 
+        private record DistanceOption(Long value, DistanceUnit unit) {
+        }
+
+        private static final List<DistanceOption> DISTANCE_OPTIONS = List.of(
+                        new DistanceOption(null, DistanceUnit.SELF),
+                        new DistanceOption(null, DistanceUnit.TOUCH),
+                        new DistanceOption(5L, DistanceUnit.FEET),
+                        new DistanceOption(10L, DistanceUnit.FEET),
+                        new DistanceOption(20L, DistanceUnit.FEET),
+                        new DistanceOption(25L, DistanceUnit.FEET),
+                        new DistanceOption(30L, DistanceUnit.FEET),
+                        new DistanceOption(40L, DistanceUnit.FEET),
+                        new DistanceOption(50L, DistanceUnit.FEET),
+                        new DistanceOption(60L, DistanceUnit.FEET),
+                        new DistanceOption(90L, DistanceUnit.FEET),
+                        new DistanceOption(100L, DistanceUnit.FEET),
+                        new DistanceOption(120L, DistanceUnit.FEET),
+                        new DistanceOption(150L, DistanceUnit.FEET),
+                        new DistanceOption(300L, DistanceUnit.FEET),
+                        new DistanceOption(400L, DistanceUnit.FEET),
+                        new DistanceOption(1000L, DistanceUnit.FEET),
+                        new DistanceOption(1L, DistanceUnit.MILE),
+                        new DistanceOption(500L, DistanceUnit.MILE),
+                        new DistanceOption(null, DistanceUnit.SIGHT),
+                        new DistanceOption(null, DistanceUnit.UNLIMITED),
+                        new DistanceOption(null, DistanceUnit.SPECIAL));
+
         /**
          * Предопределённые значения для фильтра «Длительность».
          */
@@ -84,12 +115,12 @@ public class SpellFilterService {
 
         public FilterMetadataResponse getFilterMetadata(Set<String> selectedSources) {
                 return FilterMetadataResponse.builder()
-                                .filters(buildFilterGroups())
+                                .filters(buildFilterGroups(selectedSources))
                                 .sources(buildSourceGroups(selectedSources))
                                 .build();
         }
 
-        private List<FilterGroupMeta> buildFilterGroups() {
+        private List<FilterGroupMeta> buildFilterGroups(Set<String> selectedSources) {
                 List<FilterGroupMeta> groups = new ArrayList<>();
 
                 // Уровень
@@ -225,6 +256,14 @@ public class SpellFilterService {
                                 .values(buildCastingTimeValues())
                                 .build());
 
+                // Дистанция наложения
+                groups.add(FilterGroupMeta.builder()
+                                .key(FilterKeys.keyOf(SpellQueryRequest.class, "distance"))
+                                .name("Дистанция")
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                                .values(buildDistanceValues(selectedSources))
+                                .build());
+
                 // Длительность
                 groups.add(FilterGroupMeta.builder()
                                 .key(FilterKeys.keyOf(SpellQueryRequest.class, "duration"))
@@ -286,6 +325,62 @@ public class SpellFilterService {
                                                         .build();
                                 })
                                 .toList();
+        }
+
+        private List<FilterValueMeta> buildDistanceValues(Set<String> selectedSources) {
+                Map<String, DistanceOption> knownOptions = DISTANCE_OPTIONS.stream()
+                                .collect(java.util.stream.Collectors.toMap(
+                                                this::distanceId,
+                                                Function.identity(),
+                                                (left, right) -> left));
+                Map<String, Integer> knownOrder = DISTANCE_OPTIONS.stream()
+                                .collect(java.util.stream.Collectors.toMap(
+                                                this::distanceId,
+                                                DISTANCE_OPTIONS::indexOf,
+                                                Math::min));
+                Set<String> sourceCodes = selectedSources.isEmpty()
+                                ? sourceSavedFilterService.getSavedSources()
+                                : selectedSources;
+                if (sourceCodes.isEmpty()) {
+                        sourceCodes = Set.copyOf(spellRepository.findAllUsedSourceCodes());
+                }
+
+                return spellRepository.findAllUsedDistanceIds(sourceCodes).stream()
+                                .filter(Objects::nonNull)
+                                .distinct()
+                                .sorted(Comparator
+                                                .comparing((String id) -> knownOrder.getOrDefault(id,
+                                                                Integer.MAX_VALUE))
+                                                .thenComparing(id -> id))
+                                .map(id -> buildDistanceValue(id, knownOptions.get(id)))
+                                .toList();
+        }
+
+        private FilterValueMeta buildDistanceValue(String id, DistanceOption option) {
+                String name = option == null ? distanceName(id) : SpellDistance.of(option.value(), option.unit()).toString();
+                return FilterValueMeta.builder()
+                                .id(id)
+                                .value(id)
+                                .name(name)
+                                .build();
+        }
+
+        private String distanceId(DistanceOption option) {
+                return option.value() == null
+                                ? option.unit().name()
+                                : option.value() + "_" + option.unit().name();
+        }
+
+        private String distanceName(String id) {
+                String[] parts = id.split("_", 2);
+                try {
+                        if (parts.length == 1) {
+                                return SpellDistance.of(null, DistanceUnit.valueOf(parts[0])).toString();
+                        }
+                        return SpellDistance.of(Long.parseLong(parts[0]), DistanceUnit.valueOf(parts[1])).toString();
+                } catch (IllegalArgumentException e) {
+                        return id;
+                }
         }
 
         private List<FilterValueMeta> buildDurationValues() {

@@ -249,6 +249,17 @@ class QueryRequestArgumentResolverTest
         }
 
         @Test
+        @DisplayName("строковый фильтр дистанции: distance=SELF,30_FEET")
+        void distanceFilter() throws Exception
+        {
+            SpellQueryRequest request = resolve("distance=SELF,30_FEET");
+            QueryFilter<String> filter = request.getDistance();
+            assertNotNull(filter);
+            assertEquals(Set.of("SELF", "30_FEET"), filter.getValues());
+            assertFalse(filter.isExclude());
+        }
+
+        @Test
         @DisplayName("union флаг: school=EVOCATION&school_union=1")
         void unionFlag() throws Exception
         {
