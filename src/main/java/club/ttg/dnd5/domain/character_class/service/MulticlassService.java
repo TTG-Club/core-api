@@ -64,6 +64,8 @@ public class MulticlassService {
         boolean spellcasting = false;
         int charachterLevel = request.getLevel();
         int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
+        List<CasterType> casterTypes = new ArrayList<>();
+        addCasterType(casterTypes, mainClass.getCasterType());
         List<String> requirements = new ArrayList<>();
         List<ClassTableColumn> table = new ArrayList<>();
         for (var column :mainClass.getTable()) {
@@ -106,11 +108,12 @@ public class MulticlassService {
                 .level(request.getLevel())
                 .build());
 
-        if (mainClass.getCasterType() == CasterType.NONE) {
+        if (isNotCaster(mainClass.getCasterType())) {
             spellcastLevel += mainSubClass
                     .map(subclass -> calculateSpellCastingLevel(subclass.getCasterType(), request.getLevel()))
                     .orElse(0);
         }
+        mainSubClass.ifPresent(subclass -> addCasterType(casterTypes, subclass.getCasterType()));
         for (ClassFeature subclassFeature : mainSubClass
                 .map(CharacterClass::getFeatures)
                 .orElseGet(List::of)) {
@@ -129,7 +132,6 @@ public class MulticlassService {
                 features.add(feature);
             }
         }
-        var spellMulticlass = mainClass.getCasterType() != CasterType.NONE;
         var names = new ArrayList<String>(request.getClasses().size());
         multiclass.setArmorProficiency(copyArmorProficiency(mainClass.getArmorProficiency()));
         multiclass.setWeaponProficiency(copyWeaponProficiency(mainClass.getWeaponProficiency()));
@@ -154,6 +156,7 @@ public class MulticlassService {
                 table.add(column);
             }
             spellcastLevel += calculateSpellCastingLevel(multiClass.getCasterType(), multiclassRequest.getLevel());
+            addCasterType(casterTypes, multiClass.getCasterType());
             var level = multiclassRequest.getLevel();
             for (ClassFeature multiclassFeature : multiClass.getFeatures()) {
                 if (multiclassFeature.isHideInSubclasses()) {
@@ -186,6 +189,12 @@ public class MulticlassService {
                 }
             }
             var multiSubclass = findSubclass(multiclassRequest.getSubclass(), multiclassRequest.getLevel());
+            if (isNotCaster(multiClass.getCasterType())) {
+                spellcastLevel += multiSubclass
+                        .map(subclass -> calculateSpellCastingLevel(subclass.getCasterType(), multiclassRequest.getLevel()))
+                        .orElse(0);
+            }
+            multiSubclass.ifPresent(subclass -> addCasterType(casterTypes, subclass.getCasterType()));
             for (ClassFeature multiSubclassFeature : multiSubclass
                     .map(CharacterClass::getFeatures)
                     .orElseGet(List::of)) {
@@ -205,12 +214,9 @@ public class MulticlassService {
                     .build());
             names.add(multiClass.getName());
             charachterLevel += multiclassRequest.getLevel();
-            spellMulticlass |= multiClass.getCasterType() != CasterType.NONE;
         }
         features.sort(Comparator.comparing(ClassFeatureDto::getLevel));
-        if (spellMulticlass) {
-            multiclass.setCasterType(CasterType.MULTICLASS);
-        }
+        multiclass.setCasterType(resolveCasterType(casterTypes));
         multiclass.setName(mainClass.getName() + " / " + String.join("/", names));
         multiclass.setHitDice(mainClass.getHitDice());
         multiclass.setSavingThrows(mainClass.getSavingThrows());
@@ -394,12 +400,33 @@ public class MulticlassService {
     }
 
     private int calculateSpellCastingLevel(CasterType casterType, int level) {
+        if (casterType == null) {
+            return 0;
+        }
         return switch (casterType) {
             case FULL -> level;
             case HALF -> (int) Math.ceil(level / 2.);
             case THIRD -> (int) Math.floor(level / 3.);
             default -> 0;
         };
+    }
+
+    private boolean isNotCaster(CasterType casterType) {
+        return casterType == null || casterType == CasterType.NONE;
+    }
+
+    private void addCasterType(List<CasterType> casterTypes, CasterType casterType) {
+        if (casterType != null && casterType != CasterType.NONE) {
+            casterTypes.add(casterType);
+        }
+    }
+
+    private CasterType resolveCasterType(List<CasterType> casterTypes) {
+        if (casterTypes.isEmpty()) {
+            return null;
+        }
+        CasterType firstCasterType = casterTypes.getFirst();
+        return casterTypes.stream().allMatch(firstCasterType::equals) ? firstCasterType : CasterType.MULTICLASS;
     }
 
     private String getSpellcastingMulticlass() {

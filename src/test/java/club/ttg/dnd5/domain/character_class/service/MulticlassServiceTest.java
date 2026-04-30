@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -63,6 +64,41 @@ class MulticlassServiceTest {
         ArgumentCaptor<CharacterClass> captor = ArgumentCaptor.forClass(CharacterClass.class);
         verify(multiclassMapper).toMulticlassResponse(captor.capture());
         assertTrue(captor.getValue().getWeaponProficiency().getCategory().contains(WeaponCategory.SIMPLE_MELEE));
+    }
+
+    @Test
+    void getMulticlassUsesSubclassCasterTypeWhenClassesAreNotCasters() {
+        CharacterClass fighter = characterClass("fighter");
+        CharacterClass eldritchKnight = characterClass("eldritch-knight");
+        eldritchKnight.setCasterType(CasterType.THIRD);
+
+        CharacterClass rogue = characterClass("rogue");
+        CharacterClass arcaneTrickster = characterClass("arcane-trickster");
+        arcaneTrickster.setCasterType(CasterType.THIRD);
+
+        MulticlassRequest request = new MulticlassRequest();
+        request.setUrl("fighter");
+        request.setSubclass("eldritch-knight");
+        request.setLevel(3);
+        MulticlassDto rogueRequest = new MulticlassDto();
+        rogueRequest.setUrl("rogue");
+        rogueRequest.setSubclass("arcane-trickster");
+        rogueRequest.setLevel(3);
+        request.setClasses(List.of(rogueRequest));
+
+        MulticlassResponse response = new MulticlassResponse();
+        when(classRepository.findById("fighter")).thenReturn(Optional.of(fighter));
+        when(classRepository.findById("eldritch-knight")).thenReturn(Optional.of(eldritchKnight));
+        when(classRepository.findById("rogue")).thenReturn(Optional.of(rogue));
+        when(classRepository.findById("arcane-trickster")).thenReturn(Optional.of(arcaneTrickster));
+        when(multiclassMapper.toMulticlassResponse(any(CharacterClass.class))).thenReturn(response);
+
+        service.getMulticlass(request);
+
+        ArgumentCaptor<CharacterClass> captor = ArgumentCaptor.forClass(CharacterClass.class);
+        verify(multiclassMapper).toMulticlassResponse(captor.capture());
+        assertEquals(CasterType.THIRD, captor.getValue().getCasterType());
+        assertEquals(2, response.getSpellcastingLevel());
     }
 
     private CharacterClass characterClass(String url) {
