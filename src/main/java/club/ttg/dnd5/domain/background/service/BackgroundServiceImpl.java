@@ -46,8 +46,8 @@ public class BackgroundServiceImpl implements BackgroundService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String addBackground(final BackgroundRequest request) {
         checkUrlExist(request.getUrl());
-        var feat = getFeat(request.getFeatUrl());
-        var source = sourceService.findByUrl(request.getSource().getUrl());
+        var feat = getFeatReference(request.getFeatUrl());
+        var source = sourceService.findReferenceByUrl(request.getSource().getUrl());
         return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
                 .getUrl();
     }
@@ -55,8 +55,8 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Transactional
     @Override
     public String updateBackgrounds(final String url, final BackgroundRequest request) {
-        var feat = getFeat(request.getFeatUrl());
-        var source = sourceService.findByUrl(request.getSource().getUrl());
+        var feat = getFeatReference(request.getFeatUrl());
+        var source = sourceService.findReferenceByUrl(request.getSource().getUrl());
         if (!Objects.equals(url, request.getUrl())) {
             backgroundRepository.deleteById(url);
             backgroundRepository.flush();
@@ -87,6 +87,13 @@ public class BackgroundServiceImpl implements BackgroundService {
     private Feat getFeat(String url) {
         return featRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
+    }
+
+    private Feat getFeatReference(String url) {
+        if (!featRepository.existsById(url)) {
+            throw new EntityNotFoundException("Черта не найдена по URL: " + url);
+        }
+        return featRepository.getReferenceById(url);
     }
 
     private void checkUrlExist(String url) {

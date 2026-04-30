@@ -4,10 +4,12 @@ import club.ttg.dnd5.domain.spell.model.Spell;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface SpellRepository extends JpaRepository<Spell, String> {
     @EntityGraph(attributePaths = {
@@ -45,11 +47,25 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     List<Spell> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
     @Query(value = """
-        select distinct s.source
-        from spell s
-        where s.source is not null
-        order by s.source
-        """, nativeQuery = true)
+            select distinct s.source
+            from spell s
+            where s.source is not null
+            order by s.source
+            """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
+
+    @Query(value = """
+            select distinct
+                case
+                    when elem->>'value' is null then elem->>'unit'
+                    else concat(elem->>'value', '_', elem->>'unit')
+                end
+            from spell s
+                cross join jsonb_array_elements(s.range) as elem
+            where s.is_hidden_entity = false
+                and s.source in (:sourceCodes)
+                and elem->>'unit' is not null
+            """, nativeQuery = true)
+    List<String> findAllUsedDistanceIds(@Param("sourceCodes") Set<String> sourceCodes);
 
 }

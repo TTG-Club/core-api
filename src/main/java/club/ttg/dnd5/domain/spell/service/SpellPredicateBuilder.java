@@ -142,6 +142,9 @@ public class SpellPredicateBuilder {
         // Время накладывания (JSONB-массив)
         PredicateUtils.applyJsonbTimeFilter(builder, request.getCastingTime(), "casting_time");
 
+        // Дистанция наложения (JSONB-массив)
+        PredicateUtils.applyJsonbMeasureFilter(builder, request.getDistance(), "range");
+
         // Длительность (JSONB-массив)
         PredicateUtils.applyJsonbTimeFilter(builder, request.getDuration(), "duration");
 

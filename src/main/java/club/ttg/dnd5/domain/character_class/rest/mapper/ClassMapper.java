@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.character_class.rest.dto.*;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
+import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
@@ -23,6 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -196,7 +198,43 @@ public interface ClassMapper
     @Named("weaponProficiencyToString")
     default String weaponProficiencyToString(WeaponProficiency proficiency)
     {
-        return proficiency == null ? "" : proficiency.toString();
+        if (proficiency == null)
+        {
+            return "";
+        }
+
+        return Stream.of(formatWeaponCategories(proficiency.getCategory()), proficiency.getCustom())
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining(", "));
+    }
+
+    private String formatWeaponCategories(Set<WeaponCategory> categories)
+    {
+        Set<WeaponCategory> safeCategories = categories == null ? Collections.emptySet() : categories;
+        boolean hasSimpleWeapons = safeCategories.contains(WeaponCategory.SIMPLE_MELEE)
+                && safeCategories.contains(WeaponCategory.SIMPLE_RANGED);
+        boolean hasMaterialWeapons = safeCategories.contains(WeaponCategory.MATERIAL_MELEE)
+                && safeCategories.contains(WeaponCategory.MATERIAL_RANGED);
+
+        List<String> names = new ArrayList<>();
+        if (hasSimpleWeapons)
+        {
+            names.add("Простое оружие");
+        }
+        if (hasMaterialWeapons)
+        {
+            names.add("Воинское оружие");
+        }
+
+        safeCategories.stream()
+                .filter(category -> !hasSimpleWeapons
+                        || category != WeaponCategory.SIMPLE_MELEE && category != WeaponCategory.SIMPLE_RANGED)
+                .filter(category -> !hasMaterialWeapons
+                        || category != WeaponCategory.MATERIAL_MELEE && category != WeaponCategory.MATERIAL_RANGED)
+                .map(WeaponCategory::getName)
+                .forEach(names::add);
+
+        return String.join(", ", names);
     }
 
     @Named("skillProficiencyToString")
@@ -222,7 +260,7 @@ public interface ClassMapper
                 .orElse(List.of())
                 .stream()
                 .filter(classFeature -> !classFeature.isHideInSubclasses())
-                .map(feature -> new ClassFeatureDto(feature, false))
+                .map(feature -> new ClassFeatureDto(feature, false, isSubclass))
                 .collect(Collectors.toList());
 
         List<ClassFeatureDto> classFeatureDtos = characterClass.getFeatures().stream()

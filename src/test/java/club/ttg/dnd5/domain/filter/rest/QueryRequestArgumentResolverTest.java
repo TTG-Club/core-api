@@ -164,6 +164,25 @@ class QueryRequestArgumentResolverTest
         }
 
         @Test
+        @DisplayName("pageSize parses as page size")
+        void pageSizeAlias() throws Exception
+        {
+            SpellQueryRequest request = resolve("search=fire&page=2&pageSize=25&source=PHB,DMG");
+            assertEquals("fire", request.getSearch());
+            assertEquals(2, request.getPage());
+            assertEquals(25, request.getPageSize());
+            assertEquals(Set.of("PHB", "DMG"), request.getSource());
+        }
+
+        @Test
+        @DisplayName("pageSize takes precedence over size")
+        void pageSizeTakesPrecedenceOverSize() throws Exception
+        {
+            SpellQueryRequest request = resolve("size=20&pageSize=25");
+            assertEquals(25, request.getPageSize());
+        }
+
+        @Test
         @DisplayName("enum фильтр: school=EVOCATION,ABJURATION&school_mode=1")
         void enumFilter() throws Exception
         {
@@ -227,6 +246,17 @@ class QueryRequestArgumentResolverTest
             assertNotNull(filter);
             assertEquals(Set.of("INSTANT", "1_MINUTE", "10_MINUTE"), filter.getValues());
             assertTrue(filter.isExclude());
+        }
+
+        @Test
+        @DisplayName("строковый фильтр дистанции: distance=SELF,30_FEET")
+        void distanceFilter() throws Exception
+        {
+            SpellQueryRequest request = resolve("distance=SELF,30_FEET");
+            QueryFilter<String> filter = request.getDistance();
+            assertNotNull(filter);
+            assertEquals(Set.of("SELF", "30_FEET"), filter.getValues());
+            assertFalse(filter.isExclude());
         }
 
         @Test

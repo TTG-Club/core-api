@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -29,6 +30,9 @@ public class ClassFeature {
     @Schema(description = "Название особенности", example = "Всплеск действий")
     private String name;
 
+    @Schema(description = "Options catalog name for this feature", example = "Maneuvers")
+    private String optionsName;
+
     @Schema(description = "Описание особенности")
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;
@@ -38,6 +42,9 @@ public class ClassFeature {
 
     @Schema(description = "Масштабирование особенности по уровням")
     List<ClassFeatureScaling> scaling;
+
+    @Schema(description = "Опции класса доступные для умения")
+    private List<ClassFeatureOption> options;
 
     @Schema(description = "Умение увеличивает характеристики")
     private boolean abilityImprovement;
@@ -51,9 +58,15 @@ public class ClassFeature {
     public ClassFeature(ClassFeatureRequest classFeatureRequest) {
         this.level = classFeatureRequest.getLevel();
         this.name = classFeatureRequest.getName();
+        this.optionsName = classFeatureRequest.getOptionsName();
         this.description = classFeatureRequest.getDescription();
         this.additional = classFeatureRequest.getAdditional();
         this.scaling = classFeatureRequest.getScaling();
+        this.options = Optional.ofNullable(classFeatureRequest.getOptions())
+                .orElse(List.of())
+                .stream()
+                .map(ClassFeatureOption::new)
+                .toList();
         this.key = SlugifyUtil.getSlug(this.name);
         this.hideInSubclasses = classFeatureRequest.isHideInSubclasses();
         this.abilityImprovement = classFeatureRequest.isAbilityImprovement();

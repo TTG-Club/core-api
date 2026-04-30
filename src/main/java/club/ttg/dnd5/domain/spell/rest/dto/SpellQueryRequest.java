@@ -54,5 +54,8 @@ public class SpellQueryRequest extends AbstractQueryRequest
     private QueryFilter<String> castingTime;
 
     @FilterParam
+    private QueryFilter<String> distance;
+
+    @FilterParam
     private QueryFilter<String> duration;
 }
