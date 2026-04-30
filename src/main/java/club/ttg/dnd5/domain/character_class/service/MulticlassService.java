@@ -85,7 +85,7 @@ public class MulticlassService {
             }
 
             if (classFilterFeature.getLevel() <= request.getLevel()) {
-                if (classFilterFeature.getName().equals("Использование заклинаний")) {
+                if (isSpellcastingFeature(classFilterFeature)) {
                     classFilterFeature.setDescription(getSpellcastingMulticlass());
                     spellcasting = true;
                 } else if (classFeature.getName().equals("Дополнительная атака")
@@ -118,7 +118,7 @@ public class MulticlassService {
                 .map(CharacterClass::getFeatures)
                 .orElseGet(List::of)) {
             if (subclassFeature.getLevel() <= request.getLevel()) {
-                if (subclassFeature.getName().equals("Использование заклинаний")) {
+                if (isSpellcastingFeature(subclassFeature)) {
                     subclassFeature.setDescription(getSpellcastingMulticlass());
                     spellcasting = true;
                 } else if (subclassFeature.getName().equals("Дополнительная атака")
@@ -166,11 +166,12 @@ public class MulticlassService {
                     ClassFeature classFeature = filterMulticlassFeature(multiclassFeature,
                             level,
                             charachterLevel);
-                    if (multiclassFeature.getName().equals("Использование заклинаний")) {
+                    if (isSpellcastingFeature(multiclassFeature)) {
                         if (spellcasting) {
                             continue;
                         }
                         classFeature.setDescription(getSpellcastingMulticlass());
+                        spellcasting = true;
                     } else if (multiclassFeature.getName().equals("Дополнительная атака")
                             || multiclassFeature.getName().contains("дополнительные атаки")
                             || multiclassFeature.getName().contains("дополнительных атак")) {
@@ -200,6 +201,23 @@ public class MulticlassService {
                     .orElseGet(List::of)) {
                 if (multiSubclassFeature.getLevel() <= level) {
                     ClassFeature classFeature = filterMulticlassFeature(multiSubclassFeature, level, charachterLevel);
+                    if (isSpellcastingFeature(multiSubclassFeature)) {
+                        if (spellcasting) {
+                            continue;
+                        }
+                        classFeature.setDescription(getSpellcastingMulticlass());
+                        spellcasting = true;
+                    } else if (multiSubclassFeature.getName().equals("Дополнительная атака")
+                            || multiSubclassFeature.getName().contains("дополнительные атаки")
+                            || multiSubclassFeature.getName().contains("дополнительных атак")) {
+                        if (extraAttack >= 1) {
+                            classFeature.setName(getExtraAttackName(extraAttack));
+                            classFeature.setDescription(
+                                    "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
+                                            .formatted(extraAttack + 2));
+                        }
+                        extraAttack++;
+                    }
                     classFeature.setLevel(multiSubclassFeature.getLevel() + charachterLevel);
                     var feature = classFeatureMapper.toDto(classFeature, true);
                     feature.setAdditional(multiSubclass.map(CharacterClass::getName).orElse(null));
@@ -330,6 +348,10 @@ public class MulticlassService {
         return current + ", " + addition;
     }
 
+    private boolean isSpellcastingFeature(ClassFeature classFeature) {
+        return classFeature.getName().equals("Использование заклинаний");
+    }
+
     private String getExtraAttackName(final int extraAttack)
     {
         return switch (extraAttack)
@@ -425,8 +447,7 @@ public class MulticlassService {
         if (casterTypes.isEmpty()) {
             return null;
         }
-        CasterType firstCasterType = casterTypes.getFirst();
-        return casterTypes.stream().allMatch(firstCasterType::equals) ? firstCasterType : CasterType.MULTICLASS;
+        return CasterType.MULTICLASS;
     }
 
     private String getSpellcastingMulticlass() {
