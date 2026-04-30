@@ -1,0 +1,72 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-04-30-01-add-notification-view
+      author: codex
+      changes:
+        - createTable:
+            tableName: notification_view
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_notification_view
+                    nullable: false
+              - column:
+                  name: notification_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: viewed_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: notification_view
+            baseColumnNames: notification_id
+            referencedTableName: notification
+            referencedColumnNames: id
+            constraintName: fk_notification_view_notification
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+
+        - createIndex:
+            tableName: notification_view
+            indexName: ix_notification_view_username_viewed_at
+            columns:
+              - column:
+                  name: username
+              - column:
+                  name: viewed_at
+
+        - createIndex:
+            tableName: notification_view
+            indexName: ix_notification_view_notification_username
+            columns:
+              - column:
+                  name: notification_id
+              - column:
+                  name: username
+      rollback:
+        - dropIndex:
+            tableName: notification_view
+            indexName: ix_notification_view_notification_username
+        - dropIndex:
+            tableName: notification_view
+            indexName: ix_notification_view_username_viewed_at
+        - dropForeignKeyConstraint:
+            baseTableName: notification_view
+            constraintName: fk_notification_view_notification
+        - dropTable:
+            tableName: notification_view
+            cascadeConstraints: true
