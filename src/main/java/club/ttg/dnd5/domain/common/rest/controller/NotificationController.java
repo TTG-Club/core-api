@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,8 +30,8 @@ public class NotificationController {
 
     @Operation(summary = "Получение случайной нотификации")
     @GetMapping
-    public NotificationResponse getNotification() {
-        return notificationService.getNotification();
+    public NotificationResponse getNotification(@RequestHeader(value = "X-Guest-Id", required = false) String guestId) {
+        return notificationService.getNotification(guestId);
     }
 
     @Operation(summary = "Получение нотификаций по ID персоны (полная модель для админки)")
