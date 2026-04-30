@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -29,6 +30,9 @@ public class ClassFeatureDto {
     @Schema(description = "Название особенности", example = "Всплеск действий")
     private String name;
 
+    @Schema(description = "Название опций для умения", example = "Таинственные воззвания")
+    private String optionsName;
+
     @Schema(description = "Описание особенности", requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
@@ -39,24 +43,48 @@ public class ClassFeatureDto {
     @Schema(description = "Масштабирование  особенности по уровням")
     List<ClassFeatureScalingDto> scaling;
 
+    @Schema(description = "Options available for this feature")
+    private List<ClassFeatureOptionDto> options;
+
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
 
     public ClassFeatureDto(ClassFeature classFeature, boolean isSubclass) {
+        this(classFeature, isSubclass, isSubclass);
+    }
+
+    public ClassFeatureDto(ClassFeature classFeature, boolean isSubclass, boolean filterForSubclassContext) {
         this.isSubclass = isSubclass;
         this.key = classFeature.getKey();
         this.level = classFeature.getLevel();
         this.name = classFeature.getName();
+        this.optionsName = classFeature.getOptionsName();
         this.description = classFeature.getDescription();
         this.additional = classFeature.getAdditional();
-        if (isSubclass) {
-            this.scaling = classFeature.getScaling().stream()
+        this.hideInSubclasses = classFeature.isHideInSubclasses();
+        if (filterForSubclassContext) {
+            this.scaling = Optional.ofNullable(classFeature.getScaling())
+                    .orElse(List.of())
+                    .stream()
                     .filter(featureScaling -> !featureScaling.isHideInSubclasses())
                     .map(ClassFeatureScalingDto::new)
                     .toList();
+            this.options = Optional.ofNullable(classFeature.getOptions())
+                    .orElse(List.of())
+                    .stream()
+                    .filter(option -> !option.isHideInSubclasses())
+                    .map(ClassFeatureOptionDto::new)
+                    .toList();
         } else {
-            this.scaling = classFeature.getScaling().stream()
+            this.scaling = Optional.ofNullable(classFeature.getScaling())
+                    .orElse(List.of())
+                    .stream()
                     .map(ClassFeatureScalingDto::new)
+                    .toList();
+            this.options = Optional.ofNullable(classFeature.getOptions())
+                    .orElse(List.of())
+                    .stream()
+                    .map(ClassFeatureOptionDto::new)
                     .toList();
         }
     }

@@ -38,7 +38,7 @@ public class Background extends NamedEntity {
     private Set<Skill> skillProficiencies;
 
     /** Черта */
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne
     @JoinColumn(name = "feat_id")
     private Feat feat;
 

@@ -21,9 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -122,6 +122,11 @@ public class FeatServiceImpl implements FeatService {
 
     @Override
     public Set<Feat> findAllById(final Set<String> urls) {
-        return new LinkedHashSet<>(featRepository.findAllById(urls));
+        if (urls == null || urls.isEmpty()) {
+            return Set.of();
+        }
+        return urls.stream()
+                .map(featRepository::getReferenceById)
+                .collect(Collectors.toSet());
     }
 }

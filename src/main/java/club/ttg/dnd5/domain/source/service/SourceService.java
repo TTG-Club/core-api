@@ -61,6 +61,15 @@ public class SourceService {
     }
 
     @Transactional(readOnly = true)
+    public Source findReferenceByUrl(String url) {
+        String acronym = sourceRepository.findAcronymByUrl(url)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Источник с url %s не существует", url))
+                );
+        return sourceRepository.getReferenceById(acronym);
+    }
+
+    @Transactional(readOnly = true)
     public SourceDetailResponse findDetailByUrl(String url) {
         return sourceMapper.toDetail(sourceRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(

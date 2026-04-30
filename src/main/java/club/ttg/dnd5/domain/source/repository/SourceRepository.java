@@ -20,6 +20,10 @@ public interface SourceRepository extends JpaRepository<Source, String> {
     Collection<Source> findBySearchLine(String searchLine, String invertedSearchLine, Sort defaultSort);
 
     Optional<Source> findByUrl(String url);
+
+    @Query("select s.acronym from Source s where s.url = :url")
+    Optional<String> findAcronymByUrl(String url);
+
     boolean existsByUrl(String url);
 
 }
