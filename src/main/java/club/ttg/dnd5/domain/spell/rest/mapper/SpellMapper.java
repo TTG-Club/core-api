@@ -31,7 +31,6 @@ import org.springframework.util.StringUtils;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -110,9 +109,7 @@ public interface SpellMapper
             return Set.of();
         }
 
-        Set<SpellAffiliationDto> result = new TreeSet<>(
-                Comparator.comparing(SpellAffiliationDto::getName)
-                        .thenComparing(SpellAffiliationDto::getSource));
+        Set<SpellAffiliationDto> result = new TreeSet<>(SpellAffiliationDto.BY_NAME_THEN_SOURCE);
 
         for (NamedEntity entity : entities)
         {
