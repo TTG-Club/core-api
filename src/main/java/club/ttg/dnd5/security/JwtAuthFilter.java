@@ -1,8 +1,9 @@
 package club.ttg.dnd5.security;
 
-import club.ttg.dnd5.exception.ApiException;
+import club.ttg.dnd5.domain.user.model.Role;
 import club.ttg.dnd5.domain.user.model.User;
-import club.ttg.dnd5.domain.user.service.UserService;
+import club.ttg.dnd5.exception.ApiException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -19,13 +20,12 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtils jwtService;
-
-    private final UserService userService;
 
     public static final String BEARER_PREFIX = "Bearer ";
 
@@ -47,7 +47,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String jwt = authHeader.substring(BEARER_PREFIX.length());
 
-        if (isInvalidToken(jwt, response)) {
+        try {
+            if (isInvalidToken(jwt, response)) {
+                filterChain.doFilter(request, response);
+
+                return;
+            }
+        } catch (JwtException | IllegalArgumentException exception) {
+            SecurityContextHolder.clearContext();
+            resetTokenCookie(response);
             filterChain.doFilter(request, response);
 
             return;
@@ -92,8 +100,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private void authenticateUser(String jwt, HttpServletRequest request) {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
-        String username = jwtService.extractUsername(jwt);
-        User user = userService.getByUsername(username);
+        User user = buildUser(jwt);
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                 user,
@@ -104,6 +111,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         context.setAuthentication(authToken);
         SecurityContextHolder.setContext(context);
+    }
+
+    private User buildUser(String jwt) {
+        User user = new User();
+        String userId = jwtService.extractUserId(jwt);
+
+        if (StringUtils.hasLength(userId)) {
+            try {
+                user.setUuid(UUID.fromString(userId));
+            } catch (IllegalArgumentException ignored) {
+                // Old core-api tokens used username as subject. They are still allowed to expire naturally.
+            }
+        }
+
+        user.setUsername(jwtService.extractUsername(jwt));
+        user.setEmail(jwtService.extractEmail(jwt));
+        user.setEnabled(true);
+        user.setRoles(jwtService.extractRoles(jwt).stream()
+                .map(role -> Role.builder().name(role).build())
+                .toList());
+
+        return user;
     }
 
     private void resetTokenCookie(HttpServletResponse response) {

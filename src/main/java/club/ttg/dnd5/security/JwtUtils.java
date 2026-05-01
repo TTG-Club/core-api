@@ -1,32 +1,49 @@
 package club.ttg.dnd5.security;
 
-import club.ttg.dnd5.exception.ApiException;
-import club.ttg.dnd5.domain.user.model.User;
-import club.ttg.dnd5.domain.user.service.UserService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.function.Function;
 
 @Component
-@RequiredArgsConstructor
 public class JwtUtils {
-    @Value("${api.secret}")
-    private String SECRET_KEY;
-
-    private final UserService userService;
+    @Value("${auth-service.jwt-secret}")
+    private String secretKey;
 
     public String extractUsername(String token) {
+        String username = extractClaim(token, claims -> claims.get("username", String.class));
+
+        return username != null ? username : extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
+    }
+
+    public List<String> extractRoles(String token) {
+        Object roles = extractAllClaims(token).get("roles");
+
+        if (roles instanceof List<?> roleList) {
+            return roleList.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .toList();
+        }
+
+        return Collections.emptyList();
     }
 
     public Date extractExpiration(String token) {
@@ -38,52 +55,18 @@ public class JwtUtils {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(User user) {
-        return createToken(user, getExpirationInMilliseconds(Boolean.FALSE));
-    }
-
-    public String generateToken(User user, long expiration) {
-        return createToken(user, expiration);
-    }
-
     public Boolean isTokenValid(String token) {
         try {
-            final String username = extractUsername(token);
-            User user = userService.getByUsername(username);
+            extractAllClaims(token);
 
-            return (username.equals(user.getUsername()) && !isTokenExpired(token));
-        } catch (ApiException e) {
+            return !isTokenExpired(token);
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
-    public long getExpirationInMilliseconds(Boolean remember) {
-        long expiration = 24 * 60 * 60 * 1000L;
-
-        if (remember != null && remember) {
-            expiration = expiration * 30;
-        }
-
-        return expiration;
-    }
-
     public Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
-    }
-
-    private String createToken(User user, long expiration) {
-        Map<String, Object> claims = new HashMap<>();
-
-        claims.put("roles", user.getRoles());
-        claims.put("username", user.getUsername());
-
-        return Jwts.builder()
-                .claims(claims)
-                .subject(user.getUsername())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(this.getSigningKey())
-                .compact();
     }
 
     private Claims extractAllClaims(String token) {
@@ -95,7 +78,7 @@ public class JwtUtils {
     }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
 
         return Keys.hmacShaKeyFor(keyBytes);
     }
