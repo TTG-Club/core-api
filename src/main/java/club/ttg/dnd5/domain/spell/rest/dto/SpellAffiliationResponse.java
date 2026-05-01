@@ -5,16 +5,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Set;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 public class SpellAffiliationResponse {
-    private List<SpellAffiliationDto> classes;
-    private List<SpellAffiliationDto> subclasses;
-    private List<SpellAffiliationDto> species;
-    private List<SpellAffiliationDto> lineages;
-    private List<SpellAffiliationDto> feats;
+    private Set<SpellAffiliationDto> classes;
+    private Set<SpellAffiliationDto> subclasses;
+    private Set<SpellAffiliationDto> species;
+    private Set<SpellAffiliationDto> lineages;
+    private Set<SpellAffiliationDto> feats;
 }

@@ -282,7 +282,7 @@ public class SpellService
                     affiliation.getClasses().stream()
                             .filter(item -> item.getSource() != null)
                             .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                            .collect(Collectors.toSet())
             );
         }
 
@@ -292,7 +292,7 @@ public class SpellService
                     affiliation.getSubclasses().stream()
                             .filter(item -> item.getSource() != null)
                             .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                            .collect(Collectors.toSet())
             );
         }
 
@@ -302,7 +302,7 @@ public class SpellService
                     affiliation.getSpecies().stream()
                             .filter(item -> item.getSource() != null)
                             .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                            .collect(Collectors.toSet())
             );
         }
 
@@ -312,7 +312,7 @@ public class SpellService
                     affiliation.getLineages().stream()
                             .filter(item -> item.getSource() != null)
                             .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                            .collect(Collectors.toSet())
             );
         }
 
@@ -322,7 +322,7 @@ public class SpellService
                     affiliation.getFeats().stream()
                             .filter(item -> item.getSource() != null)
                             .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                            .collect(Collectors.toSet())
             );
         }
     }

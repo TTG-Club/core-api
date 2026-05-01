@@ -30,12 +30,13 @@ import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -102,14 +103,16 @@ public interface SpellMapper
         return response;
     }
 
-    default List<SpellAffiliationDto> mapAffiliations(Set<? extends NamedEntity> entities)
+    default Set<SpellAffiliationDto> mapAffiliations(Set<? extends NamedEntity> entities)
     {
         if (entities == null || entities.isEmpty())
         {
-            return List.of();
+            return Set.of();
         }
 
-        List<SpellAffiliationDto> result = new ArrayList<>(entities.size());
+        Set<SpellAffiliationDto> result = new TreeSet<>(
+                Comparator.comparing(SpellAffiliationDto::getName)
+                        .thenComparing(SpellAffiliationDto::getSource));
 
         for (NamedEntity entity : entities)
         {
