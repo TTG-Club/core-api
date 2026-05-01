@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
 import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceOrigin;
 import club.ttg.dnd5.domain.source.model.filter.SourceSavedFilter;
 import club.ttg.dnd5.domain.source.repository.SourceSavedFilterRepository;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
@@ -180,15 +180,15 @@ public class SourceSavedFilterService
                     .build();
         }
 
-        Map<SourceType, List<Source>> sourceMap = sources.stream()
-                .filter(source -> source != null && source.getType() != null)
-                .collect(Collectors.groupingBy(Source::getType));
+        Map<SourceOrigin, List<Source>> sourceMap = sources.stream()
+                .filter(source -> source != null && source.getOrigin() != null)
+                .collect(Collectors.groupingBy(Source::getOrigin));
 
         SourceFilterInfo filterInfo = new SourceFilterInfo(
-                Arrays.stream(SourceType.values())
+                Arrays.stream(SourceOrigin.values())
                         .filter(sourceMap::containsKey)
-                        .map(type -> new SourceGroupFilter(
-                                sourceMap.get(type).stream()
+                        .map(origin -> new SourceGroupFilter(
+                                sourceMap.get(origin).stream()
                                         .sorted((left, right) -> left.getName().compareToIgnoreCase(right.getName()))
                                         .map(src -> new SourceGroupFilter.SourceFilterItem(
                                                 src.getName(),
@@ -196,8 +196,8 @@ public class SourceSavedFilterService
                                                 true
                                         ))
                                         .collect(Collectors.toList()),
-                                type.getName(),
-                                type
+                                origin.getName(),
+                                origin
                         ))
                         .collect(Collectors.toList())
         );
@@ -227,11 +227,6 @@ public class SourceSavedFilterService
         }
 
         return new SourceFilterInfo(defaultFilter.getFilter().getGroups());
-    }
-
-    public SourceFilterInfo getDefaultFilterInfo(List<String> sourceCodes)
-    {
-        return getDefaultFilterInfo(sourceCodes, Set.of());
     }
 
     public SourceFilterInfo getDefaultFilterInfo(List<String> sourceCodes, Set<String> selectedSources)

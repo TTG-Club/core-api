@@ -12,7 +12,10 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SourceDetailResponse extends BaseResponse {
+    @Deprecated(forRemoval = true)
     private String type;
+    private String origin;
+    private String kind;
     private String image;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String authors;

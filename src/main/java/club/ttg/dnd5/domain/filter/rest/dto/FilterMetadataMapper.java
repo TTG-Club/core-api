@@ -39,7 +39,7 @@ public class FilterMetadataMapper {
                 .map(SourceGroupFilter.class::cast)
                 .map(group -> FilterMetadataResponse.SourceGroupMeta.builder()
                         .name(group.getName())
-                        .key(group.getSourceType() != null ? group.getSourceType().name() : "source")
+                        .key(group.getSourceOrigin() != null ? group.getSourceOrigin().name() : "source")
                         .values(group.getFilters().stream()
                                 .map(item -> FilterMetadataResponse.FilterValueMeta.builder()
                                         .id(String.valueOf(item.getValue()))

@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.full_text_search.repository.FullTextSearchViewRepository;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewDto;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse;
+import club.ttg.dnd5.domain.source.model.SourceOrigin;
 import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import lombok.RequiredArgsConstructor;
@@ -77,13 +78,24 @@ public class FullTextSearchViewService {
                                 .label(ftsv.getAcronym())
                                 .english(ftsv.getSourceEnglish())
                                 .build())
-                        .group(NameResponse.builder()
-                                .name(ftsv.getSourceType().getGroup())
-                                .label(ftsv.getSourceType().getLabel())
-                                .build())
+                        .group(toSourceGroup(ftsv))
                         .page(ftsv.getPage())
                         .build())
                 .build();
+    }
+
+    private NameResponse toSourceGroup(FullTextSearchView ftsv) {
+        SourceOrigin origin = ftsv.getSourceOrigin();
+        if (origin == null && ftsv.getSourceType() != null) {
+            origin = ftsv.getSourceType().toOrigin();
+        }
+
+        return origin == null
+                ? new NameResponse()
+                : NameResponse.builder()
+                        .name(origin.getName())
+                        .label(origin.getLabel())
+                        .build();
     }
 
     private FullTextSearchViewResponse getEmptyResponse() {

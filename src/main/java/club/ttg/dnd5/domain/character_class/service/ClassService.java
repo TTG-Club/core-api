@@ -157,7 +157,8 @@ public class ClassService {
                 .stream()
                 .filter(subclass -> sources.contains(subclass.getSource().getAcronym()))
                 .sorted(Comparator
-                        .comparing((CharacterClass c) -> c.getSource().getType().ordinal())
+                        .comparing((CharacterClass c) -> c.getSource().getOrigin().ordinal())
+                        .thenComparing(c -> c.getSource().getKind().ordinal())
                         .thenComparing(CharacterClass::getName)
                 )
                 .map(classMapper::toShort)

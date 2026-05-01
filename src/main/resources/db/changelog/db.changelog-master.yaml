@@ -181,3 +181,5 @@ databaseChangeLog:
       file: db/changelog/2026/04/09-01-add-feat-affilation.yaml
   - include:
       file: db/changelog/2026/04/30-01-add-notification-view.yaml
+  - include:
+      file: db/changelog/2026/05/01-01-split-source-type.yaml

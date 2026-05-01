@@ -30,7 +30,14 @@ public class Source extends Timestamped {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Deprecated(forRemoval = true)
     private SourceType type;
+
+    @Enumerated(EnumType.STRING)
+    private SourceOrigin origin;
+
+    @Enumerated(EnumType.STRING)
+    private SourceKind kind;
     /**
      * Издатель
      */
@@ -51,4 +58,32 @@ public class Source extends Timestamped {
      * Список авторов, разделенных запятой
      */
     private String authors;
+
+    public SourceOrigin getOrigin() {
+        if (origin != null) {
+            return origin;
+        }
+        return type == null ? null : type.toOrigin();
+    }
+
+    public SourceKind getKind() {
+        if (kind != null) {
+            return kind;
+        }
+        return type == null ? null : type.toKind();
+    }
+
+    @PrePersist
+    @PreUpdate
+    public void normalizeSourceClassification() {
+        if (origin == null && type != null) {
+            origin = type.toOrigin();
+        }
+        if (kind == null && type != null) {
+            kind = type.toKind();
+        }
+        if (type == null && origin != null && kind != null) {
+            type = SourceType.from(origin, kind);
+        }
+    }
 }

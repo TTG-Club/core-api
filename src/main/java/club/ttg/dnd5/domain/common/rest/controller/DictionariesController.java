@@ -784,6 +784,18 @@ public class DictionariesController {
         return dictionariesService.getSourceTypes();
     }
 
+    @Operation(summary = "Source origins")
+    @GetMapping("/source/origins")
+    public Collection<SelectOptionDto> getSourceOrigins() {
+        return dictionariesService.getSourceOrigins();
+    }
+
+    @Operation(summary = "Source kinds")
+    @GetMapping("/source/kinds")
+    public Collection<SelectOptionDto> getSourceKinds() {
+        return dictionariesService.getSourceKinds();
+    }
+
     @Operation(summary = "Типы нотификаций")
     @GetMapping("/notification/types")
     @ApiResponse(

@@ -16,9 +16,9 @@ import java.util.Optional;
 public interface BaseMapping {
 
     @Retention(RetentionPolicy.SOURCE)
-    @Mapping(source = "source.type.group", target = "source.group.name")
+    @Mapping(source = "source.origin.name", target = "source.group.name")
     @Mapping(target = "source.group.english", ignore = true)
-    @Mapping(source = "source.type.label", target = "source.group.label")
+    @Mapping(source = "source.origin.label", target = "source.group.label")
     @Mapping(source = "source.name", target = "source.name.name")
     @Mapping(source = "source.english", target = "source.name.english")
     @Mapping(source = "source.acronym", target = "source.name.label")

@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: 01-01-split-source-type
+      author: Codex
+      changes:
+        - addColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: origin
+                  type: varchar(32)
+              - column:
+                  name: kind
+                  type: varchar(32)
+        - sql:
+            sql: |
+              update source
+              set origin = case
+                  when type = 'THIRD_PARTY' then 'THIRD_PARTY'
+                  when type = 'CUSTOM' then 'HOMEBREW'
+                  else 'OFFICIAL'
+              end,
+              kind = case
+                  when type = 'SETTING' then 'SETTING'
+                  when type = 'MODULE' then 'ADVENTURE'
+                  else 'SOURCEBOOK'
+              end
+              where origin is null or kind is null;
+        - addNotNullConstraint:
+            tableName: source
+            columnName: origin
+            columnDataType: varchar(32)
+        - addNotNullConstraint:
+            tableName: source
+            columnName: kind
+            columnDataType: varchar(32)
+        - sqlFile:
+            path: db/changelog/2026/05/sql/01-update-full-name-search-view-source-origin.sql

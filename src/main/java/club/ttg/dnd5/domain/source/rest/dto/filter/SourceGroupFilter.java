@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.source.rest.dto.filter;
 
 import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceOrigin;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterGroup;
 import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.dto.base.filters.FilterRegistry;
@@ -31,7 +31,7 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
      * Используется маппером для построения key в FilterMetadataResponse.
      */
     @JsonIgnore
-    private SourceType sourceType;
+    private SourceOrigin sourceOrigin;
 
     public SourceGroupFilter(List<SourceFilterItem> filters, String name)
     {
@@ -39,11 +39,11 @@ public class SourceGroupFilter extends AbstractFilterGroup<String, SourceGroupFi
         this.name = name;
     }
 
-    public SourceGroupFilter(List<SourceFilterItem> filters, String name, SourceType sourceType)
+    public SourceGroupFilter(List<SourceFilterItem> filters, String name, SourceOrigin sourceOrigin)
     {
         super(filters);
         this.name = name;
-        this.sourceType = sourceType;
+        this.sourceOrigin = sourceOrigin;
     }
 
     public static SourceGroupFilter getDefault(List<Source> sources)
