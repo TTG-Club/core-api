@@ -78,7 +78,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class RelatedEntitySaveIsolationIntegrationTest {
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withInitScript("db/test/init-related-entity-save-isolation.sql");
 
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
