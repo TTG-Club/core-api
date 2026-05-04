@@ -13,10 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Tag(name = "Пользователи")
 @RestController
@@ -25,15 +22,6 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
     private final SourceSavedFilterService sourceSavedFilterService;
-
-    @Secured("ADMIN")
-    @Operation(summary = "Получение пользователей")
-    @GetMapping
-    public Collection<UserDto> getUsers(
-            @RequestParam(required = false) String search
-    ) {
-        return userService.getUsers(search);
-    }
 
     @Secured("USER")
     @Operation(summary = "Получение профиля пользователя")
@@ -73,15 +61,5 @@ public class UserController {
     public List<String> getRoles() {
         UserDto userDto = SecurityUtils.getUserDto();
         return userDto.getRoles();
-    }
-
-    @Secured("ADMIN")
-    @Operation(summary = "Изменение ролей пользователя")
-    @PutMapping("/{userId}/roles")
-    public UserDto updateUserRoles(
-            @PathVariable UUID userId,
-            @RequestBody List<String> roles
-    ) {
-        return userService.updateUserRoles(userId, Set.copyOf(roles));
     }
 }

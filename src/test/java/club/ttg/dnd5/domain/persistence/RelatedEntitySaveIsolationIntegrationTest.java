@@ -60,7 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         classes = PortalApplication.class,
         properties = {
                 "app.url=http://localhost",
-                "api.secret=test-secret",
+                "auth-service.jwt-secret=test-secret-for-related-entity-save-isolation-tests",
                 "spring.liquibase.enabled=false",
                 "spring.jpa.hibernate.ddl-auto=create-drop",
                 "spring.jpa.properties.hibernate.hbm2ddl.auto=create-drop",
@@ -78,7 +78,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class RelatedEntitySaveIsolationIntegrationTest {
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withInitScript("db/test/init-related-entity-save-isolation.sql");
 
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
