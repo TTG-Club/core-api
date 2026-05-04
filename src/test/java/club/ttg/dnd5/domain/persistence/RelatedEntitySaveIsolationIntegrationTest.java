@@ -60,7 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         classes = PortalApplication.class,
         properties = {
                 "app.url=http://localhost",
-                "api.secret=test-secret",
+                "auth-service.jwt-secret=test-secret-for-related-entity-save-isolation-tests",
                 "spring.liquibase.enabled=false",
                 "spring.jpa.hibernate.ddl-auto=create-drop",
                 "spring.jpa.properties.hibernate.hbm2ddl.auto=create-drop",
