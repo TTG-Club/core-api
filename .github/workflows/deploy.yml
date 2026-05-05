@@ -8,105 +8,25 @@ on:
       - dev
   workflow_dispatch:
 
-env:
-  REGISTRY: ${{ secrets.REGISTRY_URL }}
-
 jobs:
-  build:
-    name: Build & Push Docker Image
+  deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
-    if: ${{ github.ref_name == 'main' || github.ref_name == 'dev' }}
-    concurrency:
-      group: build-${{ github.ref_name }}
-      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
-      attestations: write
       id-token: write
-    outputs:
-      image_tag: ${{ steps.meta.outputs.version }}
-      image_name: ${{ steps.set_image_name.outputs.IMAGE_NAME }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set lowercase image name
-        id: set_image_name
-        env:
-          REPO_NAME: ${{ github.event.repository.name }}
-        run: |
-          LOWER_NAME=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
-          echo "IMAGE_NAME=$LOWER_NAME" >> $GITHUB_ENV
-          echo "IMAGE_NAME=$LOWER_NAME" >> $GITHUB_OUTPUT
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log into registry
-        uses: docker/login-action@v3
+      - name: Build, Push and Deploy
+        uses: TTG-Club/shared-workflows/standard@v1
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - name: Extract Docker metadata
-        uses: docker/metadata-action@v5
-        id: meta
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix=${{ github.ref_name == 'main' && 'release-' || 'dev-' }},format=short
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        id: push
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=gha,scope=${{ github.ref_name }}
-          cache-to: type=gha,mode=min,scope=${{ github.ref_name }}
-
-      - name: Generate SLSA provenance
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.5.0
-
-      - name: Sign image
-        run: |
-          cosign sign --yes \
-          "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}@${{ steps.push.outputs.digest }}"
-
-  update:
-    name: Update Server
-    needs: build
-    runs-on: ubuntu-latest
-    if: ${{ github.ref_name == 'main' || github.ref_name == 'dev' }}
-    concurrency:
-      group: update-${{ github.ref_name == 'main' && 'prod' || 'dev' }}-server
-      cancel-in-progress: false
-    env:
-      APP_ID: ${{ github.ref_name == 'main' && secrets.DOKPLOY_APP_ID_PROD || secrets.DOKPLOY_APP_ID_DEV }}
-      IMAGE_NAME: ${{ needs.build.outputs.image_name }}
-    steps:
-      - name: Dokploy Update Image
-        uses: jegork/dokploy-update-image-action@0.1.0
-        with:
-          base_url: ${{ secrets.DOKPLOY_URL }}
-          token: ${{ secrets.DOKPLOY_API_KEY }}
-          application_id: ${{ env.APP_ID }}
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image_tag }}
-
-      - name: Dokploy Deployment
-        uses: benbristow/dokploy-deploy-action@0.2.2
-        with:
-          api_token: ${{ secrets.DOKPLOY_API_KEY }}
-          application_id: ${{ env.APP_ID }}
+          application_id: ${{ github.ref_name == 'main' && secrets.DOKPLOY_APP_ID_PROD || secrets.DOKPLOY_APP_ID_DEV }}
+          registry_url: ${{ secrets.REGISTRY_URL }}
+          registry_username: ${{ secrets.REGISTRY_USERNAME }}
+          registry_password: ${{ secrets.REGISTRY_PASSWORD }}
           dokploy_url: ${{ secrets.DOKPLOY_URL }}
-          service_type: application
+          dokploy_api_key: ${{ secrets.DOKPLOY_API_KEY }}
+          cosign_private_key: ${{ secrets.COSIGN_PRIVATE_KEY }}
