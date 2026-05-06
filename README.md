@@ -1,8 +1,8 @@
 # TTG Club Core API
 
-Backend REST API for the TTG Club DnD 5E portal. The service stores and serves game reference data, user-related data, generated content, images, ratings, notifications, saved filters, and search metadata.
+Backend REST API для портала TTG Club DnD 5E. Сервис хранит и отдаёт справочные игровые данные, пользовательские данные, сгенерированный контент, изображения, рейтинги, уведомления, сохранённые фильтры и метаданные поиска.
 
-## Tech Stack
+## Стек
 
 - Java 21
 - Spring Boot 3.4
@@ -10,46 +10,46 @@ Backend REST API for the TTG Club DnD 5E portal. The service stores and serves g
 - PostgreSQL
 - Liquibase migrations
 - QueryDSL
-- MapStruct and Lombok
-- JWT authentication
+- MapStruct и Lombok
+- JWT-аутентификация
 - Spring Mail
-- S3-compatible object storage
-- OpenAPI/Swagger UI and Scalar UI
+- S3-совместимое объектное хранилище
+- OpenAPI/Swagger UI и Scalar UI
 - Maven Wrapper
 - Docker multi-stage build
 
-## Main API Areas
+## Основные разделы API
 
-The public API is mostly grouped under `/api/v2`.
+Публичное API в основном сгруппировано под `/api/v2`.
 
-- Spells, species, classes, feats, backgrounds, bestiary, items, magic items, glossary, sources, articles, roadmap
-- Full-text search and filter metadata
-- Dictionaries and selectable reference values
-- Ratings, notifications, personas, online counters
-- Image upload/conversion and token borders
-- Workshop and generator endpoints
-- User profile endpoints under `/api/user`
+- Заклинания, виды, классы, черты, предыстории, бестиарий, предметы, магические предметы, глоссарий, источники, статьи, roadmap
+- Полнотекстовый поиск и метаданные фильтров
+- Справочники и значения для списков выбора
+- Рейтинги, уведомления, персоны, счётчики онлайна
+- Загрузка/конвертация изображений и рамки токенов
+- Workshop и генераторы
+- Эндпоинты профиля пользователя под `/api/user`
 
-API documentation is available after startup:
+Документация API доступна после запуска:
 
 - Swagger UI: `/swagger-ui/index.html`
 - Scalar UI: `/scalar-ui.html`
 - OpenAPI JSON: `/v3/api-docs`
 - Health check: `/actuator/health`
 
-## Requirements
+## Требования
 
 - JDK 21
-- Maven is optional because the repository includes `mvnw` and `mvnw.cmd`
+- Maven опционален: в репозитории есть `mvnw` и `mvnw.cmd`
 - PostgreSQL
-- Access to an S3-compatible bucket if image storage is enabled
-- SMTP credentials if mail delivery is enabled
+- Доступ к S3-совместимому bucket, если включено хранение изображений
+- SMTP-доступ, если включена отправка писем
 
-## Configuration
+## Конфигурация
 
-Configuration is provided through Spring properties and environment variables. Do not commit real secrets, passwords, tokens, private endpoints, or production connection strings.
+Конфигурация задаётся через Spring properties и переменные окружения. Не коммитьте реальные секреты, пароли, токены, приватные эндпоинты и production connection strings.
 
-Required environment variables:
+Необходимые переменные окружения:
 
 ```text
 APP_URL
@@ -65,106 +65,106 @@ SPRING_CLOUD_AWS_CREDENTIALS_ACCESS_KEY
 SPRING_CLOUD_AWS_CREDENTIALS_SECRET_KEY
 ```
 
-Profiles:
+Профили:
 
-- `dev`: enables SQL logging
-- `prod`: disables SQL logging
+- `dev`: включает логирование SQL
+- `prod`: отключает логирование SQL
 
-Keep local environment files outside commits, or use local-only files ignored by Git. If you need an example config, create a sanitized template with placeholder values only.
+Локальные env-файлы держите вне коммитов или используйте только файлы, игнорируемые Git. Если нужен пример конфигурации, создавайте только очищенный шаблон с placeholder-значениями.
 
-## Run Locally
+## Локальный запуск
 
-Set the required environment variables, then start the app:
+Задайте необходимые переменные окружения и запустите приложение:
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-On Windows:
+На Windows:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-To select a Spring profile:
+Чтобы выбрать Spring-профиль:
 
 ```powershell
 $env:SPRING_PROFILES_ACTIVE="dev"
 .\mvnw.cmd spring-boot:run
 ```
 
-Liquibase runs on application startup and applies migrations from:
+Liquibase запускается при старте приложения и применяет миграции из:
 
 ```text
 src/main/resources/db/changelog/db.changelog-master.yaml
 ```
 
-## Build
+## Сборка
 
 ```bash
 ./mvnw clean package
 ```
 
-The application jar is built as:
+Итоговый jar собирается в:
 
 ```text
 target/dnd5.jar
 ```
 
-## Test
+## Тесты
 
 ```bash
 ./mvnw test
 ```
 
-Some tests use Testcontainers with PostgreSQL, so Docker must be available for those tests.
+Часть тестов использует Testcontainers с PostgreSQL, поэтому для них должен быть доступен Docker.
 
 ## Docker
 
-Build the image:
+Собрать image:
 
 ```bash
 docker build -t ttg-club-core-api .
 ```
 
-Run the container with environment variables supplied by your deployment system:
+Запустить контейнер с переменными окружения, переданными вашей системой деплоя:
 
 ```bash
 docker run --rm -p 8080:8080 ttg-club-core-api
 ```
 
-## Project Structure
+## Структура проекта
 
 ```text
 src/main/java/club/ttg/dnd5
-  config/          Spring, security, cache, S3, OpenAPI, rate limit config
-  domain/          Feature modules and REST controllers
-  dto/             Shared DTOs, serializers, filters
-  exception/       API exception handling
-  security/        JWT and authentication helpers
-  util/            Shared utilities
+  config/          Конфигурация Spring, security, cache, S3, OpenAPI, rate limit
+  domain/          Функциональные модули и REST-контроллеры
+  dto/             Общие DTO, сериализаторы, фильтры
+  exception/       Обработка API-ошибок
+  security/        JWT и вспомогательная логика аутентификации
+  util/            Общие утилиты
 
 src/main/resources
   application*.properties
   db/changelog/    Liquibase migrations
-  static/          Static API documentation assets
+  static/          Статические ресурсы документации API
 
 src/test
-  java/            Unit and integration tests
-  resources/       Test SQL/resources
+  java/            Unit и integration tests
+  resources/       SQL/resources для тестов
 ```
 
-## Security Notes
+## Безопасность
 
-- Never place secret values in `README.md`, examples, screenshots, commits, or issue comments.
-- Use placeholder values in documentation, for example `<set-in-environment>`.
-- Rotate any credential that was ever committed or shared accidentally.
-- Keep production secrets in a secret manager, CI/CD variables, or the deployment environment.
+- Никогда не добавляйте секретные значения в `README.md`, примеры, скриншоты, коммиты или комментарии в задачах.
+- В документации используйте placeholder-значения, например `<set-in-environment>`.
+- Ротируйте любой credential, который случайно попал в коммит или был передан наружу.
+- Production-секреты храните в secret manager, CI/CD variables или окружении деплоя.
 
-## Contributing
+## Участие в разработке
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution requirements and CLA details.
+Требования к вкладу и CLA описаны в [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## License
+## Лицензия
 
-This project is licensed under the [Apache 2.0 License](LICENSE.md).
+Проект распространяется под лицензией [Apache 2.0](LICENSE.md).
