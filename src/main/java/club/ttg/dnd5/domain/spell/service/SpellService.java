@@ -12,6 +12,7 @@ import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationDto;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
@@ -31,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -279,51 +281,44 @@ public class SpellService
         if (affiliation.getClasses() != null)
         {
             affiliation.setClasses(
-                    affiliation.getClasses().stream()
-                            .filter(item -> item.getSource() != null)
-                            .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                    filterAffiliationsBySources(affiliation.getClasses(), sources)
             );
         }
 
         if (affiliation.getSubclasses() != null)
         {
             affiliation.setSubclasses(
-                    affiliation.getSubclasses().stream()
-                            .filter(item -> item.getSource() != null)
-                            .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                    filterAffiliationsBySources(affiliation.getSubclasses(), sources)
             );
         }
 
         if (affiliation.getSpecies() != null)
         {
             affiliation.setSpecies(
-                    affiliation.getSpecies().stream()
-                            .filter(item -> item.getSource() != null)
-                            .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                    filterAffiliationsBySources(affiliation.getSpecies(), sources)
             );
         }
 
         if (affiliation.getLineages() != null)
         {
             affiliation.setLineages(
-                    affiliation.getLineages().stream()
-                            .filter(item -> item.getSource() != null)
-                            .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                    filterAffiliationsBySources(affiliation.getLineages(), sources)
             );
         }
 
         if (affiliation.getFeats() != null)
         {
             affiliation.setFeats(
-                    affiliation.getFeats().stream()
-                            .filter(item -> item.getSource() != null)
-                            .filter(item -> sources.contains(item.getSource()))
-                            .toList()
+                    filterAffiliationsBySources(affiliation.getFeats(), sources)
             );
         }
+    }
+
+    private Set<SpellAffiliationDto> filterAffiliationsBySources(Set<SpellAffiliationDto> affiliations, Set<String> sources)
+    {
+        return affiliations.stream()
+                .filter(item -> item != null && item.getSource() != null)
+                .filter(item -> sources.contains(item.getSource()))
+                .collect(Collectors.toCollection(() -> new TreeSet<>(SpellAffiliationDto.BY_NAME_THEN_SOURCE)));
     }
 }

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.filter.rest.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class FilterMetadataResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @EqualsAndHashCode
     public static class FilterValueMeta {
         private String id;      // SHA-256 short hash, enum name, or number
         private Object value;   // Full value for display

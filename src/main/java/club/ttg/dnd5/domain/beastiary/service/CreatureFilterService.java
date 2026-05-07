@@ -163,6 +163,8 @@ public class CreatureFilterService
                                     .name(tag)
                                     .build();
                         })
+                        .distinct()
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
                         .toList())
                 .build());
 
