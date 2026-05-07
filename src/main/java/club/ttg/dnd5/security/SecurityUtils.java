@@ -31,14 +31,22 @@ public final class SecurityUtils {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (Objects.isNull(authentication)) {
-                throw new ApiException(HttpStatus.UNAUTHORIZED, "Пользователь не авторизован");
+            if (Objects.isNull(authentication) || !authentication.isAuthenticated()) {
+                throw unauthorizedException();
             }
 
-            return (User) authentication.getPrincipal();
+            if (authentication.getPrincipal() instanceof User user) {
+                return user;
+            }
+
+            throw unauthorizedException();
         } catch (InsufficientAuthenticationException e) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Пользователь не авторизован");
+            throw unauthorizedException();
         }
+    }
+
+    private static ApiException unauthorizedException() {
+        return new ApiException(HttpStatus.UNAUTHORIZED, "Пользователь не авторизован");
     }
 
     /**

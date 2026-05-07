@@ -1,0 +1,266 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-05-06-01-create-initiative-tracker
+      author: codex
+      changes:
+        - createTable:
+            tableName: initiative_tracker
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_initiative_tracker
+                    nullable: false
+              - column:
+                  name: owner_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  defaultValue: Initiative Tracker
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  defaultValue: SETUP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_round
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_participant_id
+                  type: UUID
+              - column:
+                  name: reroll_each_round
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: group_same_creatures_initiative
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: share_token
+                  type: VARCHAR(255)
+              - column:
+                  name: encounter_difficulty
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - createTable:
+            tableName: initiative_participant
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_initiative_participant
+                    nullable: false
+              - column:
+                  name: tracker_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: relation_type
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: base_name
+                  type: VARCHAR(255)
+              - column:
+                  name: display_name
+                  type: VARCHAR(255)
+              - column:
+                  name: level
+                  type: INT
+              - column:
+                  name: source_creature_id
+                  type: VARCHAR(255)
+              - column:
+                  name: same_creature_index
+                  type: INT
+              - column:
+                  name: hp_max
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: hp_current
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: hp_temporary
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: state
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initiative_bonus
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dexterity_bonus
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: roll_mode
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rolls
+                  type: JSONB
+              - column:
+                  name: roll_value
+                  type: INT
+              - column:
+                  name: initiative_total
+                  type: INT
+              - column:
+                  name: order_index
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: added_round
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: now()
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addForeignKeyConstraint:
+            baseTableName: initiative_tracker
+            baseColumnNames: owner_id
+            referencedTableName: users
+            referencedColumnNames: uuid
+            constraintName: fk_initiative_tracker_owner
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: initiative_participant
+            baseColumnNames: tracker_id
+            referencedTableName: initiative_tracker
+            referencedColumnNames: id
+            constraintName: fk_initiative_participant_tracker
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: initiative_participant
+            baseColumnNames: source_creature_id
+            referencedTableName: bestiary
+            referencedColumnNames: url
+            constraintName: fk_initiative_participant_creature
+            onDelete: SET NULL
+        - createIndex:
+            tableName: initiative_tracker
+            indexName: initiative_tracker_owner_idx
+            columns:
+              - column:
+                  name: owner_id
+        - createIndex:
+            tableName: initiative_tracker
+            indexName: initiative_tracker_share_token_idx
+            unique: true
+            columns:
+              - column:
+                  name: share_token
+        - createIndex:
+            tableName: initiative_participant
+            indexName: initiative_participant_tracker_idx
+            columns:
+              - column:
+                  name: tracker_id
+        - createIndex:
+            tableName: initiative_participant
+            indexName: initiative_participant_source_creature_idx
+            columns:
+              - column:
+                  name: source_creature_id
+      rollback:
+        - dropTable:
+            tableName: initiative_participant
+            cascadeConstraints: true
+        - dropTable:
+            tableName: initiative_tracker
+            cascadeConstraints: true
+  - changeSet:
+      id: 2026-05-06-02-drop-initiative-tracker-owner-fk
+      author: codex
+      preConditions:
+        - onFail: MARK_RAN
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_initiative_tracker_owner
+            foreignKeyTableName: initiative_tracker
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: initiative_tracker
+            constraintName: fk_initiative_tracker_owner
+      rollback:
+        - addForeignKeyConstraint:
+            baseTableName: initiative_tracker
+            baseColumnNames: owner_id
+            referencedTableName: users
+            referencedColumnNames: uuid
+            constraintName: fk_initiative_tracker_owner
+            onDelete: CASCADE
