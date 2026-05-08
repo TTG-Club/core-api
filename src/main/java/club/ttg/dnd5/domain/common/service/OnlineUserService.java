@@ -1,56 +1,128 @@
 package club.ttg.dnd5.domain.common.service;
 
+import club.ttg.dnd5.config.properties.OnlineServiceProperties;
 import club.ttg.dnd5.domain.common.model.OnlineType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class OnlineUserService
 {
-    private final ConcurrentMap<String, Instant> guestLastSeen = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Instant> registeredLastSeen = new ConcurrentHashMap<>();
+    private static final String ONLINE_TOKEN_HEADER = "X-Online-Token";
 
-    public void heartbeat(OnlineType type, String key, Instant now)
+    private final OnlineServiceProperties properties;
+    private final RestClient restClient;
+
+    public OnlineUserService(OnlineServiceProperties properties, RestClient.Builder restClientBuilder)
     {
-        if (type == OnlineType.REGISTERED)
+        if (properties.getUrl() == null || properties.getUrl().isBlank())
         {
-            registeredLastSeen.put(key, now);
+            throw new IllegalStateException("online.service.url is not set");
         }
-        else
+
+        this.properties = properties;
+        this.restClient = restClientBuilder
+                .baseUrl(properties.getUrl())
+                .requestFactory(requestFactory(properties))
+                .build();
+    }
+
+    public HeartbeatResponse heartbeat(OnlineType type, String key, String previousGuestKey)
+    {
+        try
         {
-            guestLastSeen.put(key, now);
+            HeartbeatResponse response = restClient.post()
+                    .uri("/api/v1/online/heartbeat")
+                    .headers(this::addServiceHeaders)
+                    .body(new HeartbeatRequest(properties.getSiteId(), key, previousGuestKey, type))
+                    .retrieve()
+                    .body(HeartbeatResponse.class);
+
+            return response == null ? new HeartbeatResponse(0) : response;
+        }
+        catch (RestClientResponseException ex)
+        {
+            throw asResponseStatusException(ex);
+        }
+        catch (RestClientException ex)
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Online service is unavailable", ex);
         }
     }
 
-    public OnlineCount getCount(Duration window, Instant now)
+    public OnlineCount getCount(Duration window)
     {
-        long guests = countFresh(guestLastSeen, window, now);
-        long registered = countFresh(registeredLastSeen, window, now);
-        return new OnlineCount(guests, registered, guests + registered);
+        try
+        {
+            OnlineStatsResponse response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/online/stats/{siteId}")
+                            .queryParam("windowMinutes", window.toMinutes())
+                            .build(properties.getSiteId()))
+                    .headers(this::addServiceHeaders)
+                    .retrieve()
+                    .body(OnlineStatsResponse.class);
+
+            if (response == null)
+            {
+                return new OnlineCount(0, 0, 0);
+            }
+
+            return new OnlineCount(response.guests(), response.registered(), response.total());
+        }
+        catch (RestClientResponseException ex)
+        {
+            throw asResponseStatusException(ex);
+        }
+        catch (RestClientException ex)
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Online service is unavailable", ex);
+        }
     }
 
-    public void cleanup(Duration window, Instant now)
+    private void addServiceHeaders(HttpHeaders headers)
     {
-        evictStale(guestLastSeen, window, now);
-        evictStale(registeredLastSeen, window, now);
+        String token = properties.getApiToken();
+
+        if (token != null && !token.isBlank())
+        {
+            headers.set(ONLINE_TOKEN_HEADER, token);
+        }
     }
 
-    private static long countFresh(Map<String, Instant> map, Duration window, Instant now)
+    private static SimpleClientHttpRequestFactory requestFactory(OnlineServiceProperties properties)
     {
-        return map.values().stream()
-                .filter(ts -> Duration.between(ts, now).compareTo(window) <= 0)
-                .count();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(properties.getConnectTimeout());
+        factory.setReadTimeout(properties.getReadTimeout());
+        return factory;
     }
 
-    private static void evictStale(ConcurrentMap<String, Instant> map, Duration window, Instant now)
+    private static ResponseStatusException asResponseStatusException(RestClientResponseException ex)
     {
-        map.entrySet().removeIf(e -> Duration.between(e.getValue(), now).compareTo(window) > 0);
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+
+        if (status == null || status.is5xxServerError())
+        {
+            status = HttpStatus.BAD_GATEWAY;
+        }
+
+        return new ResponseStatusException(status, "Online service request failed", ex);
     }
+
+    public record HeartbeatRequest(String siteId, String key, String previousGuestKey, OnlineType type) {}
+
+    public record HeartbeatResponse(long total) {}
+
+    public record OnlineStatsResponse(long windowMinutes, String siteId, long guests, long registered, long total) {}
 
     public record OnlineCount(long guests, long registered, long total) {}
 }
