@@ -2,6 +2,10 @@ package club.ttg.dnd5.domain.common.rest.controller;
 
 import club.ttg.dnd5.domain.common.model.OnlineType;
 import club.ttg.dnd5.domain.common.service.OnlineUserService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -11,12 +15,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,25 +34,44 @@ public class OnlineUserController
     private final OnlineUserService service;
 
     @PostMapping("/heartbeat")
-    public ResponseEntity<Void> heartbeat(
+    public ResponseEntity<OnlineUserService.HeartbeatResponse> heartbeat(
             @CookieValue(name = VISITOR_COOKIE, required = false) String visitorId,
-            Authentication authentication
+            Authentication authentication,
+            @Valid @RequestBody(required = false) OnlineHeartbeatRequest request
     )
     {
-        Instant now = Instant.now();
+        if (request != null)
+        {
+            OnlineUserService.HeartbeatResponse response = service.heartbeat(
+                    request.type(),
+                    request.key(),
+                    request.previousGuestKey()
+            );
+
+            return ResponseEntity.ok(response);
+        }
 
         if (isAuthenticated(authentication))
         {
             String userKey = buildRegisteredKey(authentication);
-            service.heartbeat(OnlineType.REGISTERED, userKey, now);
-            return ResponseEntity.noContent().build();
+            OnlineUserService.HeartbeatResponse response = service.heartbeat(
+                    OnlineType.REGISTERED,
+                    userKey,
+                    visitorId
+            );
+
+            return ResponseEntity.ok(response);
         }
 
         String ensuredVisitorId = (visitorId == null || visitorId.isBlank())
                 ? UUID.randomUUID().toString()
                 : visitorId;
 
-        service.heartbeat(OnlineType.GUEST, ensuredVisitorId, now);
+        OnlineUserService.HeartbeatResponse response = service.heartbeat(
+                OnlineType.GUEST,
+                ensuredVisitorId,
+                null
+        );
 
         if (visitorId == null || visitorId.isBlank())
         {
@@ -60,21 +83,21 @@ public class OnlineUserController
                     .maxAge(Duration.ofDays(365))
                     .build();
 
-            return ResponseEntity.noContent()
+            return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                    .build();
+                    .body(response);
         }
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/count")
     public Map<String, Object> count(@RequestParam(defaultValue = "30") long windowMinutes)
     {
-        long clampedMinutes = Math.max(1, Math.min(windowMinutes, 24 * 60));
+        long clampedMinutes = Math.clamp(windowMinutes, 1, 24 * 60);
         Duration window = Duration.ofMinutes(clampedMinutes);
 
-        OnlineUserService.OnlineCount count = service.getCount(window, Instant.now());
+        OnlineUserService.OnlineCount count = service.getCount(window);
 
         return Map.of(
                 "windowMinutes", window.toMinutes(),
@@ -97,4 +120,16 @@ public class OnlineUserController
         // Лучше: реальный userId из principal (см. ниже)
         return authentication.getName();
     }
+
+    public record OnlineHeartbeatRequest(
+            @NotBlank
+            @Size(max = 128)
+            String key,
+
+            @Size(max = 128)
+            String previousGuestKey,
+
+            @NotNull
+            OnlineType type
+    ) {}
 }
