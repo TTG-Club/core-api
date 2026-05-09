@@ -28,6 +28,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter
 {
+    private static final String ONLINE_HEARTBEAT_PATH = "/api/v2/online/heartbeat";
+
     private final RateLimitProperties properties;
 
     private final Map<String, BucketEntry> buckets = new ConcurrentHashMap<>();
@@ -35,6 +37,12 @@ public class RateLimitFilter extends OncePerRequestFilter
     public RateLimitFilter(RateLimitProperties properties)
     {
         this.properties = properties;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@NotNull HttpServletRequest request)
+    {
+        return ONLINE_HEARTBEAT_PATH.equals(request.getServletPath());
     }
 
     @Override
