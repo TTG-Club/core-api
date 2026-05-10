@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -105,6 +106,13 @@ public class OnlineUserController
                 "registered", count.registered(),
                 "total", count.total()
         );
+    }
+
+    @Secured("ADMIN")
+    @GetMapping("/stats")
+    public OnlineUserService.OnlineAdminStatsResponse stats()
+    {
+        return service.getStats();
     }
 
     private static boolean isAuthenticated(Authentication authentication)

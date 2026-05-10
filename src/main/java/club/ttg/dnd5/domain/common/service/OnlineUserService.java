@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
+import java.util.List;
 
 @Service
 public class OnlineUserService
@@ -88,6 +89,30 @@ public class OnlineUserService
         }
     }
 
+    public OnlineAdminStatsResponse getStats()
+    {
+        try
+        {
+            OnlineAdminStatsResponse response = restClient.get()
+                    .uri("/api/v1/online/stats")
+                    .headers(this::addServiceHeaders)
+                    .retrieve()
+                    .body(OnlineAdminStatsResponse.class);
+
+            return response == null
+                    ? new OnlineAdminStatsResponse(0, new OnlineCount(0, 0, 0), List.of())
+                    : response;
+        }
+        catch (RestClientResponseException ex)
+        {
+            throw asResponseStatusException(ex);
+        }
+        catch (RestClientException ex)
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Online service is unavailable", ex);
+        }
+    }
+
     private void addServiceHeaders(HttpHeaders headers)
     {
         String token = properties.getApiToken();
@@ -125,5 +150,7 @@ public class OnlineUserService
     public record OnlineStatsResponse(long windowMinutes, String siteId, long guests, long registered, long total) {}
 
     public record OnlineCount(long guests, long registered, long total) {}
+
+    public record OnlineAdminStatsResponse(long windowMinutes, OnlineCount total, List<OnlineStatsResponse> sites) {}
 }
 
