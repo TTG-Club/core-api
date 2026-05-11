@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.common.repository;
 
 import club.ttg.dnd5.domain.common.model.notification.NotificationView;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -64,4 +65,11 @@ public interface NotificationViewRepository extends JpaRepository<NotificationVi
     Set<Long> findViewedAdvertisingIdsSince(
             @Param("username") String username,
             @Param("since") LocalDateTime since);
+
+    /**
+     * Удаляет все записи просмотров, созданные ранее указанной даты.
+     */
+    @Modifying
+    @Query("DELETE FROM NotificationView v WHERE v.viewedAt < :before")
+    int deleteByViewedAtBefore(@Param("before") LocalDateTime before);
 }
