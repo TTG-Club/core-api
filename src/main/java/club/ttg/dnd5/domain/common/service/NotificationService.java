@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Comparator;
@@ -43,6 +45,9 @@ public class NotificationService {
     @Value("${notification.advertising-weight:5}")
     private int advertisingWeight;
 
+    @Value("${notification.advertising-interval-minutes:30}")
+    private int advertisingIntervalMinutes;
+
     @Transactional
     public NotificationResponse getNotification(String guestId) {
         var now = LocalDateTime.now();
@@ -52,11 +57,15 @@ public class NotificationService {
         }
 
         var viewerKey = getViewerKey(guestId);
+        var startOfDay = LocalDate.now().atStartOfDay();
+        var isFirstRequestToday = !notificationViewRepository.existsViewedSinceByUsername(viewerKey, startOfDay);
+
         var lastNotificationId = notificationViewRepository.findFirstByUsernameOrderByViewedAtDescIdDesc(viewerKey)
                 .map(view -> view.getNotification().getId())
                 .orElse(null);
         var viewedNotificationIds = findViewedNotificationIds(viewerKey, notifications);
-        var notification = selectNotification(notifications, viewedNotificationIds, lastNotificationId);
+        var notification = selectNotification(notifications, viewedNotificationIds, lastNotificationId,
+                isFirstRequestToday, viewerKey, startOfDay, now);
         if (notification == null) {
             return null;
         }
@@ -113,8 +122,21 @@ public class NotificationService {
     private Notification selectNotification(
             List<Notification> notifications,
             Set<Long> viewedNotificationIds,
-            Long lastNotificationId
+            Long lastNotificationId,
+            boolean isFirstRequestToday,
+            String viewerKey,
+            LocalDateTime startOfDay,
+            LocalDateTime now
     ) {
+        // Приоритет 1: первый запрос за сутки — показываем все рекламные по очереди
+        if (isFirstRequestToday) {
+            var unseenTodayAds = findUnseenTodayAdvertising(notifications, viewerKey, startOfDay);
+            if (!unseenTodayAds.isEmpty()) {
+                return unseenTodayAds.getFirst();
+            }
+            // Все рекламные уже показаны сегодня — переходим к обычной ротации
+        }
+
         var visibleNotifications = notifications.stream()
                 .filter(notification -> notification.getType() != NotificationType.NEWS
                         || !viewedNotificationIds.contains(notification.getId()))
@@ -137,9 +159,14 @@ public class NotificationService {
                     .orElseThrow();
         }
 
+        // Приоритет 2: реклама разрешена только раз в 30 минут
+        var advertisingAllowed = isAdvertisingAllowed(viewerKey, now);
+
         var candidates = withoutLastNotification(
                 visibleNotifications.stream()
                         .filter(notification -> notification.getType() != NotificationType.NEWS)
+                        .filter(notification -> advertisingAllowed
+                                || notification.getType() != NotificationType.ADVERTISING)
                         .toList(),
                 lastNotificationId
         );
@@ -147,6 +174,8 @@ public class NotificationService {
         if (candidates.isEmpty()) {
             candidates = visibleNotifications.stream()
                     .filter(notification -> notification.getType() != NotificationType.NEWS)
+                    .filter(notification -> advertisingAllowed
+                            || notification.getType() != NotificationType.ADVERTISING)
                     .toList();
         }
 
@@ -155,6 +184,33 @@ public class NotificationService {
         }
 
         return selectWeighted(candidates);
+    }
+
+    /**
+     * Возвращает рекламные нотификации, которые ещё не были показаны пользователю сегодня,
+     * отсортированные по id (для последовательного показа).
+     */
+    private List<Notification> findUnseenTodayAdvertising(
+            List<Notification> notifications,
+            String viewerKey,
+            LocalDateTime startOfDay
+    ) {
+        var todayViewedAdIds = notificationViewRepository.findViewedAdvertisingIdsSince(viewerKey, startOfDay);
+        return notifications.stream()
+                .filter(n -> n.getType() == NotificationType.ADVERTISING)
+                .filter(n -> !todayViewedAdIds.contains(n.getId()))
+                .sorted(Comparator.comparing(Notification::getId))
+                .toList();
+    }
+
+    /**
+     * Проверяет, прошло ли достаточно времени с последнего показа рекламы.
+     * Если реклама никогда не показывалась — разрешена.
+     */
+    private boolean isAdvertisingAllowed(String viewerKey, LocalDateTime now) {
+        return notificationViewRepository.findLastAdvertisingView(viewerKey)
+                .map(view -> Duration.between(view.getViewedAt(), now).toMinutes() >= advertisingIntervalMinutes)
+                .orElse(true);
     }
 
     private List<Notification> withoutLastNotification(List<Notification> notifications, Long lastNotificationId) {
