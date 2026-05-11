@@ -30,4 +30,6 @@ public abstract class BaseResponse extends TagType.BaseUrl {
     private String userId;
     @Schema(description = "пользователь который последний обновил")
     private String lastUsername;
+    @Schema(description = "версия SRD, например \"5.1\"")
+    private String srdVersion;
 }

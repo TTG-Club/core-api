@@ -131,6 +131,7 @@ public interface CreatureMapper {
     @Mapping(source = "request.defenses.immunities.damage", target = "immunityToDamage")
     @Mapping(source = "request.defenses.immunities.condition", target = "immunityToCondition")
     @Mapping(source = "request.defenses.immunities.text", target = "immunityText")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Source source);
 

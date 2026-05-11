@@ -44,6 +44,7 @@ public interface MagicItemMapper
     @Mapping(source = "request.category.type", target = "category")
     @Mapping(source = "request.rarity.type", target = "rarity")
     @Mapping(source = "request.rarity.varies", target = "varies")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     MagicItem toEntity(MagicItemRequest request, Source source);
 

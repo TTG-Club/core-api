@@ -22,6 +22,7 @@ public class SpeciesPredicateBuilder
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyFilterEnum(builder, request.getCreatureType(), TYPE_PATH, CreatureType.class);
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "species", "source");
+        PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
         return builder;
     }
 }

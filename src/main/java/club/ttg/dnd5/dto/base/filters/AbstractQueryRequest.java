@@ -1,5 +1,6 @@
 package club.ttg.dnd5.dto.base.filters;
 
+import club.ttg.dnd5.domain.filter.rest.FilterParam;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,10 @@ public abstract class AbstractQueryRequest
 
     /** 2-state фильтр источников: множество включённых акронимов. */
     private Set<String> source = Set.of();
+
+    /** Фильтр по версии SRD, например "5.1". */
+    @FilterParam
+    private QueryFilter<String> srdVersion;
 
     /** Номер страницы (0-based). */
     private int page = 0;

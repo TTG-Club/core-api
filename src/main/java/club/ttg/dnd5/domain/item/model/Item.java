@@ -45,5 +45,4 @@ public class Item extends NamedEntity {
     @JoinColumn(name = "source")
     private Source source;
     private Long sourcePage;
-
 }

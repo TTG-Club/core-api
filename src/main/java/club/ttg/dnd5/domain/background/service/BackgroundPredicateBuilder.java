@@ -19,6 +19,7 @@ public class BackgroundPredicateBuilder
         PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getAbility(), "abilities");
         PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getSkill(), "skill_proficiencies");
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "background", "source");
+        PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
         return builder;
     }
 }
