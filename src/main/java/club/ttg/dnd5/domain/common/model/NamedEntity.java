@@ -33,5 +33,6 @@ public abstract class NamedEntity extends Timestamped {
     private boolean isHiddenEntity = false;
 
     /** Версия SRD, например "5.1" */
+    @Column(name = "srd_version")
     private String srdVersion;
 }
