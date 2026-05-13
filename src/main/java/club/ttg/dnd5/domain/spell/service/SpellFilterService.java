@@ -123,7 +123,7 @@ public class SpellFilterService {
         }
 
         private List<FilterGroupMeta> buildFilterGroups(Set<String> selectedSources) {
-                List<FilterGroupMeta> groups = new ArrayList<>();
+                List<FilterGroupMeta> groups = new ArrayList<>(15);
 
                 // Уровень
                 groups.add(FilterGroupMeta.builder()
@@ -309,6 +309,23 @@ public class SpellFilterService {
                                                 .name("Требуется")
                                                 .build()))
                                 .build());
+
+                // Версия SRD
+                List<String> srdVersions = spellRepository.findDistinctSrdVersions();
+                if (!srdVersions.isEmpty()) {
+                        groups.add(FilterGroupMeta.builder()
+                                        .key(FilterKeys.keyOf(SpellQueryRequest.class, "srdVersion"))
+                                        .name("Версия SRD")
+                                        .supports(SupportsConfig.builder().mode(true).union(false).build())
+                                        .values(srdVersions.stream()
+                                                        .map(v -> FilterValueMeta.builder()
+                                                                        .id(v)
+                                                                        .value(v)
+                                                                        .name("SRD " + v)
+                                                                        .build())
+                                                        .toList())
+                                        .build());
+                }
 
                 return groups;
         }

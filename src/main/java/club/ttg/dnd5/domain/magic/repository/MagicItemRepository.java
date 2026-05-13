@@ -27,4 +27,12 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
         order by mi.source
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
+
+    @Query(value = """
+        select distinct mi.srd_version
+        from magic_item mi
+        where mi.srd_version is not null
+        order by mi.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
 }

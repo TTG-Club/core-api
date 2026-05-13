@@ -183,3 +183,5 @@ databaseChangeLog:
       file: db/changelog/2026/04/30-01-add-notification-view.yaml
   - include:
       file: db/changelog/2026/05/11-01-add-srd-version.yaml
+  - include:
+      file: db/changelog/2026/05/13-01-add-index-srd-version.yaml

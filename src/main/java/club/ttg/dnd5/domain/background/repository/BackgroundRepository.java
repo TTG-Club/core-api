@@ -31,4 +31,12 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
         order by b.source
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
+
+    @Query(value = """
+        select distinct b.srd_version
+        from background b
+        where b.srd_version is not null
+        order by b.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
 }

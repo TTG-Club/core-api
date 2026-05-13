@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -34,20 +35,39 @@ public class ClassFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        return List.of(
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDice"))
-                        .name("Кость хитов")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(Stream.of(Dice.d6, Dice.d8, Dice.d10, Dice.d12)
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getName())
-                                        .build())
-                                .toList())
-                        .build()
-        );
+        List<FilterGroupMeta> groups = new ArrayList<>(2);
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(ClassQueryRequest.class, "hitDice"))
+                .name("Кость хитов")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Stream.of(Dice.d6, Dice.d8, Dice.d10, Dice.d12)
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        // Версия SRD
+        List<String> srdVersions = classRepository.findDistinctSrdVersions();
+        if (!srdVersions.isEmpty()) {
+            groups.add(FilterGroupMeta.builder()
+                    .key(FilterKeys.keyOf(ClassQueryRequest.class, "srdVersion"))
+                    .name("Версия SRD")
+                    .supports(SupportsConfig.builder().mode(true).union(false).build())
+                    .values(srdVersions.stream()
+                            .map(v -> FilterValueMeta.builder()
+                                    .id(v)
+                                    .value(v)
+                                    .name("SRD " + v)
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return groups;
     }
 
     private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)

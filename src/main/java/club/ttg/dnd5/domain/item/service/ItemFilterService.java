@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -35,21 +36,40 @@ public class ItemFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        return List.of(
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(ItemQueryRequest.class, "itemType"))
-                        .name("Категория")
-                        .supports(SupportsConfig.builder().mode(true).union(true).build())
-                        .values(Arrays.stream(ItemType.values())
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getName())
-                                        .build())
-                                .sorted(Comparator.comparing(FilterValueMeta::getName))
-                                .toList())
-                        .build()
-        );
+        List<FilterGroupMeta> groups = new ArrayList<>(2);
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(ItemQueryRequest.class, "itemType"))
+                .name("Категория")
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(ItemType.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
+                        .toList())
+                .build());
+
+        // Версия SRD
+        List<String> srdVersions = itemRepository.findDistinctSrdVersions();
+        if (!srdVersions.isEmpty()) {
+            groups.add(FilterGroupMeta.builder()
+                    .key(FilterKeys.keyOf(ItemQueryRequest.class, "srdVersion"))
+                    .name("Версия SRD")
+                    .supports(SupportsConfig.builder().mode(true).union(false).build())
+                    .values(srdVersions.stream()
+                            .map(v -> FilterValueMeta.builder()
+                                    .id(v)
+                                    .value(v)
+                                    .name("SRD " + v)
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return groups;
     }
 
     private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)

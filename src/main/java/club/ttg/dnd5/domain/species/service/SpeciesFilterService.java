@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -39,20 +40,39 @@ public class SpeciesFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        return List.of(
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(SpeciesQueryRequest.class, "creatureType"))
-                        .name("Тип существа")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(Arrays.stream(CreatureType.values())
-                                .map(ct -> FilterValueMeta.builder()
-                                        .id(ct.name())
-                                        .value(ct.name())
-                                        .name(ct.getName())
-                                        .build())
-                                .toList())
-                        .build()
-        );
+        List<FilterGroupMeta> groups = new ArrayList<>(2);
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(SpeciesQueryRequest.class, "creatureType"))
+                .name("Тип существа")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Arrays.stream(CreatureType.values())
+                        .map(ct -> FilterValueMeta.builder()
+                                .id(ct.name())
+                                .value(ct.name())
+                                .name(ct.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        // Версия SRD
+        List<String> srdVersions = speciesRepository.findDistinctSrdVersions();
+        if (!srdVersions.isEmpty()) {
+            groups.add(FilterGroupMeta.builder()
+                    .key(FilterKeys.keyOf(SpeciesQueryRequest.class, "srdVersion"))
+                    .name("Версия SRD")
+                    .supports(SupportsConfig.builder().mode(true).union(false).build())
+                    .values(srdVersions.stream()
+                            .map(v -> FilterValueMeta.builder()
+                                    .id(v)
+                                    .value(v)
+                                    .name("SRD " + v)
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return groups;
     }
 
     private List<SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)

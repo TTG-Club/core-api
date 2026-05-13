@@ -30,4 +30,12 @@ public interface FeatRepository extends JpaRepository<Feat, String> {
         order by f.source
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
+
+    @Query(value = """
+        select distinct f.srd_version
+        from feat f
+        where f.srd_version is not null
+        order by f.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
 }

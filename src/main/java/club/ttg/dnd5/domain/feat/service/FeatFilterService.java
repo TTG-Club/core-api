@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -35,42 +36,63 @@ public class FeatFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        return List.of(
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(FeatQueryRequest.class, "category"))
-                        .name("Категория")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(Arrays.stream(FeatCategory.values())
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getName())
-                                        .build())
-                                .toList())
-                        .build(),
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(FeatQueryRequest.class, "ability"))
-                        .name("Характеристика")
-                        .supports(SupportsConfig.builder().mode(true).union(true).build())
-                        .values(Arrays.stream(Ability.values())
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getShortName())
-                                        .build())
-                                .toList())
-                        .build(),
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(FeatQueryRequest.class, "repeatability"))
-                        .name("Повторяемость")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(List.of(FilterValueMeta.builder()
-                                .id("1")
-                                .value("1")
-                                .name("Да")
-                                .build()))
-                        .build()
-        );
+        List<FilterGroupMeta> groups = new ArrayList<>(4);
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(FeatQueryRequest.class, "category"))
+                .name("Категория")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Arrays.stream(FeatCategory.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(FeatQueryRequest.class, "ability"))
+                .name("Характеристика")
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(Ability.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getShortName())
+                                .build())
+                        .toList())
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(FeatQueryRequest.class, "repeatability"))
+                .name("Повторяемость")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Да")
+                        .build()))
+                .build());
+
+        // Версия SRD
+        List<String> srdVersions = featRepository.findDistinctSrdVersions();
+        if (!srdVersions.isEmpty()) {
+            groups.add(FilterGroupMeta.builder()
+                    .key(FilterKeys.keyOf(FeatQueryRequest.class, "srdVersion"))
+                    .name("Версия SRD")
+                    .supports(SupportsConfig.builder().mode(true).union(false).build())
+                    .values(srdVersions.stream()
+                            .map(v -> FilterValueMeta.builder()
+                                    .id(v)
+                                    .value(v)
+                                    .name("SRD " + v)
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return groups;
     }
 
     private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)
