@@ -42,5 +42,13 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
         """, nativeQuery = true)
     List<String> findDistinctTags();
 
+    @Query(value = """
+        select distinct b.srd_version
+        from bestiary b
+        where b.srd_version is not null
+        order by b.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
+
 }
 

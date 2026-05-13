@@ -26,4 +26,12 @@ public interface SpeciesRepository extends JpaRepository<Species, String> {
         order by s.source
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
+
+    @Query(value = """
+        select distinct s.srd_version
+        from species s
+        where s.srd_version is not null
+        order by s.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
 }

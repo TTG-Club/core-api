@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -35,62 +36,85 @@ public class MagicItemFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        return List.of(
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "category"))
-                        .name("Категории")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(Arrays.stream(MagicItemCategory.values())
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getName())
-                                        .build())
-                                .toList())
-                        .build(),
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "rarity"))
-                        .name("Редкость")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(Arrays.stream(Rarity.values())
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getName())
-                                        .build())
-                                .toList())
-                        .build(),
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "attunement"))
-                        .name("Настройка")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(List.of(FilterValueMeta.builder()
-                                .id("1")
-                                .value("1")
-                                .name("Требуется")
-                                .build()))
-                        .build(),
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "charges"))
-                        .name("Заряды")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(List.of(FilterValueMeta.builder()
-                                .id("1")
-                                .value("1")
-                                .name("Есть")
-                                .build()))
-                        .build(),
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "curse"))
-                        .name("Проклятие")
-                        .supports(SupportsConfig.builder().mode(true).union(false).build())
-                        .values(List.of(FilterValueMeta.builder()
-                                .id("1")
-                                .value("1")
-                                .name("Есть")
-                                .build()))
-                        .build()
-        );
+        List<FilterGroupMeta> groups = new ArrayList<>(6);
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "category"))
+                .name("Категории")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Arrays.stream(MagicItemCategory.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "rarity"))
+                .name("Редкость")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Arrays.stream(Rarity.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "attunement"))
+                .name("Настройка")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Требуется")
+                        .build()))
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "charges"))
+                .name("Заряды")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Есть")
+                        .build()))
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "curse"))
+                .name("Проклятие")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(List.of(FilterValueMeta.builder()
+                        .id("1")
+                        .value("1")
+                        .name("Есть")
+                        .build()))
+                .build());
+
+        // Версия SRD
+        List<String> srdVersions = itemRepository.findDistinctSrdVersions();
+        if (!srdVersions.isEmpty()) {
+            groups.add(FilterGroupMeta.builder()
+                    .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "srdVersion"))
+                    .name("Версия SRD")
+                    .supports(SupportsConfig.builder().mode(true).union(false).build())
+                    .values(srdVersions.stream()
+                            .map(v -> FilterValueMeta.builder()
+                                    .id(v)
+                                    .value(v)
+                                    .name("SRD " + v)
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return groups;
     }
 
     private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)

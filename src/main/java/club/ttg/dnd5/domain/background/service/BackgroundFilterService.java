@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -35,32 +36,52 @@ public class BackgroundFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        return List.of(
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "ability"))
-                        .name("Характеристики")
-                        .supports(SupportsConfig.builder().mode(true).union(true).build())
-                        .values(Arrays.stream(Ability.values())
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getName())
-                                        .build())
-                                .toList())
-                        .build(),
-                FilterGroupMeta.builder()
-                        .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "skill"))
-                        .name("Навыки")
-                        .supports(SupportsConfig.builder().mode(true).union(true).build())
-                        .values(Arrays.stream(Skill.values())
-                                .map(v -> FilterValueMeta.builder()
-                                        .id(v.name())
-                                        .value(v.name())
-                                        .name(v.getName())
-                                        .build())
-                                .toList())
-                        .build()
-        );
+        List<FilterGroupMeta> groups = new ArrayList<>(3);
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "ability"))
+                .name("Характеристики")
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(Ability.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "skill"))
+                .name("Навыки")
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(Skill.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        // Версия SRD
+        List<String> srdVersions = backgroundRepository.findDistinctSrdVersions();
+        if (!srdVersions.isEmpty()) {
+            groups.add(FilterGroupMeta.builder()
+                    .key(FilterKeys.keyOf(BackgroundQueryRequest.class, "srdVersion"))
+                    .name("Версия SRD")
+                    .supports(SupportsConfig.builder().mode(true).union(false).build())
+                    .values(srdVersions.stream()
+                            .map(v -> FilterValueMeta.builder()
+                                    .id(v)
+                                    .value(v)
+                                    .name("SRD " + v)
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return groups;
     }
 
     private List<FilterMetadataResponse.SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)

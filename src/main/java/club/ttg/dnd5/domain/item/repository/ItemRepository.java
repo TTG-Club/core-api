@@ -32,4 +32,12 @@ public interface ItemRepository extends JpaRepository<Item, String>,
         order by i.source
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
+
+    @Query(value = """
+        select distinct i.srd_version
+        from item i
+        where i.srd_version is not null
+        order by i.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
 }

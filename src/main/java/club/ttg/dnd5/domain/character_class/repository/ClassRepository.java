@@ -57,4 +57,12 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
         order by c.source
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
+
+    @Query(value = """
+        select distinct c.srd_version
+        from class c
+        where c.srd_version is not null
+        order by c.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
 }
