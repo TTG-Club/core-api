@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-05-13-01-add-index-srd-version
+      author: codex
+      changes:
+        - createIndex:
+            tableName: species
+            indexName: idx_species_srd_version
+            columns:
+              - column:
+                  name: srd_version
+
+        - createIndex:
+            tableName: class
+            indexName: idx_class_srd_version
+            columns:
+              - column:
+                  name: srd_version
+
+        - createIndex:
+            tableName: feat
+            indexName: idx_feat_srd_version
+            columns:
+              - column:
+                  name: srd_version
+
+        - createIndex:
+            tableName: background
+            indexName: idx_background_srd_version
+            columns:
+              - column:
+                  name: srd_version
+
+        - createIndex:
+            tableName: spell
+            indexName: idx_spell_srd_version
+            columns:
+              - column:
+                  name: srd_version
+
+        - createIndex:
+            tableName: item
+            indexName: idx_item_srd_version
+            columns:
+              - column:
+                  name: srd_version
+
+        - createIndex:
+            tableName: bestiary
+            indexName: idx_bestiary_srd_version
+            columns:
+              - column:
+                  name: srd_version
+
+        - createIndex:
+            tableName: magic_item
+            indexName: idx_magic_item_srd_version
+            columns:
+              - column:
+                  name: srd_version

@@ -68,4 +68,16 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
             """, nativeQuery = true)
     List<String> findAllUsedDistanceIds(@Param("sourceCodes") Set<String> sourceCodes);
 
+    @EntityGraph(attributePaths = {"source"})
+    @Query("select s from Spell s where s.url = :url")
+    Optional<Spell> findForUpdateByUrl(String url);
+
+    @Query(value = """
+        select distinct s.srd_version
+        from spell s
+        where s.srd_version is not null
+        order by s.srd_version
+        """, nativeQuery = true)
+    List<String> findDistinctSrdVersions();
+
 }

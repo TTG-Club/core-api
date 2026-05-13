@@ -53,7 +53,7 @@ public class CreatureFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        List<FilterGroupMeta> groups = new ArrayList<>();
+        List<FilterGroupMeta> groups = new ArrayList<>(10);
 
         // CR
         groups.add(FilterGroupMeta.builder()
@@ -191,6 +191,23 @@ public class CreatureFilterService
                         .name("Есть")
                         .build()))
                 .build());
+
+        // Версия SRD
+        List<String> srdVersions = creatureRepository.findDistinctSrdVersions();
+        if (!srdVersions.isEmpty()) {
+            groups.add(FilterGroupMeta.builder()
+                    .key(FilterKeys.keyOf(CreatureQueryRequest.class, "srdVersion"))
+                    .name("Версия SRD")
+                    .supports(SupportsConfig.builder().mode(true).union(false).build())
+                    .values(srdVersions.stream()
+                            .map(v -> FilterValueMeta.builder()
+                                    .id(v)
+                                    .value(v)
+                                    .name("SRD " + v)
+                                    .build())
+                            .toList())
+                    .build());
+        }
 
         return groups;
     }

@@ -3,13 +3,15 @@ package club.ttg.dnd5.domain.common.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class NamedEntity extends Timestamped {
+public abstract class NamedEntity extends Timestamped implements Persistable<String> {
     @Id
     @Column(nullable = false, unique = true)
     private String url;
@@ -33,5 +35,23 @@ public abstract class NamedEntity extends Timestamped {
     private boolean isHiddenEntity = false;
 
     /** Версия SRD, например "5.1" */
+    @Column(name = "srd_version")
     private String srdVersion;
+
+    @Override
+    @Transient
+    public String getId() {
+        return url;
+    }
+
+    /**
+     * Определяет, является ли сущность новой (ещё не сохранённой в БД).
+     * Используется Spring Data JPA для выбора между persist() и merge().
+     * createdAt устанавливается БД при INSERT, поэтому null означает новую сущность.
+     */
+    @Override
+    @Transient
+    public boolean isNew() {
+        return getCreatedAt() == null;
+    }
 }

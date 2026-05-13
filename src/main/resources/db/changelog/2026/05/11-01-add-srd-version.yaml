@@ -102,3 +102,16 @@ databaseChangeLog:
                   type: VARCHAR(20)
                   constraints:
                     nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-glossary
+      author: codex
+      changes:
+        - addColumn:
+            tableName: glossary
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
