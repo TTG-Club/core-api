@@ -42,7 +42,11 @@ public class RateLimitFilter extends OncePerRequestFilter
     @Override
     protected boolean shouldNotFilter(@NotNull HttpServletRequest request)
     {
-        return ONLINE_HEARTBEAT_PATH.equals(request.getServletPath());
+        String path = request.getServletPath();
+        if (path == null || path.isEmpty()) {
+            path = request.getRequestURI();
+        }
+        return ONLINE_HEARTBEAT_PATH.equals(path);
     }
 
     @Override

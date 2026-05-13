@@ -66,6 +66,7 @@ public class MagicItemPredicateBuilder
             }
         }
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "magicItem", "source");
+        PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
         return builder;
     }
 }

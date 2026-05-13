@@ -1,0 +1,104 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-species
+      author: codex
+      changes:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-class
+      author: codex
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-feat
+      author: codex
+      changes:
+        - addColumn:
+            tableName: feat
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-background
+      author: codex
+      changes:
+        - addColumn:
+            tableName: background
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-spell
+      author: codex
+      changes:
+        - addColumn:
+            tableName: spell
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-item
+      author: codex
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-bestiary
+      author: codex
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-05-11-01-add-srd-version-magic-item
+      author: codex
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: srd_version
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true

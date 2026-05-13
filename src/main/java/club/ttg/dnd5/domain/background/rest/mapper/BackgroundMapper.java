@@ -57,6 +57,7 @@ public interface BackgroundMapper {
     @Mapping(source = "request.imageUrl", target = "imageUrl")
     @Mapping(source = "request.abilityScores", target = "abilities")
     @Mapping(source = "request.skillsProficiencies", target = "skillProficiencies")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
     Background toEntity(BackgroundRequest request, Feat feat, Source source);

@@ -101,6 +101,9 @@ public class CreaturePredicateBuilder
         // 2-state источники
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "creature", "source");
 
+        // Версия SRD
+        PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
+
         return builder;
     }
 }

@@ -58,10 +58,6 @@ public class ClassService {
         return classRepository.existsById(url);
     }
 
-    public CharacterClass findReferenceByUrl(String url) {
-        return classRepository.getReferenceById(url);
-    }
-
     public CharacterClass findByUrl(String url) {
         return classRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Класс с url %s не существует", url)));
@@ -115,15 +111,11 @@ public class ClassService {
 
         if (!existingClass.getUrl().equals(request.getUrl())) {
             var saved = classMapper.toEntity(request, existingClass.getSource());
-            saved.setParent(Optional.ofNullable(request.getParentUrl())
-                    .map(this::findReferenceByUrl)
-                    .orElse(null));
+            saved.setParentUrl(request.getParentUrl());
             classRepository.save(saved);
             classRepository.delete(existingClass);
         } else {
-            if (request.getParentUrl() != null) {
-                existingClass.setParent(findReferenceByUrl(request.getParentUrl()));
-            }
+            existingClass.setParentUrl(request.getParentUrl());
             classMapper.updateEntity(existingClass,
                     request,
                     getSource(request.getSource())

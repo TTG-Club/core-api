@@ -110,6 +110,8 @@ public interface ClassMapper
     @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics.values")
     @Mapping(target = "delimiterPrimary", source = "request.primaryCharacteristics.delimiter")
     @Mapping(target = "multiclassProficiency", source = "request.multiclassProficiency")
+    @Mapping(target = "srdVersion", source = "request.srdVersion")
+    @Mapping(target = "parentUrl", source = "request.parentUrl")
     @interface ToEntityMapping
     {
     }

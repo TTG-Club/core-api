@@ -18,6 +18,7 @@ public class ItemPredicateBuilder
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getItemType(), "item_types");
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "item", "source");
+        PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
         return builder;
     }
 }

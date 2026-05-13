@@ -38,6 +38,7 @@ public interface ItemMapper {
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     Item toEntity(ItemRequest request, Source source);
 

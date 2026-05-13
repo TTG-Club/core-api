@@ -22,4 +22,6 @@ public abstract class BaseRequest extends TagType.BaseUrl {
     @JsonProperty(value = "source")
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
     private SourceRequest source;
+    @Schema(description = "версия SRD, например \"5.1\"")
+    private String srdVersion;
 }

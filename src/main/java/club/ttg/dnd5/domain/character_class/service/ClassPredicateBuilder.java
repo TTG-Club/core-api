@@ -40,6 +40,7 @@ public class ClassPredicateBuilder
         );
 
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "characterClass", "source");
+        PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
 
         return builder;
     }

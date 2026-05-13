@@ -151,6 +151,9 @@ public class SpellPredicateBuilder {
         // Источники
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "spell", "source");
 
+        // Версия SRD
+        PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
+
         return builder;
     }
 }

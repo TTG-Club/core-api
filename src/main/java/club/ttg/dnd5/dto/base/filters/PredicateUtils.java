@@ -96,6 +96,36 @@ public class PredicateUtils
     }
 
     /**
+     * Строковый фильтр: IN / NOT IN / union для {@link QueryFilter} с {@link StringPath}.
+     * Используется для полей типа String (например, srdVersion).
+     */
+    public void applyStringFilter(final BooleanBuilder builder,
+                                   final QueryFilter<String> filter,
+                                   final StringPath path)
+    {
+        if (filter == null || !filter.isActive())
+        {
+            return;
+        }
+
+        if (filter.isExclude())
+        {
+            builder.and(path.notIn(filter.getValues()));
+        }
+        else if (filter.isUnion())
+        {
+            for (String val : filter.getValues())
+            {
+                builder.and(path.eq(val));
+            }
+        }
+        else
+        {
+            builder.and(path.in(filter.getValues()));
+        }
+    }
+
+    /**
      * Enum фильтр для {@link QueryFilter}: сравнение как String (Enum → name()).
      * По умолчанию — ИЛИ (IN), при union=true — И.
      */
