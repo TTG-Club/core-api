@@ -195,7 +195,10 @@ public class SpellService
     @Transactional
     public String update(String oldUrl, @Valid SpellRequest request)
     {
-        Spell existingSpell = getDetailedByUrl(oldUrl);
+        Spell existingSpell = spellRepository.findForUpdateByUrl(oldUrl)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Заклинание с url %s не существует", oldUrl)
+                ));
 
         Set<Species> species = getSpecieses(request);
         Set<Species> lineages = getLineages(request);
