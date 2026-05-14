@@ -147,10 +147,19 @@ public class MulticlassService {
                     }
                 }
                 if (!list.isEmpty()) {
-                    ClassTableColumn columnCopy = new ClassTableColumn();
-                    columnCopy.setName(column.getName());
-                    columnCopy.setScaling(list);
-                    table.add(columnCopy);
+                    // Merge into existing column with the same name if present
+                    ClassTableColumn existing = table.stream()
+                            .filter(c -> c.getName().equals(column.getName()))
+                            .findFirst()
+                            .orElse(null);
+                    if (existing != null) {
+                        existing.getScaling().addAll(list);
+                    } else {
+                        ClassTableColumn columnCopy = new ClassTableColumn();
+                        columnCopy.setName(column.getName());
+                        columnCopy.setScaling(new ArrayList<>(list));
+                        table.add(columnCopy);
+                    }
                 }
             }
 

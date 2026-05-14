@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.character_class.service;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
+import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
+import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
 import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
@@ -266,6 +268,51 @@ class MulticlassServiceTest {
         verify(multiclassMapper).toMulticlassResponse(captor.capture());
         // Weapon proficiency should contain SIMPLE_MELEE from wizard multiclass proficiency
         assertTrue(captor.getValue().getWeaponProficiency().getCategory().contains(WeaponCategory.SIMPLE_MELEE));
+    }
+
+    @Test
+    void getMulticlassWithLevelsFormatMergesTableColumnsForRepeatedClass() {
+        // Fighter 3 → Wizard 2 → Fighter 4: Fighter's table columns must appear once, not twice
+        CharacterClass fighter = characterClass("fighter");
+        ClassTableColumn fighterCol = new ClassTableColumn();
+        fighterCol.setName("Всплески действий");
+        ClassTableItem item1 = new ClassTableItem(); item1.setLevel(2); item1.setValue("1");
+        ClassTableItem item2 = new ClassTableItem(); item2.setLevel(3); item2.setValue("1");
+        ClassTableItem item3 = new ClassTableItem(); item3.setLevel(4); item3.setValue("2");
+        fighterCol.setScaling(new java.util.ArrayList<>(List.of(item1, item2, item3)));
+        fighter.setTable(List.of(fighterCol));
+
+        CharacterClass wizard = characterClass("wizard");
+        wizard.setTable(List.of());
+
+        MulticlassRequest request = new MulticlassRequest();
+        request.setLevels(List.of(
+                new MulticlassLevelEntry("fighter", null, 3),
+                new MulticlassLevelEntry("wizard", null, 2),
+                new MulticlassLevelEntry("fighter", null, 4)
+        ));
+
+        MulticlassResponse response = new MulticlassResponse();
+        when(classRepository.findById("fighter")).thenReturn(Optional.of(fighter));
+        when(classRepository.findById("wizard")).thenReturn(Optional.of(wizard));
+        when(multiclassMapper.toMulticlassResponse(any(CharacterClass.class))).thenReturn(response);
+
+        service.getMulticlass(request);
+
+        ArgumentCaptor<CharacterClass> captor = ArgumentCaptor.forClass(CharacterClass.class);
+        verify(multiclassMapper).toMulticlassResponse(captor.capture());
+
+        List<ClassTableColumn> table = captor.getValue().getTable();
+        // There must be exactly one column named "Всплески действий"
+        long count = table.stream().filter(c -> c.getName().equals("Всплески действий")).count();
+        assertEquals(1, count, "Duplicate table columns found for repeated class");
+
+        // That single column must contain all 3 scaling rows (levels 2,3 from first segment + level 4 from second)
+        ClassTableColumn merged = table.stream()
+                .filter(c -> c.getName().equals("Всплески действий"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(3, merged.getScaling().size());
     }
 
     private CharacterClass characterClass(String url) {
