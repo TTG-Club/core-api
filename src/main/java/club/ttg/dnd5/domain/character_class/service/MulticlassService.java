@@ -18,6 +18,7 @@ import club.ttg.dnd5.domain.character_class.rest.dto.MulticlassResponse;
 import club.ttg.dnd5.domain.character_class.rest.mapper.ClassFeatureMapper;
 import club.ttg.dnd5.domain.character_class.rest.mapper.MulticlassMapper;
 import club.ttg.dnd5.domain.common.rest.dto.MulticlassDto;
+import club.ttg.dnd5.domain.common.rest.dto.MulticlassLevelEntry;
 import club.ttg.dnd5.domain.common.rest.dto.MulticlassRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +27,10 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -40,7 +43,7 @@ public class MulticlassService {
 
     public CharacterClass findByUrl(String url) {
         if (!StringUtils.hasText(url)) {
-            throw new EntityNotFoundException("Class url must not be empty");
+            throw new EntityNotFoundException("URL класса не должен быть пустым");
         }
         return classRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Класс с url %s не существует", url)));
@@ -56,200 +59,239 @@ public class MulticlassService {
         return Optional.of(findByUrl(url));
     }
 
+    /**
+     * Конвертирует устаревший формат запроса в новый упорядоченный формат уровней.
+     */
+    private List<MulticlassLevelEntry> toLevelEntries(MulticlassRequest request) {
+        if (request.getLevels() != null && !request.getLevels().isEmpty()) {
+            return request.getLevels();
+        }
+        // Устаревший формат: конвертируем в записи уровней
+        List<MulticlassLevelEntry> entries = new ArrayList<>();
+        entries.add(new MulticlassLevelEntry(request.getUrl(), request.getSubclass(), request.getLevel()));
+        if (request.getClasses() != null) {
+            for (MulticlassDto dto : request.getClasses()) {
+                entries.add(new MulticlassLevelEntry(dto.getUrl(), dto.getSubclass(), dto.getLevel()));
+            }
+        }
+        return entries;
+    }
+
     public MulticlassResponse getMulticlass(final MulticlassRequest request) {
+        List<MulticlassLevelEntry> entries = toLevelEntries(request);
+        if (entries.isEmpty()) {
+            throw new EntityNotFoundException("Необходима хотя бы одна запись уровня");
+        }
+
         var multiclass = new CharacterClass();
-        var mainClass = findByUrl(request.getUrl());
         List<ClassFeatureDto> features = new ArrayList<>();
         int extraAttack = 0;
         boolean spellcasting = false;
-        int charachterLevel = request.getLevel();
-        int spellcastLevel = calculateSpellCastingLevel(mainClass.getCasterType(), request.getLevel());
+        int characterLevel = 0;
+        int spellcastLevel = 0;
         List<CasterType> casterTypes = new ArrayList<>();
-        addCasterType(casterTypes, mainClass.getCasterType());
         List<String> requirements = new ArrayList<>();
         List<ClassTableColumn> table = new ArrayList<>();
-        for (var column :mainClass.getTable()) {
-            List<ClassTableItem> list = new ArrayList<>();
-            for (ClassTableItem classTableItem : column.getScaling()) {
-                if (classTableItem.getLevel() <= request.getLevel()) {
-                    list.add(classTableItem);
-                }
-            }
-            column.setScaling(list);
-            table.add(column);
-        }
-        for (ClassFeature classFeature : mainClass.getFeatures()) {
-            var classFilterFeature = filterMulticlassFeature(classFeature, request.getLevel(), 0);
-            if (classFilterFeature.isHideInSubclasses()) {
-                continue;
-            }
-
-            if (classFilterFeature.getLevel() <= request.getLevel()) {
-                if (isSpellcastingFeature(classFilterFeature)) {
-                    classFilterFeature.setDescription(getSpellcastingMulticlass());
-                    spellcasting = true;
-                } else if (classFeature.getName().equals("Дополнительная атака")
-                        || classFeature.getName().contains("дополнительные атаки")
-                        || classFeature.getName().contains("дополнительных атак")) {
-                    extraAttack++;
-                }
-                var feature = classFeatureMapper.toDto(classFilterFeature, false);
-                feature.setAdditional(mainClass.getName());
-                features.add(feature);
-            }
-        }
-        var mainSubClass = findSubclass(request.getSubclass(), request.getLevel());
-
         List<MulticlassInfo> multiclassInfo = new ArrayList<>();
-        multiclassInfo.add(MulticlassInfo.builder()
-                .hitDice("1" + mainClass.getHitDice().getName() + " за каждый уровень")
-                .name(mainClass.getName())
-                .subclass(mainSubClass.map(CharacterClass::getName).orElse(null))
-                .level(request.getLevel())
-                .build());
+        List<String> names = new ArrayList<>();
 
-        if (isNotCaster(mainClass.getCasterType())) {
-            spellcastLevel += mainSubClass
-                    .map(subclass -> calculateSpellCastingLevel(subclass.getCasterType(), request.getLevel()))
-                    .orElse(0);
-        }
-        mainSubClass.ifPresent(subclass -> addCasterType(casterTypes, subclass.getCasterType()));
-        for (ClassFeature subclassFeature : mainSubClass
-                .map(CharacterClass::getFeatures)
-                .orElseGet(List::of)) {
-            if (subclassFeature.getLevel() <= request.getLevel()) {
-                if (isSpellcastingFeature(subclassFeature)) {
-                    subclassFeature.setDescription(getSpellcastingMulticlass());
-                    spellcasting = true;
-                } else if (subclassFeature.getName().equals("Дополнительная атака")
-                        || subclassFeature.getName().contains("дополнительные атаки")
-                        || subclassFeature.getName().contains("дополнительных атак")) {
-                    extraAttack++;
-                }
-                ClassFeature filteredSubclassFeature = filterMulticlassFeature(subclassFeature, request.getLevel(), 0);
-                var feature = classFeatureMapper.toDto(filteredSubclassFeature, true);
-                feature.setAdditional(mainSubClass.map(CharacterClass::getName).orElse(null));
-                features.add(feature);
-            }
-        }
-        var names = new ArrayList<String>(request.getClasses().size());
+        // Отслеживаем накопленные уровни по URL класса для фильтрации умений
+        Map<String, Integer> cumulativeLevelsPerClass = new HashMap<>();
+
+        // Первая запись — «основной» класс
+        MulticlassLevelEntry firstEntry = entries.getFirst();
+        CharacterClass mainClass = findByUrl(firstEntry.getUrl());
+
+        // Устанавливаем базовые владения из основного класса
         multiclass.setArmorProficiency(copyArmorProficiency(mainClass.getArmorProficiency()));
         multiclass.setWeaponProficiency(copyWeaponProficiency(mainClass.getWeaponProficiency()));
         multiclass.setToolProficiency(mainClass.getToolProficiency());
         multiclass.setSkillProficiency(copySkillProficiency(mainClass.getSkillProficiency()));
-        for (var multiclassRequest :  request.getClasses()) {
-            var multiClass = findByUrl(multiclassRequest.getUrl());
-            mergeMulticlassProficiency(multiclass, multiClass.getMulticlassProficiency());
-            requirements.add(multiClass.getPrimaryCharacteristics()
-                    .stream()
-                    .map(ability -> ability.getName() + " 13")
-                    .collect(Collectors.joining(" или ")));
-            for (var column :multiClass.getTable()) {
+
+        // Обрабатываем каждую запись по порядку
+        for (int i = 0; i < entries.size(); i++) {
+            MulticlassLevelEntry entry = entries.get(i);
+            CharacterClass entryClass = findByUrl(entry.getUrl());
+
+            // entry.getLevel() — целевой накопленный уровень класса после этого сегмента
+            int previousClassLevel = cumulativeLevelsPerClass.getOrDefault(entry.getUrl(), 0);
+            int newClassLevel = entry.getLevel();
+            int segmentLevels = newClassLevel - previousClassLevel;
+            cumulativeLevelsPerClass.put(entry.getUrl(), newClassLevel);
+
+            // Объединяем владения мультикласса при первом появлении нового класса
+            if (i > 0 && previousClassLevel == 0) {
+                mergeMulticlassProficiency(multiclass, entryClass.getMulticlassProficiency());
+                requirements.add(entryClass.getPrimaryCharacteristics()
+                        .stream()
+                        .map(ability -> ability.getName() + " 13")
+                        .collect(Collectors.joining(" или ")));
+            }
+
+            // Расчёт уровня заклинателя
+            spellcastLevel += calculateSpellCastingLevel(entryClass.getCasterType(), newClassLevel)
+                    - calculateSpellCastingLevel(entryClass.getCasterType(), previousClassLevel);
+            if (previousClassLevel == 0) {
+                addCasterType(casterTypes, entryClass.getCasterType());
+            }
+
+            // Столбцы таблицы класса
+            for (var column : entryClass.getTable()) {
                 List<ClassTableItem> list = new ArrayList<>();
                 for (ClassTableItem classTableItem : column.getScaling()) {
-                    if (classTableItem.getLevel() <= multiclassRequest.getLevel()) {
-                        list.add(classTableItem);
+                    if (classTableItem.getLevel() > previousClassLevel && classTableItem.getLevel() <= newClassLevel) {
+                        ClassTableItem copy = new ClassTableItem();
+                        copy.setLevel(classTableItem.getLevel() - previousClassLevel + characterLevel);
+                        copy.setValue(classTableItem.getValue());
+                        list.add(copy);
                     }
-                    classTableItem.setLevel(classTableItem.getLevel() + charachterLevel);
                 }
-                column.setScaling(list);
-                table.add(column);
+                if (!list.isEmpty()) {
+                    // Merge into existing column with the same name if present
+                    ClassTableColumn existing = table.stream()
+                            .filter(c -> c.getName().equals(column.getName()))
+                            .findFirst()
+                            .orElse(null);
+                    if (existing != null) {
+                        existing.getScaling().addAll(list);
+                    } else {
+                        ClassTableColumn columnCopy = new ClassTableColumn();
+                        columnCopy.setName(column.getName());
+                        columnCopy.setScaling(new ArrayList<>(list));
+                        table.add(columnCopy);
+                    }
+                }
             }
-            spellcastLevel += calculateSpellCastingLevel(multiClass.getCasterType(), multiclassRequest.getLevel());
-            addCasterType(casterTypes, multiClass.getCasterType());
-            var level = multiclassRequest.getLevel();
-            for (ClassFeature multiclassFeature : multiClass.getFeatures()) {
-                if (multiclassFeature.isHideInSubclasses()) {
+
+            // Обрабатываем умения класса для уровней (previousClassLevel, newClassLevel]
+            for (ClassFeature classFeature : entryClass.getFeatures()) {
+                if (classFeature.isHideInSubclasses()) {
                     continue;
                 }
-                if (multiclassFeature.getLevel() <= level) {
-                    ClassFeature classFeature = filterMulticlassFeature(multiclassFeature,
-                            level,
-                            charachterLevel);
-                    if (isSpellcastingFeature(multiclassFeature)) {
+                if (classFeature.getLevel() > previousClassLevel && classFeature.getLevel() <= newClassLevel) {
+                    ClassFeature filteredFeature = filterMulticlassFeature(classFeature, newClassLevel, characterLevel);
+                    if (isSpellcastingFeature(classFeature)) {
                         if (spellcasting) {
                             continue;
                         }
-                        classFeature.setDescription(getSpellcastingMulticlass());
+                        filteredFeature.setDescription(getSpellcastingMulticlass());
                         spellcasting = true;
-                    } else if (multiclassFeature.getName().equals("Дополнительная атака")
-                            || multiclassFeature.getName().contains("дополнительные атаки")
-                            || multiclassFeature.getName().contains("дополнительных атак")) {
+                    } else if (isExtraAttackFeature(classFeature)) {
                         if (extraAttack >= 1) {
-                            classFeature.setName(getExtraAttackName(extraAttack));
-                            classFeature.setDescription(
+                            filteredFeature.setName(getExtraAttackName(extraAttack));
+                            filteredFeature.setDescription(
                                     "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
                                             .formatted(extraAttack + 2));
                         }
                         extraAttack++;
                     }
-                    classFeature.setLevel(multiclassFeature.getLevel() + charachterLevel);
-                    var feature = classFeatureMapper.toDto(classFeature, false);
-                    feature.setAdditional(multiClass.getName());
+                    // Устанавливаем уровень персонажа, на котором получено умение
+                    filteredFeature.setLevel(characterLevel + (classFeature.getLevel() - previousClassLevel));
+                    var feature = classFeatureMapper.toDto(filteredFeature, false);
+                    feature.setAdditional(entryClass.getName());
+                    features.add(feature);
+                } else if (classFeature.getLevel() <= previousClassLevel && previousClassLevel > 0
+                        && hasScalingOrOptionsInRange(classFeature, previousClassLevel, newClassLevel)) {
+                    // Повторный сегмент класса: обновляем масштабирование/опции для ранее добавленного умения
+                    ClassFeature filteredFeature = filterMulticlassFeatureForRange(classFeature, previousClassLevel, newClassLevel, characterLevel);
+                    filteredFeature.setLevel(characterLevel + 1);
+                    var feature = classFeatureMapper.toDto(filteredFeature, false);
+                    feature.setAdditional(entryClass.getName());
                     features.add(feature);
                 }
             }
-            var multiSubclass = findSubclass(multiclassRequest.getSubclass(), multiclassRequest.getLevel());
-            if (isNotCaster(multiClass.getCasterType())) {
-                spellcastLevel += multiSubclass
-                        .map(subclass -> calculateSpellCastingLevel(subclass.getCasterType(), multiclassRequest.getLevel()))
-                        .orElse(0);
-            }
-            multiSubclass.ifPresent(subclass -> addCasterType(casterTypes, subclass.getCasterType()));
-            for (ClassFeature multiSubclassFeature : multiSubclass
-                    .map(CharacterClass::getFeatures)
-                    .orElseGet(List::of)) {
-                if (multiSubclassFeature.getLevel() <= level) {
-                    ClassFeature classFeature = filterMulticlassFeature(multiSubclassFeature, level, charachterLevel);
-                    if (isSpellcastingFeature(multiSubclassFeature)) {
-                        if (spellcasting) {
-                            continue;
+
+            // Обрабатываем умения подкласса
+            var subclass = findSubclass(entry.getSubclass(), newClassLevel);
+            if (subclass.isPresent()) {
+                CharacterClass sub = subclass.get();
+                // Колдовство подкласса
+                if (isNotCaster(entryClass.getCasterType())) {
+                    spellcastLevel += calculateSpellCastingLevel(sub.getCasterType(), newClassLevel)
+                            - calculateSpellCastingLevel(sub.getCasterType(), previousClassLevel);
+                }
+                if (previousClassLevel == 0) {
+                    addCasterType(casterTypes, sub.getCasterType());
+                }
+
+                for (ClassFeature subFeature : sub.getFeatures()) {
+                    if (subFeature.getLevel() > previousClassLevel && subFeature.getLevel() <= newClassLevel) {
+                        ClassFeature filteredFeature = filterMulticlassFeature(subFeature, newClassLevel, characterLevel);
+                        if (isSpellcastingFeature(subFeature)) {
+                            if (spellcasting) {
+                                continue;
+                            }
+                            filteredFeature.setDescription(getSpellcastingMulticlass());
+                            spellcasting = true;
+                        } else if (isExtraAttackFeature(subFeature)) {
+                            if (extraAttack >= 1) {
+                                filteredFeature.setName(getExtraAttackName(extraAttack));
+                                filteredFeature.setDescription(
+                                        "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
+                                                .formatted(extraAttack + 2));
+                            }
+                            extraAttack++;
                         }
-                        classFeature.setDescription(getSpellcastingMulticlass());
-                        spellcasting = true;
-                    } else if (multiSubclassFeature.getName().equals("Дополнительная атака")
-                            || multiSubclassFeature.getName().contains("дополнительные атаки")
-                            || multiSubclassFeature.getName().contains("дополнительных атак")) {
-                        if (extraAttack >= 1) {
-                            classFeature.setName(getExtraAttackName(extraAttack));
-                            classFeature.setDescription(
-                                    "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
-                                            .formatted(extraAttack + 2));
-                        }
-                        extraAttack++;
+                        filteredFeature.setLevel(characterLevel + (subFeature.getLevel() - previousClassLevel));
+                        var feature = classFeatureMapper.toDto(filteredFeature, true);
+                        feature.setAdditional(sub.getName());
+                        features.add(feature);
+                    } else if (subFeature.getLevel() <= previousClassLevel && previousClassLevel > 0
+                            && hasScalingOrOptionsInRange(subFeature, previousClassLevel, newClassLevel)) {
+                        // Повторный сегмент класса: обновляем масштабирование/опции для ранее добавленного умения подкласса
+                        ClassFeature filteredFeature = filterMulticlassFeatureForRange(subFeature, previousClassLevel, newClassLevel, characterLevel);
+                        filteredFeature.setLevel(characterLevel + 1);
+                        var feature = classFeatureMapper.toDto(filteredFeature, true);
+                        feature.setAdditional(sub.getName());
+                        features.add(feature);
                     }
-                    classFeature.setLevel(multiSubclassFeature.getLevel() + charachterLevel);
-                    var feature = classFeatureMapper.toDto(classFeature, true);
-                    feature.setAdditional(multiSubclass.map(CharacterClass::getName).orElse(null));
-                    features.add(feature);
                 }
             }
+
+            // Формируем информацию о мультиклассе для этого сегмента
             multiclassInfo.add(MulticlassInfo.builder()
-                    .hitDice("1" + multiClass.getHitDice().getName() + " за каждый уровень")
-                    .name(multiClass.getName())
-                    .subclass(multiSubclass.map(CharacterClass::getName).orElse(null))
-                    .level(multiclassRequest.getLevel())
+                    .hitDice("1" + entryClass.getHitDice().getName() + " за каждый уровень")
+                    .name(entryClass.getName())
+                    .subclass(subclass.map(CharacterClass::getName).orElse(null))
+                    .level(segmentLevels)
                     .build());
-            names.add(multiClass.getName());
-            charachterLevel += multiclassRequest.getLevel();
+
+            if (i > 0 || entries.size() == 1) {
+                if (!names.contains(entryClass.getName())) {
+                    names.add(entryClass.getName());
+                }
+            }
+
+            characterLevel += segmentLevels;
         }
+
+        // Умения уже идут в порядке прогрессии уровня персонажа — сортировка по уровню класса не нужна.
+        // Сортируем по уровню персонажа, на котором они были получены (стабильный порядок внутри одного уровня).
         features.sort(Comparator.comparing(ClassFeatureDto::getLevel));
+
         multiclass.setCasterType(resolveCasterType(casterTypes));
-        multiclass.setName(mainClass.getName() + " / " + String.join("/", names));
+        String nameStr = names.isEmpty()
+                ? mainClass.getName()
+                : mainClass.getName() + " / " + String.join(" / ", names);
+        multiclass.setName(nameStr);
         multiclass.setHitDice(mainClass.getHitDice());
         multiclass.setSavingThrows(mainClass.getSavingThrows());
         multiclass.setPrimaryCharacteristics(mainClass.getPrimaryCharacteristics());
-
         multiclass.setTable(table);
 
         var multiclassResponse = multiclassMapper.toMulticlassResponse(multiclass);
-        multiclassResponse.setCharacterLevel(request.getLevel()
-                + request.getClasses().stream().mapToInt(MulticlassDto::getLevel).sum());
+        multiclassResponse.setCharacterLevel(characterLevel);
         multiclassResponse.setSpellcastingLevel(spellcastLevel);
         multiclassResponse.setFeatures(features);
         multiclassResponse.setMulticlass(multiclassInfo);
         multiclassResponse.setRequirements(String.join(", ", requirements));
         return multiclassResponse;
+    }
+
+    private boolean isExtraAttackFeature(ClassFeature feature) {
+        return feature.getName().equals("Дополнительная атака")
+                || feature.getName().contains("дополнительные атаки")
+                || feature.getName().contains("дополнительных атак");
     }
 
     private void mergeMulticlassProficiency(CharacterClass multiclass, MulticlassProficiency proficiency) {
@@ -352,26 +394,24 @@ public class MulticlassService {
         return classFeature.getName().equals("Использование заклинаний");
     }
 
-    private String getExtraAttackName(final int extraAttack)
-    {
-        return switch (extraAttack)
-        {
+    private String getExtraAttackName(final int extraAttack) {
+        return switch (extraAttack) {
             case 1 -> "Две дополнительные атаки";
             case 2 -> "Три дополнительные атаки";
             case 3 -> "Четыре дополнительные атаки";
             default -> throw new IllegalArgumentException(
-                    "Unsupported extraAttack value: " + extraAttack
+                    "Неподдерживаемое значение extraAttack: " + extraAttack
             );
         };
     }
 
     private ClassFeature filterMulticlassFeature(final ClassFeature classFeature,
-                                                 final int level,
+                                                 final int classLevel,
                                                  final int characterLevel) {
         ClassFeature filteredFeature = copyClassFeature(classFeature);
         List<ClassFeatureScaling> list = new ArrayList<>();
         for (ClassFeatureScaling classFeatureScaling : Optional.ofNullable(classFeature.getScaling()).orElse(List.of())) {
-            if (classFeatureScaling.getLevel() <= level) {
+            if (classFeatureScaling.getLevel() <= classLevel) {
                 list.add(new ClassFeatureScaling(
                         classFeatureScaling.getLevel() + characterLevel,
                         classFeatureScaling.getName(),
@@ -386,7 +426,58 @@ public class MulticlassService {
                 .orElse(List.of())
                 .stream()
                 .filter(option -> !option.isHideInSubclasses())
-                .filter(option -> option.getRequiredClassLevel() == null || option.getRequiredClassLevel() <= level)
+                .filter(option -> option.getRequiredClassLevel() == null || option.getRequiredClassLevel() <= classLevel)
+                .map(ClassFeatureOption::new)
+                .toList());
+        return filteredFeature;
+    }
+
+    /**
+     * Проверяет, есть ли у умения масштабирование или опции в диапазоне уровней (previousClassLevel, newClassLevel].
+     */
+    private boolean hasScalingOrOptionsInRange(ClassFeature feature, int previousClassLevel, int newClassLevel) {
+        boolean hasScaling = Optional.ofNullable(feature.getScaling())
+                .orElse(List.of())
+                .stream()
+                .anyMatch(s -> s.getLevel() > previousClassLevel && s.getLevel() <= newClassLevel);
+        if (hasScaling) {
+            return true;
+        }
+        return Optional.ofNullable(feature.getOptions())
+                .orElse(List.of())
+                .stream()
+                .anyMatch(o -> o.getRequiredClassLevel() != null
+                        && o.getRequiredClassLevel() > previousClassLevel
+                        && o.getRequiredClassLevel() <= newClassLevel);
+    }
+
+    /**
+     * Фильтрует умение для повторного сегмента класса: включает только масштабирование и опции
+     * в диапазоне (previousClassLevel, newClassLevel].
+     */
+    private ClassFeature filterMulticlassFeatureForRange(final ClassFeature classFeature,
+                                                         final int previousClassLevel,
+                                                         final int newClassLevel,
+                                                         final int characterLevel) {
+        ClassFeature filteredFeature = copyClassFeature(classFeature);
+        List<ClassFeatureScaling> list = new ArrayList<>();
+        for (ClassFeatureScaling scaling : Optional.ofNullable(classFeature.getScaling()).orElse(List.of())) {
+            if (scaling.getLevel() > previousClassLevel && scaling.getLevel() <= newClassLevel) {
+                list.add(new ClassFeatureScaling(
+                        scaling.getLevel() - previousClassLevel + characterLevel,
+                        scaling.getName(),
+                        scaling.getDescription(),
+                        scaling.getAdditional(),
+                        scaling.isHideInSubclasses()
+                ));
+            }
+        }
+        filteredFeature.setScaling(list);
+        filteredFeature.setOptions(Optional.ofNullable(classFeature.getOptions())
+                .orElse(List.of())
+                .stream()
+                .filter(option -> !option.isHideInSubclasses())
+                .filter(option -> option.getRequiredClassLevel() == null || option.getRequiredClassLevel() <= newClassLevel)
                 .map(ClassFeatureOption::new)
                 .toList());
         return filteredFeature;
