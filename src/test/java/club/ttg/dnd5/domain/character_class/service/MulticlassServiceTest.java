@@ -214,6 +214,62 @@ class MulticlassServiceTest {
     }
 
     @Test
+    void getMulticlassWithLevelsFormatReturnsFeaturesForEachRepeatedClassSegment() {
+        CharacterClass fighter = characterClass("fighter-phb");
+        fighter.setFeatures(List.of(
+                classFeature("fighter-1", 1),
+                classFeature("fighter-2", 2),
+                classFeature("fighter-3", 3),
+                classFeature("fighter-4", 4),
+                classFeature("fighter-5", 5),
+                classFeature("fighter-6", 6)
+        ));
+
+        CharacterClass bard = characterClass("bard-phb");
+        bard.setFeatures(List.of(
+                classFeature("bard-1", 1),
+                classFeature("bard-2", 2),
+                classFeature("bard-3", 3)
+        ));
+
+        MulticlassRequest request = new MulticlassRequest();
+        request.setLevels(List.of(
+                new MulticlassLevelEntry("fighter-phb", "battle-master-phb", 3),
+                new MulticlassLevelEntry("bard-phb", "bard-college-of-valor-phb", 3),
+                new MulticlassLevelEntry("fighter-phb", "battle-master-phb", 6)
+        ));
+
+        MulticlassResponse response = new MulticlassResponse();
+        when(classRepository.findById("fighter-phb")).thenReturn(Optional.of(fighter));
+        when(classRepository.findById("bard-phb")).thenReturn(Optional.of(bard));
+        when(classRepository.findById("battle-master-phb")).thenReturn(Optional.of(characterClass("battle-master-phb")));
+        when(classRepository.findById("bard-college-of-valor-phb"))
+                .thenReturn(Optional.of(characterClass("bard-college-of-valor-phb")));
+        when(classFeatureMapper.toDto(any(ClassFeature.class), anyBoolean()))
+                .thenAnswer(invocation -> new ClassFeatureDto(invocation.getArgument(0), invocation.getArgument(1)));
+        when(multiclassMapper.toMulticlassResponse(any(CharacterClass.class))).thenReturn(response);
+
+        service.getMulticlass(request);
+
+        List<String> featureNames = response.getFeatures()
+                .stream()
+                .map(ClassFeatureDto::getName)
+                .toList();
+        assertEquals(List.of(
+                "fighter-1",
+                "fighter-2",
+                "fighter-3",
+                "bard-1",
+                "bard-2",
+                "bard-3",
+                "fighter-4",
+                "fighter-5",
+                "fighter-6"
+        ), featureNames);
+        assertEquals(9, response.getCharacterLevel());
+    }
+
+    @Test
     void getMulticlassWithLevelsFormatCalculatesSpellcastingLevelCorrectly() {
         // Волшебник 3, Воин 2, Волшебник 5 = итого 5 уровней волшебника, уровень заклинателя = 5
         CharacterClass wizard = characterClass("wizard");
