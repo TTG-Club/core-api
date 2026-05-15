@@ -190,6 +190,14 @@ public class MulticlassService {
                     var feature = classFeatureMapper.toDto(filteredFeature, false);
                     feature.setAdditional(entryClass.getName());
                     features.add(feature);
+                } else if (classFeature.getLevel() <= previousClassLevel && previousClassLevel > 0
+                        && hasScalingOrOptionsInRange(classFeature, previousClassLevel, newClassLevel)) {
+                    // Повторный сегмент класса: обновляем масштабирование/опции для ранее добавленного умения
+                    ClassFeature filteredFeature = filterMulticlassFeatureForRange(classFeature, previousClassLevel, newClassLevel, characterLevel);
+                    filteredFeature.setLevel(characterLevel + 1);
+                    var feature = classFeatureMapper.toDto(filteredFeature, false);
+                    feature.setAdditional(entryClass.getName());
+                    features.add(feature);
                 }
             }
 
@@ -225,6 +233,14 @@ public class MulticlassService {
                             extraAttack++;
                         }
                         filteredFeature.setLevel(characterLevel + (subFeature.getLevel() - previousClassLevel));
+                        var feature = classFeatureMapper.toDto(filteredFeature, true);
+                        feature.setAdditional(sub.getName());
+                        features.add(feature);
+                    } else if (subFeature.getLevel() <= previousClassLevel && previousClassLevel > 0
+                            && hasScalingOrOptionsInRange(subFeature, previousClassLevel, newClassLevel)) {
+                        // Повторный сегмент класса: обновляем масштабирование/опции для ранее добавленного умения подкласса
+                        ClassFeature filteredFeature = filterMulticlassFeatureForRange(subFeature, previousClassLevel, newClassLevel, characterLevel);
+                        filteredFeature.setLevel(characterLevel + 1);
                         var feature = classFeatureMapper.toDto(filteredFeature, true);
                         feature.setAdditional(sub.getName());
                         features.add(feature);
@@ -411,6 +427,57 @@ public class MulticlassService {
                 .stream()
                 .filter(option -> !option.isHideInSubclasses())
                 .filter(option -> option.getRequiredClassLevel() == null || option.getRequiredClassLevel() <= classLevel)
+                .map(ClassFeatureOption::new)
+                .toList());
+        return filteredFeature;
+    }
+
+    /**
+     * Проверяет, есть ли у умения масштабирование или опции в диапазоне уровней (previousClassLevel, newClassLevel].
+     */
+    private boolean hasScalingOrOptionsInRange(ClassFeature feature, int previousClassLevel, int newClassLevel) {
+        boolean hasScaling = Optional.ofNullable(feature.getScaling())
+                .orElse(List.of())
+                .stream()
+                .anyMatch(s -> s.getLevel() > previousClassLevel && s.getLevel() <= newClassLevel);
+        if (hasScaling) {
+            return true;
+        }
+        return Optional.ofNullable(feature.getOptions())
+                .orElse(List.of())
+                .stream()
+                .anyMatch(o -> o.getRequiredClassLevel() != null
+                        && o.getRequiredClassLevel() > previousClassLevel
+                        && o.getRequiredClassLevel() <= newClassLevel);
+    }
+
+    /**
+     * Фильтрует умение для повторного сегмента класса: включает только масштабирование и опции
+     * в диапазоне (previousClassLevel, newClassLevel].
+     */
+    private ClassFeature filterMulticlassFeatureForRange(final ClassFeature classFeature,
+                                                         final int previousClassLevel,
+                                                         final int newClassLevel,
+                                                         final int characterLevel) {
+        ClassFeature filteredFeature = copyClassFeature(classFeature);
+        List<ClassFeatureScaling> list = new ArrayList<>();
+        for (ClassFeatureScaling scaling : Optional.ofNullable(classFeature.getScaling()).orElse(List.of())) {
+            if (scaling.getLevel() > previousClassLevel && scaling.getLevel() <= newClassLevel) {
+                list.add(new ClassFeatureScaling(
+                        scaling.getLevel() - previousClassLevel + characterLevel,
+                        scaling.getName(),
+                        scaling.getDescription(),
+                        scaling.getAdditional(),
+                        scaling.isHideInSubclasses()
+                ));
+            }
+        }
+        filteredFeature.setScaling(list);
+        filteredFeature.setOptions(Optional.ofNullable(classFeature.getOptions())
+                .orElse(List.of())
+                .stream()
+                .filter(option -> !option.isHideInSubclasses())
+                .filter(option -> option.getRequiredClassLevel() == null || option.getRequiredClassLevel() <= newClassLevel)
                 .map(ClassFeatureOption::new)
                 .toList());
         return filteredFeature;
