@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
-import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -119,16 +118,14 @@ public class CreatureServiceImpl implements CreatureService {
     @Transactional
     @Override
     public String update(final String url, final CreatureRequest request) {
-        findByUrl(url);
+        var existing = findByUrl(url);
         if (!url.equalsIgnoreCase(request.getUrl())) {
-            creatureRepository.deleteById(url);
-        }
-        var book = sourceService.findByUrl(request.getSource().getUrl());
-        var creature = creatureMapper.toEntity(request, book);
-        if (!Objects.equals(url, request.getUrl())) {
             creatureRepository.deleteById(url);
             creatureRepository.flush();
         }
+        var book = sourceService.findByUrl(request.getSource().getUrl());
+        var creature = creatureMapper.toEntity(request, book);
+        creature.setCreatedAt(existing.getCreatedAt());
         galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.BESTIARY);
 
         saveGallery(request.getUrl(), request.getGallery());
