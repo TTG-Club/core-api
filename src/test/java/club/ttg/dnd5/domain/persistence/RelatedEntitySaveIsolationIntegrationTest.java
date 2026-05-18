@@ -24,6 +24,7 @@ import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
+import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
@@ -263,7 +264,7 @@ class RelatedEntitySaveIsolationIntegrationTest {
         request.setDescription(url + " description");
         request.setSource(sourceRequest(fixture.source()));
         request.setLevel(1L);
-        request.setSchool(MagicSchool.ABJURATION);
+        request.setSchool(SpellSchool.builder().school(MagicSchool.ABJURATION).build());
         request.setComponents(SpellComponents.builder().v(true).s(true).build());
         request.setCastingTime(List.of(SpellCastingTime.of(null, CastingUnit.ACTION)));
         request.setRange(List.of(SpellDistance.of(30L, DistanceUnit.FEET)));
