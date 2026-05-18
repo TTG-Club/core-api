@@ -11,7 +11,7 @@ import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
-import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
+import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -40,9 +40,7 @@ public class SpellRequest extends BaseRequest {
 
     @Schema(description = "Школа магии")
     @NotNull
-    private MagicSchool school;
-
-    private String additionalType;
+    private SpellSchool school;
 
     @Schema(description = "Требуемые компоненты")
     @NotNull

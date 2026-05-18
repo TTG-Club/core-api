@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
+import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationDto;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
@@ -64,8 +65,7 @@ public interface SpellMapper
     @Mapping(target = "alternative", source = "request.name.alternative", qualifiedByName = "joinAlternative")
     void updateEntity(@MappingTarget Spell target, SpellRequest request);
 
-    @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
-    @Mapping(target = "additionalType", source = "school.additionalType")
+    @Mapping(target = "school", source = "school", qualifiedByName = "toSchool")
     @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
     @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
     @BaseMapping.BaseSourceMapping
@@ -74,8 +74,7 @@ public interface SpellMapper
 
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
-    @Mapping(target = "school", source = "school.school.name", qualifiedByName = "capitalize")
-    @Mapping(target = "additionalType", source = "school.additionalType")
+    @Mapping(target = "school", source = "school", qualifiedByName = "toSchool")
     @Mapping(target = "castingTime", ignore = true)
     @Mapping(target = "duration", ignore = true)
     @Mapping(target = "range", ignore = true)
@@ -231,7 +230,6 @@ public interface SpellMapper
     @BaseMapping.BaseRequestNameMapping
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
-    @Mapping(source = "school.school", target = "school")
     @Mapping(target = "affiliations", ignore = true)
     SpellRequest toRequest(Spell spell);
 
@@ -277,7 +275,7 @@ public interface SpellMapper
     @Mapping(target = "url", source = "request.url")
     @Mapping(target = "description", source = "request.description")
     @Mapping(target = "sourcePage", source = "request.source.page")
-    @Mapping(target = "school.school", source = "request.school")
+    @Mapping(target = "school", source = "request.school")
     @Mapping(target = "components", source = "request.components", qualifiedByName = "setNull")
     @Mapping(target = "range", source = "request.range")
     @Mapping(target = "castingTime", source = "request.castingTime")
@@ -313,10 +311,12 @@ public interface SpellMapper
         return components;
     }
 
-    @Named("capitalize")
-    default String capitalize(String string)
-    {
-        return StringUtils.capitalize(string);
+    @Named("toSchool")
+    default String toSchool(SpellSchool spellSchool) {
+        if (spellSchool.getAdditionalType() == null) {
+            return spellSchool.getSchool().getName();
+        }
+        return String.format("%s (%s)", spellSchool.getSchool().getName(), spellSchool.getAdditionalType());
     }
 
     @Named("joinAlternative")
