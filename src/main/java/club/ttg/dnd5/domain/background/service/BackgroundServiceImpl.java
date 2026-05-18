@@ -58,7 +58,8 @@ public class BackgroundServiceImpl implements BackgroundService {
         var feat = getFeatReference(request.getFeatUrl());
         var source = sourceService.findReferenceByUrl(request.getSource().getUrl());
         if (!Objects.equals(url, request.getUrl())) {
-            backgroundRepository.deleteById(url);
+            var existing = findByUrl(url);
+            backgroundRepository.delete(existing);
             backgroundRepository.flush();
         }
         return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
@@ -76,7 +77,7 @@ public class BackgroundServiceImpl implements BackgroundService {
 
     @Override
     public boolean exists(final String backgroundUrl) {
-        return backgroundRepository.existsById(backgroundUrl);
+        return backgroundRepository.existsByUrl(backgroundUrl);
     }
 
     @Override
@@ -85,25 +86,25 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     private Feat getFeat(String url) {
-        return featRepository.findById(url)
+        return featRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
     }
 
     private Feat getFeatReference(String url) {
-        if (!featRepository.existsById(url)) {
+        if (!featRepository.existsByUrl(url)) {
             throw new EntityNotFoundException("Черта не найдена по URL: " + url);
         }
-        return featRepository.getReferenceById(url);
+        return featRepository.findByUrl(url).orElseThrow();
     }
 
     private void checkUrlExist(String url) {
-        if (backgroundRepository.existsById(url)) {
+        if (backgroundRepository.existsByUrl(url)) {
             throw new EntityExistException("Предыстория существует с url: " + url);
         }
     }
 
     private Background findByUrl(String url) {
-        return backgroundRepository.findById(url)
+        return backgroundRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException("Предыстория не найден по URL: " + url));
     }
 

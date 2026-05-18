@@ -10,6 +10,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Immutable;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Immutable
@@ -20,6 +21,7 @@ import java.time.Instant;
 @Setter
 public class FullTextSearchView {
     @Id
+    private UUID id;
     private String url;
     private String name;
     private String english;

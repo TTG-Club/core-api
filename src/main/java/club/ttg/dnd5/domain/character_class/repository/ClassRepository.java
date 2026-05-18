@@ -10,8 +10,12 @@ import org.springframework.data.repository.query.Param;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface ClassRepository extends JpaRepository<CharacterClass, String> {
+public interface ClassRepository extends JpaRepository<CharacterClass, UUID> {
+
+    boolean existsByUrl(String url);
+
 
     Collection<CharacterClass> findAllByParentIsNull(final Sort by);
 

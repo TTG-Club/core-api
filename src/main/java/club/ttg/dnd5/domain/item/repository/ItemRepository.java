@@ -9,10 +9,17 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface ItemRepository extends JpaRepository<Item, String>,
+public interface ItemRepository extends JpaRepository<Item, UUID>,
         JpaSpecificationExecutor<Item> {
+
+    Optional<Item> findByUrl(String url);
+
+    boolean existsByUrl(String url);
+
     @Query(value = """
             select i from Item i
             where i.name ilike concat('%', :searchLine, '%')

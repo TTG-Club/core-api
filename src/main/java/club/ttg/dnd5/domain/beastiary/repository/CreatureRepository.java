@@ -7,9 +7,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface CreatureRepository extends JpaRepository<Creature, String> {
+public interface CreatureRepository extends JpaRepository<Creature, UUID> {
+
+    Optional<Creature> findByUrl(String url);
+
+    boolean existsByUrl(String url);
+
     @Query(value = """
             select b from Creature b
             where b.name ilike concat('%', :searchLine, '%')

@@ -28,7 +28,7 @@ public class MagicItemServiceImpl implements MagicItemService {
 
     @Override
     public boolean existsByUrl(String url) {
-        if (!magicItemRepository.existsById(url)) {
+        if (!magicItemRepository.existsByUrl(url)) {
             throw new EntityNotFoundException("Предмет не найден по URL: " + url);
         }
         return true;
@@ -59,9 +59,10 @@ public class MagicItemServiceImpl implements MagicItemService {
     @Transactional
     @Override
     public String updateItem(String url, MagicItemRequest request) {
-        findByUrl(url);
+        var existing = findByUrl(url);
         if (!request.getUrl().equals(url)) {
-            magicItemRepository.deleteById(url);
+            magicItemRepository.delete(existing);
+            magicItemRepository.flush();
         }
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var entity = magicItemMapper.toEntity(request, source);
@@ -78,13 +79,13 @@ public class MagicItemServiceImpl implements MagicItemService {
     }
 
     private void exist(String url) {
-        if (magicItemRepository.existsById(url)) {
+        if (magicItemRepository.existsByUrl(url)) {
             throw new EntityExistException();
         }
     }
 
     private MagicItem findByUrl(String url) {
-        return magicItemRepository.findById(url)
+        return magicItemRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException("Предмет не найден по URL: " + url));
     }
 

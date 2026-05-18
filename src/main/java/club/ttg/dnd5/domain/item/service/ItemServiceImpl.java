@@ -27,7 +27,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public boolean existOrThrow(final String url) {
-        if (!itemRepository.existsById(url)) {
+        if (!itemRepository.existsByUrl(url)) {
             throw new EntityNotFoundException(String.format("Предмет с url %s не существует", url));
         }
         return true;
@@ -56,10 +56,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public String updateItem(final String itemUrl, final ItemRequest request) {
-        findByUrl(itemUrl);
+        var existing = findByUrl(itemUrl);
         var source = sourceService.findByUrl(request.getSource().getUrl());
         if (!Objects.equals(itemUrl, request.getUrl())) {
-            itemRepository.deleteById(itemUrl);
+            itemRepository.delete(existing);
             itemRepository.flush();
         }
         return itemRepository.save(itemMapper.toEntity(request, source)).getUrl();
@@ -79,13 +79,13 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private void exist(String url) {
-        if (itemRepository.existsById(url)) {
+        if (itemRepository.existsByUrl(url)) {
             throw new EntityExistException();
         }
     }
 
     private Item findByUrl(String url) {
-        return itemRepository.findById(url)
+        return itemRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException("Предмет не найден по URL: " + url));
     }
 

@@ -6,8 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
-public interface FullTextSearchViewRepository extends JpaRepository<FullTextSearchView, Long> {
+public interface FullTextSearchViewRepository extends JpaRepository<FullTextSearchView, UUID> {
 
     @Query(value = """
         select ftsv from FullTextSearchView ftsv

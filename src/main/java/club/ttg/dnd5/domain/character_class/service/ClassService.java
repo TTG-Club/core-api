@@ -55,11 +55,11 @@ public class ClassService {
     }
 
     public boolean exists(String url) {
-        return classRepository.existsById(url);
+        return classRepository.existsByUrl(url);
     }
 
     public CharacterClass findByUrl(String url) {
-        return classRepository.findById(url)
+        return classRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Класс с url %s не существует", url)));
     }
 
@@ -251,7 +251,8 @@ public class ClassService {
             return Set.of();
         }
         return urls.stream()
-                .map(classRepository::getReferenceById)
+                .map(url -> classRepository.findByUrl(url)
+                        .orElseThrow(() -> new EntityNotFoundException("Класс не найден по URL: " + url)))
                 .collect(Collectors.toSet());
     }
 

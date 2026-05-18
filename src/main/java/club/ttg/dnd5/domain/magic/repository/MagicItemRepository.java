@@ -6,8 +6,15 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
+public interface MagicItemRepository extends JpaRepository<MagicItem, UUID> {
+
+    Optional<MagicItem> findByUrl(String url);
+
+    boolean existsByUrl(String url);
+
     @Query(value = """
             select mi from MagicItem mi
             where mi.name ilike concat('%', :searchLine, '%')

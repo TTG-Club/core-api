@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-05-15-01-migrate-url-to-uuid
+      author: codex
+      comment: "Migrate all NamedEntity tables from URL-based PK to UUID PK. URL remains as unique mutable field."
+      changes:
+        - sqlFile:
+            path: db/changelog/2026/05/sql/15-01-migrate-url-to-uuid.sql
+            relativeToChangelogFile: false
+            splitStatements: true
+            stripComments: true

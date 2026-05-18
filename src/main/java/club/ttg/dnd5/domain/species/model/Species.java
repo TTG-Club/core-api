@@ -34,7 +34,7 @@ public class Species extends CreatureProperties {
 
     /** Родительский вид */
     @ManyToOne
-    @JoinColumn(name = "parent_url")
+    @JoinColumn(name = "parent_id")
     private Species parent;
 
     /** Происхождения */
@@ -49,7 +49,7 @@ public class Species extends CreatureProperties {
 
     /** Ссылки на изображения для галереи */
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id"))
+    @CollectionTable(name = "species_gallery", joinColumns = @JoinColumn(name = "species_id", referencedColumnName = "id"))
     @Column(name = "gallery_url")
     private Collection<String> galleryUrl;
 

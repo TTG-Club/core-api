@@ -45,7 +45,7 @@ public class MulticlassService {
         if (!StringUtils.hasText(url)) {
             throw new EntityNotFoundException("URL класса не должен быть пустым");
         }
-        return classRepository.findById(url)
+        return classRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Класс с url %s не существует", url)));
     }
 

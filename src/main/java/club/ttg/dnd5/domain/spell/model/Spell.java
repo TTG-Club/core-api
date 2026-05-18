@@ -60,15 +60,35 @@ public class Spell extends NamedEntity {
     private Long sourcePage;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_species_affiliation",
+            joinColumns = @JoinColumn(name = "spell_id"),
+            inverseJoinColumns = @JoinColumn(name = "species_affiliation_id")
+    )
     private Set<Species> speciesAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_lineage_affiliation",
+            joinColumns = @JoinColumn(name = "spell_id"),
+            inverseJoinColumns = @JoinColumn(name = "lineage_affiliation_id")
+    )
     private Set<Species> lineagesAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_class_affiliation",
+            joinColumns = @JoinColumn(name = "spell_id"),
+            inverseJoinColumns = @JoinColumn(name = "class_affiliation_id")
+    )
     private Set<CharacterClass> classAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_subclass_affiliation",
+            joinColumns = @JoinColumn(name = "spell_id"),
+            inverseJoinColumns = @JoinColumn(name = "subclass_affiliation_id")
+    )
     private Set<CharacterClass> subclassAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)

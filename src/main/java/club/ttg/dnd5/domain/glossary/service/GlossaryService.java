@@ -40,7 +40,7 @@ public class GlossaryService {
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(GlossaryRequest glossaryRequest) {
-        if (glossaryRepository.existsById(glossaryRequest.getUrl())) {
+        if (glossaryRepository.existsByUrl(glossaryRequest.getUrl())) {
             throw new EntityExistException(String.format("Glossary with url %s already exists", glossaryRequest.getUrl()));
         }
 
@@ -57,7 +57,7 @@ public class GlossaryService {
 
     @Transactional
     public String update(String url, GlossaryRequest request) {
-        Glossary existingGlossary = glossaryRepository.findById(url)
+        Glossary existingGlossary = glossaryRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
         Source source = Optional.ofNullable(request.getSource())
@@ -66,9 +66,7 @@ public class GlossaryService {
                 .orElse(null);
 
         Glossary updatedGlossary = glossaryMapper.toEntity(request, source);
-        updatedGlossary.setUrl(url);
-        glossaryRepository.delete(existingGlossary);
-        glossaryRepository.flush();
+        updatedGlossary.setId(existingGlossary.getId());
         glossaryRepository.save(updatedGlossary);
 
         return updatedGlossary.getUrl();
@@ -77,7 +75,7 @@ public class GlossaryService {
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
     public void delete(String url) {
-        Glossary existingGlossary = glossaryRepository.findById(url)
+        Glossary existingGlossary = glossaryRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
         existingGlossary.setHiddenEntity(true);
@@ -85,28 +83,28 @@ public class GlossaryService {
     }
 
     public GlossaryDetailedResponse findByUrl(String url) {
-        Glossary glossary = glossaryRepository.findById(url)
+        Glossary glossary = glossaryRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
         return glossaryMapper.toDetail(glossary);
     }
 
     public boolean existOrThrow(String url) {
-        if (!glossaryRepository.existsById(url)) {
+        if (!glossaryRepository.existsByUrl(url)) {
             throw new EntityNotFoundException(String.format("Glossary with url %s does not exist", url));
         }
         return true;
     }
 
     public GlossaryDetailedResponse findDetailedByUrl(String url) {
-        Glossary glossary = glossaryRepository.findById(url)
+        Glossary glossary = glossaryRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
         return glossaryMapper.toDetail(glossary);
     }
 
     public GlossaryRequest findFormByUrl(String url) {
-        Glossary glossary = glossaryRepository.findById(url)
+        Glossary glossary = glossaryRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Glossary with url %s not found", url)));
 
         return glossaryMapper.toRequest(glossary);

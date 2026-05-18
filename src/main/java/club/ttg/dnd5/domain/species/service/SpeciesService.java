@@ -39,12 +39,12 @@ public class SpeciesService {
     private final SourceSavedFilterService sourceSavedFilterService;
 
     public boolean exists(String url) {
-        return speciesRepository.existsById(url);
+        return speciesRepository.existsByUrl(url);
     }
 
     @Transactional(readOnly = true)
     public SpeciesDetailResponse findById(String url) {
-        var species = speciesRepository.findById(url)
+        var species = speciesRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
         var response = speciesMapper.toDetail(species);
 
@@ -66,7 +66,8 @@ public class SpeciesService {
             return Set.of();
         }
         return urls.stream()
-                .map(speciesRepository::getReferenceById)
+                .map(url -> speciesRepository.findByUrl(url)
+                        .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url)))
                 .collect(Collectors.toSet());
     }
 
@@ -82,14 +83,14 @@ public class SpeciesService {
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(SpeciesRequest request) {
-        if (speciesRepository.existsById(request.getUrl())) {
+        if (speciesRepository.existsByUrl(request.getUrl())) {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
         return saveSpecies(request).getUrl();
     }
 
     public List<SpeciesDetailResponse> getLineages(String parentUrl) {
-        return speciesRepository.findById(parentUrl)
+        return speciesRepository.findByUrl(parentUrl)
                 .filter(species -> !species.isHiddenEntity())
                 .map(speciesRepository::findByParent)
                 .orElseThrow(() -> new EntityNotFoundException("Вид не найден для URL: " + parentUrl))
@@ -108,7 +109,7 @@ public class SpeciesService {
     public Collection<SpeciesShortResponse> getAllLineages(String url) {
         var sources = sourceSavedFilterService.getSavedSources();
 
-        Species species = speciesRepository.findById(url)
+        Species species = speciesRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException("Вид не найден URL: " + url));
         return species.getLineages().stream()
             .filter(lineages -> sources.contains(lineages.getSource().getAcronym()))
@@ -140,15 +141,13 @@ public class SpeciesService {
 
     @Transactional
     public String update(String oldUrl, SpeciesRequest request) {
-        if (speciesRepository.existsById(oldUrl)) {
-            if (!oldUrl.equals(request.getUrl())) {
-                speciesRepository.deleteById(oldUrl);
-                speciesRepository.flush();
-            }
-            return saveSpecies(request).getUrl();
-        } else {
-            throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
+        var existing = speciesRepository.findByUrl(oldUrl)
+                .orElseThrow(() -> new EntityNotFoundException("Species with URL " + oldUrl + " does not exist."));
+        if (!oldUrl.equals(request.getUrl())) {
+            speciesRepository.delete(existing);
+            speciesRepository.flush();
         }
+        return saveSpecies(request).getUrl();
     }
 
     public SpeciesDetailResponse addSubSpecies(String speciesUrl, List<String> lineagesUrls) {
@@ -172,7 +171,7 @@ public class SpeciesService {
 
     // Private methods
     private Species findByUrl(String url) {
-        return speciesRepository.findById(url)
+        return speciesRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException("Species not found with URL: " + url));
     }
 

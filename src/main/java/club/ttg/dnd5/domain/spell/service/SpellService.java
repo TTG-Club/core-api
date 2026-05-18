@@ -50,7 +50,7 @@ public class SpellService
 
     public boolean existOrThrow(String url)
     {
-        if (!spellRepository.existsById(url))
+        if (!spellRepository.existsByUrl(url))
         {
             throw new EntityNotFoundException(String.format("Заклинание с url %s не существует", url));
         }
@@ -97,7 +97,7 @@ public class SpellService
 
     public Spell getByUrl(String url)
     {
-        return spellRepository.findById(url)
+        return spellRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Заклинание с url %s не существует", url)
                 ));
@@ -123,7 +123,7 @@ public class SpellService
 
     public boolean existsByUrl(String url)
     {
-        return spellRepository.existsById(url);
+        return spellRepository.existsByUrl(url);
     }
 
     @Transactional

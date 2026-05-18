@@ -42,7 +42,7 @@ public class CreatureServiceImpl implements CreatureService {
 
     @Override
     public Boolean existOrThrow(final String url) {
-        if (!creatureRepository.existsById(url)) {
+        if (!creatureRepository.existsByUrl(url)) {
             throw new EntityNotFoundException(String.format("Существо с url %s не существует", url));
         }
         return true;
@@ -101,7 +101,7 @@ public class CreatureServiceImpl implements CreatureService {
     @Transactional
     @Override
     public String save(final CreatureRequest request) {
-        if (creatureRepository.existsById(request.getUrl())) {
+        if (creatureRepository.existsByUrl(request.getUrl())) {
             throw new EntityExistException("Существо уже существует с URL: " + request.getUrl());
         }
         if (request.getAlignment() == null) {
@@ -120,7 +120,7 @@ public class CreatureServiceImpl implements CreatureService {
     public String update(final String url, final CreatureRequest request) {
         var existing = findByUrl(url);
         if (!url.equalsIgnoreCase(request.getUrl())) {
-            creatureRepository.deleteById(url);
+            creatureRepository.delete(existing);
             creatureRepository.flush();
         }
         var book = sourceService.findByUrl(request.getSource().getUrl());
@@ -174,7 +174,7 @@ public class CreatureServiceImpl implements CreatureService {
     }
 
     private Creature findByUrl(String url) {
-        return creatureRepository.findById(url)
+        return creatureRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Существо с URL: %s не существует", url)));
     }
 }

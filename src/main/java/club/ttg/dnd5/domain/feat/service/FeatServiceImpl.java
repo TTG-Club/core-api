@@ -43,7 +43,7 @@ public class FeatServiceImpl implements FeatService {
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
     public String addFeat(final FeatRequest dto) {
-        if (featRepository.existsById(dto.getUrl())) {
+        if (featRepository.existsByUrl(dto.getUrl())) {
             throw new EntityExistException("Feat exist by URL: " + dto.getUrl());
         }
         var book = sourceService.findByUrl(dto.getSource().getUrl());
@@ -55,11 +55,11 @@ public class FeatServiceImpl implements FeatService {
     @Transactional
     @Override
     public String updateFeat(final String featUrl, final FeatRequest request) {
-        findByUrl(featUrl);
+        var existing = findByUrl(featUrl);
         var book = sourceService.findByUrl(request.getSource().getUrl());
         var feat = featMapper.toEntity(request, book);
         if (!Objects.equals(featUrl, request.getUrl())) {
-            featRepository.deleteById(featUrl);
+            featRepository.delete(existing);
             featRepository.flush();
         }
         return featRepository.save(feat).getUrl();
@@ -77,7 +77,7 @@ public class FeatServiceImpl implements FeatService {
 
     @Override
     public boolean existOrThrow(final String url) {
-        if (!featRepository.existsById(url)) {
+        if (!featRepository.existsByUrl(url)) {
             throw new EntityNotFoundException(String.format("Черта с url %s не существует", url));
         }
         return true;
@@ -89,7 +89,7 @@ public class FeatServiceImpl implements FeatService {
     }
 
     private Feat findByUrl(String url) {
-        return featRepository.findById(url)
+        return featRepository.findByUrl(url)
                 .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
     }
 
@@ -126,7 +126,8 @@ public class FeatServiceImpl implements FeatService {
             return Set.of();
         }
         return urls.stream()
-                .map(featRepository::getReferenceById)
+                .map(url -> featRepository.findByUrl(url)
+                        .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url)))
                 .collect(Collectors.toSet());
     }
 }

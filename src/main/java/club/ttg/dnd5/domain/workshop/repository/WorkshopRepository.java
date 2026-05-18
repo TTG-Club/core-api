@@ -6,8 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.UUID;
 
-public interface WorkshopRepository extends JpaRepository<Spell, String> {
+public interface WorkshopRepository extends JpaRepository<Spell, UUID> {
 
     @Query("""
             WITH workshop_count as (SELECT 'BACKGROUND' as section_type,

@@ -6,13 +6,20 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.domain.Persistable;
+
+import java.util.UUID;
 
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class NamedEntity extends Timestamped implements Persistable<String> {
+public abstract class NamedEntity extends Timestamped implements Persistable<UUID> {
     @Id
+    @UuidGenerator
+    @Column(name = "id", nullable = false, updatable = false)
+    private UUID id;
+
     @Column(nullable = false, unique = true)
     private String url;
 
@@ -40,8 +47,8 @@ public abstract class NamedEntity extends Timestamped implements Persistable<Str
 
     @Override
     @Transient
-    public String getId() {
-        return url;
+    public UUID getId() {
+        return id;
     }
 
     /**
