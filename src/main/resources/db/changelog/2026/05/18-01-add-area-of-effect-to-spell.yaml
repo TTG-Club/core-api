@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-05-18-01-add-area-of-effect-to-spell
+      author: codex
+      changes:
+        - addColumn:
+            tableName: spell
+            columns:
+              - column:
+                  name: area_of_effect
+                  type: jsonb
+              - column:
+                  name: attack_type
+                  type: varchar(255)

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.service;
 
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.common.dictionary.*;
 import club.ttg.dnd5.domain.common.rest.dto.select.*;
@@ -13,7 +14,7 @@ import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.common.model.notification.NotificationType;
 import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
-import club.ttg.dnd5.domain.spell.model.SpellAreaOfEffect;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
@@ -151,7 +152,7 @@ public class DictionariesService {
     }
 
     public Collection<SelectOptionDto> getSpellAreaOfEffect() {
-        return Arrays.stream(SpellAreaOfEffect.values())
+        return Arrays.stream(AreaOfEffectType.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())
@@ -350,6 +351,15 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getNotificationTypes() {
         return Arrays.stream(NotificationType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getAttackTypes() {
+        return Arrays.stream(AttackType.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())

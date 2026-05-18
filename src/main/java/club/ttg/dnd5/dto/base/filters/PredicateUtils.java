@@ -518,5 +518,50 @@ public class PredicateUtils
                     .formatted(column, escapeSql(parts[1]), parts[0]);
         }
     }
+
+    /**
+     * Фильтр по строковому полю внутри JSONB-объекта (не массива).
+     * Пример: {@code area_of_effect->>'type' IN ('CONE','SPHERE')}.
+     */
+    public <E extends Enum<E>> void applyJsonbObjectEnumFieldFilter(final BooleanBuilder builder,
+                                                                     final QueryFilter<E> filter,
+                                                                     final String columnName,
+                                                                     final String jsonKey)
+    {
+        if (filter == null || !filter.isActive())
+        {
+            return;
+        }
+
+        if (filter.isExclude())
+        {
+            String values = filter.getValues().stream()
+                    .map(Enum::name)
+                    .map(s -> "'" + s + "'")
+                    .collect(java.util.stream.Collectors.joining(","));
+            builder.and(Expressions.booleanTemplate(
+                    "(" + columnName + "->>'" + jsonKey + "') NOT IN (" + values + ")"
+            ));
+        }
+        else if (filter.isUnion())
+        {
+            for (E val : filter.getValues())
+            {
+                builder.and(Expressions.booleanTemplate(
+                        "(" + columnName + "->>'" + jsonKey + "') = '" + val.name() + "'"
+                ));
+            }
+        }
+        else
+        {
+            String values = filter.getValues().stream()
+                    .map(Enum::name)
+                    .map(s -> "'" + s + "'")
+                    .collect(java.util.stream.Collectors.joining(","));
+            builder.and(Expressions.booleanTemplate(
+                    "(" + columnName + "->>'" + jsonKey + "') IN (" + values + ")"
+            ));
+        }
+    }
 }
 

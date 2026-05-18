@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.spell.model;
 
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
@@ -33,6 +34,7 @@ public class Spell extends NamedEntity {
 
     @Column(nullable = false)
     private Long level;
+
     @Embedded
     private SpellSchool school;
 
@@ -96,4 +98,11 @@ public class Spell extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private List<Condition> condition;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private AreaOfEffect areaOfEffect;
+
+    @Enumerated(EnumType.STRING)
+    private AttackType attackType;
 }
