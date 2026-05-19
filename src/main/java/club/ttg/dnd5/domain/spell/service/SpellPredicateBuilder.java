@@ -16,7 +16,7 @@ import java.util.Collection;
 public class SpellPredicateBuilder {
     private static final QSpell Q = QSpell.spell;
     private static final StringPath SCHOOL_PATH = Expressions.stringPath("school");
-    private static final StringPath ATTACK_TYPE_PATH = Expressions.stringPath("attackType");
+    private static final StringPath ATTACK_TYPE_PATH = Expressions.stringPath("attack_type");
 
     public BooleanBuilder build(final SpellQueryRequest request,
             Collection<String> classes,
