@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
@@ -34,6 +35,19 @@ public interface GlossaryMapper {
 
     @ToEntityMapping
     Glossary toEntity(GlossaryRequest request, Source source);
+
+    @Mapping(source = "request.name.name", target = "name")
+    @Mapping(source = "request.name.english", target = "english")
+    @Mapping(source = "request.name.alternative", target = "alternative", qualifiedByName = "collectToString")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(target = "source", source = "source")
+    @Mapping(target = "url", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "lastUsername", ignore = true)
+    void updateEntity(GlossaryRequest request, Source source, @MappingTarget Glossary glossary);
 
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping

@@ -65,13 +65,10 @@ public class GlossaryService {
                 .map(sourceService::findByUrl)
                 .orElse(null);
 
-        Glossary updatedGlossary = glossaryMapper.toEntity(request, source);
-        updatedGlossary.setUrl(url);
-        glossaryRepository.delete(existingGlossary);
-        glossaryRepository.flush();
-        glossaryRepository.save(updatedGlossary);
+        glossaryMapper.updateEntity(request, source, existingGlossary);
+        glossaryRepository.save(existingGlossary);
 
-        return updatedGlossary.getUrl();
+        return existingGlossary.getUrl();
     }
 
     @Transactional
