@@ -801,4 +801,22 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getNotificationTypes() {
         return dictionariesService.getNotificationTypes();
     }
+
+    @Operation(summary = "Типы атак")
+    @GetMapping("/attack/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Рукопашная атака", "value": "MELEE" },
+                              { "label": "Дальнобойная атака", "value": "RANGE" },
+                              { "label": "Рукопашная или дальнобойная атака", "value": "MELEE_OR_RANGE" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getAttackTypes() {
+        return dictionariesService.getAttackTypes();
+    }
 }

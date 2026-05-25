@@ -5,6 +5,8 @@ import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.filter.rest.FilterParam;
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
@@ -58,4 +60,10 @@ public class SpellQueryRequest extends AbstractQueryRequest
 
     @FilterParam
     private QueryFilter<String> duration;
+
+    @FilterParam(enumClass = AreaOfEffectType.class)
+    private QueryFilter<AreaOfEffectType> areaOfEffectType;
+
+    @FilterParam(enumClass = AttackType.class)
+    private QueryFilter<AttackType> attackType;
 }

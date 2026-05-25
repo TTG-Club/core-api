@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.spell.service;
 
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterKeys;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
@@ -272,6 +274,34 @@ public class SpellFilterService {
                                 .name("Длительность")
                                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(buildDurationValues())
+                                .build());
+
+                // Область воздействия эффекта
+                groups.add(FilterGroupMeta.builder()
+                                .key(FilterKeys.keyOf(SpellQueryRequest.class, "areaOfEffectType"))
+                                .name("Область воздействия")
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                                .values(Arrays.stream(AreaOfEffectType.values())
+                                        .map(a -> FilterValueMeta.builder()
+                                                .id(a.name())
+                                                .value(a.name())
+                                                .name(a.getName())
+                                                .build())
+                                        .toList())
+                                .build());
+
+                // Тип атаки
+                groups.add(FilterGroupMeta.builder()
+                                .key(FilterKeys.keyOf(SpellQueryRequest.class, "attackType"))
+                                .name("Тип атаки")
+                                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                                .values(Arrays.stream(AttackType.values())
+                                                .map(a -> FilterValueMeta.builder()
+                                                        .id(a.name())
+                                                        .value(a.name())
+                                                        .name(a.getName())
+                                                        .build())
+                                                .toList())
                                 .build());
 
                 // Ритуал

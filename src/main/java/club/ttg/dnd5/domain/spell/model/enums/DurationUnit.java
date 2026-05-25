@@ -17,7 +17,8 @@ public enum DurationUnit implements NumberFormatted<DurationUnit> {
     YEAR("год"),
     UNTIL_DISPEL("пока не рассеется"),
     PERMANENT("постоянно"),
-    ROUND("раунд");
+    ROUND("раунд"),
+    SPECIAL("специальная");
 
     private static final Map<DurationUnit, Map<Long, String>> CONJUGATED_UNITS = Map.of(
             MINUTE, Map.of(BETWEEN_TWO_AND_FOUR, "минуты", GREATER_THAN_FOUR, "минут"),

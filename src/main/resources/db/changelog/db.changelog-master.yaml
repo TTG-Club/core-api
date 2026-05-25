@@ -185,3 +185,5 @@ databaseChangeLog:
       file: db/changelog/2026/05/11-01-add-srd-version.yaml
   - include:
       file: db/changelog/2026/05/13-01-add-index-srd-version.yaml
+  - include:
+      file: db/changelog/2026/05/18-01-add-area-of-effect-to-spell.yaml
