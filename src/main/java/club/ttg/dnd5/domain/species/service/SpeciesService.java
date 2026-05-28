@@ -141,10 +141,8 @@ public class SpeciesService {
     @Transactional
     public String update(String oldUrl, SpeciesRequest request) {
         if (speciesRepository.existsById(oldUrl)) {
-            if (!oldUrl.equals(request.getUrl())) {
-                speciesRepository.deleteById(oldUrl);
-                speciesRepository.flush();
-            }
+            speciesRepository.deleteById(oldUrl);
+            speciesRepository.flush();
             return saveSpecies(request).getUrl();
         } else {
             throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");

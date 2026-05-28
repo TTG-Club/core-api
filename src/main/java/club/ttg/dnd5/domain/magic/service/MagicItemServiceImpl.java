@@ -60,9 +60,8 @@ public class MagicItemServiceImpl implements MagicItemService {
     @Override
     public String updateItem(String url, MagicItemRequest request) {
         findByUrl(url);
-        if (!request.getUrl().equals(url)) {
-            magicItemRepository.deleteById(url);
-        }
+        magicItemRepository.deleteById(url);
+        magicItemRepository.flush();
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var entity = magicItemMapper.toEntity(request, source);
         return magicItemRepository.save(entity).getUrl();
