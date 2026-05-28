@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,12 +55,10 @@ public class FeatServiceImpl implements FeatService {
     @Override
     public String updateFeat(final String featUrl, final FeatRequest request) {
         findByUrl(featUrl);
+        featRepository.deleteById(featUrl);
+        featRepository.flush();
         var book = sourceService.findByUrl(request.getSource().getUrl());
         var feat = featMapper.toEntity(request, book);
-        if (!Objects.equals(featUrl, request.getUrl())) {
-            featRepository.deleteById(featUrl);
-            featRepository.flush();
-        }
         return featRepository.save(feat).getUrl();
     }
 

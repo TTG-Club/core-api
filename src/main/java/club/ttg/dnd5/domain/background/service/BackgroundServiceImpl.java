@@ -22,7 +22,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -55,12 +54,11 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Transactional
     @Override
     public String updateBackgrounds(final String url, final BackgroundRequest request) {
+        findByUrl(url);
+        backgroundRepository.deleteById(url);
+        backgroundRepository.flush();
         var feat = getFeatReference(request.getFeatUrl());
         var source = sourceService.findReferenceByUrl(request.getSource().getUrl());
-        if (!Objects.equals(url, request.getUrl())) {
-            backgroundRepository.deleteById(url);
-            backgroundRepository.flush();
-        }
         return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
                 .getUrl();
     }

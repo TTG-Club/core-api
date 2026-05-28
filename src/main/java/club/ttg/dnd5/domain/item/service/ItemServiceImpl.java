@@ -15,7 +15,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -57,11 +56,9 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public String updateItem(final String itemUrl, final ItemRequest request) {
         findByUrl(itemUrl);
+        itemRepository.deleteById(itemUrl);
+        itemRepository.flush();
         var source = sourceService.findByUrl(request.getSource().getUrl());
-        if (!Objects.equals(itemUrl, request.getUrl())) {
-            itemRepository.deleteById(itemUrl);
-            itemRepository.flush();
-        }
         return itemRepository.save(itemMapper.toEntity(request, source)).getUrl();
     }
 
