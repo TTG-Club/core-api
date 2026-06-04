@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.spell.service;
 
-import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
@@ -16,7 +15,6 @@ import java.util.Collection;
 public class SpellPredicateBuilder {
     private static final QSpell Q = QSpell.spell;
     private static final StringPath SCHOOL_PATH = Expressions.stringPath("school");
-    private static final StringPath ATTACK_TYPE_PATH = Expressions.stringPath("attack_type");
 
     public BooleanBuilder build(final SpellQueryRequest request,
             Collection<String> classes,
@@ -97,16 +95,16 @@ public class SpellPredicateBuilder {
         }
 
         // Тип урона (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getDamageType(), "damage_type");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getDamageType(), "effect", "damageTypes");
 
         // Тип лечения (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getHealingType(), "healing_type");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getHealingType(), "effect", "healingTypes");
 
         // Состояния (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getCondition(), "condition");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getCondition(), "effect", "conditions");
 
         // Спасброски (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getSavingThrow(), "saving_throw");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getSavingThrow(), "effect", "savingThrows");
 
         // Ритуал (QueryFilter: ritual=1 / ritual=1&ritual_mode=1)
         if (request.getRitual() != null && request.getRitual().isActive()) {
@@ -151,10 +149,11 @@ public class SpellPredicateBuilder {
         PredicateUtils.applyJsonbTimeFilter(builder, request.getDuration(), "duration");
 
         // Область воздействия (JSONB-объект, поле "type")
-        PredicateUtils.applyJsonbObjectEnumFieldFilter(builder, request.getAreaOfEffectType(), "area_of_effect", "type");
+        PredicateUtils.applyJsonbObjectEnumFieldFilter(
+                builder, request.getAreaOfEffectType(), "(effect->'areaOfEffect')", "type");
 
         // Тип атаки (enum as STRING column)
-        PredicateUtils.applyFilterEnum(builder, request.getAttackType(), ATTACK_TYPE_PATH, AttackType.class);
+        PredicateUtils.applyJsonbObjectEnumFieldFilter(builder, request.getAttackType(), "effect", "attackType");
 
         // Источники
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "spell", "source");
