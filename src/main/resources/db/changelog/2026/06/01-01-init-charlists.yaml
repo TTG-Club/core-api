@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: init-charlists-table
+      author: system
+      changes:
+        - createTable:
+            tableName: charlists
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: owner_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: character_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: character_level
+                  type: INTEGER
+
+              - column:
+                  name: character_class
+                  type: VARCHAR(512)
+
+              - column:
+                  name: data
+                  type: TEXT
+
+              - column:
+                  name: visibility
+                  type: VARCHAR(20)
+                  defaultValue: PRIVATE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: share_token
+                  type: VARCHAR(255)
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: NOW()
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: NOW()
+
+        - addUniqueConstraint:
+            tableName: charlists
+            columnNames: share_token
+            constraintName: uq_charlists_share_token
+
+        - createIndex:
+            indexName: idx_charlists_owner_id
+            tableName: charlists
+            columns:
+              - column:
+                  name: owner_id
+
+        - createIndex:
+            indexName: idx_charlists_visibility
+            tableName: charlists
+            columns:
+              - column:
+                  name: visibility
+
+        - addForeignKeyConstraint:
+            baseTableName: charlists
+            baseColumnNames: owner_id
+            referencedTableName: users
+            referencedColumnNames: uuid
+            constraintName: fk_charlists_owner
+            onDelete: CASCADE
