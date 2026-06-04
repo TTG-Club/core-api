@@ -80,4 +80,16 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
         """, nativeQuery = true)
     List<String> findDistinctSrdVersions();
 
+    @EntityGraph(attributePaths = {
+            "source",
+            "classAffiliation"
+    })
+    @Query("""
+            select distinct s from Spell s
+            where s.srdVersion = :srdVersion
+              and s.isHiddenEntity = false
+            order by s.level, s.name
+            """)
+    List<Spell> findAllVisibleBySrdVersion(@Param("srdVersion") String srdVersion);
+
 }
