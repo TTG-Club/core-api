@@ -19,6 +19,7 @@ import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
+import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class VttgSpellMapperTest {
     private final VttgSpellMapper mapper = new VttgSpellMapper(
             new VttgMarkupConverter(new ObjectMapper()),
-            new VttgSpellMechanicsExtractor()
+            new VttgSpellMechanicsExtractor(),
+            new VttgSpellScalingExtractor()
     );
 
     @Test
@@ -71,9 +73,10 @@ class VttgSpellMapperTest {
         effect.setDamageFormula("8к6");
         effect.setDamageTypes(List.of(DamageType.FAIR));
         effect.setSavingThrows(List.of(Ability.DEXTERITY));
+        effect.setSaveEffect(SpellSaveEffect.HALF);
         spell.setEffect(effect);
         spell.setDescription("[\"Первый абзац\",\"Второй абзац\"]");
-        spell.setUpper("[\"Дополнительный урон.\"]");
+        spell.setUpper("[\"Урон увеличивается на {@roll 1к6} за каждый уровень ячейки выше 3.\"]");
         spell.setSrdVersion("2.5");
         Source source = new Source();
         source.setAcronym("PHB24");
@@ -98,8 +101,12 @@ class VttgSpellMapperTest {
         assertEquals("fire", result.getDamageType());
         assertEquals("8к6", result.getDamageFormula());
         assertEquals("dexterity", result.getSaveType());
+        assertEquals("half", result.getSaveEffect());
         assertEquals("Первый абзац\n\nВторой абзац", result.getDescription());
-        assertEquals("Дополнительный урон.", result.getHigherLevelDescription());
+        assertEquals("Урон увеличивается на {@roll 1к6} за каждый уровень ячейки выше 3.",
+                result.getHigherLevelDescription());
+        assertEquals("1к6", result.getScaling().getAdditionalDice());
+        assertEquals(result.getHigherLevelDescription(), result.getScaling().getDescription());
         assertEquals("PHB24, p. 241", result.getSource());
         assertEquals("phb24", result.getSourceKey());
         assertEquals("spell", result.getType());

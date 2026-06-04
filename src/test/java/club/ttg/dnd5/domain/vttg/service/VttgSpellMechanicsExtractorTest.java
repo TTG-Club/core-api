@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
+import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -101,5 +102,28 @@ class VttgSpellMechanicsExtractorTest {
         assertEquals("1к10", result.damageFormula());
         assertEquals("necrotic", result.damageType());
         assertNull(result.isHealing());
+    }
+
+    @Test
+    void extractsHalfDamageOnSuccessfulSaveFromText() {
+        Spell spell = new Spell();
+
+        var result = extractor.extract(spell,
+                "При успешном спасброске существо получает половину этого урона.");
+
+        assertEquals("half", result.saveEffect());
+    }
+
+    @Test
+    void structuredSaveEffectHasPriorityOverText() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setSaveEffect(SpellSaveEffect.SPECIAL);
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell,
+                "При успешном спасброске существо получает половину этого урона.");
+
+        assertEquals("special", result.saveEffect());
     }
 }

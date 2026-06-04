@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
+import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
@@ -29,5 +30,6 @@ public class SpellEffect {
     private List<DamageType> damageTypes;
     private List<HealingType> healingTypes;
     private List<Ability> savingThrows;
+    private SpellSaveEffect saveEffect;
     private List<Condition> conditions;
 }

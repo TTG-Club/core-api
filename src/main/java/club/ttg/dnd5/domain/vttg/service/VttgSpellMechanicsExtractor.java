@@ -26,6 +26,17 @@ public class VttgSpellMechanicsExtractor {
             "(?iu)не\\s+(?:может\\s+|могут\\s+)?(?:восстанавлив\\p{L}*|исцел\\p{L}*)"
     );
     private static final Pattern DAMAGE = Pattern.compile("(?iu)урон\\p{L}*");
+    private static final Pattern SUCCESSFUL_SAVE = Pattern.compile(
+            "(?iu)(?:при\\s+успех\\p{L}*|при\\s+успешн\\p{L}*\\s+спасброск\\p{L}*"
+                    + "|успешн\\p{L}*\\s+спасбросок)"
+    );
+    private static final Pattern HALF_DAMAGE = Pattern.compile(
+            "(?iu)(?:половин\\p{L}*\\s+(?:этого\\s+)?урон\\p{L}*"
+                    + "|урон\\p{L}*.{0,80}?уменьш\\p{L}*\\s+вдвое)"
+    );
+    private static final Pattern NO_DAMAGE = Pattern.compile(
+            "(?iu)(?:не\\s+получ\\p{L}*|не\\s+нанос\\p{L}*).{0,60}?урон\\p{L}*"
+    );
     private static final Map<DamageType, String> DAMAGE_TYPES = Map.ofEntries(
             Map.entry(DamageType.ACID, "acid"),
             Map.entry(DamageType.BLUDGEONING, "bludgeoning"),
@@ -60,8 +71,25 @@ public class VttgSpellMechanicsExtractor {
         return new VttgSpellMechanics(
                 formula,
                 damageType,
-                healing ? true : null
+                healing ? true : null,
+                extractSaveEffect(effect, text)
         );
+    }
+
+    private String extractSaveEffect(SpellEffect effect, String text) {
+        if (effect != null && effect.getSaveEffect() != null) {
+            return effect.getSaveEffect().name().toLowerCase(Locale.ROOT);
+        }
+        if (!SUCCESSFUL_SAVE.matcher(text).find()) {
+            return null;
+        }
+        if (HALF_DAMAGE.matcher(text).find()) {
+            return "half";
+        }
+        if (NO_DAMAGE.matcher(text).find()) {
+            return "none";
+        }
+        return null;
     }
 
     private String extractFormula(String text, boolean healing) {

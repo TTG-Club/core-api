@@ -37,6 +37,8 @@ public class VttgSpell {
     private Boolean isHealing;
     private Boolean autoHit;
     private String saveType;
+    private String saveEffect;
+    private VttgSpellScaling scaling;
     private String description;
     private String higherLevelDescription;
     private String source;

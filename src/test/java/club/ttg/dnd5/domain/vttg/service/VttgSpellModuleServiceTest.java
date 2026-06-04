@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellScaling;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,12 @@ class VttgSpellModuleServiceTest {
                 .deliveryType("ranged")
                 .autoHit(true)
                 .saveType("none")
+                .saveEffect("half")
+                .scaling(VttgSpellScaling.builder()
+                        .additionalDice("1к6")
+                        .additionalTargets(1)
+                        .description("Усиление")
+                        .build())
                 .description("Описание")
                 .isSRD(true)
                 .type("spell")
@@ -71,6 +78,10 @@ class VttgSpellModuleServiceTest {
         assertEquals("spell", spells.get(0).get("type").asText());
         assertEquals(3, spells.get(0).get("targetCount").asInt());
         assertTrue(spells.get(0).get("autoHit").asBoolean());
+        assertEquals("half", spells.get(0).get("saveEffect").asText());
+        assertEquals("1к6", spells.get(0).at("/scaling/additionalDice").asText());
+        assertEquals(1, spells.get(0).at("/scaling/additionalTargets").asInt());
+        assertEquals("Усиление", spells.get(0).at("/scaling/description").asText());
         assertEquals(spell.getDescription(), spells.get(0).get("description").asText());
         assertTrue(spells.get(0).get("isSRD").asBoolean());
         assertNull(spells.get(0).get("srd"));

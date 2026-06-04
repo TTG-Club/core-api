@@ -18,6 +18,7 @@ import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellAreaOfEffect;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellComponents;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellScaling;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -38,6 +39,7 @@ public class VttgSpellMapper {
 
     private final VttgMarkupConverter markupConverter;
     private final VttgSpellMechanicsExtractor mechanicsExtractor;
+    private final VttgSpellScalingExtractor scalingExtractor;
 
     public VttgSpell toVttg(Spell spell) {
         SpellCastingTime castingTime = primaryCastingTime(spell);
@@ -47,6 +49,8 @@ public class VttgSpellMapper {
         VttgSpellMechanics mechanics = mechanicsExtractor.extract(spell, description);
         SpellEffect effect = spell.getEffect();
         VttgSpellAreaOfEffect areaOfEffect = areaOfEffect(effect == null ? null : effect.getAreaOfEffect());
+        String higherLevelDescription = optionalText(spell.getUpper());
+        VttgSpellScaling scaling = scalingExtractor.extract(spell.getUpcastable(), higherLevelDescription);
 
         return VttgSpell.builder()
                 .id(spell.getUrl())
@@ -74,8 +78,10 @@ public class VttgSpellMapper {
                 .isHealing(mechanics.isHealing())
                 .autoHit(effect == null ? null : effect.getAutoHit())
                 .saveType(saveType(effect))
+                .saveEffect(mechanics.saveEffect())
+                .scaling(scaling)
                 .description(description)
-                .higherLevelDescription(optionalText(spell.getUpper()))
+                .higherLevelDescription(higherLevelDescription)
                 .source(source(spell))
                 .sourceKey(sourceKey(spell.getSource()))
                 .isSRD(true)
