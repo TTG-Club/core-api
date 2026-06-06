@@ -229,7 +229,6 @@ public class VttgSpellMapper {
             case SELF -> "self";
             case TOUCH -> "touch";
             case SIGHT -> "sight";
-            case FEET, MILE -> "ranged";
             default -> "none";
         };
     }

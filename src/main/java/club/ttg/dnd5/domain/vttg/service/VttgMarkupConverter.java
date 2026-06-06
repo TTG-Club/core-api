@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,11 +21,13 @@ public class VttgMarkupConverter {
     private static final Set<String> BLOCK_CONTENT_TYPES = Set.of(
             "doc", "blockquote", "bulletList", "orderedList", "listItem"
     );
-    private static final Pattern GLOSSARY_LINK = Pattern.compile(
-            "\\{@glossary\\s+([^|}]+)\\|url:([^}]+)}"
+    private static final Pattern SITE_LINK = Pattern.compile(
+            "\\{@(glossary|spell)\\s+([^|}]+)\\|url:([^}]+)}"
     );
+    private static final Map<String, String> SITE_LINK_SECTIONS = siteLinkSections();
     private static final Pattern ITALIC = Pattern.compile("\\{@i\\s+([^}]+)}");
     private static final Pattern BOLD = Pattern.compile("\\{@b\\s+([^}]+)}");
+    private static final Pattern ROLL = Pattern.compile("\\{@roll\\s+([^|}]+)(?:\\|[^}]*)?}");
 
     private final ObjectMapper objectMapper;
     @Value("${app.url:https://ttg.club}")
@@ -109,17 +113,32 @@ public class VttgMarkupConverter {
     private String replaceMarkup(String text) {
         String formatted = replaceInline(text, ITALIC, "*$1*");
         formatted = replaceInline(formatted, BOLD, "**$1**");
+        formatted = replaceRolls(formatted);
 
         return replaceSiteLinks(formatted);
     }
 
-    private String replaceSiteLinks(String text) {
-        Matcher matcher = GLOSSARY_LINK.matcher(text);
+    private String replaceRolls(String text) {
+        Matcher matcher = ROLL.matcher(text);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
-            String label = matcher.group(1).trim();
-            String url = matcher.group(2).trim();
-            String replacement = "[" + label + "](" + siteUrl() + "/glossary/" + url + ")";
+            matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(1).trim()));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private String replaceSiteLinks(String text) {
+        Matcher matcher = SITE_LINK.matcher(text);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String type = matcher.group(1).trim();
+            String label = matcher.group(2).trim();
+            String url = matcher.group(3).trim();
+            String section = SITE_LINK_SECTIONS.get(type);
+            String replacement = section == null
+                    ? matcher.group()
+                    : "[" + label + "](" + siteUrl() + "/" + section + "/" + url + ")";
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(result);
@@ -133,5 +152,12 @@ public class VttgMarkupConverter {
     private String siteUrl() {
         String value = StringUtils.hasText(appUrl) ? appUrl.trim() : "https://ttg.club";
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
+    }
+
+    private static Map<String, String> siteLinkSections() {
+        Map<String, String> result = new LinkedHashMap<>();
+        result.put("glossary", "glossary");
+        result.put("spell", "spells");
+        return result;
     }
 }

@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.vttg.rest.controller;
 
 import club.ttg.dnd5.domain.vttg.service.VttgModuleArchive;
-import club.ttg.dnd5.domain.vttg.service.VttgSpellModuleService;
+import club.ttg.dnd5.domain.vttg.service.VttgModuleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +20,27 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/vttg")
 public class VttgController {
-    private final VttgSpellModuleService spellModuleService;
+    private final VttgModuleService moduleService;
+
+    @Operation(summary = "Скачать общий модуль заклинаний и существ для VTTG")
+    @GetMapping(value = "/module", produces = "application/zip")
+    public ResponseEntity<byte[]> getModule() {
+        return archive(moduleService.buildAllModule());
+    }
 
     @Operation(summary = "Скачать модуль заклинаний для VTTG")
     @GetMapping(value = "/spells/module", produces = "application/zip")
     public ResponseEntity<byte[]> getSpellModule() {
-        VttgModuleArchive archive = spellModuleService.buildModule();
+        return archive(moduleService.buildSpellModule());
+    }
+
+    @Operation(summary = "Скачать модуль существ для VTTG")
+    @GetMapping(value = "/creatures/module", produces = "application/zip")
+    public ResponseEntity<byte[]> getCreatureModule() {
+        return archive(moduleService.buildCreatureModule());
+    }
+
+    private ResponseEntity<byte[]> archive(VttgModuleArchive archive) {
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(archive.fileName(), StandardCharsets.UTF_8)
                 .build();

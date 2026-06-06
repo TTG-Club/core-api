@@ -103,7 +103,7 @@ class VttgSpellMapperTest {
         assertEquals("dexterity", result.getSaveType());
         assertEquals("half", result.getSaveEffect());
         assertEquals("Первый абзац\n\nВторой абзац", result.getDescription());
-        assertEquals("Урон увеличивается на {@roll 1к6} за каждый уровень ячейки выше 3.",
+        assertEquals("Урон увеличивается на 1к6 за каждый уровень ячейки выше 3.",
                 result.getHigherLevelDescription());
         assertEquals("1к6", result.getScaling().getAdditionalDice());
         assertEquals(result.getHigherLevelDescription(), result.getScaling().getDescription());
@@ -128,7 +128,32 @@ class VttgSpellMapperTest {
 
         assertTrue(result.getDescription().startsWith("*Вы бросаете кислотный шарик*"));
         assertTrue(result.getDescription().contains("[сферой](https://ttg.club/glossary/sphere-phb)"));
-        assertTrue(result.getDescription().contains("{@roll 1к6}"));
+        assertTrue(result.getDescription().contains("1к6"));
         assertEquals("1к6", result.getDamageFormula());
+    }
+
+    @Test
+    void doesNotInferAttackDeliveryFromSpellRange() {
+        Spell spell = new Spell();
+        spell.setUrl("auto-hit-spell");
+        spell.setName("Auto Hit Spell");
+        spell.setEnglish("Auto Hit Spell");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setRange(List.of(SpellDistance.of(120L, DistanceUnit.FEET)));
+
+        SpellEffect effect = new SpellEffect();
+        effect.setTargetType(SpellTargetType.CREATURE);
+        effect.setAutoHit(true);
+        effect.setDamageFormula("3d4 + 3");
+        effect.setDamageTypes(List.of(DamageType.FORCE));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals("creature", result.getTargetType());
+        assertEquals("none", result.getDeliveryType());
+        assertEquals(120, result.getRange());
+        assertEquals("ft", result.getRangeUnit());
     }
 }

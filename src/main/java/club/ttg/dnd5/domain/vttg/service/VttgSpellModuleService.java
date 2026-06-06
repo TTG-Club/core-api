@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -67,19 +69,17 @@ public class VttgSpellModuleService {
         zip.closeEntry();
     }
 
-    private Object moduleManifest(String moduleId, String srdVersion) {
-        return new Object() {
-            public final String id = moduleId;
-            public final String name = "Заклинания TTG Club SRD " + srdVersion;
-            public final String version = "1.0.0";
-            public final String description = "Заклинания SRD " + srdVersion + ", экспортированные с TTG Club";
-            public final String author = "TTG Club";
-            public final List<String> compatibleSystems = List.of("dnd5e");
-            public final List<String> permissions = List.of("notifications");
-            public final Object client = new Object() {
-                public final String entry = "client.js";
-            };
-        };
+    private Map<String, Object> moduleManifest(String moduleId, String srdVersion) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", moduleId);
+        result.put("name", "Заклинания TTG Club SRD " + srdVersion);
+        result.put("version", "1.0.0");
+        result.put("description", "Заклинания SRD " + srdVersion + ", экспортированные с TTG Club");
+        result.put("author", "TTG Club");
+        result.put("compatibleSystems", List.of("dnd5e"));
+        result.put("permissions", List.of("notifications"));
+        result.put("client", Map.of("entry", "client.js"));
+        return result;
     }
 
     private String clientScript(String moduleId, String srdVersion) {

@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.beastiary.model.Creature;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -49,6 +50,14 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
         order by b.srd_version
         """, nativeQuery = true)
     List<String> findDistinctSrdVersions();
+
+    @Query("""
+            select c from Creature c
+            where c.srdVersion = :srdVersion
+              and c.isHiddenEntity = false
+            order by c.name
+            """)
+    List<Creature> findAllVisibleBySrdVersion(@Param("srdVersion") String srdVersion);
 
 }
 

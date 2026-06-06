@@ -1,0 +1,25 @@
+package club.ttg.dnd5.domain.vttg.rest.dto;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.util.Map;
+
+@Builder
+@Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class VttgCreature {
+    private String id;
+    private String entityType;
+    private String type;
+    private Boolean autoSaves;
+    private String name;
+    private String nameEn;
+    private String description;
+    private String header;
+    private Map<String, Object> system;
+    private String source;
+    private Boolean isSRD;
+    private Boolean isReadOnly;
+}

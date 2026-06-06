@@ -81,6 +81,20 @@ class VttgMarkupConverterTest {
     }
 
     @Test
+    void replacesSpellMarkupWithSiteLink() {
+        assertEquals(
+                "[Detect Magic [Detect Magic]](https://ttg.club/spells/detect-magic-phb)",
+                converter.toText("{@spell Detect Magic [Detect Magic]|url:detect-magic-phb}")
+        );
+    }
+
+    @Test
+    void replacesInlineRollMarkupWithDisplayedFormula() {
+        assertEquals("+1", converter.toText("{@roll +1|notation:1d20+1}"));
+        assertEquals("2к6", converter.toText("{@roll 2к6}"));
+    }
+
+    @Test
     void convertsRealSpellDescriptionArray() {
         String markup = """
                 ["{@i Вы бросаете кислотный шарик} в точку в пределах дальности, где он взрывается {@glossary сферой|url:sphere-phb} с радиусом 5 фт. Каждое {@glossary существо|url:creature-phb} в этой сфере должно преуспеть в {@glossary спасброске|url:saving-throw-phb} Ловкости или получить {@roll 1к6} урона кислотой."]
@@ -91,7 +105,7 @@ class VttgMarkupConverterTest {
                         + "[сферой](https://ttg.club/glossary/sphere-phb) с радиусом 5 фт. Каждое "
                         + "[существо](https://ttg.club/glossary/creature-phb) в этой сфере должно преуспеть в "
                         + "[спасброске](https://ttg.club/glossary/saving-throw-phb) Ловкости или получить "
-                        + "{@roll 1к6} урона кислотой.",
+                        + "1к6 урона кислотой.",
                 converter.toText(markup)
         );
     }
@@ -101,7 +115,7 @@ class VttgMarkupConverterTest {
         String description = "[\"Текст с {@roll 1к6} урона.\"]";
         String doubleEncoded = new ObjectMapper().writeValueAsString(description);
 
-        assertEquals("Текст с {@roll 1к6} урона.", converter.toText(doubleEncoded));
+        assertEquals("Текст с 1к6 урона.", converter.toText(doubleEncoded));
     }
 
     @Test
