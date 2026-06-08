@@ -73,8 +73,7 @@ public class VttgSpellMapper {
                 .targetType(targetType(effect, range, areaOfEffect))
                 .targetCount(effect == null ? null : effect.getTargetCount())
                 .deliveryType(deliveryType(effect, range))
-                .damageFormula(mechanics.damageFormula())
-                .damageType(mechanics.damageType())
+                .damageFormulas(mechanics.damageFormulas())
                 .isHealing(mechanics.isHealing())
                 .autoHit(effect == null ? null : effect.getAutoHit())
                 .saveType(saveType(effect))
@@ -207,7 +206,7 @@ public class VttgSpellMapper {
         if (range != null && range.getUnit() == DistanceUnit.SELF) {
             return "self";
         }
-        if (effect != null && (effect.getAttackType() != null || hasValues(effect.getDamageTypes())
+        if (effect != null && (effect.getAttackType() != null || hasValues(effect.getDamageFormulas())
                 || hasValues(effect.getHealingTypes()) || hasValues(effect.getSavingThrows()))) {
             return "creature";
         }

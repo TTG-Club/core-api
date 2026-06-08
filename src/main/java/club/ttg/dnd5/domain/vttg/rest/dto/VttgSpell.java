@@ -32,8 +32,7 @@ public class VttgSpell {
     private String targetType;
     private Integer targetCount;
     private String deliveryType;
-    private String damageFormula;
-    private String damageType;
+    private List<String> damageFormulas;
     private Boolean isHealing;
     private Boolean autoHit;
     private String saveType;

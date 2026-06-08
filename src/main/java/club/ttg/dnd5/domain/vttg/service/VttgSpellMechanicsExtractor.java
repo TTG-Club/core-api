@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.vttg.service;
 
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import org.springframework.stereotype.Component;
@@ -37,21 +36,6 @@ public class VttgSpellMechanicsExtractor {
     private static final Pattern NO_DAMAGE = Pattern.compile(
             "(?iu)(?:не\\s+получ\\p{L}*|не\\s+нанос\\p{L}*).{0,60}?урон\\p{L}*"
     );
-    private static final Map<DamageType, String> DAMAGE_TYPES = Map.ofEntries(
-            Map.entry(DamageType.ACID, "acid"),
-            Map.entry(DamageType.BLUDGEONING, "bludgeoning"),
-            Map.entry(DamageType.COLD, "cold"),
-            Map.entry(DamageType.FAIR, "fire"),
-            Map.entry(DamageType.FORCE, "force"),
-            Map.entry(DamageType.LIGHTNING, "lightning"),
-            Map.entry(DamageType.NECROTIC, "necrotic"),
-            Map.entry(DamageType.PIERCING, "piercing"),
-            Map.entry(DamageType.POISON, "poison"),
-            Map.entry(DamageType.PSYCHIC, "psychic"),
-            Map.entry(DamageType.RADIANT, "radiant"),
-            Map.entry(DamageType.SLASHING, "slashing"),
-            Map.entry(DamageType.THUNDER, "thunder")
-    );
     private static final Map<String, Pattern> TEXT_DAMAGE_TYPES = textDamageTypes();
 
     public VttgSpellMechanics extract(Spell spell, String description) {
@@ -59,21 +43,21 @@ public class VttgSpellMechanicsExtractor {
         SpellEffect effect = spell.getEffect();
         boolean structuredHealing = effect != null && hasValues(effect.getHealingTypes());
         boolean healing = structuredHealing || hasHealing(text);
-        String formula = effect != null && StringUtils.hasText(effect.getDamageFormula())
-                ? effect.getDamageFormula()
-                : extractFormula(text, healing);
-        String damageType = structuredDamageType(effect);
+        List<String> formulas = structuredDamageFormulas(effect);
+        String formula = formulas == null
+                ? extractFormula(text, healing)
+                : firstFormulaOnly(formulas.getFirst());
+        String damageType = structuredDamageType(formulas);
 
         if (damageType == null && DAMAGE.matcher(text).find()) {
             damageType = textDamageType(text, formula);
         }
 
-        return new VttgSpellMechanics(
-                formula,
-                damageType,
-                healing ? true : null,
-                extractSaveEffect(effect, text)
-        );
+        if (formulas == null && StringUtils.hasText(formula)) {
+            formulas = List.of(formatDamageFormula(formula, damageType));
+        }
+
+        return new VttgSpellMechanics(formulas, healing ? true : null, extractSaveEffect(effect, text));
     }
 
     private String extractSaveEffect(SpellEffect effect, String text) {
@@ -124,11 +108,12 @@ public class VttgSpellMechanicsExtractor {
         return false;
     }
 
-    private String structuredDamageType(SpellEffect effect) {
-        if (effect == null || !hasValues(effect.getDamageTypes())) {
-            return null;
-        }
-        return DAMAGE_TYPES.get(effect.getDamageTypes().getFirst());
+    private List<String> structuredDamageFormulas(SpellEffect effect) {
+        return effect == null || !hasValues(effect.getDamageFormulas()) ? null : effect.getDamageFormulas();
+    }
+
+    private String structuredDamageType(List<String> formulas) {
+        return hasValues(formulas) ? damageTypeInFormula(formulas.getFirst()) : null;
     }
 
     private String textDamageType(String text, String formula) {
@@ -158,6 +143,30 @@ public class VttgSpellMechanicsExtractor {
 
     private String window(String text, int start, int end) {
         return text.substring(Math.max(0, start), Math.min(text.length(), end));
+    }
+
+    private String formatDamageFormula(String formula, String damageType) {
+        if (!StringUtils.hasText(damageType)) {
+            return formula;
+        }
+        return formula + "[" + damageType + "]";
+    }
+
+    private String firstFormulaOnly(String formula) {
+        if (!StringUtils.hasText(formula)) {
+            return formula;
+        }
+        int bracket = formula.indexOf('[');
+        return bracket < 0 ? formula : formula.substring(0, bracket);
+    }
+
+    private String damageTypeInFormula(String formula) {
+        if (!StringUtils.hasText(formula)) {
+            return null;
+        }
+        int start = formula.indexOf('[');
+        int end = formula.indexOf(']', start + 1);
+        return start < 0 || end < 0 ? null : formula.substring(start + 1, end);
     }
 
     private boolean hasValues(List<?> values) {

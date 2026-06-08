@@ -2,7 +2,6 @@ package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
@@ -70,8 +69,7 @@ class VttgSpellMapperTest {
         effect.setAutoHit(true);
         effect.setTargetCount(3);
         effect.setTargetType(SpellTargetType.AREA);
-        effect.setDamageFormula("8к6");
-        effect.setDamageTypes(List.of(DamageType.FAIR));
+        effect.setDamageFormulas(List.of("8к6[fire]"));
         effect.setSavingThrows(List.of(Ability.DEXTERITY));
         effect.setSaveEffect(SpellSaveEffect.HALF);
         spell.setEffect(effect);
@@ -98,8 +96,7 @@ class VttgSpellMapperTest {
         assertEquals(3, result.getTargetCount());
         assertEquals("ranged", result.getDeliveryType());
         assertTrue(result.getAutoHit());
-        assertEquals("fire", result.getDamageType());
-        assertEquals("8к6", result.getDamageFormula());
+        assertEquals(List.of("8к6[fire]"), result.getDamageFormulas());
         assertEquals("dexterity", result.getSaveType());
         assertEquals("half", result.getSaveEffect());
         assertEquals("Первый абзац\n\nВторой абзац", result.getDescription());
@@ -129,7 +126,7 @@ class VttgSpellMapperTest {
         assertTrue(result.getDescription().startsWith("*Вы бросаете кислотный шарик*"));
         assertTrue(result.getDescription().contains("[сферой](https://ttg.club/glossary/sphere-phb)"));
         assertTrue(result.getDescription().contains("1к6"));
-        assertEquals("1к6", result.getDamageFormula());
+        assertEquals(List.of("1к6[acid]"), result.getDamageFormulas());
     }
 
     @Test
@@ -145,8 +142,7 @@ class VttgSpellMapperTest {
         SpellEffect effect = new SpellEffect();
         effect.setTargetType(SpellTargetType.CREATURE);
         effect.setAutoHit(true);
-        effect.setDamageFormula("3d4 + 3");
-        effect.setDamageTypes(List.of(DamageType.FORCE));
+        effect.setDamageFormulas(List.of("3d4 + 3[force]"));
         spell.setEffect(effect);
 
         var result = mapper.toVttg(spell);

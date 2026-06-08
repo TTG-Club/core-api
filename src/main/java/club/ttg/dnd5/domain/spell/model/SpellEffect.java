@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.spell.model;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
@@ -26,8 +25,7 @@ public class SpellEffect {
     private AreaOfEffect areaOfEffect;
     private AttackType attackType;
     private Boolean autoHit;
-    private String damageFormula;
-    private List<DamageType> damageTypes;
+    private List<String> damageFormulas;
     private List<HealingType> healingTypes;
     private List<Ability> savingThrows;
     private SpellSaveEffect saveEffect;

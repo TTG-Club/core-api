@@ -1,0 +1,62 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-08-01-spell-damage-formulas
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              UPDATE spell
+              SET effect = jsonb_strip_nulls(
+                  effect - 'damageFormula' - 'damageTypes'
+                  || CASE
+                      WHEN effect ? 'damageFormula' THEN jsonb_build_object(
+                          'damageFormulas',
+                          (
+                              SELECT jsonb_agg(
+                                  (effect->>'damageFormula')
+                                  || CASE
+                                      WHEN damage_type IS NULL THEN ''
+                                      ELSE '[' || CASE damage_type
+                                          WHEN 'ACID' THEN 'acid'
+                                          WHEN 'BLUDGEONING' THEN 'bludgeoning'
+                                          WHEN 'COLD' THEN 'cold'
+                                          WHEN 'FAIR' THEN 'fire'
+                                          WHEN 'FORCE' THEN 'force'
+                                          WHEN 'LIGHTNING' THEN 'lightning'
+                                          WHEN 'NECROTIC' THEN 'necrotic'
+                                          WHEN 'PIERCING' THEN 'piercing'
+                                          WHEN 'POISON' THEN 'poison'
+                                          WHEN 'PSYCHIC' THEN 'psychic'
+                                          WHEN 'RADIANT' THEN 'radiant'
+                                          WHEN 'SLASHING' THEN 'slashing'
+                                          WHEN 'THUNDER' THEN 'thunder'
+                                          ELSE lower(damage_type)
+                                      END || ']'
+                                  END
+                              )
+                              FROM (
+                                  SELECT NULL::text AS damage_type
+                                  WHERE effect->'damageTypes' IS NULL
+                                     OR jsonb_typeof(effect->'damageTypes') <> 'array'
+                                     OR CASE
+                                         WHEN jsonb_typeof(effect->'damageTypes') = 'array'
+                                             THEN jsonb_array_length(effect->'damageTypes')
+                                         ELSE 0
+                                     END = 0
+                                  UNION ALL
+                                  SELECT value
+                                  FROM jsonb_array_elements_text(
+                                      CASE
+                                          WHEN jsonb_typeof(effect->'damageTypes') = 'array'
+                                              THEN effect->'damageTypes'
+                                          ELSE '[]'::jsonb
+                                      END
+                                  ) AS damage_value(value)
+                              ) AS damage_types
+                          )
+                      )
+                      ELSE '{}'::jsonb
+                  END
+              )
+              WHERE effect ? 'damageFormula'
+                 OR effect ? 'damageTypes';
