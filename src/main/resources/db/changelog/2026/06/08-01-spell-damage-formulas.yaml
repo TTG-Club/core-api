@@ -9,7 +9,7 @@ databaseChangeLog:
               SET effect = jsonb_strip_nulls(
                   effect - 'damageFormula' - 'damageTypes'
                   || CASE
-                      WHEN effect ? 'damageFormula' THEN jsonb_build_object(
+                      WHEN jsonb_exists(effect, 'damageFormula') THEN jsonb_build_object(
                           'damageFormulas',
                           (
                               SELECT jsonb_agg(
@@ -58,5 +58,5 @@ databaseChangeLog:
                       ELSE '{}'::jsonb
                   END
               )
-              WHERE effect ? 'damageFormula'
-                 OR effect ? 'damageTypes';
+              WHERE jsonb_exists(effect, 'damageFormula')
+                 OR jsonb_exists(effect, 'damageTypes');
