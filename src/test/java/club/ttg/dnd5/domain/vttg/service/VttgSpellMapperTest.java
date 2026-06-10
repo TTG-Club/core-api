@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VttgSpellMapperTest {
@@ -69,7 +70,7 @@ class VttgSpellMapperTest {
         effect.setAutoHit(true);
         effect.setTargetCount(3);
         effect.setTargetType(SpellTargetType.AREA);
-        effect.setDamageFormulas(List.of("8к6[fire]"));
+        effect.setDamageFormulas(List.of("8к6@dmg.fire"));
         effect.setSavingThrows(List.of(Ability.DEXTERITY));
         effect.setSaveEffect(SpellSaveEffect.HALF);
         spell.setEffect(effect);
@@ -96,7 +97,9 @@ class VttgSpellMapperTest {
         assertEquals(3, result.getTargetCount());
         assertEquals("ranged", result.getDeliveryType());
         assertTrue(result.getAutoHit());
-        assertEquals(List.of("8к6[fire]"), result.getDamageFormulas());
+        assertEquals("fire", result.getDamageType());
+        assertEquals("8к6", result.getDamageFormula());
+        assertEquals("8к6@dmg.fire", result.getDamageParts().getFirst().getFormula());
         assertEquals("dexterity", result.getSaveType());
         assertEquals("half", result.getSaveEffect());
         assertEquals("Первый абзац\n\nВторой абзац", result.getDescription());
@@ -104,8 +107,8 @@ class VttgSpellMapperTest {
                 result.getHigherLevelDescription());
         assertEquals("1к6", result.getScaling().getAdditionalDice());
         assertEquals(result.getHigherLevelDescription(), result.getScaling().getDescription());
-        assertEquals("PHB24, p. 241", result.getSource());
-        assertEquals("phb24", result.getSourceKey());
+        assertEquals("PHB 2024", result.getSource());
+        assertEquals("phb", result.getSourceKey());
         assertEquals("spell", result.getType());
     }
 
@@ -120,13 +123,25 @@ class VttgSpellMapperTest {
         spell.setDescription("""
                 ["{@i Вы бросаете кислотный шарик} в точку, где он взрывается {@glossary сферой|url:sphere-phb}. Цель получает {@roll 1к6} урона кислотой."]
                 """);
+        spell.setUpper("""
+                ["The spell's damage increases by {@roll 1d6} when you reach levels 5 ({@roll 2d6}), 11 ({@roll 3d6}), and 17 ({@roll 4d6})."]
+                """);
 
         var result = mapper.toVttg(spell);
 
         assertTrue(result.getDescription().startsWith("*Вы бросаете кислотный шарик*"));
         assertTrue(result.getDescription().contains("[сферой](https://ttg.club/glossary/sphere-phb)"));
         assertTrue(result.getDescription().contains("1к6"));
-        assertEquals(List.of("1к6[acid]"), result.getDamageFormulas());
+        assertEquals("1к6", result.getDamageFormula());
+        assertEquals("acid", result.getDamageType());
+        assertEquals("1к6@dmg.acid", result.getDamageParts().getFirst().getFormula());
+        assertEquals("level", result.getCantripScaling());
+        assertEquals(5, result.getCantripScalingTiers().get(0).getLevel());
+        assertEquals("2к6@dmg.acid", result.getCantripScalingTiers().get(0).getParts().getFirst().getFormula());
+        assertEquals(11, result.getCantripScalingTiers().get(1).getLevel());
+        assertEquals("3к6@dmg.acid", result.getCantripScalingTiers().get(1).getParts().getFirst().getFormula());
+        assertEquals(17, result.getCantripScalingTiers().get(2).getLevel());
+        assertEquals("4к6@dmg.acid", result.getCantripScalingTiers().get(2).getParts().getFirst().getFormula());
     }
 
     @Test
@@ -142,7 +157,7 @@ class VttgSpellMapperTest {
         SpellEffect effect = new SpellEffect();
         effect.setTargetType(SpellTargetType.CREATURE);
         effect.setAutoHit(true);
-        effect.setDamageFormulas(List.of("3d4 + 3[force]"));
+        effect.setDamageFormulas(List.of("3d4 + 3@dmg.force"));
         spell.setEffect(effect);
 
         var result = mapper.toVttg(spell);
@@ -151,5 +166,44 @@ class VttgSpellMapperTest {
         assertEquals("none", result.getDeliveryType());
         assertEquals(120, result.getRange());
         assertEquals("ft", result.getRangeUnit());
+        assertEquals("3d4@dmg.force+3", result.getDamageParts().getFirst().getFormula());
+    }
+
+    @Test
+    void doesNotAddCantripScalingTiersWithoutCharacterLevelScalingText() {
+        Spell spell = new Spell();
+        spell.setUrl("static-cantrip");
+        spell.setName("Static Cantrip");
+        spell.setEnglish("Static Cantrip");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setDescription("[\"Target takes {@roll 1d6} fire damage.\"]");
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("1d6@dmg.fire"));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals("1d6@dmg.fire", result.getDamageParts().getFirst().getFormula());
+        assertNull(result.getCantripScaling());
+        assertNull(result.getCantripScalingTiers());
+    }
+
+    @Test
+    void mapsBonusActionAndSelfRangeLikeVttgSrd() {
+        Spell spell = new Spell();
+        spell.setUrl("self-bonus");
+        spell.setName("Self Bonus");
+        spell.setEnglish("Self Bonus");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setCastingTime(List.of(SpellCastingTime.of(1L, CastingUnit.BONUS)));
+        spell.setRange(List.of(SpellDistance.of(0L, DistanceUnit.SELF)));
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals("bonus", result.getCastingTimeUnit());
+        assertEquals("self", result.getRangeUnit());
     }
 }

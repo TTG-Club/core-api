@@ -53,6 +53,10 @@ class VttgModuleServiceTest {
         assertFalse(hasFile(spells, "creatures.json"));
         assertTrue(hasFile(creatures, "creatures.json"));
         assertFalse(hasFile(creatures, "spells.json"));
+
+        JsonNode manifest = objectMapper.readTree(moduleJson(spells));
+        assertEquals("client.js", manifest.at("/client/entry").asText());
+        assertEquals("client.js", manifest.at("/scripts/0").asText());
     }
 
     @Test
@@ -84,6 +88,14 @@ class VttgModuleServiceTest {
     private byte[] creaturesJson(Map<String, byte[]> files) {
         return files.entrySet().stream()
                 .filter(entry -> entry.getKey().endsWith("/creatures.json"))
+                .findFirst()
+                .orElseThrow()
+                .getValue();
+    }
+
+    private byte[] moduleJson(Map<String, byte[]> files) {
+        return files.entrySet().stream()
+                .filter(entry -> entry.getKey().endsWith("/module.json"))
                 .findFirst()
                 .orElseThrow()
                 .getValue();

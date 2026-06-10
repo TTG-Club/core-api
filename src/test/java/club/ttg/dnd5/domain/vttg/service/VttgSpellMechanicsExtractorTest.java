@@ -22,7 +22,9 @@ class VttgSpellMechanicsExtractorTest {
         var result = extractor.extract(spell,
                 "Цель получает {@roll 1к8} урона некротической энергией.");
 
-        assertEquals(List.of("1к8[necrotic]"), result.damageFormulas());
+        assertEquals("1к8", result.damageFormula());
+        assertEquals("necrotic", result.damageType());
+        assertEquals("1к8@dmg.necrotic", result.damageParts().getFirst().getFormula());
         assertNull(result.isHealing());
     }
 
@@ -33,7 +35,9 @@ class VttgSpellMechanicsExtractorTest {
         var result = extractor.extract(spell,
                 "При попадании цель получает 2d6 + 3 урона огнём.");
 
-        assertEquals(List.of("2к6+3[fire]"), result.damageFormulas());
+        assertEquals("2к6+3", result.damageFormula());
+        assertEquals("fire", result.damageType());
+        assertEquals("2к6@dmg.fire+3", result.damageParts().getFirst().getFormula());
     }
 
     @Test
@@ -44,7 +48,9 @@ class VttgSpellMechanicsExtractorTest {
                 "Цель получает {@roll 1к6} урона психической энергией "
                         + "и вычитает {@roll 1к4} из следующего спасброска.");
 
-        assertEquals(List.of("1к6[psychic]"), result.damageFormulas());
+        assertEquals("1к6", result.damageFormula());
+        assertEquals("psychic", result.damageType());
+        assertEquals("1к6@dmg.psychic", result.damageParts().getFirst().getFormula());
     }
 
     @Test
@@ -54,7 +60,9 @@ class VttgSpellMechanicsExtractorTest {
         var result = extractor.extract(spell,
                 "Существо восстанавливает {@roll 1к8} + ваш модификатор хитов.");
 
-        assertEquals(List.of("1к8"), result.damageFormulas());
+        assertEquals("1к8", result.damageFormula());
+        assertEquals("1к8", result.damageParts().getFirst().getFormula());
+        assertTrue(result.damageParts().getFirst().getIsHealing());
         assertTrue(result.isHealing());
     }
 
@@ -62,14 +70,17 @@ class VttgSpellMechanicsExtractorTest {
     void structuredMechanicsHavePriorityOverText() {
         Spell spell = new Spell();
         SpellEffect effect = new SpellEffect();
-        effect.setDamageFormulas(List.of("2к6[cold]", "1к6[radiant]"));
+        effect.setDamageFormulas(List.of("2к6@dmg.cold", "1к6@dmg.radiant"));
         effect.setHealingTypes(List.of(HealingType.HEALING));
         spell.setEffect(effect);
 
         var result = extractor.extract(spell,
                 "Цель получает {@roll 2к6} урона огнём.");
 
-        assertEquals(List.of("2к6[cold]", "1к6[radiant]"), result.damageFormulas());
+        assertEquals("2к6", result.damageFormula());
+        assertEquals("cold", result.damageType());
+        assertEquals("2к6@dmg.cold", result.damageParts().get(0).getFormula());
+        assertEquals("1к6@dmg.radiant", result.damageParts().get(1).getFormula());
         assertTrue(result.isHealing());
     }
 
@@ -80,7 +91,9 @@ class VttgSpellMechanicsExtractorTest {
         var result = extractor.extract(spell,
                 "Существо добавляет {@roll 1к4} к любой проверке характеристики.");
 
-        assertNull(result.damageFormulas());
+        assertNull(result.damageFormula());
+        assertNull(result.damageType());
+        assertNull(result.damageParts());
         assertNull(result.isHealing());
     }
 
@@ -92,7 +105,9 @@ class VttgSpellMechanicsExtractorTest {
                 "Цель получает {@roll 1к10} урона некротической энергией "
                         + "и не может восстанавливать хиты до конца следующего хода.");
 
-        assertEquals(List.of("1к10[necrotic]"), result.damageFormulas());
+        assertEquals("1к10", result.damageFormula());
+        assertEquals("necrotic", result.damageType());
+        assertEquals("1к10@dmg.necrotic", result.damageParts().getFirst().getFormula());
         assertNull(result.isHealing());
     }
 

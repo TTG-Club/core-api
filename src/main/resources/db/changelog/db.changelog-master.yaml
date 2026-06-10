@@ -191,3 +191,5 @@ databaseChangeLog:
       file: db/changelog/2026/06/04-01-consolidate-spell-effect.yaml
   - include:
       file: db/changelog/2026/06/08-01-spell-damage-formulas.yaml
+  - include:
+      file: db/changelog/2026/06/09-01-spell-damage-formulas-vttg-format.yaml

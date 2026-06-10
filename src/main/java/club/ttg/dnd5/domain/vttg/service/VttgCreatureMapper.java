@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureLair;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguage;
 import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
@@ -29,11 +30,37 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
 public class VttgCreatureMapper {
+    private static final Pattern DICE = Pattern.compile(
+            "(?iu)(\\d+)\\s*[\\u043akd]\\s*(\\d+)(?:\\s*([+-])\\s*(\\d+))?"
+    );
+    private static final Pattern TO_HIT = Pattern.compile(
+            "(?iu)([+-]?\\d+)\\s*(?:\\u043a\\s+\\u043f\\u043e\\u043f\\u0430\\u0434\\u0430\\u043d\\u0438\\u044e|to\\s+hit)"
+    );
+    private static final Pattern REACH = Pattern.compile(
+            "(?iu)(?:\\u0434\\u043e\\u0441\\u044f\\u0433\\u0430\\u0435\\u043c\\u043e\\u0441\\u0442\\u044c|reach)\\s*(\\d+)\\s*(?:\\u0444\\u0442|ft)"
+    );
+    private static final Pattern RANGE = Pattern.compile(
+            "(?iu)(?:\\u0434\\u0438\\u0441\\u0442\\u0430\\u043d\\u0446\\u0438\\u044f|\\u0434\\u0430\\u043b\\u044c\\u043d\\u043e\\u0431\\u043e\\u0439\\u043d\\u043e\\u0441\\u0442\\u044c|range)\\s*(\\d+)(?:\\s*/\\s*(\\d+))?\\s*(?:\\u0444\\u0442|ft)"
+    );
+    private static final Pattern HIT_START = Pattern.compile(
+            "(?iu)(?:\\u043f\\u043e\\u043f\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435|hit)\\s*:"
+    );
+    private static final Pattern FLAT_DAMAGE = Pattern.compile(
+            "(?iu)^\\s*(\\d+)\\s+.{0,40}?"
+                    + "(?:\\u0443\\u0440\\u043e\\u043d|damage)"
+    );
+    private static final Pattern DAMAGE_WORD = Pattern.compile("(?iu)(?:\\u0443\\u0440\\u043e\\u043d|damage)");
+    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+    private static final Map<String, Pattern> TEXT_DAMAGE_TYPES = textDamageTypes();
+    private static final List<ConditionEffectTemplate> CONDITION_EFFECTS = conditionEffects();
+
     private final VttgMarkupConverter markupConverter;
 
     public VttgCreature toVttg(Creature creature) {
@@ -178,8 +205,38 @@ public class VttgCreatureMapper {
     private List<Map<String, Object>> actions(Collection<CreatureAction> actions) {
         if (actions == null) return List.of();
         return actions.stream().filter(Objects::nonNull)
-                .map(action -> action(action.getName(), action.getDescription()))
+                .map(this::action)
                 .toList();
+    }
+
+    private Map<String, Object> action(CreatureAction action) {
+        String description = text(action.getDescription());
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("name", value(action.getName()));
+        result.put("description", paragraphsFromText(description));
+
+        CreatureActionMechanics mechanics = extractActionMechanics(action, description);
+        putIfNotNull(result, "attackBonus", mechanics.attackBonus());
+        putIfNotNull(result, "damageDice", mechanics.damageDice());
+        putIfNotNull(result, "damageType", mechanics.damageType());
+        putIfNotNull(result, "reach", mechanics.reach());
+        putIfNotNull(result, "rangeType", mechanics.rangeType());
+        if (mechanics.reach() != null || mechanics.range() != null || mechanics.rangeType() != null) {
+            result.put("distanceUnit", "ft");
+        }
+        if (mechanics.range() != null) {
+            Map<String, Object> range = new LinkedHashMap<>();
+            range.put("normal", mechanics.range());
+            if (mechanics.longRange() != null) {
+                range.put("long", mechanics.longRange());
+            }
+            result.put("range", range);
+        }
+        List<Map<String, Object>> activeEffects = activeEffects(description);
+        if (!activeEffects.isEmpty()) {
+            result.put("activeEffects", activeEffects);
+        }
+        return result;
     }
 
     private Map<String, Object> action(String name, String description) {
@@ -202,6 +259,143 @@ public class VttgCreatureMapper {
         String text = text(markup);
         if (!StringUtils.hasText(text)) return List.of();
         return List.of(text.split("\\R\\s*\\R"));
+    }
+
+    private List<String> paragraphsFromText(String text) {
+        if (!StringUtils.hasText(text)) return List.of();
+        return List.of(text.split("\\R\\s*\\R"));
+    }
+
+    private CreatureActionMechanics extractActionMechanics(CreatureAction action, String description) {
+        String text = value(description);
+        String attackType = attackType(action.getAttackType(), text);
+        Integer attackBonus = firstInt(TO_HIT.matcher(text));
+        Integer reach = firstInt(REACH.matcher(text));
+        RangeValues range = range(text);
+        boolean hasHitText = HIT_START.matcher(text).find();
+        boolean attackLike = attackType != null || attackBonus != null || hasHitText;
+        String hitText = hitText(text);
+        String damageDice = attackLike ? damageDice(hitText) : null;
+        String damageType = damageType(hitText, damageDice);
+
+        return new CreatureActionMechanics(
+                attackType,
+                attackBonus,
+                damageDice,
+                damageType,
+                reach,
+                range == null ? null : range.normal(),
+                range == null ? null : range.longRange()
+        );
+    }
+
+    private String attackType(AttackType source, String text) {
+        String lower = value(text).toLowerCase(Locale.ROOT);
+        if (lower.contains("melee or ranged")
+                || lower.contains("рукопашн")
+                && lower.contains("дальнобойн")) {
+            return "melee-or-ranged";
+        }
+        if (lower.contains("ranged")
+                || lower.contains("дальнобойн")) {
+            return "ranged";
+        }
+        if (lower.contains("melee")
+                || lower.contains("рукопашн")) {
+            return "melee";
+        }
+        if (source == AttackType.MELEE_OR_RANGE) {
+            return "melee-or-ranged";
+        }
+        if (source == AttackType.RANGE) {
+            return "ranged";
+        }
+        if (source == AttackType.MELEE) {
+            return "melee";
+        }
+        return null;
+    }
+
+    private RangeValues range(String text) {
+        Matcher matcher = RANGE.matcher(text);
+        if (!matcher.find()) {
+            return null;
+        }
+        return new RangeValues(
+                Integer.parseInt(matcher.group(1)),
+                StringUtils.hasText(matcher.group(2)) ? Integer.parseInt(matcher.group(2)) : null
+        );
+    }
+
+    private String hitText(String text) {
+        Matcher matcher = HIT_START.matcher(text);
+        return matcher.find() ? text.substring(matcher.end()) : text;
+    }
+
+    private String damageDice(String text) {
+        String damageContext = firstDamageContext(text);
+        Matcher matcher = DICE.matcher(damageContext);
+        if (!matcher.find()) {
+            return firstString(FLAT_DAMAGE.matcher(text));
+        }
+        String formula = matcher.group(1) + "к" + matcher.group(2);
+        if (StringUtils.hasText(matcher.group(3))) {
+            formula += " " + matcher.group(3) + " " + matcher.group(4);
+        }
+        return formula;
+    }
+
+    private String firstDamageContext(String text) {
+        Matcher matcher = DAMAGE_WORD.matcher(text);
+        if (!matcher.find()) {
+            return text;
+        }
+        return window(text, matcher.start() - 80, matcher.end() + 40);
+    }
+
+    private String damageType(String text, String damageDice) {
+        if (!StringUtils.hasText(damageDice)) {
+            return null;
+        }
+        String lower = firstDamageContext(text).toLowerCase(Locale.ROOT);
+        for (Map.Entry<String, Pattern> entry : TEXT_DAMAGE_TYPES.entrySet()) {
+            if (entry.getValue().matcher(lower).find()) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private List<Map<String, Object>> activeEffects(String description) {
+        String text = value(description);
+        return CONDITION_EFFECTS.stream()
+                .filter(effect -> effect.pattern().matcher(text).find())
+                .map(this::activeEffect)
+                .toList();
+    }
+
+    private Map<String, Object> activeEffect(ConditionEffectTemplate template) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", template.id());
+        result.put("name", template.name());
+        result.put("description", template.description());
+        result.put("icon", template.icon());
+        result.put("disabled", false);
+        result.put("origin", "feature");
+        result.put("transfer", false);
+        result.put("effectTarget", "target");
+        result.put("duration", Map.of("type", "special"));
+        result.put("changes", List.of());
+        result.put("flags", template.flags());
+        return result;
+    }
+
+    private Integer firstInt(Matcher matcher) {
+        return matcher.find() ? Integer.parseInt(matcher.group(1)) : null;
+    }
+
+    private String firstString(Matcher matcher) {
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     private Map<String, Object> movement(CreatureSpeeds speeds) {
@@ -311,7 +505,184 @@ public class VttgCreatureMapper {
         return value > 0 ? " + " + value : " - " + Math.abs(value);
     }
 
+    private String window(String text, int start, int end) {
+        return text.substring(Math.max(0, start), Math.min(text.length(), end));
+    }
+
+    private void putIfNotNull(Map<String, Object> map, String key, Object value) {
+        if (value != null) {
+            map.put(key, value);
+        }
+    }
+
     private <T> T first(Collection<T> values) {
         return values == null || values.isEmpty() ? null : values.iterator().next();
+    }
+
+    private static Map<String, Pattern> textDamageTypes() {
+        Map<String, Pattern> result = new LinkedHashMap<>();
+        result.put("acid", Pattern.compile("(?iu)\\u043a\\u0438\\u0441\\u043b\\u043e\\u0442|acid"));
+        result.put("bludgeoning", Pattern.compile("(?iu)\\u0434\\u0440\\u043e\\u0431\\u044f\\u0449|bludgeoning"));
+        result.put("cold", Pattern.compile("(?iu)\\u0445\\u043e\\u043b\\u043e\\u0434|cold"));
+        result.put("fire", Pattern.compile("(?iu)\\u043e\\u0433\\u043d|\\u043f\\u043b\\u0430\\u043c\\u0435\\u043d|fire"));
+        result.put("force", Pattern.compile("(?iu)\\u0441\\u0438\\u043b\\u043e\\u0432|force"));
+        result.put("lightning", Pattern.compile("(?iu)\\u044d\\u043b\\u0435\\u043a\\u0442\\u0440|\\u043c\\u043e\\u043b\\u043d\\u0438|lightning"));
+        result.put("necrotic", Pattern.compile("(?iu)\\u043d\\u0435\\u043a\\u0440\\u043e\\u0442|necrotic"));
+        result.put("piercing", Pattern.compile("(?iu)\\u043a\\u043e\\u043b\\u044e\\u0449|piercing"));
+        result.put("poison", Pattern.compile("(?iu)\\u044f\\u0434|poison"));
+        result.put("psychic", Pattern.compile("(?iu)\\u043f\\u0441\\u0438\\u0445\\u0438\\u0447|psychic"));
+        result.put("radiant", Pattern.compile("(?iu)\\u0438\\u0437\\u043b\\u0443\\u0447\\u0435\\u043d|\\u0441\\u0438\\u044f\\u044e\\u0449|radiant"));
+        result.put("slashing", Pattern.compile("(?iu)\\u0440\\u0443\\u0431\\u044f\\u0449|slashing"));
+        result.put("thunder", Pattern.compile("(?iu)\\u0437\\u0432\\u0443\\u043a|\\u0433\\u0440\\u043e\\u043c|thunder"));
+        return result;
+    }
+
+    private static List<ConditionEffectTemplate> conditionEffects() {
+        return List.of(
+                conditionEffect(
+                        "poisoned",
+                        "\\u041e\\u0442\\u0440\\u0430\\u0432\\u043b\\u0435\\u043d\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u0442\\u0440\\u0430\\u0432\\u043b\\u0435\\u043d\\u0430.",
+                        "tabler:biohazard",
+                        "(?:poisoned|\\u043e\\u0442\\u0440\\u0430\\u0432\\u043b\\u0435\\u043d\\p{L}*)",
+                        List.of("attack.disadvantage", "abilityCheck.disadvantage")
+                ),
+                conditionEffect(
+                        "paralyzed",
+                        "\\u041f\\u0430\\u0440\\u0430\\u043b\\u0438\\u0437\\u043e\\u0432\\u0430\\u043d\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u043f\\u0430\\u0440\\u0430\\u043b\\u0438\\u0437\\u043e\\u0432\\u0430\\u043d\\u0430.",
+                        "tabler:user-off",
+                        "(?:paralyzed|\\u043f\\u0430\\u0440\\u0430\\u043b\\u0438\\u0437\\u043e\\u0432\\u0430\\u043d\\p{L}*)",
+                        List.of(
+                                "incapacitated",
+                                "speed.zero",
+                                "save.autoFail.strength",
+                                "save.autoFail.dexterity",
+                                "attacksAgainst.advantage"
+                        )
+                ),
+                conditionEffect(
+                        "restrained",
+                        "\\u041e\\u043f\\u0443\\u0442\\u0430\\u043d\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u043f\\u0443\\u0442\\u0430\\u043d\\u0430.",
+                        "tabler:link",
+                        "(?:restrained|\\u043e\\u043f\\u0443\\u0442\\u0430\\u043d\\p{L}*)",
+                        List.of("speed.zero", "attack.disadvantage", "attacksAgainst.advantage")
+                ),
+                conditionEffect(
+                        "grappled",
+                        "\\u0421\\u0445\\u0432\\u0430\\u0447\\u0435\\u043d\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u0441\\u0445\\u0432\\u0430\\u0447\\u0435\\u043d\\u0430.",
+                        "tabler:hand-grab",
+                        "(?:grappled|\\u0441\\u0445\\u0432\\u0430\\u0447\\u0435\\u043d\\p{L}*)",
+                        List.of("speed.zero")
+                ),
+                conditionEffect(
+                        "prone",
+                        "\\u0421\\u0431\\u0438\\u0442\\u044b\\u0439 \\u0441 \\u043d\\u043e\\u0433",
+                        "\\u0426\\u0435\\u043b\\u044c \\u0441\\u0431\\u0438\\u0442\\u0430 \\u0441 \\u043d\\u043e\\u0433.",
+                        "tabler:walk",
+                        "(?:prone|\\u0441\\u0431\\u0438\\u0442\\p{L}*\\s+\\u0441\\s+\\u043d\\u043e\\u0433|\\u043f\\u0430\\u0434\\u0430\\u0435\\u0442\\s+\\u043d\\u0438\\u0447\\u043a\\u043e\\u043c)",
+                        List.of("attack.disadvantage")
+                ),
+                conditionEffect(
+                        "frightened",
+                        "\\u0418\\u0441\\u043f\\u0443\\u0433\\u0430\\u043d\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u0438\\u0441\\u043f\\u0443\\u0433\\u0430\\u043d\\u0430.",
+                        "tabler:ghost",
+                        "(?:frightened|\\u0438\\u0441\\u043f\\u0443\\u0433\\u0430\\u043d\\p{L}*)",
+                        List.of("attack.disadvantage", "abilityCheck.disadvantage")
+                ),
+                conditionEffect(
+                        "blinded",
+                        "\\u041e\\u0441\\u043b\\u0435\\u043f\\u043b\\u0435\\u043d\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u0441\\u043b\\u0435\\u043f\\u043b\\u0435\\u043d\\u0430.",
+                        "tabler:eye-off",
+                        "(?:blinded|\\u043e\\u0441\\u043b\\u0435\\u043f\\u043b\\u0435\\u043d\\p{L}*)",
+                        List.of("vision.blinded", "attack.disadvantage", "attacksAgainst.advantage")
+                ),
+                conditionEffect(
+                        "unconscious",
+                        "\\u0411\\u0435\\u0441\\u0441\\u043e\\u0437\\u043d\\u0430\\u0442\\u0435\\u043b\\u044c\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u0431\\u0435\\u0437 \\u0441\\u043e\\u0437\\u043d\\u0430\\u043d\\u0438\\u044f.",
+                        "tabler:zzz",
+                        "(?:unconscious|\\u0431\\u0435\\u0437\\s+\\u0441\\u043e\\u0437\\u043d\\u0430\\u043d\\u0438\\u044f|\\u0431\\u0435\\u0441\\u0441\\u043e\\u0437\\u043d\\u0430\\u0442\\u0435\\u043b\\p{L}*)",
+                        List.of(
+                                "incapacitated",
+                                "speed.zero",
+                                "save.autoFail.strength",
+                                "save.autoFail.dexterity",
+                                "attacksAgainst.advantage"
+                        )
+                ),
+                conditionEffect(
+                        "stunned",
+                        "\\u041e\\u0448\\u0435\\u043b\\u043e\\u043c\\u043b\\u0435\\u043d\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u0448\\u0435\\u043b\\u043e\\u043c\\u043b\\u0435\\u043d\\u0430.",
+                        "tabler:stars",
+                        "(?:stunned|\\u043e\\u0448\\u0435\\u043b\\u043e\\u043c\\u043b\\u0435\\u043d\\p{L}*)",
+                        List.of(
+                                "incapacitated",
+                                "speed.zero",
+                                "save.autoFail.strength",
+                                "save.autoFail.dexterity",
+                                "attacksAgainst.advantage"
+                        )
+                ),
+                conditionEffect(
+                        "incapacitated",
+                        "\\u041d\\u0435\\u0434\\u0435\\u0435\\u0441\\u043f\\u043e\\u0441\\u043e\\u0431\\u043d\\u044b\\u0439",
+                        "\\u0426\\u0435\\u043b\\u044c \\u043d\\u0435\\u0434\\u0435\\u0435\\u0441\\u043f\\u043e\\u0441\\u043e\\u0431\\u043d\\u0430.",
+                        "tabler:ban",
+                        "(?:incapacitated|\\u043d\\u0435\\u0434\\u0435\\u0435\\u0441\\u043f\\u043e\\u0441\\u043e\\u0431\\p{L}*)",
+                        List.of("incapacitated")
+                )
+        );
+    }
+
+    private static ConditionEffectTemplate conditionEffect(
+            String id, String name, String description, String icon, String pattern, List<String> flags) {
+        return new ConditionEffectTemplate(
+                id,
+                decodeUnicodeEscapes(name),
+                decodeUnicodeEscapes(description),
+                icon,
+                Pattern.compile("(?iu)" + pattern),
+                flags
+        );
+    }
+
+    private static String decodeUnicodeEscapes(String value) {
+        Matcher matcher = UNICODE_ESCAPE.matcher(value);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            matcher.appendReplacement(result, Matcher.quoteReplacement(
+                    Character.toString((char) Integer.parseInt(matcher.group(1), 16))
+            ));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private record RangeValues(Integer normal, Integer longRange) {
+    }
+
+    private record CreatureActionMechanics(
+            String rangeType,
+            Integer attackBonus,
+            String damageDice,
+            String damageType,
+            Integer reach,
+            Integer range,
+            Integer longRange) {
+    }
+
+    private record ConditionEffectTemplate(
+            String id,
+            String name,
+            String description,
+            String icon,
+            Pattern pattern,
+            List<String> flags) {
     }
 }

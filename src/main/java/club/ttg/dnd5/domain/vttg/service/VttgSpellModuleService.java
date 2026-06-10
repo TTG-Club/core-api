@@ -73,40 +73,60 @@ public class VttgSpellModuleService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", moduleId);
         result.put("name", "Заклинания TTG Club SRD " + srdVersion);
-        result.put("version", "1.0.0");
+        result.put("version", "1.0.1");
         result.put("description", "Заклинания SRD " + srdVersion + ", экспортированные с TTG Club");
         result.put("author", "TTG Club");
         result.put("compatibleSystems", List.of("dnd5e"));
         result.put("permissions", List.of("notifications"));
         result.put("client", Map.of("entry", "client.js"));
+        result.put("scripts", List.of("client.js"));
         return result;
     }
 
     private String clientScript(String moduleId, String srdVersion) {
         return """
-                globalThis.VTTModules.register('%s', async (api) => {
-                  const manifest = {
-                    id: '%s-compendium',
-                    name: 'Заклинания TTG Club SRD %s',
-                    tree: [{
-                      id: '%s-spells',
-                      name: 'Заклинания',
-                      icon: 'tabler:sparkles',
-                      dataFile: 'spells.json'
-                    }]
-                  };
+                (() => {
+                  let registered = false;
+                  const register = () => {
+                    if (registered) return true;
+                    const modules = globalThis.VTTModules;
+                    if (!modules || typeof modules.register !== 'function') return false;
+                    registered = true;
+                    modules.register('%s', async (api) => {
+                      const manifest = {
+                        id: '%s-compendium',
+                        name: 'Заклинания TTG Club SRD %s',
+                        tree: [{
+                          id: '%s-spells',
+                          name: 'Заклинания',
+                          icon: 'tabler:sparkles',
+                          dataFile: 'spells.json'
+                        }]
+                      };
 
-                  try {
-                    const response = await fetch('/module-assets/%s/spells.json');
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const spells = await response.json();
-                    api.compendium.register('%s', manifest, { 'spells.json': spells });
-                    api.notifications.success('TTG Club', `Загружено заклинаний SRD %s: ${spells.length}`);
-                  } catch (error) {
-                    console.error('[%s] Failed to load spells:', error);
-                    api.notifications.error('TTG Club', 'Не удалось загрузить модуль заклинаний');
+                      try {
+                        const response = await fetch('/module-assets/%s/spells.json');
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const spells = await response.json();
+                        api.compendium.register('%s', manifest, { 'spells.json': spells });
+                        api.notifications?.success?.('TTG Club', `Загружено заклинаний SRD %s: ${spells.length}`);
+                      } catch (error) {
+                        console.error('[%s] Failed to load spells:', error);
+                        api.notifications?.error?.('TTG Club', 'Не удалось загрузить модуль заклинаний');
+                      }
+                    });
+                    return true;
+                  };
+                  if (!register()) {
+                    let attempts = 0;
+                    const timer = globalThis.setInterval(() => {
+                      attempts += 1;
+                      if (register() || attempts >= 50) {
+                        globalThis.clearInterval(timer);
+                      }
+                    }, 100);
                   }
-                });
+                })();
                 """.formatted(moduleId, moduleId, srdVersion, moduleId, moduleId, moduleId, srdVersion, moduleId);
     }
 }

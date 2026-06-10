@@ -71,6 +71,7 @@ class VttgSpellModuleServiceTest {
         JsonNode manifest = objectMapper.readTree(entries.get(moduleId + "/module.json"));
         assertEquals(moduleId, manifest.get("id").asText());
         assertEquals("client.js", manifest.at("/client/entry").asText());
+        assertEquals("client.js", manifest.at("/scripts/0").asText());
 
         JsonNode spells = objectMapper.readTree(entries.get(moduleId + "/spells.json"));
         assertEquals(1, spells.size());

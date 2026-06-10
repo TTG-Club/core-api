@@ -98,7 +98,7 @@ public class SpellPredicateBuilder {
             builder.and(combined);
         }
 
-        // Тип урона внутри формул вида "2к6[fire]".
+        // Тип урона внутри формул вида "2к6@dmg.fire".
         applyDamageFormulaTypeFilter(builder, request.getDamageType());
 
         // Тип лечения (JSONB-массив)
@@ -193,13 +193,13 @@ public class SpellPredicateBuilder {
     private Predicate damageFormulaTypeExists(DamageType value) {
         return Expressions.booleanTemplate(
                 "exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {0})",
-                "%[" + damageTypeKey(value) + "]%");
+                "%@dmg." + damageTypeKey(value) + "%");
     }
 
     private Predicate damageFormulaTypeNotExists(DamageType value) {
         return Expressions.booleanTemplate(
                 "not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {0})",
-                "%[" + damageTypeKey(value) + "]%");
+                "%@dmg." + damageTypeKey(value) + "%");
     }
 
     private String damageTypeKey(DamageType value) {

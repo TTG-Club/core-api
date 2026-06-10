@@ -32,11 +32,15 @@ public class VttgSpell {
     private String targetType;
     private Integer targetCount;
     private String deliveryType;
-    private List<String> damageFormulas;
+    private String damageFormula;
+    private String damageType;
+    private List<VttgDamagePart> damageParts;
     private Boolean isHealing;
     private Boolean autoHit;
     private String saveType;
     private String saveEffect;
+    private String cantripScaling;
+    private List<VttgCantripScalingTier> cantripScalingTiers;
     private VttgSpellScaling scaling;
     private String description;
     private String higherLevelDescription;

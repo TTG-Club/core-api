@@ -113,12 +113,13 @@ public class VttgModuleService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", moduleId);
         result.put("name", content.title + " TTG Club SRD " + srdVersion);
-        result.put("version", "1.0.0");
+        result.put("version", "1.0.1");
         result.put("description", content.title + " SRD " + srdVersion + ", экспортированные с TTG Club");
         result.put("author", "TTG Club");
         result.put("compatibleSystems", List.of("dnd5e"));
         result.put("permissions", List.of("notifications"));
         result.put("client", Map.of("entry", "client.js"));
+        result.put("scripts", List.of("client.js"));
         return result;
     }
 
@@ -142,28 +143,47 @@ public class VttgModuleService {
                 .collect(java.util.stream.Collectors.joining(", "));
 
         return """
-                globalThis.VTTModules.register('%s', async (api) => {
-                  const load = async (file) => {
-                    const response = await fetch(`/module-assets/%s/${file}`);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    return response.json();
+                (() => {
+                  let registered = false;
+                  const register = () => {
+                    if (registered) return true;
+                    const modules = globalThis.VTTModules;
+                    if (!modules || typeof modules.register !== 'function') return false;
+                    registered = true;
+                    modules.register('%s', async (api) => {
+                      const load = async (file) => {
+                        const response = await fetch(`/module-assets/%s/${file}`);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.json();
+                      };
+                      const manifest = {
+                        id: '%s-compendium',
+                        name: '%s TTG Club SRD %s',
+                        tree: [
+                          %s
+                        ]
+                      };
+                      try {
+                        %s
+                        api.compendium.register('%s', manifest, { %s });
+                        api.notifications?.success?.('TTG Club', 'Модуль SRD %s загружен');
+                      } catch (error) {
+                        console.error('[%s] Failed to load module:', error);
+                        api.notifications?.error?.('TTG Club', 'Не удалось загрузить модуль');
+                      }
+                    });
+                    return true;
                   };
-                  const manifest = {
-                    id: '%s-compendium',
-                    name: '%s TTG Club SRD %s',
-                    tree: [
-                      %s
-                    ]
-                  };
-                  try {
-                    %s
-                    api.compendium.register('%s', manifest, { %s });
-                    api.notifications.success('TTG Club', 'Модуль SRD %s загружен');
-                  } catch (error) {
-                    console.error('[%s] Failed to load module:', error);
-                    api.notifications.error('TTG Club', 'Не удалось загрузить модуль');
+                  if (!register()) {
+                    let attempts = 0;
+                    const timer = globalThis.setInterval(() => {
+                      attempts += 1;
+                      if (register() || attempts >= 50) {
+                        globalThis.clearInterval(timer);
+                      }
+                    }, 100);
                   }
-                });
+                })();
                 """.formatted(moduleId, moduleId, moduleId, content.title, version, tree, loads,
                 moduleId, data, version, moduleId);
     }

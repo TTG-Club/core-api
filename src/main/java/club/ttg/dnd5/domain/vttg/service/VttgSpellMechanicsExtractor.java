@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgDamagePart;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -17,6 +18,7 @@ public class VttgSpellMechanicsExtractor {
     private static final Pattern DICE = Pattern.compile(
             "(?iu)(\\d+)\\s*[кkd]\\s*(\\d+)(?:\\s*([+-])\\s*(\\d+))?"
     );
+    private static final Pattern DAMAGE_TYPE_MARKER = Pattern.compile("@dmg\\.([A-Za-z-]+)");
     private static final Pattern HEALING = Pattern.compile(
             "(?iu)(?:восстанавлив\\p{L}*|восстановить|исцел\\p{L}*|лечени\\p{L}*)"
                     + ".{0,120}?хит"
@@ -56,8 +58,18 @@ public class VttgSpellMechanicsExtractor {
         if (formulas == null && StringUtils.hasText(formula)) {
             formulas = List.of(formatDamageFormula(formula, damageType));
         }
+        String primaryFormula = hasValues(formulas) ? firstFormulaOnly(formulas.getFirst()) : formula;
+        String primaryDamageType = damageType == null && hasValues(formulas)
+                ? damageTypeInFormula(formulas.getFirst())
+                : damageType;
 
-        return new VttgSpellMechanics(formulas, healing ? true : null, extractSaveEffect(effect, text));
+        return new VttgSpellMechanics(
+                primaryFormula,
+                primaryDamageType,
+                damageParts(formulas, healing),
+                healing ? true : null,
+                extractSaveEffect(effect, text)
+        );
     }
 
     private String extractSaveEffect(SpellEffect effect, String text) {
@@ -146,27 +158,69 @@ public class VttgSpellMechanicsExtractor {
     }
 
     private String formatDamageFormula(String formula, String damageType) {
+        formula = compactFormula(formula);
         if (!StringUtils.hasText(damageType)) {
             return formula;
         }
-        return formula + "[" + damageType + "]";
+        Matcher matcher = Pattern.compile("(?iu)^(\\d+\\s*[кkd]\\s*\\d+)(.*)$").matcher(formula);
+        if (matcher.matches()) {
+            return matcher.group(1) + "@dmg." + damageType + matcher.group(2);
+        }
+        return formula + "@dmg." + damageType;
     }
 
     private String firstFormulaOnly(String formula) {
         if (!StringUtils.hasText(formula)) {
             return formula;
         }
+        Matcher damageMarker = DAMAGE_TYPE_MARKER.matcher(formula);
+        if (damageMarker.find()) {
+            return compactFormula(damageMarker.replaceFirst(""));
+        }
         int bracket = formula.indexOf('[');
-        return bracket < 0 ? formula : formula.substring(0, bracket);
+        int end = formula.indexOf(']', bracket + 1);
+        return compactFormula(bracket < 0 || end < 0 ? formula : formula.substring(0, bracket) + formula.substring(end + 1));
     }
 
     private String damageTypeInFormula(String formula) {
         if (!StringUtils.hasText(formula)) {
             return null;
         }
+        Matcher damageMarker = DAMAGE_TYPE_MARKER.matcher(formula);
+        if (damageMarker.find()) {
+            return damageMarker.group(1);
+        }
         int start = formula.indexOf('[');
         int end = formula.indexOf(']', start + 1);
         return start < 0 || end < 0 ? null : formula.substring(start + 1, end);
+    }
+
+    private List<VttgDamagePart> damageParts(List<String> formulas, boolean healing) {
+        if (!hasValues(formulas)) {
+            return null;
+        }
+        return formulas.stream()
+                .filter(StringUtils::hasText)
+                .map(formula -> VttgDamagePart.builder()
+                        .formula(normalizeDamagePartFormula(formula))
+                        .target("selected")
+                        .isHealing(healing ? true : null)
+                        .build())
+                .toList();
+    }
+
+    private String normalizeDamagePartFormula(String formula) {
+        String damageType = damageTypeInFormula(formula);
+        if (!StringUtils.hasText(damageType)) {
+            return firstFormulaOnly(formula);
+        }
+        return formatDamageFormula(firstFormulaOnly(formula), damageType);
+    }
+
+    private String compactFormula(String formula) {
+        return StringUtils.hasText(formula)
+                ? formula.replaceAll("\\s*([+-])\\s*", "$1")
+                : formula;
     }
 
     private boolean hasValues(List<?> values) {
