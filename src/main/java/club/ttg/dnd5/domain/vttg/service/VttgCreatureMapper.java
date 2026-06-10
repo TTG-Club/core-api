@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguage;
+import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
 import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
@@ -20,6 +21,7 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -62,6 +64,8 @@ public class VttgCreatureMapper {
     private static final List<ConditionEffectTemplate> CONDITION_EFFECTS = conditionEffects();
 
     private final VttgMarkupConverter markupConverter;
+    @Value("${app.url:https://new.ttg.club}")
+    private String appUrl = "https://new.ttg.club";
 
     public VttgCreature toVttg(Creature creature) {
         return VttgCreature.builder()
@@ -73,11 +77,80 @@ public class VttgCreatureMapper {
                 .nameEn(creature.getEnglish())
                 .description(text(creature.getDescription()))
                 .header(header(creature))
+                .token(token(creature))
                 .system(system(creature))
                 .source(source(creature))
                 .isSRD(true)
                 .isReadOnly(true)
                 .build();
+    }
+
+    private Map<String, Object> token(Creature creature) {
+        Size size = first(creature.getSizes() == null ? null : creature.getSizes().getValues());
+        Senses senses = creature.getSenses();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> vision = new LinkedHashMap<>();
+        vision.put("range", visionRange(senses));
+        vision.put("darkvision", senses == null || senses.getDarkvision() == null ? 0 : senses.getDarkvision().intValue());
+        vision.put("angle", 360);
+        vision.put("enabled", true);
+
+        result.put("frameUrl", "assets/token-frames/0.png");
+        result.put("imageUrl", imageUrl(creature));
+        result.put("showName", true);
+        result.put("disposition", "hostile");
+        result.put("scale", tokenScale(size));
+        result.put("vision", vision);
+        return result;
+    }
+
+    private Number tokenScale(Size size) {
+        return switch (size == null ? Size.MEDIUM : size) {
+            case TINY -> 0.5;
+            case LARGE -> 2;
+            case HUGE -> 3;
+            case GARGANTUAN -> 4;
+            default -> 1;
+        };
+    }
+
+    private int visionRange(Senses senses) {
+        if (senses == null) {
+            return 0;
+        }
+        return Stream.of(
+                        senses.getDarkvision(),
+                        senses.getBlindsight(),
+                        senses.getTruesight(),
+                        senses.getTremorsense()
+                )
+                .filter(Objects::nonNull)
+                .mapToInt(Short::intValue)
+                .max()
+                .orElse(0);
+    }
+
+    private String imageUrl(Creature creature) {
+        String imageUrl = creature.getImageUrl();
+        if (!StringUtils.hasText(imageUrl)) {
+            return null;
+        }
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+            return imageUrl;
+        }
+        return trimTrailingSlash(appUrl) + "/" + trimLeadingSlash(imageUrl);
+    }
+
+    private String trimTrailingSlash(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
+    }
+
+    private String trimLeadingSlash(String value) {
+        return value.startsWith("/") ? value.substring(1) : value;
     }
 
     private Map<String, Object> system(Creature creature) {

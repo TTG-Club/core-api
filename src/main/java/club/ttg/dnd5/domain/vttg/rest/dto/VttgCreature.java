@@ -18,6 +18,7 @@ public class VttgCreature {
     private String nameEn;
     private String description;
     private String header;
+    private Map<String, Object> token;
     private Map<String, Object> system;
     private String source;
     private Boolean isSRD;

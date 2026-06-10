@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureLair;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
+import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
@@ -33,6 +34,7 @@ class VttgCreatureMapperTest {
         creature.setUrl("test-creature");
         creature.setName("Тестовое существо");
         creature.setEnglish("Test Creature");
+        creature.setImageUrl("/s3/bestiary/magistrus/1757076204886-badger.webp");
         creature.setSrdVersion("5.2");
         creature.setExperience(450L);
         creature.setAlignment(Alignment.CHAOTIC_EVIL);
@@ -68,6 +70,11 @@ class VttgCreatureMapperTest {
         trait.setDescription("[\"Описание черты\"]");
         creature.setTraits(List.of(trait));
 
+        Senses senses = new Senses();
+        senses.setDarkvision((short) 60);
+        senses.setBlindsight((short) 10);
+        creature.setSenses(senses);
+
         var result = mapper.toVttg(creature);
         Map<String, Object> system = result.getSystem();
 
@@ -75,6 +82,7 @@ class VttgCreatureMapperTest {
         assertEquals("creature", result.getType());
         assertTrue(result.getIsSRD());
         assertTrue(result.getIsReadOnly());
+        assertToken(result.getToken());
         assertEquals("large", system.get("size"));
         assertEquals("fiend", system.get("type"));
         assertEquals("chaotic-evil", system.get("alignment"));
@@ -246,5 +254,19 @@ class VttgCreatureMapperTest {
         assertTrue(activeEffects.stream()
                 .map(Map.class::cast)
                 .anyMatch(effect -> expectedId.equals(effect.get("id"))));
+    }
+
+    private void assertToken(Map<?, ?> token) {
+        assertEquals("assets/token-frames/0.png", token.get("frameUrl"));
+        assertEquals("https://new.ttg.club/s3/bestiary/magistrus/1757076204886-badger.webp", token.get("imageUrl"));
+        assertEquals(true, token.get("showName"));
+        assertEquals("hostile", token.get("disposition"));
+        assertEquals(2, token.get("scale"));
+
+        Map<?, ?> vision = (Map<?, ?>) token.get("vision");
+        assertEquals(60, vision.get("range"));
+        assertEquals(60, vision.get("darkvision"));
+        assertEquals(360, vision.get("angle"));
+        assertEquals(true, vision.get("enabled"));
     }
 }
