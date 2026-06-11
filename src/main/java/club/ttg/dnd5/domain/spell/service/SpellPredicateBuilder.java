@@ -1,22 +1,24 @@
 package club.ttg.dnd5.domain.spell.service;
 
-import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
+import club.ttg.dnd5.dto.base.filters.QueryFilter;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 
 import java.util.Collection;
+import java.util.Locale;
 
 @UtilityClass
 public class SpellPredicateBuilder {
     private static final QSpell Q = QSpell.spell;
     private static final StringPath SCHOOL_PATH = Expressions.stringPath("school");
-    private static final StringPath ATTACK_TYPE_PATH = Expressions.stringPath("attack_type");
 
     public BooleanBuilder build(final SpellQueryRequest request,
             Collection<String> classes,
@@ -96,17 +98,17 @@ public class SpellPredicateBuilder {
             builder.and(combined);
         }
 
-        // Тип урона (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getDamageType(), "damage_type");
+        // Тип урона внутри формул вида "2к6@dmg.fire".
+        applyDamageFormulaTypeFilter(builder, request.getDamageType());
 
         // Тип лечения (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getHealingType(), "healing_type");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getHealingType(), "effect", "healingTypes");
 
         // Состояния (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getCondition(), "condition");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getCondition(), "effect", "conditions");
 
         // Спасброски (JSONB-массив)
-        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getSavingThrow(), "saving_throw");
+        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getSavingThrow(), "effect", "savingThrows");
 
         // Ритуал (QueryFilter: ritual=1 / ritual=1&ritual_mode=1)
         if (request.getRitual() != null && request.getRitual().isActive()) {
@@ -151,10 +153,11 @@ public class SpellPredicateBuilder {
         PredicateUtils.applyJsonbTimeFilter(builder, request.getDuration(), "duration");
 
         // Область воздействия (JSONB-объект, поле "type")
-        PredicateUtils.applyJsonbObjectEnumFieldFilter(builder, request.getAreaOfEffectType(), "area_of_effect", "type");
+        PredicateUtils.applyJsonbObjectEnumFieldFilter(
+                builder, request.getAreaOfEffectType(), "(effect->'areaOfEffect')", "type");
 
         // Тип атаки (enum as STRING column)
-        PredicateUtils.applyFilterEnum(builder, request.getAttackType(), ATTACK_TYPE_PATH, AttackType.class);
+        PredicateUtils.applyJsonbObjectEnumFieldFilter(builder, request.getAttackType(), "effect", "attackType");
 
         // Источники
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "spell", "source");
@@ -163,5 +166,45 @@ public class SpellPredicateBuilder {
         PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
 
         return builder;
+    }
+
+    private void applyDamageFormulaTypeFilter(BooleanBuilder builder, QueryFilter<DamageType> filter) {
+        if (filter == null || !filter.isActive()) {
+            return;
+        }
+
+        if (filter.isExclude()) {
+            for (var value : filter.getValues()) {
+                builder.and(damageFormulaTypeNotExists(value));
+            }
+        } else if (filter.isUnion()) {
+            for (var value : filter.getValues()) {
+                builder.and(damageFormulaTypeExists(value));
+            }
+        } else {
+            BooleanBuilder orBuilder = new BooleanBuilder();
+            for (var value : filter.getValues()) {
+                orBuilder.or(damageFormulaTypeExists(value));
+            }
+            builder.and(orBuilder);
+        }
+    }
+
+    private Predicate damageFormulaTypeExists(DamageType value) {
+        return Expressions.booleanTemplate(
+                "exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {0})",
+                "%@dmg." + damageTypeKey(value) + "%");
+    }
+
+    private Predicate damageFormulaTypeNotExists(DamageType value) {
+        return Expressions.booleanTemplate(
+                "not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {0})",
+                "%@dmg." + damageTypeKey(value) + "%");
+    }
+
+    private String damageTypeKey(DamageType value) {
+        return value == DamageType.FAIR
+                ? "fire"
+                : value.name().toLowerCase(Locale.ROOT);
     }
 }

@@ -1,15 +1,10 @@
 package club.ttg.dnd5.domain.spell.model;
 
-import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
-import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
-import club.ttg.dnd5.domain.common.dictionary.Ability;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.species.model.Species;
-import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -85,24 +80,5 @@ public class Spell extends NamedEntity {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private List<Ability> savingThrow;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<HealingType> healingType;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<DamageType> damageType;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<Condition> condition;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private AreaOfEffect areaOfEffect;
-
-    @Enumerated(EnumType.STRING)
-    private AttackType attackType;
+    private SpellEffect effect;
 }

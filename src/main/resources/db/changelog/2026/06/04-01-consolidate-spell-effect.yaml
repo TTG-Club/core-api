@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-04-01-consolidate-spell-effect
+      author: codex
+      changes:
+        - addColumn:
+            tableName: spell
+            columns:
+              - column:
+                  name: effect
+                  type: jsonb
+                  constraints:
+                    nullable: true
+        - sql:
+            sql: |
+              UPDATE spell
+              SET effect = jsonb_strip_nulls(jsonb_build_object(
+                  'damageTypes', damage_type,
+                  'healingTypes', healing_type,
+                  'savingThrows', saving_throw,
+                  'conditions', condition,
+                  'areaOfEffect', area_of_effect,
+                  'attackType', attack_type
+              ))
+              WHERE damage_type IS NOT NULL
+                 OR healing_type IS NOT NULL
+                 OR saving_throw IS NOT NULL
+                 OR condition IS NOT NULL
+                 OR area_of_effect IS NOT NULL
+                 OR attack_type IS NOT NULL
+        - dropColumn:
+            tableName: spell
+            columns:
+              - column:
+                  name: damage_type
+              - column:
+                  name: healing_type
+              - column:
+                  name: saving_throw
+              - column:
+                  name: condition
+              - column:
+                  name: area_of_effect
+              - column:
+                  name: attack_type

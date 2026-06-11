@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-09-01-spell-damage-formulas-vttg-format
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              UPDATE spell
+              SET effect = jsonb_set(
+                  effect,
+                  '{damageFormulas}',
+                  (
+                      SELECT jsonb_agg(
+                          CASE
+                              WHEN formula ~ '@dmg\.[A-Za-z-]+' THEN formula
+                              WHEN formula ~ '\[[A-Za-z-]+\]' THEN regexp_replace(
+                                  regexp_replace(
+                                      formula,
+                                      '^([0-9]+[[:space:]]*[кkd][[:space:]]*[0-9]+)(.*)\[([A-Za-z-]+)\](.*)$',
+                                      E'\\1@dmg.\\3\\2\\4',
+                                      'i'
+                                  ),
+                                  '[[:space:]]*([+-])[[:space:]]*',
+                                  E'\\1',
+                                  'g'
+                              )
+                              ELSE regexp_replace(formula, '[[:space:]]*([+-])[[:space:]]*', E'\\1', 'g')
+                          END
+                      )
+                      FROM jsonb_array_elements_text(effect->'damageFormulas') AS damage_formula(formula)
+                  )
+              )
+              WHERE jsonb_typeof(effect->'damageFormulas') = 'array';

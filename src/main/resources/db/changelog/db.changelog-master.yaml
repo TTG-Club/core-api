@@ -187,3 +187,9 @@ databaseChangeLog:
       file: db/changelog/2026/05/13-01-add-index-srd-version.yaml
   - include:
       file: db/changelog/2026/05/18-01-add-area-of-effect-to-spell.yaml
+  - include:
+      file: db/changelog/2026/06/04-01-consolidate-spell-effect.yaml
+  - include:
+      file: db/changelog/2026/06/08-01-spell-damage-formulas.yaml
+  - include:
+      file: db/changelog/2026/06/09-01-spell-damage-formulas-vttg-format.yaml
