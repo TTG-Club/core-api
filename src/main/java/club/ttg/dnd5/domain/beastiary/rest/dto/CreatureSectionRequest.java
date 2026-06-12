@@ -4,7 +4,9 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,5 +29,6 @@ public class CreatureSectionRequest {
 
     @Schema(description = "Описание секции")
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
+    @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     private String description;
 }

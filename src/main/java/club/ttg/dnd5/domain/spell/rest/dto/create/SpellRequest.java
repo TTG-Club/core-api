@@ -8,7 +8,9 @@ import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Max;
@@ -50,6 +52,7 @@ public class SpellRequest extends BaseRequest {
 
     @Nullable
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
+    @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     private String upper;
 
     @Nullable

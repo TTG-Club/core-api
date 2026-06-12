@@ -7,7 +7,9 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,6 +43,7 @@ public class ClassRequest extends BaseRequest {
     private MulticlassProficiency multiclassProficiency;
 
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
+    @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     @Schema(description = "Снаряжение класса в формате Markdown")
     private String equipment;
 

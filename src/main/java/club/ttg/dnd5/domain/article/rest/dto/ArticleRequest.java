@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.article.rest.dto;
 
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
+import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
@@ -36,9 +38,11 @@ public class ArticleRequest {
     @Schema(description = "Текст превью")
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
+    @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     private String preview;
 
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
+    @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     @Schema(description = "Текст новости")
     @NotNull
     private String content;
