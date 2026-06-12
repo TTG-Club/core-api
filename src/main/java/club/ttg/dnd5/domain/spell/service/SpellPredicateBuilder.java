@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
@@ -102,7 +103,7 @@ public class SpellPredicateBuilder {
         applyDamageFormulaTypeFilter(builder, request.getDamageType());
 
         // Тип лечения (JSONB-массив)
-        PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getHealingType(), "effect", "healingTypes");
+        applyHealingTypeFilter(builder, request.getHealingType());
 
         // Состояния (JSONB-массив)
         PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getCondition(), "effect", "conditions");
@@ -200,6 +201,75 @@ public class SpellPredicateBuilder {
         return Expressions.booleanTemplate(
                 "not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {0})",
                 "%@dmg." + damageTypeKey(value) + "%");
+    }
+
+    private void applyHealingTypeFilter(BooleanBuilder builder, QueryFilter<HealingType> filter) {
+        if (filter == null || !filter.isActive()) {
+            return;
+        }
+
+        if (filter.isExclude()) {
+            for (var value : filter.getValues()) {
+                builder.and(healingTypeNotExists(value));
+            }
+        } else if (filter.isUnion()) {
+            for (var value : filter.getValues()) {
+                builder.and(healingTypeExists(value));
+            }
+        } else {
+            BooleanBuilder orBuilder = new BooleanBuilder();
+            for (var value : filter.getValues()) {
+                orBuilder.or(healingTypeExists(value));
+            }
+            builder.and(orBuilder);
+        }
+    }
+
+    private Predicate healingTypeExists(HealingType value) {
+        if (value == HealingType.HEALING) {
+            return Expressions.booleanTemplate(
+                    "("
+                            + "exists (select 1 from jsonb_array_elements_text(coalesce(effect->'healingTypes', '[]'::jsonb)) as healing_type where healing_type = {0})"
+                            + " or exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {1} and formula not like {2})"
+                            + ")",
+                    value.name(),
+                    "%@heal%",
+                    "%heal.temp%");
+        }
+        return Expressions.booleanTemplate(
+                "("
+                        + "exists (select 1 from jsonb_array_elements_text(coalesce(effect->'healingTypes', '[]'::jsonb)) as healing_type where healing_type = {0})"
+                        + " or exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {1})"
+                        + ")",
+                value.name(),
+                healingFormulaMarker(value));
+    }
+
+    private Predicate healingTypeNotExists(HealingType value) {
+        if (value == HealingType.HEALING) {
+            return Expressions.booleanTemplate(
+                    "("
+                            + "not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'healingTypes', '[]'::jsonb)) as healing_type where healing_type = {0})"
+                            + " and not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {1} and formula not like {2})"
+                            + ")",
+                    value.name(),
+                    "%@heal%",
+                    "%heal.temp%");
+        }
+        return Expressions.booleanTemplate(
+                "("
+                        + "not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'healingTypes', '[]'::jsonb)) as healing_type where healing_type = {0})"
+                        + " and not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {1})"
+                        + ")",
+                value.name(),
+                healingFormulaMarker(value));
+    }
+
+    private String healingFormulaMarker(HealingType value) {
+        return switch (value) {
+            case HEALING -> "%@heal%";
+            case TEMPORARY_HITPOINTS -> "%heal.temp%";
+        };
     }
 
     private String damageTypeKey(DamageType value) {

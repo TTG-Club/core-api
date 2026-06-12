@@ -191,6 +191,26 @@ class VttgSpellMapperTest {
     }
 
     @Test
+    void keepsHealingMarkerInVttgDamageParts() {
+        Spell spell = new Spell();
+        spell.setUrl("healing-word");
+        spell.setName("Healing Word");
+        spell.setEnglish("Healing Word");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2Рє4@heal+@mod.spell"));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals("2Рє4@heal+@mod.spell", result.getDamageParts().getFirst().getFormula());
+        assertTrue(result.getDamageParts().getFirst().getIsHealing());
+        assertTrue(result.getIsHealing());
+    }
+
+    @Test
     void mapsBonusActionAndSelfRangeLikeVttgSrd() {
         Spell spell = new Spell();
         spell.setUrl("self-bonus");

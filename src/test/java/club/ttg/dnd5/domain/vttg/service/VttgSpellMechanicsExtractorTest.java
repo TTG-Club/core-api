@@ -67,6 +67,49 @@ class VttgSpellMechanicsExtractorTest {
     }
 
     @Test
+    void treatsHealMarkerFormulaAsHealingDamagePart() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2Рє4@heal+@mod.spell"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("2Рє4@heal+@mod.spell", result.damageParts().getFirst().getFormula());
+        assertTrue(result.damageParts().getFirst().getIsHealing());
+        assertTrue(result.isHealing());
+    }
+
+    @Test
+    void treatsTemporaryHealMarkerFormulaAsHealingDamagePart() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2Рє4@heal.temp"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("2Рє4@heal.temp", result.damageParts().getFirst().getFormula());
+        assertTrue(result.damageParts().getFirst().getIsHealing());
+        assertTrue(result.isHealing());
+    }
+
+    @Test
+    void usesLegacyHealingTypesWhenFormulaHasNoMarker() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2Рє4"));
+        effect.setHealingTypes(List.of(HealingType.HEALING));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("2Рє4", result.damageParts().getFirst().getFormula());
+        assertTrue(result.damageParts().getFirst().getIsHealing());
+        assertTrue(result.isHealing());
+    }
+
+    @Test
     void structuredMechanicsHavePriorityOverText() {
         Spell spell = new Spell();
         SpellEffect effect = new SpellEffect();
