@@ -32,7 +32,7 @@ public enum Habitat {
     PLANAR_ETHEREAL_PLANE("План (Эфирный план)"),
     PLANAR_FEYWILD("План (Страна фей)"),
     PLANAR_ELEMENTAL_PLANE_OF_FIRE("План (Стихийный план огня)"),
-    PLANAR_GEHENNA("План (Гиена)"),
+    PLANAR_GEHENNA("План (Геена)"),
     PLANAR_HADES("План (Гадес)"),
     PLANAR_LIMBO("План (Лимбо)"),
     PLANAR_LOWER_PLANES("План (нижние планы)"),

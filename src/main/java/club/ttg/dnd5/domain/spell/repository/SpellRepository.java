@@ -86,10 +86,10 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     })
     @Query("""
             select distinct s from Spell s
-            where s.srdVersion = :srdVersion
+            where (:srdVersion is null or s.srdVersion = :srdVersion)
               and s.isHiddenEntity = false
             order by s.level, s.name
             """)
-    List<Spell> findAllVisibleBySrdVersion(@Param("srdVersion") String srdVersion);
+    List<Spell> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
 
 }

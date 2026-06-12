@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 @RequiredArgsConstructor
 public class VttgModuleService {
-    public static final String DEFAULT_SRD_VERSION = "5.2";
+    public static final String SRD_LABEL = "srd";
 
     private final SpellRepository spellRepository;
     private final CreatureRepository creatureRepository;
@@ -36,42 +37,57 @@ public class VttgModuleService {
 
     @Transactional(readOnly = true)
     public VttgModuleArchive buildAllModule() {
-        return buildModule(Content.ALL);
+        return buildAllModule(null);
+    }
+
+    @Transactional(readOnly = true)
+    public VttgModuleArchive buildAllModule(String srdVersion) {
+        return buildModule(Content.ALL, srdVersion);
     }
 
     @Transactional(readOnly = true)
     public VttgModuleArchive buildSpellModule() {
-        return buildModule(Content.SPELLS);
+        return buildSpellModule(null);
+    }
+
+    @Transactional(readOnly = true)
+    public VttgModuleArchive buildSpellModule(String srdVersion) {
+        return buildModule(Content.SPELLS, srdVersion);
     }
 
     @Transactional(readOnly = true)
     public VttgModuleArchive buildCreatureModule() {
-        return buildModule(Content.CREATURES);
+        return buildCreatureModule(null);
     }
 
-    private VttgModuleArchive buildModule(Content content) {
-        String version = DEFAULT_SRD_VERSION;
+    @Transactional(readOnly = true)
+    public VttgModuleArchive buildCreatureModule(String srdVersion) {
+        return buildModule(Content.CREATURES, srdVersion);
+    }
+
+    private VttgModuleArchive buildModule(Content content, String requestedSrdVersion) {
+        String srdVersion = normalizeSrdVersion(requestedSrdVersion);
+        String srdLabel = srdVersion == null ? SRD_LABEL : srdVersion;
         String suffix = content.name().toLowerCase(Locale.ROOT);
-        String moduleId = "ttg-club-srd-" + version.replaceAll("[^0-9A-Za-z]+", "-").toLowerCase(Locale.ROOT)
-                + "-" + suffix;
+        String moduleId = moduleId(srdVersion, suffix);
         Map<String, Object> files = new LinkedHashMap<>();
 
         if (content != Content.CREATURES) {
-            files.put("spells.json", spellRepository.findAllVisibleBySrdVersion(version).stream()
+            files.put("spells.json", spellRepository.findAllVisibleForVttgExport(srdVersion).stream()
                     .map(spellMapper::toVttg).toList());
         }
         if (content != Content.SPELLS) {
-            files.put("creatures.json", groupedCreatures(version));
+            files.put("creatures.json", groupedCreatures(srdVersion));
         }
         if (files.values().stream().allMatch(value -> ((List<?>) value).isEmpty())) {
-            throw new ContentNotFoundException("Контент SRD " + version + " не найден");
+            throw new ContentNotFoundException("Контент SRD" + (srdVersion == null ? "" : " " + srdVersion) + " не найден");
         }
 
-        return new VttgModuleArchive(moduleId + ".zip", createArchive(moduleId, version, content, files));
+        return new VttgModuleArchive(moduleId + ".zip", createArchive(moduleId, srdLabel, content, files));
     }
 
-    private List<Object> groupedCreatures(String version) {
-        List<Creature> creatures = creatureRepository.findAllVisibleBySrdVersion(version).stream()
+    private List<Object> groupedCreatures(String srdVersion) {
+        List<Creature> creatures = creatureRepository.findAllVisibleForVttgExport(srdVersion).stream()
                 .sorted(Comparator
                         .comparing((Creature creature) -> Objects.requireNonNullElse(creature.getExperience(), 0L))
                         .thenComparing(creature -> Objects.requireNonNullElse(creature.getName(), "")))
@@ -200,6 +216,20 @@ public class VttgModuleService {
         zip.putNextEntry(new ZipEntry(path));
         zip.write(value);
         zip.closeEntry();
+    }
+
+    private String normalizeSrdVersion(String srdVersion) {
+        return StringUtils.hasText(srdVersion) ? srdVersion.trim() : null;
+    }
+
+    private String slug(String value) {
+        return value.replaceAll("[^0-9A-Za-z]+", "-").toLowerCase(Locale.ROOT);
+    }
+
+    private String moduleId(String srdVersion, String suffix) {
+        return srdVersion == null
+                ? "ttg-club-srd-" + suffix
+                : "ttg-club-srd-" + slug(srdVersion) + "-" + suffix;
     }
 
     private enum Content {

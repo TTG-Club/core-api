@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class VttgModuleServiceTest {
@@ -36,10 +37,8 @@ class VttgModuleServiceTest {
     void buildsCombinedAndSeparateModules() throws Exception {
         Spell spell = new Spell();
         Creature creature = new Creature();
-        when(spellRepository.findAllVisibleBySrdVersion(VttgModuleService.DEFAULT_SRD_VERSION))
-                .thenReturn(List.of(spell));
-        when(creatureRepository.findAllVisibleBySrdVersion(VttgModuleService.DEFAULT_SRD_VERSION))
-                .thenReturn(List.of(creature));
+        when(spellRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(spell));
+        when(creatureRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(creature));
         when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("spell").build());
         when(creatureMapper.toVttg(creature)).thenReturn(VttgCreature.builder().id("creature").build());
 
@@ -64,8 +63,7 @@ class VttgModuleServiceTest {
         Creature rat = creature("rat", "Крыса", 10);
         Creature zombie = creature("zombie", "Зомби", 200);
         Creature ape = creature("ape", "Обезьяна", 200);
-        when(creatureRepository.findAllVisibleBySrdVersion(VttgModuleService.DEFAULT_SRD_VERSION))
-                .thenReturn(List.of(zombie, rat, ape));
+        when(creatureRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(zombie, rat, ape));
         when(creatureMapper.toVttg(rat)).thenReturn(VttgCreature.builder().id("rat").name("Крыса").build());
         when(creatureMapper.toVttg(zombie)).thenReturn(VttgCreature.builder().id("zombie").name("Зомби").build());
         when(creatureMapper.toVttg(ape)).thenReturn(VttgCreature.builder().id("ape").name("Обезьяна").build());
@@ -79,6 +77,19 @@ class VttgModuleServiceTest {
         assertEquals("ПО 1", creatures.get(2).get("name").asText());
         assertEquals("zombie", creatures.get(3).get("id").asText());
         assertEquals("ape", creatures.get(4).get("id").asText());
+    }
+
+    @Test
+    void filtersModuleByRequestedSrdVersion() {
+        String srdVersion = "5.2.1";
+        Spell spell = new Spell();
+        when(spellRepository.findAllVisibleForVttgExport(srdVersion)).thenReturn(List.of(spell));
+        when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("spell").build());
+
+        VttgModuleArchive archive = service.buildSpellModule(srdVersion);
+
+        assertEquals("ttg-club-srd-5-2-1-spells.zip", archive.fileName());
+        verify(spellRepository).findAllVisibleForVttgExport(srdVersion);
     }
 
     private boolean hasFile(Map<String, byte[]> files, String name) {

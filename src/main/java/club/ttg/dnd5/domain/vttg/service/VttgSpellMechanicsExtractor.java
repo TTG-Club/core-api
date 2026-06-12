@@ -19,6 +19,8 @@ public class VttgSpellMechanicsExtractor {
             "(?iu)(\\d+)\\s*[кkd]\\s*(\\d+)(?:\\s*([+-])\\s*(\\d+))?"
     );
     private static final Pattern DAMAGE_TYPE_MARKER = Pattern.compile("@dmg\\.([A-Za-z-]+)");
+    private static final Pattern HEALING_MARKER = Pattern.compile("(?i)@heal(?!\\.temp)");
+    private static final Pattern TEMPORARY_HEALING_MARKER = Pattern.compile("(?i)heal\\.temp");
     private static final Pattern HEALING = Pattern.compile(
             "(?iu)(?:восстанавлив\\p{L}*|восстановить|исцел\\p{L}*|лечени\\p{L}*)"
                     + ".{0,120}?хит"
@@ -43,9 +45,11 @@ public class VttgSpellMechanicsExtractor {
     public VttgSpellMechanics extract(Spell spell, String description) {
         String text = description == null ? "" : description;
         SpellEffect effect = spell.getEffect();
-        boolean structuredHealing = effect != null && hasValues(effect.getHealingTypes());
-        boolean healing = structuredHealing || hasHealing(text);
         List<String> formulas = structuredDamageFormulas(effect);
+        boolean structuredFormulas = formulas != null;
+        boolean formulaHealing = hasHealingMarker(formulas);
+        boolean structuredHealing = effect != null && hasValues(effect.getHealingTypes());
+        boolean healing = formulaHealing || structuredHealing || hasHealing(text);
         String formula = formulas == null
                 ? extractFormula(text, healing)
                 : firstFormulaOnly(formulas.getFirst());
@@ -66,7 +70,7 @@ public class VttgSpellMechanicsExtractor {
         return new VttgSpellMechanics(
                 primaryFormula,
                 primaryDamageType,
-                damageParts(formulas, healing),
+                damageParts(formulas, !formulaHealing && (structuredHealing || (!structuredFormulas && healing))),
                 healing ? true : null,
                 extractSaveEffect(effect, text)
         );
@@ -195,7 +199,18 @@ public class VttgSpellMechanicsExtractor {
         return start < 0 || end < 0 ? null : formula.substring(start + 1, end);
     }
 
-    private List<VttgDamagePart> damageParts(List<String> formulas, boolean healing) {
+    private boolean hasHealingMarker(List<String> formulas) {
+        return hasValues(formulas) && formulas.stream()
+                .anyMatch(this::isHealingFormula);
+    }
+
+    private boolean isHealingFormula(String formula) {
+        return StringUtils.hasText(formula)
+                && (HEALING_MARKER.matcher(formula).find()
+                || TEMPORARY_HEALING_MARKER.matcher(formula).find());
+    }
+
+    private List<VttgDamagePart> damageParts(List<String> formulas, boolean legacyHealing) {
         if (!hasValues(formulas)) {
             return null;
         }
@@ -204,7 +219,7 @@ public class VttgSpellMechanicsExtractor {
                 .map(formula -> VttgDamagePart.builder()
                         .formula(normalizeDamagePartFormula(formula))
                         .target("selected")
-                        .isHealing(healing ? true : null)
+                        .isHealing(isHealingFormula(formula) || legacyHealing ? true : null)
                         .build())
                 .toList();
     }

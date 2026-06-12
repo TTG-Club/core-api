@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-12-01-spell-healing-formula-markers
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              UPDATE spell
+              SET effect = jsonb_set(
+                  effect,
+                  '{damageFormulas}',
+                  (
+                      SELECT jsonb_agg(
+                          CASE
+                              WHEN formula ~* '(@heal|heal\.temp)' THEN formula
+                              WHEN jsonb_exists(effect->'healingTypes', 'TEMPORARY_HITPOINTS') THEN
+                                  CASE
+                                      WHEN formula ~* '^([0-9]+[[:space:]]*[^0-9[:space:]][[:space:]]*[0-9]+)' THEN regexp_replace(
+                                          formula,
+                                          '^([0-9]+[[:space:]]*[^0-9[:space:]][[:space:]]*[0-9]+)',
+                                          E'\\1@heal.temp',
+                                          'i'
+                                      )
+                                      ELSE formula || '@heal.temp'
+                                  END
+                              WHEN jsonb_exists(effect->'healingTypes', 'HEALING') THEN
+                                  CASE
+                                      WHEN formula ~* '^([0-9]+[[:space:]]*[^0-9[:space:]][[:space:]]*[0-9]+)' THEN regexp_replace(
+                                          formula,
+                                          '^([0-9]+[[:space:]]*[^0-9[:space:]][[:space:]]*[0-9]+)',
+                                          E'\\1@heal',
+                                          'i'
+                                      )
+                                      ELSE formula || '@heal'
+                                  END
+                              ELSE formula
+                          END
+                      )
+                      FROM jsonb_array_elements_text(effect->'damageFormulas') AS damage_formula(formula)
+                  )
+              )
+              WHERE jsonb_typeof(effect->'damageFormulas') = 'array'
+                AND jsonb_typeof(effect->'healingTypes') = 'array'
+                AND (
+                    jsonb_exists(effect->'healingTypes', 'HEALING')
+                    OR jsonb_exists(effect->'healingTypes', 'TEMPORARY_HITPOINTS')
+                );

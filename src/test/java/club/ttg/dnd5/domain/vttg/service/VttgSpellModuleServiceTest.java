@@ -28,8 +28,7 @@ class VttgSpellModuleServiceTest {
 
     @Test
     void buildsInstallableModuleArchiveForDefaultSrdVersion() throws Exception {
-        String version = VttgSpellModuleService.DEFAULT_SRD_VERSION;
-        String moduleId = "ttg-club-srd-" + version.replace(".", "-") + "-spells";
+        String moduleId = "ttg-club-srd-spells";
         Spell source = new Spell();
         VttgSpell spell = VttgSpell.builder()
                 .id("test-spell")
@@ -57,7 +56,7 @@ class VttgSpellModuleServiceTest {
                 .isSRD(true)
                 .type("spell")
                 .build();
-        when(repository.findAllVisibleBySrdVersion(version)).thenReturn(List.of(source));
+        when(repository.findAllVisibleForVttgExport(null)).thenReturn(List.of(source));
         when(mapper.toVttg(source)).thenReturn(spell);
 
         VttgModuleArchive archive = service.buildModule();
@@ -89,12 +88,12 @@ class VttgSpellModuleServiceTest {
 
         String client = new String(entries.get(moduleId + "/client.js"), StandardCharsets.UTF_8);
         assertTrue(client.contains("/module-assets/" + moduleId + "/spells.json"));
-        verify(repository).findAllVisibleBySrdVersion(version);
+        verify(repository).findAllVisibleForVttgExport(null);
     }
 
     @Test
     void rejectsEmptySrdModule() {
-        when(repository.findAllVisibleBySrdVersion(VttgSpellModuleService.DEFAULT_SRD_VERSION)).thenReturn(List.of());
+        when(repository.findAllVisibleForVttgExport(null)).thenReturn(List.of());
 
         assertThrows(club.ttg.dnd5.exception.ContentNotFoundException.class, service::buildModule);
     }
