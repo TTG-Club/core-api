@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 @RequiredArgsConstructor
 public class VttgSpellModuleService {
-    public static final String DEFAULT_SRD_VERSION = "5.2";
+    public static final String SRD_LABEL = "srd";
 
     private final SpellRepository spellRepository;
     private final VttgSpellMapper spellMapper;
@@ -29,17 +30,23 @@ public class VttgSpellModuleService {
 
     @Transactional(readOnly = true)
     public VttgModuleArchive buildModule() {
-        String version = DEFAULT_SRD_VERSION;
-        String moduleId = "ttg-club-srd-" + version.replaceAll("[^0-9A-Za-z]+", "-").toLowerCase(Locale.ROOT) + "-spells";
-        List<VttgSpell> spells = spellRepository.findAllVisibleBySrdVersion(version).stream()
+        return buildModule(null);
+    }
+
+    @Transactional(readOnly = true)
+    public VttgModuleArchive buildModule(String requestedSrdVersion) {
+        String srdVersion = normalizeSrdVersion(requestedSrdVersion);
+        String srdLabel = srdVersion == null ? SRD_LABEL : srdVersion;
+        String moduleId = srdVersion == null ? "ttg-club-srd-spells" : "ttg-club-srd-" + slug(srdVersion) + "-spells";
+        List<VttgSpell> spells = spellRepository.findAllVisibleForVttgExport(srdVersion).stream()
                 .map(spellMapper::toVttg)
                 .toList();
 
         if (spells.isEmpty()) {
-            throw new ContentNotFoundException("Заклинания SRD " + version + " не найдены");
+            throw new ContentNotFoundException("Заклинания SRD" + (srdVersion == null ? "" : " " + srdVersion) + " не найдены");
         }
 
-        return new VttgModuleArchive(moduleId + ".zip", createArchive(moduleId, version, spells));
+        return new VttgModuleArchive(moduleId + ".zip", createArchive(moduleId, srdLabel, spells));
     }
 
     private byte[] createArchive(String moduleId, String srdVersion, List<VttgSpell> spells) {
@@ -128,5 +135,13 @@ public class VttgSpellModuleService {
                   }
                 })();
                 """.formatted(moduleId, moduleId, srdVersion, moduleId, moduleId, moduleId, srdVersion, moduleId);
+    }
+
+    private String normalizeSrdVersion(String srdVersion) {
+        return StringUtils.hasText(srdVersion) ? srdVersion.trim() : null;
+    }
+
+    private String slug(String value) {
+        return value.replaceAll("[^0-9A-Za-z]+", "-").toLowerCase(Locale.ROOT);
     }
 }

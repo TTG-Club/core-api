@@ -53,11 +53,11 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
 
     @Query("""
             select c from Creature c
-            where c.srdVersion = :srdVersion
+            where (:srdVersion is null or c.srdVersion = :srdVersion)
               and c.isHiddenEntity = false
             order by c.name
             """)
-    List<Creature> findAllVisibleBySrdVersion(@Param("srdVersion") String srdVersion);
+    List<Creature> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
 
 }
 
