@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
+import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguage;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
@@ -17,6 +18,7 @@ import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
@@ -166,7 +168,6 @@ public class VttgCreatureMapper {
         result.put("alignment", alignment(creature.getAlignment()));
         result.put("armorClass", armorClass(creature));
         result.put("hitPoints", hitPoints(creature, size));
-        result.put("speed", speedText(creature.getSpeeds()));
         result.put("movement", movement(creature.getSpeeds()));
         result.put("abilities", abilities(creature));
         result.put("challengeRating", challengeRating);
@@ -176,6 +177,8 @@ public class VttgCreatureMapper {
         result.put("defenses", defenses(creature));
         result.put("senses", senses(creature));
         result.put("languages", languages(creature));
+        result.put("environments", environments(creature));
+        result.put("customEnvironments", "");
         result.put("traits", traits(creature.getTraits()));
         result.put("actions", actions(creature.getActions()));
         result.put("bonusActions", actions(creature.getBonusActions()));
@@ -271,7 +274,7 @@ public class VttgCreatureMapper {
     private List<Map<String, Object>> traits(Collection<CreatureTrait> traits) {
         if (traits == null) return List.of();
         return traits.stream().filter(Objects::nonNull)
-                .map(trait -> action(trait.getName(), trait.getDescription()))
+                .map(trait -> action(trait.getName(), trait.getEnglish(), trait.getDescription()))
                 .toList();
     }
 
@@ -286,12 +289,20 @@ public class VttgCreatureMapper {
         String description = text(action.getDescription());
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", value(action.getName()));
+        putIfHasText(result, action.getEnglish());
         result.put("description", paragraphsFromText(description));
 
         CreatureActionMechanics mechanics = extractActionMechanics(action, description);
         putIfNotNull(result, "attackBonus", mechanics.attackBonus());
-        putIfNotNull(result, "damageDice", mechanics.damageDice());
-        putIfNotNull(result, "damageType", mechanics.damageType());
+        if (mechanics.damageFormula() != null) {
+            Map<String, Object> damagePart = new LinkedHashMap<>();
+            damagePart.put("formula", mechanics.damageFormula());
+            putIfNotNull(damagePart, "type", mechanics.damageType());
+            result.put("damageParts", List.of(damagePart));
+        }
+        putIfNotNull(result, "saveType", mechanics.saveType());
+        putIfNotNull(result, "saveDC", mechanics.saveDC());
+        putIfNotNull(result, "saveEffect", mechanics.saveEffect());
         putIfNotNull(result, "reach", mechanics.reach());
         putIfNotNull(result, "rangeType", mechanics.rangeType());
         if (mechanics.reach() != null || mechanics.range() != null || mechanics.rangeType() != null) {
@@ -312,11 +323,12 @@ public class VttgCreatureMapper {
         return result;
     }
 
-    private Map<String, Object> action(String name, String description) {
-        return Map.of(
-                "name", value(name),
-                "description", paragraphs(description)
-        );
+    private Map<String, Object> action(String name, String nameEn, String description) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("name", value(name));
+        putIfHasText(result, nameEn);
+        result.put("description", paragraphs(description));
+        return result;
     }
 
     private Map<String, Object> lair(CreatureLair lair) {
@@ -345,17 +357,22 @@ public class VttgCreatureMapper {
         Integer attackBonus = firstInt(TO_HIT.matcher(text));
         Integer reach = firstInt(REACH.matcher(text));
         RangeValues range = range(text);
+        SawingThrow savingThrow = first(action.getSawingThrows());
         boolean hasHitText = HIT_START.matcher(text).find();
-        boolean attackLike = attackType != null || attackBonus != null || hasHitText;
+        boolean attackLike = attackType != null || attackBonus != null || hasHitText || savingThrow != null;
         String hitText = hitText(text);
-        String damageDice = attackLike ? damageDice(hitText) : null;
-        String damageType = damageType(hitText, damageDice);
+        String damageFormula = attackLike ? damageDice(hitText) : null;
+        String damageType = damageType(action, hitText, damageFormula);
 
         return new CreatureActionMechanics(
                 attackType,
                 attackBonus,
-                damageDice,
+                damageFormula,
                 damageType,
+                savingThrow == null || savingThrow.getAbility() == null
+                        ? null : savingThrow.getAbility().name().toLowerCase(Locale.ROOT),
+                savingThrow == null ? null : Byte.toUnsignedInt(savingThrow.getDc()),
+                savingThrow == null ? null : saveEffect(text),
                 reach,
                 range == null ? null : range.normal(),
                 range == null ? null : range.longRange()
@@ -367,7 +384,7 @@ public class VttgCreatureMapper {
         if (lower.contains("melee or ranged")
                 || lower.contains("рукопашн")
                 && lower.contains("дальнобойн")) {
-            return "melee-or-ranged";
+            return "ranged";
         }
         if (lower.contains("ranged")
                 || lower.contains("дальнобойн")) {
@@ -378,7 +395,7 @@ public class VttgCreatureMapper {
             return "melee";
         }
         if (source == AttackType.MELEE_OR_RANGE) {
-            return "melee-or-ranged";
+            return "ranged";
         }
         if (source == AttackType.RANGE) {
             return "ranged";
@@ -426,8 +443,8 @@ public class VttgCreatureMapper {
         return window(text, matcher.start() - 80, matcher.end() + 40);
     }
 
-    private String damageType(String text, String damageDice) {
-        if (!StringUtils.hasText(damageDice)) {
+    private String damageType(CreatureAction action, String text, String damageFormula) {
+        if (!StringUtils.hasText(damageFormula)) {
             return null;
         }
         String lower = firstDamageContext(text).toLowerCase(Locale.ROOT);
@@ -436,7 +453,20 @@ public class VttgCreatureMapper {
                 return entry.getKey();
             }
         }
-        return null;
+        DamageType structuredType = first(action.getDamageTypes());
+        return structuredType == null ? null : damageType(structuredType);
+    }
+
+    private String saveEffect(String text) {
+        String lower = value(text).toLowerCase(Locale.ROOT);
+        if (lower.contains("half as much") || lower.contains("half damage")
+                || lower.contains("половин")) {
+            return "half";
+        }
+        if (lower.contains("no damage") || lower.contains("не получает урон")) {
+            return "none";
+        }
+        return "special";
     }
 
     private List<Map<String, Object>> activeEffects(String description) {
@@ -484,17 +514,6 @@ public class VttgCreatureMapper {
         return result;
     }
 
-    private String speedText(CreatureSpeeds speeds) {
-        Map<String, Object> movement = movement(speeds);
-        List<String> parts = new ArrayList<>();
-        Map.of("walk", "", "climb", "лазая ", "swim", "плавая ", "fly", "летая ", "burrow", "копая ")
-                .forEach((key, prefix) -> {
-                    int speed = (int) movement.get(key);
-                    if (speed > 0) parts.add(prefix + speed + " фт.");
-                });
-        return String.join(", ", parts);
-    }
-
     private String senses(Creature creature) {
         if (creature.getSenses() == null) return "";
         List<String> values = new ArrayList<>();
@@ -512,6 +531,23 @@ public class VttgCreatureMapper {
                 .map(CreatureLanguage::getLanguage).filter(Objects::nonNull)
                 .map(language -> language.name().toLowerCase(Locale.ROOT).replace("_", "-"))
                 .toList();
+    }
+
+    private List<String> environments(Creature creature) {
+        if (creature.getSection() == null || creature.getSection().getHabitats() == null) {
+            return List.of();
+        }
+        return creature.getSection().getHabitats().stream()
+                .filter(Objects::nonNull)
+                .map(this::environment)
+                .distinct()
+                .toList();
+    }
+
+    private String environment(Habitat habitat) {
+        return habitat.name().startsWith("PLANAR_")
+                ? "planar"
+                : habitat.name().toLowerCase(Locale.ROOT);
     }
 
     private String header(Creature creature) {
@@ -547,8 +583,12 @@ public class VttgCreatureMapper {
 
     private List<String> enumNames(Collection<DamageType> values) {
         return values == null ? List.of() : values.stream().filter(Objects::nonNull)
-                .map(value -> value == DamageType.FAIR ? "fire" : value.name().toLowerCase(Locale.ROOT))
+                .map(this::damageType)
                 .toList();
+    }
+
+    private String damageType(DamageType value) {
+        return value == DamageType.FAIR ? "fire" : value.name().toLowerCase(Locale.ROOT);
     }
 
     private List<String> conditionNames(Collection<Condition> values) {
@@ -585,6 +625,12 @@ public class VttgCreatureMapper {
     private void putIfNotNull(Map<String, Object> map, String key, Object value) {
         if (value != null) {
             map.put(key, value);
+        }
+    }
+
+    private void putIfHasText(Map<String, Object> map, String value) {
+        if (StringUtils.hasText(value)) {
+            map.put("nameEn", value);
         }
     }
 
@@ -743,8 +789,11 @@ public class VttgCreatureMapper {
     private record CreatureActionMechanics(
             String rangeType,
             Integer attackBonus,
-            String damageDice,
+            String damageFormula,
             String damageType,
+            String saveType,
+            Integer saveDC,
+            String saveEffect,
             Integer reach,
             Integer range,
             Integer longRange) {

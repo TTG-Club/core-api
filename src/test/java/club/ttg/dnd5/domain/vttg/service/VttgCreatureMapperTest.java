@@ -7,13 +7,17 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
 import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
 import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
 import club.ttg.dnd5.domain.beastiary.model.CreatureLair;
+import club.ttg.dnd5.domain.beastiary.model.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
+import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -22,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -67,8 +72,13 @@ class VttgCreatureMapperTest {
 
         CreatureTrait trait = new CreatureTrait();
         trait.setName("Черта");
+        trait.setEnglish("Trait");
         trait.setDescription("[\"Описание черты\"]");
         creature.setTraits(List.of(trait));
+
+        CreatureSection section = new CreatureSection();
+        section.setHabitats(List.of(Habitat.FOREST, Habitat.PLANAR_ABYSS, Habitat.PLANAR_FEYWILD));
+        creature.setSection(section);
 
         Senses senses = new Senses();
         senses.setDarkvision((short) 60);
@@ -89,7 +99,10 @@ class VttgCreatureMapperTest {
         assertEquals("2", system.get("challengeRating"));
         assertEquals(List.of("strength"), system.get("savingThrows"));
         assertTrue(result.getDescription().contains("Описание существа"));
-        assertEquals(1, ((List<?>) system.get("traits")).size());
+        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) system.get("traits")).getFirst();
+        assertEquals("Trait", mappedTrait.get("nameEn"));
+        assertEquals(List.of("forest", "planar"), system.get("environments"));
+        assertFalse(system.containsKey("speed"));
     }
 
     @Test
@@ -138,8 +151,9 @@ class VttgCreatureMapperTest {
         Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
 
         assertEquals(5, action.get("attackBonus"));
-        assertEquals("1к8 + 3", action.get("damageDice"));
-        assertEquals("piercing", action.get("damageType"));
+        assertDamagePart(action, "1к8 + 3", "piercing");
+        assertFalse(action.containsKey("damageDice"));
+        assertFalse(action.containsKey("damageType"));
         assertEquals(10, action.get("reach"));
         assertEquals("melee", action.get("rangeType"));
         assertEquals("ft", action.get("distanceUnit"));
@@ -180,8 +194,7 @@ class VttgCreatureMapperTest {
 
         Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
 
-        assertEquals("1", action.get("damageDice"));
-        assertEquals("piercing", action.get("damageType"));
+        assertDamagePart(action, "1", "piercing");
     }
 
     @Test
@@ -197,8 +210,7 @@ class VttgCreatureMapperTest {
 
         Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
 
-        assertNull(action.get("damageDice"));
-        assertNull(action.get("damageType"));
+        assertNull(action.get("damageParts"));
     }
 
     @Test
@@ -216,6 +228,34 @@ class VttgCreatureMapperTest {
         Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
 
         assertActiveEffect(action, "prone");
+    }
+
+    @Test
+    void exportsEnglishNameStructuredDamageTypeAndSavingThrow() {
+        Creature creature = new Creature();
+        creature.setUrl("save-creature");
+        creature.setName("Save Creature");
+        creature.setDescription("");
+
+        CreatureAction action = action(
+                "Ледяное дыхание",
+                "[\"Each creature must make a DC 15 Constitution saving throw, taking 18 (4d8) damage, or half damage on success.\"]"
+        );
+        action.setEnglish("Cold Breath");
+        action.setDamageTypes(List.of(DamageType.COLD));
+        SawingThrow savingThrow = new SawingThrow();
+        savingThrow.setAbility(Ability.CONSTITUTION);
+        savingThrow.setDc((byte) 15);
+        action.setSawingThrows(List.of(savingThrow));
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mappedAction = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals("Cold Breath", mappedAction.get("nameEn"));
+        assertDamagePart(mappedAction, "4к8", "cold");
+        assertEquals("constitution", mappedAction.get("saveType"));
+        assertEquals(15, mappedAction.get("saveDC"));
+        assertEquals("half", mappedAction.get("saveEffect"));
     }
 
     private CreatureAbility ability(Ability ability, int value, int multiplier) {
@@ -254,6 +294,13 @@ class VttgCreatureMapperTest {
         assertTrue(activeEffects.stream()
                 .map(Map.class::cast)
                 .anyMatch(effect -> expectedId.equals(effect.get("id"))));
+    }
+
+    private void assertDamagePart(Map<?, ?> action, String expectedFormula, String expectedType) {
+        List<?> damageParts = (List<?>) action.get("damageParts");
+        Map<?, ?> damagePart = (Map<?, ?>) damageParts.getFirst();
+        assertEquals(expectedFormula, damagePart.get("formula"));
+        assertEquals(expectedType, damagePart.get("type"));
     }
 
     private void assertToken(Map<?, ?> token) {
