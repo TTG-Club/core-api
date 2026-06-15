@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -58,6 +59,36 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
             order by c.name
             """)
     List<Creature> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
+
+    /**
+     * Видимые существа, изменённые в окне (since, until] — для upserts дельты VTTG.
+     * Сортировка по времени изменения выполняется на стороне приложения.
+     */
+    @Query("""
+            select c from Creature c
+            where (:srdVersion is null or c.srdVersion = :srdVersion)
+              and c.isHiddenEntity = false
+              and coalesce(c.updatedAt, c.createdAt) > :since
+              and coalesce(c.updatedAt, c.createdAt) <= :until
+            """)
+    List<Creature> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                            @Param("since") Instant since,
+                                            @Param("until") Instant until);
+
+    /**
+     * Число видимых существ, изменённых в окне (since, until] — для индикатора VTTG.
+     * Скрытые сущности (мягкое удаление) не учитываются.
+     */
+    @Query("""
+            select count(c) from Creature c
+            where (:srdVersion is null or c.srdVersion = :srdVersion)
+              and c.isHiddenEntity = false
+              and coalesce(c.updatedAt, c.createdAt) > :since
+              and coalesce(c.updatedAt, c.createdAt) <= :until
+            """)
+    long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("since") Instant since,
+                                   @Param("until") Instant until);
 
 }
 

@@ -34,15 +34,28 @@ public class VttgMarkupConverter {
     private String appUrl;
 
     public String toText(String markup) {
+        return convert(markup, false);
+    }
+
+    /**
+     * Как {@link #toText(String)}, но сохраняет inline-теги бросков {@code {@roll ...}}.
+     * Нужно для форматов VTTG, где клиент сам отрисовывает интерактивные броски в описании
+     * (например магические предметы — см. wands.json).
+     */
+    public String toTextKeepingRolls(String markup) {
+        return convert(markup, true);
+    }
+
+    private String convert(String markup, boolean keepRolls) {
         if (!StringUtils.hasText(markup)) {
             return "";
         }
 
         try {
             String extracted = extract(objectMapper.readTree(markup)).trim();
-            return replaceMarkup(StringUtils.hasText(extracted) ? extracted : markup);
+            return replaceMarkup(StringUtils.hasText(extracted) ? extracted : markup, keepRolls);
         } catch (Exception ignored) {
-            return replaceMarkup(markup);
+            return replaceMarkup(markup, keepRolls);
         }
     }
 
@@ -110,10 +123,12 @@ public class VttgMarkupConverter {
                 || (trimmed.startsWith("{") && trimmed.endsWith("}"));
     }
 
-    private String replaceMarkup(String text) {
+    private String replaceMarkup(String text, boolean keepRolls) {
         String formatted = replaceInline(text, ITALIC, "*$1*");
         formatted = replaceInline(formatted, BOLD, "**$1**");
-        formatted = replaceRolls(formatted);
+        if (!keepRolls) {
+            formatted = replaceRolls(formatted);
+        }
 
         return replaceSiteLinks(formatted);
     }
