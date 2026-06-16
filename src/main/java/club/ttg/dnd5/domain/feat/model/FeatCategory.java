@@ -13,7 +13,8 @@ public enum FeatCategory {
     FIGHTING_STYLE("боевой стиль"),
     DRAGONMARK("метка дракона"),
     PATH_OF_THE_DEATH_KNIGHT("Черта пути рыцаря смерти"),
-    PATH_OF_THE_LICH("Черта пути лича");
+    PATH_OF_THE_LICH("Черта пути лича"),
+    DARK_GIFT("Тёмный дар");
 
     private final String name;
 }
