@@ -65,8 +65,12 @@ public interface BackgroundMapper {
     @Named("featToMarkup")
     default String featToMarkup(Background background) {
         Feat feat = background.getFeat();
+        String suffix = background.getFeatSuffix();
+        if (feat == null) {
+            return suffix != null ? "\"%s\"".formatted(suffix) : null;
+        }
         return "\"{@feat %s [%s]|url:%s}%s\"".formatted(feat.getName(), feat.getEnglish(), feat.getUrl(),
-                background.getFeatSuffix() != null ? " " + background.getFeatSuffix() : "");
+                suffix != null ? " " + suffix : "");
     }
 
     @Named("abilitiesToString")
