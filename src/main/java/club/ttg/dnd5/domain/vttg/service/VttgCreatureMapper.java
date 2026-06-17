@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -361,8 +362,17 @@ public class VttgCreatureMapper {
         boolean hasHitText = HIT_START.matcher(text).find();
         boolean attackLike = attackType != null || attackBonus != null || hasHitText || savingThrow != null;
         String hitText = hitText(text);
-        String damageFormula = attackLike ? damageDice(hitText) : null;
-        String damageType = damageType(action, hitText, damageFormula);
+        List<DamageSegment> damageSegments = attackLike ? damageSegments(hitText) : List.of();
+        String damageFormula;
+        String damageType;
+        if (damageSegments.stream().filter(segment -> segment.type() != null).count() >= 2) {
+            // Несколько типов урона: тип кодируется токенами @dmg.<type> прямо в формуле.
+            damageFormula = combinedDamageFormula(damageSegments);
+            damageType = null;
+        } else {
+            damageFormula = attackLike ? damageDice(hitText) : null;
+            damageType = damageType(action, hitText, damageFormula);
+        }
 
         return new CreatureActionMechanics(
                 attackType,
@@ -433,6 +443,54 @@ public class VttgCreatureMapper {
             formula += " " + matcher.group(3) + " " + matcher.group(4);
         }
         return formula;
+    }
+
+    /**
+     * Разбивает текст попадания на отдельные сегменты урона. Каждый сегмент привязан
+     * к своей формуле костей; область поиска типа урона ограничена следующим броском,
+     * поэтому типы из соседних сегментов не смешиваются.
+     */
+    private List<DamageSegment> damageSegments(String hitText) {
+        Matcher matcher = DICE.matcher(hitText);
+        List<Integer> starts = new ArrayList<>();
+        List<String> formulas = new ArrayList<>();
+        while (matcher.find()) {
+            starts.add(matcher.start());
+            String formula = matcher.group(1) + "к" + matcher.group(2);
+            if (StringUtils.hasText(matcher.group(3))) {
+                formula += matcher.group(3) + matcher.group(4);
+            }
+            formulas.add(formula);
+        }
+        List<DamageSegment> result = new ArrayList<>();
+        for (int i = 0; i < starts.size(); i++) {
+            int start = starts.get(i);
+            int end = i + 1 < starts.size() ? starts.get(i + 1) : hitText.length();
+            String region = hitText.substring(start, end);
+            if (!DAMAGE_WORD.matcher(region).find()) {
+                continue;
+            }
+            result.add(new DamageSegment(formulas.get(i), damageTypeIn(region)));
+        }
+        return result;
+    }
+
+    private String damageTypeIn(String region) {
+        String lower = region.toLowerCase(Locale.ROOT);
+        for (Map.Entry<String, Pattern> entry : TEXT_DAMAGE_TYPES.entrySet()) {
+            if (entry.getValue().matcher(lower).find()) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private String combinedDamageFormula(List<DamageSegment> segments) {
+        return segments.stream()
+                .map(segment -> segment.type() == null
+                        ? segment.formula()
+                        : segment.formula() + "@dmg." + segment.type())
+                .collect(Collectors.joining("+"));
     }
 
     private String firstDamageContext(String text) {
@@ -790,6 +848,9 @@ public class VttgCreatureMapper {
     }
 
     private record RangeValues(Integer normal, Integer longRange) {
+    }
+
+    private record DamageSegment(String formula, String type) {
     }
 
     private record CreatureActionMechanics(
