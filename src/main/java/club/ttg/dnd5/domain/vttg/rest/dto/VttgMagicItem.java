@@ -22,10 +22,12 @@ public class VttgMagicItem {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String nameEn;
     private String description;
-    /** {@code GameItemType}; для магических предметов — "equipment". */
+    /** {@code GameItemType}: "weapon" для оружия, иначе "equipment". */
     private String type;
-    /** Отображаемая метка типа (напр. «Снаряжение»). */
+    /** Отображаемая метка типа (напр. «Снаряжение»/«Оружие»). */
     private String typeLabel;
+    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous). */
+    private String section;
     private int quantity;
     /** Вес в фунтах (в модели источника отсутствует — по умолчанию 0). */
     private double weight;
@@ -34,7 +36,11 @@ public class VttgMagicItem {
     /** {@code ItemRarity}: none, common, uncommon, rare, very-rare, legendary, artifact. */
     private String rarity;
     private boolean equipped;
-    /** {@code EquipmentCategory}: wand, ring, wondrous, light, medium, heavy, shield, trinket, clothing... */
+    /**
+     * {@code EquipmentCategory}: wand, ring, wondrous, light, medium, heavy, shield, trinket, clothing...
+     * Опускается для оружия (у него своя категория) и для брони без известного класса.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String equipmentCategory;
     /**
      * Доспешные поля. Имеют смысл только для брони и при отсутствии структурных данных

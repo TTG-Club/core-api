@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.model.SectionType;
+import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.domain.spell.model.Spell;
@@ -46,14 +48,18 @@ public class VttgChangesService {
     private static final String SPELLS = SectionType.SPELL.getValue();
     private static final String BESTIARY = SectionType.BESTIARY.getValue();
     private static final String MAGIC_ITEMS = SectionType.MAGIC_ITEM.getValue();
-    private static final Set<String> SUPPORTED_TYPES = Set.of(SPELLS, BESTIARY, MAGIC_ITEMS);
+    private static final String ITEMS = SectionType.ITEM.getValue();
+    private static final Set<String> SUPPORTED_TYPES = Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS);
 
     private final SpellRepository spellRepository;
     private final CreatureRepository creatureRepository;
     private final MagicItemRepository magicItemRepository;
+    private final ItemRepository itemRepository;
     private final VttgSpellMapper spellMapper;
     private final VttgCreatureMapper creatureMapper;
     private final VttgMagicItemMapper magicItemMapper;
+    private final VttgItemMapper itemMapper;
+    private final VttgCompendiumSections compendiumSections;
 
     /** Лёгкий статус для индикатора: число изменений в окне без полезной нагрузки. */
     @Transactional(readOnly = true)
@@ -78,6 +84,12 @@ public class VttgChangesService {
             long count = magicItemRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
             if (count > 0) {
                 byType.put(MAGIC_ITEMS, count);
+            }
+        }
+        if (selected.contains(ITEMS)) {
+            long count = itemRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            if (count > 0) {
+                byType.put(ITEMS, count);
             }
         }
 
@@ -110,11 +122,17 @@ public class VttgChangesService {
                         changedAt(item.getUpdatedAt(), item.getCreatedAt()), magicItemMapper.toVttg(item)));
             }
         }
+        if (selected.contains(ITEMS)) {
+            for (Item item : itemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
+                upserts.add(new VttgChange(ITEMS, item.getUrl(),
+                        changedAt(item.getUpdatedAt(), item.getCreatedAt()), itemMapper.toVttg(item)));
+            }
+        }
 
         upserts.sort(Comparator.comparing(VttgChange::updatedAt,
                 Comparator.nullsLast(Comparator.naturalOrder())));
 
-        return new VttgChangesResponse(window.since(), window.until(), upserts);
+        return new VttgChangesResponse(window.until(), upserts, compendiumSections.changesTree());
     }
 
     private Window window(Instant sinceParam) {

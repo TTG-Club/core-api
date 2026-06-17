@@ -51,6 +51,59 @@ public class VttgCompendiumSections {
         return List.of(spells(), creatures(), magicItems());
     }
 
+    /**
+     * Дерево разделов («манифест» отображения) для ответа {@code /changes}.
+     *
+     * <p>Рекурсивные узлы: ЛИСТ ({@code section}/{@code dataKind}/{@code view}) несёт данные,
+     * ГРУППА ({@code group}/{@code children}) — только отображение. Слаги {@code section}
+     * совпадают с {@code data.section} записей; пустые листы VTTG отбрасывает.</p>
+     */
+    public List<Map<String, Object>> changesTree() {
+        return List.of(
+                leaf("spells", "Заклинания", "tabler:sparkles", "spell", spellView()),
+                leaf("creatures", "Существа", "tabler:paw", "creature", creatureView()),
+                group(List.of(
+                        leaf("weapons", "Оружие", "tabler:sword", "weapon", itemView()),
+                        leaf("armor", "Доспехи", "tabler:shield", "equipment", itemView()),
+                        leaf("gear", "Снаряжение приключенца", "tabler:backpack", "equipment", null),
+                        leaf("rings", "Кольца", "tabler:circle", "equipment", itemView()),
+                        leaf("wands", "Жезлы", "tabler:wand", "equipment", itemView()),
+                        leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", itemView()),
+                        leaf("tools", "Инструменты", "tabler:tools", "tool", null)
+                ))
+        );
+    }
+
+    private Map<String, Object> leaf(String section, String name, String icon, String dataKind, Map<String, Object> view) {
+        Map<String, Object> node = new LinkedHashMap<>();
+        node.put("section", section);
+        node.put("name", name);
+        node.put("icon", icon);
+        node.put("dataKind", dataKind);
+        if (view != null) {
+            node.put("view", view);
+        }
+        return node;
+    }
+
+    private Map<String, Object> group(List<Map<String, Object>> children) {
+        Map<String, Object> node = new LinkedHashMap<>();
+        node.put("group", "equipment");
+        node.put("name", "Снаряжение");
+        node.put("icon", "tabler:briefcase");
+        node.put("children", children);
+        return node;
+    }
+
+    /** Простой вид предметов: фильтр по редкости (общий для оружия/доспехов/колец/жезлов/чудесных). */
+    private Map<String, Object> itemView() {
+        Map<String, Object> view = filtered();
+        view.put("filters", List.of(
+                enumFilter("rarity", "Редкость", "rarity", "string", "badges")
+        ));
+        return view;
+    }
+
     private Map<String, Object> spellView() {
         Map<String, Object> view = filtered();
         view.put("groupBy", groupBy("level", "spellLevel"));

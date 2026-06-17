@@ -13,23 +13,22 @@ import org.springframework.util.StringUtils;
 import java.util.Locale;
 
 /**
- * Маппер магического предмета TTG Club в формат компендиума VTTG ({@code GameItem}, type = "equipment").
+ * Маппер магического предмета TTG Club в формат компендиума VTTG ({@code GameItem}).
  *
- * <p>Часть полей задаётся константами выгрузки (тип, метки, флаги only-read/magical), а инвентарные
- * и доспешные поля в модели источника отсутствуют и заполняются значениями по умолчанию.</p>
+ * <p>Тип отдаётся родной: оружие → {@code weapon}, всё остальное → {@code equipment} с флагом
+ * {@code isMagical=true} (отдельного типа «magic-item» нет). {@code section} раскладывает запись
+ * по листу дерева разделов (weapons/armor/rings/wands/wondrous).</p>
  *
  * <p>Сопоставление справочников выполнено под перечисления VTTG ({@code EquipmentCategory},
  * {@code ItemRarity}). Категории без точного соответствия отображаются на близкий аналог
- * (жезл/посох → wand, зелье/свиток/оружие/доспех → wondrous). Структурных данных оружия/доспеха
- * в модели нет, поэтому все предметы отдаются как {@code equipment}.</p>
+ * (жезл/посох → wand, зелье/свиток → wondrous). Структурных данных оружия/доспеха в модели нет,
+ * поэтому weapon/armor отдаются без подробных боевых/доспешных полей.</p>
  */
 @Component
 @RequiredArgsConstructor
 public class VttgMagicItemMapper {
-    /** Метка набора данных в формате VTTG (как в примере: source = "srd"). */
+    /** Запасной ключ источника, если у предмета его нет. */
     private static final String SOURCE = "srd";
-    private static final String TYPE = "equipment";
-    private static final String TYPE_LABEL = "Снаряжение";
 
     private final VttgMarkupConverter markupConverter;
 
@@ -37,6 +36,8 @@ public class VttgMagicItemMapper {
         Attunement attunement = item.getAttunement();
         boolean requiresAttunement = attunement != null && attunement.isRequires();
         String sourceKey = sourceKey(item.getSource());
+        MagicItemCategory category = item.getCategory();
+        boolean weapon = category == MagicItemCategory.WEAPON;
 
         return VttgMagicItem.builder()
                 .id(id(item, sourceKey))
@@ -44,8 +45,10 @@ public class VttgMagicItemMapper {
                 .nameEn(item.getEnglish())
                 // VTTG сам отрисовывает {@roll ...} в описании предмета — сохраняем эти теги.
                 .description(markupConverter.toTextKeepingRolls(item.getDescription()))
-                .type(TYPE)
-                .typeLabel(TYPE_LABEL)
+                // Оружие отдаём родным типом "weapon", всё остальное — "equipment" (п.3 контракта).
+                .type(weapon ? "weapon" : "equipment")
+                .typeLabel(weapon ? "Оружие" : "Снаряжение")
+                .section(section(category))
                 .quantity(1)
                 // В модели MagicItem нет веса — по умолчанию 0.
                 .weight(0)
@@ -53,7 +56,8 @@ public class VttgMagicItemMapper {
                 .cost("")
                 .rarity(rarity(item.getRarity()))
                 .equipped(false)
-                .equipmentCategory(equipmentCategory(item.getCategory()))
+                // У оружия своя категория (weaponCategory); для type=equipment — реальная категория.
+                .equipmentCategory(weapon ? null : equipmentCategory(category))
                 // Доспешные поля (baseArmorAC, maxDexBonus, stealthDisadvantage,
                 // strengthRequirement) актуальны только для брони; структурных данных
                 // доспеха в модели источника нет, поэтому опускаем их (как в эталоне SRD-бэкапа).
@@ -66,14 +70,18 @@ public class VttgMagicItemMapper {
     }
 
     /**
-     * Стабильный id в формате VTTG: "{kebab-slug url}-{sourceKey}", например "wand-of-fear-dmg".
+     * Стабильный id в формате VTTG: kebab-slug от {@code url} с суффиксом источника ровно один раз,
+     * например "wand-of-fear-dmg". Если {@code url} уже оканчивается на ключ источника
+     * (как в данных TTG: "adamantine-armor-dmg"), повторно его не добавляем — иначе VTTG создаст дубль.
      *
-     * <p>Slug — латиница/цифры/дефис (имя файла у VTTG = id). Суффикс источника обеспечивает
-     * уникальность в пределах типа, если один url встречается в разных книгах.</p>
+     * <p>Slug — латиница/цифры/дефис (имя файла у VTTG = id).</p>
      */
     private String id(MagicItem item, String sourceKey) {
         String slug = slug(item.getUrl());
-        return slug.isEmpty() ? sourceKey : slug + "-" + sourceKey;
+        if (slug.isEmpty()) {
+            return sourceKey;
+        }
+        return slug.equals(sourceKey) || slug.endsWith("-" + sourceKey) ? slug : slug + "-" + sourceKey;
     }
 
     private String slug(String value) {
@@ -85,16 +93,31 @@ public class VttgMagicItemMapper {
                 .replaceAll("^-+|-+$", "");
     }
 
-    /** MagicItemCategory → EquipmentCategory VTTG (light|medium|heavy|shield|trinket|ring|clothing|wand|wondrous|vehicle-equipment). */
+    /** Лист дерева разделов VTTG, в который попадёт предмет (см. {@code VttgCompendiumSections}). */
+    private String section(MagicItemCategory category) {
+        if (category == null) {
+            return "wondrous";
+        }
+        return switch (category) {
+            case WEAPON -> "weapons";
+            case ARMOR -> "armor";
+            case RING -> "rings";
+            case WAND, ROD, STAFF -> "wands";
+            case POTION, SCROLL, SUBJECT -> "wondrous";
+        };
+    }
+
+    /** MagicItemCategory → EquipmentCategory VTTG (ring|wand|wondrous|light|medium|heavy|shield|clothing...). */
     private String equipmentCategory(MagicItemCategory category) {
         if (category == null) {
             return "wondrous";
         }
         return switch (category) {
-            case WAND, ROD, STAFF -> "wand";   // нет отдельных rod/staff — implement-аналог
             case RING -> "ring";
-            // нет potion/scroll/weapon/armor в EquipmentCategory — отображаем как «чудесный предмет»
-            case POTION, SCROLL, WEAPON, ARMOR, SUBJECT -> "wondrous";
+            case WAND, ROD, STAFF -> "wand";   // нет отдельных rod/staff — implement-аналог
+            case ARMOR -> null;                // класс брони (light|medium|heavy|shield) в модели не задан
+            case POTION, SCROLL, SUBJECT -> "wondrous";
+            case WEAPON -> null;               // обрабатывается как type=weapon
         };
     }
 
