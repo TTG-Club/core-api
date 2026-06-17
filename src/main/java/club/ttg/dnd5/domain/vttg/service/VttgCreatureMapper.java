@@ -81,7 +81,7 @@ public class VttgCreatureMapper {
                 .header(header(creature))
                 .token(token(creature))
                 .system(system(creature))
-                .source(source(creature))
+                .sourceKey(sourceKey(creature.getSource()))
                 .isSRD(true)
                 .isReadOnly(true)
                 .build();
@@ -575,10 +575,16 @@ public class VttgCreatureMapper {
         return alignment.name().toLowerCase(Locale.ROOT).replace("_", "-");
     }
 
-    private String source(Creature creature) {
-        Source source = creature.getSource();
-        if (source == null) return "SRD " + creature.getSrdVersion();
-        return creature.getSourcePage() == null ? source.getAcronym() : source.getAcronym() + ", p. " + creature.getSourcePage();
+    private String sourceKey(Source source) {
+        if (source == null) {
+            return "srd";
+        }
+        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
+            return "phb";
+        }
+        return StringUtils.hasText(source.getAcronym())
+                ? source.getAcronym().toLowerCase(Locale.ROOT)
+                : "srd";
     }
 
     private List<String> enumNames(Collection<DamageType> values) {

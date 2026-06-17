@@ -217,11 +217,32 @@ public class VttgSpellMechanicsExtractor {
         return formulas.stream()
                 .filter(StringUtils::hasText)
                 .map(formula -> VttgDamagePart.builder()
-                        .formula(normalizeDamagePartFormula(formula))
+                        .formula(applyHealMarker(normalizeDamagePartFormula(formula),
+                                isHealingFormula(formula), legacyHealing))
                         .target("selected")
-                        .isHealing(isHealingFormula(formula) || legacyHealing ? true : null)
                         .build())
                 .toList();
+    }
+
+    /**
+     * Кодирует «лечение» прямо в формулу токеном {@code @heal} (единый стандарт COMBAT.md —
+     * флаг {@code isHealing} удалён). Токен добавляется, только если часть действительно лечащая
+     * и в формуле ещё нет {@code @heal}/{@code @heal.temp}; части с уроном ({@code @dmg.*}) не трогаются.
+     */
+    private String applyHealMarker(String formula, boolean formulaHealing, boolean legacyHealing) {
+        if (!StringUtils.hasText(formula) || hasHealMarker(formula)) {
+            return formula;
+        }
+        boolean healing = formulaHealing || (legacyHealing && !hasDamageMarker(formula));
+        return healing ? formula + "@heal" : formula;
+    }
+
+    private boolean hasHealMarker(String formula) {
+        return HEALING_MARKER.matcher(formula).find() || TEMPORARY_HEALING_MARKER.matcher(formula).find();
+    }
+
+    private boolean hasDamageMarker(String formula) {
+        return DAMAGE_TYPE_MARKER.matcher(formula).find();
     }
 
     private String normalizeDamagePartFormula(String formula) {

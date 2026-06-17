@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 
 @Tag(name = "VTTG", description = "Экспорт контента TTG Club в модули VTTG")
@@ -72,6 +73,20 @@ public class VttgController {
     @GetMapping(value = "/creatures/module", produces = "application/zip")
     public ResponseEntity<byte[]> getCreatureModule(@RequestParam(required = false) String srdVersion) {
         return archive(moduleService.buildCreatureModule(srdVersion));
+    }
+
+    @Operation(summary = "Скачать модуль магических предметов для VTTG")
+    @GetMapping(value = "/magic-items/module", produces = "application/zip")
+    public ResponseEntity<byte[]> getMagicItemModule(@RequestParam(required = false) String srdVersion) {
+        return archive(moduleService.buildMagicItemModule(srdVersion));
+    }
+
+    @Operation(summary = "Манифест компендиума для контракта сайта (VTT_TTG_MANIFEST_PATH)",
+            description = "Возвращает CompendiumManifest { tree: [...] } с узлами по dataKind (spell/creature/equipment) "
+                    + "и их view (макет/фильтры/группировка). Скачиваемые паки берут отсюда отображение.")
+    @GetMapping(value = "/manifest", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object> getManifest() {
+        return moduleService.manifest();
     }
 
     private ResponseEntity<byte[]> archive(VttgModuleArchive archive) {

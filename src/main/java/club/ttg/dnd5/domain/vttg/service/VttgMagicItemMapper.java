@@ -59,7 +59,6 @@ public class VttgMagicItemMapper {
                 .strengthRequirement(0)
                 .isMagical(true)
                 .magicAttunement(requiresAttunement ? "required" : "none")
-                .source(SOURCE)
                 .sourceKey(sourceKey(item.getSource()))
                 .isSRD(true)
                 .isReadOnly(true)

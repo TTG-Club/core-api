@@ -42,8 +42,6 @@ public class VttgMagicItem {
     private int strengthRequirement;
     /** {@code magicAttunement}: "none", "required" или "optional". */
     private String magicAttunement;
-    /** Источник набора данных: "srd". */
-    private String source;
     /** Ключ источника из sources.json: "phb", "dmg", "srd"... */
     private String sourceKey;
 

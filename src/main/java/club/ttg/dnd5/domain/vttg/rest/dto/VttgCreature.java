@@ -20,7 +20,7 @@ public class VttgCreature {
     private String header;
     private Map<String, Object> token;
     private Map<String, Object> system;
-    private String source;
+    private String sourceKey;
     private Boolean isSRD;
     private Boolean isReadOnly;
 }

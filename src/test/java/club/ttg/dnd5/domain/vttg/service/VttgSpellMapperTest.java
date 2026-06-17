@@ -97,8 +97,6 @@ class VttgSpellMapperTest {
         assertEquals(3, result.getTargetCount());
         assertEquals("ranged", result.getDeliveryType());
         assertTrue(result.getAutoHit());
-        assertEquals("fire", result.getDamageType());
-        assertEquals("8к6", result.getDamageFormula());
         assertEquals("8к6@dmg.fire", result.getDamageParts().getFirst().getFormula());
         assertEquals("dexterity", result.getSaveType());
         assertEquals("half", result.getSaveEffect());
@@ -107,7 +105,6 @@ class VttgSpellMapperTest {
                 result.getHigherLevelDescription());
         assertEquals("1к6", result.getScaling().getAdditionalDice());
         assertEquals(result.getHigherLevelDescription(), result.getScaling().getDescription());
-        assertEquals("PHB 2024", result.getSource());
         assertEquals("phb", result.getSourceKey());
         assertEquals("spell", result.getType());
     }
@@ -132,8 +129,6 @@ class VttgSpellMapperTest {
         assertTrue(result.getDescription().startsWith("*Вы бросаете кислотный шарик*"));
         assertTrue(result.getDescription().contains("[сферой](https://ttg.club/glossary/sphere-phb)"));
         assertTrue(result.getDescription().contains("1к6"));
-        assertEquals("1к6", result.getDamageFormula());
-        assertEquals("acid", result.getDamageType());
         assertEquals("1к6@dmg.acid", result.getDamageParts().getFirst().getFormula());
         assertEquals("level", result.getCantripScaling());
         assertEquals(5, result.getCantripScalingTiers().get(0).getLevel());
@@ -205,9 +200,8 @@ class VttgSpellMapperTest {
 
         var result = mapper.toVttg(spell);
 
+        // Лечение кодируется токеном @heal в формуле (легаси-флаг isHealing удалён).
         assertEquals("2Рє4@heal+@mod.spell", result.getDamageParts().getFirst().getFormula());
-        assertTrue(result.getDamageParts().getFirst().getIsHealing());
-        assertTrue(result.getIsHealing());
     }
 
     @Test

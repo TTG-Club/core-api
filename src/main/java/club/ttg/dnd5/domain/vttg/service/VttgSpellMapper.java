@@ -80,10 +80,7 @@ public class VttgSpellMapper {
                 .targetType(targetType(effect, range, areaOfEffect))
                 .targetCount(effect == null ? null : effect.getTargetCount())
                 .deliveryType(deliveryType(effect, range))
-                .damageFormula(mechanics.damageFormula())
-                .damageType(mechanics.damageType())
                 .damageParts(mechanics.damageParts())
-                .isHealing(mechanics.isHealing())
                 .autoHit(effect == null ? null : effect.getAutoHit())
                 .saveType(saveType(effect))
                 .saveEffect(mechanics.saveEffect())
@@ -92,7 +89,6 @@ public class VttgSpellMapper {
                 .scaling(scaling)
                 .description(description)
                 .higherLevelDescription(higherLevelDescription)
-                .source(source(spell))
                 .sourceKey(sourceKey(spell.getSource()))
                 .isSRD(true)
                 .classKeys(classKeys(spell.getClassAffiliation()))
@@ -294,7 +290,6 @@ public class VttgSpellMapper {
                 .formula(formula)
                 .target(part.getTarget())
                 .type(part.getType())
-                .isHealing(part.getIsHealing())
                 .build();
     }
 
@@ -312,19 +307,6 @@ public class VttgSpellMapper {
             return false;
         }
         return higherLevelDescription.matches("(?s).*\\b5\\b.*\\b11\\b.*\\b17\\b.*");
-    }
-
-    private String source(Spell spell) {
-        Source source = spell.getSource();
-        if (source == null) {
-            return "SRD " + spell.getSrdVersion();
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "PHB 2024";
-        }
-        return spell.getSourcePage() == null
-                ? source.getAcronym()
-                : source.getAcronym() + ", p. " + spell.getSourcePage();
     }
 
     private String sourceKey(Source source) {

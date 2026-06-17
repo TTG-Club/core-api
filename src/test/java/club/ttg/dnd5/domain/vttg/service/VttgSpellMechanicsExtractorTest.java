@@ -61,8 +61,7 @@ class VttgSpellMechanicsExtractorTest {
                 "Существо восстанавливает {@roll 1к8} + ваш модификатор хитов.");
 
         assertEquals("1к8", result.damageFormula());
-        assertEquals("1к8", result.damageParts().getFirst().getFormula());
-        assertTrue(result.damageParts().getFirst().getIsHealing());
+        assertEquals("1к8@heal", result.damageParts().getFirst().getFormula());
         assertTrue(result.isHealing());
     }
 
@@ -76,7 +75,6 @@ class VttgSpellMechanicsExtractorTest {
         var result = extractor.extract(spell, "");
 
         assertEquals("2Рє4@heal+@mod.spell", result.damageParts().getFirst().getFormula());
-        assertTrue(result.damageParts().getFirst().getIsHealing());
         assertTrue(result.isHealing());
     }
 
@@ -90,7 +88,6 @@ class VttgSpellMechanicsExtractorTest {
         var result = extractor.extract(spell, "");
 
         assertEquals("2Рє4@heal.temp", result.damageParts().getFirst().getFormula());
-        assertTrue(result.damageParts().getFirst().getIsHealing());
         assertTrue(result.isHealing());
     }
 
@@ -104,8 +101,7 @@ class VttgSpellMechanicsExtractorTest {
 
         var result = extractor.extract(spell, "");
 
-        assertEquals("2Рє4", result.damageParts().getFirst().getFormula());
-        assertTrue(result.damageParts().getFirst().getIsHealing());
+        assertEquals("2Рє4@heal", result.damageParts().getFirst().getFormula());
         assertTrue(result.isHealing());
     }
 

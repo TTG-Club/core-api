@@ -2,9 +2,12 @@ package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
+import club.ttg.dnd5.domain.magic.model.MagicItem;
+import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,62 +30,119 @@ import static org.mockito.Mockito.when;
 class VttgModuleServiceTest {
     private final SpellRepository spellRepository = mock(SpellRepository.class);
     private final CreatureRepository creatureRepository = mock(CreatureRepository.class);
+    private final MagicItemRepository magicItemRepository = mock(MagicItemRepository.class);
     private final VttgSpellMapper spellMapper = mock(VttgSpellMapper.class);
     private final VttgCreatureMapper creatureMapper = mock(VttgCreatureMapper.class);
+    private final VttgMagicItemMapper magicItemMapper = mock(VttgMagicItemMapper.class);
+    private final VttgCompendiumSections sections = new VttgCompendiumSections();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final VttgModuleService service = new VttgModuleService(
-            spellRepository, creatureRepository, spellMapper, creatureMapper, objectMapper);
+            spellRepository, creatureRepository, magicItemRepository,
+            spellMapper, creatureMapper, magicItemMapper, sections, objectMapper);
 
     @Test
-    void buildsCombinedAndSeparateModules() throws Exception {
+    void buildsPerSectionCompendiumLayoutWithoutClientJsOrSeparators() throws Exception {
         Spell spell = new Spell();
+        spell.setUrl("fire-burst");
+        spell.setLevel(3L);
         Creature creature = new Creature();
+        creature.setUrl("goblin");
+        creature.setExperience(100L); // ПО 1/2 → подпапка cr/1-2
         when(spellRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(spell));
         when(creatureRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(creature));
-        when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("spell").build());
-        when(creatureMapper.toVttg(creature)).thenReturn(VttgCreature.builder().id("creature").build());
+        when(magicItemRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of());
+        when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("fire-burst").build());
+        when(creatureMapper.toVttg(creature)).thenReturn(VttgCreature.builder().id("goblin").build());
 
         Map<String, byte[]> all = unzip(service.buildAllModule().content());
-        Map<String, byte[]> spells = unzip(service.buildSpellModule().content());
-        Map<String, byte[]> creatures = unzip(service.buildCreatureModule().content());
 
-        assertTrue(hasFile(all, "spells.json"));
-        assertTrue(hasFile(all, "creatures.json"));
-        assertTrue(hasFile(spells, "spells.json"));
-        assertFalse(hasFile(spells, "creatures.json"));
-        assertTrue(hasFile(creatures, "creatures.json"));
-        assertFalse(hasFile(creatures, "spells.json"));
+        // Новый формат: compendium/ с тонким manifest.json, section.json и одним JSON на сущность.
+        assertTrue(hasFile(all, "/compendium/manifest.json"));
+        assertTrue(hasFile(all, "/compendium/spells/section.json"));
+        assertTrue(hasFile(all, "/compendium/spells/3/fire-burst.json"));
+        assertTrue(hasFile(all, "/compendium/creatures/section.json"));
+        assertTrue(hasFile(all, "/compendium/creatures/cr/1-2/goblin.json"));
 
-        JsonNode manifest = objectMapper.readTree(moduleJson(spells));
-        assertEquals("client.js", manifest.at("/client/entry").asText());
-        assertEquals("client.js", manifest.at("/scripts/0").asText());
+        // Легаси-артефактов нет.
+        assertFalse(all.keySet().stream().anyMatch(path -> path.endsWith("client.js")));
+        assertFalse(all.keySet().stream().anyMatch(path -> path.endsWith("/spells.json")));
+        assertFalse(all.keySet().stream().anyMatch(path -> path.endsWith("/creatures.json")));
+
+        // module.json без client/scripts.
+        JsonNode module = readJson(all, "/module.json");
+        assertTrue(module.at("/client").isMissingNode());
+        assertTrue(module.at("/scripts").isMissingNode());
+
+        // Тонкий manifest.json: sections[] и readOnly.
+        JsonNode manifest = readJson(all, "/compendium/manifest.json");
+        assertTrue(manifest.get("readOnly").asBoolean());
+        List sectionIds = objectMapper.convertValue(manifest.get("sections"), List.class);
+        assertTrue(sectionIds.contains("spells"));
+        assertTrue(sectionIds.contains("creatures"));
+
+        // section.json несёт канонический dataKind и view.
+        JsonNode spellsSection = readJson(all, "/compendium/spells/section.json");
+        assertEquals("spell", spellsSection.get("dataKind").asText());
+        assertEquals("filtered", spellsSection.at("/view/layout").asText());
+        JsonNode creaturesSection = readJson(all, "/compendium/creatures/section.json");
+        assertEquals("creature", creaturesSection.get("dataKind").asText());
     }
 
     @Test
-    void groupsCreaturesByChallengeRatingAndSortsByExperienceThenName() throws Exception {
-        Creature rat = creature("rat", "Крыса", 10);
-        Creature zombie = creature("zombie", "Зомби", 200);
-        Creature ape = creature("ape", "Обезьяна", 200);
-        when(creatureRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(zombie, rat, ape));
-        when(creatureMapper.toVttg(rat)).thenReturn(VttgCreature.builder().id("rat").name("Крыса").build());
-        when(creatureMapper.toVttg(zombie)).thenReturn(VttgCreature.builder().id("zombie").name("Зомби").build());
-        when(creatureMapper.toVttg(ape)).thenReturn(VttgCreature.builder().id("ape").name("Обезьяна").build());
+    void buildsSeparateSpellAndCreatureModules() throws Exception {
+        Spell spell = new Spell();
+        spell.setUrl("magic-missile");
+        spell.setLevel(1L);
+        Creature creature = new Creature();
+        creature.setUrl("rat");
+        creature.setExperience(10L);
+        when(spellRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(spell));
+        when(creatureRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(creature));
+        when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("magic-missile").build());
+        when(creatureMapper.toVttg(creature)).thenReturn(VttgCreature.builder().id("rat").build());
 
-        Map<String, byte[]> files = unzip(service.buildCreatureModule().content());
-        JsonNode creatures = objectMapper.readTree(creaturesJson(files));
+        Map<String, byte[]> spells = unzip(service.buildSpellModule().content());
+        Map<String, byte[]> creatures = unzip(service.buildCreatureModule().content());
 
-        assertEquals("separator", creatures.get(0).get("type").asText());
-        assertEquals("ПО 0", creatures.get(0).get("name").asText());
-        assertEquals("rat", creatures.get(1).get("id").asText());
-        assertEquals("ПО 1", creatures.get(2).get("name").asText());
-        assertEquals("zombie", creatures.get(3).get("id").asText());
-        assertEquals("ape", creatures.get(4).get("id").asText());
+        assertTrue(hasFile(spells, "/compendium/spells/1/magic-missile.json"));
+        assertFalse(spells.keySet().stream().anyMatch(path -> path.contains("/creatures/")));
+
+        assertTrue(hasFile(creatures, "/compendium/creatures/cr/0/rat.json"));
+        assertFalse(creatures.keySet().stream().anyMatch(path -> path.contains("/spells/")));
+    }
+
+    @Test
+    void buildsMagicItemModuleAsEquipmentSection() throws Exception {
+        MagicItem item = new MagicItem();
+        when(magicItemRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(item));
+        when(magicItemMapper.toVttg(item)).thenReturn(VttgMagicItem.builder().id("srd_wand_of_fear").build());
+
+        Map<String, byte[]> files = unzip(service.buildMagicItemModule().content());
+
+        assertTrue(hasFile(files, "/compendium/magic-items/section.json"));
+        assertTrue(hasFile(files, "/compendium/magic-items/srd_wand_of_fear.json"));
+        JsonNode section = readJson(files, "/compendium/magic-items/section.json");
+        assertEquals("equipment", section.get("dataKind").asText());
+    }
+
+    @Test
+    void manifestExposesDataKindAndViewForSite() {
+        Map<String, Object> manifest = service.manifest();
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> tree = (List<Map<String, Object>>) manifest.get("tree");
+        assertTrue(tree.stream().anyMatch(node -> "spell".equals(node.get("dataKind"))));
+        assertTrue(tree.stream().anyMatch(node -> "creature".equals(node.get("dataKind"))));
+        assertTrue(tree.stream().anyMatch(node -> "equipment".equals(node.get("dataKind"))));
+        assertTrue(tree.stream().allMatch(node -> node.containsKey("view")));
     }
 
     @Test
     void filtersModuleByRequestedSrdVersion() {
         String srdVersion = "5.2.1";
         Spell spell = new Spell();
+        spell.setUrl("spell");
+        spell.setLevel(0L);
         when(spellRepository.findAllVisibleForVttgExport(srdVersion)).thenReturn(List.of(spell));
         when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("spell").build());
 
@@ -92,32 +152,17 @@ class VttgModuleServiceTest {
         verify(spellRepository).findAllVisibleForVttgExport(srdVersion);
     }
 
-    private boolean hasFile(Map<String, byte[]> files, String name) {
-        return files.keySet().stream().anyMatch(path -> path.endsWith("/" + name));
+    private boolean hasFile(Map<String, byte[]> files, String suffix) {
+        return files.keySet().stream().anyMatch(path -> path.endsWith(suffix));
     }
 
-    private byte[] creaturesJson(Map<String, byte[]> files) {
-        return files.entrySet().stream()
-                .filter(entry -> entry.getKey().endsWith("/creatures.json"))
+    private JsonNode readJson(Map<String, byte[]> files, String suffix) throws Exception {
+        byte[] content = files.entrySet().stream()
+                .filter(entry -> entry.getKey().endsWith(suffix))
                 .findFirst()
                 .orElseThrow()
                 .getValue();
-    }
-
-    private byte[] moduleJson(Map<String, byte[]> files) {
-        return files.entrySet().stream()
-                .filter(entry -> entry.getKey().endsWith("/module.json"))
-                .findFirst()
-                .orElseThrow()
-                .getValue();
-    }
-
-    private Creature creature(String url, String name, long experience) {
-        Creature creature = new Creature();
-        creature.setUrl(url);
-        creature.setName(name);
-        creature.setExperience(experience);
-        return creature;
+        return objectMapper.readTree(content);
     }
 
     private Map<String, byte[]> unzip(byte[] archive) throws Exception {

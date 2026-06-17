@@ -40,6 +40,18 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
     List<String> findDistinctSrdVersions();
 
     /**
+     * Все видимые магические предметы (опц. фильтр по версии SRD) — для полной выгрузки модуля VTTG.
+     */
+    @EntityGraph(attributePaths = {"source"})
+    @Query("""
+            select mi from MagicItem mi
+            where (:srdVersion is null or mi.srdVersion = :srdVersion)
+              and mi.isHiddenEntity = false
+            order by mi.name
+            """)
+    List<MagicItem> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
+
+    /**
      * Видимые магические предметы, изменённые в окне (since, until] — для upserts дельты VTTG.
      * Сортировка по времени изменения выполняется на стороне приложения.
      */

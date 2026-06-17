@@ -32,10 +32,7 @@ public class VttgSpell {
     private String targetType;
     private Integer targetCount;
     private String deliveryType;
-    private String damageFormula;
-    private String damageType;
     private List<VttgDamagePart> damageParts;
-    private Boolean isHealing;
     private Boolean autoHit;
     private String saveType;
     private String saveEffect;
@@ -44,7 +41,6 @@ public class VttgSpell {
     private VttgSpellScaling scaling;
     private String description;
     private String higherLevelDescription;
-    private String source;
     private String sourceKey;
     @Getter(AccessLevel.NONE)
     private boolean isSRD;
