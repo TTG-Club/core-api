@@ -36,10 +36,18 @@ public class VttgMagicItem {
     private boolean equipped;
     /** {@code EquipmentCategory}: wand, ring, wondrous, light, medium, heavy, shield, trinket, clothing... */
     private String equipmentCategory;
-    private int baseArmorAC;
+    /**
+     * Доспешные поля. Имеют смысл только для брони и при отсутствии структурных данных
+     * опускаются ({@code NON_NULL}) — как в эталоне SRD-бэкапа для не-брони (жезл и т.п.).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer baseArmorAC;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer maxDexBonus;
-    private boolean stealthDisadvantage;
-    private int strengthRequirement;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean stealthDisadvantage;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer strengthRequirement;
     /** {@code magicAttunement}: "none", "required" или "optional". */
     private String magicAttunement;
     /** Ключ источника из sources.json: "phb", "dmg", "srd"... */

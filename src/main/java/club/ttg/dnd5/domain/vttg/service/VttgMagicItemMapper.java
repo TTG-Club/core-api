@@ -19,8 +19,9 @@ import java.util.Locale;
  * и доспешные поля в модели источника отсутствуют и заполняются значениями по умолчанию.</p>
  *
  * <p>Сопоставление справочников выполнено под перечисления VTTG ({@code EquipmentCategory},
- * {@code ItemRarity}). Категории без точного соответствия (жезл/посох → wand, зелье/свиток → wondrous,
- * оружие/доспех → wondrous) и стратегия id требуют подтверждения — см. комментарии.</p>
+ * {@code ItemRarity}). Категории без точного соответствия отображаются на близкий аналог
+ * (жезл/посох → wand, зелье/свиток/оружие/доспех → wondrous). Структурных данных оружия/доспеха
+ * в модели нет, поэтому все предметы отдаются как {@code equipment}.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -35,9 +36,10 @@ public class VttgMagicItemMapper {
     public VttgMagicItem toVttg(MagicItem item) {
         Attunement attunement = item.getAttunement();
         boolean requiresAttunement = attunement != null && attunement.isRequires();
+        String sourceKey = sourceKey(item.getSource());
 
         return VttgMagicItem.builder()
-                .id(id(item))
+                .id(id(item, sourceKey))
                 .name(item.getName())
                 .nameEn(item.getEnglish())
                 // VTTG сам отрисовывает {@roll ...} в описании предмета — сохраняем эти теги.
@@ -52,26 +54,35 @@ public class VttgMagicItemMapper {
                 .rarity(rarity(item.getRarity()))
                 .equipped(false)
                 .equipmentCategory(equipmentCategory(item.getCategory()))
-                // Доспешные поля актуальны только для брони; в модели источника их нет.
-                .baseArmorAC(0)
-                .maxDexBonus(null)
-                .stealthDisadvantage(false)
-                .strengthRequirement(0)
+                // Доспешные поля (baseArmorAC, maxDexBonus, stealthDisadvantage,
+                // strengthRequirement) актуальны только для брони; структурных данных
+                // доспеха в модели источника нет, поэтому опускаем их (как в эталоне SRD-бэкапа).
                 .isMagical(true)
                 .magicAttunement(requiresAttunement ? "required" : "none")
-                .sourceKey(sourceKey(item.getSource()))
+                .sourceKey(sourceKey)
                 .isSRD(true)
                 .isReadOnly(true)
                 .build();
     }
 
-    /** Идентификатор в формате VTTG: "{source}_{url с подчёркиваниями}", например "srd_wand_of_fear". */
-    private String id(MagicItem item) {
-        String slug = item.getUrl() == null ? "" : item.getUrl()
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", "");
-        return SOURCE + "_" + slug;
+    /**
+     * Стабильный id в формате VTTG: "{kebab-slug url}-{sourceKey}", например "wand-of-fear-dmg".
+     *
+     * <p>Slug — латиница/цифры/дефис (имя файла у VTTG = id). Суффикс источника обеспечивает
+     * уникальность в пределах типа, если один url встречается в разных книгах.</p>
+     */
+    private String id(MagicItem item, String sourceKey) {
+        String slug = slug(item.getUrl());
+        return slug.isEmpty() ? sourceKey : slug + "-" + sourceKey;
+    }
+
+    private String slug(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
     }
 
     /** MagicItemCategory → EquipmentCategory VTTG (light|medium|heavy|shield|trinket|ring|clothing|wand|wondrous|vehicle-equipment). */
