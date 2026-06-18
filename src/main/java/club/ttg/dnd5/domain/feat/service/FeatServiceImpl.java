@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.service;
 
+import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 @Service
 public class FeatServiceImpl implements FeatService {
     private final FeatRepository featRepository;
+    private final BackgroundRepository backgroundRepository;
     private final FeatQueryDslSearchService featQueryDslSearchService;
     private final SourceService sourceService;
     private final FeatMapper featMapper;
@@ -54,12 +56,28 @@ public class FeatServiceImpl implements FeatService {
     @Transactional
     @Override
     public String updateFeat(final String featUrl, final FeatRequest request) {
-        findByUrl(featUrl);
-        featRepository.deleteById(featUrl);
-        featRepository.flush();
+        var existing = findByUrl(featUrl);
         var book = sourceService.findByUrl(request.getSource().getUrl());
         var feat = featMapper.toEntity(request, book);
-        return featRepository.save(feat).getUrl();
+
+        if (featUrl.equals(feat.getUrl())) {
+            // url не изменился — обновляем существующую строку (merge вместо delete+insert),
+            // чтобы не задеть FK fk_background_on_feat. createdAt переносим, иначе isNew()
+            // вернёт true и Spring Data попытается сделать INSERT (дубль ключа).
+            feat.setCreatedAt(existing.getCreatedAt());
+            return featRepository.save(feat).getUrl();
+        }
+
+        // url изменился — создаём черту с новым id, переводим на неё ссылки предысторий
+        // и удаляем старую. Порядок важен: новая черта должна существовать до repoint,
+        // а старую удаляем уже без ссылок.
+        if (featRepository.existsById(feat.getUrl())) {
+            throw new EntityExistException("Feat exist by URL: " + feat.getUrl());
+        }
+        featRepository.saveAndFlush(feat);
+        backgroundRepository.repointFeat(featUrl, feat.getUrl());
+        featRepository.deleteById(featUrl);
+        return feat.getUrl();
     }
 
     @Secured("ADMIN")

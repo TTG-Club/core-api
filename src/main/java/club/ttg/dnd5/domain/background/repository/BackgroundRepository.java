@@ -5,6 +5,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -26,6 +27,15 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
             """
     )
     List<Background> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
+
+    /**
+     * Переносит ссылки предысторий со старой черты на новую — используется при смене url черты.
+     * Новая черта должна уже существовать в БД (иначе нарушится FK fk_background_on_feat).
+     */
+    @Modifying
+    @Query(value = "update background set feat_id = :newFeatUrl where feat_id = :oldFeatUrl",
+            nativeQuery = true)
+    void repointFeat(@Param("oldFeatUrl") String oldFeatUrl, @Param("newFeatUrl") String newFeatUrl);
 
     @Query(value = """
         select distinct b.source
