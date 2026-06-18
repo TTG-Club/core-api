@@ -64,13 +64,13 @@ public class VttgCompendiumSections {
                 leaf("creatures", "Существа", "tabler:paw", "creature", creatureView()),
                 leaf("backgrounds", "Предыстории", "tabler:book", "background", null),
                 group(List.of(
-                        leaf("weapons", "Оружие", "tabler:sword", "weapon", itemView()),
-                        leaf("armor", "Доспехи", "tabler:shield", "equipment", itemView()),
-                        leaf("gear", "Снаряжение приключенца", "tabler:backpack", "equipment", null),
-                        leaf("rings", "Кольца", "tabler:circle", "equipment", itemView()),
-                        leaf("wands", "Жезлы", "tabler:wand", "equipment", itemView()),
-                        leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", itemView()),
-                        leaf("tools", "Инструменты", "tabler:tools", "tool", null)
+                        leaf("weapons", "Оружие", "tabler:sword", "weapon", listView()),
+                        leaf("armor", "Доспехи", "tabler:shield", "equipment", listView()),
+                        leaf("trinkets", "Безделушки", "tabler:backpack", "equipment", listView()),
+                        leaf("rings", "Кольца", "tabler:circle", "equipment", listView()),
+                        leaf("wands", "Жезлы", "tabler:wand", "equipment", listView()),
+                        leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", listView()),
+                        leaf("tools", "Инструменты", "tabler:tools", "tool", listView())
                 ))
         );
     }
@@ -96,12 +96,13 @@ public class VttgCompendiumSections {
         return node;
     }
 
-    /** Простой вид предметов: фильтр по редкости (общий для оружия/доспехов/колец/жезлов/чудесных). */
-    private Map<String, Object> itemView() {
-        Map<String, Object> view = filtered();
-        view.put("filters", List.of(
-                enumFilter("rarity", "Редкость", "rarity", "string", "badges")
-        ));
+    /**
+     * Простой список без левой панели и фильтров — для предметных листов
+     * (оружие/доспехи/безделушки/кольца/жезлы/чудесные/инструменты).
+     */
+    private Map<String, Object> listView() {
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("layout", "list");
         return view;
     }
 

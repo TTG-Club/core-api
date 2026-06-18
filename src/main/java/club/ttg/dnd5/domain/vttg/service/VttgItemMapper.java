@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -95,24 +96,14 @@ public class VttgItemMapper {
         data.put("weaponCategory", weaponCategory(weapon.getCategory()));
         data.put("rangeType", rangeType);
 
-        Damage damage = weapon.getDamage();
-        if (damage != null) {
-            String dice = rollDice(damage.getRoll());
-            if (dice != null) {
-                data.put("damageDice", dice);
-            }
-            if (damage.getType() != null) {
-                data.put("damageType", damageType(damage.getType()));
-            }
+        List<Map<String, Object>> damageParts = damageParts(weapon);
+        if (!damageParts.isEmpty()) {
+            data.put("damageParts", damageParts);
         }
 
         boolean special = StringUtils.hasText(weapon.getAdditional());
         data.put("weaponProperties", weaponProperties(weapon.getProperties(), special));
 
-        String versatileDice = rollDice(weapon.getVersatile());
-        if (versatileDice != null) {
-            data.put("versatileDice", versatileDice);
-        }
         if (weapon.getRange() != null) {
             data.put("range", range(weapon.getRange()));
         }
@@ -163,7 +154,8 @@ public class VttgItemMapper {
     private void putGear(Map<String, Object> data) {
         data.put("type", "equipment");
         data.put("typeLabel", "Снаряжение");
-        data.put("section", "gear");
+        data.put("section", "trinkets");
+        data.put("equipmentCategory", "trinket");
     }
 
     /**
@@ -213,20 +205,42 @@ public class VttgItemMapper {
         };
     }
 
-    /** Кубик урона в формате VTTG ("2d6"); бонус для оружия не используется. */
-    private String rollDice(Roll roll) {
+    /**
+     * Части урона в формате VTTG (как у заклинаний): кость через «к», тип урона — slug SRD,
+     * {@code versatileFormula} — для универсального (versatile) оружия. Бонус для оружия не используется.
+     */
+    private List<Map<String, Object>> damageParts(Weapon weapon) {
+        Damage damage = weapon.getDamage();
+        String formula = damage == null ? null : damageFormula(damage.getRoll());
+        if (formula == null) {
+            return List.of();
+        }
+        Map<String, Object> part = new LinkedHashMap<>();
+        part.put("formula", formula);
+        if (damage.getType() != null) {
+            part.put("type", damageType(damage.getType()));
+        }
+        String versatile = damageFormula(weapon.getVersatile());
+        if (versatile != null) {
+            part.put("versatileFormula", versatile);
+        }
+        return List.of(part);
+    }
+
+    /** Кубик урона в формате VTTG («2к6»); бонус для оружия не используется. */
+    private String damageFormula(Roll roll) {
         if (roll == null || roll.getDice() == null) {
             return null;
         }
         int count = roll.getDiceCount() == null ? 1 : roll.getDiceCount();
-        return count + "d" + roll.getDice().getMaxValue();
+        return count + "к" + roll.getDice().getMaxValue();
     }
 
     private String damageType(DamageType type) {
         return type == DamageType.FAIR ? "fire" : type.name().toLowerCase(Locale.ROOT);
     }
 
-    private java.util.List<String> weaponProperties(Set<Property> properties, boolean special) {
+    private List<String> weaponProperties(Set<Property> properties, boolean special) {
         Set<String> slugs = new TreeSet<>();
         if (properties != null) {
             properties.stream()

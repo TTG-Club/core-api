@@ -61,6 +61,18 @@ public interface ItemRepository extends JpaRepository<Item, String>,
                                         @Param("until") Instant until);
 
     /**
+     * Базовые (видимые) предметы с точным совпадением имени/английского названия — для разрешения
+     * базового типа магического предмета по его уточнению ({@code clarification}) в экспорте VTTG.
+     */
+    @EntityGraph(attributePaths = {"source"})
+    @Query("""
+            select i from Item i
+            where i.isHiddenEntity = false
+              and (lower(i.name) = lower(:text) or lower(i.english) = lower(:text))
+            """)
+    List<Item> findBaseByNameForVttgExport(@Param("text") String text);
+
+    /**
      * Число видимых предметов, изменённых в окне (since, until] — для индикатора VTTG.
      */
     @Query("""

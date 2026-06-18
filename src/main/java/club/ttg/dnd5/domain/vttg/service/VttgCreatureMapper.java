@@ -75,6 +75,7 @@ public class VttgCreatureMapper {
                 .id(creature.getUrl())
                 .entityType("creature")
                 .type("creature")
+                .section("creatures")
                 .autoSaves(true)
                 .name(creature.getName())
                 .nameEn(creature.getEnglish())

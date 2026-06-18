@@ -48,9 +48,10 @@ class VttgItemMapperTest {
         assertEquals("longsword", json.get("baseType").asText());
         assertEquals("martial", json.get("weaponCategory").asText());
         assertEquals("melee", json.get("rangeType").asText());
-        assertEquals("1d8", json.get("damageDice").asText());
-        assertEquals("slashing", json.get("damageType").asText());
-        assertEquals("1d10", json.get("versatileDice").asText());
+        JsonNode damagePart = json.get("damageParts").get(0);
+        assertEquals("1к8", damagePart.get("formula").asText());
+        assertEquals("slashing", damagePart.get("type").asText());
+        assertEquals("1к10", damagePart.get("versatileFormula").asText());
         assertEquals(5, json.get("reach").asInt());
         assertEquals("sap", json.get("mastery").asText());
         assertEquals("auto", json.get("proficiencyMode").asText());
@@ -123,7 +124,7 @@ class VttgItemMapperTest {
         assertEquals(13, json.get("strengthRequirement").asInt());
     }
 
-    /** Прочее снаряжение без weapon/armor → раздел gear, type equipment. */
+    /** Прочее снаряжение без weapon/armor → раздел trinkets (бывш. gear), type equipment. */
     @Test
     void mapsPlainGear() {
         Item item = baseItem("backpack", "Рюкзак", "Backpack");
@@ -132,7 +133,8 @@ class VttgItemMapperTest {
 
         JsonNode json = json(item);
         assertEquals("equipment", json.get("type").asText());
-        assertEquals("gear", json.get("section").asText());
+        assertEquals("trinkets", json.get("section").asText());
+        assertEquals("trinket", json.get("equipmentCategory").asText());
         assertFalse(json.has("baseArmorAC"));
         assertFalse(json.has("weaponCategory"));
     }

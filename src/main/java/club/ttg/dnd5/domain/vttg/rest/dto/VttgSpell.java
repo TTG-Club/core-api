@@ -46,6 +46,8 @@ public class VttgSpell {
     private boolean isSRD;
     private List<String> classKeys;
     private String type;
+    /** Slug листа дерева разделов, в котором показывается запись (всегда "spells"). */
+    private String section;
 
     @JsonProperty("isSRD")
     public boolean isSRD() {

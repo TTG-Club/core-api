@@ -13,6 +13,8 @@ public class VttgCreature {
     private String id;
     private String entityType;
     private String type;
+    /** Slug листа дерева разделов, в котором показывается запись (всегда "creatures"). */
+    private String section;
     private Boolean autoSaves;
     private String name;
     private String nameEn;

@@ -93,6 +93,7 @@ public class VttgSpellMapper {
                 .isSRD(true)
                 .classKeys(classKeys(spell.getClassAffiliation()))
                 .type("spell")
+                .section("spells")
                 .build();
     }
 

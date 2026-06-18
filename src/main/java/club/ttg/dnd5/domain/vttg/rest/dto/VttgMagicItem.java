@@ -1,10 +1,13 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.util.Map;
 
 /**
  * Магический предмет в формате компендиума VTTG.
@@ -56,8 +59,24 @@ public class VttgMagicItem {
     private Integer strengthRequirement;
     /** {@code magicAttunement}: "none", "required" или "optional". */
     private String magicAttunement;
+    /** Бонус «+1/+2/+3» оружия/брони; опускается, если бонуса нет. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer magicBonus;
     /** Ключ источника из sources.json: "phb", "dmg", "srd"... */
     private String sourceKey;
+
+    /**
+     * Боевые/доспешные поля, выведенные из базового предмета (по {@code clarification}):
+     * {@code baseType}, {@code damageParts}, {@code weaponCategory}, {@code baseArmorAC} и т.д.
+     * Сериализуются как поля верхнего уровня (см. {@code VttgItemMapper}); пусто — не выводятся.
+     */
+    @Getter(AccessLevel.NONE)
+    private Map<String, Object> mechanics;
+
+    @JsonAnyGetter
+    public Map<String, Object> getMechanics() {
+        return mechanics;
+    }
 
     @Getter(AccessLevel.NONE)
     private boolean isMagical;

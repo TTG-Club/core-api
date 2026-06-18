@@ -1,6 +1,14 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
+import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.Roll;
+import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.weapon.Damage;
+import club.ttg.dnd5.domain.item.model.weapon.Weapon;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
@@ -10,15 +18,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class VttgMagicItemMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final VttgMagicItemMapper mapper =
-            new VttgMagicItemMapper(new VttgMarkupConverter(objectMapper));
+    private final ItemRepository itemRepository = mock(ItemRepository.class);
+    private final VttgMagicItemMapper mapper = new VttgMagicItemMapper(
+            new VttgMarkupConverter(objectMapper),
+            itemRepository,
+            new VttgItemMapper(new VttgMarkupConverter(objectMapper)));
 
     /** Эталон SRD-бэкапа: id = "{kebab url}-{sourceKey}", type/equipmentCategory/section/флаги магичности. */
     @Test
@@ -87,6 +103,67 @@ class VttgMagicItemMapperTest {
         assertFalse(json.has("maxDexBonus"));
         assertFalse(json.has("stealthDisadvantage"));
         assertFalse(json.has("strengthRequirement"));
+    }
+
+    /** Боевые поля и вес магического оружия выводятся из базового предмета по clarification. */
+    @Test
+    void derivesWeaponMechanicsFromBaseItemByClarification() {
+        when(itemRepository.findBaseByNameForVttgExport(anyString())).thenReturn(List.of(longsword()));
+
+        MagicItem item = new MagicItem();
+        item.setUrl("flame-tongue");
+        item.setName("Огненный язык");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setClarification("Длинный меч");
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        JsonNode json = objectMapper.valueToTree(mapper.toVttg(item));
+        assertEquals("weapon", json.get("type").asText());
+        assertEquals("longsword", json.get("baseType").asText());
+        assertEquals("martial", json.get("weaponCategory").asText());
+        assertEquals("1к8", json.get("damageParts").get(0).get("formula").asText());
+        assertEquals("slashing", json.get("damageParts").get(0).get("type").asText());
+        assertEquals(3.0, json.get("weight").asDouble());
+    }
+
+    private Item longsword() {
+        Item base = new Item();
+        base.setUrl("longsword");
+        base.setName("Длинный меч");
+        base.setEnglish("Longsword");
+        base.setDescription("");
+        base.setWeight("3 фунта");
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
+        Damage damage = new Damage();
+        Roll roll = new Roll();
+        roll.setDiceCount((short) 1);
+        roll.setDice(Dice.d8);
+        damage.setRoll(roll);
+        damage.setType(DamageType.SLASHING);
+        weapon.setDamage(damage);
+        base.setWeapon(weapon);
+        Source source = new Source();
+        source.setAcronym("PHB");
+        base.setSource(source);
+        return base;
+    }
+
+    /** Бонус «+N» из названия попадает в magicBonus; без бонуса поле опускается. */
+    @Test
+    void parsesMagicBonusFromName() {
+        MagicItem item = new MagicItem();
+        item.setUrl("plate-armor-plus-1");
+        item.setName("Латы, +1");
+        item.setCategory(MagicItemCategory.ARMOR);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals(1, mapper.toVttg(item).getMagicBonus());
+        assertNull(mapper.toVttg(wandOfFear()).getMagicBonus());
     }
 
     private MagicItem wandOfFear() {
