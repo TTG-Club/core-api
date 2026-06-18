@@ -37,6 +37,9 @@
 		<mapstruct-processor.version>1.5.5.Final</mapstruct-processor.version>
 		<liqui-base.version>4.24.0</liqui-base.version>
 		<slugify.version>3.0.7</slugify.version>
+		<!-- Поддерживаемый форк OpenFeign вместо заброшенного com.querydsl (CVE-2024-49203: HQL-инъекция через orderBy).
+		     Имя свойства отличается от управляемого Spring Boot `querydsl.version`, иначе ломается импорт com.querydsl:querydsl-bom. -->
+		<openfeign-querydsl.version>5.6.1</openfeign-querydsl.version>
 		<icu4j.version>76.1</icu4j.version>
 		<commons-io.version>2.18.0</commons-io.version>
 		<lombok.version>1.18.36</lombok.version>
@@ -166,23 +169,23 @@
 			<version>${hypersistence-utils.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.querydsl</groupId>
+			<groupId>io.github.openfeign.querydsl</groupId>
 			<artifactId>querydsl-jpa</artifactId>
-			<version>5.0.0</version>
+			<version>${openfeign-querydsl.version}</version>
 			<classifier>jakarta</classifier>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/com.querydsl/querydsl-sql -->
+		<!-- https://mvnrepository.com/artifact/io.github.openfeign.querydsl/querydsl-sql -->
 		<dependency>
-			<groupId>com.querydsl</groupId>
+			<groupId>io.github.openfeign.querydsl</groupId>
 			<artifactId>querydsl-sql</artifactId>
-			<version>5.0.0</version>
+			<version>${openfeign-querydsl.version}</version>
 		</dependency>
 		<!-- QueryDSL APT for code generation -->
 		<dependency>
-			<groupId>com.querydsl</groupId>
+			<groupId>io.github.openfeign.querydsl</groupId>
 			<artifactId>querydsl-apt</artifactId>
-			<version>5.0.0</version>
+			<version>${openfeign-querydsl.version}</version>
 			<classifier>jakarta</classifier>
 			<scope>provided</scope>
 		</dependency>
@@ -280,9 +283,9 @@
 				<dependencies>
 					<!-- Add this dependency to the plugin -->
 					<dependency>
-						<groupId>com.querydsl</groupId>
+						<groupId>io.github.openfeign.querydsl</groupId>
 						<artifactId>querydsl-apt</artifactId>
-						<version>5.0.0</version>
+						<version>${openfeign-querydsl.version}</version>
 					</dependency>
 				</dependencies>
 			</plugin>
