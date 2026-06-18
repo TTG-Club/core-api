@@ -23,6 +23,12 @@ public abstract class NamedEntity extends Timestamped implements Persistable<Str
     private String alternative;
     @Column(columnDefinition = "TEXT")
     private String description;
+    /**
+     * Оригинальное описание на английском языке (обычный текст, без разметки).
+     * Необязательное, заполняется через формы ввода на фронте.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String original;
     private String imageUrl;
     /**
      * Indicates whether this entity should be hidden from the frontend.

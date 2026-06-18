@@ -53,6 +53,7 @@ public interface BackgroundMapper {
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.imageUrl", target = "imageUrl")
     @Mapping(source = "request.abilityScores", target = "abilities")

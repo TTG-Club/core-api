@@ -39,6 +39,7 @@ public interface MagicItemMapper
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.category.clarification", target = "clarification")
     @Mapping(source = "request.category.type", target = "category")

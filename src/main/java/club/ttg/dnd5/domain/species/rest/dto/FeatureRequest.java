@@ -17,6 +17,8 @@ public class FeatureRequest {
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     private String description;
+    @Schema(description = "оригинальное описание на английском языке (обычный текст)")
+    private String original;
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
     private SourceResponse source = new SourceResponse();
 }

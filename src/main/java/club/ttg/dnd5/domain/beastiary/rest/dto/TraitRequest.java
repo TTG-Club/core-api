@@ -18,4 +18,6 @@ public class TraitRequest {
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     @Schema(description = "Описание особенности")
     private String description;
+    @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
+    private String original;
 }

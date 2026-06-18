@@ -110,6 +110,7 @@ public interface CreatureMapper {
     @Mapping(source = "request.speeds", target = "speeds")
     @Mapping(source = "request.sizes", target = "sizes")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.experience.value", target = "experience")
     @Mapping(source = "request.experience.inLair", target = "experienceInLair")

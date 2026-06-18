@@ -18,6 +18,10 @@ public class CreatureLair {
      */
     private String description;
     /**
+     * Оригинальное описание на английском языке (обычный текст)
+     */
+    private String original;
+    /**
      * Эффекты
      */
     private Collection<CreatureAction> effects;

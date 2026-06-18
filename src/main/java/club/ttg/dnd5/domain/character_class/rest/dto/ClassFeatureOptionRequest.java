@@ -28,6 +28,9 @@ public class ClassFeatureOptionRequest {
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     private String description;
 
+    @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
+    private String original;
+
     @Schema(description = "Short additional label")
     private String additional;
 

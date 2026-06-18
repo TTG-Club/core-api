@@ -30,6 +30,9 @@ public class ClassFeatureOption {
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;
 
+    @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
+    private String original;
+
     @Schema(description = "Short additional label")
     private String additional;
 
@@ -47,6 +50,7 @@ public class ClassFeatureOption {
         this.key = StringUtils.hasText(request.getKey()) ? request.getKey() : buildKey(request.getName());
         this.name = request.getName();
         this.description = request.getDescription();
+        this.original = request.getOriginal();
         this.additional = request.getAdditional();
         this.prerequisite = request.getPrerequisite();
         this.requiredClassLevel = request.getRequiredClassLevel();
@@ -57,6 +61,7 @@ public class ClassFeatureOption {
         this.key = option.getKey();
         this.name = option.getName();
         this.description = option.getDescription();
+        this.original = option.getOriginal();
         this.additional = option.getAdditional();
         this.prerequisite = option.getPrerequisite();
         this.requiredClassLevel = option.getRequiredClassLevel();

@@ -94,6 +94,7 @@ public interface ClassMapper
 
     @Mapping(target = "url", source = "request.url")
     @Mapping(target = "description", source = "request.description")
+    @Mapping(target = "original", source = "request.original")
     @Mapping(target = "imageUrl", source = "request.imageUrl")
     @Mapping(target = "hitDice", source = "request.hitDice")
     @Mapping(target = "savingThrows", source = "request.savingThrows")

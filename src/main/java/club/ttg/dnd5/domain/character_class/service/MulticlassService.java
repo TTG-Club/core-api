@@ -416,6 +416,7 @@ public class MulticlassService {
                         classFeatureScaling.getLevel() + characterLevel,
                         classFeatureScaling.getName(),
                         classFeatureScaling.getDescription(),
+                        classFeatureScaling.getOriginal(),
                         classFeatureScaling.getAdditional(),
                         classFeatureScaling.isHideInSubclasses()
                 ));
@@ -467,6 +468,7 @@ public class MulticlassService {
                         scaling.getLevel() - previousClassLevel + characterLevel,
                         scaling.getName(),
                         scaling.getDescription(),
+                        scaling.getOriginal(),
                         scaling.getAdditional(),
                         scaling.isHideInSubclasses()
                 ));
@@ -489,6 +491,7 @@ public class MulticlassService {
         copy.setLevel(classFeature.getLevel());
         copy.setName(classFeature.getName());
         copy.setDescription(classFeature.getDescription());
+        copy.setOriginal(classFeature.getOriginal());
         copy.setAdditional(classFeature.getAdditional());
         copy.setScaling(Optional.ofNullable(classFeature.getScaling())
                 .orElse(List.of())
@@ -497,6 +500,7 @@ public class MulticlassService {
                         scaling.getLevel(),
                         scaling.getName(),
                         scaling.getDescription(),
+                        scaling.getOriginal(),
                         scaling.getAdditional(),
                         scaling.isHideInSubclasses()
                 ))
