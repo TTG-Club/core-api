@@ -12,6 +12,8 @@ import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
+import club.ttg.dnd5.domain.species.model.Species;
+import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
@@ -56,7 +58,9 @@ public class VttgChangesService {
     private static final String ITEMS = SectionType.ITEM.getValue();
     private static final String BACKGROUNDS = SectionType.BACKGROUND.getValue();
     private static final String FEATS = SectionType.FEAT.getValue();
-    private static final Set<String> SUPPORTED_TYPES = Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS, FEATS);
+    private static final String SPECIES = SectionType.SPECIES.getValue();
+    private static final Set<String> SUPPORTED_TYPES =
+            Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS, FEATS, SPECIES);
 
     private final SpellRepository spellRepository;
     private final CreatureRepository creatureRepository;
@@ -64,12 +68,14 @@ public class VttgChangesService {
     private final ItemRepository itemRepository;
     private final BackgroundRepository backgroundRepository;
     private final FeatRepository featRepository;
+    private final SpeciesRepository speciesRepository;
     private final VttgSpellMapper spellMapper;
     private final VttgCreatureMapper creatureMapper;
     private final VttgMagicItemMapper magicItemMapper;
     private final VttgItemMapper itemMapper;
     private final VttgBackgroundMapper backgroundMapper;
     private final VttgFeatMapper featMapper;
+    private final VttgSpeciesMapper speciesMapper;
     private final VttgCompendiumSections compendiumSections;
 
     /** Лёгкий статус для индикатора: число изменений в окне без полезной нагрузки. */
@@ -115,6 +121,12 @@ public class VttgChangesService {
                 byType.put(FEATS, count);
             }
         }
+        if (selected.contains(SPECIES)) {
+            long count = speciesRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            if (count > 0) {
+                byType.put(SPECIES, count);
+            }
+        }
 
         long total = byType.values().stream().mapToLong(Long::longValue).sum();
         return new VttgChangesStatus(window.since(), window.until(), total > 0, total, byType);
@@ -155,6 +167,12 @@ public class VttgChangesService {
             for (Background background : backgroundRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
                 upserts.add(new VttgChange(BACKGROUNDS, background.getUrl(),
                         changedAt(background.getUpdatedAt(), background.getCreatedAt()), backgroundMapper.toVttg(background)));
+            }
+        }
+        if (selected.contains(SPECIES)) {
+            for (Species species : speciesRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
+                upserts.add(new VttgChange(SPECIES, species.getUrl(),
+                        changedAt(species.getUpdatedAt(), species.getCreatedAt()), speciesMapper.toVttg(species)));
             }
         }
         upserts.sort(Comparator.comparing(VttgChange::updatedAt,
