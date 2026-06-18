@@ -20,6 +20,8 @@ import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesResponse;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesStatus;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -49,6 +53,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class VttgChangesService {
+
+    private static final Logger log = LoggerFactory.getLogger(VttgChangesService.class);
 
     /** Защитный лаг верхней границы окна против невидимых ещё (незакоммиченных) изменений. */
     static final Duration SAFETY_LAG = Duration.ofMinutes(5);
@@ -136,60 +142,93 @@ public class VttgChangesService {
     /** Дельта окна: добавленные/изменённые видимые сущности (upserts) с полезной нагрузкой. */
     @Transactional(readOnly = true)
     public VttgChangesResponse changes(Instant sinceParam, String srdVersion, Set<String> types) {
+        long startedAt = System.nanoTime();
         Window window = window(sinceParam);
         Set<String> selected = normalizeTypes(types);
         List<VttgChange> upserts = new ArrayList<>();
+        Map<String, long[]> timings = new LinkedHashMap<>();
+        // Общий на ответ кэш разрешения базовых предметов: зачарования «+1/+2/+3» делят одну базу,
+        // поэтому повторные сканы таблицы item не выполняются.
+        Map<String, List<Item>> baseCache = new HashMap<>();
 
-        if (selected.contains(SPELLS)) {
-            for (Spell spell : spellRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
-                upserts.add(new VttgChange(SPELLS, spell.getUrl(),
+        collect(upserts, SPELLS, selected, timings,
+                () -> spellRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
+                spell -> new VttgChange(SPELLS, spell.getUrl(),
                         changedAt(spell.getUpdatedAt(), spell.getCreatedAt()), spellMapper.toVttg(spell)));
-            }
-        }
-        if (selected.contains(BESTIARY)) {
-            for (Creature creature : creatureRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
-                upserts.add(new VttgChange(BESTIARY, creature.getUrl(),
+        collect(upserts, BESTIARY, selected, timings,
+                () -> creatureRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
+                creature -> new VttgChange(BESTIARY, creature.getUrl(),
                         changedAt(creature.getUpdatedAt(), creature.getCreatedAt()), creatureMapper.toVttg(creature)));
-            }
-        }
-        if (selected.contains(MAGIC_ITEMS)) {
-            // Общий на ответ кэш разрешения базовых предметов: зачарования «+1/+2/+3» делят одну базу,
-            // поэтому повторные сканы таблицы item не выполняются.
-            Map<String, List<Item>> baseCache = new HashMap<>();
-            for (MagicItem item : magicItemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
-                upserts.add(new VttgChange(MAGIC_ITEMS, item.getUrl(),
+        collect(upserts, MAGIC_ITEMS, selected, timings,
+                () -> magicItemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
+                item -> new VttgChange(MAGIC_ITEMS, item.getUrl(),
                         changedAt(item.getUpdatedAt(), item.getCreatedAt()), magicItemMapper.toVttg(item, baseCache)));
-            }
-        }
-        if (selected.contains(ITEMS)) {
-            for (Item item : itemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
-                upserts.add(new VttgChange(ITEMS, item.getUrl(),
+        collect(upserts, ITEMS, selected, timings,
+                () -> itemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
+                item -> new VttgChange(ITEMS, item.getUrl(),
                         changedAt(item.getUpdatedAt(), item.getCreatedAt()), itemMapper.toVttg(item)));
-            }
-        }
-        if (selected.contains(BACKGROUNDS)) {
-            for (Background background : backgroundRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
-                upserts.add(new VttgChange(BACKGROUNDS, background.getUrl(),
+        collect(upserts, BACKGROUNDS, selected, timings,
+                () -> backgroundRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
+                background -> new VttgChange(BACKGROUNDS, background.getUrl(),
                         changedAt(background.getUpdatedAt(), background.getCreatedAt()), backgroundMapper.toVttg(background)));
-            }
-        }
-        if (selected.contains(SPECIES)) {
-            for (Species species : speciesRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
-                upserts.add(new VttgChange(SPECIES, species.getUrl(),
+        collect(upserts, SPECIES, selected, timings,
+                () -> speciesRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
+                species -> new VttgChange(SPECIES, species.getUrl(),
                         changedAt(species.getUpdatedAt(), species.getCreatedAt()), speciesMapper.toVttg(species)));
-            }
-        }
+
         upserts.sort(Comparator.comparing(VttgChange::updatedAt,
                 Comparator.nullsLast(Comparator.naturalOrder())));
 
         // Черты идут единым блоком в конце: разделитель категории + её черты (порядок эталона),
         // чтобы маркеры-разделители не «разъезжались» при сортировке остальных сущностей по времени.
         if (selected.contains(FEATS)) {
-            appendFeatChanges(upserts,
-                    featRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()));
+            long fetchStart = System.nanoTime();
+            List<Feat> feats = featRepository.findChangedForVttgExport(srdVersion, window.since(), window.until());
+            long mapStart = System.nanoTime();
+            appendFeatChanges(upserts, feats);
+            timings.put(FEATS, new long[]{
+                    millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), feats.size()});
         }
 
-        return new VttgChangesResponse(window.until(), upserts, compendiumSections.changesTree());
+        VttgChangesResponse response = new VttgChangesResponse(window.until(), upserts, compendiumSections.changesTree());
+        logTimings(timings, upserts.size(), millisSince(startedAt, System.nanoTime()));
+        return response;
+    }
+
+    /**
+     * Выбирает изменённые сущности одного типа и добавляет их в дельту, замеряя время выборки из БД
+     * и время маппинга (для диагностики узких мест полной выгрузки {@code since=EPOCH}).
+     */
+    private <E> void collect(List<VttgChange> target, String type, Set<String> selected,
+                             Map<String, long[]> timings,
+                             Supplier<List<E>> finder, Function<E, VttgChange> mapper) {
+        if (!selected.contains(type)) {
+            return;
+        }
+        long fetchStart = System.nanoTime();
+        List<E> entities = finder.get();
+        long mapStart = System.nanoTime();
+        for (E entity : entities) {
+            target.add(mapper.apply(entity));
+        }
+        timings.put(type, new long[]{
+                millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), entities.size()});
+    }
+
+    /** Логирует разбивку по фазам (fetch/map по типам); сериализация JSON выполняется вне этого метода. */
+    private void logTimings(Map<String, long[]> timings, int totalUpserts, long totalMs) {
+        if (!log.isInfoEnabled()) {
+            return;
+        }
+        StringBuilder breakdown = new StringBuilder();
+        timings.forEach((type, t) -> breakdown.append(' ').append(type)
+                .append("=[fetch ").append(t[0]).append("ms, map ").append(t[1]).append("ms, n=").append(t[2]).append(']'));
+        log.info("VTTG /changes: {} upserts за {}ms (fetch+map+sort, без сериализации);{}",
+                totalUpserts, totalMs, breakdown);
+    }
+
+    private static long millisSince(long fromNanos, long toNanos) {
+        return (toNanos - fromNanos) / 1_000_000;
     }
 
     /**
