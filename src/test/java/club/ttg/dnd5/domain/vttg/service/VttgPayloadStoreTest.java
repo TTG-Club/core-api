@@ -45,7 +45,7 @@ class VttgPayloadStoreTest {
         AtomicBoolean recomputed = new AtomicBoolean(false);
 
         List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt)),
-                trackedByUrls(recomputed), identity, toDto);
+                () -> null, trackedByUrls(recomputed), identity, toDto);
 
         assertEquals(1, changes.size());
         assertEquals(node("stored"), changes.get(0).data());
@@ -61,7 +61,7 @@ class VttgPayloadStoreTest {
         Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
 
         List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt)),
-                urls -> List.copyOf(urls), identity, toDto);
+                () -> null, urls -> List.copyOf(urls), identity, toDto);
 
         assertEquals(1, changes.size());
         assertEquals(objectMapper.valueToTree(Map.of("name", "fireball")), changes.get(0).data());
@@ -80,10 +80,29 @@ class VttgPayloadStoreTest {
                 .thenReturn(List.of(stored("fireball", node("old"), changedAt, VttgPayloadStore.SCHEMA_VERSION - 1)));
         AtomicBoolean recomputed = new AtomicBoolean(false);
 
-        store.load(TYPE, refs(ref("fireball", changedAt)), trackedByUrls(recomputed), identity, toDto);
+        store.load(TYPE, refs(ref("fireball", changedAt)), () -> null, trackedByUrls(recomputed), identity, toDto);
 
         assertTrue(recomputed.get(), "несовпадение версии схемы должно пересчитывать payload");
         verify(repository).saveAll(any());
+    }
+
+    @Test
+    void newerDependencyStampInvalidatesPayload() {
+        Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
+        Instant dependencyStamp = Instant.parse("2026-06-10T00:00:00Z");
+        // payload сохранён по собственному времени сущности — но зависимость изменилась позже.
+        when(repository.findByTypeAndUrlIn(eq(TYPE), any()))
+                .thenReturn(List.of(stored("flametongue", node("old"), changedAt, VttgPayloadStore.SCHEMA_VERSION)));
+        AtomicBoolean recomputed = new AtomicBoolean(false);
+
+        store.load(TYPE, refs(ref("flametongue", changedAt)), () -> dependencyStamp,
+                trackedByUrls(recomputed), identity, toDto);
+
+        assertTrue(recomputed.get(), "правка зависимости должна инвалидировать payload");
+        ArgumentCaptor<List<VttgExport>> captor = captor();
+        verify(repository).saveAll(captor.capture());
+        assertEquals(dependencyStamp, captor.getValue().get(0).getSrcUpdatedAt(),
+                "сохраняется отметка зависимости как актуальная");
     }
 
     @Test
@@ -92,14 +111,14 @@ class VttgPayloadStoreTest {
         when(repository.findByTypeAndUrlIn(eq(TYPE), any())).thenReturn(List.of());
 
         List<VttgChange> changes = store.load(TYPE, refs(ref("ghost", changedAt)),
-                urls -> List.of(), identity, toDto);
+                () -> null, urls -> List.of(), identity, toDto);
 
         assertTrue(changes.isEmpty());
     }
 
     @Test
     void emptyWindowReturnsEmptyWithoutQuery() {
-        List<VttgChange> changes = store.load(TYPE, List::of, urls -> List.of(), identity, toDto);
+        List<VttgChange> changes = store.load(TYPE, List::of, () -> null, urls -> List.of(), identity, toDto);
 
         assertTrue(changes.isEmpty());
         verify(repository, never()).findByTypeAndUrlIn(anyString(), any());

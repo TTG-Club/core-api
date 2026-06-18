@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.item.repository;
 
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -59,6 +60,30 @@ public interface ItemRepository extends JpaRepository<Item, String>,
     List<Item> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
                                         @Param("since") Instant since,
                                         @Param("until") Instant until);
+
+    /** Лёгкие ссылки (url + время изменения) видимых предметов окна — без гидрации jsonb. */
+    @Query("""
+            select i.url as url, coalesce(i.updatedAt, i.createdAt) as changedAt from Item i
+            where (:srdVersion is null or i.srdVersion = :srdVersion)
+              and i.isHiddenEntity = false
+              and coalesce(i.updatedAt, i.createdAt) > :since
+              and coalesce(i.updatedAt, i.createdAt) <= :until
+            """)
+    List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("since") Instant since,
+                                                     @Param("until") Instant until);
+
+    /** Полные предметы по набору url — для пересчёта недостающих payload (fallback). */
+    @EntityGraph(attributePaths = {"source"})
+    @Query("select i from Item i where i.url in :urls")
+    List<Item> findAllForVttgExportByUrls(@Param("urls") Collection<String> urls);
+
+    /**
+     * Максимум времени изменения видимых предметов — «отметка зависимостей» для магических предметов
+     * (их payload выводит поля из базового предмета; правка предмета должна инвалидировать payload).
+     */
+    @Query("select max(coalesce(i.updatedAt, i.createdAt)) from Item i where i.isHiddenEntity = false")
+    Instant maxChangedAtForVttgExport();
 
     /**
      * Базовые (видимые) предметы с точным совпадением имени/английского названия — для разрешения

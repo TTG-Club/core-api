@@ -59,6 +59,13 @@ public interface FeatRepository extends JpaRepository<Feat, String> {
                                         @Param("until") Instant until);
 
     /**
+     * Максимум времени изменения видимых черт — «отметка зависимостей» для предысторий
+     * (их payload включает данные связанной черты; правка черты должна инвалидировать payload).
+     */
+    @Query("select max(coalesce(f.updatedAt, f.createdAt)) from Feat f where f.isHiddenEntity = false")
+    Instant maxChangedAtForVttgExport();
+
+    /**
      * Число видимых черт, изменённых в окне (since, until] — для индикатора VTTG.
      */
     @Query("""

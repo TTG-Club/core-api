@@ -164,39 +164,40 @@ public class VttgChangesService {
         long startedAt = System.nanoTime();
         Window window = window(sinceParam);
         Set<String> selected = normalizeTypes(types);
-        // Общий на тип кэш разрешения базовых предметов: зачарования «+1/+2/+3» делят одну базу,
-        // поэтому повторные сканы таблицы item не выполняются (используется только задачей magic-items).
+        // Общий на ответ кэш разрешения базовых предметов: зачарования «+1/+2/+3» делят одну базу,
+        // поэтому повторные сканы таблицы item не выполняются (используется только при пересчёте magic-items).
         Map<String, List<Item>> baseCache = new HashMap<>();
 
-        // Каждый тип выбирается и маппится параллельно в своей read-only транзакции: основная стоимость —
-        // гидрация jsonb и сетевые задержки до БД, поэтому перекрытие ожиданий заметно снижает латентность.
+        // Все разделы с данными собираются единообразно из предрассчитанных payload (vttg_export):
+        // в окне берётся лёгкая проекция (url + время), payload читается из таблицы, недостающее
+        // пересчитывается на лету и сохраняется. Типы с зависимостями передают «отметку зависимостей»
+        // (max времени изменения зависимой таблицы), которая инвалидирует payload при правке зависимости.
         Map<String, CompletableFuture<TypeResult>> futures = new LinkedHashMap<>();
-        // Заклинания и существа (без кросс-сущностных зависимостей, ~91% стоимости) читаются из
-        // предрассчитанных payload (vttg_export); недостающие пересчитываются на лету и сохраняются.
         submitStore(futures, SPELLS, selected,
                 () -> spellRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
-                spellRepository::findAllForVttgExportByUrls,
-                Spell::getUrl, spellMapper::toVttg);
+                () -> null,
+                spellRepository::findAllForVttgExportByUrls, Spell::getUrl, spellMapper::toVttg);
         submitStore(futures, BESTIARY, selected,
                 () -> creatureRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
-                creatureRepository::findAllForVttgExportByUrls,
-                Creature::getUrl, creatureMapper::toVttg);
-        submit(futures, MAGIC_ITEMS, selected,
-                () -> magicItemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
-                item -> new VttgChange(MAGIC_ITEMS, item.getUrl(),
-                        changedAt(item.getUpdatedAt(), item.getCreatedAt()), magicItemMapper.toVttg(item, baseCache)));
-        submit(futures, ITEMS, selected,
-                () -> itemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
-                item -> new VttgChange(ITEMS, item.getUrl(),
-                        changedAt(item.getUpdatedAt(), item.getCreatedAt()), itemMapper.toVttg(item)));
-        submit(futures, BACKGROUNDS, selected,
-                () -> backgroundRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
-                background -> new VttgChange(BACKGROUNDS, background.getUrl(),
-                        changedAt(background.getUpdatedAt(), background.getCreatedAt()), backgroundMapper.toVttg(background)));
-        submit(futures, SPECIES, selected,
-                () -> speciesRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
-                species -> new VttgChange(SPECIES, species.getUrl(),
-                        changedAt(species.getUpdatedAt(), species.getCreatedAt()), speciesMapper.toVttg(species)));
+                () -> null,
+                creatureRepository::findAllForVttgExportByUrls, Creature::getUrl, creatureMapper::toVttg);
+        submitStore(futures, ITEMS, selected,
+                () -> itemRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                () -> null,
+                itemRepository::findAllForVttgExportByUrls, Item::getUrl, itemMapper::toVttg);
+        submitStore(futures, MAGIC_ITEMS, selected,
+                () -> magicItemRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                itemRepository::maxChangedAtForVttgExport,
+                magicItemRepository::findAllForVttgExportByUrls, MagicItem::getUrl,
+                item -> magicItemMapper.toVttg(item, baseCache));
+        submitStore(futures, BACKGROUNDS, selected,
+                () -> backgroundRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                featRepository::maxChangedAtForVttgExport,
+                backgroundRepository::findAllForVttgExportByUrls, Background::getUrl, backgroundMapper::toVttg);
+        submitStore(futures, SPECIES, selected,
+                () -> speciesRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                speciesRepository::maxChangedAtForVttgExport,
+                speciesRepository::findAllForVttgExportByUrls, Species::getUrl, speciesMapper::toVttg);
 
         // Черты выбираются параллельно, но в дельту идут единым блоком ПОСЛЕ сортировки остальных:
         // разделитель категории + её черты в порядке эталона, иначе маркеры «разъедутся» при сортировке.
@@ -233,34 +234,12 @@ public class VttgChangesService {
     }
 
     /**
-     * Планирует параллельную выборку+маппинг одного типа (если он выбран) в отдельной read-only
-     * транзакции, замеряя время выборки из БД и время маппинга. Сущности полностью маппятся в DTO
-     * внутри транзакции, поэтому наружу не утекают lazy-ссылки на сущности.
-     */
-    private <E> void submit(Map<String, CompletableFuture<TypeResult>> futures, String type, Set<String> selected,
-                            Supplier<List<E>> finder, Function<E, VttgChange> mapper) {
-        if (!selected.contains(type)) {
-            return;
-        }
-        futures.put(type, supplyAsync(type, () -> {
-            long fetchStart = System.nanoTime();
-            List<E> entities = finder.get();
-            long mapStart = System.nanoTime();
-            List<VttgChange> changes = new ArrayList<>(entities.size());
-            for (E entity : entities) {
-                changes.add(mapper.apply(entity));
-            }
-            return new TypeResult(type, changes,
-                    millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), entities.size());
-        }));
-    }
-
-    /**
      * Планирует параллельную сборку типа из предрассчитанных payload ({@link VttgPayloadStore}).
      * Транзакцией управляет store (она записываемая — пересчитанные payload сохраняются).
      */
     private <E> void submitStore(Map<String, CompletableFuture<TypeResult>> futures, String type, Set<String> selected,
                                  Supplier<List<VttgEntityRef>> refsFinder,
+                                 Supplier<Instant> dependencyStampFinder,
                                  Function<Collection<String>, List<E>> byUrlsFinder,
                                  Function<E, String> urlOf, Function<E, Object> toDto) {
         if (!selected.contains(type)) {
@@ -268,7 +247,8 @@ public class VttgChangesService {
         }
         futures.put(type, CompletableFuture.supplyAsync(() -> {
             long start = System.nanoTime();
-            List<VttgChange> changes = payloadStore.load(type, refsFinder, byUrlsFinder, urlOf, toDto);
+            List<VttgChange> changes =
+                    payloadStore.load(type, refsFinder, dependencyStampFinder, byUrlsFinder, urlOf, toDto);
             return new TypeResult(type, changes, millisSince(start, System.nanoTime()), 0, changes.size());
         }, exportExecutor));
     }

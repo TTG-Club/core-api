@@ -45,15 +45,19 @@ public class VttgPayloadStore {
      * недостающие. Выполняется в собственной (записываемой) транзакции — вызывается параллельно
      * для каждого типа.
      *
-     * @param type        тип раздела VTTG (например, "spells")
-     * @param refsFinder  лёгкая выборка ссылок (url + changedAt) сущностей окна
+     * @param type         тип раздела VTTG (например, "spells")
+     * @param refsFinder   лёгкая выборка ссылок (url + changedAt) сущностей окна
+     * @param dependencyStampFinder отметка зависимостей: максимум времени изменения зависимой
+     *                     таблицы (например, базовых предметов для магических). Меняется при правке
+     *                     зависимости и инвалидирует payload. {@code () -> null} — зависимостей нет
      * @param byUrlsFinder выборка полных сущностей по набору url (для пересчёта)
-     * @param urlOf       извлечение url из сущности
-     * @param toDto       маппинг сущности в VTTG-DTO
+     * @param urlOf        извлечение url из сущности
+     * @param toDto        маппинг сущности в VTTG-DTO
      */
     @Transactional
     public <E> List<VttgChange> load(String type,
                                      Supplier<List<VttgEntityRef>> refsFinder,
+                                     Supplier<Instant> dependencyStampFinder,
                                      Function<Collection<String>, List<E>> byUrlsFinder,
                                      Function<E, String> urlOf,
                                      Function<E, Object> toDto) {
@@ -61,20 +65,25 @@ public class VttgPayloadStore {
         if (refs.isEmpty()) {
             return List.of();
         }
+        Instant dependencyStamp = dependencyStampFinder.get();
 
-        Map<String, Instant> changedAt = new LinkedHashMap<>();
+        // Отметка валидности = max(время изменения сущности, отметка зависимостей). Правка как самой
+        // сущности, так и её зависимости сдвигает отметку и делает сохранённый payload устаревшим.
+        Map<String, Instant> windowStamp = new LinkedHashMap<>();
+        Map<String, Instant> validStamp = new LinkedHashMap<>();
         for (VttgEntityRef ref : refs) {
-            changedAt.put(ref.getUrl(), ref.getChangedAt());
+            windowStamp.put(ref.getUrl(), ref.getChangedAt());
+            validStamp.put(ref.getUrl(), latest(ref.getChangedAt(), dependencyStamp));
         }
 
         Map<String, JsonNode> payloads = new LinkedHashMap<>();
         List<String> missing = new ArrayList<>();
-        for (VttgExport stored : repository.findByTypeAndUrlIn(type, changedAt.keySet())) {
-            if (isFresh(stored, changedAt.get(stored.getUrl()))) {
+        for (VttgExport stored : repository.findByTypeAndUrlIn(type, windowStamp.keySet())) {
+            if (isFresh(stored, validStamp.get(stored.getUrl()))) {
                 payloads.put(stored.getUrl(), stored.getPayload());
             }
         }
-        for (String url : changedAt.keySet()) {
+        for (String url : windowStamp.keySet()) {
             if (!payloads.containsKey(url)) {
                 missing.add(url);
             }
@@ -86,7 +95,7 @@ public class VttgPayloadStore {
                 String url = urlOf.apply(entity);
                 JsonNode payload = objectMapper.valueToTree(toDto.apply(entity));
                 payloads.put(url, payload);
-                recomputed.add(new VttgExport(type, url, payload, changedAt.get(url), SCHEMA_VERSION));
+                recomputed.add(new VttgExport(type, url, payload, validStamp.get(url), SCHEMA_VERSION));
             }
             repository.saveAll(recomputed);
         }
@@ -102,10 +111,20 @@ public class VttgPayloadStore {
         return changes;
     }
 
-    private boolean isFresh(VttgExport stored, Instant expectedChangedAt) {
+    private boolean isFresh(VttgExport stored, Instant expectedStamp) {
         return stored.getSchemaVer() == SCHEMA_VERSION
-                && expectedChangedAt != null
+                && expectedStamp != null
                 && stored.getSrcUpdatedAt() != null
-                && stored.getSrcUpdatedAt().toEpochMilli() == expectedChangedAt.toEpochMilli();
+                && stored.getSrcUpdatedAt().toEpochMilli() == expectedStamp.toEpochMilli();
+    }
+
+    private Instant latest(Instant changedAt, Instant dependencyStamp) {
+        if (dependencyStamp == null) {
+            return changedAt;
+        }
+        if (changedAt == null || dependencyStamp.isAfter(changedAt)) {
+            return dependencyStamp;
+        }
+        return changedAt;
     }
 }
