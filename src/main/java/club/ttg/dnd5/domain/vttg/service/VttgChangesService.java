@@ -5,6 +5,9 @@ import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.model.SectionType;
+import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
@@ -52,18 +55,21 @@ public class VttgChangesService {
     private static final String MAGIC_ITEMS = SectionType.MAGIC_ITEM.getValue();
     private static final String ITEMS = SectionType.ITEM.getValue();
     private static final String BACKGROUNDS = SectionType.BACKGROUND.getValue();
-    private static final Set<String> SUPPORTED_TYPES = Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS);
+    private static final String FEATS = SectionType.FEAT.getValue();
+    private static final Set<String> SUPPORTED_TYPES = Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS, FEATS);
 
     private final SpellRepository spellRepository;
     private final CreatureRepository creatureRepository;
     private final MagicItemRepository magicItemRepository;
     private final ItemRepository itemRepository;
     private final BackgroundRepository backgroundRepository;
+    private final FeatRepository featRepository;
     private final VttgSpellMapper spellMapper;
     private final VttgCreatureMapper creatureMapper;
     private final VttgMagicItemMapper magicItemMapper;
     private final VttgItemMapper itemMapper;
     private final VttgBackgroundMapper backgroundMapper;
+    private final VttgFeatMapper featMapper;
     private final VttgCompendiumSections compendiumSections;
 
     /** Лёгкий статус для индикатора: число изменений в окне без полезной нагрузки. */
@@ -101,6 +107,12 @@ public class VttgChangesService {
             long count = backgroundRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
             if (count > 0) {
                 byType.put(BACKGROUNDS, count);
+            }
+        }
+        if (selected.contains(FEATS)) {
+            long count = featRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            if (count > 0) {
+                byType.put(FEATS, count);
             }
         }
 
@@ -145,11 +157,55 @@ public class VttgChangesService {
                         changedAt(background.getUpdatedAt(), background.getCreatedAt()), backgroundMapper.toVttg(background)));
             }
         }
-
         upserts.sort(Comparator.comparing(VttgChange::updatedAt,
                 Comparator.nullsLast(Comparator.naturalOrder())));
 
+        // Черты идут единым блоком в конце: разделитель категории + её черты (порядок эталона),
+        // чтобы маркеры-разделители не «разъезжались» при сортировке остальных сущностей по времени.
+        if (selected.contains(FEATS)) {
+            appendFeatChanges(upserts,
+                    featRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()));
+        }
+
         return new VttgChangesResponse(window.until(), upserts, compendiumSections.changesTree());
+    }
+
+    /**
+     * Добавляет черты в дельту единым блоком: для каждой непустой категории — её разделитель
+     * ({@code type:"separator"}) и следом черты этой категории. Порядок категорий и подписи
+     * разделителей задаёт {@link VttgFeatMapper}; черты внутри категории — по имени.
+     * Черты без категории идут в конце без разделителя.
+     */
+    private void appendFeatChanges(List<VttgChange> target, List<Feat> feats) {
+        Map<FeatCategory, List<Feat>> grouped = new LinkedHashMap<>();
+        for (FeatCategory category : featMapper.separatorOrder()) {
+            grouped.put(category, new ArrayList<>());
+        }
+        List<Feat> uncategorized = new ArrayList<>();
+        for (Feat feat : feats) {
+            List<Feat> bucket = feat.getCategory() == null ? uncategorized : grouped.get(feat.getCategory());
+            bucket.add(feat);
+        }
+
+        Comparator<Feat> byName = Comparator.comparing(Feat::getName,
+                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        for (Map.Entry<FeatCategory, List<Feat>> entry : grouped.entrySet()) {
+            List<Feat> group = entry.getValue();
+            if (group.isEmpty()) {
+                continue;
+            }
+            Map<String, Object> separator = featMapper.separator(entry.getKey());
+            target.add(new VttgChange(FEATS, "separator/" + separator.get("id"), null, separator));
+            group.sort(byName);
+            group.forEach(feat -> target.add(featChange(feat)));
+        }
+        uncategorized.sort(byName);
+        uncategorized.forEach(feat -> target.add(featChange(feat)));
+    }
+
+    private VttgChange featChange(Feat feat) {
+        return new VttgChange(FEATS, feat.getUrl(),
+                changedAt(feat.getUpdatedAt(), feat.getCreatedAt()), featMapper.toVttg(feat));
     }
 
     private Window window(Instant sinceParam) {
