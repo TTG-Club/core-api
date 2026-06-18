@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.background.model.Background;
+import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.model.SectionType;
@@ -49,16 +51,19 @@ public class VttgChangesService {
     private static final String BESTIARY = SectionType.BESTIARY.getValue();
     private static final String MAGIC_ITEMS = SectionType.MAGIC_ITEM.getValue();
     private static final String ITEMS = SectionType.ITEM.getValue();
-    private static final Set<String> SUPPORTED_TYPES = Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS);
+    private static final String BACKGROUNDS = SectionType.BACKGROUND.getValue();
+    private static final Set<String> SUPPORTED_TYPES = Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS);
 
     private final SpellRepository spellRepository;
     private final CreatureRepository creatureRepository;
     private final MagicItemRepository magicItemRepository;
     private final ItemRepository itemRepository;
+    private final BackgroundRepository backgroundRepository;
     private final VttgSpellMapper spellMapper;
     private final VttgCreatureMapper creatureMapper;
     private final VttgMagicItemMapper magicItemMapper;
     private final VttgItemMapper itemMapper;
+    private final VttgBackgroundMapper backgroundMapper;
     private final VttgCompendiumSections compendiumSections;
 
     /** Лёгкий статус для индикатора: число изменений в окне без полезной нагрузки. */
@@ -90,6 +95,12 @@ public class VttgChangesService {
             long count = itemRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
             if (count > 0) {
                 byType.put(ITEMS, count);
+            }
+        }
+        if (selected.contains(BACKGROUNDS)) {
+            long count = backgroundRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            if (count > 0) {
+                byType.put(BACKGROUNDS, count);
             }
         }
 
@@ -126,6 +137,12 @@ public class VttgChangesService {
             for (Item item : itemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
                 upserts.add(new VttgChange(ITEMS, item.getUrl(),
                         changedAt(item.getUpdatedAt(), item.getCreatedAt()), itemMapper.toVttg(item)));
+            }
+        }
+        if (selected.contains(BACKGROUNDS)) {
+            for (Background background : backgroundRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
+                upserts.add(new VttgChange(BACKGROUNDS, background.getUrl(),
+                        changedAt(background.getUpdatedAt(), background.getCreatedAt()), backgroundMapper.toVttg(background)));
             }
         }
 
