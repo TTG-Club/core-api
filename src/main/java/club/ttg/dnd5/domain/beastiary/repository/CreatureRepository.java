@@ -64,22 +64,6 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
     List<Creature> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
 
     /**
-     * Видимые существа, изменённые в окне (since, until] — для upserts дельты VTTG.
-     * Сортировка по времени изменения выполняется на стороне приложения.
-     */
-    @EntityGraph(attributePaths = {"source"})
-    @Query("""
-            select c from Creature c
-            where (:srdVersion is null or c.srdVersion = :srdVersion)
-              and c.isHiddenEntity = false
-              and coalesce(c.updatedAt, c.createdAt) > :since
-              and coalesce(c.updatedAt, c.createdAt) <= :until
-            """)
-    List<Creature> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
-                                            @Param("since") Instant since,
-                                            @Param("until") Instant until);
-
-    /**
      * Лёгкие ссылки (url + время изменения) видимых существ окна — без гидрации jsonb,
      * для сопоставления с предрассчитанными payload в {@code vttg_export}.
      */

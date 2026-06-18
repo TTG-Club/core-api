@@ -40,37 +40,11 @@ public interface SpeciesRepository extends JpaRepository<Species, String> {
     List<String> findDistinctSrdVersions();
 
     /**
-     * Видимые верхнеуровневые виды (без родителя), изменённые в окне (since, until] — для upserts
-     * дельты VTTG. Происхождения (дочерние виды) отдельными записями не выгружаются: они
-     * сворачиваются в {@code choices} умения родителя. Родитель попадает в дельту и тогда, когда
-     * в окне изменилось только его происхождение (подзапрос {@code exists}), иначе правка дочернего
-     * вида не доехала бы до клиента. Сортировка по времени изменения — на стороне приложения.
-     */
-    @EntityGraph(attributePaths = {"source", "lineages"})
-    @Query("""
-            select distinct s from Species s
-            where (:srdVersion is null or s.srdVersion = :srdVersion)
-              and s.isHiddenEntity = false
-              and s.parent is null
-              and (
-                    (coalesce(s.updatedAt, s.createdAt) > :since and coalesce(s.updatedAt, s.createdAt) <= :until)
-                 or exists (
-                        select 1 from Species l
-                        where l.parent = s
-                          and l.isHiddenEntity = false
-                          and coalesce(l.updatedAt, l.createdAt) > :since
-                          and coalesce(l.updatedAt, l.createdAt) <= :until
-                    )
-              )
-            """)
-    List<Species> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
-                                           @Param("since") Instant since,
-                                           @Param("until") Instant until);
-
-    /**
-     * Лёгкие ссылки (url + время изменения) видов окна — без гидрации jsonb. Логика членства
-     * совпадает с {@link #findChangedForVttgExport}: верхнеуровневые виды, изменённые сами либо
-     * через своё происхождение. Время — собственное время вида (как в полной выборке).
+     * Лёгкие ссылки (url + время изменения) видов окна — без гидрации jsonb. Возвращает видимые
+     * верхнеуровневые виды (без родителя), изменённые сами либо через своё происхождение (подзапрос
+     * {@code exists}), иначе правка дочернего вида не доехала бы до клиента. Происхождения отдельными
+     * записями не выгружаются — они сворачиваются в {@code choices} умения родителя. Время —
+     * собственное время вида.
      */
     @Query("""
             select s.url as url, coalesce(s.updatedAt, s.createdAt) as changedAt from Species s

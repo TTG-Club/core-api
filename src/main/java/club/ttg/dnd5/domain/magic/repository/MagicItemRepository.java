@@ -52,22 +52,6 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
             """)
     List<MagicItem> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
 
-    /**
-     * Видимые магические предметы, изменённые в окне (since, until] — для upserts дельты VTTG.
-     * Сортировка по времени изменения выполняется на стороне приложения.
-     */
-    @EntityGraph(attributePaths = {"source"})
-    @Query("""
-            select mi from MagicItem mi
-            where (:srdVersion is null or mi.srdVersion = :srdVersion)
-              and mi.isHiddenEntity = false
-              and coalesce(mi.updatedAt, mi.createdAt) > :since
-              and coalesce(mi.updatedAt, mi.createdAt) <= :until
-            """)
-    List<MagicItem> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
-                                             @Param("since") Instant since,
-                                             @Param("until") Instant until);
-
     /** Лёгкие ссылки (url + время изменения) видимых магических предметов окна — без гидрации jsonb. */
     @Query("""
             select mi.url as url, coalesce(mi.updatedAt, mi.createdAt) as changedAt from MagicItem mi

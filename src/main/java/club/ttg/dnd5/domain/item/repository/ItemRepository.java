@@ -45,22 +45,6 @@ public interface ItemRepository extends JpaRepository<Item, String>,
         """, nativeQuery = true)
     List<String> findDistinctSrdVersions();
 
-    /**
-     * Видимые предметы, изменённые в окне (since, until] — для upserts дельты VTTG.
-     * Сортировка по времени изменения выполняется на стороне приложения.
-     */
-    @EntityGraph(attributePaths = {"source"})
-    @Query("""
-            select i from Item i
-            where (:srdVersion is null or i.srdVersion = :srdVersion)
-              and i.isHiddenEntity = false
-              and coalesce(i.updatedAt, i.createdAt) > :since
-              and coalesce(i.updatedAt, i.createdAt) <= :until
-            """)
-    List<Item> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
-                                        @Param("since") Instant since,
-                                        @Param("until") Instant until);
-
     /** Лёгкие ссылки (url + время изменения) видимых предметов окна — без гидрации jsonb. */
     @Query("""
             select i.url as url, coalesce(i.updatedAt, i.createdAt) as changedAt from Item i

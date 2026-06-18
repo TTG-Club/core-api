@@ -96,26 +96,6 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     List<Spell> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
 
     /**
-     * Видимые заклинания, изменённые в окне (since, until] — для upserts дельты VTTG.
-     * Сортировка по времени изменения выполняется на стороне приложения
-     * (SELECT DISTINCT + ORDER BY по выражению несовместим с PostgreSQL).
-     */
-    @EntityGraph(attributePaths = {
-            "source",
-            "classAffiliation"
-    })
-    @Query("""
-            select distinct s from Spell s
-            where (:srdVersion is null or s.srdVersion = :srdVersion)
-              and s.isHiddenEntity = false
-              and coalesce(s.updatedAt, s.createdAt) > :since
-              and coalesce(s.updatedAt, s.createdAt) <= :until
-            """)
-    List<Spell> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
-                                         @Param("since") Instant since,
-                                         @Param("until") Instant until);
-
-    /**
      * Лёгкие ссылки (url + время изменения) видимых заклинаний окна — без гидрации jsonb,
      * для сопоставления с предрассчитанными payload в {@code vttg_export}.
      */
