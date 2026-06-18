@@ -25,7 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,6 +40,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -86,6 +91,8 @@ public class VttgChangesService {
     private final VttgFeatMapper featMapper;
     private final VttgSpeciesMapper speciesMapper;
     private final VttgCompendiumSections compendiumSections;
+    private final PlatformTransactionManager transactionManager;
+    private final ExecutorService exportExecutor;
 
     /** Лёгкий статус для индикатора: число изменений в окне без полезной нагрузки. */
     @Transactional(readOnly = true)
@@ -150,54 +157,69 @@ public class VttgChangesService {
      * {@code until} в кэшированном ответе «заморожена», что безопасно — повторная выборка идемпотентна.</p>
      */
     @Cacheable(cacheNames = CacheConfig.VTTG_FULL_EXPORT, condition = "#sinceParam == null", key = "{#srdVersion, #types}")
-    @Transactional(readOnly = true)
     public VttgChangesResponse changes(Instant sinceParam, String srdVersion, Set<String> types) {
         long startedAt = System.nanoTime();
         Window window = window(sinceParam);
         Set<String> selected = normalizeTypes(types);
-        List<VttgChange> upserts = new ArrayList<>();
-        Map<String, long[]> timings = new LinkedHashMap<>();
-        // Общий на ответ кэш разрешения базовых предметов: зачарования «+1/+2/+3» делят одну базу,
-        // поэтому повторные сканы таблицы item не выполняются.
+        // Общий на тип кэш разрешения базовых предметов: зачарования «+1/+2/+3» делят одну базу,
+        // поэтому повторные сканы таблицы item не выполняются (используется только задачей magic-items).
         Map<String, List<Item>> baseCache = new HashMap<>();
 
-        collect(upserts, SPELLS, selected, timings,
+        // Каждый тип выбирается и маппится параллельно в своей read-only транзакции: основная стоимость —
+        // гидрация jsonb и сетевые задержки до БД, поэтому перекрытие ожиданий заметно снижает латентность.
+        Map<String, CompletableFuture<TypeResult>> futures = new LinkedHashMap<>();
+        submit(futures, SPELLS, selected,
                 () -> spellRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
                 spell -> new VttgChange(SPELLS, spell.getUrl(),
                         changedAt(spell.getUpdatedAt(), spell.getCreatedAt()), spellMapper.toVttg(spell)));
-        collect(upserts, BESTIARY, selected, timings,
+        submit(futures, BESTIARY, selected,
                 () -> creatureRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
                 creature -> new VttgChange(BESTIARY, creature.getUrl(),
                         changedAt(creature.getUpdatedAt(), creature.getCreatedAt()), creatureMapper.toVttg(creature)));
-        collect(upserts, MAGIC_ITEMS, selected, timings,
+        submit(futures, MAGIC_ITEMS, selected,
                 () -> magicItemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
                 item -> new VttgChange(MAGIC_ITEMS, item.getUrl(),
                         changedAt(item.getUpdatedAt(), item.getCreatedAt()), magicItemMapper.toVttg(item, baseCache)));
-        collect(upserts, ITEMS, selected, timings,
+        submit(futures, ITEMS, selected,
                 () -> itemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
                 item -> new VttgChange(ITEMS, item.getUrl(),
                         changedAt(item.getUpdatedAt(), item.getCreatedAt()), itemMapper.toVttg(item)));
-        collect(upserts, BACKGROUNDS, selected, timings,
+        submit(futures, BACKGROUNDS, selected,
                 () -> backgroundRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
                 background -> new VttgChange(BACKGROUNDS, background.getUrl(),
                         changedAt(background.getUpdatedAt(), background.getCreatedAt()), backgroundMapper.toVttg(background)));
-        collect(upserts, SPECIES, selected, timings,
+        submit(futures, SPECIES, selected,
                 () -> speciesRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
                 species -> new VttgChange(SPECIES, species.getUrl(),
                         changedAt(species.getUpdatedAt(), species.getCreatedAt()), speciesMapper.toVttg(species)));
 
+        // Черты выбираются параллельно, но в дельту идут единым блоком ПОСЛЕ сортировки остальных:
+        // разделитель категории + её черты в порядке эталона, иначе маркеры «разъедутся» при сортировке.
+        CompletableFuture<TypeResult> featsFuture = !selected.contains(FEATS) ? null
+                : supplyAsync(FEATS, () -> {
+                    long fetchStart = System.nanoTime();
+                    List<Feat> feats = featRepository.findChangedForVttgExport(srdVersion, window.since(), window.until());
+                    long mapStart = System.nanoTime();
+                    List<VttgChange> block = new ArrayList<>();
+                    appendFeatChanges(block, feats);
+                    return new TypeResult(FEATS, block,
+                            millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), feats.size());
+                });
+
+        Map<String, long[]> timings = new LinkedHashMap<>();
+        List<VttgChange> upserts = new ArrayList<>();
+        for (CompletableFuture<TypeResult> future : futures.values()) {
+            TypeResult result = future.join();
+            upserts.addAll(result.changes());
+            timings.put(result.type(), new long[]{result.fetchMs(), result.mapMs(), result.count()});
+        }
         upserts.sort(Comparator.comparing(VttgChange::updatedAt,
                 Comparator.nullsLast(Comparator.naturalOrder())));
 
-        // Черты идут единым блоком в конце: разделитель категории + её черты (порядок эталона),
-        // чтобы маркеры-разделители не «разъезжались» при сортировке остальных сущностей по времени.
-        if (selected.contains(FEATS)) {
-            long fetchStart = System.nanoTime();
-            List<Feat> feats = featRepository.findChangedForVttgExport(srdVersion, window.since(), window.until());
-            long mapStart = System.nanoTime();
-            appendFeatChanges(upserts, feats);
-            timings.put(FEATS, new long[]{
-                    millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), feats.size()});
+        if (featsFuture != null) {
+            TypeResult result = featsFuture.join();
+            upserts.addAll(result.changes());
+            timings.put(result.type(), new long[]{result.fetchMs(), result.mapMs(), result.count()});
         }
 
         VttgChangesResponse response = new VttgChangesResponse(window.until(), upserts, compendiumSections.changesTree());
@@ -206,23 +228,38 @@ public class VttgChangesService {
     }
 
     /**
-     * Выбирает изменённые сущности одного типа и добавляет их в дельту, замеряя время выборки из БД
-     * и время маппинга (для диагностики узких мест полной выгрузки {@code since=EPOCH}).
+     * Планирует параллельную выборку+маппинг одного типа (если он выбран) в отдельной read-only
+     * транзакции, замеряя время выборки из БД и время маппинга. Сущности полностью маппятся в DTO
+     * внутри транзакции, поэтому наружу не утекают lazy-ссылки на сущности.
      */
-    private <E> void collect(List<VttgChange> target, String type, Set<String> selected,
-                             Map<String, long[]> timings,
-                             Supplier<List<E>> finder, Function<E, VttgChange> mapper) {
+    private <E> void submit(Map<String, CompletableFuture<TypeResult>> futures, String type, Set<String> selected,
+                            Supplier<List<E>> finder, Function<E, VttgChange> mapper) {
         if (!selected.contains(type)) {
             return;
         }
-        long fetchStart = System.nanoTime();
-        List<E> entities = finder.get();
-        long mapStart = System.nanoTime();
-        for (E entity : entities) {
-            target.add(mapper.apply(entity));
-        }
-        timings.put(type, new long[]{
-                millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), entities.size()});
+        futures.put(type, supplyAsync(type, () -> {
+            long fetchStart = System.nanoTime();
+            List<E> entities = finder.get();
+            long mapStart = System.nanoTime();
+            List<VttgChange> changes = new ArrayList<>(entities.size());
+            for (E entity : entities) {
+                changes.add(mapper.apply(entity));
+            }
+            return new TypeResult(type, changes,
+                    millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), entities.size());
+        }));
+    }
+
+    /** Запускает задачу в пуле экспорта, оборачивая её в отдельную read-only транзакцию. */
+    private CompletableFuture<TypeResult> supplyAsync(String type, Supplier<TypeResult> task) {
+        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+        transaction.setReadOnly(true);
+        transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return CompletableFuture.supplyAsync(() -> transaction.execute(status -> task.get()), exportExecutor);
+    }
+
+    /** Результат обработки одного типа: готовые upserts и тайминги фаз. */
+    private record TypeResult(String type, List<VttgChange> changes, long fetchMs, long mapMs, int count) {
     }
 
     /** Логирует разбивку по фазам (fetch/map по типам); сериализация JSON выполняется вне этого метода. */
