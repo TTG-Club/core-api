@@ -28,9 +28,10 @@ class VttgFeatMapperTest {
         assertEquals("Оборона", json.get("name").asText());
         assertEquals("Defense", json.get("nameEn").asText());
         assertEquals("feat", json.get("type").asText());
+        assertEquals("feats", json.get("section").asText());
         assertEquals("feat", json.get("featureType").asText());
         assertEquals("Черты", json.get("typeLabel").asText());
-        assertEquals("PHB 2024", json.get("source").asText());
+        assertFalse(json.has("source"));
         assertEquals("phb", json.get("sourceKey").asText());
         assertTrue(json.get("isSRD").asBoolean());
         assertFalse(json.get("repeatable").asBoolean());
@@ -77,6 +78,8 @@ class VttgFeatMapperTest {
                 mapper.separatorOrder().subList(0, 4));
 
         assertEquals("separator", mapper.separator(FeatCategory.FIGHTING_STYLE).get("type"));
+        // Разделитель несёт section своего листа, иначе уезжает в фейковую папку "Separator".
+        assertEquals("feats", mapper.separator(FeatCategory.FIGHTING_STYLE).get("section"));
         assertEquals("fighting_style", mapper.separator(FeatCategory.FIGHTING_STYLE).get("id"));
         assertEquals("Боевой стиль", mapper.separator(FeatCategory.FIGHTING_STYLE).get("name"));
         assertEquals("origin_feat", mapper.separator(FeatCategory.ORIGIN).get("id"));

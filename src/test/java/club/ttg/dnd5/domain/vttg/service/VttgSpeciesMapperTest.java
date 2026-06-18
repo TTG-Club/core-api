@@ -33,9 +33,11 @@ class VttgSpeciesMapperTest {
 
         JsonNode json = json(species);
         assertEquals("species", json.get("type").asText());
+        assertEquals("species", json.get("section").asText());
         assertEquals("dragonborn", json.get("key").asText());
         assertEquals("Dragonborn", json.get("nameEn").asText());
-        assertEquals("PHB 2024", json.get("source").asText());
+        assertFalse(json.has("source"));
+        assertEquals("phb", json.get("sourceKey").asText());
         assertEquals("dragon", json.get("creatureType").asText());
         assertEquals("[\"medium\"]", json.get("size").toString());
         assertEquals(30, json.get("speed").get("walk").asInt());

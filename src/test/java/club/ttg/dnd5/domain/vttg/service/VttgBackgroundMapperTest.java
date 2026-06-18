@@ -35,6 +35,7 @@ class VttgBackgroundMapperTest {
         assertEquals("acolyte", json.get("key").asText());
         assertEquals("Acolyte", json.get("nameEn").asText());
         assertEquals("background", json.get("type").asText());
+        assertEquals("backgrounds", json.get("section").asText());
         assertTrue(json.get("isSRD").asBoolean());
 
         assertEquals("[\"intelligence\",\"wisdom\",\"charisma\"]",

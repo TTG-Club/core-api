@@ -129,14 +129,16 @@ public class VttgMarkupConverter {
         String formatted = replaceInline(text, ITALIC, "*$1*");
         formatted = replaceInline(formatted, BOLD, "**$1**");
         if (!keepRolls) {
-            formatted = replaceRolls(formatted);
+            formatted = unwrapLabel(formatted, ROLL);
         }
+        formatted = unwrapLabel(formatted, LINK);
 
         return replaceSiteLinks(formatted);
     }
 
-    private String replaceRolls(String text) {
-        Matcher matcher = ROLL.matcher(text);
+    /** Заменяет каждое совпадение на его первую группу (метку), без обрамляющих тегов. */
+    private String unwrapLabel(String text, Pattern pattern) {
+        Matcher matcher = pattern.matcher(text);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(1).trim()));

@@ -95,6 +95,16 @@ class VttgMarkupConverterTest {
     }
 
     @Test
+    void unwrapsLinkTokenToPlainTerm() {
+        assertEquals(
+                "Только рукопашное оружие.",
+                converter.toText("Только {@link рукопашное оружие|url:/items?itemType=MELEE_WEAPON}.")
+        );
+        // Без url — тоже остаётся только термин.
+        assertEquals("оружие", converter.toText("{@link оружие}"));
+    }
+
+    @Test
     void convertsRealSpellDescriptionArray() {
         String markup = """
                 ["{@i Вы бросаете кислотный шарик} в точку в пределах дальности, где он взрывается {@glossary сферой|url:sphere-phb} с радиусом 5 фт. Каждое {@glossary существо|url:creature-phb} в этой сфере должно преуспеть в {@glossary спасброске|url:saving-throw-phb} Ловкости или получить {@roll 1к6} урона кислотой."]
