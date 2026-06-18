@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.repository;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -76,6 +78,26 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
     List<Creature> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
                                             @Param("since") Instant since,
                                             @Param("until") Instant until);
+
+    /**
+     * Лёгкие ссылки (url + время изменения) видимых существ окна — без гидрации jsonb,
+     * для сопоставления с предрассчитанными payload в {@code vttg_export}.
+     */
+    @Query("""
+            select c.url as url, coalesce(c.updatedAt, c.createdAt) as changedAt from Creature c
+            where (:srdVersion is null or c.srdVersion = :srdVersion)
+              and c.isHiddenEntity = false
+              and coalesce(c.updatedAt, c.createdAt) > :since
+              and coalesce(c.updatedAt, c.createdAt) <= :until
+            """)
+    List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("since") Instant since,
+                                                     @Param("until") Instant until);
+
+    /** Полные существа по набору url — для пересчёта недостающих payload (fallback экспорта VTTG). */
+    @EntityGraph(attributePaths = {"source"})
+    @Query("select c from Creature c where c.url in :urls")
+    List<Creature> findAllForVttgExportByUrls(@Param("urls") Collection<String> urls);
 
     /**
      * Число видимых существ, изменённых в окне (since, until] — для индикатора VTTG.

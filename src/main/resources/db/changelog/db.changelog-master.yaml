@@ -195,3 +195,5 @@ databaseChangeLog:
       file: db/changelog/2026/06/09-01-spell-damage-formulas-vttg-format.yaml
   - include:
       file: db/changelog/2026/06/12-01-spell-healing-formula-markers.yaml
+  - include:
+      file: db/changelog/2026/06/18-01-add-vttg-export.yaml

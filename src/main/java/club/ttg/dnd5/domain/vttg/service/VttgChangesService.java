@@ -19,6 +19,7 @@ import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesResponse;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesStatus;
+import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import club.ttg.dnd5.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -91,6 +93,7 @@ public class VttgChangesService {
     private final VttgFeatMapper featMapper;
     private final VttgSpeciesMapper speciesMapper;
     private final VttgCompendiumSections compendiumSections;
+    private final VttgPayloadStore payloadStore;
     private final PlatformTransactionManager transactionManager;
     private final ExecutorService exportExecutor;
 
@@ -168,14 +171,16 @@ public class VttgChangesService {
         // Каждый тип выбирается и маппится параллельно в своей read-only транзакции: основная стоимость —
         // гидрация jsonb и сетевые задержки до БД, поэтому перекрытие ожиданий заметно снижает латентность.
         Map<String, CompletableFuture<TypeResult>> futures = new LinkedHashMap<>();
-        submit(futures, SPELLS, selected,
-                () -> spellRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
-                spell -> new VttgChange(SPELLS, spell.getUrl(),
-                        changedAt(spell.getUpdatedAt(), spell.getCreatedAt()), spellMapper.toVttg(spell)));
-        submit(futures, BESTIARY, selected,
-                () -> creatureRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
-                creature -> new VttgChange(BESTIARY, creature.getUrl(),
-                        changedAt(creature.getUpdatedAt(), creature.getCreatedAt()), creatureMapper.toVttg(creature)));
+        // Заклинания и существа (без кросс-сущностных зависимостей, ~91% стоимости) читаются из
+        // предрассчитанных payload (vttg_export); недостающие пересчитываются на лету и сохраняются.
+        submitStore(futures, SPELLS, selected,
+                () -> spellRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                spellRepository::findAllForVttgExportByUrls,
+                Spell::getUrl, spellMapper::toVttg);
+        submitStore(futures, BESTIARY, selected,
+                () -> creatureRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                creatureRepository::findAllForVttgExportByUrls,
+                Creature::getUrl, creatureMapper::toVttg);
         submit(futures, MAGIC_ITEMS, selected,
                 () -> magicItemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until()),
                 item -> new VttgChange(MAGIC_ITEMS, item.getUrl(),
@@ -248,6 +253,24 @@ public class VttgChangesService {
             return new TypeResult(type, changes,
                     millisSince(fetchStart, mapStart), millisSince(mapStart, System.nanoTime()), entities.size());
         }));
+    }
+
+    /**
+     * Планирует параллельную сборку типа из предрассчитанных payload ({@link VttgPayloadStore}).
+     * Транзакцией управляет store (она записываемая — пересчитанные payload сохраняются).
+     */
+    private <E> void submitStore(Map<String, CompletableFuture<TypeResult>> futures, String type, Set<String> selected,
+                                 Supplier<List<VttgEntityRef>> refsFinder,
+                                 Function<Collection<String>, List<E>> byUrlsFinder,
+                                 Function<E, String> urlOf, Function<E, Object> toDto) {
+        if (!selected.contains(type)) {
+            return;
+        }
+        futures.put(type, CompletableFuture.supplyAsync(() -> {
+            long start = System.nanoTime();
+            List<VttgChange> changes = payloadStore.load(type, refsFinder, byUrlsFinder, urlOf, toDto);
+            return new TypeResult(type, changes, millisSince(start, System.nanoTime()), 0, changes.size());
+        }, exportExecutor));
     }
 
     /** Запускает задачу в пуле экспорта, оборачивая её в отдельную read-only транзакцию. */

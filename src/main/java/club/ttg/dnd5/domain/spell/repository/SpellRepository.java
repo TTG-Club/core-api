@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.spell.repository;
 
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -112,6 +114,26 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     List<Spell> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
                                          @Param("since") Instant since,
                                          @Param("until") Instant until);
+
+    /**
+     * Лёгкие ссылки (url + время изменения) видимых заклинаний окна — без гидрации jsonb,
+     * для сопоставления с предрассчитанными payload в {@code vttg_export}.
+     */
+    @Query("""
+            select s.url as url, coalesce(s.updatedAt, s.createdAt) as changedAt from Spell s
+            where (:srdVersion is null or s.srdVersion = :srdVersion)
+              and s.isHiddenEntity = false
+              and coalesce(s.updatedAt, s.createdAt) > :since
+              and coalesce(s.updatedAt, s.createdAt) <= :until
+            """)
+    List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("since") Instant since,
+                                                     @Param("until") Instant until);
+
+    /** Полные заклинания по набору url — для пересчёта недостающих payload (fallback экспорта VTTG). */
+    @EntityGraph(attributePaths = {"source", "classAffiliation"})
+    @Query("select distinct s from Spell s where s.url in :urls")
+    List<Spell> findAllForVttgExportByUrls(@Param("urls") Collection<String> urls);
 
     /**
      * Число видимых заклинаний, изменённых в окне (since, until] — для индикатора VTTG.
