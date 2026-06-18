@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -152,9 +153,12 @@ public class VttgChangesService {
             }
         }
         if (selected.contains(MAGIC_ITEMS)) {
+            // Общий на ответ кэш разрешения базовых предметов: зачарования «+1/+2/+3» делят одну базу,
+            // поэтому повторные сканы таблицы item не выполняются.
+            Map<String, List<Item>> baseCache = new HashMap<>();
             for (MagicItem item : magicItemRepository.findChangedForVttgExport(srdVersion, window.since(), window.until())) {
                 upserts.add(new VttgChange(MAGIC_ITEMS, item.getUrl(),
-                        changedAt(item.getUpdatedAt(), item.getCreatedAt()), magicItemMapper.toVttg(item)));
+                        changedAt(item.getUpdatedAt(), item.getCreatedAt()), magicItemMapper.toVttg(item, baseCache)));
             }
         }
         if (selected.contains(ITEMS)) {

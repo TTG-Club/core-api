@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.beastiary.repository;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -64,6 +65,7 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
      * Видимые существа, изменённые в окне (since, until] — для upserts дельты VTTG.
      * Сортировка по времени изменения выполняется на стороне приложения.
      */
+    @EntityGraph(attributePaths = {"source"})
     @Query("""
             select c from Creature c
             where (:srdVersion is null or c.srdVersion = :srdVersion)

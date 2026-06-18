@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -55,12 +56,21 @@ public class VttgMagicItemMapper {
     private final VttgItemMapper itemMapper;
 
     public VttgMagicItem toVttg(MagicItem item) {
+        return toVttg(item, new HashMap<>());
+    }
+
+    /**
+     * Вариант для пакетной выгрузки: {@code baseCache} мемоизирует разрешение базовых предметов
+     * по уточнению/названию в пределах одного ответа. Множество зачарований «+1/+2/+3» делят одну
+     * базу (например «длинный меч»), поэтому кэш убирает повторные сканы таблицы {@code item}.
+     */
+    public VttgMagicItem toVttg(MagicItem item, Map<String, List<Item>> baseCache) {
         Attunement attunement = item.getAttunement();
         boolean requiresAttunement = attunement != null && attunement.isRequires();
         String sourceKey = sourceKey(item.getSource());
         MagicItemCategory category = item.getCategory();
         boolean weapon = category == MagicItemCategory.WEAPON;
-        BaseMechanics base = resolveBase(item, category);
+        BaseMechanics base = resolveBase(item, category, baseCache);
 
         return VttgMagicItem.builder()
                 .id(id(item, sourceKey))
@@ -112,11 +122,12 @@ public class VttgMagicItemMapper {
      * боевые/доспешные поля и вес/стоимость. Срабатывает только для оружия и брони; для «общих»
      * зачарований и уточнений без точного совпадения базы возвращает пустой результат.
      */
-    private BaseMechanics resolveBase(MagicItem item, MagicItemCategory category) {
+    private BaseMechanics resolveBase(MagicItem item, MagicItemCategory category,
+                                      Map<String, List<Item>> baseCache) {
         if (category != MagicItemCategory.WEAPON && category != MagicItemCategory.ARMOR) {
             return BaseMechanics.EMPTY;
         }
-        Item base = findBase(item, category);
+        Item base = findBase(item, category, baseCache);
         if (base == null) {
             return BaseMechanics.EMPTY;
         }
@@ -133,13 +144,16 @@ public class VttgMagicItemMapper {
     }
 
     /** Первый видимый базовый предмет нужного рода (оружие/броня) с точным совпадением имени. */
-    private Item findBase(MagicItem item, MagicItemCategory category) {
+    private Item findBase(MagicItem item, MagicItemCategory category, Map<String, List<Item>> baseCache) {
         boolean needWeapon = category == MagicItemCategory.WEAPON;
         for (String candidate : new String[]{item.getClarification(), item.getName(), item.getEnglish()}) {
             if (!StringUtils.hasText(candidate)) {
                 continue;
             }
-            for (Item base : itemRepository.findBaseByNameForVttgExport(candidate.trim())) {
+            String key = candidate.trim().toLowerCase(Locale.ROOT);
+            List<Item> candidates =
+                    baseCache.computeIfAbsent(key, ignored -> itemRepository.findBaseByNameForVttgExport(candidate.trim()));
+            for (Item base : candidates) {
                 if (needWeapon ? base.getWeapon() != null : base.getArmor() != null) {
                     return base;
                 }
