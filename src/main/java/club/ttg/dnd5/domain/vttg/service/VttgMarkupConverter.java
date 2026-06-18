@@ -28,6 +28,8 @@ public class VttgMarkupConverter {
     private static final Pattern ITALIC = Pattern.compile("\\{@i\\s+([^}]+)}");
     private static final Pattern BOLD = Pattern.compile("\\{@b\\s+([^}]+)}");
     private static final Pattern ROLL = Pattern.compile("\\{@roll\\s+([^|}]+)(?:\\|[^}]*)?}");
+    /** Универсальная ссылка {@code {@link термин|url:...}} (или без url) — в VTTG раскрывается в обычный текст термина. */
+    private static final Pattern LINK = Pattern.compile("\\{@link\\s+([^|}]+)(?:\\|[^}]*)?}");
 
     private final ObjectMapper objectMapper;
     @Value("${app.url:https://ttg.club}")

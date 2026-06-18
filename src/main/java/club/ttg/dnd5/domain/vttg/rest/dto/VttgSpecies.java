@@ -29,13 +29,15 @@ import java.util.List;
 public class VttgSpecies {
     /** Канонический тип сущности для VTTG — всегда "species". */
     private String type;
+    /** Слаг листа дерева разделов, в котором показывается запись — всегда "species". */
+    private String section;
     /** Стабильный ключ вида (slug из url). */
     private String key;
     private String name;
     private String nameEn;
     private String description;
-    /** Человекочитаемое имя источника, например "PHB 2024". */
-    private String source;
+    /** Ключ источника: "phb"/"dmg"/... (источник в VTTG резолвится из него). */
+    private String sourceKey;
     /** Тип существа (slug): "humanoid"/"dragon"/"fiend"/... */
     private String creatureType;
     /** Размеры в порядке источника (slug'и: "small"/"medium"/...). */

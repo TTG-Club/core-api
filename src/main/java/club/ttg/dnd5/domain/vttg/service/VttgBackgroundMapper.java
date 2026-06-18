@@ -28,6 +28,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class VttgBackgroundMapper {
     private static final String SOURCE = "srd";
+    /** Слаг листа дерева разделов для предысторий (см. {@link VttgCompendiumSections}). */
+    private static final String SECTION = "backgrounds";
 
     private final VttgMarkupConverter markupConverter;
 
@@ -39,6 +41,7 @@ public class VttgBackgroundMapper {
                 .name(background.getName())
                 .nameEn(optional(background.getEnglish()))
                 .description(markupConverter.toText(background.getDescription()))
+                .section(SECTION)
                 .sourceKey(sourceKey(background.getSource()))
                 .isSRD(true)
                 .abilityGrant(abilityGrant(background.getAbilities()))

@@ -22,8 +22,8 @@ public class VttgFeat {
     private String nameEn;
     /** Канонический тип сущности для VTTG — всегда "feat". */
     private String type;
-    /** Человекочитаемое имя источника, например "PHB 2024". */
-    private String source;
+    /** Слаг листа дерева разделов, в котором показывается запись — всегда "feats". */
+    private String section;
     /** Ключ источника: "phb"/"dmg"/... */
     private String sourceKey;
     /** Подтип записи в VTTG — всегда "feat". */

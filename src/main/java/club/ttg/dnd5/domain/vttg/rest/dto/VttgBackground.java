@@ -25,6 +25,8 @@ public class VttgBackground {
     private String name;
     private String nameEn;
     private String description;
+    /** Слаг листа дерева разделов, в котором показывается запись — всегда "backgrounds". */
+    private String section;
     /** Ключ источника: "phb"/"dmg"/... */
     private String sourceKey;
     private AbilityGrant abilityGrant;

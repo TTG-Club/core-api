@@ -28,6 +28,8 @@ public class VttgFeatMapper {
     private static final String SOURCE = "srd";
     private static final String TYPE = "feat";
     private static final String TYPE_LABEL = "Черты";
+    /** Слаг листа дерева разделов для черт и их разделителей (см. {@link VttgCompendiumSections}). */
+    private static final String SECTION = "feats";
 
     /**
      * Разделители категорий черт в порядке эталона {@code feats.json}
@@ -44,7 +46,7 @@ public class VttgFeatMapper {
                 .name(feat.getName())
                 .nameEn(optional(feat.getEnglish()))
                 .type(TYPE)
-                .source(sourceName(feat.getSource()))
+                .section(SECTION)
                 .sourceKey(sourceKey(feat.getSource()))
                 .isSRD(true)
                 .featureType(TYPE)
@@ -73,6 +75,9 @@ public class VttgFeatMapper {
         Separator separator = SEPARATORS.getOrDefault(category, defaultSeparator(category));
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("type", "separator");
+        // Разделитель — это заголовок ВНУТРИ списка черт, поэтому несёт section своего листа,
+        // иначе VTTG уводит его в отдельную фейковую папку "Separator".
+        result.put("section", SECTION);
         result.put("id", separator.id());
         result.put("name", separator.name());
         return result;
@@ -100,11 +105,6 @@ public class VttgFeatMapper {
         return "srd_feat_" + (base == null ? "" : base.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "_")
                 .replaceAll("^_+|_+$", ""));
-    }
-
-    /** Человекочитаемое имя источника для отображения ({@code source.name}); {@code null} опускается. */
-    private String sourceName(Source source) {
-        return source == null ? null : optional(source.getName());
     }
 
     private String sourceKey(Source source) {

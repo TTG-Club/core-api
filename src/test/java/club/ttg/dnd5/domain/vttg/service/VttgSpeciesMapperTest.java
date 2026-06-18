@@ -29,7 +29,7 @@ class VttgSpeciesMapperTest {
         species.setSpeed(30);
         species.setDarkVision(60);
         species.setFeatures(List.of(
-                new SpeciesFeature("draconic-flight", "Драконий Полёт", "Draconic Flight", "Призрачные крылья.")));
+                new SpeciesFeature("draconic-flight", "Драконий Полёт", "Draconic Flight", "Призрачные крылья.", null)));
 
         JsonNode json = json(species);
         assertEquals("species", json.get("type").asText());
@@ -74,12 +74,12 @@ class VttgSpeciesMapperTest {
         elf.setSizes(List.of(size(Size.MEDIUM)));
         elf.setSpeed(30);
         elf.setFeatures(List.of(
-                new SpeciesFeature("trance", "Транс", "Trance", "Не нужно спать."),
-                new SpeciesFeature("elf-lineage", "Происхождения эльфов", "Elf Lineage", "Выберите происхождение.")));
+                new SpeciesFeature("trance", "Транс", "Trance", "Не нужно спать.", null),
+                new SpeciesFeature("elf-lineage", "Происхождения эльфов", "Elf Lineage", "Выберите происхождение.", null)));
 
         Species high = baseSpecies("high-elf", "Высший эльф", "High Elf");
         high.setDescription("Магия высших эльфов.");
-        high.setFeatures(List.of(new SpeciesFeature("high-magic", "Магия", "Magic", "Престидижитация.")));
+        high.setFeatures(List.of(new SpeciesFeature("high-magic", "Магия", "Magic", "Престидижитация.", null)));
         Species drow = baseSpecies("drow", "Дроу", "Drow");
         drow.setDescription("Дроу из Подземья.");
         elf.setLineages(List.of(high, drow));
