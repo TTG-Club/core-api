@@ -3,9 +3,12 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
+import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
 import club.ttg.dnd5.domain.vttg.service.VttgCompendiumSections.Section;
 import club.ttg.dnd5.exception.ContentNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -127,8 +131,8 @@ public class VttgModuleService {
                     this::creaturePath, creatureMapper::toVttg);
         }
         if (content.includes(Content.MAGIC_ITEMS)) {
-            addPayload(payloads, sections.magicItems(), magicItemRepository.findAllVisibleForVttgExport(srdVersion),
-                    item -> fileName(magicItemMapper.toVttg(item).getId()), magicItemMapper::toVttg);
+            addMagicItemPayload(payloads, sections.magicItems(),
+                    magicItemRepository.findAllVisibleForVttgExport(srdVersion));
         }
 
         if (payloads.isEmpty()) {
@@ -146,6 +150,23 @@ public class VttgModuleService {
         Map<String, Object> entries = new LinkedHashMap<>();
         for (T entity : entities) {
             entries.put(pathFn.apply(entity), mapper.apply(entity));
+        }
+        if (!entries.isEmpty()) {
+            payloads.add(new SectionPayload(section, entries));
+        }
+    }
+
+    /**
+     * Магические предметы: каждый маппится ровно один раз (имя файла берётся из {@code id}
+     * уже смапленного объекта), а общий на секцию {@code baseCache} убирает повторные сканы
+     * таблицы {@code item} при разрешении базовых предметов зачарований «+1/+2/+3».
+     */
+    private void addMagicItemPayload(List<SectionPayload> payloads, Section section, List<MagicItem> items) {
+        Map<String, List<Item>> baseCache = new HashMap<>();
+        Map<String, Object> entries = new LinkedHashMap<>();
+        for (MagicItem item : items) {
+            VttgMagicItem mapped = magicItemMapper.toVttg(item, baseCache);
+            entries.put(fileName(mapped.getId()), mapped);
         }
         if (!entries.isEmpty()) {
             payloads.add(new SectionPayload(section, entries));

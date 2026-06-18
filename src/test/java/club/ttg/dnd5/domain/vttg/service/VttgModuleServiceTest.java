@@ -23,6 +23,8 @@ import java.util.zip.ZipInputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -115,7 +117,7 @@ class VttgModuleServiceTest {
     void buildsMagicItemModuleAsEquipmentSection() throws Exception {
         MagicItem item = new MagicItem();
         when(magicItemRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(item));
-        when(magicItemMapper.toVttg(item)).thenReturn(VttgMagicItem.builder().id("srd_wand_of_fear").build());
+        when(magicItemMapper.toVttg(eq(item), any())).thenReturn(VttgMagicItem.builder().id("srd_wand_of_fear").build());
 
         Map<String, byte[]> files = unzip(service.buildMagicItemModule().content());
 
