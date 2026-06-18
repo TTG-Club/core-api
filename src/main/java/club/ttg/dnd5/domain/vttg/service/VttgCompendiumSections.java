@@ -71,8 +71,9 @@ public class VttgCompendiumSections {
                         leaf("trinkets", "Безделушки", "tabler:backpack", "equipment", listView()),
                         leaf("rings", "Кольца", "tabler:circle", "equipment", listView()),
                         leaf("wands", "Жезлы", "tabler:wand", "equipment", listView()),
-                        leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", listView()),
-                        leaf("tools", "Инструменты", "tabler:tools", "tool", listView())
+                        leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", listView())
+                        // Лист "tools" (Инструменты) убран: записей с section "tools" в выгрузке нет.
+                        // Вернуть, когда появятся данные инструментов (см. VttgItemMapper.putTool).
                 ))
         );
     }

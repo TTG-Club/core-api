@@ -39,6 +39,8 @@ import java.util.regex.Pattern;
 public class VttgMagicItemMapper {
     /** Запасной ключ источника, если у предмета его нет. */
     private static final String SOURCE = "srd";
+    /** Дефолтная редкость магического предмета, когда реальную не удалось определить (none недопустим). */
+    private static final String DEFAULT_MAGIC_RARITY = "uncommon";
     /** Бонус «+1/+2/+3» из названия/уточнения предмета. */
     private static final Pattern MAGIC_BONUS = Pattern.compile("\\+([123])");
 
@@ -75,7 +77,7 @@ public class VttgMagicItemMapper {
         return VttgMagicItem.builder()
                 .id(id(item, sourceKey))
                 .name(item.getName())
-                .nameEn(item.getEnglish())
+                .nameEn(VttgItemMapper.cleanNameEn(item.getEnglish()))
                 // VTTG сам отрисовывает {@roll ...} в описании предмета — сохраняем эти теги.
                 .description(markupConverter.toTextKeepingRolls(item.getDescription()))
                 // Оружие отдаём родным типом "weapon", всё остальное — "equipment" (п.3 контракта).
@@ -86,7 +88,7 @@ public class VttgMagicItemMapper {
                 // Вес/стоимость берём у базового предмета (по clarification); иначе 0/"".
                 .weight(base.weight())
                 .cost(base.cost())
-                .rarity(rarity(item.getRarity()))
+                .rarity(rarity(item))
                 .equipped(false)
                 // У оружия своя категория (weaponCategory); для брони — из mechanics; иначе реальная.
                 .equipmentCategory(weapon ? null : equipmentCategory(category))
@@ -217,6 +219,21 @@ public class VttgMagicItemMapper {
         };
     }
 
+    /**
+     * Редкость в формате VTTG. У магического предмета {@code isMagical=true} редкость обязана быть
+     * реальной (none недопустим), поэтому для VARIES/UNKNOWN/отсутствующей она выводится из текста
+     * {@code varies} (берётся минимальная упомянутая редкость), а если распознать не удалось —
+     * подставляется дефолт {@link #DEFAULT_MAGIC_RARITY}.
+     */
+    private String rarity(MagicItem item) {
+        String mapped = rarity(item.getRarity());
+        if (!"none".equals(mapped)) {
+            return mapped;
+        }
+        String fromVaries = rarityFromVaries(item.getVaries());
+        return fromVaries != null ? fromVaries : DEFAULT_MAGIC_RARITY;
+    }
+
     /** Rarity → ItemRarity VTTG (none|common|uncommon|rare|very-rare|legendary|artifact). */
     private String rarity(Rarity rarity) {
         if (rarity == null) {
@@ -229,8 +246,41 @@ public class VttgMagicItemMapper {
             case VERY_RARE -> "very-rare";
             case LEGENDARY -> "legendary";
             case ARTIFACT -> "artifact";
-            case VARIES, UNKNOWN -> "none";   // в ItemRarity нет «varies»/«unknown»
+            case VARIES, UNKNOWN -> "none";   // в ItemRarity нет «varies»/«unknown» — решается в rarity(MagicItem)
         };
+    }
+
+    /**
+     * Минимальная редкость, упомянутая в тексте {@code varies} (напр. «редкий, очень редкий или
+     * легендарный» → {@code rare}). Возвращает {@code null}, если ни одна редкость не распознана.
+     * Порядок проверок — от младшей к старшей; учитываются перекрытия подстрок
+     * («необычный» ⊃ «обычн», «очень редкий» ⊃ «редк»).
+     */
+    private String rarityFromVaries(String varies) {
+        if (!StringUtils.hasText(varies)) {
+            return null;
+        }
+        // Убираем существительное «редкость/редкости/…», иначе его корень «редк» ложно даёт rare.
+        String text = varies.toLowerCase(Locale.ROOT).replaceAll("редкост\\p{L}*", " ");
+        if (text.matches(".*(?<!не)обычн.*")) {
+            return "common";
+        }
+        if (text.contains("необычн")) {
+            return "uncommon";
+        }
+        if (text.matches(".*(?<!очень )редк.*")) {
+            return "rare";
+        }
+        if (text.contains("очень редк")) {
+            return "very-rare";
+        }
+        if (text.contains("легендарн")) {
+            return "legendary";
+        }
+        if (text.contains("артефакт")) {
+            return "artifact";
+        }
+        return null;
     }
 
     private String sourceKey(Source source) {

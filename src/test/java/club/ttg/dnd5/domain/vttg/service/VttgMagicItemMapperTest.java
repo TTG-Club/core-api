@@ -166,6 +166,56 @@ class VttgMagicItemMapperTest {
         assertNull(mapper.toVttg(wandOfFear()).getMagicBonus());
     }
 
+    /** Магический предмет с varies-редкостью получает минимальную упомянутую редкость, а не "none". */
+    @Test
+    void derivesRarityFromVariesText() {
+        MagicItem item = new MagicItem();
+        item.setUrl("ioun-stone");
+        item.setName("Камень Йоун");
+        item.setCategory(MagicItemCategory.SUBJECT);
+        item.setRarity(Rarity.VARIES);
+        item.setVaries("редкость варьируется: необычный, редкий, очень редкий или легендарный");
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        // «необычный» — минимальная упомянутая редкость; существительное «редкость» не считается за rare.
+        assertEquals("uncommon", mapper.toVttg(item).getRarity());
+    }
+
+    /** У магического предмета без распознаваемой редкости — дефолт, но не "none". */
+    @Test
+    void fallsBackToConcreteRarityWhenNotDeterminable() {
+        MagicItem item = new MagicItem();
+        item.setUrl("spell-scroll");
+        item.setName("Свиток заклинания");
+        item.setCategory(MagicItemCategory.SCROLL);
+        // rarity не задана и varies нет — но isMagical=true, поэтому "none" недопустим.
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        String rarity = mapper.toVttg(item).getRarity();
+        assertEquals("uncommon", rarity);
+        assertFalse("none".equals(rarity));
+    }
+
+    /** nameEn чистится от обрамляющих пробелов/запятых. */
+    @Test
+    void cleansNameEn() {
+        MagicItem item = new MagicItem();
+        item.setUrl("perfume-of-bewitching");
+        item.setName("Духи очарования");
+        item.setEnglish("  Perfume of Bewitching");
+        item.setCategory(MagicItemCategory.SUBJECT);
+        item.setRarity(Rarity.COMMON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals("Perfume of Bewitching", mapper.toVttg(item).getNameEn());
+    }
+
     private MagicItem wandOfFear() {
         MagicItem item = new MagicItem();
         item.setUrl("wand-of-fear");

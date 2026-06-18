@@ -228,6 +228,13 @@ public class VttgChangesService {
             timings.put(result.type(), new long[]{result.fetchMs(), result.mapMs(), result.count()});
         }
 
+        // Инвариант контракта: у каждого upsert есть updatedAt (ISO-8601). Записи сущностей берут его
+        // из coalesce(updatedAt, createdAt), но служебные разделители черт идут без своего времени —
+        // им (и любым «битым» без времени) проставляем верхнюю границу окна, иначе применение падает.
+        Instant fallbackStamp = window.until();
+        upserts.replaceAll(change -> change.updatedAt() != null ? change
+                : new VttgChange(change.type(), change.url(), fallbackStamp, change.data()));
+
         VttgChangesResponse response = new VttgChangesResponse(window.until(), upserts, compendiumSections.changesTree());
         logTimings(timings, upserts.size(), millisSince(startedAt, System.nanoTime()));
         return response;

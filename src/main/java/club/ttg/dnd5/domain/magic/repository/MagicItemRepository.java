@@ -12,6 +12,24 @@ import java.util.Collection;
 import java.util.List;
 
 public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
+
+    /**
+     * Фрагмент JPQL: исключение «несобственных» записей из выгрузки VTTG (контракт /changes).
+     * Это не конкретные предметы, поэтому в дельту и модуль они не идут:
+     * <ul>
+     *   <li>«сборные» заглушки одной записью на три бонуса — «… +1, +2 или +3»;</li>
+     *   <li>шаблонные зачарования «применяется к любому предмету» без своих характеристик
+     *       (адамантиновое/зачарованное оружие/доспех/посох).</li>
+     * </ul>
+     * Применяется ко всем {@code *ForVttgExport}-запросам, чтобы /status и /changes были согласованы.
+     */
+    String EXCLUDE_NON_CONCRETE = """
+             and mi.name not like '%+1, +2 или +3%'
+             and mi.name not in (
+                 'Адамантиновое оружие', 'Адамантиновый доспех',
+                 'Зачарованное оружие', 'Зачарованный доспех', 'Зачарованный посох')
+            """;
+
     @Query(value = """
             select mi from MagicItem mi
             where mi.name ilike concat('%', :searchLine, '%')
@@ -48,6 +66,7 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
             select mi from MagicItem mi
             where (:srdVersion is null or mi.srdVersion = :srdVersion)
               and mi.isHiddenEntity = false
+            """ + EXCLUDE_NON_CONCRETE + """
             order by mi.name
             """)
     List<MagicItem> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
@@ -59,7 +78,7 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
               and mi.isHiddenEntity = false
               and coalesce(mi.updatedAt, mi.createdAt) > :since
               and coalesce(mi.updatedAt, mi.createdAt) <= :until
-            """)
+            """ + EXCLUDE_NON_CONCRETE)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
@@ -79,7 +98,7 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
               and mi.isHiddenEntity = false
               and coalesce(mi.updatedAt, mi.createdAt) > :since
               and coalesce(mi.updatedAt, mi.createdAt) <= :until
-            """)
+            """ + EXCLUDE_NON_CONCRETE)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);

@@ -57,8 +57,9 @@ public class VttgItemMapper {
 
         data.put("id", id(item, sourceKey));
         data.put("name", item.getName());
-        if (StringUtils.hasText(item.getEnglish())) {
-            data.put("nameEn", item.getEnglish());
+        String nameEn = cleanNameEn(item.getEnglish());
+        if (nameEn != null) {
+            data.put("nameEn", nameEn);
         }
         data.put("description", markupConverter.toText(item.getDescription()));
 
@@ -183,6 +184,21 @@ public class VttgItemMapper {
         return value.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
+    }
+
+    /**
+     * Нормализует английское имя для выдачи: убирает обрамляющие пробелы/запятые и схлопывает
+     * повторяющиеся пробелы внутри (в данных встречается мусор вида "  Perfume of Bewitching").
+     * Возвращает {@code null}, если после чистки имя пустое (поле опускается).
+     */
+    static String cleanNameEn(String english) {
+        if (!StringUtils.hasText(english)) {
+            return null;
+        }
+        String cleaned = english.replaceAll("\\s+", " ")
+                .replaceAll("^[\\s,]+|[\\s,]+$", "")
+                .trim();
+        return cleaned.isEmpty() ? null : cleaned;
     }
 
     private String weaponCategory(WeaponCategory category) {
