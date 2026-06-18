@@ -19,9 +19,11 @@ import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesResponse;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesStatus;
+import club.ttg.dnd5.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -139,7 +141,15 @@ public class VttgChangesService {
         return new VttgChangesStatus(window.since(), window.until(), total > 0, total, byType);
     }
 
-    /** Дельта окна: добавленные/изменённые видимые сущности (upserts) с полезной нагрузкой. */
+    /**
+     * Дельта окна: добавленные/изменённые видимые сущности (upserts) с полезной нагрузкой.
+     *
+     * <p>Полная выгрузка (без {@code since}) кэшируется ненадолго: она тяжёлая (гидрация jsonb)
+     * и детерминирована в пределах окна, повторные первичные загрузки берутся из кэша.
+     * Инкрементальный поллинг ({@code since} задан) не кэшируется и всегда свежий; верхняя граница
+     * {@code until} в кэшированном ответе «заморожена», что безопасно — повторная выборка идемпотентна.</p>
+     */
+    @Cacheable(cacheNames = CacheConfig.VTTG_FULL_EXPORT, condition = "#sinceParam == null", key = "{#srdVersion, #types}")
     @Transactional(readOnly = true)
     public VttgChangesResponse changes(Instant sinceParam, String srdVersion, Set<String> types) {
         long startedAt = System.nanoTime();
