@@ -63,9 +63,9 @@ public class VttgItemMapper {
         }
         data.put("description", markupConverter.toText(item.getDescription()));
 
-        if (item.getWeapon() != null) {
+        if (isWeapon(item)) {
             putWeapon(data, item);
-        } else if (item.getArmor() != null) {
+        } else if (isArmor(item)) {
             putArmor(data, item);
         } else if (isTool(item)) {
             putTool(data, item);
@@ -88,12 +88,16 @@ public class VttgItemMapper {
     // ── Оружие ──────────────────────────────────────────────────────────────────────────────────
     private void putWeapon(Map<String, Object> data, Item item) {
         Weapon weapon = item.getWeapon();
-        String rangeType = rangeType(weapon.getCategory());
 
         data.put("type", "weapon");
         data.put("typeLabel", "Оружие");
         data.put("section", "weapons");
         data.put("baseType", baseType(item));
+        if (weapon == null) {
+            return;
+        }
+
+        String rangeType = rangeType(weapon.getCategory());
         data.put("weaponCategory", weaponCategory(weapon.getCategory()));
         data.put("rangeType", rangeType);
 
@@ -131,6 +135,10 @@ public class VttgItemMapper {
         data.put("typeLabel", "Снаряжение");
         data.put("section", "armor");
         data.put("baseType", baseType(item));
+        if (armor == null) {
+            return;
+        }
+
         data.put("baseArmorAC", armor.getArmorClass());
         // Ключ присутствует всегда (как в эталоне): null означает «без предела бонуса Ловкости».
         data.put("maxDexBonus", maxDexBonus(armor.getMod()));
@@ -331,10 +339,22 @@ public class VttgItemMapper {
         };
     }
 
+    private boolean isWeapon(Item item) {
+        return item.getCategory() == ItemCategory.WEAPON || hasTypeCategory(item, ItemCategory.WEAPON);
+    }
+
+    private boolean isArmor(Item item) {
+        return item.getCategory() == ItemCategory.ARMOR || hasTypeCategory(item, ItemCategory.ARMOR);
+    }
+
     private boolean isTool(Item item) {
+        return item.getCategory() == ItemCategory.TOOL || hasTypeCategory(item, ItemCategory.TOOL);
+    }
+
+    private boolean hasTypeCategory(Item item, ItemCategory category) {
         return item.getTypes() != null && item.getTypes().stream()
                 .filter(Objects::nonNull)
-                .anyMatch(type -> type.getCategory() == ItemCategory.TOOL);
+                .anyMatch(type -> type.getCategory() == category);
     }
 
     private String toolCategory(Item item) {

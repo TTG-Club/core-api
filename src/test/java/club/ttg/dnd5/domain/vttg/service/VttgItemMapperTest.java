@@ -40,6 +40,7 @@ class VttgItemMapperTest {
         weapon.setVersatile(roll(Dice.d10));
         weapon.setMastery(Mastery.SAP);
         item.setWeapon(weapon);
+        item.setTypes(Set.of(ItemType.MARTIAL_WEAPON, ItemType.MELEE_WEAPON));
 
         JsonNode json = json(item);
         assertEquals("longsword-phb", json.get("id").asText());
@@ -74,6 +75,7 @@ class VttgItemMapperTest {
         range.setMax((short) 320);
         weapon.setRange(range);
         item.setWeapon(weapon);
+        item.setTypes(Set.of(ItemType.SIMPLE_WEAPON, ItemType.RANGED_WEAPON));
 
         JsonNode json = json(item);
         assertEquals("ranged", json.get("rangeType").asText());
@@ -94,6 +96,7 @@ class VttgItemMapperTest {
         armor.setMod(Armor.DexterityMod.PLUS);
         armor.setStealth(true);
         item.setArmor(armor);
+        item.setTypes(Set.of(ItemType.LIGHT_ARMOR));
 
         JsonNode json = json(item);
         assertEquals("equipment", json.get("type").asText());
@@ -117,6 +120,7 @@ class VttgItemMapperTest {
         armor.setStealth(true);
         armor.setStrength("13");
         item.setArmor(armor);
+        item.setTypes(Set.of(ItemType.HEAVY_ARMOR));
 
         JsonNode json = json(item);
         assertEquals("heavy", json.get("equipmentCategory").asText());
@@ -149,6 +153,59 @@ class VttgItemMapperTest {
         assertEquals("tool", json.get("type").asText());
         assertEquals("tools", json.get("section").asText());
         assertEquals("other", json.get("toolCategory").asText());
+    }
+
+    @Test
+    void mapsWeaponByItemTypeWhenArmorDataExists() {
+        Item item = baseItem("spear", "Spear", "Spear");
+        item.setTypes(Set.of(ItemType.SIMPLE_WEAPON, ItemType.MELEE_WEAPON));
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.SIMPLE_MELEE);
+        weapon.setDamage(damage(Dice.d6, DamageType.PIERCING));
+        weapon.setProperties(Set.of(Property.THROWN));
+        weapon.setMastery(Mastery.SAP);
+        item.setWeapon(weapon);
+        Armor armor = new Armor();
+        armor.setCategory(ArmorCategory.LIGHT);
+        armor.setArmorClass(11);
+        item.setArmor(armor);
+
+        JsonNode json = json(item);
+        assertEquals("weapon", json.get("type").asText());
+        assertEquals("weapons", json.get("section").asText());
+        assertEquals("1к6", json.get("damageParts").get(0).get("formula").asText());
+        assertEquals("[\"thrown\"]", json.get("weaponProperties").toString());
+        assertEquals(5, json.get("reach").asInt());
+        assertEquals("sap", json.get("mastery").asText());
+        assertFalse(json.has("baseArmorAC"));
+        assertFalse(json.has("equipmentCategory"));
+    }
+
+    @Test
+    void mapsArmorByItemTypeWhenWeaponDataExists() {
+        Item item = baseItem("shield", "Shield", "Shield");
+        item.setTypes(Set.of(ItemType.SHIELD));
+        Armor armor = new Armor();
+        armor.setCategory(ArmorCategory.SHIELD);
+        armor.setArmorClass(2);
+        armor.setStealth(false);
+        item.setArmor(armor);
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.SIMPLE_MELEE);
+        weapon.setDamage(damage(Dice.d4, DamageType.BLUDGEONING));
+        weapon.setProperties(Set.of(Property.LIGHT));
+        item.setWeapon(weapon);
+
+        JsonNode json = json(item);
+        assertEquals("equipment", json.get("type").asText());
+        assertEquals("armor", json.get("section").asText());
+        assertEquals("shield", json.get("equipmentCategory").asText());
+        assertEquals(2, json.get("baseArmorAC").asInt());
+        assertFalse(json.get("stealthDisadvantage").asBoolean());
+        assertFalse(json.has("damageParts"));
+        assertFalse(json.has("weaponProperties"));
+        assertFalse(json.has("reach"));
+        assertFalse(json.has("mastery"));
     }
 
     private JsonNode json(Item item) {
