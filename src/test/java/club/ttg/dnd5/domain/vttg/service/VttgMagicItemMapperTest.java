@@ -1,10 +1,12 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.Roll;
+import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.weapon.Damage;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
@@ -18,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,6 +52,8 @@ class VttgMagicItemMapperTest {
         assertEquals("wand", result.getEquipmentCategory());
         assertEquals("wands", result.getSection());
         assertEquals("rare", result.getRarity());
+        // Стоимость — по таблице редкости: редкий → 4000 зм.
+        assertEquals("4000 зм", result.getCost());
         assertEquals("required", result.getMagicAttunement());
         assertEquals("dmg", result.getSourceKey());
         assertTrue(result.isMagical());
@@ -180,7 +185,157 @@ class VttgMagicItemMapperTest {
         item.setSource(source);
 
         // «необычный» — минимальная упомянутая редкость; существительное «редкость» не считается за rare.
-        assertEquals("uncommon", mapper.toVttg(item).getRarity());
+        VttgMagicItem result = mapper.toVttg(item);
+        assertEquals("uncommon", result.getRarity());
+        // Стоимость берётся по той же выведенной редкости: необычный → 400 зм.
+        assertEquals("400 зм", result.getCost());
+    }
+
+    /** Несколько баз в clarification («полулаты или латы») раскрываются в отдельные предметы с подменой слова в названии. */
+    @Test
+    void splitsMultipleBaseItemsIntoSeparateEntries() {
+        when(itemRepository.findBaseByNameForVttgExport("латы")).thenReturn(List.of(plate()));
+        when(itemRepository.findBaseByNameForVttgExport("полулаты")).thenReturn(List.of(halfPlate()));
+
+        MagicItem item = new MagicItem();
+        item.setUrl("dwarven-plate");
+        item.setName("Латы дварфов");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setClarification("полулаты или латы");
+        item.setRarity(Rarity.VERY_RARE);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        assertEquals(2, variants.size());
+        // База, совпадающая с названием: имя и url (а значит id) не меняются.
+        VttgMagicItem plate = byName(variants, "Латы дварфов");
+        assertEquals("dwarven-plate-dmg", plate.getId());
+        assertEquals("41500 зм", plate.getCost()); // 40000 (очень редкий) + 1500 (латы)
+        // Дополнительная база: слово в названии заменено, id получает суффикс url базы.
+        VttgMagicItem half = byName(variants, "Полулаты дварфов");
+        assertEquals("dwarven-plate-half-plate-dmg", half.getId());
+        assertEquals("40750 зм", half.getCost()); // 40000 + 750 (полулаты)
+    }
+
+    /** Один базовый предмет в clarification не расщепляется — ровно одна запись. */
+    @Test
+    void doesNotSplitSingleBaseItem() {
+        MagicItem item = new MagicItem();
+        item.setUrl("flame-tongue");
+        item.setName("Огненный язык");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setClarification("Длинный меч");
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals(1, mapper.toVttgVariants(item, new HashMap<>()).size());
+    }
+
+    private VttgMagicItem byName(List<VttgMagicItem> variants, String name) {
+        return variants.stream()
+                .filter(v -> name.equals(v.getName()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private Item plate() {
+        return armor("plate", "Латы", "Plate", "1500");
+    }
+
+    private Item halfPlate() {
+        return armor("half-plate", "Полулаты", "Half Plate", "750");
+    }
+
+    private Item armor(String url, String name, String english, String cost) {
+        Item base = new Item();
+        base.setUrl(url);
+        base.setName(name);
+        base.setEnglish(english);
+        base.setDescription("");
+        base.setWeight("0");
+        base.setCost(cost);
+        base.setCoin(Coin.GC);
+        base.setArmor(new Armor());
+        Source source = new Source();
+        source.setAcronym("PHB");
+        base.setSource(source);
+        return base;
+    }
+
+    /** Если clarification указывает на конкретный немагический предмет — его стоимость прибавляется к цене редкости. */
+    @Test
+    void addsBaseItemCostToRarityCost() {
+        Item longsword = longsword();
+        longsword.setCost("15");
+        longsword.setCoin(Coin.GC);
+        when(itemRepository.findBaseByNameForVttgExport(anyString())).thenReturn(List.of(longsword));
+
+        MagicItem item = new MagicItem();
+        item.setUrl("longsword-plus-1");
+        item.setName("Длинный меч, +1");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setClarification("Длинный меч");
+        item.setRarity(Rarity.RARE);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        // 4000 (редкий) + 15 (длинный меч) = 4015 зм.
+        assertEquals("4015 зм", mapper.toVttg(item).getCost());
+    }
+
+    /** Номинал монеты базового предмета приводится к золоту перед сложением. */
+    @Test
+    void convertsBaseItemCoinToGold() {
+        Item longsword = longsword();
+        longsword.setCost("5");
+        longsword.setCoin(Coin.SC); // 5 см = 0.5 зм
+        when(itemRepository.findBaseByNameForVttgExport(anyString())).thenReturn(List.of(longsword));
+
+        MagicItem item = new MagicItem();
+        item.setUrl("club-plus-1");
+        item.setName("Дубинка, +1");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setClarification("Дубинка");
+        item.setRarity(Rarity.UNCOMMON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        // 400 (необычный) + 0.5 (5 см) = 400.5 зм.
+        assertEquals("400.5 зм", mapper.toVttg(item).getCost());
+    }
+
+    /** Стоимость выставляется по таблице «Редкость и цена» для каждого уровня редкости. */
+    @Test
+    void setsCostFromRarityTable() {
+        assertEquals("100 зм", costForRarity(Rarity.COMMON));
+        assertEquals("400 зм", costForRarity(Rarity.UNCOMMON));
+        assertEquals("4000 зм", costForRarity(Rarity.RARE));
+        assertEquals("40000 зм", costForRarity(Rarity.VERY_RARE));
+        assertEquals("200000 зм", costForRarity(Rarity.LEGENDARY));
+    }
+
+    /** Артефакт бесценен — цена редкости не подставляется, остаётся стоимость базы (здесь — пусто). */
+    @Test
+    void leavesArtifactCostUnsetAsPriceless() {
+        assertEquals("", costForRarity(Rarity.ARTIFACT));
+    }
+
+    private String costForRarity(Rarity rarity) {
+        MagicItem item = new MagicItem();
+        item.setUrl("test-item");
+        item.setName("Тестовый предмет");
+        item.setCategory(MagicItemCategory.SUBJECT);
+        item.setRarity(rarity);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        return mapper.toVttg(item).getCost();
     }
 
     /** У магического предмета без распознаваемой редкости — дефолт, но не "none". */
@@ -195,9 +350,12 @@ class VttgMagicItemMapperTest {
         source.setAcronym("DMG");
         item.setSource(source);
 
-        String rarity = mapper.toVttg(item).getRarity();
+        VttgMagicItem result = mapper.toVttg(item);
+        String rarity = result.getRarity();
         assertEquals("uncommon", rarity);
         assertFalse("none".equals(rarity));
+        // Дефолт «uncommon» определяет и стоимость: 400 зм.
+        assertEquals("400 зм", result.getCost());
     }
 
     /** nameEn чистится от обрамляющих пробелов/запятых. */

@@ -165,8 +165,10 @@ public class VttgModuleService {
         Map<String, List<Item>> baseCache = new HashMap<>();
         Map<String, Object> entries = new LinkedHashMap<>();
         for (MagicItem item : items) {
-            VttgMagicItem mapped = magicItemMapper.toVttg(item, baseCache);
-            entries.put(fileName(mapped.getId()), mapped);
+            // Один предмет может раскрыться в несколько (несколько баз в clarification, напр. «полулаты или латы»).
+            for (VttgMagicItem mapped : magicItemMapper.toVttgVariants(item, baseCache)) {
+                entries.put(fileName(mapped.getId()), mapped);
+            }
         }
         if (!entries.isEmpty()) {
             payloads.add(new SectionPayload(section, entries));

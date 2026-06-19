@@ -117,6 +117,28 @@ class VttgPayloadStoreTest {
     }
 
     @Test
+    void arrayPayloadFlattensIntoOneChangePerElementKeyedById() {
+        Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
+        // Сущность раскрылась в несколько записей — payload сохранён массивом.
+        Function<String, Object> toList = url -> List.of(
+                Map.of("id", "dwarven-plate-dmg", "name", "Латы дварфов"),
+                Map.of("id", "dwarven-plate-half-plate-dmg", "name", "Полулаты дварфов"));
+        when(repository.findByTypeAndUrlIn(eq(TYPE), any())).thenReturn(List.of());
+
+        List<VttgChange> changes = store.load(TYPE, refs(ref("dwarven-plate", changedAt)),
+                () -> null, urls -> List.copyOf(urls), identity, toList);
+
+        assertEquals(2, changes.size());
+        // Каждый элемент массива — отдельное изменение с url = его id.
+        assertEquals("dwarven-plate-dmg", changes.get(0).url());
+        assertEquals("dwarven-plate-half-plate-dmg", changes.get(1).url());
+        assertEquals(changedAt, changes.get(0).updatedAt());
+        com.fasterxml.jackson.databind.JsonNode secondData =
+                (com.fasterxml.jackson.databind.JsonNode) changes.get(1).data();
+        assertEquals("Полулаты дварфов", secondData.get("name").asText());
+    }
+
+    @Test
     void emptyWindowReturnsEmptyWithoutQuery() {
         List<VttgChange> changes = store.load(TYPE, List::of, () -> null, urls -> List.of(), identity, toDto);
 

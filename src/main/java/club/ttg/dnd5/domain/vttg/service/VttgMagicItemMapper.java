@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
@@ -12,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +44,7 @@ public class VttgMagicItemMapper {
     /** Запасной ключ источника, если у предмета его нет. */
     private static final String SOURCE = "srd";
     /** Дефолтная редкость магического предмета, когда реальную не удалось определить (none недопустим). */
-    private static final String DEFAULT_MAGIC_RARITY = "uncommon";
+    private static final Rarity DEFAULT_MAGIC_RARITY = Rarity.UNCOMMON;
     /** Бонус «+1/+2/+3» из названия/уточнения предмета. */
     private static final Pattern MAGIC_BONUS = Pattern.compile("\\+([123])");
 
@@ -65,19 +69,69 @@ public class VttgMagicItemMapper {
      * Вариант для пакетной выгрузки: {@code baseCache} мемоизирует разрешение базовых предметов
      * по уточнению/названию в пределах одного ответа. Множество зачарований «+1/+2/+3» делят одну
      * базу (например «длинный меч»), поэтому кэш убирает повторные сканы таблицы {@code item}.
+     *
+     * <p>Маппит предмет «как есть», без расщепления по нескольким базам в {@code clarification}
+     * (для этого см. {@link #toVttgVariants}).</p>
      */
     public VttgMagicItem toVttg(MagicItem item, Map<String, List<Item>> baseCache) {
+        return map(item, item.getName(), item.getClarification(), item.getUrl(), item.getEnglish(), baseCache);
+    }
+
+    /**
+     * Раскрывает предмет в один или несколько экспортируемых: если в {@code clarification} перечислено
+     * несколько базовых предметов (напр. «полулаты или латы»), а в названии присутствует один из них,
+     * на каждый базовый предмет создаётся отдельная запись с подменой этого слова в названии
+     * (напр. «Латы дварфов» → «Латы дварфов» и «Полулаты дварфов»). Иначе — ровно одна запись.
+     */
+    public List<VttgMagicItem> toVttgVariants(MagicItem item, Map<String, List<Item>> baseCache) {
+        MagicItemCategory category = item.getCategory();
+        List<String> bases = splitBaseItems(item.getClarification());
+        // Расщепляем только оружие/броню — лишь для них ищем конкретный предмет в таблице item.
+        boolean splittable = category == MagicItemCategory.WEAPON || category == MagicItemCategory.ARMOR;
+        String anchor = splittable && bases.size() > 1 ? anchor(item.getName(), bases) : null;
+        if (anchor == null) {
+            return List.of(toVttg(item, baseCache));
+        }
+        List<VttgMagicItem> result = new ArrayList<>(bases.size());
+        for (String base : bases) {
+            if (base.equalsIgnoreCase(anchor)) {
+                // Базовый предмет, совпадающий с названием — исходные имя/url/english (контракт не меняется).
+                result.add(map(item, item.getName(), base, item.getUrl(), item.getEnglish(), baseCache));
+            } else {
+                String name = replaceAnchor(item.getName(), anchor, base);
+                result.add(map(item, name, base, variantUrl(item, base, baseCache), null, baseCache));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Payload для дельты {@code /changes}: один объект для обычного предмета либо список, если предмет
+     * расщепляется на несколько (см. {@link #toVttgVariants}). Список сохраняется в payload массивом и
+     * затем разворачивается в отдельные изменения ({@link VttgPayloadStore}); обычные предметы остаются
+     * объектом — их контракт не меняется.
+     */
+    public Object toVttgPayload(MagicItem item, Map<String, List<Item>> baseCache) {
+        List<VttgMagicItem> variants = toVttgVariants(item, baseCache);
+        return variants.size() == 1 ? variants.get(0) : variants;
+    }
+
+    /** Сборка одной записи VTTG для заданных имени/уточнения/url/английского названия. */
+    private VttgMagicItem map(MagicItem item, String name, String clarification, String url,
+                              String english, Map<String, List<Item>> baseCache) {
         Attunement attunement = item.getAttunement();
         boolean requiresAttunement = attunement != null && attunement.isRequires();
         String sourceKey = sourceKey(item.getSource());
         MagicItemCategory category = item.getCategory();
         boolean weapon = category == MagicItemCategory.WEAPON;
-        BaseMechanics base = resolveBase(item, category, baseCache);
+        Item base = findBase(category, baseCache, clarification, name, english);
+        BaseMechanics mechanics = mechanics(base, category);
+        Rarity rarity = effectiveRarity(item);
 
         return VttgMagicItem.builder()
-                .id(id(item, sourceKey))
-                .name(item.getName())
-                .nameEn(VttgItemMapper.cleanNameEn(item.getEnglish()))
+                .id(id(url, sourceKey))
+                .name(name)
+                .nameEn(VttgItemMapper.cleanNameEn(english))
                 // VTTG сам отрисовывает {@roll ...} в описании предмета — сохраняем эти теги.
                 .description(markupConverter.toTextKeepingRolls(item.getDescription()))
                 // Оружие отдаём родным типом "weapon", всё остальное — "equipment" (п.3 контракта).
@@ -85,19 +139,20 @@ public class VttgMagicItemMapper {
                 .typeLabel(weapon ? "Оружие" : "Снаряжение")
                 .section(section(category))
                 .quantity(1)
-                // Вес/стоимость берём у базового предмета (по clarification); иначе 0/"".
-                .weight(base.weight())
-                .cost(base.cost())
-                .rarity(rarity(item))
+                // Вес берём у базового предмета (по clarification); иначе 0.
+                .weight(mechanics.weight())
+                // Стоимость — по редкости (таблица «Редкость и цена»); артефакт бесценен — стоимость базы (обычно "").
+                .cost(cost(rarity, mechanics))
+                .rarity(rarityCode(rarity))
                 .equipped(false)
                 // У оружия своя категория (weaponCategory); для брони — из mechanics; иначе реальная.
                 .equipmentCategory(weapon ? null : equipmentCategory(category))
-                // Боевые/доспешные поля выводятся из базового предмета (см. resolveBase);
+                // Боевые/доспешные поля выводятся из базового предмета (см. mechanics);
                 // для «общих» зачарований и нерешённых уточнений их нет — это допустимо.
-                .mechanics(base.fields())
+                .mechanics(mechanics.fields())
                 .isMagical(true)
                 .magicAttunement(requiresAttunement ? "required" : "none")
-                .magicBonus(magicBonus(item))
+                .magicBonus(firstBonus(name, english, clarification))
                 .sourceKey(sourceKey)
                 .isSRD(true)
                 .isReadOnly(true)
@@ -111,8 +166,8 @@ public class VttgMagicItemMapper {
      *
      * <p>Slug — латиница/цифры/дефис (имя файла у VTTG = id).</p>
      */
-    private String id(MagicItem item, String sourceKey) {
-        String slug = slug(item.getUrl());
+    private String id(String url, String sourceKey) {
+        String slug = slug(url);
         if (slug.isEmpty()) {
             return sourceKey;
         }
@@ -120,16 +175,21 @@ public class VttgMagicItemMapper {
     }
 
     /**
-     * Разрешает базовый предмет по уточнению ({@code clarification}) или названию и переносит из него
-     * боевые/доспешные поля и вес/стоимость. Срабатывает только для оружия и брони; для «общих»
-     * зачарований и уточнений без точного совпадения базы возвращает пустой результат.
+     * Url дополнительного варианта: к url предмета добавляется slug url базового предмета
+     * (напр. «dwarven-plate» + «half-plate» → «dwarven-plate-half-plate»), чтобы id был уникальным
+     * и стабильным. Если базовый предмет не разрешился (нелатинский/пустой slug) — добавляем сам base.
      */
-    private BaseMechanics resolveBase(MagicItem item, MagicItemCategory category,
-                                      Map<String, List<Item>> baseCache) {
-        if (category != MagicItemCategory.WEAPON && category != MagicItemCategory.ARMOR) {
-            return BaseMechanics.EMPTY;
+    private String variantUrl(MagicItem item, String base, Map<String, List<Item>> baseCache) {
+        Item resolved = findBase(item.getCategory(), baseCache, base);
+        String suffix = resolved != null ? slug(resolved.getUrl()) : "";
+        if (suffix.isEmpty()) {
+            suffix = slug(base);
         }
-        Item base = findBase(item, category, baseCache);
+        return suffix.isEmpty() ? item.getUrl() : item.getUrl() + "-" + suffix;
+    }
+
+    /** Боевые/доспешные поля и вес/стоимость базового предмета; {@code EMPTY} — база не найдена. */
+    private BaseMechanics mechanics(Item base, MagicItemCategory category) {
         if (base == null) {
             return BaseMechanics.EMPTY;
         }
@@ -141,21 +201,26 @@ public class VttgMagicItemMapper {
             }
         }
         double weight = baseMap.get("weight") instanceof Number number ? number.doubleValue() : 0;
-        String cost = baseMap.get("cost") instanceof String value ? value : "";
-        return new BaseMechanics(weight, cost, fields.isEmpty() ? null : fields);
+        return new BaseMechanics(weight, goldCost(base), fields.isEmpty() ? null : fields);
     }
 
-    /** Первый видимый базовый предмет нужного рода (оружие/броня) с точным совпадением имени. */
-    private Item findBase(MagicItem item, MagicItemCategory category, Map<String, List<Item>> baseCache) {
+    /**
+     * Первый видимый базовый предмет нужного рода (оружие/броня) с точным совпадением имени по любому
+     * из {@code candidates} (уточнение/название/английское имя). Только для оружия и брони.
+     */
+    private Item findBase(MagicItemCategory category, Map<String, List<Item>> baseCache, String... candidates) {
+        if (category != MagicItemCategory.WEAPON && category != MagicItemCategory.ARMOR) {
+            return null;
+        }
         boolean needWeapon = category == MagicItemCategory.WEAPON;
-        for (String candidate : new String[]{item.getClarification(), item.getName(), item.getEnglish()}) {
+        for (String candidate : candidates) {
             if (!StringUtils.hasText(candidate)) {
                 continue;
             }
             String key = candidate.trim().toLowerCase(Locale.ROOT);
-            List<Item> candidates =
+            List<Item> found =
                     baseCache.computeIfAbsent(key, ignored -> itemRepository.findBaseByNameForVttgExport(candidate.trim()));
-            for (Item base : candidates) {
+            for (Item base : found) {
                 if (needWeapon ? base.getWeapon() != null : base.getArmor() != null) {
                     return base;
                 }
@@ -164,11 +229,51 @@ public class VttgMagicItemMapper {
         return null;
     }
 
-    /** Бонус оружия/брони «+1/+2/+3» из названия, английского имени или уточнения; {@code null} — нет бонуса. */
-    private Integer magicBonus(MagicItem item) {
-        return firstBonus(item.getName(), item.getEnglish(), item.getClarification());
+    /** Разбивает {@code clarification} на отдельные базовые предметы по «или»/запятой/точке с запятой. */
+    private List<String> splitBaseItems(String clarification) {
+        if (!StringUtils.hasText(clarification)) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (String part : clarification.split("(?i)\\s+или\\s+|\\s*[,;]\\s*")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result;
     }
 
+    /** Самый длинный базовый предмет из {@code bases}, входящий в название (без учёта регистра); иначе {@code null}. */
+    private String anchor(String name, List<String> bases) {
+        if (!StringUtils.hasText(name)) {
+            return null;
+        }
+        String lower = name.toLowerCase(Locale.ROOT);
+        String best = null;
+        for (String base : bases) {
+            if (lower.contains(base.toLowerCase(Locale.ROOT))
+                    && (best == null || base.length() > best.length())) {
+                best = base;
+            }
+        }
+        return best;
+    }
+
+    /** Подменяет вхождение {@code anchor} в названии на {@code base}, сохраняя регистр первой буквы. */
+    private String replaceAnchor(String name, String anchor, String base) {
+        int idx = name.toLowerCase(Locale.ROOT).indexOf(anchor.toLowerCase(Locale.ROOT));
+        if (idx < 0) {
+            return name;
+        }
+        String matched = name.substring(idx, idx + anchor.length());
+        String replacement = !matched.isEmpty() && Character.isUpperCase(matched.charAt(0))
+                ? Character.toUpperCase(base.charAt(0)) + base.substring(1)
+                : base;
+        return name.substring(0, idx) + replacement + name.substring(idx + anchor.length());
+    }
+
+    /** Бонус оружия/брони «+1/+2/+3» из названия, английского имени или уточнения; {@code null} — нет бонуса. */
     private Integer firstBonus(String... values) {
         for (String value : values) {
             if (!StringUtils.hasText(value)) {
@@ -220,25 +325,60 @@ public class VttgMagicItemMapper {
     }
 
     /**
-     * Редкость в формате VTTG. У магического предмета {@code isMagical=true} редкость обязана быть
-     * реальной (none недопустим), поэтому для VARIES/UNKNOWN/отсутствующей она выводится из текста
+     * Стоимость предмета: цена по таблице «Редкость и цена» ({@link Rarity#getBaseCost()}) плюс
+     * стоимость базового немагического предмета, разрешённого по {@code clarification}
+     * (напр. «длинный меч», «латы»), приведённая к золоту. Артефакт бесценен
+     * ({@code baseCost == null}) — для него цена редкости не подставляется, остаётся лишь стоимость
+     * базы (обычно её нет).
+     */
+    private String cost(Rarity rarity, BaseMechanics base) {
+        Integer rarityCost = rarity.getBaseCost();
+        Double baseCost = base.costGold();
+        if (rarityCost == null) {
+            return baseCost != null ? formatGold(baseCost) : "";
+        }
+        return formatGold(rarityCost + (baseCost != null ? baseCost : 0));
+    }
+
+    /** Стоимость базы в золоте (с учётом номинала монеты); {@code null} — не задана или не парсится. */
+    private Double goldCost(Item base) {
+        if (!StringUtils.hasText(base.getCost()) || base.getCoin() == null) {
+            return null;
+        }
+        String normalized = base.getCost().replaceAll("[\\s\\u00A0]", "").replace(',', '.');
+        try {
+            return Double.parseDouble(normalized) * base.getCoin().getExchangeForGold();
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** Золото в формате эталона: «4015 зм»; дробные суммы округляются до сотых (медь) без хвостовых нулей. */
+    private String formatGold(double gold) {
+        String number = BigDecimal.valueOf(gold)
+                .setScale(2, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString();
+        return number + " " + Coin.GC.getShortName();
+    }
+
+    /**
+     * Реальная редкость магического предмета. У {@code isMagical=true} редкость обязана быть
+     * конкретной (none недопустим), поэтому для VARIES/UNKNOWN/отсутствующей она выводится из текста
      * {@code varies} (берётся минимальная упомянутая редкость), а если распознать не удалось —
      * подставляется дефолт {@link #DEFAULT_MAGIC_RARITY}.
      */
-    private String rarity(MagicItem item) {
-        String mapped = rarity(item.getRarity());
-        if (!"none".equals(mapped)) {
-            return mapped;
+    private Rarity effectiveRarity(MagicItem item) {
+        Rarity rarity = item.getRarity();
+        if (rarity != null && rarity != Rarity.VARIES && rarity != Rarity.UNKNOWN) {
+            return rarity;
         }
-        String fromVaries = rarityFromVaries(item.getVaries());
+        Rarity fromVaries = rarityFromVaries(item.getVaries());
         return fromVaries != null ? fromVaries : DEFAULT_MAGIC_RARITY;
     }
 
-    /** Rarity → ItemRarity VTTG (none|common|uncommon|rare|very-rare|legendary|artifact). */
-    private String rarity(Rarity rarity) {
-        if (rarity == null) {
-            return "none";
-        }
+    /** Rarity → ItemRarity VTTG (common|uncommon|rare|very-rare|legendary|artifact). */
+    private String rarityCode(Rarity rarity) {
         return switch (rarity) {
             case COMMON -> "common";
             case UNCOMMON -> "uncommon";
@@ -246,39 +386,40 @@ public class VttgMagicItemMapper {
             case VERY_RARE -> "very-rare";
             case LEGENDARY -> "legendary";
             case ARTIFACT -> "artifact";
-            case VARIES, UNKNOWN -> "none";   // в ItemRarity нет «varies»/«unknown» — решается в rarity(MagicItem)
+            // effectiveRarity() сюда VARIES/UNKNOWN не пропускает — но switch обязан быть полным.
+            case VARIES, UNKNOWN -> rarityCode(DEFAULT_MAGIC_RARITY);
         };
     }
 
     /**
      * Минимальная редкость, упомянутая в тексте {@code varies} (напр. «редкий, очень редкий или
-     * легендарный» → {@code rare}). Возвращает {@code null}, если ни одна редкость не распознана.
+     * легендарный» → {@link Rarity#RARE}). Возвращает {@code null}, если ни одна редкость не распознана.
      * Порядок проверок — от младшей к старшей; учитываются перекрытия подстрок
      * («необычный» ⊃ «обычн», «очень редкий» ⊃ «редк»).
      */
-    private String rarityFromVaries(String varies) {
+    private Rarity rarityFromVaries(String varies) {
         if (!StringUtils.hasText(varies)) {
             return null;
         }
         // Убираем существительное «редкость/редкости/…», иначе его корень «редк» ложно даёт rare.
         String text = varies.toLowerCase(Locale.ROOT).replaceAll("редкост\\p{L}*", " ");
         if (text.matches(".*(?<!не)обычн.*")) {
-            return "common";
+            return Rarity.COMMON;
         }
         if (text.contains("необычн")) {
-            return "uncommon";
+            return Rarity.UNCOMMON;
         }
         if (text.matches(".*(?<!очень )редк.*")) {
-            return "rare";
+            return Rarity.RARE;
         }
         if (text.contains("очень редк")) {
-            return "very-rare";
+            return Rarity.VERY_RARE;
         }
         if (text.contains("легендарн")) {
-            return "legendary";
+            return Rarity.LEGENDARY;
         }
         if (text.contains("артефакт")) {
-            return "artifact";
+            return Rarity.ARTIFACT;
         }
         return null;
     }
@@ -295,8 +436,8 @@ public class VttgMagicItemMapper {
                 : SOURCE;
     }
 
-    /** Выведенные из базового предмета поля: вес, стоимость и боевые/доспешные поля ({@code null} — нет). */
-    private record BaseMechanics(double weight, String cost, Map<String, Object> fields) {
-        private static final BaseMechanics EMPTY = new BaseMechanics(0, "", null);
+    /** Выведенные из базового предмета поля: вес, стоимость в золоте и боевые/доспешные поля ({@code null} — нет). */
+    private record BaseMechanics(double weight, Double costGold, Map<String, Object> fields) {
+        private static final BaseMechanics EMPTY = new BaseMechanics(0, null, null);
     }
 }

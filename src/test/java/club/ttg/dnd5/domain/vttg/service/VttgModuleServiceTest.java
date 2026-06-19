@@ -117,7 +117,8 @@ class VttgModuleServiceTest {
     void buildsMagicItemModuleAsEquipmentSection() throws Exception {
         MagicItem item = new MagicItem();
         when(magicItemRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(item));
-        when(magicItemMapper.toVttg(eq(item), any())).thenReturn(VttgMagicItem.builder().id("srd_wand_of_fear").build());
+        when(magicItemMapper.toVttgVariants(eq(item), any()))
+                .thenReturn(List.of(VttgMagicItem.builder().id("srd_wand_of_fear").build()));
 
         Map<String, byte[]> files = unzip(service.buildMagicItemModule().content());
 

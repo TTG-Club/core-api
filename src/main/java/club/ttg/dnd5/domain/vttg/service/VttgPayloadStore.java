@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 public class VttgPayloadStore {
 
     /** Версия логики мапперов. Увеличьте при изменении формата payload — все строки пересчитаются. */
-    public static final int SCHEMA_VERSION = 3;
+    public static final int SCHEMA_VERSION = 4;
 
     private final VttgExportRepository repository;
     private final ObjectMapper objectMapper;
@@ -104,11 +104,26 @@ public class VttgPayloadStore {
         for (VttgEntityRef ref : refs) {
             JsonNode payload = payloads.get(ref.getUrl());
             // payload == null лишь если сущность исчезла между выборкой ссылок и пересчётом — пропускаем.
-            if (payload != null) {
+            if (payload == null) {
+                continue;
+            }
+            // Массив = одна сущность раскрылась в несколько записей (напр. магический предмет с
+            // несколькими базами в clarification) — разворачиваем в отдельные изменения по id элемента.
+            if (payload.isArray()) {
+                for (JsonNode element : payload) {
+                    changes.add(new VttgChange(type, elementKey(element, ref.getUrl()), ref.getChangedAt(), element));
+                }
+            } else {
                 changes.add(new VttgChange(type, ref.getUrl(), ref.getChangedAt(), payload));
             }
         }
         return changes;
+    }
+
+    /** Естественный ключ записи из элемента массива: его {@code id}; иначе url исходной сущности. */
+    private String elementKey(JsonNode element, String fallbackUrl) {
+        JsonNode id = element.get("id");
+        return id != null && id.isTextual() ? id.asText() : fallbackUrl;
     }
 
     private boolean isFresh(VttgExport stored, Instant expectedStamp) {

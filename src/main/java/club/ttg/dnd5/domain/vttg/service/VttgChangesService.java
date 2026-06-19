@@ -189,7 +189,7 @@ public class VttgChangesService {
                 () -> magicItemRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
                 itemRepository::maxChangedAtForVttgExport,
                 magicItemRepository::findAllForVttgExportByUrls, MagicItem::getUrl,
-                item -> magicItemMapper.toVttg(item, baseCache));
+                item -> magicItemMapper.toVttgPayload(item, baseCache));
         submitStore(futures, BACKGROUNDS, selected,
                 () -> backgroundRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
                 featRepository::maxChangedAtForVttgExport,
