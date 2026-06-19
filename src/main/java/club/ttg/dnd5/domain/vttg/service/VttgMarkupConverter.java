@@ -30,6 +30,8 @@ public class VttgMarkupConverter {
     private static final Pattern ROLL = Pattern.compile("\\{@roll\\s+([^|}]+)(?:\\|[^}]*)?}");
     /** Универсальная ссылка {@code {@link термин|url:...}} (или без url) — в VTTG раскрывается в обычный текст термина. */
     private static final Pattern LINK = Pattern.compile("\\{@link\\s+([^|}]+)(?:\\|[^}]*)?}");
+    /** Перенос строки {@code {@br}} — в VTTG раскрывается в обычный перевод строки. */
+    private static final Pattern BR = Pattern.compile("\\{@br}");
 
     private final ObjectMapper objectMapper;
     @Value("${app.url:https://ttg.club}")
@@ -126,7 +128,8 @@ public class VttgMarkupConverter {
     }
 
     private String replaceMarkup(String text, boolean keepRolls) {
-        String formatted = replaceInline(text, ITALIC, "*$1*");
+        String formatted = replaceInline(text, BR, "\n");
+        formatted = replaceInline(formatted, ITALIC, "*$1*");
         formatted = replaceInline(formatted, BOLD, "**$1**");
         if (!keepRolls) {
             formatted = unwrapLabel(formatted, ROLL);

@@ -105,6 +105,14 @@ class VttgMarkupConverterTest {
     }
 
     @Test
+    void replacesBrTokenWithLineBreak() {
+        assertEquals(
+                "Первая строка\nВторая строка",
+                converter.toText("Первая строка{@br}Вторая строка")
+        );
+    }
+
+    @Test
     void convertsRealSpellDescriptionArray() {
         String markup = """
                 ["{@i Вы бросаете кислотный шарик} в точку в пределах дальности, где он взрывается {@glossary сферой|url:sphere-phb} с радиусом 5 фт. Каждое {@glossary существо|url:creature-phb} в этой сфере должно преуспеть в {@glossary спасброске|url:saving-throw-phb} Ловкости или получить {@roll 1к6} урона кислотой."]
