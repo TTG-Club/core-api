@@ -22,6 +22,9 @@ import java.util.Set;
         @Index(name = "name_index", columnList = "name, english, alternative")
 })
 public class Item extends NamedEntity {
+    @Enumerated(EnumType.STRING)
+    private ItemCategory category = ItemCategory.ITEM;
+
     @Type(JsonType.class)
     @Column(name = "item_types", columnDefinition = "jsonb")
     private Set<ItemType> types;

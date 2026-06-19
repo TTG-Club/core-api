@@ -13,7 +13,25 @@ databaseChangeLog:
             columnName: item_type
 
   - changeSet:
-      id: 2026-06-19-01-drop-item-category-column
+      id: 2026-06-19-01-add-item-category-column
+      author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: item
+                columnName: category
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: category
+                  type: VARCHAR(31)
+                  defaultValue: ITEM
+
+  - changeSet:
+      id: 2026-06-19-01-backfill-item-category
       author: Codex
       preConditions:
         - onFail: MARK_RAN
@@ -21,6 +39,12 @@ databaseChangeLog:
             tableName: item
             columnName: category
       changes:
-        - dropColumn:
-            tableName: item
-            columnName: category
+        - sql:
+            sql: |
+              update item
+              set category = case
+                  when weapon is not null and weapon <> '{}'::jsonb then 'WEAPON'
+                  when armor is not null and armor <> '{}'::jsonb then 'ARMOR'
+                  else 'ITEM'
+              end
+              where category is null;

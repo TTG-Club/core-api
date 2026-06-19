@@ -20,7 +20,6 @@ import org.mapstruct.ReportingPolicy;
 public interface ItemMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
-    @Mapping(target = "category", constant = "ITEM")
     @Mapping(source = ".", target = "cost", qualifiedByName = "getCost")
     @BaseItem
     ItemDetailResponse toDetailResponse(final Item item);
@@ -40,6 +39,7 @@ public interface ItemMapper {
     @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(source = "request.category", target = "category", defaultValue = "ITEM")
     @Mapping(target = "source", source = "source")
     Item toEntity(ItemRequest request, Source source);
 
