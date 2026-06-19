@@ -199,3 +199,5 @@ databaseChangeLog:
       file: db/changelog/2026/06/18-01-add-vttg-export.yaml
   - include:
       file: db/changelog/2026/06/18-02-add-original-description.yaml
+  - include:
+      file: db/changelog/2026/06/19-01-drop-unused-item-columns.yaml

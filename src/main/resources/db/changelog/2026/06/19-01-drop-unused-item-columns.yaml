@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-19-01-drop-item-type-column
+      author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: item
+            columnName: item_type
+      changes:
+        - dropColumn:
+            tableName: item
+            columnName: item_type
+
+  - changeSet:
+      id: 2026-06-19-01-drop-item-category-column
+      author: Codex
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: item
+            columnName: category
+      changes:
+        - dropColumn:
+            tableName: item
+            columnName: category
