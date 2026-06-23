@@ -81,4 +81,8 @@ public class Spell extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private SpellEffect effect;
+
+    @Type(JsonType.class)
+    @Column(name = "active_effects", columnDefinition = "jsonb")
+    private List<SpellActiveEffect> activeEffects;
 }

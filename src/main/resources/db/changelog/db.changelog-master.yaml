@@ -203,3 +203,5 @@ databaseChangeLog:
       file: db/changelog/2026/06/19-01-drop-unused-item-columns.yaml
   - include:
       file: db/changelog/2026/06/23-01-add-user-subscription.yaml
+  - include:
+      file: db/changelog/2026/06/23-02-add-spell-active-effects.yaml

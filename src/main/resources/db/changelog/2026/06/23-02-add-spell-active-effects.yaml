@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-23-02-add-spell-active-effects
+      author: codex
+      changes:
+        - addColumn:
+            tableName: spell
+            columns:
+              - column:
+                  name: active_effects
+                  type: jsonb
+                  constraints:
+                    nullable: true
