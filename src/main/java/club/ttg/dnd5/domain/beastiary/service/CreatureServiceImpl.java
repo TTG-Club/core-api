@@ -94,7 +94,12 @@ public class CreatureServiceImpl implements CreatureService {
 
     @Override
     public CreatureRequest findFormByUrl(final String url) {
-        return creatureMapper.toRequest(findByUrl(url));
+        var request = creatureMapper.toRequest(findByUrl(url));
+        request.setGallery(galleryRepository.findAllByUrlAndType(request.getUrl(), SectionType.BESTIARY)
+                .stream()
+                .map(Gallery::getImage)
+                .toList());
+        return request;
     }
 
     @Secured("ADMIN")
