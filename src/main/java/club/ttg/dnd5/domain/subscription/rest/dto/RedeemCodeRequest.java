@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.subscription.rest.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record RegisterSubscriptionRequest(
+public record RedeemCodeRequest(
         @NotBlank String code
 ) {
 }

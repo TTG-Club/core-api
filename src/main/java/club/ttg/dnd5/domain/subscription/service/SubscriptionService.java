@@ -1,8 +1,14 @@
 package club.ttg.dnd5.domain.subscription.service;
 
+import club.ttg.dnd5.domain.subscription.model.RedemptionCode;
+import club.ttg.dnd5.domain.subscription.model.RewardPerk;
 import club.ttg.dnd5.domain.subscription.model.SubscriptionType;
 import club.ttg.dnd5.domain.subscription.model.UserSubscription;
+import club.ttg.dnd5.domain.subscription.repository.RedemptionCodeRepository;
 import club.ttg.dnd5.domain.subscription.repository.UserSubscriptionRepository;
+import club.ttg.dnd5.domain.subscription.rest.dto.CreateCodesRequest;
+import club.ttg.dnd5.domain.subscription.rest.dto.RedeemResponse;
+import club.ttg.dnd5.domain.subscription.rest.dto.RedemptionCodeResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.SubscriptionResponse;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.security.SecurityUtils;
@@ -16,8 +22,11 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -26,42 +35,88 @@ public class SubscriptionService {
     private static final char[] CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
     private static final int CODE_LENGTH = 16;
     private static final int MAX_CODE_ATTEMPTS = 20;
+    private static final int MAX_BATCH_SIZE = 1000;
 
-    private final UserSubscriptionRepository repository;
+    private final RedemptionCodeRepository codeRepository;
+    private final UserSubscriptionRepository subscriptionRepository;
+    private final RewardService rewardService;
     private final SecureRandom random = new SecureRandom();
 
+    /**
+     * Выпускает пачку одноразовых кодов с одинаковыми наградами и периодом.
+     */
     @Transactional
-    public SubscriptionResponse createGift(int durationMonths) {
-        if (durationMonths < 1) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Срок подписки должен быть не меньше 1 месяца");
+    public List<RedemptionCodeResponse> createCodes(CreateCodesRequest request) {
+        int count = request.count() == null ? 1 : request.count();
+        if (count < 1 || count > MAX_BATCH_SIZE) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Количество кодов должно быть от 1 до " + MAX_BATCH_SIZE);
+        }
+        if (request.subscriptionMonths() == null && request.rewardTier() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Код должен нести подписку, награды или то и другое");
+        }
+        if (request.subscriptionMonths() != null) {
+            if (request.subscriptionMonths() < 1) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Срок подписки должен быть не меньше 1 месяца");
+            }
+            if (request.subscriptionType() == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Не указан тип подписки");
+            }
         }
 
-        UserSubscription subscription = new UserSubscription();
-        subscription.setType(SubscriptionType.GIFT);
-        subscription.setDurationMonths(durationMonths);
-        subscription.setRegistrationCode(generateUniqueCode());
-        return toResponse(repository.save(subscription), Instant.now());
+        Set<String> batch = new HashSet<>();
+        List<RedemptionCodeResponse> result = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            RedemptionCode code = new RedemptionCode();
+            code.setCode(generateUniqueCode(batch));
+            code.setSubscriptionType(request.subscriptionMonths() == null ? null : request.subscriptionType());
+            code.setSubscriptionMonths(request.subscriptionMonths());
+            code.setRewardTier(request.rewardTier());
+            code.setLabel(request.label());
+            result.add(toResponse(codeRepository.save(code)));
+        }
+        return result;
     }
 
+    /**
+     * Погашает код: выдаёт награды сразу (навсегда) и создаёт подписку
+     * в статусе REGISTERED, если код её нёс. Таймер запускается отдельно — {@link #activate}.
+     */
     @Transactional
-    public SubscriptionResponse register(String code) {
+    public RedeemResponse redeem(String rawCode) {
         String username = currentUsername();
-        UserSubscription subscription = repository.findByRegistrationCode(normalizeCode(code))
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Код подписки не найден"));
-
-        if (subscription.getOwnerUsername() != null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Подписка уже зарегистрирована");
+        RedemptionCode code = codeRepository.findByCode(normalizeCode(rawCode))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Код не найден"));
+        if (code.getRedeemedBy() != null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Код уже использован");
         }
 
-        subscription.setOwnerUsername(username);
-        subscription.setRegisteredAt(Instant.now());
-        return toResponse(subscription, Instant.now());
+        Instant now = Instant.now();
+        code.setRedeemedBy(username);
+        code.setRedeemedAt(now);
+
+        SubscriptionResponse subscription = null;
+        if (code.getSubscriptionMonths() != null) {
+            UserSubscription entity = new UserSubscription();
+            entity.setType(code.getSubscriptionType());
+            entity.setDurationMonths(code.getSubscriptionMonths());
+            entity.setOwnerUsername(username);
+            entity.setRegisteredAt(now);
+            subscription = toResponse(subscriptionRepository.save(entity), now);
+        }
+
+        List<RewardPerk> grantedPerks = List.of();
+        if (code.getRewardTier() != null) {
+            grantedPerks = rewardService.grantTier(username, code.getRewardTier(), code.getUuid());
+        }
+        return new RedeemResponse(subscription, grantedPerks);
     }
 
     @Transactional
     public SubscriptionResponse activate(UUID id) {
         String username = currentUsername();
-        UserSubscription subscription = repository.findById(id)
+        UserSubscription subscription = subscriptionRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Подписка не найдена"));
 
         if (!username.equals(subscription.getOwnerUsername())) {
@@ -80,32 +135,40 @@ public class SubscriptionService {
     }
 
     @Transactional(readOnly = true)
+    public List<SubscriptionResponse> allSubscriptions() {
+        Instant now = Instant.now();
+        return subscriptionRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(subscription -> toResponse(subscription, now))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<SubscriptionResponse> currentUserSubscriptions() {
         Instant now = Instant.now();
-        return repository.findByOwnerUsernameOrderByCreatedAtDesc(currentUsername()).stream()
+        return subscriptionRepository.findByOwnerUsernameOrderByCreatedAtDesc(currentUsername()).stream()
                 .map(subscription -> toResponse(subscription, now))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public boolean hasRegisteredSubscription(String username) {
-        return StringUtils.hasText(username) && repository.existsByOwnerUsername(username);
+        return StringUtils.hasText(username) && subscriptionRepository.existsByOwnerUsername(username);
     }
 
     @Transactional(readOnly = true)
     public boolean hasActiveSubscription(String username, Instant now) {
         return StringUtils.hasText(username)
-                && repository.existsByOwnerUsernameAndStartsAtIsNotNullAndExpiresAtAfter(username, now);
+                && subscriptionRepository.existsByOwnerUsernameAndStartsAtIsNotNullAndExpiresAtAfter(username, now);
     }
 
-    private String generateUniqueCode() {
+    private String generateUniqueCode(Set<String> batch) {
         for (int attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
             String code = randomCode();
-            if (!repository.existsByRegistrationCode(code)) {
+            if (batch.add(code) && !codeRepository.existsByCode(code)) {
                 return code;
             }
         }
-        throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Не удалось создать уникальный код подписки");
+        throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Не удалось создать уникальный код");
     }
 
     private String randomCode() {
@@ -126,13 +189,26 @@ public class SubscriptionService {
 
     private String normalizeCode(String code) {
         if (!StringUtils.hasText(code)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Код подписки обязателен");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Код обязателен");
         }
         String normalized = code.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT);
         if (!StringUtils.hasText(normalized)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Код подписки обязателен");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Код обязателен");
         }
         return normalized;
+    }
+
+    private RedemptionCodeResponse toResponse(RedemptionCode code) {
+        return new RedemptionCodeResponse(
+                code.getUuid(),
+                code.getCode(),
+                code.getSubscriptionType(),
+                code.getSubscriptionMonths(),
+                code.getRewardTier(),
+                code.getLabel(),
+                code.getRedeemedBy(),
+                code.getRedeemedAt(),
+                code.getCreatedAt());
     }
 
     private SubscriptionResponse toResponse(UserSubscription subscription, Instant now) {
@@ -140,7 +216,6 @@ public class SubscriptionService {
                 subscription.getUuid(),
                 subscription.getType(),
                 status(subscription, now),
-                subscription.getRegistrationCode(),
                 subscription.getDurationMonths(),
                 subscription.getOwnerUsername(),
                 subscription.getRegisteredAt(),

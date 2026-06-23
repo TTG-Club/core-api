@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.subscription.rest.controller;
 
-import club.ttg.dnd5.domain.subscription.rest.dto.CreateGiftSubscriptionRequest;
-import club.ttg.dnd5.domain.subscription.rest.dto.RegisterSubscriptionRequest;
+import club.ttg.dnd5.domain.subscription.rest.dto.CreateCodesRequest;
+import club.ttg.dnd5.domain.subscription.rest.dto.RedeemCodeRequest;
+import club.ttg.dnd5.domain.subscription.rest.dto.RedeemResponse;
+import club.ttg.dnd5.domain.subscription.rest.dto.RedemptionCodeResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.SubscriptionResponse;
 import club.ttg.dnd5.domain.subscription.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,18 +31,18 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
 
     @Secured("ADMIN")
-    @Operation(summary = "Создать подарочную подписку")
-    @PostMapping("/gift")
+    @Operation(summary = "Выпустить пачку кодов с одинаковыми наградами и периодом")
+    @PostMapping("/codes")
     @ResponseStatus(HttpStatus.CREATED)
-    public SubscriptionResponse createGift(@Valid @RequestBody CreateGiftSubscriptionRequest request) {
-        return subscriptionService.createGift(request.durationMonths());
+    public List<RedemptionCodeResponse> createCodes(@Valid @RequestBody CreateCodesRequest request) {
+        return subscriptionService.createCodes(request);
     }
 
     @Secured("USER")
-    @Operation(summary = "Зарегистрировать подарочную подписку на текущего пользователя")
-    @PostMapping("/register")
-    public SubscriptionResponse register(@Valid @RequestBody RegisterSubscriptionRequest request) {
-        return subscriptionService.register(request.code());
+    @Operation(summary = "Погасить код: выдать награды и зарегистрировать подписку")
+    @PostMapping("/redeem")
+    public RedeemResponse redeem(@Valid @RequestBody RedeemCodeRequest request) {
+        return subscriptionService.redeem(request.code());
     }
 
     @Secured("USER")
@@ -55,5 +57,12 @@ public class SubscriptionController {
     @GetMapping("/my")
     public List<SubscriptionResponse> mySubscriptions() {
         return subscriptionService.currentUserSubscriptions();
+    }
+
+    @Secured("ADMIN")
+    @Operation(summary = "Получить все подписки (для админки)")
+    @GetMapping("/all")
+    public List<SubscriptionResponse> allSubscriptions() {
+        return subscriptionService.allSubscriptions();
     }
 }

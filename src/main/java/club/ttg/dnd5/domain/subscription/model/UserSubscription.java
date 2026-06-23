@@ -32,9 +32,6 @@ public class UserSubscription {
     @Column(nullable = false, length = 32)
     private SubscriptionType type;
 
-    @Column(name = "registration_code", nullable = false, unique = true, length = 64)
-    private String registrationCode;
-
     @Column(name = "duration_months", nullable = false)
     private Integer durationMonths;
 

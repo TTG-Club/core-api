@@ -9,7 +9,6 @@ public record SubscriptionResponse(
         UUID id,
         SubscriptionType type,
         String status,
-        String registrationCode,
         Integer durationMonths,
         String ownerUsername,
         Instant registeredAt,

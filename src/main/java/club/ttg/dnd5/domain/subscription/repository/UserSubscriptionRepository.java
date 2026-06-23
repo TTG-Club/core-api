@@ -5,13 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscription, UUID> {
-    Optional<UserSubscription> findByRegistrationCode(String registrationCode);
-
-    boolean existsByRegistrationCode(String registrationCode);
+    List<UserSubscription> findAllByOrderByCreatedAtDesc();
 
     List<UserSubscription> findByOwnerUsernameOrderByCreatedAtDesc(String ownerUsername);
 
