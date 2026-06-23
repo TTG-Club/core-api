@@ -140,13 +140,29 @@ public class SpeciesService {
 
     @Transactional
     public String update(String oldUrl, SpeciesRequest request) {
-        if (speciesRepository.existsById(oldUrl)) {
-            speciesRepository.deleteById(oldUrl);
-            speciesRepository.flush();
-            return saveSpecies(request).getUrl();
-        } else {
+        Species existing = speciesRepository.findById(oldUrl)
+                .orElse(null);
+        if (existing == null) {
             throw new EntityNotFoundException("Species with URL " + oldUrl + " does not exist.");
         }
+
+        if (oldUrl.equals(request.getUrl())) {
+            speciesMapper.updateEntity(request, existing);
+            if (StringUtils.hasText(request.getParent())) {
+                existing.setParent(findByUrl(request.getParent()));
+            } else {
+                existing.setParent(null);
+            }
+            existing.setSource(sourceService.findByUrl(request.getSource().getUrl()));
+            return speciesRepository.save(existing).getUrl();
+        }
+
+        if (speciesRepository.existsById(request.getUrl())) {
+            throw new EntityExistException("Р’РёРґ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ СЃ URL: " + request.getUrl());
+        }
+        speciesRepository.deleteById(oldUrl);
+        speciesRepository.flush();
+        return saveSpecies(request).getUrl();
     }
 
     public SpeciesDetailResponse addSubSpecies(String speciesUrl, List<String> lineagesUrls) {

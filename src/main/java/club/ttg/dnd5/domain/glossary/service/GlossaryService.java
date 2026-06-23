@@ -65,10 +65,18 @@ public class GlossaryService {
                 .map(sourceService::findByUrl)
                 .orElse(null);
 
-        glossaryMapper.updateEntity(request, source, existingGlossary);
-        glossaryRepository.save(existingGlossary);
+        if (url.equals(request.getUrl())) {
+            glossaryMapper.updateEntity(request, source, existingGlossary);
+            glossaryRepository.save(existingGlossary);
+            return existingGlossary.getUrl();
+        }
 
-        return existingGlossary.getUrl();
+        if (glossaryRepository.existsById(request.getUrl())) {
+            throw new EntityExistException(String.format("Glossary with url %s already exists", request.getUrl()));
+        }
+        glossaryRepository.deleteById(url);
+        glossaryRepository.flush();
+        return glossaryRepository.save(glossaryMapper.toEntity(request, source)).getUrl();
     }
 
     @Transactional

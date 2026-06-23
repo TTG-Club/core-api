@@ -211,6 +211,21 @@ public class SpellService
                 .map(sourceService::findReferenceByUrl)
                 .orElse(null);
 
+        if (!oldUrl.equals(request.getUrl()))
+        {
+            if (existsByUrl(request.getUrl()))
+            {
+                throw new EntityExistException(String.format("Р—Р°РєР»РёРЅР°РЅРёРµ СЃ url %s СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚", request.getUrl()));
+            }
+
+            spellRepository.deleteById(oldUrl);
+            spellRepository.flush();
+
+            Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
+            spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
+            return spellRepository.save(spell).getUrl();
+        }
+
         spellMapper.updateEntity(existingSpell, request);
         existingSpell.setSource(source);
 

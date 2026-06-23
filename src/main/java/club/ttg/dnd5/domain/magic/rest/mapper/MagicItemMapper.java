@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
@@ -48,6 +49,19 @@ public interface MagicItemMapper
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     MagicItem toEntity(MagicItemRequest request, Source source);
+
+    @BaseMapping.BaseEntityNameMapping
+    @Mapping(target = "url", ignore = true)
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(source = "request.category.clarification", target = "clarification")
+    @Mapping(source = "request.category.type", target = "category")
+    @Mapping(source = "request.rarity.type", target = "rarity")
+    @Mapping(source = "request.rarity.varies", target = "varies")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(target = "source", source = "source")
+    void updateEntity(MagicItemRequest request, Source source, @MappingTarget MagicItem magicItem);
 
     @Named("toSubtitle")
     default String toSubtitle(MagicItem magicItem) {

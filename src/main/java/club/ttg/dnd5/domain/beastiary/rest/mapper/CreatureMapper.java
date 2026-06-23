@@ -30,6 +30,7 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -135,6 +136,38 @@ public interface CreatureMapper {
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     Creature toEntity(CreatureRequest request, Source source);
+
+    @BaseMapping.BaseEntityNameMapping
+    @Mapping(target = "url", ignore = true)
+    @Mapping(source = "request.ac.value", target = "armor.armorClass")
+    @Mapping(source = "request.ac.text", target = "armor.text")
+    @Mapping(source = "request.speeds", target = "speeds")
+    @Mapping(source = "request.sizes", target = "sizes")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(source = "request.experience.value", target = "experience")
+    @Mapping(source = "request.experience.inLair", target = "experienceInLair")
+    @Mapping(source = "request.experience.suffix", target = "experienceSuffix")
+    @Mapping(source = "request.section.name.name", target = "section.sectionName")
+    @Mapping(source = "request.section.name.english", target = "section.sectionEnglish")
+    @Mapping(source = "request.section.subtitle", target = "section.subtitle")
+    @Mapping(source = "request.section.habitats", target = "section.habitats")
+    @Mapping(source = "request.section.treasures", target = "section.treasures")
+    @Mapping(source = "request.section.description", target = "section.sectionDescription")
+    @Mapping(source = "request.legendary.actions", target = "legendaryActions")
+    @Mapping(source = "request.legendary.count", target = "legendaryAction")
+    @Mapping(source = "request.legendary.inLair", target = "legendaryActionInLair")
+    @Mapping(source = "request.defenses.vulnerabilities.values", target = "vulnerabilities")
+    @Mapping(source = "request.defenses.vulnerabilities.text", target = "vulnerabilitiesText")
+    @Mapping(source = "request.defenses.resistances.values", target = "resistance")
+    @Mapping(source = "request.defenses.resistances.text", target = "resistanceText")
+    @Mapping(source = "request.defenses.immunities.damage", target = "immunityToDamage")
+    @Mapping(source = "request.defenses.immunities.condition", target = "immunityToCondition")
+    @Mapping(source = "request.defenses.immunities.text", target = "immunityText")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(target = "source", source = "source")
+    void updateEntity(CreatureRequest request, Source source, @MappingTarget Creature creature);
 
     @Named("toAbilities")
     default AbilitiesResponse toAbilities(Creature creature) {

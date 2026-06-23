@@ -58,22 +58,22 @@ public class FeatServiceImpl implements FeatService {
     public String updateFeat(final String featUrl, final FeatRequest request) {
         var existing = findByUrl(featUrl);
         var book = sourceService.findByUrl(request.getSource().getUrl());
-        var feat = featMapper.toEntity(request, book);
 
-        if (featUrl.equals(feat.getUrl())) {
+        if (featUrl.equals(request.getUrl())) {
             // url не изменился — обновляем существующую строку (merge вместо delete+insert),
             // чтобы не задеть FK fk_background_on_feat. createdAt переносим, иначе isNew()
             // вернёт true и Spring Data попытается сделать INSERT (дубль ключа).
-            feat.setCreatedAt(existing.getCreatedAt());
-            return featRepository.save(feat).getUrl();
+            featMapper.updateEntity(request, book, existing);
+            return featRepository.save(existing).getUrl();
         }
 
         // url изменился — создаём черту с новым id, переводим на неё ссылки предысторий
         // и удаляем старую. Порядок важен: новая черта должна существовать до repoint,
         // а старую удаляем уже без ссылок.
-        if (featRepository.existsById(feat.getUrl())) {
-            throw new EntityExistException("Feat exist by URL: " + feat.getUrl());
+        if (featRepository.existsById(request.getUrl())) {
+            throw new EntityExistException("Feat exist by URL: " + request.getUrl());
         }
+        var feat = featMapper.toEntity(request, book);
         featRepository.saveAndFlush(feat);
         backgroundRepository.repointFeat(featUrl, feat.getUrl());
         featRepository.deleteById(featUrl);

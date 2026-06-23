@@ -110,10 +110,14 @@ public class ClassService {
         CharacterClass existingClass = findByUrl(url);
 
         if (!existingClass.getUrl().equals(request.getUrl())) {
-            var saved = classMapper.toEntity(request, existingClass.getSource());
+            if (exists(request.getUrl())) {
+                throw new EntityExistException(String.format("РљР»Р°СЃСЃ СЃ url %s СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚", request.getUrl()));
+            }
+            classRepository.delete(existingClass);
+            classRepository.flush();
+            var saved = classMapper.toEntity(request, getSource(request.getSource()));
             saved.setParentUrl(request.getParentUrl());
             classRepository.save(saved);
-            classRepository.delete(existingClass);
         } else {
             existingClass.setParentUrl(request.getParentUrl());
             classMapper.updateEntity(existingClass,
@@ -122,7 +126,7 @@ public class ClassService {
             );
         }
 
-        galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.CLASS);
+        galleryRepository.deleteByUrlAndType(url, SectionType.CLASS);
 
         saveGallery(request.getUrl(), request.getGallery());
         return request.getUrl();

@@ -59,10 +59,18 @@ public class MagicItemServiceImpl implements MagicItemService {
     @Transactional
     @Override
     public String updateItem(String url, MagicItemRequest request) {
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+
+        if (url.equals(request.getUrl())) {
+            var existing = findByUrl(url);
+            magicItemMapper.updateEntity(request, source, existing);
+            return magicItemRepository.save(existing).getUrl();
+        }
+
         findByUrl(url);
+        exist(request.getUrl());
         magicItemRepository.deleteById(url);
         magicItemRepository.flush();
-        var source = sourceService.findByUrl(request.getSource().getUrl());
         var entity = magicItemMapper.toEntity(request, source);
         return magicItemRepository.save(entity).getUrl();
     }

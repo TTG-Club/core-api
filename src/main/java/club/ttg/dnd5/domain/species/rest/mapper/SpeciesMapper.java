@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.CollectionUtils;
 
@@ -56,6 +57,22 @@ public interface SpeciesMapper {
     @Mapping(source = "gallery", target = "galleryUrl")
     @Mapping(target = "sourcePage", source = "source.page")
     Species toEntity(SpeciesRequest request);
+
+    @Mapping(target = "url", ignore = true)
+    @Mapping(source = "name.name", target = "name")
+    @Mapping(source = "name.english", target = "english")
+    @Mapping(target = "parent", ignore = true)
+    @Mapping(source = "properties.sizes", target = "sizes")
+    @Mapping(source = "properties.type", target = "type")
+    @Mapping(source = "properties.movementAttributes.base", target = "speed")
+    @Mapping(source = "properties.movementAttributes.fly", target = "fly")
+    @Mapping(source = "properties.movementAttributes.climb", target = "climb")
+    @Mapping(source = "properties.movementAttributes.swim", target = "swim")
+    @Mapping(source = "features", target = "features")
+    @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
+    @Mapping(source = "gallery", target = "galleryUrl")
+    @Mapping(target = "sourcePage", source = "source.page")
+    void updateEntity(SpeciesRequest request, @MappingTarget Species species);
 
     @BaseMapping.BaseRequestNameMapping
     @BaseMapping.BaseSourceRequestMapping

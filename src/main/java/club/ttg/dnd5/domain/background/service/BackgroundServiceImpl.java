@@ -54,11 +54,19 @@ public class BackgroundServiceImpl implements BackgroundService {
     @Transactional
     @Override
     public String updateBackgrounds(final String url, final BackgroundRequest request) {
-        findByUrl(url);
-        backgroundRepository.deleteById(url);
-        backgroundRepository.flush();
         var feat = getFeatReference(request.getFeatUrl());
         var source = sourceService.findReferenceByUrl(request.getSource().getUrl());
+
+        if (url.equals(request.getUrl())) {
+            var existing = findByUrl(url);
+            backgroundMapper.updateEntity(request, feat, source, existing);
+            return backgroundRepository.save(existing).getUrl();
+        }
+
+        findByUrl(url);
+        checkUrlExist(request.getUrl());
+        backgroundRepository.deleteById(url);
+        backgroundRepository.flush();
         return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
                 .getUrl();
     }
