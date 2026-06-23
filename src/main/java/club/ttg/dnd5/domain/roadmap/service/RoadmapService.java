@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.roadmap.repository.RoadmapRepository;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapRequest;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapResponse;
 import club.ttg.dnd5.domain.roadmap.rest.mapper.RoadmapMapper;
+import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -55,11 +56,17 @@ public class RoadmapService {
     public String update(final String url, final RoadmapRequest roadmap) {
         var entity = roadmapRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Roadmap not found"));
-        roadmapMapper.update(entity, roadmap);
-        if (!url.equals(roadmap.getUrl())) {
-            roadmapRepository.deleteById(url);
+        if (url.equals(roadmap.getUrl())) {
+            roadmapMapper.update(entity, roadmap);
+            return roadmapRepository.save(entity).getUrl();
         }
-        return roadmapRepository.save(entity).getUrl();
+
+        if (roadmapRepository.existsById(roadmap.getUrl())) {
+            throw new EntityExistException("Roadmap already exists");
+        }
+        roadmapRepository.deleteById(url);
+        roadmapRepository.flush();
+        return roadmapRepository.save(roadmapMapper.toEntity(roadmap)).getUrl();
     }
 
     @Transactional

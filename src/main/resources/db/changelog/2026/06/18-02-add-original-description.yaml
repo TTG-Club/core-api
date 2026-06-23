@@ -1,0 +1,130 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-18-02-add-original-spell
+      author: claude
+      changes:
+        - addColumn:
+            tableName: spell
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-class
+      author: claude
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-item
+      author: claude
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-bestiary
+      author: claude
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-background
+      author: claude
+      changes:
+        - addColumn:
+            tableName: background
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-feat
+      author: claude
+      changes:
+        - addColumn:
+            tableName: feat
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-magic-item
+      author: claude
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-glossary
+      author: claude
+      changes:
+        - addColumn:
+            tableName: glossary
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-species
+      author: claude
+      changes:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2026-06-18-02-add-original-source
+      author: claude
+      changes:
+        - addColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: original
+                  type: TEXT
+                  constraints:
+                    nullable: true

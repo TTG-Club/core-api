@@ -11,4 +11,6 @@ public class Attunement {
     private boolean requires;
     @Schema(description = "описание ограничения настройки (например только классом, видом или мировоззрением)")
     private String description;
+    @Schema(description = "оригинальное описание на английском языке (обычный текст)")
+    private String original;
 }

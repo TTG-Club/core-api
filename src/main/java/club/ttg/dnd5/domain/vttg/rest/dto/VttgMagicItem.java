@@ -1,10 +1,13 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.util.Map;
 
 /**
  * Магический предмет в формате компендиума VTTG.
@@ -22,10 +25,12 @@ public class VttgMagicItem {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String nameEn;
     private String description;
-    /** {@code GameItemType}; для магических предметов — "equipment". */
+    /** {@code GameItemType}: "weapon" для оружия, иначе "equipment". */
     private String type;
-    /** Отображаемая метка типа (напр. «Снаряжение»). */
+    /** Отображаемая метка типа (напр. «Снаряжение»/«Оружие»). */
     private String typeLabel;
+    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous). */
+    private String section;
     private int quantity;
     /** Вес в фунтах (в модели источника отсутствует — по умолчанию 0). */
     private double weight;
@@ -34,18 +39,44 @@ public class VttgMagicItem {
     /** {@code ItemRarity}: none, common, uncommon, rare, very-rare, legendary, artifact. */
     private String rarity;
     private boolean equipped;
-    /** {@code EquipmentCategory}: wand, ring, wondrous, light, medium, heavy, shield, trinket, clothing... */
+    /**
+     * {@code EquipmentCategory}: wand, ring, wondrous, light, medium, heavy, shield, trinket, clothing...
+     * Опускается для оружия (у него своя категория) и для брони без известного класса.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String equipmentCategory;
-    private int baseArmorAC;
+    /**
+     * Доспешные поля. Имеют смысл только для брони и при отсутствии структурных данных
+     * опускаются ({@code NON_NULL}) — как в эталоне SRD-бэкапа для не-брони (жезл и т.п.).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer baseArmorAC;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer maxDexBonus;
-    private boolean stealthDisadvantage;
-    private int strengthRequirement;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean stealthDisadvantage;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer strengthRequirement;
     /** {@code magicAttunement}: "none", "required" или "optional". */
     private String magicAttunement;
-    /** Источник набора данных: "srd". */
-    private String source;
+    /** Бонус «+1/+2/+3» оружия/брони; опускается, если бонуса нет. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer magicBonus;
     /** Ключ источника из sources.json: "phb", "dmg", "srd"... */
     private String sourceKey;
+
+    /**
+     * Боевые/доспешные поля, выведенные из базового предмета (по {@code clarification}):
+     * {@code baseType}, {@code damageParts}, {@code weaponCategory}, {@code baseArmorAC} и т.д.
+     * Сериализуются как поля верхнего уровня (см. {@code VttgItemMapper}); пусто — не выводятся.
+     */
+    @Getter(AccessLevel.NONE)
+    private Map<String, Object> mechanics;
+
+    @JsonAnyGetter
+    public Map<String, Object> getMechanics() {
+        return mechanics;
+    }
 
     @Getter(AccessLevel.NONE)
     private boolean isMagical;

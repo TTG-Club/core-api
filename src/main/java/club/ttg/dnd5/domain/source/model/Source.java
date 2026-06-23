@@ -29,6 +29,13 @@ public class Source extends Timestamped {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    /**
+     * Оригинальное описание на английском языке (обычный текст, без разметки).
+     * Необязательное, заполняется через формы ввода на фронте.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String original;
+
     @Enumerated(EnumType.STRING)
     private SourceType type;
     /**

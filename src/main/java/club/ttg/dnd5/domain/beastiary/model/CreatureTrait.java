@@ -13,4 +13,6 @@ public class CreatureTrait {
     private String english;
 
     private String description;
+
+    private String original;
 }

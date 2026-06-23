@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
@@ -30,10 +31,20 @@ public interface FeatMapper {
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Source source);
+
+    @BaseMapping.BaseEntityNameMapping
+    @Mapping(target = "url", ignore = true)
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(target = "source", source = "source")
+    void updateEntity(FeatRequest request, Source source, @MappingTarget Feat feat);
 
     @BaseMapping.BaseRequestNameMapping
     @BaseMapping.BaseSourceRequestMapping

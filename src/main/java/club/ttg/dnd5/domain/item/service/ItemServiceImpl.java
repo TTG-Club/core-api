@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 
@@ -54,11 +55,20 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public String updateItem(final String itemUrl, final ItemRequest request) {
+        var source = sourceService.findByUrl(request.getSource().getUrl());
+
+        if (itemUrl.equals(request.getUrl())) {
+            var existing = findByUrl(itemUrl);
+            itemMapper.updateEntity(request, source, existing);
+            return itemRepository.save(existing).getUrl();
+        }
+
         findByUrl(itemUrl);
+        exist(request.getUrl());
         itemRepository.deleteById(itemUrl);
         itemRepository.flush();
-        var source = sourceService.findByUrl(request.getSource().getUrl());
         return itemRepository.save(itemMapper.toEntity(request, source)).getUrl();
     }
 

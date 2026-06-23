@@ -15,6 +15,7 @@ public class CreatureAction {
     private String name;
     private String english;
     private String description;
+    private String original;
 
     private AttackType attackType;
     private Collection<SawingThrow> sawingThrows;

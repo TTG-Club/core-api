@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class VttgMarkupConverter {
     private static final Set<String> BLOCK_CONTENT_TYPES = Set.of(
-            "doc", "blockquote", "bulletList", "orderedList", "listItem"
+            "doc", "blockquote", "bulletList", "orderedList", "listItem", "table", "tableRow"
     );
     private static final Pattern SITE_LINK = Pattern.compile(
             "\\{@(glossary|spell)\\s+([^|}]+)\\|url:([^}]+)}"
@@ -28,6 +29,10 @@ public class VttgMarkupConverter {
     private static final Pattern ITALIC = Pattern.compile("\\{@i\\s+([^}]+)}");
     private static final Pattern BOLD = Pattern.compile("\\{@b\\s+([^}]+)}");
     private static final Pattern ROLL = Pattern.compile("\\{@roll\\s+([^|}]+)(?:\\|[^}]*)?}");
+    /** Generic <code>{&#64;link term|url:...}</code> link; VTTG receives only the visible term text. */
+    private static final Pattern LINK = Pattern.compile("\\{@link\\s+([^|}]+)(?:\\|[^}]*)?}");
+    /** Перенос строки {@code {@br}} — в VTTG раскрывается в обычный перевод строки. */
+    private static final Pattern BR = Pattern.compile("\\{@br}");
 
     private final ObjectMapper objectMapper;
     @Value("${app.url:https://ttg.club}")
@@ -79,6 +84,15 @@ public class VttgMarkupConverter {
         }
         if (node.isObject()) {
             String type = node.path("type").asText();
+            if ("bulletList".equals(type)) {
+                return extractList(node, false);
+            }
+            if ("orderedList".equals(type)) {
+                return extractList(node, true);
+            }
+            if ("table".equals(type)) {
+                return extractTable(node);
+            }
             String text = node.hasNonNull("text") ? node.get("text").asText() : "";
             String content = node.has("content")
                     ? extractChildren(node.get("content"), hasBlockContent(type))
@@ -87,12 +101,102 @@ public class VttgMarkupConverter {
             if ("hardBreak".equals(type)) {
                 return "\n";
             }
-            if ("listItem".equals(type) && StringUtils.hasText(content)) {
-                return "- " + content.replace("\n\n", "\n  ");
-            }
             return text + content;
         }
         return "";
+    }
+
+    private String extractList(JsonNode node, boolean ordered) {
+        JsonNode items = node.get("content");
+        if (items == null || !items.isArray()) {
+            return "";
+        }
+
+        int start = node.path("attrs").path("start").asInt(1);
+        List<String> lines = new ArrayList<>();
+        for (int index = 0; index < items.size(); index++) {
+            String content = extractListItem(items.get(index));
+            if (StringUtils.hasText(content)) {
+                String marker = ordered ? (start + index) + ". " : "- ";
+                lines.add(marker + indentContinuation(content));
+            }
+        }
+        return String.join("\n", lines);
+    }
+
+    private String extractListItem(JsonNode item) {
+        if (item == null || !item.isObject()) {
+            return extract(item).trim();
+        }
+
+        JsonNode content = item.get("content");
+        if (content == null) {
+            return "";
+        }
+        return extractChildren(content, true).trim();
+    }
+
+    private String indentContinuation(String content) {
+        return content.trim().replace("\n", "\n  ");
+    }
+
+    private String extractTable(JsonNode node) {
+        JsonNode rows = node.get("content");
+        if (rows == null || !rows.isArray()) {
+            return "";
+        }
+
+        List<List<String>> table = new ArrayList<>();
+        for (JsonNode row : rows) {
+            List<String> cells = extractTableRow(row);
+            if (!cells.isEmpty()) {
+                table.add(cells);
+            }
+        }
+        if (table.isEmpty()) {
+            return "";
+        }
+
+        int width = table.stream().mapToInt(List::size).max().orElse(0);
+        List<String> markdown = new ArrayList<>();
+        markdown.add(formatTableRow(table.getFirst(), width));
+        markdown.add(formatTableSeparator(width));
+        for (int index = 1; index < table.size(); index++) {
+            markdown.add(formatTableRow(table.get(index), width));
+        }
+        return String.join("\n", markdown);
+    }
+
+    private List<String> extractTableRow(JsonNode row) {
+        JsonNode cells = row.get("content");
+        if (cells == null || !cells.isArray()) {
+            return List.of();
+        }
+
+        List<String> result = new ArrayList<>();
+        cells.forEach(cell -> result.add(formatTableCell(extract(cell))));
+        return result;
+    }
+
+    private String formatTableCell(String cell) {
+        return cell.trim()
+                .replace("|", "\\|")
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .replace("\n\n", "<br>")
+                .replace("\n", "<br>");
+    }
+
+    private String formatTableRow(List<String> row, int width) {
+        List<String> cells = new ArrayList<>(row);
+        while (cells.size() < width) {
+            cells.add("");
+        }
+        return "| " + String.join(" | ", cells) + " |";
+    }
+
+    private String formatTableSeparator(int width) {
+        return "| " + String.join(" | ", Collections.nCopies(width, "---")) + " |";
     }
 
     private String extractChildren(JsonNode children, boolean blockContent) {
@@ -124,17 +228,20 @@ public class VttgMarkupConverter {
     }
 
     private String replaceMarkup(String text, boolean keepRolls) {
-        String formatted = replaceInline(text, ITALIC, "*$1*");
+        String formatted = replaceInline(text, BR, "\n");
+        formatted = replaceInline(formatted, ITALIC, "*$1*");
         formatted = replaceInline(formatted, BOLD, "**$1**");
         if (!keepRolls) {
-            formatted = replaceRolls(formatted);
+            formatted = unwrapLabel(formatted, ROLL);
         }
+        formatted = unwrapLabel(formatted, LINK);
 
         return replaceSiteLinks(formatted);
     }
 
-    private String replaceRolls(String text) {
-        Matcher matcher = ROLL.matcher(text);
+    /** Заменяет каждое совпадение на его первую группу (метку), без обрамляющих тегов. */
+    private String unwrapLabel(String text, Pattern pattern) {
+        Matcher matcher = pattern.matcher(text);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(1).trim()));

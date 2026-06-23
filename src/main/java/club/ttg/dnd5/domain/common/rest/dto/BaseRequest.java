@@ -22,6 +22,9 @@ public abstract class BaseRequest extends TagType.BaseUrl {
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     @Schema(description = "описание", requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
+    @Schema(description = "оригинальное описание на английском языке (обычный текст)",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String original;
     @JsonProperty(value = "source")
     @Schema(description = "источник", requiredMode = Schema.RequiredMode.REQUIRED)
     private SourceRequest source;

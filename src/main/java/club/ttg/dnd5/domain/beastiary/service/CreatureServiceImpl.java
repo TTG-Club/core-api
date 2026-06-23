@@ -119,13 +119,23 @@ public class CreatureServiceImpl implements CreatureService {
     @Override
     public String update(final String url, final CreatureRequest request) {
         var existing = findByUrl(url);
-        var createdAt = existing.getCreatedAt();
+        var book = sourceService.findByUrl(request.getSource().getUrl());
+
+        galleryRepository.deleteByUrlAndType(url, SectionType.BESTIARY);
+
+        if (url.equals(request.getUrl())) {
+            creatureMapper.updateEntity(request, book, existing);
+            saveGallery(request.getUrl(), request.getGallery());
+            persistTagHash(existing);
+            return creatureRepository.save(existing).getUrl();
+        }
+
+        if (creatureRepository.existsById(request.getUrl())) {
+            throw new EntityExistException("РЎСѓС‰РµСЃС‚РІРѕ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ СЃ URL: " + request.getUrl());
+        }
         creatureRepository.deleteById(url);
         creatureRepository.flush();
-        var book = sourceService.findByUrl(request.getSource().getUrl());
         var creature = creatureMapper.toEntity(request, book);
-        creature.setCreatedAt(createdAt);
-        galleryRepository.deleteByUrlAndType(request.getUrl(), SectionType.BESTIARY);
 
         saveGallery(request.getUrl(), request.getGallery());
         persistTagHash(creature);

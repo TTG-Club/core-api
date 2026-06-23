@@ -12,6 +12,7 @@ import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 
 import java.util.Collection;
@@ -53,6 +54,7 @@ public interface BackgroundMapper {
     @BaseMapping.BaseEntityNameMapping
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.imageUrl", target = "imageUrl")
     @Mapping(source = "request.abilityScores", target = "abilities")
@@ -61,6 +63,19 @@ public interface BackgroundMapper {
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
     Background toEntity(BackgroundRequest request, Feat feat, Source source);
+
+    @BaseMapping.BaseEntityNameMapping
+    @Mapping(target = "url", ignore = true)
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "request.original", target = "original")
+    @Mapping(source = "request.source.page", target = "sourcePage")
+    @Mapping(source = "request.imageUrl", target = "imageUrl")
+    @Mapping(source = "request.abilityScores", target = "abilities")
+    @Mapping(source = "request.skillsProficiencies", target = "skillProficiencies")
+    @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(source = "feat", target = "feat")
+    @Mapping(source = "source", target = "source")
+    void updateEntity(BackgroundRequest request, Feat feat, Source source, @MappingTarget Background background);
 
     @Named("featToMarkup")
     default String featToMarkup(Background background) {

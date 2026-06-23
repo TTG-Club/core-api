@@ -1,12 +1,16 @@
 package club.ttg.dnd5.domain.item.repository;
 
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -40,4 +44,54 @@ public interface ItemRepository extends JpaRepository<Item, String>,
         order by i.srd_version
         """, nativeQuery = true)
     List<String> findDistinctSrdVersions();
+
+    /** Лёгкие ссылки (url + время изменения) видимых предметов окна — без гидрации jsonb. */
+    @Query("""
+            select i.url as url, coalesce(i.updatedAt, i.createdAt) as changedAt from Item i
+            where (:srdVersion is null or i.srdVersion = :srdVersion)
+              and i.isHiddenEntity = false
+              and coalesce(i.updatedAt, i.createdAt) > :since
+              and coalesce(i.updatedAt, i.createdAt) <= :until
+            """)
+    List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("since") Instant since,
+                                                     @Param("until") Instant until);
+
+    /** Полные предметы по набору url — для пересчёта недостающих payload (fallback). */
+    @EntityGraph(attributePaths = {"source"})
+    @Query("select i from Item i where i.url in :urls")
+    List<Item> findAllForVttgExportByUrls(@Param("urls") Collection<String> urls);
+
+    /**
+     * Максимум времени изменения видимых предметов — «отметка зависимостей» для магических предметов
+     * (их payload выводит поля из базового предмета; правка предмета должна инвалидировать payload).
+     */
+    @Query("select max(coalesce(i.updatedAt, i.createdAt)) from Item i where i.isHiddenEntity = false")
+    Instant maxChangedAtForVttgExport();
+
+    /**
+     * Базовые (видимые) предметы с точным совпадением имени/английского названия — для разрешения
+     * базового типа магического предмета по его уточнению ({@code clarification}) в экспорте VTTG.
+     */
+    @EntityGraph(attributePaths = {"source"})
+    @Query("""
+            select i from Item i
+            where i.isHiddenEntity = false
+              and (lower(i.name) = lower(:text) or lower(i.english) = lower(:text))
+            """)
+    List<Item> findBaseByNameForVttgExport(@Param("text") String text);
+
+    /**
+     * Число видимых предметов, изменённых в окне (since, until] — для индикатора VTTG.
+     */
+    @Query("""
+            select count(i) from Item i
+            where (:srdVersion is null or i.srdVersion = :srdVersion)
+              and i.isHiddenEntity = false
+              and coalesce(i.updatedAt, i.createdAt) > :since
+              and coalesce(i.updatedAt, i.createdAt) <= :until
+            """)
+    long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("since") Instant since,
+                                   @Param("until") Instant until);
 }

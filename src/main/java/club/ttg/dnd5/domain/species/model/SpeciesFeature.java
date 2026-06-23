@@ -16,4 +16,5 @@ public class SpeciesFeature {
     private String name;
     private String english;
     private String description;
+    private String original;
 }

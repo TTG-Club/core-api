@@ -198,6 +198,40 @@ class VttgCreatureMapperTest {
     }
 
     @Test
+    void combinesTwoDamageTypesIntoSingleFormula() {
+        Creature creature = new Creature();
+        creature.setUrl("two-damage-creature");
+        creature.setName("Two Damage Creature");
+        creature.setDescription("");
+        creature.setActions(List.of(action(
+                "Укус",
+                "[\"Бросок рукопашной атаки: +4 к попаданию, досягаемость 5 фт. "
+                        + "Попадание: 5 (1к6 + 2) рубящего урона + 5 (2к4) урона некротической энергией.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertDamageFormula(action);
+    }
+
+    @Test
+    void combinesTwoDamageTypesFromEnglishDescription() {
+        Creature creature = new Creature();
+        creature.setUrl("two-damage-creature-en");
+        creature.setName("Two Damage Creature En");
+        creature.setDescription("");
+        creature.setActions(List.of(action(
+                "Bite",
+                "[\"Melee Weapon Attack: +4 to hit, reach 5 ft., one target. "
+                        + "Hit: 5 (1d6 + 2) slashing damage plus 5 (2d4) necrotic damage.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertDamageFormula(action);
+    }
+
+    @Test
     void doesNotExtractOngoingDamageAsAttackDamage() {
         Creature creature = new Creature();
         creature.setUrl("ongoing-damage-creature");
@@ -301,6 +335,14 @@ class VttgCreatureMapperTest {
         Map<?, ?> damagePart = (Map<?, ?>) damageParts.getFirst();
         assertEquals(expectedFormula, damagePart.get("formula"));
         assertEquals(expectedType, damagePart.get("type"));
+    }
+
+    private void assertDamageFormula(Map<?, ?> action) {
+        List<?> damageParts = (List<?>) action.get("damageParts");
+        assertEquals(1, damageParts.size());
+        Map<?, ?> damagePart = (Map<?, ?>) damageParts.getFirst();
+        assertEquals("1к6+2@dmg.slashing+2к4@dmg.necrotic", damagePart.get("formula"));
+        assertNull(damagePart.get("type"));
     }
 
     private void assertToken(Map<?, ?> token) {

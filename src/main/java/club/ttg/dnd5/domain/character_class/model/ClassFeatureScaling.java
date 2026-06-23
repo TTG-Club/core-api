@@ -24,6 +24,9 @@ public class ClassFeatureScaling {
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String description;
 
+    @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
+    private String original;
+
     @Schema(description = "Дополнительный текст рядом с уровнем", example = "Дополнительное использование")
     private String additional;
 

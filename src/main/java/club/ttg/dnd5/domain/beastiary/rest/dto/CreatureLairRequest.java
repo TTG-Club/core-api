@@ -18,6 +18,7 @@ public class CreatureLairRequest {
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     private String description;
+    private String original;
     private Collection<ActionRequest> effects;
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)

@@ -274,6 +274,7 @@ public interface SpellMapper
     @BaseMapping.BaseEntityNameMapping
     @Mapping(target = "url", source = "request.url")
     @Mapping(target = "description", source = "request.description")
+    @Mapping(target = "original", source = "request.original")
     @Mapping(target = "sourcePage", source = "request.source.page")
     @Mapping(target = "school", source = "request.school")
     @Mapping(target = "components", source = "request.components", qualifiedByName = "setNull")

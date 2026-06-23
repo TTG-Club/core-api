@@ -67,7 +67,96 @@ class VttgMarkupConverterTest {
                 """;
 
         assertEquals(
-                "- Первый эффект\nпродолжение\n\n- Второй эффект",
+                "- Первый эффект\n  продолжение\n- Второй эффект",
+                converter.toText(markup)
+        );
+    }
+
+    @Test
+    void convertsOrderedListToMarkdown() {
+        String markup = """
+                {
+                  "type": "orderedList",
+                  "attrs": {"start": 3},
+                  "content": [
+                    {
+                      "type": "listItem",
+                      "content": [{
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "First"}]
+                      }]
+                    },
+                    {
+                      "type": "listItem",
+                      "content": [{
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "Second"}]
+                      }]
+                    }
+                  ]
+                }
+                """;
+
+        assertEquals(
+                "3. First\n4. Second",
+                converter.toText(markup)
+        );
+    }
+
+    @Test
+    void convertsTableToMarkdown() {
+        String markup = """
+                {
+                  "type": "table",
+                  "content": [
+                    {
+                      "type": "tableRow",
+                      "content": [
+                        {
+                          "type": "tableHeader",
+                          "content": [{
+                            "type": "paragraph",
+                            "content": [{"type": "text", "text": "Name"}]
+                          }]
+                        },
+                        {
+                          "type": "tableHeader",
+                          "content": [{
+                            "type": "paragraph",
+                            "content": [{"type": "text", "text": "Value"}]
+                          }]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "tableRow",
+                      "content": [
+                        {
+                          "type": "tableCell",
+                          "content": [{
+                            "type": "paragraph",
+                            "content": [{"type": "text", "text": "A | B"}]
+                          }]
+                        },
+                        {
+                          "type": "tableCell",
+                          "content": [{
+                            "type": "paragraph",
+                            "content": [
+                              {"type": "text", "text": "Line 1"},
+                              {"type": "hardBreak"},
+                              {"type": "text", "text": "Line 2"}
+                            ]
+                          }]
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """;
+
+        assertEquals(
+                "| Name | Value |\n| --- | --- |\n| A \\| B | Line 1<br>Line 2 |",
                 converter.toText(markup)
         );
     }
@@ -92,6 +181,24 @@ class VttgMarkupConverterTest {
     void replacesInlineRollMarkupWithDisplayedFormula() {
         assertEquals("+1", converter.toText("{@roll +1|notation:1d20+1}"));
         assertEquals("2к6", converter.toText("{@roll 2к6}"));
+    }
+
+    @Test
+    void unwrapsLinkTokenToPlainTerm() {
+        assertEquals(
+                "Только рукопашное оружие.",
+                converter.toText("Только {@link рукопашное оружие|url:/items?itemType=MELEE_WEAPON}.")
+        );
+        // Без url — тоже остаётся только термин.
+        assertEquals("оружие", converter.toText("{@link оружие}"));
+    }
+
+    @Test
+    void replacesBrTokenWithLineBreak() {
+        assertEquals(
+                "Первая строка\nВторая строка",
+                converter.toText("Первая строка{@br}Вторая строка")
+        );
     }
 
     @Test
