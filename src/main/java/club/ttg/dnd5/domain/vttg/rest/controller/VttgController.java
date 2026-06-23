@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.vttg.rest.controller;
 
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesResponse;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesStatus;
+import club.ttg.dnd5.domain.vttg.service.VttgAccessService;
 import club.ttg.dnd5.domain.vttg.service.VttgChangesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,8 +21,9 @@ import java.util.Set;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/vttg")
-@Secured({"VTTG", "ADMIN"})
+@Secured({"USER", "VTTG", "ADMIN"})
 public class VttgController {
+    private final VttgAccessService accessService;
     private final VttgChangesService changesService;
 
     @Operation(summary = "Проверить наличие изменений для VTTG (лёгкий индикатор)",
@@ -32,7 +34,7 @@ public class VttgController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant since,
             @RequestParam(required = false) String srdVersion,
             @RequestParam(required = false) Set<String> types) {
-        return changesService.status(since, srdVersion, types);
+        return changesService.status(since, srdVersion, types, accessService.access().srdOnly());
     }
 
     @Operation(summary = "Получить дельту изменений сущностей для VTTG",
@@ -45,6 +47,6 @@ public class VttgController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant since,
             @RequestParam(required = false) String srdVersion,
             @RequestParam(required = false) Set<String> types) {
-        return changesService.changes(since, srdVersion, types);
+        return changesService.changes(since, srdVersion, types, accessService.access().srdOnly());
     }
 }

@@ -58,12 +58,14 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
     /** Лёгкие ссылки (url + время изменения) видимых предысторий окна — без гидрации jsonb. */
     @Query("""
             select b.url as url, coalesce(b.updatedAt, b.createdAt) as changedAt from Background b
-            where (:srdVersion is null or b.srdVersion = :srdVersion)
+            where (:srdOnly = false or b.srdVersion is not null)
+              and (:srdVersion is null or b.srdVersion = :srdVersion)
               and b.isHiddenEntity = false
               and coalesce(b.updatedAt, b.createdAt) > :since
               and coalesce(b.updatedAt, b.createdAt) <= :until
             """)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("srdOnly") boolean srdOnly,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
@@ -77,12 +79,14 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
      */
     @Query("""
             select count(b) from Background b
-            where (:srdVersion is null or b.srdVersion = :srdVersion)
+            where (:srdOnly = false or b.srdVersion is not null)
+              and (:srdVersion is null or b.srdVersion = :srdVersion)
               and b.isHiddenEntity = false
               and coalesce(b.updatedAt, b.createdAt) > :since
               and coalesce(b.updatedAt, b.createdAt) <= :until
             """)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 }

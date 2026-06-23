@@ -64,22 +64,26 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
     @EntityGraph(attributePaths = {"source"})
     @Query("""
             select mi from MagicItem mi
-            where (:srdVersion is null or mi.srdVersion = :srdVersion)
+            where (:srdOnly = false or mi.srdVersion is not null)
+              and (:srdVersion is null or mi.srdVersion = :srdVersion)
               and mi.isHiddenEntity = false
             """ + EXCLUDE_NON_CONCRETE + """
             order by mi.name
             """)
-    List<MagicItem> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
+    List<MagicItem> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion,
+                                                @Param("srdOnly") boolean srdOnly);
 
     /** Лёгкие ссылки (url + время изменения) видимых магических предметов окна — без гидрации jsonb. */
     @Query("""
             select mi.url as url, coalesce(mi.updatedAt, mi.createdAt) as changedAt from MagicItem mi
-            where (:srdVersion is null or mi.srdVersion = :srdVersion)
+            where (:srdOnly = false or mi.srdVersion is not null)
+              and (:srdVersion is null or mi.srdVersion = :srdVersion)
               and mi.isHiddenEntity = false
               and coalesce(mi.updatedAt, mi.createdAt) > :since
               and coalesce(mi.updatedAt, mi.createdAt) <= :until
             """ + EXCLUDE_NON_CONCRETE)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("srdOnly") boolean srdOnly,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
@@ -94,12 +98,14 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
      */
     @Query("""
             select count(mi) from MagicItem mi
-            where (:srdVersion is null or mi.srdVersion = :srdVersion)
+            where (:srdOnly = false or mi.srdVersion is not null)
+              and (:srdVersion is null or mi.srdVersion = :srdVersion)
               and mi.isHiddenEntity = false
               and coalesce(mi.updatedAt, mi.createdAt) > :since
               and coalesce(mi.updatedAt, mi.createdAt) <= :until
             """ + EXCLUDE_NON_CONCRETE)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 }

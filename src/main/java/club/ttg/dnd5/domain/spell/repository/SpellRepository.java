@@ -89,11 +89,13 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     })
     @Query("""
             select distinct s from Spell s
-            where (:srdVersion is null or s.srdVersion = :srdVersion)
+            where (:srdOnly = false or s.srdVersion is not null)
+              and (:srdVersion is null or s.srdVersion = :srdVersion)
               and s.isHiddenEntity = false
             order by s.level, s.name
             """)
-    List<Spell> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
+    List<Spell> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion,
+                                            @Param("srdOnly") boolean srdOnly);
 
     /**
      * Лёгкие ссылки (url + время изменения) видимых заклинаний окна — без гидрации jsonb,
@@ -101,12 +103,14 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
      */
     @Query("""
             select s.url as url, coalesce(s.updatedAt, s.createdAt) as changedAt from Spell s
-            where (:srdVersion is null or s.srdVersion = :srdVersion)
+            where (:srdOnly = false or s.srdVersion is not null)
+              and (:srdVersion is null or s.srdVersion = :srdVersion)
               and s.isHiddenEntity = false
               and coalesce(s.updatedAt, s.createdAt) > :since
               and coalesce(s.updatedAt, s.createdAt) <= :until
             """)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("srdOnly") boolean srdOnly,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
@@ -121,12 +125,14 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
      */
     @Query("""
             select count(s) from Spell s
-            where (:srdVersion is null or s.srdVersion = :srdVersion)
+            where (:srdOnly = false or s.srdVersion is not null)
+              and (:srdVersion is null or s.srdVersion = :srdVersion)
               and s.isHiddenEntity = false
               and coalesce(s.updatedAt, s.createdAt) > :since
               and coalesce(s.updatedAt, s.createdAt) <= :until
             """)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 

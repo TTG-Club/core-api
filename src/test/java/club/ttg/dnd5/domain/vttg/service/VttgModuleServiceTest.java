@@ -50,9 +50,9 @@ class VttgModuleServiceTest {
         Creature creature = new Creature();
         creature.setUrl("goblin");
         creature.setExperience(100L); // ПО 1/2 → подпапка cr/1-2
-        when(spellRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(spell));
-        when(creatureRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(creature));
-        when(magicItemRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of());
+        when(spellRepository.findAllVisibleForVttgExport(null, false)).thenReturn(List.of(spell));
+        when(creatureRepository.findAllVisibleForVttgExport(null, false)).thenReturn(List.of(creature));
+        when(magicItemRepository.findAllVisibleForVttgExport(null, false)).thenReturn(List.of());
         when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("fire-burst").build());
         when(creatureMapper.toVttg(creature)).thenReturn(VttgCreature.builder().id("goblin").build());
 
@@ -98,8 +98,8 @@ class VttgModuleServiceTest {
         Creature creature = new Creature();
         creature.setUrl("rat");
         creature.setExperience(10L);
-        when(spellRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(spell));
-        when(creatureRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(creature));
+        when(spellRepository.findAllVisibleForVttgExport(null, false)).thenReturn(List.of(spell));
+        when(creatureRepository.findAllVisibleForVttgExport(null, false)).thenReturn(List.of(creature));
         when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("magic-missile").build());
         when(creatureMapper.toVttg(creature)).thenReturn(VttgCreature.builder().id("rat").build());
 
@@ -116,7 +116,7 @@ class VttgModuleServiceTest {
     @Test
     void buildsMagicItemModuleAsEquipmentSection() throws Exception {
         MagicItem item = new MagicItem();
-        when(magicItemRepository.findAllVisibleForVttgExport(null)).thenReturn(List.of(item));
+        when(magicItemRepository.findAllVisibleForVttgExport(null, false)).thenReturn(List.of(item));
         when(magicItemMapper.toVttgVariants(eq(item), any()))
                 .thenReturn(List.of(VttgMagicItem.builder().id("srd_wand_of_fear").build()));
 
@@ -146,13 +146,13 @@ class VttgModuleServiceTest {
         Spell spell = new Spell();
         spell.setUrl("spell");
         spell.setLevel(0L);
-        when(spellRepository.findAllVisibleForVttgExport(srdVersion)).thenReturn(List.of(spell));
+        when(spellRepository.findAllVisibleForVttgExport(srdVersion, false)).thenReturn(List.of(spell));
         when(spellMapper.toVttg(spell)).thenReturn(VttgSpell.builder().id("spell").build());
 
         VttgModuleArchive archive = service.buildSpellModule(srdVersion);
 
         assertEquals("ttg-club-srd-5-2-1-spells.zip", archive.fileName());
-        verify(spellRepository).findAllVisibleForVttgExport(srdVersion);
+        verify(spellRepository).findAllVisibleForVttgExport(srdVersion, false);
     }
 
     private boolean hasFile(Map<String, byte[]> files, String suffix) {
