@@ -83,11 +83,17 @@ public class BackgroundServiceImpl implements BackgroundService {
     }
 
     private Feat getFeat(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
         return featRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException("Черта не найдена по URL: " + url));
     }
 
     private Feat getFeatReference(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
         if (!featRepository.existsById(url)) {
             throw new EntityNotFoundException("Черта не найдена по URL: " + url);
         }
