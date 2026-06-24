@@ -19,9 +19,12 @@ import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -37,9 +40,25 @@ public class RewardService {
      */
     @Transactional
     public List<RewardPerk> grantTier(String username, RewardTier tier, UUID sourceCode) {
+        return grantPerks(username, tier.perks(), sourceCode);
+    }
+
+    /**
+     * Выдаёт пользователю произвольный набор перков. Уже имеющиеся перки пропускаются.
+     * Идемпотентно — повторная выдача не дублирует награды.
+     *
+     * @return фактически выданные перки
+     */
+    @Transactional
+    public List<RewardPerk> grantPerks(String username, Collection<RewardPerk> perks, UUID sourceCode) {
+        if (perks == null || perks.isEmpty()) {
+            return List.of();
+        }
         Instant now = Instant.now();
         List<RewardPerk> granted = new ArrayList<>();
-        for (RewardPerk perk : tier.perks()) {
+        // EnumSet сортирует по объявлению перков — детерминированный порядок выдачи
+        Set<RewardPerk> ordered = EnumSet.copyOf(perks);
+        for (RewardPerk perk : ordered) {
             if (rewardRepository.existsByUsernameAndPerk(username, perk)) {
                 continue;
             }

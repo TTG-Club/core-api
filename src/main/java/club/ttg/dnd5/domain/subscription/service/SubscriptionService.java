@@ -1,8 +1,9 @@
 package club.ttg.dnd5.domain.subscription.service;
 
+import club.ttg.dnd5.domain.achievement.rest.dto.UserAchievementResponse;
+import club.ttg.dnd5.domain.achievement.service.AchievementService;
 import club.ttg.dnd5.domain.subscription.model.RedemptionCode;
 import club.ttg.dnd5.domain.subscription.model.RewardPerk;
-import club.ttg.dnd5.domain.subscription.model.SubscriptionType;
 import club.ttg.dnd5.domain.subscription.model.UserSubscription;
 import club.ttg.dnd5.domain.subscription.repository.RedemptionCodeRepository;
 import club.ttg.dnd5.domain.subscription.repository.UserSubscriptionRepository;
@@ -10,6 +11,10 @@ import club.ttg.dnd5.domain.subscription.rest.dto.CreateCodesRequest;
 import club.ttg.dnd5.domain.subscription.rest.dto.RedeemResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.RedemptionCodeResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.SubscriptionResponse;
+import club.ttg.dnd5.domain.user.model.Role;
+import club.ttg.dnd5.domain.user.model.User;
+import club.ttg.dnd5.domain.user.repository.RoleRepository;
+import club.ttg.dnd5.domain.user.repository.UserRepository;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +28,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +38,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class SubscriptionService {
+    /** Роль, выдаваемая при активации подписки и снимаемая по её истечении. */
+    public static final String SUBSCRIBER_ROLE = "SUBSCRIBER";
+
     private static final char[] CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
     private static final int CODE_LENGTH = 16;
     private static final int MAX_CODE_ATTEMPTS = 20;
@@ -40,10 +49,13 @@ public class SubscriptionService {
     private final RedemptionCodeRepository codeRepository;
     private final UserSubscriptionRepository subscriptionRepository;
     private final RewardService rewardService;
+    private final AchievementService achievementService;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final SecureRandom random = new SecureRandom();
 
     /**
-     * Выпускает пачку одноразовых кодов с одинаковыми наградами и периодом.
+     * Выпускает пачку одноразовых кодов с одинаковым содержимым.
      */
     @Transactional
     public List<RedemptionCodeResponse> createCodes(CreateCodesRequest request) {
@@ -52,9 +64,11 @@ public class SubscriptionService {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Количество кодов должно быть от 1 до " + MAX_BATCH_SIZE);
         }
-        if (request.subscriptionMonths() == null && request.rewardTier() == null) {
+        boolean hasPerks = request.perks() != null && !request.perks().isEmpty();
+        boolean hasAchievements = request.achievements() != null && !request.achievements().isEmpty();
+        if (request.subscriptionMonths() == null && request.rewardTier() == null && !hasPerks && !hasAchievements) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
-                    "Код должен нести подписку, награды или то и другое");
+                    "Код должен нести подписку, тир, перки или достижения");
         }
         if (request.subscriptionMonths() != null) {
             if (request.subscriptionMonths() < 1) {
@@ -73,6 +87,8 @@ public class SubscriptionService {
             code.setSubscriptionType(request.subscriptionMonths() == null ? null : request.subscriptionType());
             code.setSubscriptionMonths(request.subscriptionMonths());
             code.setRewardTier(request.rewardTier());
+            code.setPerks(hasPerks ? EnumSet.copyOf(request.perks()) : new HashSet<>());
+            code.setAchievements(hasAchievements ? new HashSet<>(request.achievements()) : new HashSet<>());
             code.setLabel(request.label());
             result.add(toResponse(codeRepository.save(code)));
         }
@@ -80,21 +96,27 @@ public class SubscriptionService {
     }
 
     /**
-     * Погашает код: выдаёт награды сразу (навсегда) и создаёт подписку
+     * Погашает код: выдаёт перки и достижения сразу (навсегда) и создаёт подписку
      * в статусе REGISTERED, если код её нёс. Таймер запускается отдельно — {@link #activate}.
+     * <p>
+     * Захват кода атомарен ({@link RedemptionCodeRepository#claim}): при гонке двух
+     * параллельных погашений ровно одно обновит строку, второе получит 409.
      */
     @Transactional
     public RedeemResponse redeem(String rawCode) {
         String username = currentUsername();
-        RedemptionCode code = codeRepository.findByCode(normalizeCode(rawCode))
+        String normalized = normalizeCode(rawCode);
+        RedemptionCode code = codeRepository.findByCode(normalized)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Код не найден"));
         if (code.getRedeemedBy() != null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Код уже использован");
+            throw new ApiException(HttpStatus.CONFLICT, "Код уже использован");
         }
 
         Instant now = Instant.now();
-        code.setRedeemedBy(username);
-        code.setRedeemedAt(now);
+        if (codeRepository.claim(normalized, username, now) == 0) {
+            // строку успел захватить параллельный запрос между findByCode и claim
+            throw new ApiException(HttpStatus.CONFLICT, "Код уже использован");
+        }
 
         SubscriptionResponse subscription = null;
         if (code.getSubscriptionMonths() != null) {
@@ -106,13 +128,24 @@ public class SubscriptionService {
             subscription = toResponse(subscriptionRepository.save(entity), now);
         }
 
-        List<RewardPerk> grantedPerks = List.of();
+        // перки = пресет тира ∪ произвольный набор кода
+        Set<RewardPerk> perks = EnumSet.noneOf(RewardPerk.class);
         if (code.getRewardTier() != null) {
-            grantedPerks = rewardService.grantTier(username, code.getRewardTier(), code.getUuid());
+            perks.addAll(code.getRewardTier().perks());
         }
-        return new RedeemResponse(subscription, grantedPerks);
+        perks.addAll(code.getPerks());
+        List<RewardPerk> grantedPerks = rewardService.grantPerks(username, perks, code.getUuid());
+
+        List<UserAchievementResponse> grantedAchievements =
+                achievementService.grant(username, code.getAchievements(), code.getUuid(), null);
+
+        return new RedeemResponse(subscription, grantedPerks, grantedAchievements);
     }
 
+    /**
+     * Активирует накопленную подписку пользователя: фиксирует даты старта/окончания
+     * и выдаёт роль {@link #SUBSCRIBER_ROLE}.
+     */
     @Transactional
     public SubscriptionResponse activate(UUID id) {
         String username = currentUsername();
@@ -131,6 +164,8 @@ public class SubscriptionService {
         subscription.setExpiresAt(ZonedDateTime.ofInstant(now, ZoneOffset.UTC)
                 .plusMonths(subscription.getDurationMonths())
                 .toInstant());
+
+        grantSubscriberRole(username);
         return toResponse(subscription, now);
     }
 
@@ -159,6 +194,26 @@ public class SubscriptionService {
     public boolean hasActiveSubscription(String username, Instant now) {
         return StringUtils.hasText(username)
                 && subscriptionRepository.existsByOwnerUsernameAndStartsAtIsNotNullAndExpiresAtAfter(username, now);
+    }
+
+    /** Добавляет пользователю роль подписчика, если её ещё нет. */
+    private void grantSubscriberRole(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+        boolean alreadyHas = user.getRoles() != null && user.getRoles().stream()
+                .anyMatch(role -> SUBSCRIBER_ROLE.equals(role.getName()));
+        if (alreadyHas) {
+            return;
+        }
+        Role subscriberRole = roleRepository.findByName(SUBSCRIBER_ROLE);
+        if (subscriberRole == null) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Роль " + SUBSCRIBER_ROLE + " не сконфигурирована");
+        }
+        List<Role> roles = user.getRoles() == null ? new ArrayList<>() : new ArrayList<>(user.getRoles());
+        roles.add(subscriberRole);
+        user.setRoles(roles);
+        userRepository.save(user);
     }
 
     private String generateUniqueCode(Set<String> batch) {
@@ -205,6 +260,8 @@ public class SubscriptionService {
                 code.getSubscriptionType(),
                 code.getSubscriptionMonths(),
                 code.getRewardTier(),
+                code.getPerks(),
+                code.getAchievements(),
                 code.getLabel(),
                 code.getRedeemedBy(),
                 code.getRedeemedAt(),

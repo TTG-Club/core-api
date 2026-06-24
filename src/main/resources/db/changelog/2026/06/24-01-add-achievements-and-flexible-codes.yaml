@@ -1,0 +1,201 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-24-01-create-achievement
+      author: claude
+      changes:
+        - createTable:
+            tableName: achievement
+            columns:
+              - column:
+                  name: code
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_achievement
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(1024)
+              - column:
+                  name: icon
+                  type: VARCHAR(255)
+              - column:
+                  name: hidden
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: trigger_key
+                  type: VARCHAR(64)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - createIndex:
+            tableName: achievement
+            indexName: idx_achievement_trigger_key
+            columns:
+              - column:
+                  name: trigger_key
+
+  - changeSet:
+      id: 2026-06-24-01-create-user-achievement
+      author: claude
+      changes:
+        - createTable:
+            tableName: user_achievement
+            columns:
+              - column:
+                  name: uuid
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_user_achievement
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: achievement_code
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: granted_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_code
+                  type: UUID
+              - column:
+                  name: granted_by
+                  type: VARCHAR(255)
+        - addUniqueConstraint:
+            tableName: user_achievement
+            columnNames: username, achievement_code
+            constraintName: uc_user_achievement_username_code
+        - createIndex:
+            tableName: user_achievement
+            indexName: idx_user_achievement_code
+            columns:
+              - column:
+                  name: achievement_code
+
+  - changeSet:
+      id: 2026-06-24-01-create-redemption-code-perk
+      author: claude
+      changes:
+        - createTable:
+            tableName: redemption_code_perk
+            columns:
+              - column:
+                  name: code_uuid
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: perk
+                  type: VARCHAR(48)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: redemption_code_perk
+            columnNames: code_uuid, perk
+            constraintName: pk_redemption_code_perk
+        - addForeignKeyConstraint:
+            baseTableName: redemption_code_perk
+            baseColumnNames: code_uuid
+            constraintName: fk_redemption_code_perk_on_code
+            referencedTableName: redemption_code
+            referencedColumnNames: uuid
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 2026-06-24-01-create-redemption-code-achievement
+      author: claude
+      changes:
+        - createTable:
+            tableName: redemption_code_achievement
+            columns:
+              - column:
+                  name: code_uuid
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: achievement_code
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: redemption_code_achievement
+            columnNames: code_uuid, achievement_code
+            constraintName: pk_redemption_code_achievement
+        - addForeignKeyConstraint:
+            baseTableName: redemption_code_achievement
+            baseColumnNames: code_uuid
+            constraintName: fk_redemption_code_achievement_on_code
+            referencedTableName: redemption_code
+            referencedColumnNames: uuid
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 2026-06-24-01-seed-subscriber-role
+      author: claude
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: SUBSCRIBER
+      rollback:
+        - delete:
+            tableName: roles
+            where: name = 'SUBSCRIBER'
+
+  - changeSet:
+      id: 2026-06-24-01-seed-achievements
+      author: claude
+      changes:
+        - insert:
+            tableName: achievement
+            columns:
+              - column:
+                  name: code
+                  value: KICKSTARTER_BACKER
+              - column:
+                  name: title
+                  value: Бэкер краудфандинга
+              - column:
+                  name: description
+                  value: Поддержал проект на этапе краудфандинга
+              - column:
+                  name: hidden
+                  valueBoolean: false
+        - insert:
+            tableName: achievement
+            columns:
+              - column:
+                  name: code
+                  value: EARLY_SUPPORTER
+              - column:
+                  name: title
+                  value: Ранний сторонник
+              - column:
+                  name: description
+                  value: Один из первых пользователей портала
+              - column:
+                  name: hidden
+                  valueBoolean: false

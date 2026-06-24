@@ -17,6 +17,10 @@ public enum RewardPerk {
     PROFILE_BADGE,
     /** Уникальная рамка вокруг аватарки. */
     AVATAR_FRAME,
+    /** Особый цвет никнейма. */
+    NICKNAME_COLOR,
+    /** Набор уникальных иконок профиля. */
+    PROFILE_ICON,
     /** Увековечивание в самом приложении. */
     APP_CREDITS
 }

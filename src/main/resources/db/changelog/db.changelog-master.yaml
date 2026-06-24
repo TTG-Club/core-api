@@ -207,3 +207,5 @@ databaseChangeLog:
       file: db/changelog/2026/06/23-02-add-spell-active-effects.yaml
   - include:
       file: db/changelog/2026/06/23-03-add-rewards-and-redemption-codes.yaml
+  - include:
+      file: db/changelog/2026/06/24-01-add-achievements-and-flexible-codes.yaml
