@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class MagicItemRequest extends BaseRequest {
@@ -27,4 +29,8 @@ public class MagicItemRequest extends BaseRequest {
 
     @Schema(description = "true если предмет расходуемый")
     private boolean consumable;
+
+    @Schema(description = "URL связанных немагических предметов (для веса/стоимости при экспорте в VTTG и фильтрации)",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<String> items;
 }

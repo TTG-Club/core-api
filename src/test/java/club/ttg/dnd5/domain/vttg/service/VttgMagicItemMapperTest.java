@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -372,6 +373,95 @@ class VttgMagicItemMapperTest {
         item.setSource(source);
 
         assertEquals("Perfume of Bewitching", mapper.toVttg(item).getNameEn());
+    }
+
+    /** Явно связанный немагический предмет задаёт вес и стоимость (приоритет над clarification, для любой категории). */
+    @Test
+    void usesLinkedItemForWeightAndCost() {
+        Item longsword = longsword();
+        longsword.setCost("15");
+        longsword.setCoin(Coin.GC);
+
+        MagicItem item = new MagicItem();
+        item.setUrl("flame-tongue");
+        item.setName("Огненный язык");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.RARE);
+        item.setItems(Set.of(longsword));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        JsonNode json = objectMapper.valueToTree(mapper.toVttg(item));
+        // Вес — у связанного предмета; стоимость — цена редкости + стоимость базы.
+        assertEquals(3.0, json.get("weight").asDouble());
+        assertEquals("4015 зм", json.get("cost").asText()); // 4000 (редкий) + 15 (длинный меч)
+    }
+
+    /** Несколько связанных видов оружия раскрываются в отдельные записи с подменой слова в названии. */
+    @Test
+    void splitsByLinkedWeapons() {
+        Item longsword = longsword();
+        Item shortsword = shortsword();
+
+        MagicItem item = new MagicItem();
+        item.setUrl("sword-of-vengeance");
+        item.setName("Длинный меч мести");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.RARE);
+        item.setItems(Set.of(longsword, shortsword));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        assertEquals(2, variants.size());
+        // База, совпадающая с названием — имя и url (id) не меняются.
+        VttgMagicItem main = byName(variants, "Длинный меч мести");
+        assertEquals("sword-of-vengeance-dmg", main.getId());
+        // Дополнительная база — слово в названии заменено, id получает суффикс url базы.
+        VttgMagicItem variant = byName(variants, "Короткий меч мести");
+        assertEquals("sword-of-vengeance-shortsword-dmg", variant.getId());
+    }
+
+    /** Один связанный предмет не расщепляется — ровно одна запись. */
+    @Test
+    void doesNotSplitSingleLinkedItem() {
+        MagicItem item = new MagicItem();
+        item.setUrl("flame-tongue");
+        item.setName("Огненный язык");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.RARE);
+        item.setItems(Set.of(longsword()));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals(1, mapper.toVttgVariants(item, new HashMap<>()).size());
+    }
+
+    private Item shortsword() {
+        Item base = new Item();
+        base.setUrl("shortsword");
+        base.setName("Короткий меч");
+        base.setEnglish("Shortsword");
+        base.setDescription("");
+        base.setWeight("2 фунта");
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
+        Damage damage = new Damage();
+        Roll roll = new Roll();
+        roll.setDiceCount((short) 1);
+        roll.setDice(Dice.d6);
+        damage.setRoll(roll);
+        damage.setType(DamageType.PIERCING);
+        weapon.setDamage(damage);
+        base.setWeapon(weapon);
+        Source source = new Source();
+        source.setAcronym("PHB");
+        base.setSource(source);
+        return base;
     }
 
     private MagicItem wandOfFear() {

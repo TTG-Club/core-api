@@ -16,11 +16,13 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,6 +76,11 @@ public class VttgMagicItemMapper {
      * (для этого см. {@link #toVttgVariants}).</p>
      */
     public VttgMagicItem toVttg(MagicItem item, Map<String, List<Item>> baseCache) {
+        List<Item> linked = linkedItems(item);
+        if (!linked.isEmpty()) {
+            // Явно связанные немагические предметы точнее уточнения (clarification): вес/стоимость берём у них.
+            return build(item, item.getName(), pickBase(item.getCategory(), linked), item.getUrl(), item.getEnglish());
+        }
         return map(item, item.getName(), item.getClarification(), item.getUrl(), item.getEnglish(), baseCache);
     }
 
@@ -84,6 +91,10 @@ public class VttgMagicItemMapper {
      * (напр. «Латы дварфов» → «Латы дварфов» и «Полулаты дварфов»). Иначе — ровно одна запись.
      */
     public List<VttgMagicItem> toVttgVariants(MagicItem item, Map<String, List<Item>> baseCache) {
+        List<Item> linked = linkedItems(item);
+        if (!linked.isEmpty()) {
+            return variantsFromLinked(item, linked);
+        }
         MagicItemCategory category = item.getCategory();
         List<String> bases = splitBaseItems(item.getClarification());
         // Расщепляем только оружие/броню — лишь для них ищем конкретный предмет в таблице item.
@@ -116,15 +127,20 @@ public class VttgMagicItemMapper {
         return variants.size() == 1 ? variants.get(0) : variants;
     }
 
-    /** Сборка одной записи VTTG для заданных имени/уточнения/url/английского названия. */
+    /** Сборка одной записи VTTG: базовый предмет разрешается из уточнения ({@code clarification}). */
     private VttgMagicItem map(MagicItem item, String name, String clarification, String url,
                               String english, Map<String, List<Item>> baseCache) {
+        Item base = findBase(item.getCategory(), baseCache, clarification, name, english);
+        return build(item, name, base, url, english);
+    }
+
+    /** Сборка одной записи VTTG для заданных имени/url/английского названия и уже разрешённого базового предмета. */
+    private VttgMagicItem build(MagicItem item, String name, Item base, String url, String english) {
         Attunement attunement = item.getAttunement();
         boolean requiresAttunement = attunement != null && attunement.isRequires();
         String sourceKey = sourceKey(item.getSource());
         MagicItemCategory category = item.getCategory();
         boolean weapon = category == MagicItemCategory.WEAPON;
-        Item base = findBase(category, baseCache, clarification, name, english);
         BaseMechanics mechanics = mechanics(base, category);
         Rarity rarity = effectiveRarity(item);
 
@@ -152,7 +168,7 @@ public class VttgMagicItemMapper {
                 .mechanics(mechanics.fields())
                 .isMagical(true)
                 .magicAttunement(requiresAttunement ? "required" : "none")
-                .magicBonus(firstBonus(name, english, clarification))
+                .magicBonus(firstBonus(name, english, item.getClarification()))
                 .sourceKey(sourceKey)
                 .isSRD(true)
                 .isReadOnly(true)
@@ -195,13 +211,81 @@ public class VttgMagicItemMapper {
         }
         Map<String, Object> baseMap = itemMapper.toVttg(base);
         Map<String, Object> fields = new LinkedHashMap<>();
-        for (String key : category == MagicItemCategory.WEAPON ? WEAPON_KEYS : ARMOR_KEYS) {
+        // Боевые/доспешные поля имеют смысл только для оружия/брони; для прочих категорий берём лишь вес/стоимость.
+        List<String> keys = switch (category == null ? MagicItemCategory.SUBJECT : category) {
+            case WEAPON -> WEAPON_KEYS;
+            case ARMOR -> ARMOR_KEYS;
+            default -> List.of();
+        };
+        for (String key : keys) {
             if (baseMap.containsKey(key)) {
                 fields.put(key, baseMap.get(key));
             }
         }
         double weight = baseMap.get("weight") instanceof Number number ? number.doubleValue() : 0;
         return new BaseMechanics(weight, goldCost(base), fields.isEmpty() ? null : fields);
+    }
+
+    /** Связанные немагические предметы магического предмета в стабильном порядке (по url); пусто — связей нет. */
+    private List<Item> linkedItems(MagicItem item) {
+        Set<Item> items = item.getItems();
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+        return items.stream()
+                .sorted(Comparator.comparing(Item::getUrl, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+    }
+
+    /**
+     * Базовый предмет для веса/стоимости/механик из набора связанных: для оружия — первый со «start»-оружием,
+     * для брони — первый с бронёй, иначе — первый связанный (вес/стоимость есть у любой категории).
+     */
+    private Item pickBase(MagicItemCategory category, List<Item> linked) {
+        if (category == MagicItemCategory.WEAPON) {
+            return linked.stream().filter(base -> base.getWeapon() != null).findFirst().orElse(linked.get(0));
+        }
+        if (category == MagicItemCategory.ARMOR) {
+            return linked.stream().filter(base -> base.getArmor() != null).findFirst().orElse(linked.get(0));
+        }
+        return linked.get(0);
+    }
+
+    /**
+     * Раскрывает магический предмет по явно связанным немагическим: для оружия/брони с несколькими базами —
+     * по записи на каждую базу (со своими весом/стоимостью и подменой слова в названии, как у clarification),
+     * иначе — одна запись с предпочтительной базой.
+     */
+    private List<VttgMagicItem> variantsFromLinked(MagicItem item, List<Item> linked) {
+        MagicItemCategory category = item.getCategory();
+        boolean splittable = category == MagicItemCategory.WEAPON || category == MagicItemCategory.ARMOR;
+        if (!splittable || linked.size() == 1) {
+            return List.of(build(item, item.getName(), pickBase(category, linked), item.getUrl(), item.getEnglish()));
+        }
+        String anchor = anchor(item.getName(), linked.stream().map(Item::getName).toList());
+        if (anchor == null) {
+            return List.of(build(item, item.getName(), pickBase(category, linked), item.getUrl(), item.getEnglish()));
+        }
+        List<VttgMagicItem> result = new ArrayList<>(linked.size());
+        for (Item base : linked) {
+            if (base.getName() != null && base.getName().equalsIgnoreCase(anchor)) {
+                // База, совпадающая с названием — исходные имя/url/english (контракт не меняется).
+                result.add(build(item, item.getName(), base, item.getUrl(), item.getEnglish()));
+            } else {
+                String name = replaceAnchor(item.getName(), anchor, base.getName());
+                result.add(build(item, name, base, variantUrlForLinked(item, base), null));
+            }
+        }
+        return result;
+    }
+
+    /** Url дополнительного варианта по связанному предмету: url предмета + slug url базы (стабильный, уникальный). */
+    private String variantUrlForLinked(MagicItem item, Item base) {
+        String suffix = slug(base.getUrl());
+        if (suffix.isEmpty()) {
+            suffix = slug(base.getName());
+        }
+        return suffix.isEmpty() ? item.getUrl() : item.getUrl() + "-" + suffix;
     }
 
     /**

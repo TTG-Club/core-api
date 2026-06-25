@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.magic.rest.mapper;
 
+import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
@@ -13,6 +14,9 @@ import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
 import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+import java.util.Set;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {BaseMapping.class})
 public interface MagicItemMapper
@@ -35,6 +39,7 @@ public interface MagicItemMapper
     @Mapping(target = "category.type", source = "category")
     @Mapping(target = "rarity.type", source = "rarity")
     @Mapping(target = "rarity.varies", source = "varies")
+    @Mapping(target = "items", source = "items", qualifiedByName = "itemsToUrls")
     MagicItemRequest toRequest(MagicItem magicItem);
 
     @BaseMapping.BaseEntityNameMapping
@@ -48,7 +53,8 @@ public interface MagicItemMapper
     @Mapping(source = "request.rarity.varies", target = "varies")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
-    MagicItem toEntity(MagicItemRequest request, Source source);
+    @Mapping(target = "items", source = "linkedItems")
+    MagicItem toEntity(MagicItemRequest request, Source source, Set<Item> linkedItems);
 
     @BaseMapping.BaseEntityNameMapping
     @Mapping(target = "url", ignore = true)
@@ -61,7 +67,19 @@ public interface MagicItemMapper
     @Mapping(source = "request.rarity.varies", target = "varies")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
-    void updateEntity(MagicItemRequest request, Source source, @MappingTarget MagicItem magicItem);
+    @Mapping(target = "items", source = "linkedItems")
+    void updateEntity(MagicItemRequest request, Source source, Set<Item> linkedItems, @MappingTarget MagicItem magicItem);
+
+    @Named("itemsToUrls")
+    default List<String> itemsToUrls(Set<Item> items) {
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+        return items.stream()
+                .map(Item::getUrl)
+                .sorted()
+                .toList();
+    }
 
     @Named("toSubtitle")
     default String toSubtitle(MagicItem magicItem) {

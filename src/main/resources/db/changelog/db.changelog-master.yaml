@@ -209,3 +209,5 @@ databaseChangeLog:
       file: db/changelog/2026/06/23-03-add-rewards-and-redemption-codes.yaml
   - include:
       file: db/changelog/2026/06/24-01-add-achievements-and-flexible-codes.yaml
+  - include:
+      file: db/changelog/2026/06/25-01-add-magic-item-items.yaml
