@@ -177,6 +177,29 @@ public class SubscriptionService {
                 .toList();
     }
 
+    /** Все выпущенные коды для админского списка (новые сверху). */
+    @Transactional(readOnly = true)
+    public List<RedemptionCodeResponse> allCodes() {
+        return codeRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * Удаляет выпущенный код. Удалять можно только непогашенные коды:
+     * удаление не отзывает уже выданную подписку/награды, а у погашенного кода
+     * нужно сохранить аудит «кто/когда активировал».
+     */
+    @Transactional
+    public void deleteCode(UUID id) {
+        RedemptionCode code = codeRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Код не найден"));
+        if (code.getRedeemedBy() != null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Нельзя удалить уже использованный код");
+        }
+        codeRepository.delete(code);
+    }
+
     @Transactional(readOnly = true)
     public List<SubscriptionResponse> currentUserSubscriptions() {
         Instant now = Instant.now();
