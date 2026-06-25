@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -36,6 +37,15 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
                  )
              )
             """;
+
+    /**
+     * Явно обновляет {@code updatedAt} предмета. Нужно для изменений, которые не затрагивают строку
+     * самого предмета (например, правка только связей в join-таблице {@code magic_item_item}):
+     * без этого {@code @UpdateTimestamp} не срабатывает и дельта VTTG ({@code /changes}) пропускает правку.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update MagicItem mi set mi.updatedAt = :now where mi.url = :url")
+    void touchUpdatedAt(@Param("url") String url, @Param("now") Instant now);
 
     @Query(value = """
             select mi from MagicItem mi
