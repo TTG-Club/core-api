@@ -48,12 +48,14 @@ public interface ItemRepository extends JpaRepository<Item, String>,
     /** Лёгкие ссылки (url + время изменения) видимых предметов окна — без гидрации jsonb. */
     @Query("""
             select i.url as url, coalesce(i.updatedAt, i.createdAt) as changedAt from Item i
-            where (:srdVersion is null or i.srdVersion = :srdVersion)
+            where (:srdOnly = false or i.srdVersion is not null)
+              and (:srdVersion is null or i.srdVersion = :srdVersion)
               and i.isHiddenEntity = false
               and coalesce(i.updatedAt, i.createdAt) > :since
               and coalesce(i.updatedAt, i.createdAt) <= :until
             """)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("srdOnly") boolean srdOnly,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
@@ -86,12 +88,14 @@ public interface ItemRepository extends JpaRepository<Item, String>,
      */
     @Query("""
             select count(i) from Item i
-            where (:srdVersion is null or i.srdVersion = :srdVersion)
+            where (:srdOnly = false or i.srdVersion is not null)
+              and (:srdVersion is null or i.srdVersion = :srdVersion)
               and i.isHiddenEntity = false
               and coalesce(i.updatedAt, i.createdAt) > :since
               and coalesce(i.updatedAt, i.createdAt) <= :until
             """)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 }

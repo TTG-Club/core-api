@@ -1,0 +1,232 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-23-03-drop-code-from-user-subscription
+      author: claude
+      changes:
+        - dropUniqueConstraint:
+            tableName: user_subscription
+            constraintName: uc_user_subscription_registration_code
+        - dropColumn:
+            tableName: user_subscription
+            columnName: registration_code
+
+  - changeSet:
+      id: 2026-06-23-03-create-redemption-code
+      author: claude
+      changes:
+        - createTable:
+            tableName: redemption_code
+            columns:
+              - column:
+                  name: uuid
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_redemption_code
+              - column:
+                  name: code
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subscription_type
+                  type: VARCHAR(32)
+              - column:
+                  name: subscription_months
+                  type: INT
+              - column:
+                  name: reward_tier
+                  type: VARCHAR(32)
+              - column:
+                  name: label
+                  type: VARCHAR(255)
+              - column:
+                  name: redeemed_by
+                  type: VARCHAR(255)
+              - column:
+                  name: redeemed_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - addUniqueConstraint:
+            tableName: redemption_code
+            columnNames: code
+            constraintName: uc_redemption_code_code
+        - createIndex:
+            tableName: redemption_code
+            indexName: idx_redemption_code_redeemed_by
+            columns:
+              - column:
+                  name: redeemed_by
+
+  - changeSet:
+      id: 2026-06-23-03-create-user-reward
+      author: claude
+      changes:
+        - createTable:
+            tableName: user_reward
+            columns:
+              - column:
+                  name: uuid
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_user_reward
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: perk
+                  type: VARCHAR(48)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: granted_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_code
+                  type: UUID
+        - addUniqueConstraint:
+            tableName: user_reward
+            columnNames: username, perk
+            constraintName: uc_user_reward_username_perk
+        - createIndex:
+            tableName: user_reward
+            indexName: idx_user_reward_perk
+            columns:
+              - column:
+                  name: perk
+
+  - changeSet:
+      id: 2026-06-23-03-create-reward-resource
+      author: claude
+      changes:
+        - createTable:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  type: VARCHAR(48)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_reward_resource
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+              - column:
+                  name: url
+                  type: VARCHAR(1024)
+              - column:
+                  name: availability
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: VARCHAR(1024)
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+
+  - changeSet:
+      id: 2026-06-23-03-seed-reward-resource
+      author: claude
+      changes:
+        - insert:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  value: EARLY_ACCESS_DOWNLOAD
+              - column:
+                  name: title
+                  value: Ранний доступ к скачиванию
+              - column:
+                  name: availability
+                  value: AVAILABLE
+        - insert:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  value: MAP_TOKENS_DOWNLOAD
+              - column:
+                  name: title
+                  value: Карты и токены
+              - column:
+                  name: availability
+                  value: AVAILABLE
+        - insert:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  value: ADVENTURE_DOWNLOAD
+              - column:
+                  name: title
+                  value: Приключение
+              - column:
+                  name: availability
+                  value: COMING_SOON
+              - column:
+                  name: note
+                  value: Будет готово ближе к релизу
+        - insert:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  value: DEV_CHAT_ACCESS
+              - column:
+                  name: title
+                  value: Приватный чат разработки
+              - column:
+                  name: availability
+                  value: AVAILABLE
+        - insert:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  value: PROFILE_BADGE
+              - column:
+                  name: title
+                  value: Уникальный значок профиля
+              - column:
+                  name: availability
+                  value: AVAILABLE
+        - insert:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  value: AVATAR_FRAME
+              - column:
+                  name: title
+                  value: Уникальная рамка аватара
+              - column:
+                  name: availability
+                  value: AVAILABLE
+        - insert:
+            tableName: reward_resource
+            columns:
+              - column:
+                  name: perk
+                  value: APP_CREDITS
+              - column:
+                  name: title
+                  value: Упоминание в приложении
+              - column:
+                  name: availability
+                  value: AVAILABLE

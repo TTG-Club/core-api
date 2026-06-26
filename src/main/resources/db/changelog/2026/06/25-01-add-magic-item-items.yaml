@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-magic-item-item
+      author: you
+
+      changes:
+        - createTable:
+            tableName: magic_item_item
+            columns:
+              - column:
+                  name: magic_item_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: item_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: magic_item_item
+            columnNames: magic_item_id, item_id
+            constraintName: pk_magic_item_item
+
+        - addForeignKeyConstraint:
+            baseTableName: magic_item_item
+            baseColumnNames: magic_item_id
+            referencedTableName: magic_item
+            referencedColumnNames: url
+            constraintName: fk_magic_item_item_magic_item
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: magic_item_item
+            baseColumnNames: item_id
+            referencedTableName: item
+            referencedColumnNames: url
+            constraintName: fk_magic_item_item_item
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: magic_item_item
+            indexName: idx_magic_item_item_magic_item
+            columns:
+              - column:
+                  name: magic_item_id
+
+        - createIndex:
+            tableName: magic_item_item
+            indexName: idx_magic_item_item_item
+            columns:
+              - column:
+                  name: item_id

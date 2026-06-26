@@ -99,49 +99,49 @@ public class VttgChangesService {
 
     /** Лёгкий статус для индикатора: число изменений в окне без полезной нагрузки. */
     @Transactional(readOnly = true)
-    public VttgChangesStatus status(Instant sinceParam, String srdVersion, Set<String> types) {
+    public VttgChangesStatus status(Instant sinceParam, String srdVersion, Set<String> types, boolean srdOnly) {
         Window window = window(sinceParam);
         Set<String> selected = normalizeTypes(types);
         Map<String, Long> byType = new LinkedHashMap<>();
 
         if (selected.contains(SPELLS)) {
-            long count = spellRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            long count = spellRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(SPELLS, count);
             }
         }
         if (selected.contains(BESTIARY)) {
-            long count = creatureRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            long count = creatureRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(BESTIARY, count);
             }
         }
         if (selected.contains(MAGIC_ITEMS)) {
-            long count = magicItemRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            long count = magicItemRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(MAGIC_ITEMS, count);
             }
         }
         if (selected.contains(ITEMS)) {
-            long count = itemRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            long count = itemRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(ITEMS, count);
             }
         }
         if (selected.contains(BACKGROUNDS)) {
-            long count = backgroundRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            long count = backgroundRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(BACKGROUNDS, count);
             }
         }
         if (selected.contains(FEATS)) {
-            long count = featRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            long count = featRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(FEATS, count);
             }
         }
         if (selected.contains(SPECIES)) {
-            long count = speciesRepository.countChangedForVttgExport(srdVersion, window.since(), window.until());
+            long count = speciesRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(SPECIES, count);
             }
@@ -159,8 +159,8 @@ public class VttgChangesService {
      * Инкрементальный поллинг ({@code since} задан) не кэшируется и всегда свежий; верхняя граница
      * {@code until} в кэшированном ответе «заморожена», что безопасно — повторная выборка идемпотентна.</p>
      */
-    @Cacheable(cacheNames = CacheConfig.VTTG_FULL_EXPORT, condition = "#sinceParam == null", key = "{#srdVersion, #types}")
-    public VttgChangesResponse changes(Instant sinceParam, String srdVersion, Set<String> types) {
+    @Cacheable(cacheNames = CacheConfig.VTTG_FULL_EXPORT, condition = "#sinceParam == null", key = "{#srdVersion, #types, #srdOnly}")
+    public VttgChangesResponse changes(Instant sinceParam, String srdVersion, Set<String> types, boolean srdOnly) {
         long startedAt = System.nanoTime();
         Window window = window(sinceParam);
         Set<String> selected = normalizeTypes(types);
@@ -174,28 +174,28 @@ public class VttgChangesService {
         // (max времени изменения зависимой таблицы), которая инвалидирует payload при правке зависимости.
         Map<String, CompletableFuture<TypeResult>> futures = new LinkedHashMap<>();
         submitStore(futures, SPELLS, selected,
-                () -> spellRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                () -> spellRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 () -> null,
                 spellRepository::findAllForVttgExportByUrls, Spell::getUrl, spellMapper::toVttg);
         submitStore(futures, BESTIARY, selected,
-                () -> creatureRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                () -> creatureRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 () -> null,
                 creatureRepository::findAllForVttgExportByUrls, Creature::getUrl, creatureMapper::toVttg);
         submitStore(futures, ITEMS, selected,
-                () -> itemRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                () -> itemRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 () -> null,
                 itemRepository::findAllForVttgExportByUrls, Item::getUrl, itemMapper::toVttg);
         submitStore(futures, MAGIC_ITEMS, selected,
-                () -> magicItemRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                () -> magicItemRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 itemRepository::maxChangedAtForVttgExport,
                 magicItemRepository::findAllForVttgExportByUrls, MagicItem::getUrl,
                 item -> magicItemMapper.toVttgPayload(item, baseCache));
         submitStore(futures, BACKGROUNDS, selected,
-                () -> backgroundRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                () -> backgroundRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 featRepository::maxChangedAtForVttgExport,
                 backgroundRepository::findAllForVttgExportByUrls, Background::getUrl, backgroundMapper::toVttg);
         submitStore(futures, SPECIES, selected,
-                () -> speciesRepository.findChangedRefsForVttgExport(srdVersion, window.since(), window.until()),
+                () -> speciesRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 speciesRepository::maxChangedAtForVttgExport,
                 speciesRepository::findAllForVttgExportByUrls, Species::getUrl, speciesMapper::toVttg);
 
@@ -204,7 +204,7 @@ public class VttgChangesService {
         CompletableFuture<TypeResult> featsFuture = !selected.contains(FEATS) ? null
                 : supplyAsync(FEATS, () -> {
                     long fetchStart = System.nanoTime();
-                    List<Feat> feats = featRepository.findChangedForVttgExport(srdVersion, window.since(), window.until());
+                    List<Feat> feats = featRepository.findChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
                     long mapStart = System.nanoTime();
                     List<VttgChange> block = new ArrayList<>();
                     appendFeatChanges(block, feats);

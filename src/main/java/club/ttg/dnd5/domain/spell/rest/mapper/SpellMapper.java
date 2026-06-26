@@ -289,6 +289,7 @@ public interface SpellMapper
     @Mapping(target = "subclassAffiliation", source = "subclasses")
     @Mapping(target = "featAffiliation", source = "feats")
     @Mapping(target = "srdVersion", source = "request.srdVersion")
+    @Mapping(target = "activeEffects", source = "request.activeEffects")
     @interface ToEntityMapping
     {
     }

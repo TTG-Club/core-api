@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,13 +23,29 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
      *       (адамантиновое/зачарованное оружие/доспех/посох).</li>
      * </ul>
      * Применяется ко всем {@code *ForVttgExport}-запросам, чтобы /status и /changes были согласованы.
+     * Исключение: если у такого предмета есть явно связанные немагические предметы, он экспортируется
+     * (раскрывается в конкретные предметы по связям — см. {@code VttgMagicItemMapper}).
      */
     String EXCLUDE_NON_CONCRETE = """
-             and mi.name not like '%+1, +2 или +3%'
-             and mi.name not in (
-                 'Адамантиновое оружие', 'Адамантиновый доспех',
-                 'Зачарованное оружие', 'Зачарованный доспех', 'Зачарованный посох')
+             and (
+                 size(mi.items) > 0
+                 or (
+                     mi.name not like '%+1, +2 или +3%'
+                     and mi.name not in (
+                         'Адамантиновое оружие', 'Адамантиновый доспех',
+                         'Зачарованное оружие', 'Зачарованный доспех', 'Зачарованный посох')
+                 )
+             )
             """;
+
+    /**
+     * Явно обновляет {@code updatedAt} предмета. Нужно для изменений, которые не затрагивают строку
+     * самого предмета (например, правка только связей в join-таблице {@code magic_item_item}):
+     * без этого {@code @UpdateTimestamp} не срабатывает и дельта VTTG ({@code /changes}) пропускает правку.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update MagicItem mi set mi.updatedAt = :now where mi.url = :url")
+    void touchUpdatedAt(@Param("url") String url, @Param("now") Instant now);
 
     @Query(value = """
             select mi from MagicItem mi
@@ -64,22 +81,26 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
     @EntityGraph(attributePaths = {"source"})
     @Query("""
             select mi from MagicItem mi
-            where (:srdVersion is null or mi.srdVersion = :srdVersion)
+            where (:srdOnly = false or mi.srdVersion is not null)
+              and (:srdVersion is null or mi.srdVersion = :srdVersion)
               and mi.isHiddenEntity = false
             """ + EXCLUDE_NON_CONCRETE + """
             order by mi.name
             """)
-    List<MagicItem> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
+    List<MagicItem> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion,
+                                                @Param("srdOnly") boolean srdOnly);
 
     /** Лёгкие ссылки (url + время изменения) видимых магических предметов окна — без гидрации jsonb. */
     @Query("""
             select mi.url as url, coalesce(mi.updatedAt, mi.createdAt) as changedAt from MagicItem mi
-            where (:srdVersion is null or mi.srdVersion = :srdVersion)
+            where (:srdOnly = false or mi.srdVersion is not null)
+              and (:srdVersion is null or mi.srdVersion = :srdVersion)
               and mi.isHiddenEntity = false
               and coalesce(mi.updatedAt, mi.createdAt) > :since
               and coalesce(mi.updatedAt, mi.createdAt) <= :until
             """ + EXCLUDE_NON_CONCRETE)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("srdOnly") boolean srdOnly,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
@@ -94,12 +115,14 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
      */
     @Query("""
             select count(mi) from MagicItem mi
-            where (:srdVersion is null or mi.srdVersion = :srdVersion)
+            where (:srdOnly = false or mi.srdVersion is not null)
+              and (:srdVersion is null or mi.srdVersion = :srdVersion)
               and mi.isHiddenEntity = false
               and coalesce(mi.updatedAt, mi.createdAt) > :since
               and coalesce(mi.updatedAt, mi.createdAt) <= :until
             """ + EXCLUDE_NON_CONCRETE)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 }

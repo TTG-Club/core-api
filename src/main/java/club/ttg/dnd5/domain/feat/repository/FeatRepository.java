@@ -49,12 +49,14 @@ public interface FeatRepository extends JpaRepository<Feat, String> {
     @EntityGraph(attributePaths = {"source"})
     @Query("""
             select f from Feat f
-            where (:srdVersion is null or f.srdVersion = :srdVersion)
+            where (:srdOnly = false or f.srdVersion is not null)
+              and (:srdVersion is null or f.srdVersion = :srdVersion)
               and f.isHiddenEntity = false
               and coalesce(f.updatedAt, f.createdAt) > :since
               and coalesce(f.updatedAt, f.createdAt) <= :until
             """)
     List<Feat> findChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                        @Param("srdOnly") boolean srdOnly,
                                         @Param("since") Instant since,
                                         @Param("until") Instant until);
 
@@ -70,12 +72,14 @@ public interface FeatRepository extends JpaRepository<Feat, String> {
      */
     @Query("""
             select count(f) from Feat f
-            where (:srdVersion is null or f.srdVersion = :srdVersion)
+            where (:srdOnly = false or f.srdVersion is not null)
+              and (:srdVersion is null or f.srdVersion = :srdVersion)
               and f.isHiddenEntity = false
               and coalesce(f.updatedAt, f.createdAt) > :since
               and coalesce(f.updatedAt, f.createdAt) <= :until
             """)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 }

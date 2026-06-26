@@ -6,8 +6,10 @@ import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.Roll;
+import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.weapon.Damage;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -140,6 +143,7 @@ class VttgMagicItemMapperTest {
         base.setEnglish("Longsword");
         base.setDescription("");
         base.setWeight("3 фунта");
+        base.setCategory(ItemCategory.WEAPON);
         Weapon weapon = new Weapon();
         weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
         Damage damage = new Damage();
@@ -259,6 +263,7 @@ class VttgMagicItemMapperTest {
         base.setWeight("0");
         base.setCost(cost);
         base.setCoin(Coin.GC);
+        base.setCategory(ItemCategory.ARMOR);
         base.setArmor(new Armor());
         Source source = new Source();
         source.setAcronym("PHB");
@@ -372,6 +377,222 @@ class VttgMagicItemMapperTest {
         item.setSource(source);
 
         assertEquals("Perfume of Bewitching", mapper.toVttg(item).getNameEn());
+    }
+
+    /** Явно связанный немагический предмет задаёт вес и стоимость (приоритет над clarification, для любой категории). */
+    @Test
+    void usesLinkedItemForWeightAndCost() {
+        Item longsword = longsword();
+        longsword.setCost("15");
+        longsword.setCoin(Coin.GC);
+
+        MagicItem item = new MagicItem();
+        item.setUrl("flame-tongue");
+        item.setName("Огненный язык");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.RARE);
+        item.setItems(Set.of(longsword));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        JsonNode json = objectMapper.valueToTree(mapper.toVttg(item));
+        // Вес — у связанного предмета; стоимость — цена редкости + стоимость базы.
+        assertEquals(3.0, json.get("weight").asDouble());
+        assertEquals("4015 зм", json.get("cost").asText()); // 4000 (редкий) + 15 (длинный меч)
+    }
+
+    /** Несколько связанных видов оружия раскрываются в отдельные записи с подменой слова в названии. */
+    @Test
+    void splitsByLinkedWeapons() {
+        Item longsword = longsword();
+        Item shortsword = shortsword();
+
+        MagicItem item = new MagicItem();
+        item.setUrl("sword-of-vengeance");
+        item.setName("Длинный меч мести");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.RARE);
+        item.setItems(Set.of(longsword, shortsword));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        assertEquals(2, variants.size());
+        // База, совпадающая с названием — имя и url (id) не меняются.
+        VttgMagicItem main = byName(variants, "Длинный меч мести");
+        assertEquals("sword-of-vengeance-dmg", main.getId());
+        // Дополнительная база — слово в названии заменено, id получает суффикс url базы.
+        VttgMagicItem variant = byName(variants, "Короткий меч мести");
+        assertEquals("sword-of-vengeance-shortsword-dmg", variant.getId());
+    }
+
+    /** Один связанный предмет не расщепляется — ровно одна запись. */
+    @Test
+    void doesNotSplitSingleLinkedItem() {
+        MagicItem item = new MagicItem();
+        item.setUrl("flame-tongue");
+        item.setName("Огненный язык");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.RARE);
+        item.setItems(Set.of(longsword()));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals(1, mapper.toVttgVariants(item, new HashMap<>()).size());
+    }
+
+    /** Один связанный предмет: стоимость = стоимость связанного + цена по редкости; название не меняется. */
+    @Test
+    void singleLinkedItemSetsCostByFormula() {
+        MagicItem item = new MagicItem();
+        item.setUrl("dwarven-plate");
+        item.setName("Латы дварфов");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setRarity(Rarity.VERY_RARE);
+        item.setItems(Set.of(plate())); // Латы, 1500 зм
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+        assertEquals(1, variants.size());
+        assertEquals("Латы дварфов", variants.get(0).getName());
+        // 40000 (очень редкий) + 1500 (латы) = 41500 зм.
+        assertEquals("41500 зм", variants.get(0).getCost());
+    }
+
+    /** Несколько связанных предметов: по записи на каждый, со сменой слова в названии (регистр сохраняется). */
+    @Test
+    void splitsMultipleLinkedItemsByName() {
+        Item chainMail = armorWithCategory("chain-mail", "Кольчуга", "Chain Mail", "75", ArmorCategory.HEAVY);
+        Item chainShirt =
+                armorWithCategory("chain-shirt", "Кольчужная рубаха", "Chain Shirt", "50", ArmorCategory.MEDIUM);
+
+        MagicItem item = new MagicItem();
+        item.setUrl("elven-chain");
+        item.setName("Эльфийская кольчуга");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setRarity(Rarity.RARE);
+        item.setItems(Set.of(chainMail, chainShirt));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        assertEquals(2, variants.size());
+        VttgMagicItem mail = byName(variants, "Эльфийская кольчуга");
+        assertEquals("elven-chain-dmg", mail.getId());
+        // Слово «кольчуга» строчное в названии — замена тоже строчная.
+        VttgMagicItem shirt = byName(variants, "Эльфийская кольчужная рубаха");
+        assertEquals("elven-chain-chain-shirt-dmg", shirt.getId());
+    }
+
+    /** Шаблон «+1, +2 или +3»: на связанный доспех — три записи с растущей редкостью и стоимостью. */
+    @Test
+    void expandsArmorBonusTemplate() {
+        MagicItem item = new MagicItem();
+        item.setUrl("armor-plus");
+        item.setName("Доспех, +1, +2 или +3");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setRarity(Rarity.VARIES);
+        item.setItems(Set.of(plate())); // Латы, 1500 зм
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+        assertEquals(3, variants.size());
+
+        VttgMagicItem plus1 = byName(variants, "Латы +1");
+        assertEquals(1, plus1.getMagicBonus());
+        assertEquals("rare", plus1.getRarity());
+        assertEquals("5500 зм", plus1.getCost()); // 4000 + 1500
+
+        VttgMagicItem plus2 = byName(variants, "Латы +2");
+        assertEquals("very-rare", plus2.getRarity());
+        assertEquals("41500 зм", plus2.getCost()); // 40000 + 1500
+
+        VttgMagicItem plus3 = byName(variants, "Латы +3");
+        assertEquals("legendary", plus3.getRarity());
+        assertEquals("201500 зм", plus3.getCost()); // 200000 + 1500
+    }
+
+    /** Шаблон «+N» с несколькими связанными предметами: по три записи на каждый. */
+    @Test
+    void expandsBonusTemplateForEachLinkedItem() {
+        Item leather = armor("leather-armor", "Кожаный доспех", "Leather Armor", "10");
+
+        MagicItem item = new MagicItem();
+        item.setUrl("armor-plus");
+        item.setName("Доспех, +1, +2 или +3");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setRarity(Rarity.VARIES);
+        item.setItems(Set.of(plate(), leather));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+        assertEquals(6, variants.size());
+        byName(variants, "Кожаный доспех +1");
+        byName(variants, "Кожаный доспех +3");
+        byName(variants, "Латы +2");
+    }
+
+    /** Для щита (как и для оружия) шаблон «+N» даёт редкость на уровень ниже брони. */
+    @Test
+    void shieldBonusTemplateUsesLowerRarity() {
+        Item shield = armorWithCategory("shield", "Щит", "Shield", "10", ArmorCategory.SHIELD);
+
+        MagicItem item = new MagicItem();
+        item.setUrl("shield-plus");
+        item.setName("Щит, +1, +2 или +3");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setRarity(Rarity.VARIES);
+        item.setItems(Set.of(shield));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+        assertEquals("uncommon", byName(variants, "Щит +1").getRarity());
+        assertEquals("rare", byName(variants, "Щит +2").getRarity());
+        assertEquals("very-rare", byName(variants, "Щит +3").getRarity());
+    }
+
+    private Item armorWithCategory(String url, String name, String english, String cost, ArmorCategory category) {
+        Item base = armor(url, name, english, cost);
+        base.getArmor().setCategory(category);
+        return base;
+    }
+
+    private Item shortsword() {
+        Item base = new Item();
+        base.setUrl("shortsword");
+        base.setName("Короткий меч");
+        base.setEnglish("Shortsword");
+        base.setDescription("");
+        base.setWeight("2 фунта");
+        base.setCategory(ItemCategory.WEAPON);
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
+        Damage damage = new Damage();
+        Roll roll = new Roll();
+        roll.setDiceCount((short) 1);
+        roll.setDice(Dice.d6);
+        damage.setRoll(roll);
+        damage.setType(DamageType.PIERCING);
+        weapon.setDamage(damage);
+        base.setWeapon(weapon);
+        Source source = new Source();
+        source.setAcronym("PHB");
+        base.setSource(source);
+        return base;
     }
 
     private MagicItem wandOfFear() {

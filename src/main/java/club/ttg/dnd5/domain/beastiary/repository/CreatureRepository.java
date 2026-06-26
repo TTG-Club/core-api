@@ -57,11 +57,13 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
 
     @Query("""
             select c from Creature c
-            where (:srdVersion is null or c.srdVersion = :srdVersion)
+            where (:srdOnly = false or c.srdVersion is not null)
+              and (:srdVersion is null or c.srdVersion = :srdVersion)
               and c.isHiddenEntity = false
             order by c.name
             """)
-    List<Creature> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion);
+    List<Creature> findAllVisibleForVttgExport(@Param("srdVersion") String srdVersion,
+                                               @Param("srdOnly") boolean srdOnly);
 
     /**
      * Лёгкие ссылки (url + время изменения) видимых существ окна — без гидрации jsonb,
@@ -69,12 +71,14 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
      */
     @Query("""
             select c.url as url, coalesce(c.updatedAt, c.createdAt) as changedAt from Creature c
-            where (:srdVersion is null or c.srdVersion = :srdVersion)
+            where (:srdOnly = false or c.srdVersion is not null)
+              and (:srdVersion is null or c.srdVersion = :srdVersion)
               and c.isHiddenEntity = false
               and coalesce(c.updatedAt, c.createdAt) > :since
               and coalesce(c.updatedAt, c.createdAt) <= :until
             """)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("srdOnly") boolean srdOnly,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
@@ -89,12 +93,14 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
      */
     @Query("""
             select count(c) from Creature c
-            where (:srdVersion is null or c.srdVersion = :srdVersion)
+            where (:srdOnly = false or c.srdVersion is not null)
+              and (:srdVersion is null or c.srdVersion = :srdVersion)
               and c.isHiddenEntity = false
               and coalesce(c.updatedAt, c.createdAt) > :since
               and coalesce(c.updatedAt, c.createdAt) <= :until
             """)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 

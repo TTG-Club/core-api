@@ -201,3 +201,15 @@ databaseChangeLog:
       file: db/changelog/2026/06/18-02-add-original-description.yaml
   - include:
       file: db/changelog/2026/06/19-01-drop-unused-item-columns.yaml
+  - include:
+      file: db/changelog/2026/06/23-01-add-user-subscription.yaml
+  - include:
+      file: db/changelog/2026/06/23-02-add-spell-active-effects.yaml
+  - include:
+      file: db/changelog/2026/06/23-03-add-rewards-and-redemption-codes.yaml
+  - include:
+      file: db/changelog/2026/06/24-01-add-achievements-and-flexible-codes.yaml
+  - include:
+      file: db/changelog/2026/06/25-01-add-magic-item-items.yaml
+  - include:
+      file: db/changelog/2026/06/26-01-add-disabled-to-redemption-code.yaml

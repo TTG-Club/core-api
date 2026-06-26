@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.item.model.Item;
@@ -16,11 +17,13 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,6 +77,12 @@ public class VttgMagicItemMapper {
      * (для этого см. {@link #toVttgVariants}).</p>
      */
     public VttgMagicItem toVttg(MagicItem item, Map<String, List<Item>> baseCache) {
+        List<Item> linked = linkedItems(item);
+        if (!linked.isEmpty()) {
+            // Явно связанные немагические предметы точнее уточнения (clarification): вес/стоимость берём у них.
+            // Для контекстов, где нужна одна запись, берём первый из раскрытых вариантов.
+            return variantsFromLinked(item, linked).get(0);
+        }
         return map(item, item.getName(), item.getClarification(), item.getUrl(), item.getEnglish(), baseCache);
     }
 
@@ -84,6 +93,10 @@ public class VttgMagicItemMapper {
      * (напр. «Латы дварфов» → «Латы дварфов» и «Полулаты дварфов»). Иначе — ровно одна запись.
      */
     public List<VttgMagicItem> toVttgVariants(MagicItem item, Map<String, List<Item>> baseCache) {
+        List<Item> linked = linkedItems(item);
+        if (!linked.isEmpty()) {
+            return variantsFromLinked(item, linked);
+        }
         MagicItemCategory category = item.getCategory();
         List<String> bases = splitBaseItems(item.getClarification());
         // Расщепляем только оружие/броню — лишь для них ищем конкретный предмет в таблице item.
@@ -116,17 +129,28 @@ public class VttgMagicItemMapper {
         return variants.size() == 1 ? variants.get(0) : variants;
     }
 
-    /** Сборка одной записи VTTG для заданных имени/уточнения/url/английского названия. */
+    /** Сборка одной записи VTTG: базовый предмет разрешается из уточнения ({@code clarification}). */
     private VttgMagicItem map(MagicItem item, String name, String clarification, String url,
                               String english, Map<String, List<Item>> baseCache) {
+        Item base = findBase(item.getCategory(), baseCache, clarification, name, english);
+        return build(item, name, base, url, english);
+    }
+
+    /** Сборка одной записи VTTG: редкость и бонус выводятся из самого предмета (название/varies). */
+    private VttgMagicItem build(MagicItem item, String name, Item base, String url, String english) {
+        return buildEntry(item, name, base, url, english,
+                effectiveRarity(item), firstBonus(name, english, item.getClarification()));
+    }
+
+    /** Сборка одной записи VTTG с явно заданными редкостью и бонусом (для раскрытия «+1/+2/+3»). */
+    private VttgMagicItem buildEntry(MagicItem item, String name, Item base, String url,
+                                     String english, Rarity rarity, Integer bonus) {
         Attunement attunement = item.getAttunement();
         boolean requiresAttunement = attunement != null && attunement.isRequires();
         String sourceKey = sourceKey(item.getSource());
         MagicItemCategory category = item.getCategory();
         boolean weapon = category == MagicItemCategory.WEAPON;
-        Item base = findBase(category, baseCache, clarification, name, english);
         BaseMechanics mechanics = mechanics(base, category);
-        Rarity rarity = effectiveRarity(item);
 
         return VttgMagicItem.builder()
                 .id(id(url, sourceKey))
@@ -152,7 +176,7 @@ public class VttgMagicItemMapper {
                 .mechanics(mechanics.fields())
                 .isMagical(true)
                 .magicAttunement(requiresAttunement ? "required" : "none")
-                .magicBonus(firstBonus(name, english, clarification))
+                .magicBonus(bonus)
                 .sourceKey(sourceKey)
                 .isSRD(true)
                 .isReadOnly(true)
@@ -195,13 +219,123 @@ public class VttgMagicItemMapper {
         }
         Map<String, Object> baseMap = itemMapper.toVttg(base);
         Map<String, Object> fields = new LinkedHashMap<>();
-        for (String key : category == MagicItemCategory.WEAPON ? WEAPON_KEYS : ARMOR_KEYS) {
+        // Боевые/доспешные поля имеют смысл только для оружия/брони; для прочих категорий берём лишь вес/стоимость.
+        List<String> keys = switch (category == null ? MagicItemCategory.SUBJECT : category) {
+            case WEAPON -> WEAPON_KEYS;
+            case ARMOR -> ARMOR_KEYS;
+            default -> List.of();
+        };
+        for (String key : keys) {
             if (baseMap.containsKey(key)) {
                 fields.put(key, baseMap.get(key));
             }
         }
         double weight = baseMap.get("weight") instanceof Number number ? number.doubleValue() : 0;
         return new BaseMechanics(weight, goldCost(base), fields.isEmpty() ? null : fields);
+    }
+
+    /** Связанные немагические предметы магического предмета в стабильном порядке (по url); пусто — связей нет. */
+    private List<Item> linkedItems(MagicItem item) {
+        Set<Item> items = item.getItems();
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+        return items.stream()
+                .sorted(Comparator.comparing(Item::getUrl, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+    }
+
+    /**
+     * Раскрывает магический предмет по явно связанным немагическим предметам:
+     * <ul>
+     *   <li><b>Шаблон «+1, +2 или +3»</b> (Доспех/Щит/Оружие …) — на каждый связанный предмет
+     *       по три записи с бонусами +1/+2/+3 (см. {@link #bonusVariants});</li>
+     *   <li><b>один связанный</b> — одна запись: вес из связанного, стоимость = стоимость связанного
+     *       + цена по редкости (таблица «Редкость и цена»);</li>
+     *   <li><b>несколько связанных</b> — по записи на каждый связанный предмет, с подменой слова
+     *       в названии (напр. «Эльфийская кольчуга» → «Эльфийская кольчуга» и
+     *       «Эльфийская кольчужная рубаха»).</li>
+     * </ul>
+     */
+    private List<VttgMagicItem> variantsFromLinked(MagicItem item, List<Item> linked) {
+        if (isBonusTemplate(item)) {
+            return bonusVariants(item, linked);
+        }
+        if (linked.size() == 1) {
+            return List.of(build(item, item.getName(), linked.get(0), item.getUrl(), item.getEnglish()));
+        }
+        String anchor = anchor(item.getName(), linked.stream().map(Item::getName).toList());
+        List<VttgMagicItem> result = new ArrayList<>(linked.size());
+        for (Item base : linked) {
+            if (anchor != null && base.getName() != null && base.getName().equalsIgnoreCase(anchor)) {
+                // База, совпадающая с названием — исходные имя/url/english (контракт не меняется).
+                result.add(build(item, item.getName(), base, item.getUrl(), item.getEnglish()));
+            } else {
+                String name = anchor != null
+                        ? replaceAnchor(item.getName(), anchor, base.getName())
+                        : item.getName() + " (" + base.getName() + ")";
+                result.add(build(item, name, base, variantUrlForLinked(item, base), null));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Шаблонный «сборный» магический предмет вида «… +1, +2 или +3» (Доспех, Щит, Оружие и т.п.):
+     * при экспорте раскрывается в конкретные предметы по связанным немагическим предметам.
+     */
+    private boolean isBonusTemplate(MagicItem item) {
+        return item.getName() != null && item.getName().contains("+1, +2 или +3");
+    }
+
+    /**
+     * Раскрытие шаблона «+1, +2 или +3»: на каждый связанный немагический предмет — три записи
+     * (Кожаный доспех +1/+2/+3, …, Латы +1/+2/+3). Вес берётся из базы, стоимость = стоимость базы
+     * + цена по редкости соответствующего бонуса, редкость/бонус выставляются явно.
+     */
+    private List<VttgMagicItem> bonusVariants(MagicItem item, List<Item> linked) {
+        List<VttgMagicItem> result = new ArrayList<>(linked.size() * 3);
+        for (Item base : linked) {
+            for (int bonus = 1; bonus <= 3; bonus++) {
+                String name = base.getName() + " +" + bonus;
+                String english = StringUtils.hasText(base.getEnglish())
+                        ? base.getEnglish() + " +" + bonus
+                        : null;
+                String url = variantUrlForLinked(item, base) + "-plus-" + bonus;
+                result.add(buildEntry(item, name, base, url, english, rarityForBonus(base, bonus), bonus));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Редкость по величине бонуса. Оружие и щиты дешевле брони на один уровень:
+     * оружие/щит +1/+2/+3 → необычный/редкий/очень редкий; броня +1/+2/+3 → редкий/очень редкий/легендарный.
+     */
+    private Rarity rarityForBonus(Item base, int bonus) {
+        boolean weaponTable = base.getWeapon() != null
+                || (base.getArmor() != null && base.getArmor().getCategory() == ArmorCategory.SHIELD);
+        if (weaponTable) {
+            return switch (bonus) {
+                case 1 -> Rarity.UNCOMMON;
+                case 2 -> Rarity.RARE;
+                default -> Rarity.VERY_RARE;
+            };
+        }
+        return switch (bonus) {
+            case 1 -> Rarity.RARE;
+            case 2 -> Rarity.VERY_RARE;
+            default -> Rarity.LEGENDARY;
+        };
+    }
+
+    /** Url дополнительного варианта по связанному предмету: url предмета + slug url базы (стабильный, уникальный). */
+    private String variantUrlForLinked(MagicItem item, Item base) {
+        String suffix = slug(base.getUrl());
+        if (suffix.isEmpty()) {
+            suffix = slug(base.getName());
+        }
+        return suffix.isEmpty() ? item.getUrl() : item.getUrl() + "-" + suffix;
     }
 
     /**
@@ -267,9 +401,13 @@ public class VttgMagicItemMapper {
             return name;
         }
         String matched = name.substring(idx, idx + anchor.length());
-        String replacement = !matched.isEmpty() && Character.isUpperCase(matched.charAt(0))
-                ? Character.toUpperCase(base.charAt(0)) + base.substring(1)
-                : base;
+        String replacement = base;
+        if (!matched.isEmpty() && !base.isEmpty()) {
+            // Регистр первой буквы базы выравниваем по заменяемому слову («Латы»→«Полулаты», «кольчуга»→«кольчужная рубаха»).
+            replacement = Character.isUpperCase(matched.charAt(0))
+                    ? Character.toUpperCase(base.charAt(0)) + base.substring(1)
+                    : Character.toLowerCase(base.charAt(0)) + base.substring(1);
+        }
         return name.substring(0, idx) + replacement + name.substring(idx + anchor.length());
     }
 

@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.magic.service;
 
+import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
@@ -14,7 +16,10 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
@@ -24,6 +29,7 @@ public class MagicItemServiceImpl implements MagicItemService {
     private final MagicItemMapper magicItemMapper;
     private final MagicItemQueryDslSearchService magicItemQueryDslSearchService;
     private final SourceService sourceService;
+    private final ItemRepository itemRepository;
 
 
     @Override
@@ -52,7 +58,7 @@ public class MagicItemServiceImpl implements MagicItemService {
     public String addItem(MagicItemRequest request) {
         exist(request.getUrl());
         var source = sourceService.findByUrl(request.getSource().getUrl());
-        var entity = magicItemMapper.toEntity(request, source);
+        var entity = magicItemMapper.toEntity(request, source, resolveItems(request.getItems()));
         return magicItemRepository.save(entity).getUrl();
     }
 
@@ -60,18 +66,24 @@ public class MagicItemServiceImpl implements MagicItemService {
     @Override
     public String updateItem(String url, MagicItemRequest request) {
         var source = sourceService.findByUrl(request.getSource().getUrl());
+        var linkedItems = resolveItems(request.getItems());
 
         if (url.equals(request.getUrl())) {
             var existing = findByUrl(url);
-            magicItemMapper.updateEntity(request, source, existing);
-            return magicItemRepository.save(existing).getUrl();
+            magicItemMapper.updateEntity(request, source, linkedItems, existing);
+            magicItemRepository.save(existing);
+            // Изменение только связей (ManyToMany — отдельная join-таблица) не помечает саму сущность
+            // изменённой, поэтому @UpdateTimestamp не срабатывает и дельта VTTG (/changes) пропускает правку.
+            // Явно обновляем метку времени, чтобы предмет попал в выгрузку.
+            magicItemRepository.touchUpdatedAt(url, Instant.now());
+            return url;
         }
 
         findByUrl(url);
         exist(request.getUrl());
         magicItemRepository.deleteById(url);
         magicItemRepository.flush();
-        var entity = magicItemMapper.toEntity(request, source);
+        var entity = magicItemMapper.toEntity(request, source, linkedItems);
         return magicItemRepository.save(entity).getUrl();
     }
 
@@ -97,7 +109,15 @@ public class MagicItemServiceImpl implements MagicItemService {
 
     public MagicItemDetailResponse preview(final MagicItemRequest request) {
         var source = sourceService.findByUrl(request.getSource().getUrl());
-        return magicItemMapper.toDetail(magicItemMapper.toEntity(request, source));
+        return magicItemMapper.toDetail(magicItemMapper.toEntity(request, source, resolveItems(request.getItems())));
+    }
+
+    /** Разрешает URL связанных немагических предметов в сущности; отсутствующие тихо отбрасываются. */
+    private Set<Item> resolveItems(final List<String> urls) {
+        if (urls == null || urls.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(itemRepository.findAllById(urls));
     }
 
     @Override

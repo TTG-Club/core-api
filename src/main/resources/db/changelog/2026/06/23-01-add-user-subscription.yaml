@@ -1,0 +1,68 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-23-01-add-user-subscription
+      author: codex
+      changes:
+        - createTable:
+            tableName: user_subscription
+            columns:
+              - column:
+                  name: uuid
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_user_subscription
+              - column:
+                  name: type
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: registration_code
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_months
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: owner_username
+                  type: VARCHAR(255)
+              - column:
+                  name: registered_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: starts_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+        - addUniqueConstraint:
+            tableName: user_subscription
+            columnNames: registration_code
+            constraintName: uc_user_subscription_registration_code
+        - createIndex:
+            tableName: user_subscription
+            indexName: idx_user_subscription_owner
+            columns:
+              - column:
+                  name: owner_username
+        - createIndex:
+            tableName: user_subscription
+            indexName: idx_user_subscription_owner_active
+            columns:
+              - column:
+                  name: owner_username
+              - column:
+                  name: starts_at
+              - column:
+                  name: expires_at

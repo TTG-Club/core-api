@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-26-01-add-disabled-to-redemption-code
+      author: claude
+      changes:
+        - addColumn:
+            tableName: redemption_code
+            columns:
+              - column:
+                  name: disabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: disabled_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: disabled_by
+                  type: VARCHAR(255)

@@ -48,7 +48,8 @@ public interface SpeciesRepository extends JpaRepository<Species, String> {
      */
     @Query("""
             select s.url as url, coalesce(s.updatedAt, s.createdAt) as changedAt from Species s
-            where (:srdVersion is null or s.srdVersion = :srdVersion)
+            where (:srdOnly = false or s.srdVersion is not null)
+              and (:srdVersion is null or s.srdVersion = :srdVersion)
               and s.isHiddenEntity = false
               and s.parent is null
               and (
@@ -63,6 +64,7 @@ public interface SpeciesRepository extends JpaRepository<Species, String> {
               )
             """)
     List<VttgEntityRef> findChangedRefsForVttgExport(@Param("srdVersion") String srdVersion,
+                                                     @Param("srdOnly") boolean srdOnly,
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
@@ -84,7 +86,8 @@ public interface SpeciesRepository extends JpaRepository<Species, String> {
      */
     @Query("""
             select count(s) from Species s
-            where (:srdVersion is null or s.srdVersion = :srdVersion)
+            where (:srdOnly = false or s.srdVersion is not null)
+              and (:srdVersion is null or s.srdVersion = :srdVersion)
               and s.isHiddenEntity = false
               and s.parent is null
               and (
@@ -99,6 +102,7 @@ public interface SpeciesRepository extends JpaRepository<Species, String> {
               )
             """)
     long countChangedForVttgExport(@Param("srdVersion") String srdVersion,
+                                   @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
 }

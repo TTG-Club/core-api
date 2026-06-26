@@ -123,16 +123,16 @@ public class VttgModuleService {
         List<SectionPayload> payloads = new ArrayList<>();
 
         if (content.includes(Content.SPELLS)) {
-            addPayload(payloads, sections.spells(), spellRepository.findAllVisibleForVttgExport(srdVersion),
+            addPayload(payloads, sections.spells(), spellRepository.findAllVisibleForVttgExport(srdVersion, false),
                     this::spellPath, spellMapper::toVttg);
         }
         if (content.includes(Content.CREATURES)) {
-            addPayload(payloads, sections.creatures(), creatureRepository.findAllVisibleForVttgExport(srdVersion),
+            addPayload(payloads, sections.creatures(), creatureRepository.findAllVisibleForVttgExport(srdVersion, false),
                     this::creaturePath, creatureMapper::toVttg);
         }
         if (content.includes(Content.MAGIC_ITEMS)) {
             addMagicItemPayload(payloads, sections.magicItems(),
-                    magicItemRepository.findAllVisibleForVttgExport(srdVersion));
+                    magicItemRepository.findAllVisibleForVttgExport(srdVersion, false));
         }
 
         if (payloads.isEmpty()) {

@@ -25,6 +25,7 @@ public class SpellEffect {
     private AreaOfEffect areaOfEffect;
     private AttackType attackType;
     private Boolean autoHit;
+    private Projectiles projectiles;
     private List<String> damageFormulas;
     private List<HealingType> healingTypes;
     private List<Ability> savingThrows;
