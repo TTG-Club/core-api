@@ -16,6 +16,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -70,7 +71,12 @@ public class MagicItemServiceImpl implements MagicItemService {
         if (url.equals(request.getUrl())) {
             var existing = findByUrl(url);
             magicItemMapper.updateEntity(request, source, linkedItems, existing);
-            return magicItemRepository.save(existing).getUrl();
+            magicItemRepository.save(existing);
+            // Изменение только связей (ManyToMany — отдельная join-таблица) не помечает саму сущность
+            // изменённой, поэтому @UpdateTimestamp не срабатывает и дельта VTTG (/changes) пропускает правку.
+            // Явно обновляем метку времени, чтобы предмет попал в выгрузку.
+            magicItemRepository.touchUpdatedAt(url, Instant.now());
+            return url;
         }
 
         findByUrl(url);
