@@ -19,6 +19,9 @@ public record RedemptionCodeResponse(
         String label,
         String redeemedBy,
         Instant redeemedAt,
+        boolean disabled,
+        Instant disabledAt,
+        String disabledBy,
         Instant createdAt
 ) {
 }

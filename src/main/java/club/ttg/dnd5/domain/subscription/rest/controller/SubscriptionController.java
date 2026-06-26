@@ -45,6 +45,20 @@ public class SubscriptionController {
         return subscriptionService.allCodes();
     }
 
+    @Secured("ADMIN")
+    @Operation(summary = "Деактивировать выпущенный код (его нельзя будет погасить)")
+    @PostMapping("/codes/{id}/deactivate")
+    public RedemptionCodeResponse deactivateCode(@PathVariable UUID id) {
+        return subscriptionService.setCodeDisabled(id, true);
+    }
+
+    @Secured("ADMIN")
+    @Operation(summary = "Снова активировать ранее деактивированный код")
+    @PostMapping("/codes/{id}/reactivate")
+    public RedemptionCodeResponse reactivateCode(@PathVariable UUID id) {
+        return subscriptionService.setCodeDisabled(id, false);
+    }
+
     @Secured("USER")
     @Operation(summary = "Погасить код: выдать награды и зарегистрировать подписку")
     @PostMapping("/redeem")
