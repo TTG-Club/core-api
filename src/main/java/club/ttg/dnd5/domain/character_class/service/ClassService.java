@@ -17,6 +17,8 @@ import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 
@@ -38,12 +40,15 @@ import java.util.stream.Collectors;
 @Service
 public class ClassService {
 
+    public static final String REVISION_ENTITY_TYPE = "class";
+
     private final ClassRepository classRepository;
     private final ClassMapper classMapper;
     private final ClassQueryDslSearchService classQueryDslSearchService;
     private final SourceService sourceService;
     private final GalleryRepository galleryRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
+    private final EntityRevisionService revisionService;
 
     public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
@@ -94,6 +99,8 @@ public class ClassService {
 
         saveGallery(request.getUrl(), request.getGallery());
         CharacterClass saved = classRepository.save(toSave);
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
+                findFormByUrl(saved.getUrl()));
         return classMapper.toDetailedResponse(saved);
     }
 
@@ -103,6 +110,7 @@ public class ClassService {
         CharacterClass characterClass = findByUrl(url);
         characterClass.setHiddenEntity(true);
         classRepository.save(characterClass);
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.DELETE, findFormByUrl(url));
     }
 
     @Transactional
@@ -129,6 +137,8 @@ public class ClassService {
         galleryRepository.deleteByUrlAndType(url, SectionType.CLASS);
 
         saveGallery(request.getUrl(), request.getGallery());
+        revisionService.record(REVISION_ENTITY_TYPE, request.getUrl(), RevisionOperation.UPDATE,
+                findFormByUrl(request.getUrl()));
         return request.getUrl();
     }
 

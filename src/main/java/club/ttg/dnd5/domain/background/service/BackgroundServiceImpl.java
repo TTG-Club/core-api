@@ -10,6 +10,8 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
@@ -26,11 +28,14 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @Service
 public class BackgroundServiceImpl implements BackgroundService {
+    public static final String REVISION_ENTITY_TYPE = "background";
+
     private final BackgroundQueryDslSearchService backgroundQueryDslSearchService;
     private final BackgroundRepository backgroundRepository;
     private final FeatRepository featRepository;
     private final SourceService sourceService;
     private final BackgroundMapper backgroundMapper;
+    private final EntityRevisionService revisionService;
 
 
     @Override
@@ -47,8 +52,10 @@ public class BackgroundServiceImpl implements BackgroundService {
         checkUrlExist(request.getUrl());
         var feat = getFeatReference(request.getFeatUrl());
         var source = sourceService.findReferenceByUrl(request.getSource().getUrl());
-        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
-                .getUrl();
+        Background saved = backgroundRepository.save(backgroundMapper.toEntity(request, feat, source));
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
+                backgroundMapper.toRequest(saved));
+        return saved.getUrl();
     }
 
     @Transactional
@@ -60,15 +67,20 @@ public class BackgroundServiceImpl implements BackgroundService {
         if (url.equals(request.getUrl())) {
             var existing = findByUrl(url);
             backgroundMapper.updateEntity(request, feat, source, existing);
-            return backgroundRepository.save(existing).getUrl();
+            Background saved = backgroundRepository.save(existing);
+            revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.UPDATE,
+                    backgroundMapper.toRequest(saved));
+            return saved.getUrl();
         }
 
         findByUrl(url);
         checkUrlExist(request.getUrl());
         backgroundRepository.deleteById(url);
         backgroundRepository.flush();
-        return backgroundRepository.save(backgroundMapper.toEntity(request, feat, source))
-                .getUrl();
+        Background saved = backgroundRepository.save(backgroundMapper.toEntity(request, feat, source));
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.UPDATE,
+                backgroundMapper.toRequest(saved));
+        return saved.getUrl();
     }
 
     @Transactional
@@ -77,7 +89,10 @@ public class BackgroundServiceImpl implements BackgroundService {
     public String deleteBackgrounds(final String url) {
         var entity = findByUrl(url);
         entity.setHiddenEntity(true);
-        return backgroundRepository.save(entity).getUrl();
+        Background saved = backgroundRepository.save(entity);
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.DELETE,
+                backgroundMapper.toRequest(saved));
+        return saved.getUrl();
     }
 
     @Override

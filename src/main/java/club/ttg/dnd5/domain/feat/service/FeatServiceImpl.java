@@ -12,6 +12,8 @@ import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,18 +30,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class FeatServiceImpl implements FeatService {
+    public static final String REVISION_ENTITY_TYPE = "feat";
+
     private final FeatRepository featRepository;
     private final BackgroundRepository backgroundRepository;
     private final FeatQueryDslSearchService featQueryDslSearchService;
     private final SourceService sourceService;
     private final FeatMapper featMapper;
+    private final EntityRevisionService revisionService;
 
     @Override
     public FeatDetailResponse getFeat(final String featUrl) {
         return featMapper.toDetail(findByUrl(featUrl));
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Transactional
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
@@ -49,10 +54,12 @@ public class FeatServiceImpl implements FeatService {
         }
         var book = sourceService.findByUrl(dto.getSource().getUrl());
         var feat = featMapper.toEntity(dto, book);
-        return featRepository.save(feat).getUrl();
+        String url = featRepository.save(feat).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.CREATE, findFormByUrl(url));
+        return url;
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Transactional
     @Override
     public String updateFeat(final String featUrl, final FeatRequest request) {
@@ -64,7 +71,9 @@ public class FeatServiceImpl implements FeatService {
             // чтобы не задеть FK fk_background_on_feat. createdAt переносим, иначе isNew()
             // вернёт true и Spring Data попытается сделать INSERT (дубль ключа).
             featMapper.updateEntity(request, book, existing);
-            return featRepository.save(existing).getUrl();
+            String url = featRepository.save(existing).getUrl();
+            revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
+            return url;
         }
 
         // url изменился — создаём черту с новым id, переводим на неё ссылки предысторий
@@ -77,17 +86,21 @@ public class FeatServiceImpl implements FeatService {
         featRepository.saveAndFlush(feat);
         backgroundRepository.repointFeat(featUrl, feat.getUrl());
         featRepository.deleteById(featUrl);
+        revisionService.record(REVISION_ENTITY_TYPE, feat.getUrl(), RevisionOperation.UPDATE,
+                findFormByUrl(feat.getUrl()));
         return feat.getUrl();
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Transactional
     @Override
     @CacheEvict(cacheNames = "countAllMaterials")
     public String delete(final String featUrl) {
         var entity = findByUrl(featUrl);
         entity.setHiddenEntity(true);
-        return featRepository.save(entity).getUrl();
+        String url = featRepository.save(entity).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.DELETE, findFormByUrl(url));
+        return url;
     }
 
     @Override

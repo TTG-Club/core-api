@@ -1,0 +1,98 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-26-create-entity-revision
+      author: cowork
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: entity_revision
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_entity_revision
+              - column:
+                  name: entity_type
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entity_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: operation
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: snapshot
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: changed_by
+                  type: VARCHAR(255)
+              - column:
+                  name: changed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: prev_hash
+                  type: VARCHAR(64)
+              - column:
+                  name: hash
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 2026-06-26-entity-revision-constraints
+      author: cowork
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addUniqueConstraint:
+            tableName: entity_revision
+            columnNames: entity_type, entity_id, version
+            constraintName: uq_entity_revision_type_id_version
+        - createIndex:
+            tableName: entity_revision
+            indexName: idx_entity_revision_type_id
+            columns:
+              - column:
+                  name: entity_type
+              - column:
+                  name: entity_id
+  - changeSet:
+      id: 2026-06-26-entity-revision-append-only
+      author: cowork
+      comment: >-
+        Защита от подделки истории: запрещаем UPDATE и DELETE на уровне БД через
+        триггер. В отличие от REVOKE, триггер действует даже на владельца таблицы.
+      changes:
+        - sql:
+            splitStatements: false
+            sql: >-
+              CREATE OR REPLACE FUNCTION entity_revision_block_modify()
+              RETURNS trigger AS $$
+              BEGIN
+                  RAISE EXCEPTION 'entity_revision is append-only: % is not allowed', TG_OP;
+              END;
+              $$ LANGUAGE plpgsql;
+
+              CREATE TRIGGER trg_entity_revision_append_only
+              BEFORE UPDATE OR DELETE ON entity_revision
+              FOR EACH ROW EXECUTE FUNCTION entity_revision_block_modify();
+            rollback:
+              - sql: DROP TRIGGER IF EXISTS trg_entity_revision_append_only ON entity_revision;
+              - sql: DROP FUNCTION IF EXISTS entity_revision_block_modify();

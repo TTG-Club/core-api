@@ -88,7 +88,7 @@ public class BackgroundController {
             @ApiResponse(responseCode = "404", description = "Предыстория не найден"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public String addBackgrounds(@RequestBody final BackgroundRequest backgroundDto) {
@@ -96,7 +96,7 @@ public class BackgroundController {
     }
 
     @Operation(summary = "Предпросмотр предыстории")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public BackgroundDetailResponse preview(@RequestBody BackgroundRequest request) {
         return backgroundService.preview(request);
@@ -108,7 +108,7 @@ public class BackgroundController {
             @ApiResponse(responseCode = "404", description = "Предыстория не найден"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PutMapping("{url}")
     public String updateBackgrounds(
             @PathVariable final String url,
@@ -117,7 +117,7 @@ public class BackgroundController {
     }
 
     @Operation(summary = "Помечает предысторию как скрытую для списков")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @DeleteMapping("{url}")
     public String deleteBackgrounds(
             @PathVariable final String url) {

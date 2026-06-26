@@ -19,6 +19,8 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.create.CreateAffiliationRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -39,6 +41,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SpellService
 {
+    /** Тип сущности в единой таблице истории изменений. */
+    public static final String REVISION_ENTITY_TYPE = "spell";
+
     private final ClassService classService;
     private final SpeciesService speciesService;
     private final FeatService featService;
@@ -47,6 +52,7 @@ public class SpellService
     private final SpellMapper spellMapper;
     private final SpellQueryDslSearchService spellQueryDslSearchService;
     private final SourceSavedFilterService sourceSavedFilterService;
+    private final EntityRevisionService revisionService;
 
     public boolean existOrThrow(String url)
     {
@@ -149,7 +155,10 @@ public class SpellService
         Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
 
-        return spellRepository.save(spell).getUrl();
+        Spell saved = spellRepository.save(spell);
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
+                spellMapper.toRequest(saved));
+        return saved.getUrl();
     }
 
     private Set<CharacterClass> getClasses(SpellRequest request)
@@ -223,7 +232,13 @@ public class SpellService
 
             Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
             spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
-            return spellRepository.save(spell).getUrl();
+            Spell renamed = spellRepository.save(spell);
+            // Переименование (смена url): фиксируем удаление старой записи и новую версию под новым url.
+            revisionService.record(REVISION_ENTITY_TYPE, oldUrl, RevisionOperation.DELETE,
+                    spellMapper.toRequest(renamed));
+            revisionService.record(REVISION_ENTITY_TYPE, renamed.getUrl(), RevisionOperation.UPDATE,
+                    spellMapper.toRequest(renamed));
+            return renamed.getUrl();
         }
 
         spellMapper.updateEntity(existingSpell, request);
@@ -260,6 +275,9 @@ public class SpellService
         }
 
         existingSpell.setUpcastable(existingSpell.getLevel() > 0 && StringUtils.hasText(existingSpell.getUpper()));
+
+        revisionService.record(REVISION_ENTITY_TYPE, existingSpell.getUrl(), RevisionOperation.UPDATE,
+                spellMapper.toRequest(existingSpell));
         return existingSpell.getUrl();
     }
 
@@ -270,6 +288,8 @@ public class SpellService
         Spell existingSpell = getByUrl(url);
         existingSpell.setHiddenEntity(true);
         spellRepository.save(existingSpell);
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.DELETE,
+                spellMapper.toRequest(getFormByUrl(url)));
     }
 
     public SpellDetailedResponse preview(final SpellRequest request)

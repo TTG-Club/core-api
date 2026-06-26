@@ -11,6 +11,8 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesFeatureMapper;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -31,12 +33,15 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SpeciesService {
+    public static final String REVISION_ENTITY_TYPE = "species";
+
     private final SpeciesRepository speciesRepository;
     private final SourceService sourceService;
     private final SpeciesQueryDslSearchService speciesQueryDslSearchService;
     private final SpeciesMapper speciesMapper;
     private final SpeciesFeatureMapper speciesFeatureMapper;
     private final SourceSavedFilterService sourceSavedFilterService;
+    private final EntityRevisionService revisionService;
 
     public boolean exists(String url) {
         return speciesRepository.existsById(url);
@@ -85,7 +90,9 @@ public class SpeciesService {
         if (speciesRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
         }
-        return saveSpecies(request).getUrl();
+        String url = saveSpecies(request).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.CREATE, findFormByUrl(url));
+        return url;
     }
 
     public List<SpeciesDetailResponse> getLineages(String parentUrl) {
@@ -154,7 +161,9 @@ public class SpeciesService {
                 existing.setParent(null);
             }
             existing.setSource(sourceService.findByUrl(request.getSource().getUrl()));
-            return speciesRepository.save(existing).getUrl();
+            String url = speciesRepository.save(existing).getUrl();
+            revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
+            return url;
         }
 
         if (speciesRepository.existsById(request.getUrl())) {
@@ -162,7 +171,9 @@ public class SpeciesService {
         }
         speciesRepository.deleteById(oldUrl);
         speciesRepository.flush();
-        return saveSpecies(request).getUrl();
+        String url = saveSpecies(request).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
+        return url;
     }
 
     public SpeciesDetailResponse addSubSpecies(String speciesUrl, List<String> lineagesUrls) {

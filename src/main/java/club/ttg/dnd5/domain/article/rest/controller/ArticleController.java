@@ -48,7 +48,7 @@ public class ArticleController {
     }
 
     @Operation(summary = "Создание новости")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public String addArticle(@RequestBody @Valid final ArticleRequest request) {
@@ -56,7 +56,7 @@ public class ArticleController {
     }
 
     @Operation(summary = "Обновление новости")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PutMapping("/{id}")
     public String updateArticle(@PathVariable final UUID id, @RequestBody final ArticleRequest request) {
         return articleService.update(id, request);
@@ -69,14 +69,14 @@ public class ArticleController {
     }
 
     @Operation(summary = "Предпросмотр новости")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public ArticleDetailedResponse preview(@RequestBody @Valid final ArticleRequest request) {
         return articleService.preview(request);
     }
 
     @Operation(summary = "Помечает новость как скрытую для списков")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @DeleteMapping("{id}")
     public String deleteArticle(@PathVariable final UUID id) {
         return articleService.delete(id);
@@ -91,7 +91,7 @@ public class ArticleController {
 
     @Operation(summary = "Получить cnt последних новостей")
     @GetMapping("/search/unpublished")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     public List<ArticleShortResponse> searchUnpublished(@RequestParam(required = false)
             @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
         return articleService.searchUnpublished(cnt);

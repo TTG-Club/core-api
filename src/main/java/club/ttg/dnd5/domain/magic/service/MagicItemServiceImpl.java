@@ -9,6 +9,8 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.domain.magic.rest.mapper.MagicItemMapper;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +27,14 @@ import java.util.Set;
 @Service
 public class MagicItemServiceImpl implements MagicItemService {
 
+    public static final String REVISION_ENTITY_TYPE = "magicItem";
+
     private final MagicItemRepository magicItemRepository;
     private final MagicItemMapper magicItemMapper;
     private final MagicItemQueryDslSearchService magicItemQueryDslSearchService;
     private final SourceService sourceService;
     private final ItemRepository itemRepository;
+    private final EntityRevisionService revisionService;
 
 
     @Override
@@ -59,7 +64,9 @@ public class MagicItemServiceImpl implements MagicItemService {
         exist(request.getUrl());
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var entity = magicItemMapper.toEntity(request, source, resolveItems(request.getItems()));
-        return magicItemRepository.save(entity).getUrl();
+        String url = magicItemRepository.save(entity).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.CREATE, findFormByUrl(url));
+        return url;
     }
 
     @Transactional
@@ -76,6 +83,7 @@ public class MagicItemServiceImpl implements MagicItemService {
             // изменённой, поэтому @UpdateTimestamp не срабатывает и дельта VTTG (/changes) пропускает правку.
             // Явно обновляем метку времени, чтобы предмет попал в выгрузку.
             magicItemRepository.touchUpdatedAt(url, Instant.now());
+            revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
             return url;
         }
 
@@ -84,7 +92,9 @@ public class MagicItemServiceImpl implements MagicItemService {
         magicItemRepository.deleteById(url);
         magicItemRepository.flush();
         var entity = magicItemMapper.toEntity(request, source, linkedItems);
-        return magicItemRepository.save(entity).getUrl();
+        String savedUrl = magicItemRepository.save(entity).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
     @Transactional
@@ -93,7 +103,9 @@ public class MagicItemServiceImpl implements MagicItemService {
     public String delete(String url) {
         var item = findByUrl(url);
         item.setHiddenEntity(true);
-        return magicItemRepository.save(item).getUrl();
+        String savedUrl = magicItemRepository.save(item).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.DELETE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
     private void exist(String url) {

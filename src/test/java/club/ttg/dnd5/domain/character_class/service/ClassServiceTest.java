@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import org.junit.jupiter.api.Test;
@@ -26,13 +27,15 @@ class ClassServiceTest {
     private final SourceService sourceService = mock(SourceService.class);
     private final GalleryRepository galleryRepository = mock(GalleryRepository.class);
     private final SourceSavedFilterService sourceSavedFilterService = mock(SourceSavedFilterService.class);
+    private final EntityRevisionService revisionService = mock(EntityRevisionService.class);
     private final ClassService service = new ClassService(
             classRepository,
             classMapper,
             classQueryDslSearchService,
             sourceService,
             galleryRepository,
-            sourceSavedFilterService
+            sourceSavedFilterService,
+            revisionService
     );
 
     @Test
@@ -48,6 +51,9 @@ class ClassServiceTest {
 
         when(classRepository.findById("old-url")).thenReturn(Optional.of(existingClass));
         when(classMapper.toEntity(request, null)).thenReturn(mappedClass);
+        // Снимок версии после переименования читает сущность по новому url.
+        when(classRepository.findById("new-url")).thenReturn(Optional.of(mappedClass));
+        when(classMapper.toRequest(mappedClass)).thenReturn(new ClassRequest());
 
         service.update("old-url", request);
 

@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -38,6 +39,8 @@ class BackgroundServiceImplTest {
     private FeatRepository featRepository;
     @Mock
     private SourceService sourceService;
+    @Mock
+    private EntityRevisionService revisionService;
 
     private BackgroundServiceImpl backgroundService;
 
@@ -49,7 +52,8 @@ class BackgroundServiceImplTest {
                 backgroundRepository,
                 featRepository,
                 sourceService,
-                backgroundMapper
+                backgroundMapper,
+                revisionService
         );
     }
 

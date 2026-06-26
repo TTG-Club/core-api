@@ -71,7 +71,7 @@ public class ItemController {
         return itemService.search(request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Добавление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно добавлен"),
@@ -92,13 +92,13 @@ public class ItemController {
     }
 
     @Operation(summary = "Предпросмотр предмета")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public ItemDetailResponse preview(@RequestBody ItemRequest request) {
         return itemService.preview(request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Обновление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно обновлен"),
@@ -111,7 +111,7 @@ public class ItemController {
         return itemService.updateItem(itemUrl, itemDto);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Скрывает предмет")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),

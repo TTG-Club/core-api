@@ -6,6 +6,8 @@ import club.ttg.dnd5.domain.roadmap.repository.RoadmapRepository;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapRequest;
 import club.ttg.dnd5.domain.roadmap.rest.dto.RoadmapResponse;
 import club.ttg.dnd5.domain.roadmap.rest.mapper.RoadmapMapper;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +22,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class RoadmapService {
+    public static final String REVISION_ENTITY_TYPE = "roadmap";
+
     private final RoadmapRepository roadmapRepository;
     private final RoadmapMapper roadmapMapper;
     private final RatingService ratingService;
+    private final EntityRevisionService revisionService;
 
     public Collection<RoadmapResponse> findAll(final boolean visible) {
         List<Roadmap> roadmaps;
@@ -49,7 +54,9 @@ public class RoadmapService {
 
     @Transactional
     public String save(final RoadmapRequest roadmap) {
-        return roadmapRepository.save(roadmapMapper.toEntity(roadmap)).getUrl();
+        String url = roadmapRepository.save(roadmapMapper.toEntity(roadmap)).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.CREATE, findFormByUrl(url));
+        return url;
     }
 
     @Transactional
@@ -58,7 +65,9 @@ public class RoadmapService {
                 .orElseThrow(() -> new EntityNotFoundException("Roadmap not found"));
         if (url.equals(roadmap.getUrl())) {
             roadmapMapper.update(entity, roadmap);
-            return roadmapRepository.save(entity).getUrl();
+            String savedUrl = roadmapRepository.save(entity).getUrl();
+            revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+            return savedUrl;
         }
 
         if (roadmapRepository.existsById(roadmap.getUrl())) {
@@ -66,12 +75,17 @@ public class RoadmapService {
         }
         roadmapRepository.deleteById(url);
         roadmapRepository.flush();
-        return roadmapRepository.save(roadmapMapper.toEntity(roadmap)).getUrl();
+        String savedUrl = roadmapRepository.save(roadmapMapper.toEntity(roadmap)).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
     @Transactional
     public String remove(final String url) {
+        // Жёсткое удаление — снимаем снимок до удаления, чтобы версия осталась в истории.
+        RoadmapRequest snapshot = findFormByUrl(url);
         roadmapRepository.deleteById(url);
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.DELETE, snapshot);
         return url;
     }
 

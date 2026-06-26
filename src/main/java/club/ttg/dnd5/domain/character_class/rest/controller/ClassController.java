@@ -84,7 +84,7 @@ public class ClassController {
         return classService.getAbilityImprovements();
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Создать новый класс", description = "Создание нового класса в системе.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Класс успешно создан"),
@@ -96,7 +96,7 @@ public class ClassController {
         return classService.save(request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PutMapping("/{url}")
     public String updateClass(@PathVariable String url,
                               @Valid
@@ -110,7 +110,7 @@ public class ClassController {
     }
 
     @Operation(summary = "Предпросмотр класса")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public ClassDetailedResponse preview(@RequestBody ClassRequest request) {
         return classService.preview(request);

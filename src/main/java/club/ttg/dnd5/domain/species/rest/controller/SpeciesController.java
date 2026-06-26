@@ -134,7 +134,7 @@ public class SpeciesController {
         return speciesService.addSubSpecies(speciesUrl, subSpeciesUrls);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Создать новый вид", description = "Создание нового вида в системе.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Вид успешно создан"),
@@ -147,7 +147,7 @@ public class SpeciesController {
     }
 
     @Operation(summary = "Предпросмотр вида")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public SpeciesDetailResponse preview(@RequestBody SpeciesRequest request) {
         return speciesService.preview(request);
@@ -160,7 +160,7 @@ public class SpeciesController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @PutMapping("/{url}")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @ResponseStatus(HttpStatus.OK)
     public String updateSpecies(@PathVariable String url, @RequestBody SpeciesRequest request) {
         return speciesService.update(url, request);
