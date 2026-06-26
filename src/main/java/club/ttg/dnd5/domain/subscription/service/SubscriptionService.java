@@ -4,10 +4,12 @@ import club.ttg.dnd5.domain.achievement.rest.dto.UserAchievementResponse;
 import club.ttg.dnd5.domain.achievement.service.AchievementService;
 import club.ttg.dnd5.domain.subscription.model.RedemptionCode;
 import club.ttg.dnd5.domain.subscription.model.RewardPerk;
+import club.ttg.dnd5.domain.subscription.model.RewardResource;
 import club.ttg.dnd5.domain.subscription.model.UserSubscription;
 import club.ttg.dnd5.domain.subscription.repository.RedemptionCodeRepository;
 import club.ttg.dnd5.domain.subscription.repository.UserSubscriptionRepository;
 import club.ttg.dnd5.domain.subscription.rest.dto.CreateCodesRequest;
+import club.ttg.dnd5.domain.subscription.rest.dto.MyRedemptionResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.RedeemResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.RedemptionCodeResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.SubscriptionResponse;
@@ -29,9 +31,11 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -127,6 +131,7 @@ public class SubscriptionService {
             entity.setType(code.getSubscriptionType());
             entity.setDurationMonths(code.getSubscriptionMonths());
             entity.setOwnerUsername(username);
+            entity.setSourceCode(code.getUuid());
             entity.setRegisteredAt(now);
             subscription = toResponse(subscriptionRepository.save(entity), now);
         }
@@ -218,6 +223,49 @@ public class SubscriptionService {
         Instant now = Instant.now();
         return subscriptionRepository.findByOwnerUsernameOrderByCreatedAtDesc(currentUsername()).stream()
                 .map(subscription -> toResponse(subscription, now))
+                .toList();
+    }
+
+    /**
+     * Коды, погашенные текущим пользователем (новые сверху), с резолвом наград в
+     * ссылки и привязанной подпиской — для раздела «Активация кодов» в кабинете.
+     * Награды кода = пресет тира ∪ доп. перки кода (как при погашении), что даёт
+     * стабильный перечень ссылок независимо от дедупликации выданных перков.
+     */
+    @Transactional(readOnly = true)
+    public List<MyRedemptionResponse> currentUserRedemptions() {
+        String username = currentUsername();
+        Instant now = Instant.now();
+
+        // подписки пользователя по коду-источнику — чтобы прицепить к своей строке без N+1
+        Map<UUID, UserSubscription> subscriptionsByCode = new HashMap<>();
+        for (UserSubscription subscription : subscriptionRepository.findByOwnerUsernameOrderByCreatedAtDesc(username)) {
+            if (subscription.getSourceCode() != null) {
+                subscriptionsByCode.putIfAbsent(subscription.getSourceCode(), subscription);
+            }
+        }
+
+        // справочник ссылок на награды — один раз на весь список (а не на каждый код)
+        Map<RewardPerk, RewardResource> resources = rewardService.resourceMap();
+
+        return codeRepository.findByRedeemedByOrderByRedeemedAtDesc(username).stream()
+                .map(code -> {
+                    Set<RewardPerk> perks = EnumSet.noneOf(RewardPerk.class);
+                    if (code.getRewardTier() != null) {
+                        perks.addAll(code.getRewardTier().perks());
+                    }
+                    perks.addAll(code.getPerks());
+
+                    UserSubscription subscription = subscriptionsByCode.get(code.getUuid());
+                    return new MyRedemptionResponse(
+                            code.getUuid(),
+                            code.getCode(),
+                            code.getRedeemedAt(),
+                            code.getRewardTier(),
+                            rewardService.describe(perks, code.getRedeemedAt(), resources),
+                            achievementService.describe(code.getAchievements(), code.getRedeemedAt()),
+                            subscription == null ? null : toResponse(subscription, now));
+                })
                 .toList();
     }
 
