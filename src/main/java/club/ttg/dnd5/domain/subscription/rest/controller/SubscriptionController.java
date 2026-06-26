@@ -12,7 +12,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,14 +43,6 @@ public class SubscriptionController {
     @GetMapping("/codes")
     public List<RedemptionCodeResponse> allCodes() {
         return subscriptionService.allCodes();
-    }
-
-    @Secured("ADMIN")
-    @Operation(summary = "Удалить выпущенный код по id (только непогашенный)")
-    @DeleteMapping("/codes/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCode(@PathVariable UUID id) {
-        subscriptionService.deleteCode(id);
     }
 
     @Secured("USER")
