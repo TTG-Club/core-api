@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,9 @@ public interface RedemptionCodeRepository extends JpaRepository<RedemptionCode, 
     Optional<RedemptionCode> findByCode(String code);
 
     boolean existsByCode(String code);
+
+    /** Все выпущенные коды, новые сверху (для админского списка). */
+    List<RedemptionCode> findAllByOrderByCreatedAtDesc();
 
     /**
      * Атомарно помечает код использованным. Условие {@code redeemed_by IS NULL}

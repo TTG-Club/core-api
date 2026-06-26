@@ -111,6 +111,9 @@ public class SubscriptionService {
         if (code.getRedeemedBy() != null) {
             throw new ApiException(HttpStatus.CONFLICT, "Код уже использован");
         }
+        if (code.isDisabled()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Код деактивирован");
+        }
 
         Instant now = Instant.now();
         if (codeRepository.claim(normalized, username, now) == 0) {
@@ -175,6 +178,39 @@ public class SubscriptionService {
         return subscriptionRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(subscription -> toResponse(subscription, now))
                 .toList();
+    }
+
+    /** Все выпущенные коды для админского списка (новые сверху). */
+    @Transactional(readOnly = true)
+    public List<RedemptionCodeResponse> allCodes() {
+        return codeRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * Мягко деактивирует или возвращает в строй выпущенный код. Деактивированный код
+     * нельзя погасить, но запись сохраняется. Менять статус уже использованного кода
+     * нельзя. Деактивацию пишем в аудит (кем/когда), при возврате — очищаем.
+     */
+    @Transactional
+    public RedemptionCodeResponse setCodeDisabled(UUID id, boolean disabled) {
+        RedemptionCode code = codeRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Код не найден"));
+        if (code.getRedeemedBy() != null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Нельзя изменить статус уже использованного кода");
+        }
+
+        if (disabled) {
+            code.setDisabled(true);
+            code.setDisabledAt(Instant.now());
+            code.setDisabledBy(currentUsername());
+        } else {
+            code.setDisabled(false);
+            code.setDisabledAt(null);
+            code.setDisabledBy(null);
+        }
+        return toResponse(codeRepository.save(code));
     }
 
     @Transactional(readOnly = true)
@@ -265,6 +301,9 @@ public class SubscriptionService {
                 code.getLabel(),
                 code.getRedeemedBy(),
                 code.getRedeemedAt(),
+                code.isDisabled(),
+                code.getDisabledAt(),
+                code.getDisabledBy(),
                 code.getCreatedAt());
     }
 

@@ -76,6 +76,16 @@ public class RedemptionCode {
     @Column(name = "redeemed_at")
     private Instant redeemedAt;
 
+    /** Деактивированный код нельзя погасить; запись сохраняется (мягкое отключение). */
+    @Column(name = "disabled", nullable = false)
+    private boolean disabled = false;
+
+    @Column(name = "disabled_at")
+    private Instant disabledAt;
+
+    @Column(name = "disabled_by")
+    private String disabledBy;
+
     @Column(name = "created_at", updatable = false)
     @CreationTimestamp(source = SourceType.DB)
     private Instant createdAt;
