@@ -1,27 +1,52 @@
 package club.ttg.dnd5.domain.vttg.service;
 
-import club.ttg.dnd5.domain.subscription.service.SubscriptionService;
+import club.ttg.dnd5.config.properties.InternalServiceProperties;
+import club.ttg.dnd5.config.properties.SubscriberServiceProperties;
 import club.ttg.dnd5.domain.user.model.Role;
 import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.exception.ApiException;
+import club.ttg.dnd5.security.InternalServiceTokenFilter;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.http.HttpMethod.GET;
 
 class VttgAccessServiceTest {
-    private final SubscriptionService subscriptionService = mock(SubscriptionService.class);
-    private final VttgAccessService service = new VttgAccessService(subscriptionService);
+    private static final String BASE_URL = "http://subscriber.test";
+    private static final String SECRET = "shared-secret";
+
+    private RestClient.Builder restClientBuilder;
+    private MockRestServiceServer server;
+    private VttgAccessService service;
+
+    @BeforeEach
+    void setUp() {
+        restClientBuilder = RestClient.builder();
+        server = MockRestServiceServer.bindTo(restClientBuilder).build();
+
+        SubscriberServiceProperties subscriberProperties = new SubscriberServiceProperties();
+        subscriberProperties.setBaseUrl(BASE_URL);
+        InternalServiceProperties internalProperties = new InternalServiceProperties();
+        internalProperties.setServiceSecret(SECRET);
+
+        service = new VttgAccessService(subscriberProperties, internalProperties, restClientBuilder);
+    }
 
     @AfterEach
     void clearSecurityContext() {
@@ -29,44 +54,66 @@ class VttgAccessServiceTest {
     }
 
     @Test
-    void adminGetsFullExportWithoutSubscription() {
+    void adminGetsFullExportWithoutCallingSubscriber() {
         authenticate("admin", "ADMIN");
-
+        // никакого ожидания на сервере — admin не должен звать subscriber-service
         assertFalse(service.access().srdOnly());
+        server.verify();
     }
 
     @Test
     void earlyAccessVttgRoleGetsOnlySrdWithoutActiveSubscription() {
         authenticate("early", "VTTG");
-        when(subscriptionService.hasActiveSubscription(eq("early"), any())).thenReturn(false);
+        expectStatus("early", "{\"active\":false,\"registered\":false}");
 
         assertTrue(service.access().srdOnly());
+        server.verify();
     }
 
     @Test
     void activeSubscriptionGetsFullExport() {
         authenticate("subscriber", "USER");
-        when(subscriptionService.hasActiveSubscription(eq("subscriber"), any())).thenReturn(true);
+        expectStatus("subscriber", "{\"active\":true,\"registered\":true}");
 
         assertFalse(service.access().srdOnly());
+        server.verify();
     }
 
     @Test
     void registeredInactiveSubscriptionGetsOnlySrd() {
         authenticate("registered", "USER");
-        when(subscriptionService.hasActiveSubscription(eq("registered"), any())).thenReturn(false);
-        when(subscriptionService.hasRegisteredSubscription("registered")).thenReturn(true);
+        expectStatus("registered", "{\"active\":false,\"registered\":true}");
 
         assertTrue(service.access().srdOnly());
+        server.verify();
     }
 
     @Test
     void userWithoutSubscriptionIsRejected() {
         authenticate("user", "USER");
-        when(subscriptionService.hasActiveSubscription(eq("user"), any())).thenReturn(false);
-        when(subscriptionService.hasRegisteredSubscription("user")).thenReturn(false);
+        expectStatus("user", "{\"active\":false,\"registered\":false}");
 
         assertThrows(ApiException.class, service::access);
+        server.verify();
+    }
+
+    @Test
+    void subscriberServiceFailureIsFailClosedForNonRegisteredUser() {
+        authenticate("user", "USER");
+        server.expect(requestTo(BASE_URL + "/api/internal/subscriptions/user/status"))
+                .andExpect(method(GET))
+                .andRespond(withServerError());
+
+        // недоступность subscriber-service → active=false, registered=false → 403
+        assertThrows(ApiException.class, service::access);
+        server.verify();
+    }
+
+    private void expectStatus(String username, String body) {
+        server.expect(requestTo(BASE_URL + "/api/internal/subscriptions/" + username + "/status"))
+                .andExpect(method(GET))
+                .andExpect(header(InternalServiceTokenFilter.SERVICE_TOKEN_HEADER, SECRET))
+                .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
     }
 
     private void authenticate(String username, String role) {
