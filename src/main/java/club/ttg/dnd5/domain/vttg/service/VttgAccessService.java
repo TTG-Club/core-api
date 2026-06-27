@@ -1,14 +1,12 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.config.properties.InternalServiceProperties;
-import club.ttg.dnd5.config.properties.SubscriberServiceProperties;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.security.InternalServiceTokenFilter;
 import club.ttg.dnd5.security.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -32,23 +30,13 @@ import java.time.Instant;
 @Slf4j
 @Service
 public class VttgAccessService {
-    private final SubscriberServiceProperties subscriberProperties;
     private final InternalServiceProperties internalProperties;
     private final RestClient restClient;
 
-    public VttgAccessService(SubscriberServiceProperties subscriberProperties,
-                             InternalServiceProperties internalProperties,
-                             RestClient.Builder restClientBuilder) {
-        if (subscriberProperties.getBaseUrl() == null || subscriberProperties.getBaseUrl().isBlank()) {
-            throw new IllegalStateException("subscriber-service.base-url is not set");
-        }
-
-        this.subscriberProperties = subscriberProperties;
+    public VttgAccessService(InternalServiceProperties internalProperties,
+                             RestClient subscriberServiceRestClient) {
         this.internalProperties = internalProperties;
-        this.restClient = restClientBuilder
-                .baseUrl(subscriberProperties.getBaseUrl())
-                .requestFactory(requestFactory(subscriberProperties))
-                .build();
+        this.restClient = subscriberServiceRestClient;
     }
 
     public VttgAccess access() {
@@ -98,13 +86,6 @@ public class VttgAccessService {
         if (secret != null && !secret.isBlank()) {
             headers.set(InternalServiceTokenFilter.SERVICE_TOKEN_HEADER, secret);
         }
-    }
-
-    private static SimpleClientHttpRequestFactory requestFactory(SubscriberServiceProperties properties) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(properties.getConnectTimeout());
-        factory.setReadTimeout(properties.getReadTimeout());
-        return factory;
     }
 
     /**

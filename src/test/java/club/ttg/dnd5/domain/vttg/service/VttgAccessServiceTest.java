@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.config.properties.InternalServiceProperties;
-import club.ttg.dnd5.config.properties.SubscriberServiceProperties;
 import club.ttg.dnd5.domain.user.model.Role;
 import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.exception.ApiException;
@@ -31,21 +30,21 @@ class VttgAccessServiceTest {
     private static final String BASE_URL = "http://subscriber.test";
     private static final String SECRET = "shared-secret";
 
-    private RestClient.Builder restClientBuilder;
     private MockRestServiceServer server;
     private VttgAccessService service;
 
     @BeforeEach
     void setUp() {
-        restClientBuilder = RestClient.builder();
+        // Mock привязываем к билдеру и только потом строим RestClient: иначе baseUrl/requestFactory
+        // затёрли бы mock-фабрику и запросы уходили бы в реальную сеть.
+        RestClient.Builder restClientBuilder = RestClient.builder();
         server = MockRestServiceServer.bindTo(restClientBuilder).build();
+        RestClient restClient = restClientBuilder.baseUrl(BASE_URL).build();
 
-        SubscriberServiceProperties subscriberProperties = new SubscriberServiceProperties();
-        subscriberProperties.setBaseUrl(BASE_URL);
         InternalServiceProperties internalProperties = new InternalServiceProperties();
         internalProperties.setServiceSecret(SECRET);
 
-        service = new VttgAccessService(subscriberProperties, internalProperties, restClientBuilder);
+        service = new VttgAccessService(internalProperties, restClient);
     }
 
     @AfterEach
