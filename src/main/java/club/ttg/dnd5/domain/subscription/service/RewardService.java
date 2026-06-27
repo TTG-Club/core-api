@@ -86,6 +86,36 @@ public class RewardService {
         return StringUtils.hasText(username) && rewardRepository.existsByUsernameAndPerk(username, perk);
     }
 
+    /**
+     * Описывает набор перков их контентом (ссылка/статус готовности) — без привязки
+     * к конкретной выдаче. Нужен для показа «что даёт код» в личном кабинете: для
+     * каждого перка подставляются title/url/availability из {@link RewardResource}.
+     * Порядок — по объявлению перков (детерминированный). Готовую карту ресурсов
+     * берут через {@link #resourceMap()} один раз и переиспользуют для многих кодов,
+     * чтобы не сканировать reward_resource на каждый код.
+     *
+     * @param grantedAt момент получения (например, дата погашения кода)
+     */
+    public List<UserRewardResponse> describe(Collection<RewardPerk> perks, Instant grantedAt,
+                                             Map<RewardPerk, RewardResource> resources) {
+        if (perks == null || perks.isEmpty()) {
+            return List.of();
+        }
+        return EnumSet.copyOf(perks).stream()
+                .map(perk -> describe(perk, grantedAt, resources.get(perk)))
+                .toList();
+    }
+
+    private UserRewardResponse describe(RewardPerk perk, Instant grantedAt, RewardResource resource) {
+        return new UserRewardResponse(
+                perk,
+                grantedAt,
+                resource == null ? null : resource.getTitle(),
+                resource == null ? null : resource.getUrl(),
+                resource == null ? null : resource.getAvailability(),
+                resource == null ? null : resource.getNote());
+    }
+
     @Transactional(readOnly = true)
     public List<RewardResourceResponse> resources() {
         return resourceRepository.findAll().stream()
@@ -116,7 +146,9 @@ public class RewardService {
                 .toList();
     }
 
-    private Map<RewardPerk, RewardResource> resourceMap() {
+    /** Справочник контента наград (perk → ресурс). Публичный для батч-резолва в других сервисах. */
+    @Transactional(readOnly = true)
+    public Map<RewardPerk, RewardResource> resourceMap() {
         Map<RewardPerk, RewardResource> map = new EnumMap<>(RewardPerk.class);
         resourceRepository.findAll().forEach(resource -> map.put(resource.getPerk(), resource));
         return map;

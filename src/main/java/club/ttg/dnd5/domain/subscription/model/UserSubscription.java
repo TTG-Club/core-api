@@ -38,6 +38,10 @@ public class UserSubscription {
     @Column(name = "owner_username")
     private String ownerUsername;
 
+    /** Код, по которому создана подписка (null для ручной выдачи). */
+    @Column(name = "source_code")
+    private UUID sourceCode;
+
     @Column(name = "registered_at")
     private Instant registeredAt;
 

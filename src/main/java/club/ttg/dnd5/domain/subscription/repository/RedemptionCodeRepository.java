@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.subscription.repository;
 
 import club.ttg.dnd5.domain.subscription.model.RedemptionCode;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,10 @@ public interface RedemptionCodeRepository extends JpaRepository<RedemptionCode, 
 
     /** Все выпущенные коды, новые сверху (для админского списка). */
     List<RedemptionCode> findAllByOrderByCreatedAtDesc();
+
+    /** Коды, погашенные пользователем, новые сверху (для личного кабинета). */
+    @EntityGraph(attributePaths = {"perks", "achievements"})
+    List<RedemptionCode> findByRedeemedByOrderByRedeemedAtDesc(String redeemedBy);
 
     /**
      * Атомарно помечает код использованным. Условие {@code redeemed_by IS NULL}

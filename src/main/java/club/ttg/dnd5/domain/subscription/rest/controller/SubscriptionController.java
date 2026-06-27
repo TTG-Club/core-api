@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.subscription.rest.controller;
 
 import club.ttg.dnd5.domain.subscription.rest.dto.CreateCodesRequest;
+import club.ttg.dnd5.domain.subscription.rest.dto.MyRedemptionResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.RedeemCodeRequest;
 import club.ttg.dnd5.domain.subscription.rest.dto.RedeemResponse;
 import club.ttg.dnd5.domain.subscription.rest.dto.RedemptionCodeResponse;
@@ -78,6 +79,13 @@ public class SubscriptionController {
     @GetMapping("/my")
     public List<SubscriptionResponse> mySubscriptions() {
         return subscriptionService.currentUserSubscriptions();
+    }
+
+    @Secured("USER")
+    @Operation(summary = "Коды, погашенные текущим пользователем, с наградами и ссылками")
+    @GetMapping("/my-codes")
+    public List<MyRedemptionResponse> myCodes() {
+        return subscriptionService.currentUserRedemptions();
     }
 
     @Secured("ADMIN")
