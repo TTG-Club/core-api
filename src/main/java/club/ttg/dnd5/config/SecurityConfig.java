@@ -1,6 +1,7 @@
 package club.ttg.dnd5.config;
 
 import club.ttg.dnd5.config.properties.SecurityProperties;
+import club.ttg.dnd5.security.InternalServiceTokenFilter;
 import club.ttg.dnd5.security.JwtAuthFilter;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
@@ -34,6 +35,7 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @EnableJpaAuditing(auditorAwareRef = "auditorAwareImpl")
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
+    private final InternalServiceTokenFilter internalServiceTokenFilter;
     private final SecurityProperties securityProperties;
 
     @Bean
@@ -43,9 +45,13 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(this::getCorsConfigurer))
             .authorizeHttpRequests(request -> request
                 .requestMatchers(securityProperties.getIgnoredPaths().toArray(new String[0])).permitAll()
+                // Внутренние ручки закрыты не Spring Security, а InternalServiceTokenFilter
+                // по общему секрету сервисов (X-Service-Token), поэтому здесь permitAll.
+                .requestMatchers("/api/internal/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
+            .addFilterBefore(internalServiceTokenFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         http.httpBasic(AbstractHttpConfigurer::disable);
