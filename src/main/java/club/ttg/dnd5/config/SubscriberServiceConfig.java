@@ -15,6 +15,11 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class SubscriberServiceConfig {
 
+    /**
+     * Собирает {@link RestClient} к subscriber-service с конечными таймаутами.
+     * Падает на старте, если {@code subscriber-service.base-url} не задан, — лучше
+     * не подняться, чем молча ходить «в никуда».
+     */
     @Bean
     public RestClient subscriberServiceRestClient(SubscriberServiceProperties properties) {
         if (properties.getBaseUrl() == null || properties.getBaseUrl().isBlank()) {

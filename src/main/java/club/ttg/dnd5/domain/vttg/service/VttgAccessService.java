@@ -39,6 +39,14 @@ public class VttgAccessService {
         this.restClient = subscriberServiceRestClient;
     }
 
+    /**
+     * Вычисляет объём контента для текущего пользователя. Админ — всегда полный;
+     * для остальных полный объём только при действующей подписке, иначе SRD.
+     *
+     * @return {@code srdOnly = false} для полного контента, {@code srdOnly = true} для SRD
+     * @throws ApiException 403, если у пользователя без раннего доступа нет даже
+     *                      зарегистрированной подписки
+     */
     public VttgAccess access() {
         boolean admin = SecurityUtils.userRoles().anyMatch("ADMIN"::equals);
         if (admin) {
@@ -99,6 +107,10 @@ public class VttgAccessService {
         }
     }
 
+    /**
+     * Результат проверки доступа: {@code srdOnly = true} — отдавать только SRD,
+     * {@code false} — весь контент.
+     */
     public record VttgAccess(boolean srdOnly) {
     }
 }
