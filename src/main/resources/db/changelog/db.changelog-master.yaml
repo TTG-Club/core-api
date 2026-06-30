@@ -215,3 +215,5 @@ databaseChangeLog:
       file: db/changelog/2026/06/26-01-add-disabled-to-redemption-code.yaml
   - include:
       file: db/changelog/2026/06/26-02-add-source-code-to-subscription.yaml
+  - include:
+      file: db/changelog/2026/06/27-01-drop-subscription-domain.yaml
