@@ -139,9 +139,9 @@ public class CreatureServiceImpl implements CreatureService {
             creatureMapper.updateEntity(request, book, existing);
             saveGallery(request.getUrl(), request.getGallery());
             persistTagHash(existing);
-            String url = creatureRepository.save(existing).getUrl();
-            revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
-            return url;
+            String savedUrl = creatureRepository.save(existing).getUrl();
+            revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+            return savedUrl;
         }
 
         if (creatureRepository.existsById(request.getUrl())) {
@@ -153,9 +153,9 @@ public class CreatureServiceImpl implements CreatureService {
 
         saveGallery(request.getUrl(), request.getGallery());
         persistTagHash(creature);
-        String url = creatureRepository.save(creature).getUrl();
-        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
-        return url;
+        String savedUrl = creatureRepository.save(creature).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
     @Secured({"ADMIN", "MODERATOR"})
