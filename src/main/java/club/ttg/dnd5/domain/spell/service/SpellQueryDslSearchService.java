@@ -7,7 +7,9 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellGrouping;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellSorting;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.PathBuilder;
+import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.sql.JPASQLQuery;
 import jakarta.persistence.EntityManager;
@@ -19,6 +21,12 @@ import java.util.List;
 public class SpellQueryDslSearchService extends AbstractQueryDslSearchService<Spell, QSpell>
 {
     private static final QSpell SPELL = QSpell.spell;
+    private static final PathBuilder<Object> SPELL_PATH = new PathBuilder<>(Object.class, "spell");
+    private static final StringExpression CLASS_GROUP = Expressions.stringTemplate(
+            "coalesce((select min(sca.class_affiliation_url) from spell_class_affiliation sca "
+                    + "where sca.spell_url = {0}), '')",
+            SPELL.url);
+
     public SpellQueryDslSearchService(EntityManager entityManager)
     {
         super(entityManager, SPELL);
@@ -27,8 +35,7 @@ public class SpellQueryDslSearchService extends AbstractQueryDslSearchService<Sp
     @Override
     protected BooleanExpression buildSourcePredicate(final List<String> values)
     {
-        PathBuilder<Object> spell = new PathBuilder<>(Object.class, "spell");
-        return spell.getString("source").in(values);
+        return SPELL_PATH.getString("source").in(values);
     }
 
     @Override
@@ -59,9 +66,10 @@ public class SpellQueryDslSearchService extends AbstractQueryDslSearchService<Sp
 
         return switch (grouping)
         {
-            case LEVEL -> new OrderSpecifier[]{SPELL.level.asc(), nameOrder};
-            case SCHOOL -> new OrderSpecifier[]{SPELL.school.school.asc(), nameOrder};
-            case CLASS, NONE -> new OrderSpecifier[]{nameOrder};
+            case LEVEL -> new OrderSpecifier[]{SPELL.level.asc(), nameOrder, SPELL.url.asc()};
+            case SCHOOL -> new OrderSpecifier[]{SPELL_PATH.getString("school").asc(), nameOrder, SPELL.url.asc()};
+            case CLASS -> new OrderSpecifier[]{CLASS_GROUP.asc(), nameOrder, SPELL.url.asc()};
+            case NONE -> new OrderSpecifier[]{nameOrder, SPELL.url.asc()};
         };
     }
 }
