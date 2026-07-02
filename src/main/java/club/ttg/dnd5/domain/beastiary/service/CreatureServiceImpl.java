@@ -62,7 +62,8 @@ public class CreatureServiceImpl implements CreatureService {
         var tagValues = resolveHashes(request.getTag());
 
         var predicate = CreaturePredicateBuilder.build(request, traitValues, tagValues);
-        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize(),
+                        request.getGrouping(), request.getSorting())
                 .stream()
                 .map(creatureMapper::toShort)
                 .toList();

@@ -8,5 +8,6 @@ import lombok.Setter;
 @Setter
 public class MagicItemShortResponse extends ShortResponse {
     private String rarity;
+    private String category;
     private boolean attunement;
 }
