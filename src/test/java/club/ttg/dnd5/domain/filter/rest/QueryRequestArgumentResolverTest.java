@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.filter.rest;
 
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellGrouping;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellSorting;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,6 +163,15 @@ class QueryRequestArgumentResolverTest
             assertEquals(2, request.getPage());
             assertEquals(20, request.getPageSize());
             assertEquals(Set.of("PHB", "DMG"), request.getSource());
+        }
+
+        @Test
+        @DisplayName("группировка и сортировка списка заклинаний")
+        void spellListPresentation() throws Exception
+        {
+            SpellQueryRequest request = resolve("grouping=SCHOOL&sorting=ENGLISH");
+            assertEquals(SpellGrouping.SCHOOL, request.getGrouping());
+            assertEquals(SpellSorting.ENGLISH, request.getSorting());
         }
 
         @Test

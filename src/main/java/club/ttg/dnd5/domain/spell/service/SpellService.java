@@ -64,6 +64,7 @@ public class SpellService
         return true;
     }
 
+    @Transactional(readOnly = true)
     public List<SpellShortResponse> search(final SpellQueryRequest request)
     {
         var classUrls = request.getClassName() != null
@@ -80,7 +81,8 @@ public class SpellService
 
         var predicate = SpellPredicateBuilder.build(request, classUrls, subclassUrls);
 
-        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize(),
+                        request.getGrouping(), request.getSorting())
                 .stream()
                 .map(spellMapper::toShort)
                 .collect(Collectors.toList());

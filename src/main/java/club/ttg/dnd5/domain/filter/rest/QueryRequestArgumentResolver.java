@@ -83,6 +83,31 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
             request.setSource(splitToSet(sourceVal));
         }
 
+        for (Field field : collectFields(clazz))
+        {
+            QueryParam annotation = field.getAnnotation(QueryParam.class);
+            if (annotation == null || !field.getType().isEnum())
+            {
+                continue;
+            }
+
+            String key = annotation.value().isEmpty() ? field.getName() : annotation.value();
+            String raw = tokens.get(key);
+            if (raw == null)
+            {
+                continue;
+            }
+
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Class<? extends Enum> enumClass = (Class<? extends Enum>) field.getType();
+            Enum<?> value = parseEnum(raw, enumClass);
+            if (value != null)
+            {
+                field.set(request, value);
+            }
+        }
+
         // 3. Парсинг аннотированных полей из токенов
         for (Field field : collectAnnotatedFields(clazz))
         {
@@ -217,6 +242,13 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
      */
     List<Field> collectAnnotatedFields(Class<?> clazz)
     {
+        return collectFields(clazz).stream()
+                .filter(field -> field.isAnnotationPresent(FilterParam.class))
+                .toList();
+    }
+
+    private List<Field> collectFields(Class<?> clazz)
+    {
         List<Field> result = new ArrayList<>();
         Class<?> current = clazz;
 
@@ -224,10 +256,7 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
         {
             for (Field field : current.getDeclaredFields())
             {
-                if (field.isAnnotationPresent(FilterParam.class))
-                {
-                    result.add(field);
-                }
+                result.add(field);
             }
             current = current.getSuperclass();
         }
@@ -272,4 +301,5 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
 
         return null;
     }
+
 }
