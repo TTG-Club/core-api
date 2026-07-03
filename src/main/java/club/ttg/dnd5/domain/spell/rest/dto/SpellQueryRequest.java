@@ -20,11 +20,16 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SpellQueryRequest extends AbstractQueryRequest
 {
+    public static final String WITHOUT_CLASS_GROUP = "__without_class__";
+
     @QueryParam
     private SpellGrouping grouping = SpellGrouping.LEVEL;
 
     @QueryParam
     private SpellSorting sorting = SpellSorting.NAME;
+
+    @QueryParam
+    private String classGroup;
 
     @FilterParam(enumClass = MagicSchool.class)
     private QueryFilter<MagicSchool> school;

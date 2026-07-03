@@ -178,6 +178,15 @@ class QueryRequestArgumentResolverTest
         }
 
         @Test
+        @DisplayName("РіСЂСѓРїРїР° РєР»Р°СЃСЃР° РґР»СЏ РЅРµР·Р°РІРёСЃРёРјРѕР№ РїР°РіРёРЅР°С†РёРё")
+        void spellClassGroup() throws Exception
+        {
+            SpellQueryRequest request = resolve("classGroup=wizard-phb");
+
+            assertEquals("wizard-phb", request.getClassGroup());
+        }
+
+        @Test
         @DisplayName("группировка и сортировка списка существ")
         void creatureListPresentation() throws Exception
         {

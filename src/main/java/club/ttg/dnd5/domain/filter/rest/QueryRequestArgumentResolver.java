@@ -86,7 +86,7 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
         for (Field field : collectFields(clazz))
         {
             QueryParam annotation = field.getAnnotation(QueryParam.class);
-            if (annotation == null || !field.getType().isEnum())
+            if (annotation == null)
             {
                 continue;
             }
@@ -99,12 +99,19 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
             }
 
             field.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            Class<? extends Enum> enumClass = (Class<? extends Enum>) field.getType();
-            Enum<?> value = parseEnum(raw, enumClass);
-            if (value != null)
+            if (field.getType() == String.class)
             {
-                field.set(request, value);
+                field.set(request, raw);
+            }
+            else if (field.getType().isEnum())
+            {
+                @SuppressWarnings("unchecked")
+                Class<? extends Enum> enumClass = (Class<? extends Enum>) field.getType();
+                Enum<?> value = parseEnum(raw, enumClass);
+                if (value != null)
+                {
+                    field.set(request, value);
+                }
             }
         }
 
