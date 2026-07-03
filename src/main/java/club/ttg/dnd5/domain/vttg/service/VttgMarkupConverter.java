@@ -84,23 +84,39 @@ public class VttgMarkupConverter {
         }
         if (node.isObject()) {
             String type = node.path("type").asText();
+
+            // Перенос строки — и ProseMirror (hardBreak), и фронтовый узел (break).
+            if ("hardBreak".equals(type) || "break".equals(type)) {
+                return "\n";
+            }
+            // Списки: ProseMirror (bulletList/orderedList) и фронтовый {type:list}.
             if ("bulletList".equals(type)) {
                 return extractList(node, false);
             }
             if ("orderedList".equals(type)) {
                 return extractList(node, true);
             }
-            if ("table".equals(type)) {
-                return extractTable(node);
+            if ("list".equals(type)) {
+                return extractFrontendList(node);
             }
+            // Таблица: фронтовая форма (colLabels/rows) либо ProseMirror (content).
+            if ("table".equals(type)) {
+                return node.has("colLabels") || node.has("rows")
+                        ? extractFrontendTable(node)
+                        : extractTable(node);
+            }
+            // Инлайн-узлы фронтового диалекта (формат/ссылки) — узловая форма тех
+            // же тегов, что в строках-абзацах идут литералами и разворачиваются в
+            // replaceMarkup. null — не инлайн-узел, идёт обобщённо (текст+контент).
+            String inline = extractInlineNode(node, type);
+            if (inline != null) {
+                return inline;
+            }
+
             String text = node.hasNonNull("text") ? node.get("text").asText() : "";
             String content = node.has("content")
                     ? extractChildren(node.get("content"), hasBlockContent(type))
                     : "";
-
-            if ("hardBreak".equals(type)) {
-                return "\n";
-            }
             return text + content;
         }
         return "";
@@ -138,6 +154,137 @@ public class VttgMarkupConverter {
 
     private String indentContinuation(String content) {
         return content.trim().replace("\n", "\n  ");
+    }
+
+    /**
+     * Список фронтового диалекта {@code {type:list, attrs:{type}, content:[...]}}:
+     * пункт — это МАССИВ-батч инлайна либо узел {@code {type:li}}. В markdown —
+     * маркеры {@code - } / {@code N. } (как {@link #extractList}).
+     */
+    private String extractFrontendList(JsonNode node) {
+        JsonNode items = node.get("content");
+        if (items == null || !items.isArray()) {
+            return "";
+        }
+
+        boolean ordered = "ordered".equals(node.path("attrs").path("type").asText());
+        List<String> lines = new ArrayList<>();
+        int number = 1;
+        for (JsonNode item : items) {
+            String content = extractFrontendListItem(item).trim();
+            if (StringUtils.hasText(content)) {
+                String marker = ordered ? (number++) + ". " : "- ";
+                lines.add(marker + indentContinuation(content));
+            }
+        }
+        return String.join("\n", lines);
+    }
+
+    /** Содержимое пункта фронтового списка: батч-массив, узел {@code {type:li}} или иной узел. */
+    private String extractFrontendListItem(JsonNode item) {
+        if (item.isArray()) {
+            return extractChildren(item, false);
+        }
+        if ("li".equals(item.path("type").asText())) {
+            return extractContent(item);
+        }
+        return extract(item);
+    }
+
+    /**
+     * Таблица фронтового диалекта {@code {type:table, colLabels[], colStyles[],
+     * rows[][]}} → markdown-таблица. Ячейка — строка либо {@code {content, align}}.
+     * Стили колонок и подпись в VTTG опускаются (как и в {@link #extractTable}).
+     */
+    private String extractFrontendTable(JsonNode node) {
+        List<List<String>> table = new ArrayList<>();
+
+        JsonNode colLabels = node.get("colLabels");
+        if (colLabels != null && colLabels.isArray()) {
+            List<String> header = new ArrayList<>();
+            colLabels.forEach(label -> header.add(formatTableCell(extractInlineCell(label))));
+            if (!header.isEmpty()) {
+                table.add(header);
+            }
+        }
+
+        JsonNode rows = node.get("rows");
+        if (rows != null && rows.isArray()) {
+            for (JsonNode row : rows) {
+                if (!row.isArray()) {
+                    continue;
+                }
+                List<String> cells = new ArrayList<>();
+                row.forEach(cell -> cells.add(formatTableCell(extractInlineCell(cell))));
+                if (!cells.isEmpty()) {
+                    table.add(cells);
+                }
+            }
+        }
+
+        if (table.isEmpty()) {
+            return "";
+        }
+
+        int width = table.stream().mapToInt(List::size).max().orElse(0);
+        List<String> markdown = new ArrayList<>();
+        markdown.add(formatTableRow(table.getFirst(), width));
+        markdown.add(formatTableSeparator(width));
+        for (int index = 1; index < table.size(); index++) {
+            markdown.add(formatTableRow(table.get(index), width));
+        }
+        return String.join("\n", markdown);
+    }
+
+    /**
+     * Инлайн-текст ячейки/заголовка фронтовой таблицы: строка, массив инлайн-узлов
+     * (так фронт сериализует {@code colLabels[i]}/ячейку) либо {@code {content, align}}.
+     * Всегда инлайн-склейка (без блочного {@code \n\n}), иначе в ячейке из нескольких
+     * фрагментов (например {@code {@th Урон ({@dice к6})}}) появился бы ложный перенос.
+     */
+    private String extractInlineCell(JsonNode cell) {
+        if (cell.isArray()) {
+            return extractChildren(cell, false);
+        }
+        if (cell.isObject() && cell.has("content") && !cell.has("type")) {
+            return extractChildren(cell.get("content"), false);
+        }
+        return extract(cell);
+    }
+
+    /**
+     * Разворачивает ИНЛАЙН-узел фронтового диалекта в текст/markdown. Возвращает
+     * null, если это не инлайн-узел (обрабатывается обобщённо). Форматирование
+     * повторяет {@link #replaceMarkup} (там — литеральные {@code {@...}} из строк),
+     * но здесь рекурсирует по вложенным узлам без риска регэкспа на «}».
+     */
+    private String extractInlineNode(JsonNode node, String type) {
+        if ("bold".equals(type)) {
+            return "**" + extractContent(node) + "**";
+        }
+        if ("italic".equals(type)) {
+            return "*" + extractContent(node) + "*";
+        }
+        // Ссылки на разделы сайта ({type:glossary|spell}, attrs.url) — как в
+        // replaceSiteLinks; прочие типы разделов/форматов идут обобщённо (текст).
+        String section = SITE_LINK_SECTIONS.get(type);
+        if (section != null) {
+            String label = extractContent(node).trim();
+            String url = node.path("attrs").path("url").asText("");
+            return url.isEmpty()
+                    ? label
+                    : "[" + label + "](" + siteUrl() + "/" + section + "/" + url + ")";
+        }
+        if ("link".equals(type)) {
+            return extractContent(node);
+        }
+        return null;
+    }
+
+    /** Инлайн-содержимое узла (content) без блочных переносов; "" если пусто. */
+    private String extractContent(JsonNode node) {
+        JsonNode content = node.get("content");
+        return content == null ? "" : extractChildren(content, false);
     }
 
     private String extractTable(JsonNode node) {
