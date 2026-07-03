@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.filter.rest.FilterParam;
+import club.ttg.dnd5.domain.filter.rest.QueryParam;
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
 import lombok.Data;
@@ -20,6 +21,12 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class CreatureQueryRequest extends AbstractQueryRequest
 {
+    @QueryParam
+    private CreatureGrouping grouping = CreatureGrouping.CHALLENGE_RATING;
+
+    @QueryParam
+    private CreatureSorting sorting = CreatureSorting.CHALLENGE_RATING;
+
     @FilterParam
     private QueryFilter<Long> cr;
 

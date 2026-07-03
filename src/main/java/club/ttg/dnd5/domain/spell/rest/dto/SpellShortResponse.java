@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Set;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -17,5 +19,6 @@ public class SpellShortResponse extends ShortResponse {
     private Boolean concentration;
     private Boolean ritual;
     private SpellShortComponents components;
+    private Set<SpellAffiliationDto> classes;
 
 }
