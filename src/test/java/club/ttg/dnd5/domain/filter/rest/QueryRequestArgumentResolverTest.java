@@ -172,9 +172,9 @@ class QueryRequestArgumentResolverTest
         @DisplayName("группировка и сортировка списка заклинаний")
         void spellListPresentation() throws Exception
         {
-            SpellQueryRequest request = resolve("grouping=SCHOOL&sorting=ENGLISH");
+            SpellQueryRequest request = resolve("grouping=SCHOOL&sorting=LEVEL");
             assertEquals(SpellGrouping.SCHOOL, request.getGrouping());
-            assertEquals(SpellSorting.ENGLISH, request.getSorting());
+            assertEquals(SpellSorting.LEVEL, request.getSorting());
         }
 
         @Test

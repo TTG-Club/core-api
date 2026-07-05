@@ -56,6 +56,29 @@ class SpellQueryDslSearchServiceTest
         );
     }
 
+    @Test
+    void levelSortingOrdersSpellsInsideSchoolGroups()
+    {
+        assertOrder(
+                service.getOrder(SpellGrouping.SCHOOL, SpellSorting.LEVEL),
+                "spell.school",
+                "spell.level",
+                "spell.name",
+                "spell.url"
+        );
+    }
+
+    @Test
+    void levelSortingOrdersUngroupedSpells()
+    {
+        assertOrder(
+                service.getOrder(SpellGrouping.NONE, SpellSorting.LEVEL),
+                "spell.level",
+                "spell.name",
+                "spell.url"
+        );
+    }
+
     private void assertOrder(final OrderSpecifier<?>[] order, final String... expectedTargets)
     {
         assertEquals(

@@ -63,13 +63,25 @@ public class SpellQueryDslSearchService extends AbstractQueryDslSearchService<Sp
         OrderSpecifier<?> nameOrder = sorting == SpellSorting.ENGLISH
                 ? SPELL.english.asc()
                 : SPELL.name.asc();
+        OrderSpecifier<?>[] sortingOrder = sorting == SpellSorting.LEVEL
+                ? new OrderSpecifier[]{SPELL.level.asc(), nameOrder, SPELL.url.asc()}
+                : new OrderSpecifier[]{nameOrder, SPELL.url.asc()};
 
         return switch (grouping)
         {
             case LEVEL -> new OrderSpecifier[]{SPELL.level.asc(), nameOrder, SPELL.url.asc()};
-            case SCHOOL -> new OrderSpecifier[]{SPELL_PATH.getString("school").asc(), nameOrder, SPELL.url.asc()};
-            case CLASS -> new OrderSpecifier[]{CLASS_GROUP.asc(), nameOrder, SPELL.url.asc()};
-            case NONE -> new OrderSpecifier[]{nameOrder, SPELL.url.asc()};
+            case SCHOOL -> prepend(SPELL_PATH.getString("school").asc(), sortingOrder);
+            case CLASS -> prepend(CLASS_GROUP.asc(), sortingOrder);
+            case NONE -> sortingOrder;
         };
+    }
+
+    private OrderSpecifier<?>[] prepend(final OrderSpecifier<?> groupOrder,
+                                        final OrderSpecifier<?>[] sortingOrder)
+    {
+        OrderSpecifier<?>[] order = new OrderSpecifier<?>[sortingOrder.length + 1];
+        order[0] = groupOrder;
+        System.arraycopy(sortingOrder, 0, order, 1, sortingOrder.length);
+        return order;
     }
 }
