@@ -25,6 +25,7 @@ public interface MagicItemMapper
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "attunement.requires", target = "attunement")
     @Mapping(source = "rarity.name", target = "rarity")
+    @Mapping(source = "category.name", target = "category")
     MagicItemShortResponse toShort(MagicItem magicItem);
 
     @BaseMapping.BaseShortResponseNameMapping

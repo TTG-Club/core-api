@@ -96,6 +96,28 @@ public class AchievementService {
                 .toList();
     }
 
+    /**
+     * Описывает достижения по их кодам из каталога — для встраивания в другие ответы
+     * (например список погашенных кодов). Несуществующие в каталоге показываются кодом.
+     *
+     * @param grantedAt момент получения, проставляемый в ответ
+     */
+    @Transactional(readOnly = true)
+    public List<UserAchievementResponse> describe(Collection<String> codes, Instant grantedAt) {
+        if (codes == null || codes.isEmpty()) {
+            return List.of();
+        }
+        Map<String, Achievement> catalog = catalogMap();
+        return codes.stream()
+                .map(code -> {
+                    Achievement achievement = catalog.get(code);
+                    return achievement == null
+                            ? new UserAchievementResponse(code, code, null, null, grantedAt)
+                            : toUserResponse(achievement, grantedAt);
+                })
+                .toList();
+    }
+
     @Transactional
     public AchievementResponse createOrUpdate(String code, AchievementRequest request) {
         if (!StringUtils.hasText(code)) {

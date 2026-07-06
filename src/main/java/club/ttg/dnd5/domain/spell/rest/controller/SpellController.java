@@ -64,7 +64,7 @@ public class SpellController {
         return spellFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public String createSpell(@RequestBody SpellRequest request) {
@@ -72,13 +72,13 @@ public class SpellController {
     }
 
     @Operation(summary = "Предпросмотр заклинания")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public SpellDetailedResponse preview(@RequestBody SpellRequest request) {
         return spellService.preview(request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PutMapping("/{url}")
     public String updateSpell(@PathVariable String url,
                                              @Valid
@@ -86,7 +86,7 @@ public class SpellController {
         return spellService.update(url, request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @DeleteMapping("/{url}")
     public void deleteSpell(@PathVariable String url) {
         spellService.delete(url);

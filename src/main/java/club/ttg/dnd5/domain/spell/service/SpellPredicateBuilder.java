@@ -28,6 +28,19 @@ public class SpellPredicateBuilder {
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
 
+        if (request.getClassGroup() != null && !request.getClassGroup().isBlank()) {
+            if (SpellQueryRequest.WITHOUT_CLASS_GROUP.equals(request.getClassGroup())) {
+                builder.and(Expressions.booleanTemplate(
+                        "not exists (select 1 from spell_class_affiliation sca where sca.spell_url = {0}.url)",
+                        Q));
+            } else {
+                builder.and(Expressions.booleanTemplate(
+                        "exists (select 1 from spell_class_affiliation sca where sca.spell_url = {0}.url and sca.class_affiliation_url = {1})",
+                        Q,
+                        request.getClassGroup()));
+            }
+        }
+
         // Школа магии (enum as STRING column)
         PredicateUtils.applyFilterEnum(builder, request.getSchool(), SCHOOL_PATH, MagicSchool.class);
 

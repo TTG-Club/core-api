@@ -68,6 +68,7 @@ public interface SpellMapper
     @Mapping(target = "school", source = "school", qualifiedByName = "toSchool")
     @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
     @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
+    @Mapping(target = "classes", source = "classAffiliation", qualifiedByName = "toAffiliations")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     SpellShortResponse toShort(Spell spell);
@@ -101,6 +102,7 @@ public interface SpellMapper
         return response;
     }
 
+    @Named("toAffiliations")
     default Set<SpellAffiliationDto> mapAffiliations(Set<? extends NamedEntity> entities)
     {
         if (entities == null || entities.isEmpty())

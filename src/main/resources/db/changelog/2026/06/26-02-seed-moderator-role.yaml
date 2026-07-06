@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-26-seed-moderator-role
+      author: cowork
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: Создаёт роль MODERATOR, если её ещё нет.
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM roles WHERE name = 'MODERATOR'
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: MODERATOR
+      rollback:
+        - delete:
+            tableName: roles
+            where: name = 'MODERATOR'

@@ -63,7 +63,7 @@ public class ImageService
         ImageIO.scanForPlugins();
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     public String upload(final SectionType prefix, final MultipartFile file)
     {
         validateUpload(file);
@@ -102,7 +102,7 @@ public class ImageService
         return converted.bytes();
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     public void delete(final String key)
     {
         try

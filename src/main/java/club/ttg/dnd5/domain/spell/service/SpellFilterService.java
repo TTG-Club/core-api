@@ -155,13 +155,14 @@ public class SpellFilterService {
                                                 .toList())
                                 .build());
                 var sources = sourceSavedFilterService.getSavedSources();
+                String classFilterKey = FilterKeys.keyOf(SpellQueryRequest.class, "className");
                 // Классы
                 List<CharacterClass> magicClasses = classService.findAllMagicClasses()
                         .stream()
                         .filter(c -> sources.contains(c.getSource().getAcronym()))
                         .toList();
                 groups.add(FilterGroupMeta.builder()
-                                .key(FilterKeys.keyOf(SpellQueryRequest.class, "className"))
+                                .key(classFilterKey)
                                 .name("Классы")
                                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                                 .values(magicClasses.stream()
@@ -192,6 +193,10 @@ public class SpellFilterService {
                                                                 .value(c.getUrl())
                                                                 .name("%s [%s]".formatted(c.getName(),
                                                                                 c.getSource().getAcronym()))
+                                                                .relations(c.getParentUrl() == null
+                                                                                ? Map.of()
+                                                                                : Map.of(classFilterKey,
+                                                                                                List.of(c.getParentUrl())))
                                                                 .build())
                                                 .toList())
                                 .build());

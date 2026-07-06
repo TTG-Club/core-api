@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.filter.rest.FilterParam;
+import club.ttg.dnd5.domain.filter.rest.QueryParam;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
@@ -19,6 +20,17 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SpellQueryRequest extends AbstractQueryRequest
 {
+    public static final String WITHOUT_CLASS_GROUP = "__without_class__";
+
+    @QueryParam
+    private SpellGrouping grouping = SpellGrouping.LEVEL;
+
+    @QueryParam
+    private SpellSorting sorting = SpellSorting.NAME;
+
+    @QueryParam
+    private String classGroup;
+
     @FilterParam(enumClass = MagicSchool.class)
     private QueryFilter<MagicSchool> school;
 

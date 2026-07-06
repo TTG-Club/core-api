@@ -11,6 +11,8 @@ import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryShortResponse;
 import club.ttg.dnd5.domain.glossary.rest.dto.GlossaryQueryRequest;
 import club.ttg.dnd5.domain.glossary.rest.dto.create.GlossaryRequest;
 import club.ttg.dnd5.domain.glossary.rest.mapper.GlossaryMapper;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -25,10 +27,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class GlossaryService {
+    public static final String REVISION_ENTITY_TYPE = "glossary";
+
     private final GlossaryRepository glossaryRepository;
     private final SourceService sourceService;
     private final GlossaryMapper glossaryMapper;
     private final GlossaryQueryDslSearchService glossaryQueryDslSearchService;
+    private final EntityRevisionService revisionService;
 
     public List<GlossaryShortResponse> search(final GlossaryQueryRequest request) {
         var predicate = GlossaryPredicateBuilder.build(request);
@@ -52,6 +57,8 @@ public class GlossaryService {
         Glossary glossary = glossaryMapper.toEntity(glossaryRequest, source);
         glossary = glossaryRepository.save(glossary);
 
+        revisionService.record(REVISION_ENTITY_TYPE, glossary.getUrl(), RevisionOperation.CREATE,
+                findFormByUrl(glossary.getUrl()));
         return glossary.getUrl();
     }
 
@@ -68,6 +75,8 @@ public class GlossaryService {
         if (url.equals(request.getUrl())) {
             glossaryMapper.updateEntity(request, source, existingGlossary);
             glossaryRepository.save(existingGlossary);
+            revisionService.record(REVISION_ENTITY_TYPE, existingGlossary.getUrl(), RevisionOperation.UPDATE,
+                    findFormByUrl(existingGlossary.getUrl()));
             return existingGlossary.getUrl();
         }
 
@@ -76,7 +85,9 @@ public class GlossaryService {
         }
         glossaryRepository.deleteById(url);
         glossaryRepository.flush();
-        return glossaryRepository.save(glossaryMapper.toEntity(request, source)).getUrl();
+        String savedUrl = glossaryRepository.save(glossaryMapper.toEntity(request, source)).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
     @Transactional
@@ -87,6 +98,7 @@ public class GlossaryService {
 
         existingGlossary.setHiddenEntity(true);
         glossaryRepository.save(existingGlossary);
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.DELETE, findFormByUrl(url));
     }
 
     public GlossaryDetailedResponse findByUrl(String url) {

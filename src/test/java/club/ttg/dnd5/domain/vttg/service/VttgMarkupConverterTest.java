@@ -231,4 +231,99 @@ class VttgMarkupConverterTest {
 
         assertEquals(markup, converter.toText(markup));
     }
+
+    @Test
+    void convertsFrontendDialectTableToMarkdown() {
+        String markup = """
+                {
+                  "type": "table",
+                  "caption": "Пример",
+                  "colLabels": ["Компонент", "Тип"],
+                  "colStyles": ["w-1/2", "w-1/2"],
+                  "rows": [
+                    [
+                      {"content": [{"type": "bold", "content": [{"type": "text", "text": "Badge"}]}]},
+                      "Inline"
+                    ],
+                    [
+                      "Kbd",
+                      {"content": [{"type": "badge", "attrs": {"color": "primary"}, "content": [{"type": "text", "text": "7"}]}]}
+                    ]
+                  ]
+                }
+                """;
+
+        assertEquals(
+                "| Компонент | Тип |\n| --- | --- |\n| **Badge** | Inline |\n| Kbd | 7 |",
+                converter.toText(markup)
+        );
+    }
+
+    @Test
+    void convertsFrontendTableWithNodeArrayHeaders() {
+        // Реальный формат редактора (toStoredMarkup): colLabels[i] — МАССИВ инлайн-
+        // узлов, ячейки — {content}. Заголовок из нескольких фрагментов не должен
+        // склеиваться через <br> (инлайн-склейка, а не блочная).
+        String markup = """
+                {
+                  "type": "table",
+                  "colLabels": [
+                    [
+                      {"type": "text", "text": "Урон ("},
+                      {"type": "roll", "content": [{"type": "text", "text": "к6"}]},
+                      {"type": "text", "text": ")"}
+                    ],
+                    [{"type": "text", "text": "Эффект"}]
+                  ],
+                  "rows": [
+                    [
+                      {"content": [{"type": "text", "text": "10"}]},
+                      {"content": [{"type": "text", "text": "Ожог"}]}
+                    ]
+                  ]
+                }
+                """;
+
+        assertEquals(
+                "| Урон (к6) | Эффект |\n| --- | --- |\n| 10 | Ожог |",
+                converter.toText(markup)
+        );
+    }
+
+    @Test
+    void convertsFrontendDialectOrderedListToMarkdown() {
+        String markup = """
+                {
+                  "type": "list",
+                  "attrs": {"type": "ordered"},
+                  "content": [
+                    [{"type": "text", "text": "Первый"}],
+                    [{"type": "bold", "content": [{"type": "text", "text": "Второй"}]}]
+                  ]
+                }
+                """;
+
+        assertEquals("1. Первый\n2. **Второй**", converter.toText(markup));
+    }
+
+    @Test
+    void convertsFrontendDialectQuoteWithInlineNodes() {
+        String markup = """
+                {
+                  "type": "quote",
+                  "attrs": {"color": "primary", "variant": "outline"},
+                  "content": [
+                    {"type": "bold", "content": [{"type": "text", "text": "Внимание"}]},
+                    {"type": "text", "text": ": смотри "},
+                    {"type": "spell", "attrs": {"url": "fireball-phb"}, "content": [{"type": "text", "text": "Огненный шар"}]},
+                    {"type": "text", "text": "."}
+                  ]
+                }
+                """;
+
+        assertEquals(
+                "**Внимание**: смотри [Огненный шар](https://ttg.club/spells/fireball-phb).",
+                converter.toText(markup)
+        );
+    }
 }

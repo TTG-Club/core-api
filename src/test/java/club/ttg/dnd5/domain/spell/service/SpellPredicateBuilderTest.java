@@ -12,6 +12,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SpellPredicateBuilderTest {
 
     @Test
+    void classGroupRequiresExactClassAffiliation() {
+        SpellQueryRequest request = new SpellQueryRequest();
+        request.setClassGroup("wizard-phb");
+
+        String predicate = SpellPredicateBuilder.build(request, Set.of(), Set.of()).toString();
+
+        assertTrue(predicate.contains("spell_class_affiliation"));
+        assertTrue(predicate.contains("class_affiliation_url"));
+        assertTrue(predicate.contains("wizard-phb"));
+    }
+
+    @Test
+    void withoutClassGroupRequiresMissingClassAffiliation() {
+        SpellQueryRequest request = new SpellQueryRequest();
+        request.setClassGroup(SpellQueryRequest.WITHOUT_CLASS_GROUP);
+
+        String predicate = SpellPredicateBuilder.build(request, Set.of(), Set.of()).toString();
+
+        assertTrue(predicate.contains("not exists"));
+        assertTrue(predicate.contains("spell_class_affiliation"));
+    }
+
+    @Test
     void healingFilterChecksLegacyHealingTypesAndDamageFormulaMarkers() {
         SpellQueryRequest request = new SpellQueryRequest();
         QueryFilter<HealingType> filter = new QueryFilter<>();

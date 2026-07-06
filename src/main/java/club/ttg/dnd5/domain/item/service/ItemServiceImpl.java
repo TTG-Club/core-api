@@ -10,6 +10,8 @@ import club.ttg.dnd5.domain.item.rest.mapper.ItemMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -20,10 +22,13 @@ import java.util.Collection;
 @RequiredArgsConstructor
 @Service
 public class ItemServiceImpl implements ItemService {
+    public static final String REVISION_ENTITY_TYPE = "item";
+
     private final ItemRepository itemRepository;
     private final ItemQueryDslService itemQueryDslService;
     private final SourceService sourceService;
     private final ItemMapper itemMapper;
+    private final EntityRevisionService revisionService;
 
     @Override
     public boolean existOrThrow(final String url) {
@@ -51,7 +56,9 @@ public class ItemServiceImpl implements ItemService {
     public String addItem(final ItemRequest request) {
         exist(request.getUrl());
         var item = toItem(request);
-        return itemRepository.save(item).getUrl();
+        String url = itemRepository.save(item).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.CREATE, findFormByUrl(url));
+        return url;
     }
 
     @Override
@@ -62,14 +69,18 @@ public class ItemServiceImpl implements ItemService {
         if (itemUrl.equals(request.getUrl())) {
             var existing = findByUrl(itemUrl);
             itemMapper.updateEntity(request, source, existing);
-            return itemRepository.save(existing).getUrl();
+            String url = itemRepository.save(existing).getUrl();
+            revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
+            return url;
         }
 
         findByUrl(itemUrl);
         exist(request.getUrl());
         itemRepository.deleteById(itemUrl);
         itemRepository.flush();
-        return itemRepository.save(itemMapper.toEntity(request, source)).getUrl();
+        String url = itemRepository.save(itemMapper.toEntity(request, source)).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
+        return url;
     }
 
     @Override
@@ -77,7 +88,9 @@ public class ItemServiceImpl implements ItemService {
     public String delete(final String itemUrl) {
         Item item = findByUrl(itemUrl);
         item.setHiddenEntity(true);
-        return itemRepository.save(item).getUrl();
+        String url = itemRepository.save(item).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.DELETE, findFormByUrl(url));
+        return url;
     }
 
     private Item toItem(final ItemRequest request) {

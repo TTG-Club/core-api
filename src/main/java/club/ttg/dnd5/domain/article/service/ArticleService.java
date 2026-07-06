@@ -6,6 +6,8 @@ import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
 import club.ttg.dnd5.domain.article.rest.mapper.ArticleMapper;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,16 +23,22 @@ import java.util.UUID;
 @Service
 public class ArticleService {
 
+    public static final String REVISION_ENTITY_TYPE = "article";
+
     private static final int DEFAULT_SEARCH_SIZE = 10;
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
+    private final EntityRevisionService revisionService;
 
     public String save(ArticleRequest request) {
         validateUrlNonExistence(request.getUrl());
 
         Article toSave = articleMapper.toEntity(request);
 
-        return articleRepository.save(toSave).getUrl();
+        Article saved = articleRepository.save(toSave);
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getId().toString(), RevisionOperation.CREATE,
+                findFormById(saved.getId()));
+        return saved.getUrl();
     }
 
     public String update(UUID id, ArticleRequest request) {
@@ -38,7 +46,9 @@ public class ArticleService {
 
         articleMapper.updateEntity(toUpdate, request);
 
-        return articleRepository.save(toUpdate).getUrl();
+        String url = articleRepository.save(toUpdate).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, id.toString(), RevisionOperation.UPDATE, findFormById(id));
+        return url;
     }
 
     public boolean existsByUrl(String url) {
@@ -82,7 +92,9 @@ public class ArticleService {
     public String delete(UUID id) {
         Article toDelete = getById(id);
         toDelete.setDeleted(true);
-        return articleRepository.save(toDelete).getUrl();
+        String url = articleRepository.save(toDelete).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, id.toString(), RevisionOperation.DELETE, findFormById(id));
+        return url;
     }
 
 
