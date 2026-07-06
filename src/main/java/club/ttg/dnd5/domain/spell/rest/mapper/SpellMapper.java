@@ -65,7 +65,8 @@ public interface SpellMapper
     @Mapping(target = "alternative", source = "request.name.alternative", qualifiedByName = "joinAlternative")
     void updateEntity(@MappingTarget Spell target, SpellRequest request);
 
-    @Mapping(target = "school", source = "school", qualifiedByName = "toSchool")
+    @Mapping(target = "school", source = "school", qualifiedByName = "toSchoolName")
+    @Mapping(target = "additionalType", source = "school.additionalType")
     @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
     @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
     @Mapping(target = "classes", source = "classAffiliation", qualifiedByName = "toAffiliations")
@@ -321,6 +322,11 @@ public interface SpellMapper
             return spellSchool.getSchool().getName();
         }
         return String.format("%s (%s)", spellSchool.getSchool().getName(), spellSchool.getAdditionalType());
+    }
+
+    @Named("toSchoolName")
+    default String toSchoolName(SpellSchool spellSchool) {
+        return spellSchool.getSchool().getName();
     }
 
     @Named("joinAlternative")
