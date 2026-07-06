@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,9 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
 	Optional<User> findByUsername(String username);
+
+	@Query("SELECT DISTINCT u FROM User u JOIN u.roles r WHERE r.name = :role")
+	List<User> findAllByRoleName(@Param("role") String role);
 
 	@Query("SELECT u FROM User u WHERE lower(u.username) = lower(:usernameOrEmail) or lower(u.email) = lower(:usernameOrEmail)")
 	Optional<User> findByEmailOrUsername(String usernameOrEmail);
