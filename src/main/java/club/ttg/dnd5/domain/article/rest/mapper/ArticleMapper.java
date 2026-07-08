@@ -18,18 +18,28 @@ public interface ArticleMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "deleted", constant = "false")
+    @Mapping(target = "draft", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "publishDateTime", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     Article toEntity(ArticleRequest article);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "draft", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "publishDateTime", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     void updateEntity(@MappingTarget Article article, ArticleRequest articleRequest);
 
+    @Mapping(source = "type.name", target = "typeName")
+    @Mapping(source = "status.name", target = "statusName")
     ArticleDetailedResponse toDetailedResponse(Article byUrl);
 
     ArticleRequest toRequest(Article article);
 
+    @Mapping(source = "type.name", target = "typeName")
+    @Mapping(source = "status.name", target = "statusName")
     ArticleShortResponse toShortResponse(Article article);
 
     List<ArticleShortResponse> toShortResponseList(Collection<Article> articles);

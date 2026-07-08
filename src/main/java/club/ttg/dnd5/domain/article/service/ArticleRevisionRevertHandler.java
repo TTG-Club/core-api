@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 @Component
 @RequiredArgsConstructor
 public class ArticleRevisionRevertHandler implements RevisionRevertHandler {
@@ -30,8 +28,8 @@ public class ArticleRevisionRevertHandler implements RevisionRevertHandler {
             request = objectMapper.readValue(snapshotJson, ArticleRequest.class);
         } catch (JsonProcessingException e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Не удалось прочитать снимок новости для отката");
+                    "Не удалось прочитать снимок статьи / новости для отката");
         }
-        articleService.update(UUID.fromString(entityId), request);
+        articleService.update(entityId, request);
     }
 }

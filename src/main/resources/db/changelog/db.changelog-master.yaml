@@ -221,3 +221,11 @@ databaseChangeLog:
       file: db/changelog/2026/06/26-02-add-source-code-to-subscription.yaml
   - include:
       file: db/changelog/2026/06/27-01-drop-subscription-domain.yaml
+  - include:
+      file: db/changelog/2026/07/06-01-article-type-and-deleted.yaml
+  - include:
+      file: db/changelog/2026/07/06-02-add-draft-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/07-01-add-accessible-by-link-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/07-02-add-active-to-article.yaml

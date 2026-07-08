@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-07-02-add-active-to-article
+      author: Peterko
+      changes:
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        # Существующие опубликованные (не черновики) записи считаем активными.
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: active
+                  valueBoolean: true
+            where: draft = false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: active
+                  valueBoolean: false
+            where: active IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: active
+            columnDataType: BOOLEAN
+            defaultNullValue: false

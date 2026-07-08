@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.article.rest.dto;
 
+import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -21,7 +22,21 @@ import java.time.Instant;
 public class ArticleRequest {
 
     @NotNull
+    @Schema(description = "Уникальный url статьи / новости (slug)")
     private String url;
+
+    @NotNull
+    @Schema(description = "Тип: NEWS (новость) или ARTICLE (статья)")
+    private ArticleType type;
+
+    @Schema(description = "Черновик. true — сохранить черновиком (не публиковать): виден только в списке "
+            + "черновиков, недоступен ни на сайте, ни по ссылке. false — опубликована (не черновик).")
+    private boolean draft;
+
+    @Schema(description = "Активность опубликованной записи (учитывается при draft=false). true — активна "
+            + "(в общем доступе на сайте, с учётом даты публикации); false — неактивна (снята с сайта, "
+            + "но остаётся опубликованной, не черновик).")
+    private boolean active;
 
     @NotNull
     @Schema(description = "Заголовок")
@@ -32,8 +47,13 @@ public class ArticleRequest {
     private String previewImageUrl;
 
     @Nullable
-    @Schema(description = "Дата и время публикации")
+    @Schema(description = "Дата публикации. Будущая дата при draft=false, active=true — запись запланирована "
+            + "и появится на сайте автоматически по её наступлении. Если не задана при публикации — ставится «сейчас».")
     private Instant publishDateTime;
+
+    @Schema(description = "Доступна по прямой ссылке, даже когда не в общем доступе (для предпросмотра/шеринга). "
+            + "Актуально для неактивной опубликованной записи (draft=false, active=false); к черновику не относится.")
+    private boolean accessibleByLink;
 
     @Schema(description = "Текст превью")
     @NotNull
@@ -43,7 +63,7 @@ public class ArticleRequest {
 
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
-    @Schema(description = "Текст новости")
+    @Schema(description = "Текст статьи / новости")
     @NotNull
     private String content;
 }
