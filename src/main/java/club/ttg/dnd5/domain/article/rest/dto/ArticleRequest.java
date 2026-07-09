@@ -55,6 +55,10 @@ public class ArticleRequest {
             + "Актуально для неактивной опубликованной записи (draft=false, active=false); к черновику не относится.")
     private boolean accessibleByLink;
 
+    @Schema(description = "Опубликовать в Telegram-канал. true — при публикации (сейчас или по наступлении даты) "
+            + "запись один раз уйдёт в канал, если интеграция включена глобально. false — в канал не отправлять.")
+    private boolean publishToTelegram;
+
     @Schema(description = "Текст превью")
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)

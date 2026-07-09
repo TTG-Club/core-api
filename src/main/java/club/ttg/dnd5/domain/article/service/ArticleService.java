@@ -57,6 +57,14 @@ public class ArticleService {
         articleMapper.updateEntity(toUpdate, request);
         applyPublication(toUpdate, request);
 
+        // Занята под отправку или уже отправлена в канал (и всё ещё помечена к публикации) — пометить на
+        // синхронизацию. Учитываем telegramPostedAt (claim), чтобы правка в окне ПЕРВОЙ отправки не потерялась:
+        // тогда message_id ещё null, но claim уже стоит, и после отправки поллер синхронизирует свежий текст.
+        boolean claimedOrPosted = toUpdate.getTelegramPostedAt() != null || toUpdate.getTelegramMessageId() != null;
+        if (claimedOrPosted && toUpdate.isPublishToTelegram()) {
+            toUpdate.setTelegramDirty(true);
+        }
+
         String savedUrl = articleRepository.save(toUpdate).getUrl();
         revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
         return savedUrl;
@@ -85,6 +93,50 @@ public class ArticleService {
                 article.setPublishDateTime(Instant.now());
             }
         }
+    }
+
+    /**
+     * Пытается занять запись под отправку в Telegram (см. {@link ArticleRepository#claimForTelegram}).
+     * Короткая отдельная транзакция ДО сетевого вызова.
+     *
+     * @return {@code true}, если заняли (можно отправлять); {@code false}, если уже занята.
+     */
+    @Transactional
+    public boolean claimTelegramPost(UUID id, Instant when) {
+        return articleRepository.claimForTelegram(id, when) == 1;
+    }
+
+    /**
+     * Освобождает ранее занятую запись после неуспешной отправки — чтобы повторить на следующем тике.
+     */
+    @Transactional
+    public void releaseTelegramPost(UUID id) {
+        articleRepository.releaseTelegramClaim(id);
+    }
+
+    /**
+     * Фиксирует успешную отправку в Telegram: id поста в канале и тип (фото/текст).
+     */
+    @Transactional
+    public void markTelegramSent(UUID id, Long messageId, boolean photo) {
+        articleRepository.markTelegramSent(id, messageId, photo);
+    }
+
+    /**
+     * Снимает флаг правки после синхронизации — только если запись не изменилась с момента загрузки
+     * (updatedAt совпадает). Иначе правку, прилетевшую во время отправки, не теряем: флаг остаётся.
+     */
+    @Transactional
+    public void clearTelegramDirty(UUID id, Instant updatedAt) {
+        articleRepository.clearTelegramDirtyIfUnchanged(id, updatedAt);
+    }
+
+    /**
+     * Сбрасывает состояние отправки в Telegram после удаления поста из канала.
+     */
+    @Transactional
+    public void clearTelegramPost(UUID id) {
+        articleRepository.clearTelegramPost(id);
     }
 
     public boolean existsByUrl(String url) {

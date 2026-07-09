@@ -21,6 +21,10 @@ public interface ArticleMapper {
     @Mapping(target = "draft", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "publishDateTime", ignore = true)
+    @Mapping(target = "telegramPostedAt", ignore = true)
+    @Mapping(target = "telegramMessageId", ignore = true)
+    @Mapping(target = "telegramPhoto", ignore = true)
+    @Mapping(target = "telegramDirty", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     Article toEntity(ArticleRequest article);
 
@@ -29,6 +33,10 @@ public interface ArticleMapper {
     @Mapping(target = "draft", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "publishDateTime", ignore = true)
+    @Mapping(target = "telegramPostedAt", ignore = true)
+    @Mapping(target = "telegramMessageId", ignore = true)
+    @Mapping(target = "telegramPhoto", ignore = true)
+    @Mapping(target = "telegramDirty", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     void updateEntity(@MappingTarget Article article, ArticleRequest articleRequest);
 

@@ -14,6 +14,7 @@ import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -23,6 +24,9 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
+// UPDATE только по реально изменённым колонкам: правка новости не должна затирать
+// telegram_* поля, которыми асинхронно владеет планировщик (claim / message_id / dirty).
+@DynamicUpdate
 @Table(name = "article",
         indexes = {
                 @Index(name = "article_url_index", columnList = "url", unique = true)
@@ -73,6 +77,40 @@ public class Article extends Timestamped {
      */
     @Column(nullable = false)
     private boolean accessibleByLink;
+
+    /**
+     * Пожелание автора отправить запись в Telegram-канал. Управляется галочкой в админке.
+     * Постится только при publishToTelegram=true И включённой глобально интеграции, один раз
+     * при попадании записи в общий доступ (см. {@code telegramPostedAt}).
+     */
+    @Column(nullable = false)
+    private boolean publishToTelegram;
+
+    /**
+     * Момент отправки записи в Telegram-канал. NULL — ещё не отправлена.
+     * Служит флагом идемпотентности: планировщик постит запись один раз и проставляет время,
+     * поэтому повторное сохранение/редактирование или снятие-и-возврат публикации не дублируют пост.
+     */
+    private Instant telegramPostedAt;
+
+    /**
+     * id сообщения в Telegram-канале. Заполняется после успешной отправки, нужен для правки поста
+     * при редактировании новости. NULL — пост в канал ещё не ушёл.
+     */
+    private Long telegramMessageId;
+
+    /**
+     * Пост в канале отправлен как фото (с обложкой). Тогда при синхронизации правим caption,
+     * иначе — text (Telegram различает editMessageCaption и editMessageText).
+     */
+    @Column(nullable = false)
+    private boolean telegramPhoto;
+
+    /**
+     * Новость изменена после отправки в канал — планировщик синхронизирует пост (editMessage) и снимет флаг.
+     */
+    @Column(nullable = false)
+    private boolean telegramDirty;
 
     /**
      * Вычисляемый статус: черновик / запланирована / активна / неактивна.

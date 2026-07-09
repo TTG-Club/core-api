@@ -229,3 +229,9 @@ databaseChangeLog:
       file: db/changelog/2026/07/07-01-add-accessible-by-link-to-article.yaml
   - include:
       file: db/changelog/2026/07/07-02-add-active-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/08-01-add-telegram-posted-at-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/08-02-add-publish-to-telegram-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/08-03-add-telegram-sync-to-article.yaml
