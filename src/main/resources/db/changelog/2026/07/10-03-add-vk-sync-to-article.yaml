@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-10-03-add-vk-sync-to-article
+      author: Peterko
+      changes:
+        # id поста на стене (числовой post_id) — чтобы редактировать/удалять пост при правке
+        # или удалении новости. NULL = ещё не отправлено.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: vk_post_id
+                  type: BIGINT
+        # Строка вложения-обложки (photo<owner_id>_<id>) — пере-передаётся в wall.edit, чтобы правка
+        # текста не убрала фото с поста. NULL = пост без обложки.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: vk_attachment
+                  type: VARCHAR(64)
+        # Новость изменена после отправки — нужно синхронизировать пост на стене.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: vk_dirty
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: vk_dirty
+                  valueBoolean: false
+            where: vk_dirty IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: vk_dirty
+            columnDataType: BOOLEAN
+            defaultNullValue: false

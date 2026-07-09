@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -37,6 +38,7 @@ public class FilterMetadataResponse {
         private Object value;   // Full value for display
         private String name;    // Human readable name
         private Boolean selected; // Selection state (for sources)
+        private Map<String, List<String>> relations; // Parent filter key -> allowed parent value ids
     }
 
     @Data

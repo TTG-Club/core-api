@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-08-03-add-telegram-sync-to-article
+      author: Peterko
+      changes:
+        # id сообщения в канале — чтобы редактировать пост при правке новости. NULL = ещё не отправлено.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_message_id
+                  type: BIGINT
+        # Пост отправлен как фото (с обложкой) — тогда правим caption, иначе text.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_photo
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_photo
+                  valueBoolean: false
+            where: telegram_photo IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: telegram_photo
+            columnDataType: BOOLEAN
+            defaultNullValue: false
+        # Новость изменена после отправки — нужно синхронизировать пост в канале.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_dirty
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_dirty
+                  valueBoolean: false
+            where: telegram_dirty IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: telegram_dirty
+            columnDataType: BOOLEAN
+            defaultNullValue: false

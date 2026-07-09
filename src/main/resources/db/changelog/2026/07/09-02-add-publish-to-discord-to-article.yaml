@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-09-02-add-publish-to-discord-to-article
+      author: Peterko
+      changes:
+        # Галочка «опубликовать в Discord» на записи. По умолчанию false — существующие
+        # и новые записи в канал не уходят, пока автор явно не включит отправку.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: publish_to_discord
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: publish_to_discord
+                  valueBoolean: false
+            where: publish_to_discord IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: publish_to_discord
+            columnDataType: BOOLEAN
+            defaultNullValue: false

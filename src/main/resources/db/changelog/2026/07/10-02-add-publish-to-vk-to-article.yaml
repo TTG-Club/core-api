@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-10-02-add-publish-to-vk-to-article
+      author: Peterko
+      changes:
+        # Галочка «опубликовать в VK» на записи. По умолчанию false — существующие
+        # и новые записи на стену не уходят, пока автор явно не включит отправку.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: publish_to_vk
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: publish_to_vk
+                  valueBoolean: false
+            where: publish_to_vk IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: publish_to_vk
+            columnDataType: BOOLEAN
+            defaultNullValue: false

@@ -17,6 +17,8 @@ import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 
 import club.ttg.dnd5.domain.filter.model.FilterHashMapping;
 import club.ttg.dnd5.domain.filter.repository.FilterHashMappingRepository;
+import club.ttg.dnd5.domain.revision.model.RevisionOperation;
+import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import org.springframework.util.StringUtils;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -32,6 +34,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Service
 public class CreatureServiceImpl implements CreatureService {
+    public static final String REVISION_ENTITY_TYPE = "creature";
+
     private final CreatureRepository creatureRepository;
     private final CreatureQueryDslSearchService creatureQueryDslSearchService;
     private final SourceService sourceService;
@@ -39,6 +43,7 @@ public class CreatureServiceImpl implements CreatureService {
     private final CreatureMapper creatureMapper;
     private final FilterHashMappingRepository filterHashMappingRepository;
     private final FilterHashService filterHashService;
+    private final EntityRevisionService revisionService;
 
     @Override
     public Boolean existOrThrow(final String url) {
@@ -57,7 +62,8 @@ public class CreatureServiceImpl implements CreatureService {
         var tagValues = resolveHashes(request.getTag());
 
         var predicate = CreaturePredicateBuilder.build(request, traitValues, tagValues);
-        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+        return creatureQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize(),
+                        request.getGrouping(), request.getSorting())
                 .stream()
                 .map(creatureMapper::toShort)
                 .toList();
@@ -102,7 +108,7 @@ public class CreatureServiceImpl implements CreatureService {
         return request;
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Transactional
     @Override
     public String save(final CreatureRequest request) {
@@ -116,10 +122,12 @@ public class CreatureServiceImpl implements CreatureService {
         var book = sourceService.findByUrl(request.getSource().getUrl());
         var creature = creatureMapper.toEntity(request, book);
         persistTagHash(creature);
-        return creatureRepository.save(creature).getUrl();
+        String url = creatureRepository.save(creature).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.CREATE, findFormByUrl(url));
+        return url;
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Transactional
     @Override
     public String update(final String url, final CreatureRequest request) {
@@ -132,7 +140,9 @@ public class CreatureServiceImpl implements CreatureService {
             creatureMapper.updateEntity(request, book, existing);
             saveGallery(request.getUrl(), request.getGallery());
             persistTagHash(existing);
-            return creatureRepository.save(existing).getUrl();
+            String savedUrl = creatureRepository.save(existing).getUrl();
+            revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+            return savedUrl;
         }
 
         if (creatureRepository.existsById(request.getUrl())) {
@@ -144,16 +154,20 @@ public class CreatureServiceImpl implements CreatureService {
 
         saveGallery(request.getUrl(), request.getGallery());
         persistTagHash(creature);
-        return creatureRepository.save(creature).getUrl();
+        String savedUrl = creatureRepository.save(creature).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Transactional
     @Override
     public String delete(final String url) {
         Creature existing = findByUrl(url);
         existing.setHiddenEntity(true);
-        return creatureRepository.save(existing).getUrl();
+        String savedUrl = creatureRepository.save(existing).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.DELETE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
     @Override

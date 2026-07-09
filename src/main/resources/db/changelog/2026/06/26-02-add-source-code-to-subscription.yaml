@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-26-02-add-source-code-to-subscription
+      author: claude
+      changes:
+        - addColumn:
+            tableName: user_subscription
+            columns:
+              - column:
+                  name: source_code
+                  type: UUID

@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-06-27-01-drop-subscription-domain
+      author: claude
+      comment: >-
+        Подписки/коды/награды вынесены в subscriber-service. Удаляем их таблицы из core-api.
+        Достижения (achievement, user_achievement) ОСТАЮТСЯ и НЕ затрагиваются.
+      changes:
+        # Сначала зависящие junction-таблицы (FK на redemption_code), затем сами таблицы.
+        - sql:
+            splitStatements: false
+            stripComments: false
+            sql: >-
+              DROP TABLE IF EXISTS redemption_code_perk CASCADE;
+              DROP TABLE IF EXISTS redemption_code_achievement CASCADE;
+              DROP TABLE IF EXISTS redemption_code CASCADE;
+              DROP TABLE IF EXISTS user_reward CASCADE;
+              DROP TABLE IF EXISTS reward_resource CASCADE;
+              DROP TABLE IF EXISTS user_subscription CASCADE;
+
+  - changeSet:
+      id: 2026-06-27-01-remove-subscriber-role
+      author: claude
+      comment: >-
+        Роль SUBSCRIBER выдаётся теперь subscriber-service. Снимаем её со всех пользователей
+        (user_role ссылается на roles по FK) и удаляем саму роль из core-api.
+      changes:
+        - sql:
+            splitStatements: false
+            stripComments: false
+            sql: >-
+              DELETE FROM user_role
+              WHERE role_id IN (SELECT id FROM roles WHERE name = 'SUBSCRIBER');
+        - delete:
+            tableName: roles
+            where: name = 'SUBSCRIBER'

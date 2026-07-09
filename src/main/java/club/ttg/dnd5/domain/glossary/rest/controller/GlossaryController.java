@@ -59,7 +59,7 @@ public class GlossaryController {
         return glossaryService.findFormByUrl(url);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public String createGlossary(@RequestBody GlossaryRequest request) {
@@ -67,19 +67,19 @@ public class GlossaryController {
     }
 
     @Operation(summary = "Предпросмотр глоссария")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public GlossaryDetailedResponse preview(@RequestBody GlossaryRequest request) {
         return glossaryService.preview(request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PutMapping("/{url}")
     public String updateGlossary(@PathVariable String url, @Valid @RequestBody GlossaryRequest request) {
         return glossaryService.update(url, request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @DeleteMapping("/{url}")
     public void deleteGlossary(@PathVariable String url) {
         glossaryService.delete(url);

@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-06-01-add-type-to-article
+      author: Peterko
+      changes:
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: type
+                  type: VARCHAR(255)
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: type
+                  value: NEWS
+            where: type IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: type
+            columnDataType: VARCHAR(255)
+  - changeSet:
+      id: 2026-07-06-02-harden-article-deleted
+      author: Peterko
+      changes:
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: deleted
+                  valueBoolean: false
+            where: deleted IS NULL
+        - addDefaultValue:
+            tableName: article
+            columnName: deleted
+            columnDataType: BOOLEAN
+            defaultValueBoolean: false
+        - addNotNullConstraint:
+            tableName: article
+            columnName: deleted
+            columnDataType: BOOLEAN
+            defaultNullValue: false

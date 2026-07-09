@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-10-01-add-vk-posted-at-to-article
+      author: Peterko
+      changes:
+        # Момент отправки записи на стену сообщества VK. NULL = ещё не отправлена.
+        # Флаг идемпотентности: планировщик постит только записи с NULL и проставляет время.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: vk_posted_at
+                  type: DATETIME
+        # Backfill: уже опубликованные (живые) записи считаем «отправленными», чтобы при
+        # включении интеграции планировщик не залил стену старыми новостями. Черновики и
+        # запланированные на будущее оставляем NULL — они уйдут на стену в момент публикации.
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: vk_posted_at
+                  valueComputed: now()
+            where: draft = false AND active = true AND publish_date_time < now()

@@ -79,7 +79,7 @@ public class MagicItemController {
         return magicItemFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Добавление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно добавлен"),
@@ -93,13 +93,13 @@ public class MagicItemController {
     }
 
     @Operation(summary = "Предпросмотр предмета")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public MagicItemDetailResponse preview(@RequestBody MagicItemRequest request) {
         return magicItemService.preview(request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Обновление предмета")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Предмет успешно обновлен"),
@@ -112,7 +112,7 @@ public class MagicItemController {
         return magicItemService.updateItem(url, itemDto);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Скрывает предмет")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),

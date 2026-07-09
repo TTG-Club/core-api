@@ -1,7 +1,12 @@
 package club.ttg.dnd5.domain.filter.rest;
 
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureGrouping;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
+import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSorting;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellGrouping;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellSorting;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -164,6 +169,33 @@ class QueryRequestArgumentResolverTest
         }
 
         @Test
+        @DisplayName("группировка и сортировка списка заклинаний")
+        void spellListPresentation() throws Exception
+        {
+            SpellQueryRequest request = resolve("grouping=SCHOOL&sorting=LEVEL");
+            assertEquals(SpellGrouping.SCHOOL, request.getGrouping());
+            assertEquals(SpellSorting.LEVEL, request.getSorting());
+        }
+
+        @Test
+        @DisplayName("РіСЂСѓРїРїР° РєР»Р°СЃСЃР° РґР»СЏ РЅРµР·Р°РІРёСЃРёРјРѕР№ РїР°РіРёРЅР°С†РёРё")
+        void spellClassGroup() throws Exception
+        {
+            SpellQueryRequest request = resolve("classGroup=wizard-phb");
+
+            assertEquals("wizard-phb", request.getClassGroup());
+        }
+
+        @Test
+        @DisplayName("группировка и сортировка списка существ")
+        void creatureListPresentation() throws Exception
+        {
+            CreatureQueryRequest request = resolveCreature("grouping=TYPE&sorting=ENGLISH");
+            assertEquals(CreatureGrouping.TYPE, request.getGrouping());
+            assertEquals(CreatureSorting.ENGLISH, request.getSorting());
+        }
+
+        @Test
         @DisplayName("pageSize parses as page size")
         void pageSizeAlias() throws Exception
         {
@@ -309,10 +341,27 @@ class QueryRequestArgumentResolverTest
         return (SpellQueryRequest) resolver.resolveArgument(parameter, null, webRequest, null);
     }
 
+    private CreatureQueryRequest resolveCreature(String queryString) throws Exception
+    {
+        HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+        when(httpRequest.getQueryString()).thenReturn(queryString);
+
+        NativeWebRequest webRequest = mock(NativeWebRequest.class);
+        when(webRequest.getNativeRequest(HttpServletRequest.class)).thenReturn(httpRequest);
+
+        Method method = TestController.class.getMethod("searchCreatures", CreatureQueryRequest.class);
+        MethodParameter parameter = new MethodParameter(method, 0);
+
+        return (CreatureQueryRequest) resolver.resolveArgument(parameter, null, webRequest, null);
+    }
+
     /** Фиктивный контроллер для создания MethodParameter. */
     static class TestController
     {
         @SuppressWarnings("unused")
         public void search(SpellQueryRequest request) {}
+
+        @SuppressWarnings("unused")
+        public void searchCreatures(CreatureQueryRequest request) {}
     }
 }

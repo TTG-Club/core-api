@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.article.rest.controller;
 
-import org.springdoc.core.annotations.ParameterObject;
+import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
@@ -25,75 +25,88 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v2/articles")
-@Tag(name = "Новости", description = "REST API новостей")
+@Tag(name = "Статьи / Новости", description = "REST API статей / новостей")
 public class ArticleController {
 
     private final ArticleService articleService;
 
+    @Operation(summary = "Проверка занятости url (для админки при выборе slug): "
+            + "200 — url уже занят (в т.ч. черновиком/удалённой/отложенной), 404 — свободен")
+    @Secured({"ADMIN", "MODERATOR"})
     @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
     public boolean existByUrl(@PathVariable final String url) {
         articleService.validateUrlExistence(url);
         return true;
     }
 
-    @Operation(summary = "Полный объект новости по url")
+    @Operation(summary = "Полная статья / новость по url")
     @GetMapping("/{url}")
     public ArticleDetailedResponse findByUrl(@PathVariable final String url) {
         return articleService.findByUrl(url);
     }
 
-    @Operation(summary = "Создание новости")
-    @Secured("ADMIN")
+    @Operation(summary = "Создание статьи / новости")
+    @Secured({"ADMIN", "MODERATOR"})
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public String addArticle(@RequestBody @Valid final ArticleRequest request) {
         return articleService.save(request);
     }
 
-    @Operation(summary = "Обновление новости")
-    @Secured("ADMIN")
-    @PutMapping("/{id}")
-    public String updateArticle(@PathVariable final UUID id, @RequestBody final ArticleRequest request) {
-        return articleService.update(id, request);
+    @Operation(summary = "Обновление статьи / новости")
+    @Secured({"ADMIN", "MODERATOR"})
+    @PutMapping("/{url}")
+    public String updateArticle(@PathVariable final String url, @RequestBody @Valid final ArticleRequest request) {
+        return articleService.update(url, request);
     }
 
-    @Operation(summary = "Полный форма для редактирования новости по id")
-    @GetMapping("/{id}/raw")
-    public ArticleRequest getById(@PathVariable final UUID id) {
-        return articleService.findFormById(id);
+    @Operation(summary = "Полная форма для редактирования статьи / новости по url")
+    @Secured({"ADMIN", "MODERATOR"})
+    @GetMapping("/{url}/raw")
+    public ArticleRequest getRawByUrl(@PathVariable final String url) {
+        return articleService.findFormByUrl(url);
     }
 
-    @Operation(summary = "Предпросмотр новости")
-    @Secured("ADMIN")
+    @Operation(summary = "Предпросмотр статьи / новости")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public ArticleDetailedResponse preview(@RequestBody @Valid final ArticleRequest request) {
         return articleService.preview(request);
     }
 
-    @Operation(summary = "Помечает новость как скрытую для списков")
-    @Secured("ADMIN")
-    @DeleteMapping("{id}")
-    public String deleteArticle(@PathVariable final UUID id) {
-        return articleService.delete(id);
+    @Operation(summary = "Помечает статью / новость как скрытую для списков")
+    @Secured({"ADMIN", "MODERATOR"})
+    @DeleteMapping("/{url}")
+    public String deleteArticle(@PathVariable final String url) {
+        return articleService.delete(url);
     }
 
-    @Operation(summary = "Получить cnt последних новостей")
+    @Operation(summary = "Получить cnt последних опубликованных статей / новостей (с фильтром по типу и поиском)")
     @GetMapping("/search")
-    public List<ArticleShortResponse> search(@RequestParam(required = false)
-            @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
-        return articleService.searchPublished(cnt);
+    public List<ArticleShortResponse> search(
+            @RequestParam(required = false)
+            @Schema(description = "Сколько статей / новостей грузить (дефолт - 10)") final Integer cnt,
+            @RequestParam(required = false)
+            @Schema(description = "Фильтр по типу: NEWS или ARTICLE (по умолчанию — все)") final ArticleType type,
+            @RequestParam(required = false)
+            @Schema(description = "Поиск по подстроке в заголовке (регистронезависимо)") final String search) {
+        return articleService.searchPublished(cnt, type, search);
     }
 
-    @Operation(summary = "Получить cnt последних новостей")
+    @Operation(summary = "Получить cnt последних неопубликованных статей / новостей (для модерации, с фильтром и поиском)")
     @GetMapping("/search/unpublished")
-    @Secured("ADMIN")
-    public List<ArticleShortResponse> searchUnpublished(@RequestParam(required = false)
-            @Schema(description = "Сколько новостей грузить (дефолт - 10)") final Integer cnt) {
-        return articleService.searchUnpublished(cnt);
+    @Secured({"ADMIN", "MODERATOR"})
+    public List<ArticleShortResponse> searchUnpublished(
+            @RequestParam(required = false)
+            @Schema(description = "Сколько статей / новостей грузить (дефолт - 10)") final Integer cnt,
+            @RequestParam(required = false)
+            @Schema(description = "Фильтр по типу: NEWS или ARTICLE (по умолчанию — все)") final ArticleType type,
+            @RequestParam(required = false)
+            @Schema(description = "Поиск по подстроке в заголовке (регистронезависимо)") final String search) {
+        return articleService.searchUnpublished(cnt, type, search);
     }
 }

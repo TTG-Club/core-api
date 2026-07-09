@@ -18,6 +18,7 @@ public enum SectionType {
     GLOSSARY("glossary"),
     CLASS("classes"),
     SOURCE("sources"),
+    ARTICLE("articles"),
     TOKEN_BORDER("tokenator/border");
 
     @JsonValue

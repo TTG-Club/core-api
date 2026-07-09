@@ -66,7 +66,7 @@ public class CreatureController {
     }
 
     @Operation(summary = "Добавление существа")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public String create(@RequestBody CreatureRequest request) {
@@ -74,14 +74,14 @@ public class CreatureController {
     }
 
     @Operation(summary = "Предпросмотр существа")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public CreatureDetailResponse preview(@RequestBody CreatureRequest request) {
         return creatureService.preview(request);
     }
 
     @Operation(summary = "Обновление существа")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PutMapping("/{url}")
     public String update(@PathVariable String url,
                                       @Valid
@@ -90,7 +90,7 @@ public class CreatureController {
     }
 
     @Operation(summary = "Сокрытие существа")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @DeleteMapping("/{url}")
     public String delete(@PathVariable String url) {
         return creatureService.delete(url);

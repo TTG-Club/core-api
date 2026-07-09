@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.article.rest.dto;
 
+import club.ttg.dnd5.domain.article.model.ArticleStatus;
+import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -21,14 +23,41 @@ import java.util.UUID;
 @Setter
 public class ArticleDetailedResponse {
     @NotNull
+    @Schema(description = "Идентификатор статьи / новости")
     private UUID id;
 
     @NotNull
+    @Schema(description = "Уникальный url статьи / новости (slug)")
     private String url;
+
+    @NotNull
+    @Schema(description = "Тип (ключ): NEWS или ARTICLE")
+    private ArticleType type;
+
+    @NotNull
+    @Schema(description = "Человеко-читаемое название типа: «Новость» или «Статья»")
+    private String typeName;
+
+    @NotNull
+    @Schema(description = "Статус (ключ): DRAFT, SCHEDULED, ACTIVE или INACTIVE")
+    private ArticleStatus status;
+
+    @NotNull
+    @Schema(description = "Человеко-читаемый статус: «Черновик» / «Запланирована» / «Активна» / «Неактивна»")
+    private String statusName;
+
+    @Schema(description = "Черновик (не опубликована)")
+    private boolean draft;
+
+    @Schema(description = "Активна (в общем доступе); false — неактивна (снята с сайта, но опубликована)")
+    private boolean active;
 
     @Nullable
     @Schema(description = "Дата и время публикации")
     private Instant publishDateTime;
+
+    @Schema(description = "Доступна по прямой ссылке даже если не опубликована")
+    private boolean accessibleByLink;
 
     @NotNull
     @Schema(description = "Заголовок")
@@ -44,7 +73,7 @@ public class ArticleDetailedResponse {
     private String preview;
 
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    @Schema(description = "Текст новости")
+    @Schema(description = "Текст статьи / новости")
     @NotNull
     private String content;
 

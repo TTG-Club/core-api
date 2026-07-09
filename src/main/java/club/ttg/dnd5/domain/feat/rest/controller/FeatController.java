@@ -85,7 +85,7 @@ public class FeatController {
         return featFilterService.getFilterMetadata(source != null ? source : Set.of());
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Добавление черты")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Черта успешно добавлена"),
@@ -99,13 +99,13 @@ public class FeatController {
     }
 
     @Operation(summary = "Предпросмотр черты")
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")
     public FeatDetailResponse preview(@RequestBody FeatRequest request) {
         return featService.preview(request);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Обновление черты")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черта успешно обновлена"),
@@ -119,7 +119,7 @@ public class FeatController {
         return featService.updateFeat(url, featDto);
     }
 
-    @Secured("ADMIN")
+    @Secured({"ADMIN", "MODERATOR"})
     @Operation(summary = "Скрывает черту")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Черта удалена из общего списка"),
