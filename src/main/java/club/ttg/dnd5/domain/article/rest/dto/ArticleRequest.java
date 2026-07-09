@@ -64,6 +64,11 @@ public class ArticleRequest {
             + "Независима от Telegram.")
     private boolean publishToDiscord;
 
+    @Schema(description = "Опубликовать на стену сообщества ВКонтакте. true — при публикации (сейчас или по "
+            + "наступлении даты) запись один раз уйдёт на стену, если интеграция включена глобально. false — "
+            + "на стену не отправлять. Независима от Telegram и Discord.")
+    private boolean publishToVk;
+
     @Schema(description = "Текст превью")
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)

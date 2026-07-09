@@ -267,4 +267,99 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
     @Query("UPDATE Article a SET a.discordMessageId = null, a.discordPostedAt = null, a.discordDirty = false "
             + "WHERE a.id = :id")
     void clearDiscordPost(@Param("id") UUID id);
+
+    /**
+     * Записи, которые пора отправить в VK: с включённой галочкой (publishToVk=true), живые и опубликованные
+     * (не удалены, не черновик, активны, дата публикации наступила) и ещё не отправленные (vkPostedAt IS NULL).
+     * Один и тот же запрос закрывает и «опубликовано сейчас», и «наступила запланированная дата». Независим
+     * от Telegram и Discord.
+     */
+    @Query("""
+            SELECT a FROM Article a
+            WHERE a.deleted = false
+              AND a.draft = false
+              AND a.active = true
+              AND a.publishToVk = true
+              AND a.publishDateTime < :now
+              AND a.vkPostedAt IS NULL
+            ORDER BY a.publishDateTime ASC
+            """)
+    List<Article> findDueForVk(@Param("now") Instant now, Limit limit);
+
+    /**
+     * Атомарно «занимает» запись под отправку в VK: проставляет время ТОЛЬКО если она ещё не занята
+     * ({@code vkPostedAt IS NULL}). Занимаем ДО сетевого вызова, поэтому:
+     * — параллельный тик / второй инстанс не отправят дубль (займёт кто-то один);
+     * — сбой после успешной отправки (упавшая транзакция/рестарт) не приведёт к повторному посту.
+     *
+     * @return 1 — заняли (можно отправлять), 0 — уже занята кем-то (пропускаем).
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkPostedAt = :postedAt WHERE a.id = :id AND a.vkPostedAt IS NULL")
+    int claimForVk(@Param("id") UUID id, @Param("postedAt") Instant postedAt);
+
+    /**
+     * Снимает отметку об отправке — если отправка не удалась по временной причине, чтобы
+     * повторить попытку на следующем тике.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkPostedAt = null WHERE a.id = :id")
+    void releaseVkClaim(@Param("id") UUID id);
+
+    /**
+     * Записи, у которых пост на стене уже есть (vkPostId), новость изменена после отправки (vkDirty=true) и
+     * она всё ещё публична (те же условия, что в findDueForVk) — их нужно синхронизировать (отредактировать пост).
+     */
+    @Query("""
+            SELECT a FROM Article a
+            WHERE a.deleted = false
+              AND a.draft = false
+              AND a.active = true
+              AND a.publishToVk = true
+              AND a.publishDateTime < :now
+              AND a.vkPostId IS NOT NULL
+              AND a.vkDirty = true
+            ORDER BY a.updatedAt ASC
+            """)
+    List<Article> findDirtyForVk(@Param("now") Instant now, Limit limit);
+
+    /**
+     * Фиксирует успешную отправку: id поста на стене и строку вложения-обложки (для сохранения фото при правке).
+     * Момент отправки (vkPostedAt) уже проставлен на этапе claim. Флаг vkDirty НЕ трогаем: если правка прилетела
+     * в окне отправки, она останется помеченной и синхронизируется следующим тиком.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkPostId = :postId, a.vkAttachment = :attachment WHERE a.id = :id")
+    void markVkSent(@Param("id") UUID id, @Param("postId") Long postId, @Param("attachment") String attachment);
+
+    /**
+     * Снимает флаг правки — только если запись не изменилась с момента загрузки (updatedAt совпадает).
+     * Compare-and-clear: правка, прилетевшая во время отправки на стену, сдвинет updatedAt, clear не сработает,
+     * и синхронизация повторится на следующем тике с самым свежим текстом.
+     *
+     * @return 1 — флаг снят, 0 — запись за это время изменилась (флаг оставлен).
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkDirty = false WHERE a.id = :id AND a.updatedAt = :updatedAt")
+    int clearVkDirtyIfUnchanged(@Param("id") UUID id, @Param("updatedAt") Instant updatedAt);
+
+    /**
+     * Удалённые с сайта записи, у которых ещё есть пост на стене (vkPostId) — их надо удалить из VK.
+     */
+    @Query("""
+            SELECT a FROM Article a
+            WHERE a.deleted = true
+              AND a.vkPostId IS NOT NULL
+            ORDER BY a.updatedAt ASC
+            """)
+    List<Article> findDeletedForVk(Limit limit);
+
+    /**
+     * Сбрасывает состояние отправки в VK (после удаления поста со стены). Обнуляет и время отправки,
+     * чтобы восстановленная (снятая с удаления) запись снова опубликовалась.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkPostId = null, a.vkAttachment = null, a.vkPostedAt = null, a.vkDirty = false "
+            + "WHERE a.id = :id")
+    void clearVkPost(@Param("id") UUID id);
 }

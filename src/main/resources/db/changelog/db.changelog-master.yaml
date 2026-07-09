@@ -241,3 +241,9 @@ databaseChangeLog:
       file: db/changelog/2026/07/09-02-add-publish-to-discord-to-article.yaml
   - include:
       file: db/changelog/2026/07/09-03-add-discord-sync-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/10-01-add-vk-posted-at-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/10-02-add-publish-to-vk-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/10-03-add-vk-sync-to-article.yaml

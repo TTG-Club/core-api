@@ -72,6 +72,13 @@ public class ArticleService {
             toUpdate.setDiscordDirty(true);
         }
 
+        // То же для VK: занята под отправку или уже отправлена (и всё ещё помечена к публикации) —
+        // пометить на синхронизацию. Независимо от Telegram и Discord.
+        boolean vkClaimedOrPosted = toUpdate.getVkPostedAt() != null || toUpdate.getVkPostId() != null;
+        if (vkClaimedOrPosted && toUpdate.isPublishToVk()) {
+            toUpdate.setVkDirty(true);
+        }
+
         String savedUrl = articleRepository.save(toUpdate).getUrl();
         revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
         return savedUrl;
@@ -188,6 +195,50 @@ public class ArticleService {
     @Transactional
     public void clearDiscordPost(UUID id) {
         articleRepository.clearDiscordPost(id);
+    }
+
+    /**
+     * Пытается занять запись под отправку в VK (см. {@link ArticleRepository#claimForVk}).
+     * Короткая отдельная транзакция ДО сетевого вызова.
+     *
+     * @return {@code true}, если заняли (можно отправлять); {@code false}, если уже занята.
+     */
+    @Transactional
+    public boolean claimVkPost(UUID id, Instant when) {
+        return articleRepository.claimForVk(id, when) == 1;
+    }
+
+    /**
+     * Освобождает ранее занятую запись после неуспешной отправки — чтобы повторить на следующем тике.
+     */
+    @Transactional
+    public void releaseVkPost(UUID id) {
+        articleRepository.releaseVkClaim(id);
+    }
+
+    /**
+     * Фиксирует успешную отправку в VK: id поста на стене и строку вложения-обложки.
+     */
+    @Transactional
+    public void markVkSent(UUID id, Long postId, String attachment) {
+        articleRepository.markVkSent(id, postId, attachment);
+    }
+
+    /**
+     * Снимает флаг правки после синхронизации — только если запись не изменилась с момента загрузки
+     * (updatedAt совпадает). Иначе правку, прилетевшую во время отправки, не теряем: флаг остаётся.
+     */
+    @Transactional
+    public void clearVkDirty(UUID id, Instant updatedAt) {
+        articleRepository.clearVkDirtyIfUnchanged(id, updatedAt);
+    }
+
+    /**
+     * Сбрасывает состояние отправки в VK после удаления поста со стены.
+     */
+    @Transactional
+    public void clearVkPost(UUID id) {
+        articleRepository.clearVkPost(id);
     }
 
     public boolean existsByUrl(String url) {

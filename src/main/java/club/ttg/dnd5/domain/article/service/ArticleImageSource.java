@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
  * Достаёт байты обложки новости из S3, чтобы залить их в канал файлом (а не ссылкой) — общий источник
- * для Telegram- и Discord-публикаторов. previewImageUrl хранится как относительный путь {@code /s3/<key>};
+ * для Telegram-, Discord- и VK-публикаторов. previewImageUrl хранится как относительный путь {@code /s3/<key>};
  * публичного URL у объекта нет (bucket закрыт), поэтому картинку читаем напрямую из S3 — доступ у сервиса есть.
  */
 @Slf4j

@@ -28,6 +28,10 @@ public interface ArticleMapper {
     @Mapping(target = "discordPostedAt", ignore = true)
     @Mapping(target = "discordMessageId", ignore = true)
     @Mapping(target = "discordDirty", ignore = true)
+    @Mapping(target = "vkPostedAt", ignore = true)
+    @Mapping(target = "vkPostId", ignore = true)
+    @Mapping(target = "vkAttachment", ignore = true)
+    @Mapping(target = "vkDirty", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     Article toEntity(ArticleRequest article);
 
@@ -43,6 +47,10 @@ public interface ArticleMapper {
     @Mapping(target = "discordPostedAt", ignore = true)
     @Mapping(target = "discordMessageId", ignore = true)
     @Mapping(target = "discordDirty", ignore = true)
+    @Mapping(target = "vkPostedAt", ignore = true)
+    @Mapping(target = "vkPostId", ignore = true)
+    @Mapping(target = "vkAttachment", ignore = true)
+    @Mapping(target = "vkDirty", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     void updateEntity(@MappingTarget Article article, ArticleRequest articleRequest);
 

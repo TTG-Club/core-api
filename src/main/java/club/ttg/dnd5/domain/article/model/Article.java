@@ -24,7 +24,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
-// UPDATE только по реально изменённым колонкам: правка новости не должна затирать telegram_*/discord_*
+// UPDATE только по реально изменённым колонкам: правка новости не должна затирать telegram_*/discord_*/vk_*
 // поля, которыми асинхронно владеют планировщики публикации (claim / message_id / dirty).
 @DynamicUpdate
 @Table(name = "article",
@@ -140,6 +140,40 @@ public class Article extends Timestamped {
      */
     @Column(nullable = false)
     private boolean discordDirty;
+
+    /**
+     * Пожелание автора отправить запись на стену сообщества ВКонтакте. Управляется галочкой в админке.
+     * Постится только при publishToVk=true И включённой глобально интеграции (заданы токен и id сообщества),
+     * один раз при попадании записи в общий доступ (см. {@code vkPostedAt}). Независима от Telegram и Discord.
+     */
+    @Column(nullable = false)
+    private boolean publishToVk;
+
+    /**
+     * Момент отправки записи на стену VK. NULL — ещё не отправлена.
+     * Служит флагом идемпотентности: планировщик постит запись один раз и проставляет время,
+     * поэтому повторное сохранение/редактирование или снятие-и-возврат публикации не дублируют пост.
+     */
+    private Instant vkPostedAt;
+
+    /**
+     * id поста на стене сообщества (числовой post_id). Заполняется после успешной отправки, нужен для правки
+     * ({@code wall.edit}) и удаления ({@code wall.delete}) поста. NULL — пост на стену ещё не ушёл.
+     */
+    private Long vkPostId;
+
+    /**
+     * Строка вложения-обложки поста ({@code photo<owner_id>_<id>}). Заполняется, если пост ушёл с обложкой:
+     * пере-передаётся в {@code wall.edit}, чтобы правка текста не убрала фото. NULL — пост без обложки.
+     */
+    @Column(length = 64)
+    private String vkAttachment;
+
+    /**
+     * Новость изменена после отправки на стену — планировщик синхронизирует пост (wall.edit) и снимет флаг.
+     */
+    @Column(nullable = false)
+    private boolean vkDirty;
 
     /**
      * Вычисляемый статус: черновик / запланирована / активна / неактивна.
