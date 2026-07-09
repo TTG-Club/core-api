@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-08-02-add-publish-to-telegram-to-article
+      author: Peterko
+      changes:
+        # Галочка «опубликовать в Telegram» на записи. По умолчанию false — существующие
+        # и новые записи в канал не уходят, пока автор явно не включит отправку.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: publish_to_telegram
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: publish_to_telegram
+                  valueBoolean: false
+            where: publish_to_telegram IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: publish_to_telegram
+            columnDataType: BOOLEAN
+            defaultNullValue: false

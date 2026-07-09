@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-07-01-add-accessible-by-link-to-article
+      author: Peterko
+      changes:
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: accessible_by_link
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: accessible_by_link
+                  valueBoolean: false
+            where: accessible_by_link IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: accessible_by_link
+            columnDataType: BOOLEAN
+            defaultNullValue: false

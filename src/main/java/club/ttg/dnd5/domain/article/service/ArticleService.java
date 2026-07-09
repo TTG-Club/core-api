@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.article.service;
 
 import club.ttg.dnd5.domain.article.model.Article;
+import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.domain.article.repository.ArticleRepository;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
@@ -10,12 +11,14 @@ import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,25 +33,212 @@ public class ArticleService {
     private final ArticleMapper articleMapper;
     private final EntityRevisionService revisionService;
 
+    @Transactional
     public String save(ArticleRequest request) {
         validateUrlNonExistence(request.getUrl());
 
         Article toSave = articleMapper.toEntity(request);
+        applyPublication(toSave, request);
 
         Article saved = articleRepository.save(toSave);
-        revisionService.record(REVISION_ENTITY_TYPE, saved.getId().toString(), RevisionOperation.CREATE,
-                findFormById(saved.getId()));
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
+                findFormByUrl(saved.getUrl()));
         return saved.getUrl();
     }
 
-    public String update(UUID id, ArticleRequest request) {
-        Article toUpdate = getById(id);
+    @Transactional
+    public String update(String url, ArticleRequest request) {
+        Article toUpdate = getByUrl(url);
+
+        if (!url.equals(request.getUrl())) {
+            validateUrlNonExistence(request.getUrl());
+        }
 
         articleMapper.updateEntity(toUpdate, request);
+        applyPublication(toUpdate, request);
 
-        String url = articleRepository.save(toUpdate).getUrl();
-        revisionService.record(REVISION_ENTITY_TYPE, id.toString(), RevisionOperation.UPDATE, findFormById(id));
-        return url;
+        // Занята под отправку или уже отправлена в канал (и всё ещё помечена к публикации) — пометить на
+        // синхронизацию. Учитываем telegramPostedAt (claim), чтобы правка в окне ПЕРВОЙ отправки не потерялась:
+        // тогда message_id ещё null, но claim уже стоит, и после отправки поллер синхронизирует свежий текст.
+        boolean claimedOrPosted = toUpdate.getTelegramPostedAt() != null || toUpdate.getTelegramMessageId() != null;
+        if (claimedOrPosted && toUpdate.isPublishToTelegram()) {
+            toUpdate.setTelegramDirty(true);
+        }
+
+        // То же для Discord: занята под отправку или уже отправлена (и всё ещё помечена к публикации) —
+        // пометить на синхронизацию. Независимо от Telegram.
+        boolean discordClaimedOrPosted = toUpdate.getDiscordPostedAt() != null || toUpdate.getDiscordMessageId() != null;
+        if (discordClaimedOrPosted && toUpdate.isPublishToDiscord()) {
+            toUpdate.setDiscordDirty(true);
+        }
+
+        // То же для VK: занята под отправку или уже отправлена (и всё ещё помечена к публикации) —
+        // пометить на синхронизацию. Независимо от Telegram и Discord.
+        boolean vkClaimedOrPosted = toUpdate.getVkPostedAt() != null || toUpdate.getVkPostId() != null;
+        if (vkClaimedOrPosted && toUpdate.isPublishToVk()) {
+            toUpdate.setVkDirty(true);
+        }
+
+        String savedUrl = articleRepository.save(toUpdate).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
+        return savedUrl;
+    }
+
+    /**
+     * Переносит флаги публикации в поля сущности.
+     * draft=true — черновик: не публична, не активна; дату можно сохранить на будущее.
+     * draft=false — опубликована: active=true — активна (будущая дата = запланирована; если дата не задана
+     * и её ещё нет — ставим «сейчас»); active=false — неактивна (снята с сайта, дату публикации не трогаем).
+     * Черновик и активность/неактивность — независимые оси: неактивная запись остаётся опубликованной.
+     */
+    private void applyPublication(Article article, ArticleRequest request) {
+        if (request.isDraft()) {
+            article.setDraft(true);
+            article.setActive(false);
+            article.setPublishDateTime(request.getPublishDateTime());
+            return;
+        }
+        article.setDraft(false);
+        article.setActive(request.isActive());
+        if (request.isActive()) {
+            if (request.getPublishDateTime() != null) {
+                article.setPublishDateTime(request.getPublishDateTime());
+            } else if (article.getPublishDateTime() == null) {
+                article.setPublishDateTime(Instant.now());
+            }
+        }
+    }
+
+    /**
+     * Пытается занять запись под отправку в Telegram (см. {@link ArticleRepository#claimForTelegram}).
+     * Короткая отдельная транзакция ДО сетевого вызова.
+     *
+     * @return {@code true}, если заняли (можно отправлять); {@code false}, если уже занята.
+     */
+    @Transactional
+    public boolean claimTelegramPost(UUID id, Instant when) {
+        return articleRepository.claimForTelegram(id, when) == 1;
+    }
+
+    /**
+     * Освобождает ранее занятую запись после неуспешной отправки — чтобы повторить на следующем тике.
+     */
+    @Transactional
+    public void releaseTelegramPost(UUID id) {
+        articleRepository.releaseTelegramClaim(id);
+    }
+
+    /**
+     * Фиксирует успешную отправку в Telegram: id поста в канале и тип (фото/текст).
+     */
+    @Transactional
+    public void markTelegramSent(UUID id, Long messageId, boolean photo) {
+        articleRepository.markTelegramSent(id, messageId, photo);
+    }
+
+    /**
+     * Снимает флаг правки после синхронизации — только если запись не изменилась с момента загрузки
+     * (updatedAt совпадает). Иначе правку, прилетевшую во время отправки, не теряем: флаг остаётся.
+     */
+    @Transactional
+    public void clearTelegramDirty(UUID id, Instant updatedAt) {
+        articleRepository.clearTelegramDirtyIfUnchanged(id, updatedAt);
+    }
+
+    /**
+     * Сбрасывает состояние отправки в Telegram после удаления поста из канала.
+     */
+    @Transactional
+    public void clearTelegramPost(UUID id) {
+        articleRepository.clearTelegramPost(id);
+    }
+
+    /**
+     * Пытается занять запись под отправку в Discord (см. {@link ArticleRepository#claimForDiscord}).
+     * Короткая отдельная транзакция ДО сетевого вызова.
+     *
+     * @return {@code true}, если заняли (можно отправлять); {@code false}, если уже занята.
+     */
+    @Transactional
+    public boolean claimDiscordPost(UUID id, Instant when) {
+        return articleRepository.claimForDiscord(id, when) == 1;
+    }
+
+    /**
+     * Освобождает ранее занятую запись после неуспешной отправки — чтобы повторить на следующем тике.
+     */
+    @Transactional
+    public void releaseDiscordPost(UUID id) {
+        articleRepository.releaseDiscordClaim(id);
+    }
+
+    /**
+     * Фиксирует успешную отправку в Discord: id поста в канале.
+     */
+    @Transactional
+    public void markDiscordSent(UUID id, String messageId) {
+        articleRepository.markDiscordSent(id, messageId);
+    }
+
+    /**
+     * Снимает флаг правки после синхронизации — только если запись не изменилась с момента загрузки
+     * (updatedAt совпадает). Иначе правку, прилетевшую во время отправки, не теряем: флаг остаётся.
+     */
+    @Transactional
+    public void clearDiscordDirty(UUID id, Instant updatedAt) {
+        articleRepository.clearDiscordDirtyIfUnchanged(id, updatedAt);
+    }
+
+    /**
+     * Сбрасывает состояние отправки в Discord после удаления поста из канала.
+     */
+    @Transactional
+    public void clearDiscordPost(UUID id) {
+        articleRepository.clearDiscordPost(id);
+    }
+
+    /**
+     * Пытается занять запись под отправку в VK (см. {@link ArticleRepository#claimForVk}).
+     * Короткая отдельная транзакция ДО сетевого вызова.
+     *
+     * @return {@code true}, если заняли (можно отправлять); {@code false}, если уже занята.
+     */
+    @Transactional
+    public boolean claimVkPost(UUID id, Instant when) {
+        return articleRepository.claimForVk(id, when) == 1;
+    }
+
+    /**
+     * Освобождает ранее занятую запись после неуспешной отправки — чтобы повторить на следующем тике.
+     */
+    @Transactional
+    public void releaseVkPost(UUID id) {
+        articleRepository.releaseVkClaim(id);
+    }
+
+    /**
+     * Фиксирует успешную отправку в VK: id поста на стене и строку вложения-обложки.
+     */
+    @Transactional
+    public void markVkSent(UUID id, Long postId, String attachment) {
+        articleRepository.markVkSent(id, postId, attachment);
+    }
+
+    /**
+     * Снимает флаг правки после синхронизации — только если запись не изменилась с момента загрузки
+     * (updatedAt совпадает). Иначе правку, прилетевшую во время отправки, не теряем: флаг остаётся.
+     */
+    @Transactional
+    public void clearVkDirty(UUID id, Instant updatedAt) {
+        articleRepository.clearVkDirtyIfUnchanged(id, updatedAt);
+    }
+
+    /**
+     * Сбрасывает состояние отправки в VK после удаления поста со стены.
+     */
+    @Transactional
+    public void clearVkPost(UUID id) {
+        articleRepository.clearVkPost(id);
     }
 
     public boolean existsByUrl(String url) {
@@ -57,58 +247,78 @@ public class ArticleService {
 
     public void validateUrlNonExistence(String url) {
         if (existsByUrl(url)) {
-            throw new EntityExistException(String.format("Статья с url %s уже существует", url));
+            throw new EntityExistException(String.format("Статья / новость с url %s уже существует", url));
         }
     }
 
     public void validateUrlExistence(String url) {
         if (!existsByUrl(url)) {
-            throw new EntityNotFoundException(String.format("Статья с url %s не существует", url));
+            throw new EntityNotFoundException(String.format("Статья / новость с url %s не существует", url));
         }
     }
 
     public Article getByUrl(String url) {
         return articleRepository.findByUrl(url)
-                .orElseThrow(() -> new EntityNotFoundException(String.format("Статья с url %s не существует", url)));
+                .orElseThrow(() -> new EntityNotFoundException(String.format("Статья / новость с url %s не существует", url)));
     }
 
-    public Article getById(UUID id) {
-        return articleRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(String.format("Статья с id %s не существует", id)));
-    }
-
+    /**
+     * Публичная выдача: возвращает запись только если она не удалена и уже опубликована.
+     */
     public ArticleDetailedResponse findByUrl(String url) {
-        return articleMapper.toDetailedResponse(getByUrl(url));
+        Article article = articleRepository.findAccessibleByUrl(url, Instant.now())
+                .orElseThrow(() -> new EntityNotFoundException(String.format("Статья / новость с url %s не существует", url)));
+        return articleMapper.toDetailedResponse(article);
     }
 
-    public ArticleRequest findFormById(UUID id) {
-        return articleMapper.toRequest(getById(id));
+    public ArticleRequest findFormByUrl(String url) {
+        return articleMapper.toRequest(getByUrl(url));
     }
 
     public ArticleDetailedResponse preview(ArticleRequest request) {
-        return articleMapper.toDetailedResponse(articleMapper.toEntity(request));
+        Article entity = articleMapper.toEntity(request);
+        applyPublication(entity, request);
+        Instant now = Instant.now();
+        entity.setId(new UUID(0L, 0L));
+        entity.setCreatedAt(now);
+        entity.setUpdatedAt(now);
+        return articleMapper.toDetailedResponse(entity);
     }
 
-    public String delete(UUID id) {
-        Article toDelete = getById(id);
+    @Transactional
+    public String delete(String url) {
+        Article toDelete = getByUrl(url);
         toDelete.setDeleted(true);
-        String url = articleRepository.save(toDelete).getUrl();
-        revisionService.record(REVISION_ENTITY_TYPE, id.toString(), RevisionOperation.DELETE, findFormById(id));
-        return url;
+        String savedUrl = articleRepository.save(toDelete).getUrl();
+        revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.DELETE, findFormByUrl(savedUrl));
+        return savedUrl;
     }
 
 
-    public List<ArticleShortResponse> searchPublished(Integer cnt) {
-        return articleMapper.toShortResponseList(articleRepository.findAllByDeletedFalseAndPublishDateTimeBeforeOrderByPublishDateTimeDesc(
-                Instant.now(),
-                Optional.ofNullable(cnt)
-                        .map(Limit::of)
-                        .orElseGet(() -> Limit.of(DEFAULT_SEARCH_SIZE))));
+    public List<ArticleShortResponse> searchPublished(Integer cnt, ArticleType type, String search) {
+        return articleMapper.toShortResponseList(
+                articleRepository.findPublished(Instant.now(), type, toLikePattern(search), toLimit(cnt)));
     }
 
-    public List<ArticleShortResponse> searchUnpublished(Integer cnt) {
-        return articleMapper.toShortResponseList(articleRepository.findAllByDeletedFalseOrderByCreatedAtDesc(Optional.ofNullable(cnt)
+    public List<ArticleShortResponse> searchUnpublished(Integer cnt, ArticleType type, String search) {
+        return articleMapper.toShortResponseList(
+                articleRepository.findUnpublished(Instant.now(), type, toLikePattern(search), toLimit(cnt)));
+    }
+
+    private Limit toLimit(Integer cnt) {
+        return Optional.ofNullable(cnt)
                 .map(Limit::of)
-                .orElseGet(() -> Limit.of(DEFAULT_SEARCH_SIZE))));
+                .orElseGet(() -> Limit.of(DEFAULT_SEARCH_SIZE));
+    }
+
+    /**
+     * Готовый LIKE-шаблон в нижнем регистре: "%" — без фильтра (совпадает со всеми заголовками),
+     * иначе "%<текст>%". Всегда непустая строка, поэтому параметр биндится как varchar (не bytea).
+     */
+    private String toLikePattern(String search) {
+        if (search == null || search.isBlank()) {
+            return "%";
+        }
+        return "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
     }
 }

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.service;
 
+import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.common.dictionary.*;
@@ -83,6 +84,12 @@ public class DictionariesService {
                 .label(label)
                 .value(value)
                 .build();
+    }
+
+    public Collection<SelectOptionDto> getArticleTypes() {
+        return Arrays.stream(ArticleType.values())
+                .map(type -> createBaseOptionDTO(type.getName(), type.name()))
+                .collect(Collectors.toList());
     }
 
     public Collection<DiceOptionDto> getDices() {

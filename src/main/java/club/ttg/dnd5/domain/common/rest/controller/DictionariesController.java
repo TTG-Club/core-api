@@ -784,6 +784,23 @@ public class DictionariesController {
         return dictionariesService.getSourceTypes();
     }
 
+    @Operation(summary = "Типы статей / новостей")
+    @GetMapping("/article/types")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Новость", "value": "NEWS" },
+                              { "label": "Статья", "value": "ARTICLE" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getArticleTypes() {
+        return dictionariesService.getArticleTypes();
+    }
+
     @Operation(summary = "Типы нотификаций")
     @GetMapping("/notification/types")
     @ApiResponse(
