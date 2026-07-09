@@ -235,3 +235,9 @@ databaseChangeLog:
       file: db/changelog/2026/07/08-02-add-publish-to-telegram-to-article.yaml
   - include:
       file: db/changelog/2026/07/08-03-add-telegram-sync-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/09-01-add-discord-posted-at-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/09-02-add-publish-to-discord-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/09-03-add-discord-sync-to-article.yaml

@@ -65,6 +65,13 @@ public class ArticleService {
             toUpdate.setTelegramDirty(true);
         }
 
+        // То же для Discord: занята под отправку или уже отправлена (и всё ещё помечена к публикации) —
+        // пометить на синхронизацию. Независимо от Telegram.
+        boolean discordClaimedOrPosted = toUpdate.getDiscordPostedAt() != null || toUpdate.getDiscordMessageId() != null;
+        if (discordClaimedOrPosted && toUpdate.isPublishToDiscord()) {
+            toUpdate.setDiscordDirty(true);
+        }
+
         String savedUrl = articleRepository.save(toUpdate).getUrl();
         revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
         return savedUrl;
@@ -137,6 +144,50 @@ public class ArticleService {
     @Transactional
     public void clearTelegramPost(UUID id) {
         articleRepository.clearTelegramPost(id);
+    }
+
+    /**
+     * Пытается занять запись под отправку в Discord (см. {@link ArticleRepository#claimForDiscord}).
+     * Короткая отдельная транзакция ДО сетевого вызова.
+     *
+     * @return {@code true}, если заняли (можно отправлять); {@code false}, если уже занята.
+     */
+    @Transactional
+    public boolean claimDiscordPost(UUID id, Instant when) {
+        return articleRepository.claimForDiscord(id, when) == 1;
+    }
+
+    /**
+     * Освобождает ранее занятую запись после неуспешной отправки — чтобы повторить на следующем тике.
+     */
+    @Transactional
+    public void releaseDiscordPost(UUID id) {
+        articleRepository.releaseDiscordClaim(id);
+    }
+
+    /**
+     * Фиксирует успешную отправку в Discord: id поста в канале.
+     */
+    @Transactional
+    public void markDiscordSent(UUID id, String messageId) {
+        articleRepository.markDiscordSent(id, messageId);
+    }
+
+    /**
+     * Снимает флаг правки после синхронизации — только если запись не изменилась с момента загрузки
+     * (updatedAt совпадает). Иначе правку, прилетевшую во время отправки, не теряем: флаг остаётся.
+     */
+    @Transactional
+    public void clearDiscordDirty(UUID id, Instant updatedAt) {
+        articleRepository.clearDiscordDirtyIfUnchanged(id, updatedAt);
+    }
+
+    /**
+     * Сбрасывает состояние отправки в Discord после удаления поста из канала.
+     */
+    @Transactional
+    public void clearDiscordPost(UUID id) {
+        articleRepository.clearDiscordPost(id);
     }
 
     public boolean existsByUrl(String url) {

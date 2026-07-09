@@ -9,14 +9,14 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
- * Достаёт байты обложки новости из S3, чтобы залить их в Telegram файлом (а не ссылкой).
- * previewImageUrl хранится как относительный путь {@code /s3/<key>}; публичного URL у объекта нет
- * (bucket закрыт), поэтому картинку читаем напрямую из S3 — доступ у сервиса уже есть.
+ * Достаёт байты обложки новости из S3, чтобы залить их в канал файлом (а не ссылкой) — общий источник
+ * для Telegram- и Discord-публикаторов. previewImageUrl хранится как относительный путь {@code /s3/<key>};
+ * публичного URL у объекта нет (bucket закрыт), поэтому картинку читаем напрямую из S3 — доступ у сервиса есть.
  */
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class TelegramImageSource {
+public class ArticleImageSource {
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -46,7 +46,7 @@ public class TelegramImageSource {
         }
     }
 
-    /** Имя файла для Telegram (по расширению определяет тип). */
+    /** Имя файла для загрузки в канал (по расширению определяет тип). */
     public String filename(String previewImageUrl) {
         String key = key(previewImageUrl);
         if (key == null) {

@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-09-01-add-discord-posted-at-to-article
+      author: Peterko
+      changes:
+        # Момент отправки записи в Discord-канал. NULL = ещё не отправлена.
+        # Флаг идемпотентности: планировщик постит только записи с NULL и проставляет время.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_posted_at
+                  type: DATETIME
+        # Backfill: уже опубликованные (живые) записи считаем «отправленными», чтобы при
+        # включении интеграции планировщик не залил канал старыми новостями. Черновики и
+        # запланированные на будущее оставляем NULL — они уйдут в канал в момент публикации.
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_posted_at
+                  valueComputed: now()
+            where: draft = false AND active = true AND publish_date_time < now()

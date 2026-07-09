@@ -24,8 +24,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
-// UPDATE только по реально изменённым колонкам: правка новости не должна затирать
-// telegram_* поля, которыми асинхронно владеет планировщик (claim / message_id / dirty).
+// UPDATE только по реально изменённым колонкам: правка новости не должна затирать telegram_*/discord_*
+// поля, которыми асинхронно владеют планировщики публикации (claim / message_id / dirty).
 @DynamicUpdate
 @Table(name = "article",
         indexes = {
@@ -111,6 +111,35 @@ public class Article extends Timestamped {
      */
     @Column(nullable = false)
     private boolean telegramDirty;
+
+    /**
+     * Пожелание автора отправить запись в Discord-канал. Управляется галочкой в админке.
+     * Постится только при publishToDiscord=true И включённой глобально интеграции (задан webhook),
+     * один раз при попадании записи в общий доступ (см. {@code discordPostedAt}). Независима от Telegram.
+     */
+    @Column(nullable = false)
+    private boolean publishToDiscord;
+
+    /**
+     * Момент отправки записи в Discord-канал. NULL — ещё не отправлена.
+     * Служит флагом идемпотентности: планировщик постит запись один раз и проставляет время,
+     * поэтому повторное сохранение/редактирование или снятие-и-возврат публикации не дублируют пост.
+     */
+    private Instant discordPostedAt;
+
+    /**
+     * id сообщения в Discord-канале (снежинка). Заполняется после успешной отправки, нужен для правки
+     * и удаления поста. Строка, а не число: снежинка приходит строкой в JSON и используется как сегмент
+     * пути вебхука ({@code /messages/{id}}). NULL — пост в канал ещё не ушёл.
+     */
+    @Column(length = 32)
+    private String discordMessageId;
+
+    /**
+     * Новость изменена после отправки в канал — планировщик синхронизирует пост (editMessage) и снимет флаг.
+     */
+    @Column(nullable = false)
+    private boolean discordDirty;
 
     /**
      * Вычисляемый статус: черновик / запланирована / активна / неактивна.

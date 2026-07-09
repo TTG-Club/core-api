@@ -25,7 +25,7 @@ import java.util.Map;
  * Ничего не знает про БД и транзакции — только строит текст/пейлоад и делает HTTP-вызов. Длинный пост не
  * обрезается: первый кусок идёт в подпись к фото (≤1024) или в первое сообщение (≤4096), остальное
  * досылается отдельными сообщениями (≤4096). Текст поста — Telegram-HTML (см. {@link TelegramHtmlFormatter}),
- * обложку заливаем файлом из S3 (см. {@link TelegramImageSource}). Итог отправки — явный статус, чтобы
+ * обложку заливаем файлом из S3 (см. {@link ArticleImageSource}). Итог отправки — явный статус, чтобы
  * планировщик отличал «повторить» (временный сбой) от «сдаться» (перманентный отказ Telegram).
  */
 @Slf4j
@@ -70,7 +70,7 @@ public class TelegramPublisher {
     private final RestClient telegramRestClient;
     private final TelegramProperties properties;
     private final TelegramHtmlFormatter formatter;
-    private final TelegramImageSource imageSource;
+    private final ArticleImageSource imageSource;
 
     /**
      * Отправляет новый пост в канал (при необходимости — несколькими сообщениями).
@@ -256,7 +256,11 @@ public class TelegramPublisher {
             return new SendOutcome(retriable ? SendResult.TRANSIENT : SendResult.REJECTED, null);
         } catch (RestClientException ex) {
             // Сеть/таймаут (в т.ч. потерянный ответ на уже доставленный запрос) — считаем временным.
-            log.warn("Не удалось вызвать Telegram {}: {}", method, ex.getMessage());
+            // Логируем причину (IOException), а НЕ ex.getMessage(): RestClient вшивает в него полный URL
+            // запроса, а в пути — токен бота (…/bot<token>/…). Причина URL не содержит.
+            Throwable cause = ex.getCause();
+            log.warn("Не удалось вызвать Telegram {}: {}", method,
+                    cause != null ? cause.getMessage() : ex.getClass().getSimpleName());
             return new SendOutcome(SendResult.TRANSIENT, null);
         }
     }

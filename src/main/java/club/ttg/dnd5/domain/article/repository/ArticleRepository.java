@@ -171,4 +171,100 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
     @Query("UPDATE Article a SET a.telegramMessageId = null, a.telegramPostedAt = null, a.telegramDirty = false "
             + "WHERE a.id = :id")
     void clearTelegramPost(@Param("id") UUID id);
+
+    /**
+     * Записи, которые пора отправить в Discord: с включённой галочкой (publishToDiscord=true),
+     * живые и опубликованные (не удалены, не черновик, активны, дата публикации наступила) и ещё
+     * не отправленные (discordPostedAt IS NULL). Один и тот же запрос закрывает и «опубликовано
+     * сейчас», и «наступила запланированная дата». Независим от Telegram.
+     */
+    @Query("""
+            SELECT a FROM Article a
+            WHERE a.deleted = false
+              AND a.draft = false
+              AND a.active = true
+              AND a.publishToDiscord = true
+              AND a.publishDateTime < :now
+              AND a.discordPostedAt IS NULL
+            ORDER BY a.publishDateTime ASC
+            """)
+    List<Article> findDueForDiscord(@Param("now") Instant now, Limit limit);
+
+    /**
+     * Атомарно «занимает» запись под отправку в Discord: проставляет время ТОЛЬКО если она ещё
+     * не занята ({@code discordPostedAt IS NULL}). Занимаем ДО сетевого вызова, поэтому:
+     * — параллельный тик / второй инстанс не отправят дубль (займёт кто-то один);
+     * — сбой после успешной отправки (упавшая транзакция/рестарт) не приведёт к повторному посту.
+     *
+     * @return 1 — заняли (можно отправлять), 0 — уже занята кем-то (пропускаем).
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.discordPostedAt = :postedAt WHERE a.id = :id AND a.discordPostedAt IS NULL")
+    int claimForDiscord(@Param("id") UUID id, @Param("postedAt") Instant postedAt);
+
+    /**
+     * Снимает отметку об отправке — если отправка не удалась по временной причине, чтобы
+     * повторить попытку на следующем тике.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.discordPostedAt = null WHERE a.id = :id")
+    void releaseDiscordClaim(@Param("id") UUID id);
+
+    /**
+     * Записи, у которых пост в канале уже есть (discordMessageId), новость изменена после отправки
+     * (discordDirty=true) и она всё ещё публична (те же условия, что в findDueForDiscord) — их нужно
+     * синхронизировать (отредактировать пост).
+     */
+    @Query("""
+            SELECT a FROM Article a
+            WHERE a.deleted = false
+              AND a.draft = false
+              AND a.active = true
+              AND a.publishToDiscord = true
+              AND a.publishDateTime < :now
+              AND a.discordMessageId IS NOT NULL
+              AND a.discordDirty = true
+            ORDER BY a.updatedAt ASC
+            """)
+    List<Article> findDirtyForDiscord(@Param("now") Instant now, Limit limit);
+
+    /**
+     * Фиксирует успешную отправку: id поста в канале. Момент отправки (discordPostedAt) уже проставлен
+     * на этапе claim. Флаг discordDirty НЕ трогаем: если правка прилетела в окне отправки, она останется
+     * помеченной и синхронизируется следующим тиком.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.discordMessageId = :messageId WHERE a.id = :id")
+    void markDiscordSent(@Param("id") UUID id, @Param("messageId") String messageId);
+
+    /**
+     * Снимает флаг правки — только если запись не изменилась с момента загрузки (updatedAt совпадает).
+     * Compare-and-clear: правка, прилетевшая во время отправки в канал, сдвинет updatedAt, clear не сработает,
+     * и синхронизация повторится на следующем тике с самым свежим текстом.
+     *
+     * @return 1 — флаг снят, 0 — запись за это время изменилась (флаг оставлен).
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.discordDirty = false WHERE a.id = :id AND a.updatedAt = :updatedAt")
+    int clearDiscordDirtyIfUnchanged(@Param("id") UUID id, @Param("updatedAt") Instant updatedAt);
+
+    /**
+     * Удалённые с сайта записи, у которых ещё есть пост в канале (discordMessageId) — их надо удалить из Discord.
+     */
+    @Query("""
+            SELECT a FROM Article a
+            WHERE a.deleted = true
+              AND a.discordMessageId IS NOT NULL
+            ORDER BY a.updatedAt ASC
+            """)
+    List<Article> findDeletedForDiscord(Limit limit);
+
+    /**
+     * Сбрасывает состояние отправки в Discord (после удаления поста из канала). Обнуляет и время отправки,
+     * чтобы восстановленная (снятая с удаления) запись снова опубликовалась.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.discordMessageId = null, a.discordPostedAt = null, a.discordDirty = false "
+            + "WHERE a.id = :id")
+    void clearDiscordPost(@Param("id") UUID id);
 }

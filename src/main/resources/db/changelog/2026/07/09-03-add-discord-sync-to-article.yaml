@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-09-03-add-discord-sync-to-article
+      author: Peterko
+      changes:
+        # id сообщения в канале (Discord-снежинка) — чтобы редактировать/удалять пост при правке
+        # или удалении новости. Строка, а не число: снежинка приходит строкой в JSON и используется
+        # как сегмент пути вебхука. NULL = ещё не отправлено.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_message_id
+                  type: VARCHAR(32)
+        # Новость изменена после отправки — нужно синхронизировать пост в канале.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_dirty
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_dirty
+                  valueBoolean: false
+            where: discord_dirty IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: discord_dirty
+            columnDataType: BOOLEAN
+            defaultNullValue: false

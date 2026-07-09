@@ -59,6 +59,11 @@ public class ArticleRequest {
             + "запись один раз уйдёт в канал, если интеграция включена глобально. false — в канал не отправлять.")
     private boolean publishToTelegram;
 
+    @Schema(description = "Опубликовать в Discord-канал. true — при публикации (сейчас или по наступлении даты) "
+            + "запись один раз уйдёт в канал, если интеграция включена глобально. false — в канал не отправлять. "
+            + "Независима от Telegram.")
+    private boolean publishToDiscord;
+
     @Schema(description = "Текст превью")
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
