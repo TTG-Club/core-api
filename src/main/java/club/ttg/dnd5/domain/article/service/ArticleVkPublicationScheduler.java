@@ -99,19 +99,24 @@ public class ArticleVkPublicationScheduler {
         List<Article> dirty = articleRepository.findDirtyForVk(Instant.now(), batch);
         int synced = 0;
         for (Article article : dirty) {
-            VkPublisher.EditResult result;
+            VkPublisher.EditOutcome outcome;
             try {
-                result = vkPublisher.editPost(article);
+                outcome = vkPublisher.editPost(article);
             } catch (RuntimeException ex) {
                 log.warn("Ошибка синхронизации поста {} в VK — повторю на следующем тике", article.getUrl(), ex);
                 continue;
             }
-            if (result != VkPublisher.EditResult.RETRY) {
+            // Обложка, залитая во время правки (пост изначально ушёл текстом, картинку добавили позже) —
+            // сохраняем строку вложения, чтобы следующие правки её пере-передавали и не заливали фото заново.
+            if (outcome.newAttachment() != null) {
+                articleService.saveVkAttachment(article.getId(), outcome.newAttachment());
+            }
+            if (outcome.status() != VkPublisher.EditResult.RETRY) {
                 // SYNCED или GIVE_UP — снимаем флаг, но только если запись не изменилась в окне отправки
                 // (иначе свежая правка сдвинула updatedAt, флаг останется и синхронизируется следующим тиком).
                 articleService.clearVkDirty(article.getId(), article.getUpdatedAt());
             }
-            if (result == VkPublisher.EditResult.SYNCED) {
+            if (outcome.status() == VkPublisher.EditResult.SYNCED) {
                 synced++;
             }
         }

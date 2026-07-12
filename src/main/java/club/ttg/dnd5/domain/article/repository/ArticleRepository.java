@@ -333,6 +333,15 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
     void markVkSent(@Param("id") UUID id, @Param("postId") Long postId, @Param("attachment") String attachment);
 
     /**
+     * Сохраняет строку вложения-обложки для уже опубликованного поста — обложку залили при синхронизации
+     * правки (пост изначально ушёл текстом). Точечный UPDATE только по vk_attachment: не трогает updatedAt и
+     * прочие vk_*-поля, чтобы не сорвать claim/compare-and-clear.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkAttachment = :attachment WHERE a.id = :id")
+    void updateVkAttachment(@Param("id") UUID id, @Param("attachment") String attachment);
+
+    /**
      * Снимает флаг правки — только если запись не изменилась с момента загрузки (updatedAt совпадает).
      * Compare-and-clear: правка, прилетевшая во время отправки на стену, сдвинет updatedAt, clear не сработает,
      * и синхронизация повторится на следующем тике с самым свежим текстом.

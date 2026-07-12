@@ -225,6 +225,16 @@ public class ArticleService {
     }
 
     /**
+     * Сохраняет строку вложения-обложки, залитой при синхронизации правки (пост изначально ушёл текстом,
+     * обложку добавили позже). Отдельная короткая транзакция; {@code updatedAt} не трогает — чтобы не сорвать
+     * compare-and-clear флага {@code vkDirty}.
+     */
+    @Transactional
+    public void saveVkAttachment(UUID id, String attachment) {
+        articleRepository.updateVkAttachment(id, attachment);
+    }
+
+    /**
      * Снимает флаг правки после синхронизации — только если запись не изменилась с момента загрузки
      * (updatedAt совпадает). Иначе правку, прилетевшую во время отправки, не теряем: флаг остаётся.
      */
