@@ -42,6 +42,22 @@ public final class SecurityUtils {
     }
 
     /**
+     * Метод возвращает данные пользователя из токена или {@code null}, если запрос анонимный.
+     * Для публичных ручек, поведение которых зависит от наличия авторизации.
+     *
+     * @return Данные пользователя или {@code null}.
+     */
+    public static User getUserOrNull() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (Objects.isNull(authentication) || !(authentication.getPrincipal() instanceof User user)) {
+            return null;
+        }
+
+        return user;
+    }
+
+    /**
      * Метод возвращает стрим ролей пользователя расшифрованные из токена.
      *
      * @return Роли пользователя.

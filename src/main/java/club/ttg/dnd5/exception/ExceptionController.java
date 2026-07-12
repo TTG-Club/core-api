@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ControllerAdvice
@@ -36,6 +38,15 @@ public class ExceptionController {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponseDto> handleRequestParamException(MissingServletRequestParameterException exception) {
         String message = String.format("Отсутствует необходимый параметр \"%s\"", exception.getParameterName());
+
+        return convertToResponseEntity(HttpStatus.BAD_REQUEST, message);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseDto> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
+        String message = exception.getBindingResult().getFieldErrors().stream()
+                .map(error -> String.format("%s: %s", error.getField(), error.getDefaultMessage()))
+                .collect(Collectors.joining("; "));
 
         return convertToResponseEntity(HttpStatus.BAD_REQUEST, message);
     }

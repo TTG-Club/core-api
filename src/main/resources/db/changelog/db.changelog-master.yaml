@@ -247,3 +247,9 @@ databaseChangeLog:
       file: db/changelog/2026/07/10-02-add-publish-to-vk-to-article.yaml
   - include:
       file: db/changelog/2026/07/10-03-add-vk-sync-to-article.yaml
+  - include:
+      file: db/changelog/2026/07/10-04-create-initiative-tracker-table.yaml
+  - include:
+      file: db/changelog/2026/07/10-05-create-initiative-participant-table.yaml
+  - include:
+      file: db/changelog/2026/07/10-06-add-initiative-battle-options.yaml
