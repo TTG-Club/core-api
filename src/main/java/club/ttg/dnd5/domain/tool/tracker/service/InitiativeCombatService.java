@@ -99,7 +99,7 @@ public class InitiativeCombatService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "В трекере нет участников");
         }
         int currentIndex = indexOf(order, tracker.getCurrentParticipantId());
-        NextTurn result = nextAlive(order, currentIndex, null);
+        TurnStep result = nextAlive(order, currentIndex, null);
         if (result.participant() == null) {
             tracker.setCurrentParticipantId(null);
             return;
@@ -116,6 +116,39 @@ public class InitiativeCombatService {
     }
 
     /**
+     * Откатывает ход на шаг назад: к предыдущему живому по порядку, пропуская повержённых;
+     * с первого живого участника раунда — к последнему живому предыдущего раунда
+     * ({@code round - 1}). На первом ходу первого раунда отката нет — состояние не меняется.
+     * Живых нет или текущий ход не назначен — no-op. Броски инициативы не трогаются: при
+     * включённом {@code rerollEachRound} значения прошлого раунда не хранятся и не
+     * восстанавливаются.
+     */
+    public void prevTurn(InitiativeTracker tracker, List<InitiativeParticipant> participants) {
+        if (tracker.getStatus() != TrackerStatus.ACTIVE) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Бой не начат — сначала прокиньте инициативу");
+        }
+        List<InitiativeParticipant> order = sort(participants);
+        if (order.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "В трекере нет участников");
+        }
+        int currentIndex = indexOf(order, tracker.getCurrentParticipantId());
+        if (currentIndex < 0) {
+            return;
+        }
+        TurnStep result = prevAlive(order, currentIndex);
+        if (result.participant() == null) {
+            return;
+        }
+        if (result.wrapped()) {
+            if (tracker.getRound() <= 1) {
+                return;
+            }
+            tracker.setRound(tracker.getRound() - 1);
+        }
+        tracker.setCurrentParticipantId(result.participant().getId());
+    }
+
+    /**
      * Переносит ход с удаляемого участника на следующего живого (вызывается ДО удаления).
      * Удаляемый ходил последним в раунде — ход первому живому и новый раунд; живых больше
      * не остаётся — текущего хода нет.
@@ -128,7 +161,7 @@ public class InitiativeCombatService {
         }
         List<InitiativeParticipant> order = sort(participants);
         int removedIndex = indexOf(order, removed.getId());
-        NextTurn result = nextAlive(order, removedIndex, removed.getId());
+        TurnStep result = nextAlive(order, removedIndex, removed.getId());
         if (result.participant() == null) {
             tracker.setCurrentParticipantId(null);
             return;
@@ -181,7 +214,7 @@ public class InitiativeCombatService {
      * и {@code excludedId} (удаляемого). {@code wrapped} — был ли переход через конец списка
      * (значит начался новый раунд). {@code participant == null} — живых не осталось.
      */
-    private static NextTurn nextAlive(List<InitiativeParticipant> order, int fromIndex, UUID excludedId) {
+    private static TurnStep nextAlive(List<InitiativeParticipant> order, int fromIndex, UUID excludedId) {
         int size = order.size();
         boolean wrapped = false;
         for (int step = 1; step <= size; step++) {
@@ -196,9 +229,31 @@ public class InitiativeCombatService {
             if (candidate.isDead()) {
                 continue;
             }
-            return new NextTurn(candidate, wrapped);
+            return new TurnStep(candidate, wrapped);
         }
-        return new NextTurn(null, wrapped);
+        return new TurnStep(null, wrapped);
+    }
+
+    /**
+     * Предыдущий живой участник перед позицией {@code fromIndex} (по кругу), пропуская
+     * повержённых. {@code wrapped} — был ли переход через начало списка (значит откат в
+     * предыдущий раунд). {@code participant == null} — живых не осталось.
+     */
+    private static TurnStep prevAlive(List<InitiativeParticipant> order, int fromIndex) {
+        int size = order.size();
+        boolean wrapped = false;
+        for (int step = 1; step <= size; step++) {
+            int raw = fromIndex - step;
+            if (raw < 0) {
+                wrapped = true;
+            }
+            InitiativeParticipant candidate = order.get(((raw % size) + size) % size);
+            if (candidate.isDead()) {
+                continue;
+            }
+            return new TurnStep(candidate, wrapped);
+        }
+        return new TurnStep(null, wrapped);
     }
 
     private static int compareTurnOrder(InitiativeParticipant left, InitiativeParticipant right) {
@@ -261,6 +316,6 @@ public class InitiativeCombatService {
         return -1;
     }
 
-    private record NextTurn(InitiativeParticipant participant, boolean wrapped) {
+    private record TurnStep(InitiativeParticipant participant, boolean wrapped) {
     }
 }

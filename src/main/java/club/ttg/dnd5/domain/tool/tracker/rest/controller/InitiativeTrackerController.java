@@ -161,6 +161,16 @@ public class InitiativeTrackerController {
         return trackerService.nextTurn(id, trackerKey);
     }
 
+    @Operation(summary = "Откат хода на шаг назад; с первого участника раунда — к последнему живому "
+            + "предыдущего раунда (round - 1). На первом ходу первого раунда не откатывает — возвращает "
+            + "текущее состояние. Броски инициативы не восстанавливаются (актуально при rerollEachRound)")
+    @PostMapping("/{id}/turn/prev")
+    public TrackerDetailedResponse prevTurn(
+            @PathVariable final UUID id,
+            @RequestHeader(value = TRACKER_KEY_HEADER, required = false) final String trackerKey) {
+        return trackerService.prevTurn(id, trackerKey);
+    }
+
     @Operation(summary = "Завершить бой: броски очищаются, состав участников сохраняется, "
             + "трекер возвращается в подготовку")
     @PostMapping("/{id}/reset")

@@ -243,6 +243,13 @@ public class InitiativeTrackerService {
         return toDetailedResponse(tracker);
     }
 
+    @Transactional
+    public TrackerDetailedResponse prevTurn(UUID trackerId, String trackerKey) {
+        InitiativeTracker tracker = getWithAccess(trackerId, trackerKey);
+        combatService.prevTurn(tracker, participantRepository.findAllByTrackerId(trackerId));
+        return toDetailedResponse(tracker);
+    }
+
     /** Завершает бой: броски очищаются, состав сохраняется, трекер снова в подготовке. */
     @Transactional
     public TrackerDetailedResponse reset(UUID trackerId, String trackerKey) {

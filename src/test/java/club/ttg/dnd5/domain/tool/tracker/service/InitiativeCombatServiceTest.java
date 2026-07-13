@@ -142,6 +142,125 @@ class InitiativeCombatServiceTest {
     }
 
     @Test
+    void prevTurnMovesToPreviousParticipant() {
+        InitiativeParticipant first = participant(1, 20, 0, 1);
+        InitiativeParticipant second = participant(2, 10, 0, 1);
+        InitiativeTracker tracker = activeTracker(second.getId());
+
+        service.prevTurn(tracker, List.of(first, second));
+
+        assertEquals(first.getId(), tracker.getCurrentParticipantId());
+        assertEquals(1, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnFromFirstParticipantReturnsToPreviousRound() {
+        InitiativeParticipant first = participant(1, 20, 0, 1);
+        InitiativeParticipant last = participant(2, 10, 0, 1);
+        InitiativeTracker tracker = activeTracker(first.getId());
+        tracker.setRound(3);
+
+        service.prevTurn(tracker, List.of(first, last));
+
+        assertEquals(last.getId(), tracker.getCurrentParticipantId());
+        assertEquals(2, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnOnFirstTurnOfFirstRoundKeepsState() {
+        InitiativeParticipant first = participant(1, 20, 0, 1);
+        InitiativeParticipant last = participant(2, 10, 0, 1);
+        InitiativeTracker tracker = activeTracker(first.getId());
+
+        service.prevTurn(tracker, List.of(first, last));
+
+        assertEquals(first.getId(), tracker.getCurrentParticipantId());
+        assertEquals(1, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnSkipsDeadParticipants() {
+        InitiativeParticipant first = participant(1, 20, 0, 1);
+        InitiativeParticipant deadMiddle = participant(2, 15, 0, 1);
+        deadMiddle.setDead(true);
+        InitiativeParticipant last = participant(3, 10, 0, 1);
+        InitiativeTracker tracker = activeTracker(last.getId());
+
+        service.prevTurn(tracker, List.of(first, deadMiddle, last));
+
+        // Мёртвый в середине порядка пропущен — откат сразу к первому
+        assertEquals(first.getId(), tracker.getCurrentParticipantId());
+        assertEquals(1, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnFromFirstAliveOfFirstRoundKeepsStateEvenWithDeadBefore() {
+        // Текущий — первый ЖИВОЙ первого раунда (выше по порядку только повержённый):
+        // отката нет, круг назад через конец списка означал бы раунд 0
+        InitiativeParticipant deadFirst = participant(1, 20, 0, 1);
+        deadFirst.setDead(true);
+        InitiativeParticipant current = participant(2, 15, 0, 1);
+        InitiativeParticipant last = participant(3, 10, 0, 1);
+        InitiativeTracker tracker = activeTracker(current.getId());
+
+        service.prevTurn(tracker, List.of(deadFirst, current, last));
+
+        assertEquals(current.getId(), tracker.getCurrentParticipantId());
+        assertEquals(1, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnWithSingleAliveDecrementsRoundKeepingTurn() {
+        InitiativeParticipant only = participant(1, 20, 0, 1);
+        InitiativeParticipant dead = participant(2, 10, 0, 1);
+        dead.setDead(true);
+        InitiativeTracker tracker = activeTracker(only.getId());
+        tracker.setRound(2);
+
+        service.prevTurn(tracker, List.of(only, dead));
+
+        // Единственный живой: откат по кругу возвращается к нему же, но раундом раньше
+        assertEquals(only.getId(), tracker.getCurrentParticipantId());
+        assertEquals(1, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnWhenEveryoneDeadIsNoOp() {
+        InitiativeParticipant a = participant(1, 20, 0, 1);
+        a.setDead(true);
+        InitiativeParticipant b = participant(2, 10, 0, 1);
+        b.setDead(true);
+        InitiativeTracker tracker = activeTracker(a.getId());
+        tracker.setRound(2);
+
+        service.prevTurn(tracker, List.of(a, b));
+
+        assertEquals(a.getId(), tracker.getCurrentParticipantId());
+        assertEquals(2, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnWithoutCurrentIsNoOp() {
+        InitiativeTracker tracker = activeTracker(null);
+        tracker.setRound(2);
+
+        service.prevTurn(tracker, List.of(participant(1, 10, 0, 1)));
+
+        assertNull(tracker.getCurrentParticipantId());
+        assertEquals(2, tracker.getRound());
+    }
+
+    @Test
+    void prevTurnRequiresActiveCombat() {
+        assertThrows(ApiException.class, () -> service.prevTurn(tracker(), List.of(participant(1, 10, 0, 1))));
+    }
+
+    @Test
+    void prevTurnWithoutParticipantsThrows() {
+        assertThrows(ApiException.class, () -> service.prevTurn(activeTracker(null), List.of()));
+    }
+
+    @Test
     void removalOfCurrentParticipantPassesTurnToNext() {
         InitiativeParticipant current = participant(1, 20, 0, 1);
         InitiativeParticipant next = participant(2, 10, 0, 1);
