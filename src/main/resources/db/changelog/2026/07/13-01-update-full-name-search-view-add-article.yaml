@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 13-01-update-full-name-search-view-add-article
+      author: Magistrus
+      changes:
+        - sqlFile:
+            path: sql/13-01-update-full-name-search-view-add-article.sql
+            relativeToChangelogFile: true

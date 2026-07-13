@@ -71,18 +71,30 @@ public class FullTextSearchViewService {
                         .english(ftsv.getEnglish())
                         .build())
                 .type(ftsv.getType())
-                .source(SourceResponse.builder()
-                        .name(NameResponse.builder()
-                                .name(ftsv.getSourceName())
-                                .label(ftsv.getAcronym())
-                                .english(ftsv.getSourceEnglish())
-                                .build())
-                        .group(NameResponse.builder()
-                                .name(ftsv.getSourceType().getGroup())
-                                .label(ftsv.getSourceType().getLabel())
-                                .build())
-                        .page(ftsv.getPage())
+                .source(getSource(ftsv))
+                .build();
+    }
+
+    /**
+     * Источник (книга) есть не у всех разделов: у статей / новостей его нет,
+     * тогда sourceType и page отсутствуют — возвращаем null, чтобы не разыменовывать
+     * их (в т.ч. не распаковывать null Integer в примитивный page).
+     */
+    private SourceResponse getSource(FullTextSearchView ftsv) {
+        if (ftsv.getSourceType() == null) {
+            return null;
+        }
+        return SourceResponse.builder()
+                .name(NameResponse.builder()
+                        .name(ftsv.getSourceName())
+                        .label(ftsv.getAcronym())
+                        .english(ftsv.getSourceEnglish())
                         .build())
+                .group(NameResponse.builder()
+                        .name(ftsv.getSourceType().getGroup())
+                        .label(ftsv.getSourceType().getLabel())
+                        .build())
+                .page(ftsv.getPage())
                 .build();
     }
 
