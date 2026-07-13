@@ -80,7 +80,7 @@ public class ArticleTelegramPublicationScheduler {
             }
             switch (result.status()) {
                 case POSTED -> {
-                    articleService.markTelegramSent(id, result.messageId(), result.photo());
+                    articleService.markTelegramSent(id, result.messageId(), result.tailMessageIdsCsv(), result.photo());
                     posted++;
                 }
                 // Временный сбой — снимаем отметку, повторим на следующем тике.
