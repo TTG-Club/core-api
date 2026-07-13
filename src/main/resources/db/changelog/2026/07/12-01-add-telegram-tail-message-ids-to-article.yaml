@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-12-01-add-telegram-tail-message-ids-to-article
+      author: Peterko
+      changes:
+        # id хвостовых сообщений многочастного поста (CSV): когда длинная новость не влезает в одно
+        # сообщение, продолжение уходит отдельными сообщениями. Храним их id, чтобы при удалении новости
+        # убрать из канала ВЕСЬ пост, а не только первое сообщение (с картинкой). NULL/пусто — пост в одном
+        # сообщении (telegram_message_id).
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_tail_message_ids
+                  type: TEXT

@@ -100,6 +100,13 @@ public class Article extends Timestamped {
     private Long telegramMessageId;
 
     /**
+     * id хвостовых сообщений многочастного поста (CSV): когда длинная новость не влезла в одно сообщение,
+     * продолжение уходит отдельными сообщениями. Нужны, чтобы при удалении новости убрать из канала ВЕСЬ
+     * пост, а не только первое (с картинкой). NULL/пусто — пост уместился в одно сообщение.
+     */
+    private String telegramTailMessageIds;
+
+    /**
      * Пост в канале отправлен как фото (с обложкой). Тогда при синхронизации правим caption,
      * иначе — text (Telegram различает editMessageCaption и editMessageText).
      */

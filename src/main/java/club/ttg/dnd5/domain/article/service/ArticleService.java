@@ -129,11 +129,12 @@ public class ArticleService {
     }
 
     /**
-     * Фиксирует успешную отправку в Telegram: id поста в канале и тип (фото/текст).
+     * Фиксирует успешную отправку в Telegram: id первого поста в канале, id хвостовых сообщений (CSV,
+     * {@code null} — пост в одно сообщение) и тип (фото/текст).
      */
     @Transactional
-    public void markTelegramSent(UUID id, Long messageId, boolean photo) {
-        articleRepository.markTelegramSent(id, messageId, photo);
+    public void markTelegramSent(UUID id, Long messageId, String tailMessageIds, boolean photo) {
+        articleRepository.markTelegramSent(id, messageId, tailMessageIds, photo);
     }
 
     /**

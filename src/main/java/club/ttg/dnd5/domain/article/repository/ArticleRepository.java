@@ -133,13 +133,16 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
     List<Article> findDirtyForTelegram(@Param("now") Instant now, Limit limit);
 
     /**
-     * Фиксирует успешную отправку: id поста в канале и тип (фото/текст).
-     * Момент отправки (telegramPostedAt) уже проставлен на этапе claim. Флаг telegramDirty НЕ трогаем:
-     * если правка прилетела в окне отправки, она останется помеченной и синхронизируется следующим тиком.
+     * Фиксирует успешную отправку: id первого поста в канале, id хвостовых сообщений (CSV, NULL — поста
+     * хватило одного сообщения) и тип (фото/текст). Момент отправки (telegramPostedAt) уже проставлен на
+     * этапе claim. Флаг telegramDirty НЕ трогаем: если правка прилетела в окне отправки, она останется
+     * помеченной и синхронизируется следующим тиком.
      */
     @Modifying
-    @Query("UPDATE Article a SET a.telegramMessageId = :messageId, a.telegramPhoto = :photo WHERE a.id = :id")
-    void markTelegramSent(@Param("id") UUID id, @Param("messageId") Long messageId, @Param("photo") boolean photo);
+    @Query("UPDATE Article a SET a.telegramMessageId = :messageId, a.telegramTailMessageIds = :tailMessageIds, "
+            + "a.telegramPhoto = :photo WHERE a.id = :id")
+    void markTelegramSent(@Param("id") UUID id, @Param("messageId") Long messageId,
+                          @Param("tailMessageIds") String tailMessageIds, @Param("photo") boolean photo);
 
     /**
      * Снимает флаг правки — только если запись не изменилась с момента загрузки (updatedAt совпадает).
@@ -168,8 +171,8 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
      * чтобы восстановленная (снятая с удаления) запись снова опубликовалась.
      */
     @Modifying
-    @Query("UPDATE Article a SET a.telegramMessageId = null, a.telegramPostedAt = null, a.telegramDirty = false "
-            + "WHERE a.id = :id")
+    @Query("UPDATE Article a SET a.telegramMessageId = null, a.telegramTailMessageIds = null, "
+            + "a.telegramPostedAt = null, a.telegramDirty = false WHERE a.id = :id")
     void clearTelegramPost(@Param("id") UUID id);
 
     /**
