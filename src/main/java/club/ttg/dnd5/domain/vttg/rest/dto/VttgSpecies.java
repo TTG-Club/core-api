@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -29,10 +30,17 @@ import java.util.List;
 public class VttgSpecies {
     /** Канонический тип сущности для VTTG — всегда "species". */
     private String type;
+    /**
+     * Идентификатор записи для раскладки дельты: имя файла {@code <id>.json} (см. {@code routeEntity}
+     * в VTTG {@code compendiumUpdate.ts}). Обязателен, иначе запись отбрасывается. Совпадает с {@link #key}.
+     */
+    private String id;
     /** Слаг листа дерева разделов, в котором показывается запись — всегда "species". */
     private String section;
     /** Стабильный ключ вида (slug из url). */
     private String key;
+    /** Признак SRD (для раскладки по пакам); выводится всегда. */
+    private boolean isSRD;
     private String name;
     private String nameEn;
     private String description;
@@ -47,6 +55,12 @@ public class VttgSpecies {
     private List<Grant> grants;
     /** Видовые умения; пустой список, если их нет. */
     private List<Feature> features;
+
+    /** Явный геттер: без него Jackson сериализует boolean-{@code isSRD} как ключ «SRD». */
+    @JsonProperty("isSRD")
+    public boolean isSRD() {
+        return isSRD;
+    }
 
     /** Скорости перемещения в футах; отсутствующие виды движения опускаются. */
     @JsonInclude(JsonInclude.Include.NON_NULL)

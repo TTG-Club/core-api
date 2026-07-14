@@ -63,9 +63,9 @@ class VttgClassMapperTest {
         assertEquals("fighter", json.get("key").asText());
         assertEquals("Fighter", json.get("nameEn").asText());
         assertEquals("phb", json.get("sourceKey").asText());
-        // isSRD выводится всегда (даже false), ключ именно "isSRD".
+        // isSRD выводится всегда, ключ именно "isSRD"; контент помечается SRD (→ SRD-пак).
         assertTrue(json.has("isSRD"));
-        assertFalse(json.get("isSRD").asBoolean());
+        assertTrue(json.get("isSRD").asBoolean());
         assertEquals(10, json.get("hitDie").asInt());
 
         assertEquals("[\"constitution\",\"strength\"]", sortedInsensitive(json.get("savingThrowProficiencies")));

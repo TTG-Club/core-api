@@ -35,6 +35,9 @@ class VttgSpeciesMapperTest {
         assertEquals("species", json.get("type").asText());
         assertEquals("species", json.get("section").asText());
         assertEquals("dragonborn", json.get("key").asText());
+        // id обязателен для раскладки дельты (routeEntity: <id>.json) и равен key; isSRD → SRD-пак.
+        assertEquals("dragonborn", json.get("id").asText());
+        assertTrue(json.get("isSRD").asBoolean());
         assertEquals("Dragonborn", json.get("nameEn").asText());
         assertFalse(json.has("source"));
         assertEquals("phb", json.get("sourceKey").asText());
