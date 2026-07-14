@@ -108,6 +108,7 @@ class VttgFeatMapperTest {
         source.setAcronym("PHB24");
         source.setName("PHB 2024");
         feat.setSource(source);
+        feat.setSrdVersion("5.1");
         return feat;
     }
 }

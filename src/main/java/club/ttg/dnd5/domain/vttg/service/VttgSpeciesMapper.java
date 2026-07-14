@@ -46,7 +46,7 @@ public class VttgSpeciesMapper {
                 .id(key)
                 .section(SECTION)
                 .key(key)
-                .isSRD(true)
+                .isSRD(species.getSrdVersion() != null)
                 .name(species.getName())
                 .nameEn(optional(species.getEnglish()))
                 .description(markupConverter.toText(species.getDescription()))

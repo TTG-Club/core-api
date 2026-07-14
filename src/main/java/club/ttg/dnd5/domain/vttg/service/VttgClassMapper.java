@@ -108,9 +108,7 @@ public class VttgClassMapper {
                 .nameEn(optional(characterClass.getEnglish()))
                 .description(description(characterClass.getDescription()))
                 .sourceKey(sourceKey(characterClass.getSource()))
-                // Как и остальные мапперы выгрузки, помечаем контент как SRD → запись едет в SRD-пак
-                // (иначе routeEntity уводит её в premium-пак «TTG Club», отдельно от заклинаний/существ).
-                .isSRD(true)
+                .isSRD(characterClass.getSrdVersion() != null)
                 .hitDie(hitDie(characterClass.getHitDice()))
                 .armorProficiencies(armor(characterClass.getArmorProficiency()))
                 .weaponProficiencies(weapon(characterClass.getWeaponProficiency()))

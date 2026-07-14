@@ -90,6 +90,7 @@ class VttgBackgroundMapperTest {
         Source source = new Source();
         source.setAcronym("PHB24");
         bg.setSource(source);
+        bg.setSrdVersion("5.1");
         return bg;
     }
 

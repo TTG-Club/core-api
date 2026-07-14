@@ -118,6 +118,7 @@ class VttgSpeciesMapperTest {
         source.setAcronym("PHB24");
         source.setName("PHB 2024");
         species.setSource(source);
+        species.setSrdVersion("5.1");
         return species;
     }
 

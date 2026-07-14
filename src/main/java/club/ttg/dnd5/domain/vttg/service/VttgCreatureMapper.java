@@ -84,7 +84,7 @@ public class VttgCreatureMapper {
                 .token(token(creature))
                 .system(system(creature))
                 .sourceKey(sourceKey(creature.getSource()))
-                .isSRD(true)
+                .isSRD(creature.getSrdVersion() != null)
                 .isReadOnly(true)
                 .build();
     }

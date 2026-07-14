@@ -609,6 +609,7 @@ class VttgMagicItemMapperTest {
         Source source = new Source();
         source.setAcronym("DMG");
         item.setSource(source);
+        item.setSrdVersion("5.1");
         return item;
     }
 }

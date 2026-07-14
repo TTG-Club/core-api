@@ -135,6 +135,15 @@ class VttgClassMapperTest {
         assertEquals("Воплощение", choices.get(0).get("name").asText());
     }
 
+    /** isSRD выводится из srdVersion: свой (homebrew) класс без версии SRD → isSRD=false (→ premium-пак). */
+    @Test
+    void homebrewClassWithoutSrdVersionIsNotSrd() {
+        CharacterClass homebrew = baseClass("blood-hunter", "Охотник на нечисть", "Blood Hunter");
+        homebrew.setSrdVersion(null);
+
+        assertFalse(json(homebrew).get("isSRD").asBoolean());
+    }
+
     private String columnKey(JsonNode json) {
         // Ключ единственной динамической колонки таблицы (транслит «Второе дыхание»).
         JsonNode columns = json.get("tableColumns");
@@ -164,6 +173,7 @@ class VttgClassMapperTest {
         source.setAcronym("PHB24");
         source.setName("PHB 2024");
         characterClass.setSource(source);
+        characterClass.setSrdVersion("5.1");
         return characterClass;
     }
 

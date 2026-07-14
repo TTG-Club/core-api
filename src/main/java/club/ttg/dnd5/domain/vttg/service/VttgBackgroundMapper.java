@@ -43,7 +43,7 @@ public class VttgBackgroundMapper {
                 .description(markupConverter.toText(background.getDescription()))
                 .section(SECTION)
                 .sourceKey(sourceKey(background.getSource()))
-                .isSRD(true)
+                .isSRD(background.getSrdVersion() != null)
                 .abilityGrant(abilityGrant(background.getAbilities()))
                 .skillGrant(skillGrant(background.getSkillProficiencies()))
                 .featGrant(featGrant(background.getFeat()))

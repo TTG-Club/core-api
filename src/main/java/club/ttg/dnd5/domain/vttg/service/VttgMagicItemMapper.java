@@ -178,7 +178,7 @@ public class VttgMagicItemMapper {
                 .magicAttunement(requiresAttunement ? "required" : "none")
                 .magicBonus(bonus)
                 .sourceKey(sourceKey)
-                .isSRD(true)
+                .isSRD(item.getSrdVersion() != null)
                 .isReadOnly(true)
                 .build();
     }

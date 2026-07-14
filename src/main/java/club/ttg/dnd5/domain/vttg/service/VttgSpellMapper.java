@@ -91,7 +91,7 @@ public class VttgSpellMapper {
                 .description(description)
                 .higherLevelDescription(higherLevelDescription)
                 .sourceKey(sourceKey(spell.getSource()))
-                .isSRD(true)
+                .isSRD(spell.getSrdVersion() != null)
                 .classKeys(classKeys(spell))
                 .type("spell")
                 .section("spells")
