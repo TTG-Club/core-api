@@ -81,6 +81,17 @@ public class VkPublisher {
     /** Итог синхронизации правки / удаления поста. */
     public enum EditResult { SYNCED, RETRY, GIVE_UP }
 
+    /**
+     * Итог синхронизации правки поста: статус + строка вложения-обложки, если её залили прямо во время правки
+     * ({@code null} — обложку не трогали). Ненулевой {@code newAttachment} планировщик сохраняет в БД, чтобы
+     * следующие правки её пере-передавали и не заливали фото заново.
+     */
+    public record EditOutcome(EditResult status, String newAttachment) {
+        static EditOutcome of(EditResult status) {
+            return new EditOutcome(status, null);
+        }
+    }
+
     private final RestClient vkRestClient;
     private final VkProperties properties;
     private final VkTextFormatter formatter;
@@ -131,27 +142,50 @@ public class VkPublisher {
     /**
      * Синхронизирует пост с обновлённой новостью: правит текст на месте ({@code wall.edit}). Сохранённую
      * строку вложения (обложку) пере-передаём, потому что {@code wall.edit} без {@code attachments} может
-     * очистить вложения — так фото остаётся на месте. Текстовый пост правим без {@code attachments}.
+     * очистить вложения — так фото остаётся на месте.
+     * <p>
+     * Если сохранённой обложки нет ({@code vkAttachment} пуст), а у новости картинка теперь есть — заливаем
+     * её прямо сейчас и до-прикрепляем. Это закрывает случаи, когда пост изначально ушёл текстом: обложку
+     * добавили уже после первой публикации, либо первая публикация не смогла её залить (напр. позже сменили
+     * ключ сообщества на пользовательский токен админа). Залитую строку вложения возвращаем в
+     * {@link EditOutcome#newAttachment()} — планировщик сохранит её, чтобы не заливать фото на каждой правке.
      */
-    public EditResult editPost(Article article) {
+    public EditOutcome editPost(Article article) {
         String message = buildMessage(article);
         if (!StringUtils.hasText(message)) {
             // Правка сделала запись пустой — корректной альтернативы нет: прекращаем попытки (флаг снимет поллер).
-            return EditResult.GIVE_UP;
+            return EditOutcome.of(EditResult.GIVE_UP);
         }
+
+        String attachment = article.getVkAttachment();
+        String uploadedAttachment = null;
+        if (!StringUtils.hasText(attachment)) {
+            Cover cover = uploadCover(article);
+            if (cover.retryNeeded()) {
+                // Временный сбой загрузки обложки — правку отложим, повторим весь проход на следующем тике.
+                return EditOutcome.of(EditResult.RETRY);
+            }
+            // null — обложки нет либо VK отказал (напр. ошибка 27 для группового токена): правим текст без фото.
+            attachment = cover.attachment();
+            uploadedAttachment = cover.attachment();
+        }
+
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("owner_id", ownerId());
         params.add("post_id", String.valueOf(article.getVkPostId()));
         params.add("message", message);
-        if (StringUtils.hasText(article.getVkAttachment())) {
-            params.add("attachments", article.getVkAttachment());
+        if (StringUtils.hasText(attachment)) {
+            params.add("attachments", attachment);
         }
-        return switch (callMethod("wall.edit", params).result()) {
+        EditResult status = switch (callMethod("wall.edit", params).result()) {
             case SENT -> EditResult.SYNCED;
             case TRANSIENT -> EditResult.RETRY;
             // Пост удалён/нельзя изменить — прекращаем попытки.
             case REJECTED -> EditResult.GIVE_UP;
         };
+        // Свежезалитую обложку сохраняем в любом исходе (даже при RETRY): фото уже в альбоме сообщества,
+        // повторная правка пере-прикрепит его по сохранённой строке, а не зальёт файл заново.
+        return new EditOutcome(status, uploadedAttachment);
     }
 
     /** Удаляет пост со стены (для удалённой с сайта новости). */
@@ -190,10 +224,12 @@ public class VkPublisher {
         if (!StringUtils.hasText(article.getPreviewImageUrl())) {
             return Cover.none();
         }
-        // Байты обложки из S3: null — картинки нет; временный сбой чтения пробрасывается наружу
-        // (планировщик освободит запись и повторит).
+        // Байты обложки из S3: null — картинки нет (не S3-путь, напр. внешний URL, или объекта нет в бакете);
+        // временный сбой чтения пробрасывается наружу (планировщик освободит запись и повторит).
         byte[] bytes = imageSource.bytes(article.getPreviewImageUrl());
         if (bytes == null) {
+            log.info("Не удалось прочитать байты обложки {} для {} — отправляю текстом",
+                    article.getPreviewImageUrl(), article.getUrl());
             return Cover.none();
         }
 
@@ -217,11 +253,15 @@ public class VkPublisher {
             return Cover.retry();
         }
         if (uploaded.result() == SendResult.REJECTED || uploaded.response() == null) {
+            log.info("VK отклонил файл обложки при загрузке для {} — отправляю текстом", article.getUrl());
             return Cover.none();
         }
         String photo = uploaded.response().path("photo").asText("");
-        // Пустой photo (или "[]") — VK не принял файл: постим без обложки.
+        // Пустой photo (или "[]") — VK не принял файл (частая причина — формат/размер/пропорции картинки,
+        // которые ВК фильтрует строже Telegram/Discord): постим без обложки.
         if (!StringUtils.hasText(photo) || "[]".equals(photo)) {
+            log.info("VK не принял картинку обложки для {} (формат/размер/пропорции?) — отправляю текстом",
+                    article.getUrl());
             return Cover.none();
         }
 
@@ -236,6 +276,7 @@ public class VkPublisher {
         }
         JsonNode arr = saved.response();
         if (saved.result() == SendResult.REJECTED || arr == null || !arr.isArray() || arr.isEmpty()) {
+            log.info("VK не сохранил обложку (saveWallPhoto) для {} — отправляю текстом", article.getUrl());
             return Cover.none();
         }
         JsonNode photoObj = arr.get(0);

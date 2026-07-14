@@ -114,8 +114,12 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
                                                      @Param("since") Instant since,
                                                      @Param("until") Instant until);
 
-    /** Полные заклинания по набору url — для пересчёта недостающих payload (fallback экспорта VTTG). */
-    @EntityGraph(attributePaths = {"source", "classAffiliation"})
+    /**
+     * Полные заклинания по набору url — для пересчёта недостающих payload (fallback экспорта VTTG).
+     * Подтягивает {@code subclassAffiliation.parent}: ключи классов заклинания включают ключ
+     * родительского класса подкласса (см. {@code VttgSpellMapper#classKeys}).
+     */
+    @EntityGraph(attributePaths = {"source", "classAffiliation", "subclassAffiliation", "subclassAffiliation.parent"})
     @Query("select distinct s from Spell s where s.url in :urls")
     List<Spell> findAllForVttgExportByUrls(@Param("urls") Collection<String> urls);
 

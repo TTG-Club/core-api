@@ -133,13 +133,16 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
     List<Article> findDirtyForTelegram(@Param("now") Instant now, Limit limit);
 
     /**
-     * Фиксирует успешную отправку: id поста в канале и тип (фото/текст).
-     * Момент отправки (telegramPostedAt) уже проставлен на этапе claim. Флаг telegramDirty НЕ трогаем:
-     * если правка прилетела в окне отправки, она останется помеченной и синхронизируется следующим тиком.
+     * Фиксирует успешную отправку: id первого поста в канале, id хвостовых сообщений (CSV, NULL — поста
+     * хватило одного сообщения) и тип (фото/текст). Момент отправки (telegramPostedAt) уже проставлен на
+     * этапе claim. Флаг telegramDirty НЕ трогаем: если правка прилетела в окне отправки, она останется
+     * помеченной и синхронизируется следующим тиком.
      */
     @Modifying
-    @Query("UPDATE Article a SET a.telegramMessageId = :messageId, a.telegramPhoto = :photo WHERE a.id = :id")
-    void markTelegramSent(@Param("id") UUID id, @Param("messageId") Long messageId, @Param("photo") boolean photo);
+    @Query("UPDATE Article a SET a.telegramMessageId = :messageId, a.telegramTailMessageIds = :tailMessageIds, "
+            + "a.telegramPhoto = :photo WHERE a.id = :id")
+    void markTelegramSent(@Param("id") UUID id, @Param("messageId") Long messageId,
+                          @Param("tailMessageIds") String tailMessageIds, @Param("photo") boolean photo);
 
     /**
      * Снимает флаг правки — только если запись не изменилась с момента загрузки (updatedAt совпадает).
@@ -168,8 +171,8 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
      * чтобы восстановленная (снятая с удаления) запись снова опубликовалась.
      */
     @Modifying
-    @Query("UPDATE Article a SET a.telegramMessageId = null, a.telegramPostedAt = null, a.telegramDirty = false "
-            + "WHERE a.id = :id")
+    @Query("UPDATE Article a SET a.telegramMessageId = null, a.telegramTailMessageIds = null, "
+            + "a.telegramPostedAt = null, a.telegramDirty = false WHERE a.id = :id")
     void clearTelegramPost(@Param("id") UUID id);
 
     /**
@@ -331,6 +334,15 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
     @Modifying
     @Query("UPDATE Article a SET a.vkPostId = :postId, a.vkAttachment = :attachment WHERE a.id = :id")
     void markVkSent(@Param("id") UUID id, @Param("postId") Long postId, @Param("attachment") String attachment);
+
+    /**
+     * Сохраняет строку вложения-обложки для уже опубликованного поста — обложку залили при синхронизации
+     * правки (пост изначально ушёл текстом). Точечный UPDATE только по vk_attachment: не трогает updatedAt и
+     * прочие vk_*-поля, чтобы не сорвать claim/compare-and-clear.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkAttachment = :attachment WHERE a.id = :id")
+    void updateVkAttachment(@Param("id") UUID id, @Param("attachment") String attachment);
 
     /**
      * Снимает флаг правки — только если запись не изменилась с момента загрузки (updatedAt совпадает).

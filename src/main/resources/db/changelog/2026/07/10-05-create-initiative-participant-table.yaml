@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-10-05-create-initiative-participant-table
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: initiative_participant
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_initiative_participant
+                  name: id
+                  type: UUID
+              - column:
+                  name: tracker_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initiative_bonus
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: creature_url
+                  type: VARCHAR(255)
+              - column:
+                  name: initiative_roll
+                  type: INT
+              - column:
+                  name: initiative_total
+                  type: INT
+              - column:
+                  name: tie_roll
+                  type: INT
+              - column:
+                  name: seq
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+  - changeSet:
+      id: 2026-07-10-05-create-initiative-participant-index
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: tracker_id
+            indexName: initiative_participant_tracker_index
+            tableName: initiative_participant
+        - addForeignKeyConstraint:
+            baseTableName: initiative_participant
+            baseColumnNames: tracker_id
+            referencedTableName: initiative_tracker
+            referencedColumnNames: id
+            constraintName: FK_INITIATIVE_PARTICIPANT_ON_TRACKER
+            onDelete: CASCADE

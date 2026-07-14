@@ -14,8 +14,8 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.AbilitiesResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.AbilityResponse;
 import club.ttg.dnd5.domain.beastiary.rest.dto.BonusDto;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
+import club.ttg.dnd5.domain.beastiary.service.CreatureInitiativeCalculator;
 import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
@@ -278,9 +278,7 @@ public interface CreatureMapper {
 
     @Named("toInit")
     default BonusDto toInit(Creature creature) {
-        var mod = creature.getAbilities().getMod(Ability.DEXTERITY);
-        var pb = ChallengeRating.getPb(creature.getExperience());
-        var initiative = mod + pb * creature.getInitiative().getMultiplier();
+        var initiative = CreatureInitiativeCalculator.initiativeBonus(creature);
         String sign = initiative >= 0 ? "+" : "";
         return BonusDto.builder()
                 .value(String.format("%s%d", sign, initiative))

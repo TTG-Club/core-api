@@ -39,10 +39,14 @@ public class VttgSpeciesMapper {
     private final VttgMarkupConverter markupConverter;
 
     public VttgSpecies toVttg(Species species) {
+        String key = slug(species.getUrl());
         return VttgSpecies.builder()
                 .type(TYPE)
+                // id обязателен для раскладки дельты (routeEntity: <id>.json), иначе вид отбрасывается.
+                .id(key)
                 .section(SECTION)
-                .key(slug(species.getUrl()))
+                .key(key)
+                .isSRD(species.getSrdVersion() != null)
                 .name(species.getName())
                 .nameEn(optional(species.getEnglish()))
                 .description(markupConverter.toText(species.getDescription()))

@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -90,8 +91,8 @@ public class VttgSpellMapper {
                 .description(description)
                 .higherLevelDescription(higherLevelDescription)
                 .sourceKey(sourceKey(spell.getSource()))
-                .isSRD(true)
-                .classKeys(classKeys(spell.getClassAffiliation()))
+                .isSRD(spell.getSrdVersion() != null)
+                .classKeys(classKeys(spell))
                 .type("spell")
                 .section("spells")
                 .build();
@@ -320,19 +321,46 @@ public class VttgSpellMapper {
         return source.getAcronym().toLowerCase(Locale.ROOT);
     }
 
-    private List<String> classKeys(Set<CharacterClass> classes) {
-        if (classes == null) {
-            return List.of();
-        }
-        return classes.stream()
-                .filter(Objects::nonNull)
-                .map(CharacterClass::getEnglish)
+    /**
+     * Ключи классов заклинания — источник «списка заклинаний класса» в VTTG (фильтр компендиума
+     * и выбор заклинаний персонажа идут по {@code spell.classKeys}, отдельного поля-списка на классе нет).
+     *
+     * <p>Собираются из двух источников: принадлежности базовым классам ({@code classAffiliation}) и
+     * принадлежности подклассам ({@code subclassAffiliation}) — подкласс отображается на ключ
+     * РОДИТЕЛЬСКОГО класса. Так заклинания, привязанные только к подклассу (домены/клятвы/традиции),
+     * тоже попадают в список базового класса, и результат не зависит целиком от заполненности
+     * {@code classAffiliation}. Ключ нормализуется идентично ключу записи класса
+     * ({@code VttgClassMapper}) для 12 канонических классов, иначе фильтр не сойдётся.</p>
+     */
+    private List<String> classKeys(Spell spell) {
+        return Stream.concat(
+                        classEnglishNames(spell.getClassAffiliation()),
+                        subclassParentEnglishNames(spell.getSubclassAffiliation()))
                 .filter(StringUtils::hasText)
                 .map(value -> value.toLowerCase(Locale.ROOT).replaceAll("[^a-z]", ""))
                 .filter(CLASS_KEYS::contains)
                 .distinct()
                 .sorted()
                 .toList();
+    }
+
+    private Stream<String> classEnglishNames(Set<CharacterClass> classes) {
+        if (classes == null) {
+            return Stream.empty();
+        }
+        return classes.stream().filter(Objects::nonNull).map(CharacterClass::getEnglish);
+    }
+
+    /** Английские имена РОДИТЕЛЬСКИХ классов набора подклассов (подклассы без родителя пропускаются). */
+    private Stream<String> subclassParentEnglishNames(Set<CharacterClass> subclasses) {
+        if (subclasses == null) {
+            return Stream.empty();
+        }
+        return subclasses.stream()
+                .filter(Objects::nonNull)
+                .map(CharacterClass::getParent)
+                .filter(Objects::nonNull)
+                .map(CharacterClass::getEnglish);
     }
 
     private String optionalText(String value) {

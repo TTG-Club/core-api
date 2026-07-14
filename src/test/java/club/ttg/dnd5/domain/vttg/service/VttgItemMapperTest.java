@@ -221,6 +221,7 @@ class VttgItemMapperTest {
         Source source = new Source();
         source.setAcronym("PHB");
         item.setSource(source);
+        item.setSrdVersion("5.1");
         return item;
     }
 

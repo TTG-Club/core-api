@@ -62,6 +62,7 @@ public class VttgCompendiumSections {
         return List.of(
                 leaf("spells", "Заклинания", "tabler:sparkles", "spell", spellView()),
                 leaf("creatures", "Существа", "tabler:paw", "creature", creatureView()),
+                leaf("classes", "Классы", "tabler:users-group", "class", null),
                 leaf("species", "Виды", "tabler:users", "species", null),
                 leaf("backgrounds", "Предыстории", "tabler:book", "background", null),
                 leaf("feats", "Черты", "tabler:star", "feat", null),

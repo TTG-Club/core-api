@@ -80,7 +80,7 @@ public class VttgItemMapper {
         data.put("equipped", false);
         data.put("isMagical", false);
         data.put("sourceKey", sourceKey);
-        data.put("isSRD", true);
+        data.put("isSRD", item.getSrdVersion() != null);
         data.put("isReadOnly", true);
         return data;
     }

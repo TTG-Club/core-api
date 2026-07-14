@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
@@ -23,17 +24,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VttgSpellMapperTest {
+    private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(new ObjectMapper());
     private final VttgSpellMapper mapper = new VttgSpellMapper(
-            new VttgMarkupConverter(new ObjectMapper()),
+            markupConverter,
             new VttgSpellMechanicsExtractor(),
             new VttgSpellScalingExtractor()
     );
+    private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter);
 
     @Test
     void mapsStructuredSpellFieldsToVttgFormat() {
@@ -202,6 +206,115 @@ class VttgSpellMapperTest {
 
         // Лечение кодируется токеном @heal в формуле (легаси-флаг isHealing удалён).
         assertEquals("2Рє4@heal+@mod.spell", result.getDamageParts().getFirst().getFormula());
+    }
+
+    /**
+     * Список заклинаний класса в VTTG строится фильтром по {@code spell.classKeys}
+     * (отдельного поля-списка на классе нет). Проверяем, что ключ, который кладёт
+     * spell-маппер, ТОЧНО совпадает с {@code key} записи класса — иначе фильтр в
+     * {@code WizardStepSpellcasting} не найдёт заклинаний класса.
+     */
+    @Test
+    void spellClassKeysMatchExportedClassKey() {
+        CharacterClass wizard = characterClass("wizard", "Волшебник", "Wizard");
+
+        Spell spell = new Spell();
+        spell.setUrl("fire-bolt");
+        spell.setName("Огненный снаряд");
+        spell.setEnglish("Fire Bolt");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setClassAffiliation(Set.of(wizard));
+
+        List<String> classKeys = mapper.toVttg(spell).getClassKeys();
+        String classKey = classMapper.toVttg(wizard).getKey();
+
+        assertEquals(List.of("wizard"), classKeys);
+        assertEquals("wizard", classKey);
+        assertTrue(classKeys.contains(classKey));
+    }
+
+    /** Несколько принадлежностей: канонические ключи, отсортированы и без дублей; неканонические отброшены. */
+    @Test
+    void spellClassKeysFilterToCanonicalSortedDistinct() {
+        Spell spell = new Spell();
+        spell.setUrl("cure-wounds");
+        spell.setName("Лечение ран");
+        spell.setEnglish("Cure Wounds");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.ABJURATION).build());
+        spell.setClassAffiliation(Set.of(
+                characterClass("cleric", "Жрец", "Cleric"),
+                characterClass("bard", "Бард", "Bard"),
+                // Неканонический (хоумбрю) класс отбрасывается фильтром CLASS_KEYS.
+                characterClass("blood-hunter", "Охотник на нечисть", "Blood Hunter")));
+
+        assertEquals(List.of("bard", "cleric"), mapper.toVttg(spell).getClassKeys());
+    }
+
+    /** Заклинание без принадлежности к классам даёт пустой список ключей (не null). */
+    @Test
+    void spellWithoutClassAffiliationHasEmptyClassKeys() {
+        Spell spell = new Spell();
+        spell.setUrl("orphan-spell");
+        spell.setName("Ничьё");
+        spell.setEnglish("Orphan Spell");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+
+        assertTrue(mapper.toVttg(spell).getClassKeys().isEmpty());
+    }
+
+    /**
+     * Заклинание, привязанное ТОЛЬКО к подклассу (домен/клятва), попадает в список базового класса:
+     * подкласс отображается на ключ родительского класса.
+     */
+    @Test
+    void spellClassKeysIncludeSubclassParent() {
+        CharacterClass cleric = characterClass("cleric", "Жрец", "Cleric");
+        CharacterClass lifeDomain = characterClass("life-domain", "Домен Жизни", "Life Domain");
+        lifeDomain.setParent(cleric);
+
+        Spell spell = new Spell();
+        spell.setUrl("bless");
+        spell.setName("Благословение");
+        spell.setEnglish("Bless");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setSubclassAffiliation(Set.of(lifeDomain));
+
+        assertEquals(List.of("cleric"), mapper.toVttg(spell).getClassKeys());
+    }
+
+    /** Прямая принадлежность и подклассовая объединяются и дедуплицируются (родитель == прямой класс). */
+    @Test
+    void spellClassKeysMergeClassAndSubclassParentDistinct() {
+        CharacterClass wizard = characterClass("wizard", "Волшебник", "Wizard");
+        CharacterClass cleric = characterClass("cleric", "Жрец", "Cleric");
+        CharacterClass lifeDomain = characterClass("life-domain", "Домен Жизни", "Life Domain");
+        lifeDomain.setParent(cleric);
+        // Подкласс волшебника: его родитель совпадает с прямой принадлежностью → должен схлопнуться.
+        CharacterClass evocation = characterClass("evocation-school", "Школа Воплощения", "Evocation");
+        evocation.setParent(wizard);
+
+        Spell spell = new Spell();
+        spell.setUrl("combo-spell");
+        spell.setName("Combo");
+        spell.setEnglish("Combo");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setClassAffiliation(Set.of(wizard));
+        spell.setSubclassAffiliation(Set.of(lifeDomain, evocation));
+
+        assertEquals(List.of("cleric", "wizard"), mapper.toVttg(spell).getClassKeys());
+    }
+
+    private CharacterClass characterClass(String url, String name, String english) {
+        CharacterClass characterClass = new CharacterClass();
+        characterClass.setUrl(url);
+        characterClass.setName(name);
+        characterClass.setEnglish(english);
+        return characterClass;
     }
 
     @Test

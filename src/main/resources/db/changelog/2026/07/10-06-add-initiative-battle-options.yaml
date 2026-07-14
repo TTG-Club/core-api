@@ -1,0 +1,49 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-10-06-add-reroll-each-round-to-initiative-tracker
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: initiative_tracker
+            columns:
+              - column:
+                  name: reroll_each_round
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: initiative_tracker
+            columns:
+              - column:
+                  name: reroll_each_round
+                  valueBoolean: false
+            where: reroll_each_round IS NULL
+        - addNotNullConstraint:
+            tableName: initiative_tracker
+            columnName: reroll_each_round
+            columnDataType: BOOLEAN
+            defaultNullValue: false
+  - changeSet:
+      id: 2026-07-10-06-add-dead-to-initiative-participant
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: initiative_participant
+            columns:
+              - column:
+                  name: dead
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: initiative_participant
+            columns:
+              - column:
+                  name: dead
+                  valueBoolean: false
+            where: dead IS NULL
+        - addNotNullConstraint:
+            tableName: initiative_participant
+            columnName: dead
+            columnDataType: BOOLEAN
+            defaultNullValue: false

@@ -48,7 +48,7 @@ public class VttgFeatMapper {
                 .type(TYPE)
                 .section(SECTION)
                 .sourceKey(sourceKey(feat.getSource()))
-                .isSRD(true)
+                .isSRD(feat.getSrdVersion() != null)
                 .featureType(TYPE)
                 .repeatable(Boolean.TRUE.equals(feat.getRepeatability()))
                 .description(markupConverter.toText(feat.getDescription()))
