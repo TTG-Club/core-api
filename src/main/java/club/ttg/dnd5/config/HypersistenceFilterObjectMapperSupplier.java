@@ -2,6 +2,7 @@ package club.ttg.dnd5.config;
 
 import club.ttg.dnd5.dto.base.filters.FilterRegistry;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 import io.hypersistence.utils.hibernate.type.util.ObjectMapperSupplier;
@@ -20,6 +21,10 @@ public class HypersistenceFilterObjectMapperSupplier implements ObjectMapperSupp
     public ObjectMapper get()
     {
         ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+        // jsonb в БД может содержать поля, которых нет в текущей Java-модели (схема данных
+        // эволюционирует независимо от кода; веб-слой их тоже игнорирует). Неизвестное поле
+        // не должно валить гидрацию сущности — иначе одна запись ломает целые выборки.
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         ClassPathScanningCandidateComponentProvider scanner =
                 new ClassPathScanningCandidateComponentProvider(false);

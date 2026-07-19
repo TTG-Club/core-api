@@ -165,12 +165,19 @@ public class VttgChangesService {
     /**
      * Дельта окна: добавленные/изменённые видимые сущности (upserts) с полезной нагрузкой.
      *
-     * <p>Полная выгрузка (без {@code since}) кэшируется ненадолго: она тяжёлая (гидрация jsonb)
-     * и детерминирована в пределах окна, повторные первичные загрузки берутся из кэша.
-     * Инкрементальный поллинг ({@code since} задан) не кэшируется и всегда свежий; верхняя граница
-     * {@code until} в кэшированном ответе «заморожена», что безопасно — повторная выборка идемпотентна.</p>
+     * <p>Полная выгрузка кэшируется ненадолго: она тяжёлая (гидрация jsonb) и детерминирована
+     * в пределах окна, повторные первичные загрузки берутся из кэша. Полной считается выгрузка
+     * и без {@code since}, и с курсором «с начала времён» ({@code since} не позже эпохи) — именно
+     * такой шлёт лаунчер VTTG при первой синхронизации. {@code sync} схлопывает конкурентные
+     * холодные выгрузки в одно вычисление — N новых пользователей не собирают N полных дампов
+     * одновременно. Инкрементальный поллинг ({@code since} задан и свежий) не кэшируется и всегда
+     * свежий; верхняя граница {@code until} в кэшированном ответе «заморожена», что безопасно —
+     * повторная выборка идемпотентна.</p>
      */
-    @Cacheable(cacheNames = CacheConfig.VTTG_FULL_EXPORT, condition = "#sinceParam == null", key = "{#srdVersion, #types, #srdOnly}")
+    @Cacheable(cacheNames = CacheConfig.VTTG_FULL_EXPORT,
+            condition = "#sinceParam == null || #sinceParam.toEpochMilli() <= 0",
+            key = "{#srdVersion, #types, #srdOnly}",
+            sync = true)
     public VttgChangesResponse changes(Instant sinceParam, String srdVersion, Set<String> types, boolean srdOnly) {
         long startedAt = System.nanoTime();
         Window window = window(sinceParam);
@@ -257,7 +264,8 @@ public class VttgChangesService {
 
     /**
      * Планирует параллельную сборку типа из предрассчитанных payload ({@link VttgPayloadStore}).
-     * Транзакцией управляет store (она записываемая — пересчитанные payload сохраняются).
+     * Транзакциями управляет store: чтение, пересчёт и дозапись payload разнесены по фазам,
+     * сбой одной сущности не валит выгрузку типа.
      */
     private <E> void submitStore(Map<String, CompletableFuture<TypeResult>> futures, String type, Set<String> selected,
                                  Supplier<List<VttgEntityRef>> refsFinder,

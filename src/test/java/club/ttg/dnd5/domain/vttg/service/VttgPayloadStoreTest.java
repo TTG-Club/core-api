@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -32,7 +33,8 @@ class VttgPayloadStoreTest {
 
     private final VttgExportRepository repository = mock(VttgExportRepository.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final VttgPayloadStore store = new VttgPayloadStore(repository, objectMapper);
+    private final VttgPayloadStore store =
+            new VttgPayloadStore(repository, objectMapper, mock(PlatformTransactionManager.class));
 
     private final Function<String, String> identity = url -> url;
     private final Function<String, Object> toDto = url -> Map.of("name", url);
@@ -136,6 +138,63 @@ class VttgPayloadStoreTest {
         com.fasterxml.jackson.databind.JsonNode secondData =
                 (com.fasterxml.jackson.databind.JsonNode) changes.get(1).data();
         assertEquals("Полулаты дварфов", secondData.get("name").asText());
+    }
+
+    @Test
+    void brokenEntityMappingSkippedOthersSurvive() {
+        Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
+        when(repository.findByTypeAndUrlIn(eq(TYPE), any())).thenReturn(List.of());
+        Function<String, Object> failingToDto = url -> {
+            if (url.equals("broken")) {
+                throw new IllegalStateException("null там, где не ждали");
+            }
+            return Map.of("name", url);
+        };
+
+        List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt), ref("broken", changedAt)),
+                () -> null, urls -> List.copyOf(urls), identity, failingToDto);
+
+        assertEquals(1, changes.size(), "битая сущность пропускается, остальные выгружаются");
+        assertEquals("fireball", changes.get(0).url());
+        ArgumentCaptor<List<VttgExport>> captor = captor();
+        verify(repository).saveAll(captor.capture());
+        assertEquals(1, captor.getValue().size(), "payload битой сущности не сохраняется");
+    }
+
+    @Test
+    void batchHydrationFailureFallsBackToPerUrlAndSkipsBroken() {
+        Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
+        when(repository.findByTypeAndUrlIn(eq(TYPE), any())).thenReturn(List.of());
+        // Пакетная гидрация падает целиком (битый jsonb одной записи валит всю выборку) —
+        // поштучный фолбэк выгружает живые сущности, битая пропускается.
+        Function<Collection<String>, List<String>> byUrls = urls -> {
+            if (urls.size() > 1) {
+                throw new IllegalStateException("битый jsonb в пакете");
+            }
+            String url = urls.iterator().next();
+            if (url.equals("broken")) {
+                throw new IllegalStateException("битый jsonb");
+            }
+            return List.of(url);
+        };
+
+        List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt), ref("broken", changedAt)),
+                () -> null, byUrls, identity, toDto);
+
+        assertEquals(1, changes.size(), "поштучный фолбэк спасает живые сущности");
+        assertEquals("fireball", changes.get(0).url());
+    }
+
+    @Test
+    void persistFailureDoesNotFailLoad() {
+        Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
+        when(repository.findByTypeAndUrlIn(eq(TYPE), any())).thenReturn(List.of());
+        when(repository.saveAll(any())).thenThrow(new IllegalStateException("duplicate key"));
+
+        List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt)),
+                () -> null, urls -> List.copyOf(urls), identity, toDto);
+
+        assertEquals(1, changes.size(), "сбой записи кэша payload не валит ответ — он собран из памяти");
     }
 
     @Test
