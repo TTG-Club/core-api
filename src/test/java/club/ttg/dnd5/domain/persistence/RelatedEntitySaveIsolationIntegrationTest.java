@@ -67,8 +67,6 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "spring.jpa.properties.hibernate.hbm2ddl.auto=create-drop",
                 "spring.jpa.properties.hibernate.generate_statistics=true",
                 "spring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=true",
-                "spring.mail.username=test@example.com",
-                "spring.mail.password=test-password",
                 "spring.cloud.aws.s3.endpoint=http://localhost:4566",
                 "spring.cloud.aws.s3.region=us-east-1",
                 "spring.cloud.aws.s3.bucket=test-bucket",

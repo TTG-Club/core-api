@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
+import club.ttg.dnd5.domain.spell.model.SpellActiveEffect;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
@@ -307,6 +308,47 @@ class VttgSpellMapperTest {
         spell.setSubclassAffiliation(Set.of(lifeDomain, evocation));
 
         assertEquals(List.of("cleric", "wizard"), mapper.toVttg(spell).getClassKeys());
+    }
+
+    /** Активные эффекты заклинания («Злая насмешка») экспортируются без преобразования, включая consumeOn/flags. */
+    @Test
+    void exportsSpellActiveEffects() {
+        Spell spell = new Spell();
+        spell.setUrl("vicious-mockery");
+        spell.setName("Злая насмешка");
+        spell.setEnglish("Vicious Mockery");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.ENCHANTMENT).build());
+
+        SpellActiveEffect effect = new SpellActiveEffect();
+        effect.setId("vicious-mockery-attack-disadvantage");
+        effect.setName("Помеха на следующую атаку");
+        effect.setEffectTarget("target");
+        effect.setConsumeOn("carrierAttack");
+        effect.setFlags(List.of("attack.disadvantage"));
+        spell.setActiveEffects(List.of(effect));
+
+        var result = mapper.toVttg(spell);
+        assertEquals(1, result.getActiveEffects().size());
+        assertEquals("vicious-mockery-attack-disadvantage", result.getActiveEffects().getFirst().getId());
+        assertEquals("carrierAttack", result.getActiveEffects().getFirst().getConsumeOn());
+
+        // Сериализация под ключом "activeEffects", флаги проброшены.
+        var tree = new ObjectMapper().valueToTree(result);
+        assertEquals("attack.disadvantage", tree.get("activeEffects").get(0).get("flags").get(0).asText());
+    }
+
+    /** Заклинание без активных эффектов не несёт поле activeEffects (омитится). */
+    @Test
+    void omitsActiveEffectsWhenAbsent() {
+        Spell spell = new Spell();
+        spell.setUrl("plain-spell");
+        spell.setName("Plain");
+        spell.setEnglish("Plain");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+
+        assertNull(mapper.toVttg(spell).getActiveEffects());
     }
 
     private CharacterClass characterClass(String url, String name, String english) {

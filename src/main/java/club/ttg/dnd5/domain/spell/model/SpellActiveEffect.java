@@ -38,9 +38,13 @@ public class SpellActiveEffect {
     private String conditionKey;
     private Save applySave;
     private Boolean applyOnSuccess;
+    private Boolean applyOnSuccessOnly;
+    /** Триггер потребления эффекта (например {@code carrierAttack} у «Злой насмешки»). */
+    private String consumeOn;
     private List<DamagePart> damageParts;
     private RecurringSave recurringSave;
     private RecurringDamage recurringDamage;
+    private List<String> conditionImmunities;
 
     /** Длительность эффекта. */
     @Getter

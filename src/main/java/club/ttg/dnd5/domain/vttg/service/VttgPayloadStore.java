@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 public class VttgPayloadStore {
 
     /** Версия логики мапперов. Увеличьте при изменении формата payload — все строки пересчитаются. */
-    public static final int SCHEMA_VERSION = 7;
+    public static final int SCHEMA_VERSION = 8;
 
     private final VttgExportRepository repository;
     private final ObjectMapper objectMapper;
