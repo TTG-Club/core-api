@@ -7,8 +7,11 @@ import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,21 +32,35 @@ import java.util.function.Supplier;
  * перезаписываются (самозаполнение, отдельный backfill не нужен). Правка сущности меняет её
  * {@code updatedAt}, что автоматически инвалидирует payload — для типов без кросс-сущностных
  * зависимостей (заклинания, существа) этого достаточно, код в сервисах сохранения не требуется.</p>
+ *
+ * <p>Устойчивость: одна «битая» сущность (не гидрируется из jsonb, падает маппинг) не валит
+ * выгрузку типа — пакет пересчёта деградирует до поштучной обработки, сбойная сущность
+ * пропускается с ошибкой в логе. Сохранение пересчитанных payload — оптимизация: его сбой
+ * (например, гонка параллельных выгрузок) не мешает отдать ответ, собранный в памяти.
+ * Поэтому фазы разнесены по собственным транзакциям, а не объединены в одну.</p>
  */
 @Service
 @RequiredArgsConstructor
 public class VttgPayloadStore {
 
+    private static final Logger log = LoggerFactory.getLogger(VttgPayloadStore.class);
+
     /** Версия логики мапперов. Увеличьте при изменении формата payload — все строки пересчитаются. */
     public static final int SCHEMA_VERSION = 8;
 
+    /**
+     * Размер пакета пересчёта/сохранения: ограничивает {@code IN}-список, объём транзакции и
+     * зону поражения при сбое (на поштучную обработку переходит только сбойный пакет).
+     */
+    static final int BATCH_SIZE = 500;
+
     private final VttgExportRepository repository;
     private final ObjectMapper objectMapper;
+    private final PlatformTransactionManager transactionManager;
 
     /**
      * Возвращает изменения одного типа за окно, используя предрассчитанные payload и пересчитывая
-     * недостающие. Выполняется в собственной (записываемой) транзакции — вызывается параллельно
-     * для каждого типа.
+     * недостающие. Вызывается параллельно для каждого типа; транзакциями фаз управляет сам.
      *
      * @param type         тип раздела VTTG (например, "spells")
      * @param refsFinder   лёгкая выборка ссылок (url + changedAt) сущностей окна
@@ -54,18 +71,17 @@ public class VttgPayloadStore {
      * @param urlOf        извлечение url из сущности
      * @param toDto        маппинг сущности в VTTG-DTO
      */
-    @Transactional
     public <E> List<VttgChange> load(String type,
                                      Supplier<List<VttgEntityRef>> refsFinder,
                                      Supplier<Instant> dependencyStampFinder,
                                      Function<Collection<String>, List<E>> byUrlsFinder,
                                      Function<E, String> urlOf,
                                      Function<E, Object> toDto) {
-        List<VttgEntityRef> refs = refsFinder.get();
+        List<VttgEntityRef> refs = inReadOnlyTx(refsFinder::get);
         if (refs.isEmpty()) {
             return List.of();
         }
-        Instant dependencyStamp = dependencyStampFinder.get();
+        Instant dependencyStamp = inReadOnlyTx(dependencyStampFinder::get);
 
         // Отметка валидности = max(время изменения сущности, отметка зависимостей). Правка как самой
         // сущности, так и её зависимости сдвигает отметку и делает сохранённый payload устаревшим.
@@ -78,7 +94,7 @@ public class VttgPayloadStore {
 
         Map<String, JsonNode> payloads = new LinkedHashMap<>();
         List<String> missing = new ArrayList<>();
-        for (VttgExport stored : repository.findByTypeAndUrlIn(type, windowStamp.keySet())) {
+        for (VttgExport stored : inReadOnlyTx(() -> repository.findByTypeAndUrlIn(type, windowStamp.keySet()))) {
             if (isFresh(stored, validStamp.get(stored.getUrl()))) {
                 payloads.put(stored.getUrl(), stored.getPayload());
             }
@@ -91,19 +107,17 @@ public class VttgPayloadStore {
 
         if (!missing.isEmpty()) {
             List<VttgExport> recomputed = new ArrayList<>(missing.size());
-            for (E entity : byUrlsFinder.apply(missing)) {
-                String url = urlOf.apply(entity);
-                JsonNode payload = objectMapper.valueToTree(toDto.apply(entity));
-                payloads.put(url, payload);
-                recomputed.add(new VttgExport(type, url, payload, validStamp.get(url), SCHEMA_VERSION));
+            for (List<String> batch : batches(missing)) {
+                recomputeBatch(type, batch, byUrlsFinder, urlOf, toDto, validStamp, payloads, recomputed);
             }
-            repository.saveAll(recomputed);
+            persist(type, recomputed);
         }
 
         List<VttgChange> changes = new ArrayList<>(refs.size());
         for (VttgEntityRef ref : refs) {
             JsonNode payload = payloads.get(ref.getUrl());
-            // payload == null лишь если сущность исчезла между выборкой ссылок и пересчётом — пропускаем.
+            // payload == null — сущность исчезла между выборкой ссылок и пересчётом либо пропущена
+            // как «битая» (см. recomputeBatch) — не отдаём.
             if (payload == null) {
                 continue;
             }
@@ -118,6 +132,89 @@ public class VttgPayloadStore {
             }
         }
         return changes;
+    }
+
+    /**
+     * Пересчитывает пакет url: гидрация + маппинг в одной read-only транзакции (маппер может
+     * дочитывать ленивые связи). Если пакет падает целиком (например, сущность не гидрируется
+     * из-за некорректного jsonb), деградирует до поштучной обработки: сбойные сущности
+     * пропускаются с ошибкой в логе, остальные попадают в выгрузку.
+     */
+    private <E> void recomputeBatch(String type, List<String> batch,
+                                    Function<Collection<String>, List<E>> byUrlsFinder,
+                                    Function<E, String> urlOf, Function<E, Object> toDto,
+                                    Map<String, Instant> validStamp,
+                                    Map<String, JsonNode> payloads, List<VttgExport> recomputed) {
+        try {
+            inReadOnlyTx(() -> {
+                mapEntities(type, byUrlsFinder.apply(batch), urlOf, toDto, validStamp, payloads, recomputed);
+                return null;
+            });
+        } catch (RuntimeException batchFailure) {
+            log.warn("VTTG export: пакетный пересчёт {} ({} url) не удался, перехожу на поштучный: {}",
+                    type, batch.size(), batchFailure.toString());
+            for (String url : batch) {
+                try {
+                    inReadOnlyTx(() -> {
+                        mapEntities(type, byUrlsFinder.apply(List.of(url)), urlOf, toDto, validStamp, payloads, recomputed);
+                        return null;
+                    });
+                } catch (RuntimeException entityFailure) {
+                    log.error("VTTG export: сущность {}/{} не выгружается — пропущена в дампе", type, url, entityFailure);
+                }
+            }
+        }
+    }
+
+    /** Маппит сущности в payload; сбой одной сущности пропускает её, не прерывая остальные. */
+    private <E> void mapEntities(String type, List<E> entities,
+                                 Function<E, String> urlOf, Function<E, Object> toDto,
+                                 Map<String, Instant> validStamp,
+                                 Map<String, JsonNode> payloads, List<VttgExport> recomputed) {
+        for (E entity : entities) {
+            String url = urlOf.apply(entity);
+            try {
+                JsonNode payload = objectMapper.valueToTree(toDto.apply(entity));
+                payloads.put(url, payload);
+                recomputed.add(new VttgExport(type, url, payload, validStamp.get(url), SCHEMA_VERSION));
+            } catch (RuntimeException failure) {
+                log.error("VTTG export: маппинг {}/{} упал — сущность пропущена в дампе", type, url, failure);
+            }
+        }
+    }
+
+    /**
+     * Сохраняет пересчитанные payload пакетами в отдельных транзакциях. Хранилище — кэш:
+     * сбой записи (например, гонка параллельных выгрузок по одному url) логируется, но ответ
+     * всё равно собирается из уже посчитанных в памяти payload; недостающее пересчитается позже.
+     */
+    private void persist(String type, List<VttgExport> recomputed) {
+        for (List<VttgExport> batch : batches(recomputed)) {
+            try {
+                inWriteTx(() -> repository.saveAll(batch));
+            } catch (RuntimeException failure) {
+                log.warn("VTTG export: не удалось сохранить {} payload {} — ответ собран из памяти: {}",
+                        batch.size(), type, failure.toString());
+            }
+        }
+    }
+
+    private <T> T inReadOnlyTx(Supplier<T> action) {
+        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+        transaction.setReadOnly(true);
+        return transaction.execute(status -> action.get());
+    }
+
+    private void inWriteTx(Runnable action) {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> action.run());
+    }
+
+    private static <T> List<List<T>> batches(List<T> items) {
+        List<List<T>> result = new ArrayList<>();
+        for (int from = 0; from < items.size(); from += BATCH_SIZE) {
+            result.add(items.subList(from, Math.min(items.size(), from + BATCH_SIZE)));
+        }
+        return result;
     }
 
     /** Естественный ключ записи из элемента массива: его {@code id}; иначе url исходной сущности. */
