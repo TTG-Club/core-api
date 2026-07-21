@@ -14,6 +14,8 @@ import java.util.Optional;
 @Mapper(componentModel = "spring")
 public interface SpellComponentsMapper {
     @Mapping(target = "m", source = "m", qualifiedByName = "stringNotEmpty")
+    @Mapping(target = "withCost", source = "m", qualifiedByName = "materialWithCost")
+    @Mapping(target = "consumable", source = "m", qualifiedByName = "materialConsumable")
     SpellShortComponents toSpellShortComponents(SpellComponents components);
 
     @Mapping(target = "m", source = "m.text")
@@ -24,6 +26,25 @@ public interface SpellComponentsMapper {
         return Optional.ofNullable(material)
                 .map(MaterialComponent::getText)
                 .map(StringUtils::isNotEmpty)
+                .orElse(false);
+    }
+
+    /**
+     * Материальный компонент со стоимостью: его нельзя заменить фокусировкой или мешочком
+     * с компонентами, поэтому признак выносится в короткую карточку.
+     */
+    @Named("materialWithCost")
+    default Boolean materialWithCost(MaterialComponent material) {
+        return Optional.ofNullable(material)
+                .map(MaterialComponent::getWithCost)
+                .orElse(false);
+    }
+
+    /** Материальный компонент расходуется при накладывании — его нужно докупать. */
+    @Named("materialConsumable")
+    default Boolean materialConsumable(MaterialComponent material) {
+        return Optional.ofNullable(material)
+                .map(MaterialComponent::getConsumable)
                 .orElse(false);
     }
 }

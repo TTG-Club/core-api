@@ -257,3 +257,11 @@ databaseChangeLog:
       file: db/changelog/2026/07/12-01-add-telegram-tail-message-ids-to-article.yaml
   - include:
       file: db/changelog/2026/07/13-01-update-full-name-search-view-add-article.yaml
+  - include:
+      file: db/changelog/2026/07/21-01-create-spellbook-table.yaml
+  - include:
+      file: db/changelog/2026/07/21-02-create-spellbook-spell-table.yaml
+  - include:
+      file: db/changelog/2026/07/21-03-add-share-key-to-spellbook.yaml
+  - include:
+      file: db/changelog/2026/07/21-04-create-spellbook-access-table.yaml

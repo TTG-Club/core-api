@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.config.properties.InternalServiceProperties;
+import club.ttg.dnd5.domain.subscription.service.SubscriptionStatusClient;
 import club.ttg.dnd5.domain.user.model.Role;
 import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.exception.ApiException;
@@ -44,7 +45,7 @@ class VttgAccessServiceTest {
         InternalServiceProperties internalProperties = new InternalServiceProperties();
         internalProperties.setServiceSecret(SECRET);
 
-        service = new VttgAccessService(internalProperties, restClient);
+        service = new VttgAccessService(new SubscriptionStatusClient(internalProperties, restClient));
     }
 
     @AfterEach

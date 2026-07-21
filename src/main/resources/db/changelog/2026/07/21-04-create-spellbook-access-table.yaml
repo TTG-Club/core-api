@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-21-04-create-spellbook-access-table
+      author: dev
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: spellbook_access
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_spellbook_access
+                  name: id
+                  type: UUID
+              - column:
+                  name: spellbook_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+  - changeSet:
+      id: 2026-07-21-04-create-spellbook-access-constraints
+      author: dev
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: user_username
+            indexName: spellbook_access_user_index
+            tableName: spellbook_access
+        - addUniqueConstraint:
+            tableName: spellbook_access
+            columnNames: spellbook_id, user_username
+            constraintName: spellbook_access_unique
+        - addForeignKeyConstraint:
+            baseTableName: spellbook_access
+            baseColumnNames: spellbook_id
+            referencedTableName: spellbook
+            referencedColumnNames: id
+            constraintName: FK_SPELLBOOK_ACCESS_ON_SPELLBOOK
+            onDelete: CASCADE

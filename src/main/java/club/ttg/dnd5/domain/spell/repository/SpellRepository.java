@@ -75,6 +75,18 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     @Query("select s from Spell s where s.url = :url")
     Optional<Spell> findForUpdateByUrl(String url);
 
+    /**
+     * Заклинания по набору url для короткого представления (список заклинаний книги):
+     * подтягивает источник и классы — их требует {@code SpellMapper#toShort}.
+     */
+    @EntityGraph(attributePaths = {"source", "classAffiliation", "classAffiliation.source"})
+    @Query("select distinct s from Spell s where s.url in :urls order by s.level, s.name")
+    List<Spell> findAllShortByUrls(@Param("urls") Collection<String> urls);
+
+    /** Существующие и не скрытые заклинания из набора url — проверка перед добавлением в книгу. */
+    @Query("select s.url from Spell s where s.url in :urls and s.isHiddenEntity = false")
+    Set<String> findVisibleUrls(@Param("urls") Collection<String> urls);
+
     @Query(value = """
         select distinct s.srd_version
         from spell s

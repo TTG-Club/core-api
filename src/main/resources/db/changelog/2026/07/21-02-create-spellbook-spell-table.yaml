@@ -1,0 +1,73 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-21-02-create-spellbook-spell-table
+      author: dev
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: spellbook_spell
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_spellbook_spell
+                  name: id
+                  type: UUID
+              - column:
+                  name: spellbook_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: spell_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: prepared
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+  - changeSet:
+      id: 2026-07-21-02-create-spellbook-spell-constraints
+      author: dev
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: spellbook_id
+            indexName: spellbook_spell_spellbook_index
+            tableName: spellbook_spell
+        - addUniqueConstraint:
+            tableName: spellbook_spell
+            columnNames: spellbook_id, spell_url
+            constraintName: spellbook_spell_unique
+        - addForeignKeyConstraint:
+            baseTableName: spellbook_spell
+            baseColumnNames: spellbook_id
+            referencedTableName: spellbook
+            referencedColumnNames: id
+            constraintName: FK_SPELLBOOK_SPELL_ON_SPELLBOOK
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: spellbook_spell
+            baseColumnNames: spell_url
+            referencedTableName: spell
+            referencedColumnNames: url
+            constraintName: FK_SPELLBOOK_SPELL_ON_SPELL
+            onDelete: CASCADE

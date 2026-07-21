@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-21-03-add-share-key-to-spellbook
+      author: dev
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: spellbook
+            columns:
+              - column:
+                  name: share_key
+                  type: UUID
+        - update:
+            tableName: spellbook
+            columns:
+              - column:
+                  name: share_key
+                  valueComputed: gen_random_uuid()
+            where: share_key IS NULL
+        - addNotNullConstraint:
+            tableName: spellbook
+            columnName: share_key
+            columnDataType: UUID
+        - addUniqueConstraint:
+            tableName: spellbook
+            columnNames: share_key
+            constraintName: spellbook_share_key_unique
