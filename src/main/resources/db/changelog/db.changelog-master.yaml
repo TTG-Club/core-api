@@ -257,3 +257,5 @@ databaseChangeLog:
       file: db/changelog/2026/07/12-01-add-telegram-tail-message-ids-to-article.yaml
   - include:
       file: db/changelog/2026/07/13-01-update-full-name-search-view-add-article.yaml
+  - include:
+      file: db/changelog/2026/07/21-01-create-user-display-name-table.yaml
