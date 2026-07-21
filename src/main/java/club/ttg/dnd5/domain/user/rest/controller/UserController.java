@@ -3,12 +3,16 @@ package club.ttg.dnd5.domain.user.rest.controller;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterRequest;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import club.ttg.dnd5.domain.user.rest.dto.DisplayNameResponse;
+import club.ttg.dnd5.domain.user.rest.dto.UpdateDisplayNameRequest;
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
 import club.ttg.dnd5.domain.user.rest.dto.UserProfileShortResponse;
+import club.ttg.dnd5.domain.user.service.DisplayNameService;
 import club.ttg.dnd5.domain.user.service.UserService;
 import club.ttg.dnd5.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +26,27 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final SourceSavedFilterService sourceSavedFilterService;
+    private final DisplayNameService displayNameService;
 
     @Secured("USER")
     @Operation(summary = "Получение профиля пользователя")
     @GetMapping("/profile")
     public UserDto getUser() {
         return SecurityUtils.getUserDto();
+    }
+
+    @Secured("USER")
+    @Operation(summary = "Отображаемое имя текущего пользователя (создаётся лениво)")
+    @GetMapping("/profile/display-name")
+    public DisplayNameResponse getDisplayName() {
+        return displayNameService.getOrCreateForCurrentUser();
+    }
+
+    @Secured("USER")
+    @Operation(summary = "Смена отображаемого имени")
+    @PatchMapping("/profile/display-name")
+    public DisplayNameResponse updateDisplayName(@Valid @RequestBody UpdateDisplayNameRequest request) {
+        return displayNameService.updateForCurrentUser(request.displayName());
     }
 
     @Secured("USER")
