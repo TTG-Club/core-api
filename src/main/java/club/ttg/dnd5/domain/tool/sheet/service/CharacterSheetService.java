@@ -3,8 +3,10 @@ package club.ttg.dnd5.domain.tool.sheet.service;
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetListResponse;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetPublicResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetRequest;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetResponse;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetShareResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.mapper.CharacterSheetMapper;
 import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.exception.ApiException;
@@ -30,6 +32,7 @@ public class CharacterSheetService {
     private static final int MAX_ACTIVE_SHEETS = 2;
     private static final int MAX_DELETED_HISTORY_PER_USER = 10;
     private static final String DEFAULT_NAME = "Новый персонаж";
+    private static final String SHARED_NOT_FOUND_MESSAGE = "Лист персонажа по этой ссылке не найден";
 
     private final CharacterSheetRepository sheetRepository;
     private final CharacterSheetMapper sheetMapper;
@@ -114,6 +117,55 @@ public class CharacterSheetService {
         validateLimit(user);
         sheet.setDeleted(false);
         return sheetMapper.toResponse(sheet);
+    }
+
+    /**
+     * Включает доступ по ссылке и возвращает её токен. Идемпотентно: у уже расшаренного листа
+     * токен не перевыпускается, иначе разосланные ранее ссылки молча перестали бы открываться.
+     */
+    @Transactional
+    public CharacterSheetShareResponse share(UUID sheetId) {
+        CharacterSheet sheet = getOwnedActive(sheetId);
+        if (sheet.getShareToken() == null) {
+            sheet.setShareToken(UUID.randomUUID());
+        }
+        return new CharacterSheetShareResponse(sheet.getShareToken());
+    }
+
+    /**
+     * Отзывает доступ по ссылке: выданная ранее ссылка перестаёт открываться немедленно
+     * и навсегда — повторное «поделиться» выдаст новый токен. Повторный отзыв безопасен.
+     */
+    @Transactional
+    public void revokeShare(UUID sheetId) {
+        getOwnedActive(sheetId).setShareToken(null);
+    }
+
+    /**
+     * Лист по ссылке: чтение без авторизации и без владения. Неизвестный, отозванный или битый
+     * токен, как и удалённый лист, — одинаковый 404: наружу не подтверждается даже существование
+     * листа. Ручек записи по токену нет — просмотр «только чтение» обеспечен их отсутствием,
+     * а не поведением клиента.
+     */
+    public CharacterSheetPublicResponse findShared(String shareToken) {
+        CharacterSheet sheet = sheetRepository.findByShareTokenAndDeletedFalse(parseShareToken(shareToken))
+                .orElseThrow(() -> new EntityNotFoundException(SHARED_NOT_FOUND_MESSAGE));
+        return sheetMapper.toPublicResponse(sheet);
+    }
+
+    /**
+     * Токен разбирается вручную, а не конвертером {@code @PathVariable UUID}: ссылку правят руками
+     * и обрезают мессенджеры, а мусор в пути должен давать 404, а не 500 от конвертера.
+     */
+    private UUID parseShareToken(String shareToken) {
+        if (!StringUtils.hasText(shareToken)) {
+            throw new EntityNotFoundException(SHARED_NOT_FOUND_MESSAGE);
+        }
+        try {
+            return UUID.fromString(shareToken.trim());
+        } catch (IllegalArgumentException e) {
+            throw new EntityNotFoundException(SHARED_NOT_FOUND_MESSAGE);
+        }
     }
 
     /**
