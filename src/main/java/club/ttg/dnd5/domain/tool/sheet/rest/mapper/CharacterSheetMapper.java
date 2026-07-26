@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.tool.sheet.rest.mapper;
 
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetPublicResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetResponse;
 import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
@@ -26,4 +27,9 @@ public interface CharacterSheetMapper {
 
     @IterableMapping(qualifiedByName = "listItem")
     List<CharacterSheetResponse> toListItemResponseList(Collection<CharacterSheet> sheets);
+
+    /**
+     * Лист для просмотра по ссылке: владелец и токен ссылки наружу не уходят.
+     */
+    CharacterSheetPublicResponse toPublicResponse(CharacterSheet sheet);
 }

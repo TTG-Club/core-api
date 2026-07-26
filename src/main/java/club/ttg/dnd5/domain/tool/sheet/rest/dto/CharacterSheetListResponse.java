@@ -17,6 +17,9 @@ public class CharacterSheetListResponse {
     @Schema(description = "Максимум активных листов у пользователя (в будущем зависит от подписки)")
     private int limit;
 
+    @Schema(description = "Максимум удалённых листов в истории: более старые вытесняются новыми удалениями")
+    private int historyLimit;
+
     @Schema(description = "Текущее число активных (неудалённых) листов")
     private int count;
 

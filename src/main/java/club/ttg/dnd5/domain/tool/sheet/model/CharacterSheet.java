@@ -27,7 +27,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "character_sheet",
         indexes = {
-                @Index(name = "character_sheet_user_id_index", columnList = "user_id")
+                @Index(name = "character_sheet_user_id_index", columnList = "user_id"),
+                @Index(name = "character_sheet_share_token_index", columnList = "share_token", unique = true)
         })
 public class CharacterSheet extends Timestamped {
 
@@ -62,4 +63,12 @@ public class CharacterSheet extends Timestamped {
      */
     @Column(nullable = false)
     private boolean deleted;
+
+    /**
+     * Секрет ссылки «поделиться листом»: {@code null} — доступа по ссылке нет. По токену лист
+     * отдаётся кому угодно, но только на чтение. Токен, а не сам id, чтобы ссылка не раскрывала
+     * идентификатор листа и отзывалась независимо от него.
+     */
+    @Column(name = "share_token")
+    private UUID shareToken;
 }

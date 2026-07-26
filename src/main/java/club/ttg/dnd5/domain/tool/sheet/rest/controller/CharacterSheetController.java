@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.tool.sheet.rest.controller;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetListResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetRequest;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetResponse;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetShareResponse;
 import club.ttg.dnd5.domain.tool.sheet.service.CharacterSheetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -40,7 +41,7 @@ public class CharacterSheetController {
 
     private final CharacterSheetService sheetService;
 
-    @Operation(summary = "Создание листа: до 2 активных на пользователя (лимит вернёт 400); "
+    @Operation(summary = "Создание листа: до 8 активных на пользователя (лимит вернёт 400); "
             + "data — лист целиком, обязателен")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
@@ -70,7 +71,7 @@ public class CharacterSheetController {
         return sheetService.update(id, request);
     }
 
-    @Operation(summary = "Мягкое удаление: лист уходит в историю (хранятся последние 10 удалённых) "
+    @Operation(summary = "Мягкое удаление: лист уходит в историю (хранятся последние 20 удалённых) "
             + "и может быть восстановлен")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable final UUID id) {
@@ -81,5 +82,18 @@ public class CharacterSheetController {
     @PostMapping("/{id}/restore")
     public CharacterSheetResponse restore(@PathVariable final UUID id) {
         return sheetService.restore(id);
+    }
+
+    @Operation(summary = "Включение доступа по ссылке: возвращает токен ссылки. "
+            + "Повторный вызов идемпотентен — токен у расшаренного листа не меняется")
+    @PostMapping("/{id}/share")
+    public CharacterSheetShareResponse share(@PathVariable final UUID id) {
+        return sheetService.share(id);
+    }
+
+    @Operation(summary = "Отзыв доступа по ссылке: выданная ранее ссылка перестаёт открываться")
+    @DeleteMapping("/{id}/share")
+    public void revokeShare(@PathVariable final UUID id) {
+        sheetService.revokeShare(id);
     }
 }

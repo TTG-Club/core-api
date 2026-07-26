@@ -34,6 +34,11 @@ public class CharacterSheetResponse {
     private JsonNode data;
 
     @Nullable
+    @Schema(description = "Токен ссылки «поделиться»; null — доступ по ссылке выключен. "
+            + "Отдаётся только владельцу листа")
+    private UUID shareToken;
+
+    @Nullable
     @Schema(description = "Дата создания")
     private Instant createdAt;
 

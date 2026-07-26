@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-25-01-add-share-token-to-character-sheet
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: character_sheet
+            columns:
+              - column:
+                  name: share_token
+                  type: UUID
+        # Уникальный индекс: токен — единственный ключ поиска листа по ссылке.
+        # Колонка nullable (нерасшаренные листы), в Postgres несколько NULL уникальности не нарушают.
+        - createIndex:
+            columns:
+              - column:
+                  name: share_token
+            indexName: character_sheet_share_token_index
+            tableName: character_sheet
+            unique: true
