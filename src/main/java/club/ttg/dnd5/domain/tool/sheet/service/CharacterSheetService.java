@@ -29,10 +29,16 @@ import java.util.UUID;
 @Service
 public class CharacterSheetService {
 
+    /**
+     * Отказ по ссылке «поделиться». Package-private: тем же текстом отвечает
+     * {@link SavedCharacterSheetService} — сохранение по битой ссылке и просмотр по ней должны
+     * объясняться одинаково.
+     */
+    static final String SHARED_NOT_FOUND_MESSAGE = "Лист персонажа по этой ссылке не найден";
+
     private static final int MAX_ACTIVE_SHEETS = 2;
     private static final int MAX_DELETED_HISTORY_PER_USER = 10;
     private static final String DEFAULT_NAME = "Новый персонаж";
-    private static final String SHARED_NOT_FOUND_MESSAGE = "Лист персонажа по этой ссылке не найден";
 
     private final CharacterSheetRepository sheetRepository;
     private final CharacterSheetMapper sheetMapper;
@@ -156,8 +162,11 @@ public class CharacterSheetService {
     /**
      * Токен разбирается вручную, а не конвертером {@code @PathVariable UUID}: ссылку правят руками
      * и обрезают мессенджеры, а мусор в пути должен давать 404, а не 500 от конвертера.
+     * <p>
+     * Package-private: тем же разбором пользуется {@link SavedCharacterSheetService} — токен
+     * туда приходит из тела запроса, но правят и обрезают его так же.
      */
-    private UUID parseShareToken(String shareToken) {
+    static UUID parseShareToken(String shareToken) {
         if (!StringUtils.hasText(shareToken)) {
             throw new EntityNotFoundException(SHARED_NOT_FOUND_MESSAGE);
         }

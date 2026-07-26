@@ -1,0 +1,72 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-26-01-create-character-sheet-saved-table
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: character_sheet_saved
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_character_sheet_saved
+                  name: id
+                  type: UUID
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sheet_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: share_token
+                  type: UUID
+                  constraints:
+                    nullable: false
+              # Снимок названия на момент сохранения: им подписывается карточка
+              # листа, к которому доступ уже закрыт — живое название взять неоткуда.
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+  - changeSet:
+      id: 2026-07-26-01-create-character-sheet-saved-user-index
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createIndex:
+            columns:
+              - column:
+                  name: user_id
+            indexName: character_sheet_saved_user_id_index
+            tableName: character_sheet_saved
+        # Один лист сохраняется пользователем один раз: повторное сохранение
+        # (новая ссылка на тот же лист) обновляет запись, а не плодит дубли.
+        - createIndex:
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: sheet_id
+            indexName: character_sheet_saved_user_sheet_index
+            tableName: character_sheet_saved
+            unique: true
