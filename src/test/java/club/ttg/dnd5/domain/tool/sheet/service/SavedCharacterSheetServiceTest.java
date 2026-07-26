@@ -110,7 +110,7 @@ class SavedCharacterSheetServiceTest {
         when(sheetRepository.findByShareTokenAndDeletedFalse(sheet.getShareToken()))
                 .thenReturn(Optional.of(sheet));
         when(savedRepository.findByUserIdAndSheetId(viewer, sheet.getId())).thenReturn(Optional.empty());
-        when(savedRepository.countByUserId(viewer)).thenReturn(4L);
+        when(savedRepository.countByUserId(viewer)).thenReturn(16L);
 
         ApiException exception = assertThrows(ApiException.class,
                 () -> service.save(sheet.getShareToken().toString()));
@@ -143,7 +143,7 @@ class SavedCharacterSheetServiceTest {
 
         SavedCharacterSheetListResponse response = service.findMine();
 
-        assertEquals(4, response.getLimit());
+        assertEquals(16, response.getLimit());
         assertEquals(2, response.getCount());
         SavedCharacterSheetResponse first = response.getSheets().getFirst();
         assertFalse(first.isAvailable());

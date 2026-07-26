@@ -36,8 +36,8 @@ public class CharacterSheetService {
      */
     static final String SHARED_NOT_FOUND_MESSAGE = "Лист персонажа по этой ссылке не найден";
 
-    private static final int MAX_ACTIVE_SHEETS = 2;
-    private static final int MAX_DELETED_HISTORY_PER_USER = 10;
+    private static final int MAX_ACTIVE_SHEETS = 8;
+    private static final int MAX_DELETED_HISTORY_PER_USER = 20;
     private static final String DEFAULT_NAME = "Новый персонаж";
 
     private final CharacterSheetRepository sheetRepository;

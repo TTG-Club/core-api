@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Service
 public class SavedCharacterSheetService {
 
-    private static final int MAX_SAVED_SHEETS = 4;
+    private static final int MAX_SAVED_SHEETS = 16;
     private static final String NOT_FOUND_MESSAGE = "Сохранённый лист персонажа не найден";
 
     private final SavedCharacterSheetRepository savedRepository;
