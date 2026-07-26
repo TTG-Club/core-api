@@ -64,6 +64,8 @@ public class CharacterSheetService {
     /**
      * Листы текущего пользователя, новые первее, с лимитом и числом активных (для «N из M»
      * на клиенте). {@code includeDeleted=true} — вместе с историей удалённых (без документа).
+     * Глубина истории отдаётся тем же ответом: сколько удалённых листов ещё можно восстановить,
+     * клиенту иначе неоткуда узнать.
      */
     public CharacterSheetListResponse findMine(boolean includeDeleted) {
         User user = SecurityUtils.getUser();
@@ -71,8 +73,8 @@ public class CharacterSheetService {
                 ? sheetRepository.findAllByUserIdOrderByCreatedAtDesc(user.getUuid())
                 : sheetRepository.findAllByUserIdAndDeletedFalseOrderByCreatedAtDesc(user.getUuid());
         long activeCount = sheets.stream().filter(sheet -> !sheet.isDeleted()).count();
-        return new CharacterSheetListResponse(
-                getLimitFor(user), (int) activeCount, sheetMapper.toListItemResponseList(sheets));
+        return new CharacterSheetListResponse(getLimitFor(user), MAX_DELETED_HISTORY_PER_USER,
+                (int) activeCount, sheetMapper.toListItemResponseList(sheets));
     }
 
     public CharacterSheetResponse findById(UUID sheetId) {
