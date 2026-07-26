@@ -26,12 +26,6 @@ public class TelegramProperties {
     /** Канал: {@code @username} или числовой id вида {@code -100...}. */
     private String chatId;
 
-    /**
-     * Секретный чат разработки: числовой id вида {@code -100...}. Пусто — выпуск
-     * одноразовых ссылок-приглашений выключен (ручка отвечает 503).
-     */
-    private String devChatId;
-
     /** База Bot API. Меняется только для тестов/прокси. */
     private String apiUrl = "https://api.telegram.org";
 
