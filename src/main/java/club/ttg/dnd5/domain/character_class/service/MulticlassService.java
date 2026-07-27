@@ -153,10 +153,12 @@ public class MulticlassService {
                             .findFirst()
                             .orElse(null);
                     if (existing != null) {
+                        existing.setResource(existing.isResource() || column.isResource());
                         existing.getScaling().addAll(list);
                     } else {
                         ClassTableColumn columnCopy = new ClassTableColumn();
                         columnCopy.setName(column.getName());
+                        columnCopy.setResource(column.isResource());
                         columnCopy.setScaling(new ArrayList<>(list));
                         table.add(columnCopy);
                     }

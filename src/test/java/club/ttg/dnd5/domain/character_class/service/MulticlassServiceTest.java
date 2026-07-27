@@ -332,6 +332,7 @@ class MulticlassServiceTest {
         CharacterClass fighter = characterClass("fighter");
         ClassTableColumn fighterCol = new ClassTableColumn();
         fighterCol.setName("Всплески действий");
+        fighterCol.setResource(true);
         ClassTableItem item1 = new ClassTableItem(); item1.setLevel(2); item1.setValue("1");
         ClassTableItem item2 = new ClassTableItem(); item2.setLevel(3); item2.setValue("1");
         ClassTableItem item3 = new ClassTableItem(); item3.setLevel(4); item3.setValue("2");
@@ -369,6 +370,7 @@ class MulticlassServiceTest {
                 .findFirst()
                 .orElseThrow();
         assertEquals(3, merged.getScaling().size());
+        assertTrue(merged.isResource());
     }
 
     private CharacterClass characterClass(String url) {
