@@ -113,6 +113,9 @@ public interface ClassMapper
     @Mapping(target = "multiclassProficiency", source = "request.multiclassProficiency")
     @Mapping(target = "srdVersion", source = "request.srdVersion")
     @Mapping(target = "parentUrl", source = "request.parentUrl")
+    // Homebrew-поля выставляются в сервисе (владелец из аутентификации), а не мапятся из запроса.
+    @Mapping(target = "ownerId", ignore = true)
+    @Mapping(target = "visibility", ignore = true)
     @interface ToEntityMapping
     {
     }

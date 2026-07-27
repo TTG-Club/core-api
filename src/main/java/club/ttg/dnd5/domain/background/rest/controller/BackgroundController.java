@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.service.BackgroundFilterService;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.ContentPathUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,9 +37,9 @@ public class BackgroundController {
             @ApiResponse(responseCode = "200", description = "URL предыстории существует"),
             @ApiResponse(responseCode = "404", description = "URL предыстория не существует"),
     })
-    @RequestMapping(path = "/{backgroundUrl}", method = RequestMethod.HEAD)
+    @RequestMapping(path = "/{*backgroundUrl}", method = RequestMethod.HEAD)
     public boolean existByUrl(@PathVariable final String backgroundUrl) {
-        var exist = backgroundService.exists(backgroundUrl);
+        var exist = backgroundService.exists(ContentPathUtils.normalizeUrl(backgroundUrl));
         if (!exist) {
             throw new EntityNotFoundException("URL предыстории не найден");
         }
@@ -46,14 +47,16 @@ public class BackgroundController {
     }
 
     @Operation(summary = "Детальная информация о предыстории", description = "Возвращает объект с детальной информацией о предыстории")
-    @GetMapping("{url}")
+    @GetMapping(value = "/{*url}", params = "!raw")
     public BackgroundDetailResponse findBackground(@PathVariable final String url) {
-        return backgroundService.getBackground(url);
+        return backgroundService.getBackground(ContentPathUtils.normalizeUrl(url));
     }
 
-    @GetMapping("/{url}/raw")
+    // Форма редактирования: raw-представление выбирается query-флагом ?raw (catch-all {*url} несовместим
+    // с прежним путём /{url}/raw, т.к. homebrew-url содержат слэши).
+    @GetMapping(value = "/{*url}", params = "raw")
     public BackgroundRequest getBackgroundFormByUrl(@PathVariable String url) {
-        return backgroundService.findFormByUrl(url);
+        return backgroundService.findFormByUrl(ContentPathUtils.normalizeUrl(url));
     }
 
     @GetMapping("/select")
@@ -109,18 +112,18 @@ public class BackgroundController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @Secured({"ADMIN", "MODERATOR"})
-    @PutMapping("{url}")
+    @PutMapping("/{*url}")
     public String updateBackgrounds(
             @PathVariable final String url,
             @RequestBody final BackgroundRequest request) {
-        return backgroundService.updateBackgrounds(url, request);
+        return backgroundService.updateBackgrounds(ContentPathUtils.normalizeUrl(url), request);
     }
 
     @Operation(summary = "Помечает предысторию как скрытую для списков")
     @Secured({"ADMIN", "MODERATOR"})
-    @DeleteMapping("{url}")
+    @DeleteMapping("/{*url}")
     public String deleteBackgrounds(
             @PathVariable final String url) {
-        return backgroundService.deleteBackgrounds(url);
+        return backgroundService.deleteBackgrounds(ContentPathUtils.normalizeUrl(url));
     }
 }

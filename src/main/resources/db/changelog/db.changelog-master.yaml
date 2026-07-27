@@ -261,3 +261,11 @@ databaseChangeLog:
       file: db/changelog/2026/07/21-01-create-user-display-name-table.yaml
   - include:
       file: db/changelog/2026/07/24-01-create-character-sheet-table.yaml
+  - include:
+      file: db/changelog/2026/07/24-02-add-owner-and-visibility-to-spell.yaml
+  - include:
+      file: db/changelog/2026/07/24-03-add-owner-and-visibility-to-content.yaml
+  - include:
+      file: db/changelog/2026/07/25-01-update-full-name-search-view-visibility.yaml
+  - include:
+      file: db/changelog/2026/07/25-02-create-user-handle-table.yaml

@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.magic.model;
 
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import club.ttg.dnd5.domain.item.model.Item;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -22,7 +22,7 @@ import java.util.Set;
         @Index(name = "url_index", columnList = "url"),
         @Index(name = "name_index", columnList = "name, english, alternative")
 })
-public class MagicItem extends NamedEntity {
+public class MagicItem extends OwnableEntity {
     /**
      * Категория магического предмета.
      */

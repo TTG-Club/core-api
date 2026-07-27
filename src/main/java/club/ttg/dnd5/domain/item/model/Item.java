@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.item.model;
 
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -21,7 +21,7 @@ import java.util.Set;
         @Index(name = "url_index", columnList = "url"),
         @Index(name = "name_index", columnList = "name, english, alternative")
 })
-public class Item extends NamedEntity {
+public class Item extends OwnableEntity {
     @Enumerated(EnumType.STRING)
     private ItemCategory category = ItemCategory.ITEM;
 

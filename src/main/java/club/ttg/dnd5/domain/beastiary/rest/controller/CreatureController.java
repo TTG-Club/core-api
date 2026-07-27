@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import club.ttg.dnd5.util.ContentPathUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,9 +37,9 @@ public class CreatureController {
             @ApiResponse(responseCode = "200", description = "Существо существует"),
             @ApiResponse(responseCode = "404", description = "Существо не существует")
     })
-    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    @RequestMapping(path = "/{*url}", method = RequestMethod.HEAD)
     public Boolean isSpellExist(@PathVariable String url) {
-        return creatureService.existOrThrow(url);
+        return creatureService.existOrThrow(ContentPathUtils.normalizeUrl(url));
     }
 
     @Operation(summary = "Поиск существ", description = "Поиск существ с GET-параметрами фильтрации и пагинацией")
@@ -49,14 +50,16 @@ public class CreatureController {
     }
 
     @Operation(summary = "Получение детальной информации по URL", description = "Получение детальной информации по его уникальному URL.")
-    @GetMapping("/{url}")
+    @GetMapping(value = "/{*url}", params = "!raw")
     public CreatureDetailResponse getByUrl(@PathVariable String url) {
-        return creatureService.findDetailedByUrl(url);
+        return creatureService.findDetailedByUrl(ContentPathUtils.normalizeUrl(url));
     }
 
-    @GetMapping("/{url}/raw")
+    // Форма редактирования: raw-представление выбирается query-флагом ?raw (catch-all {*url} несовместим
+    // с прежним путём /{url}/raw, т.к. homebrew-url содержат слэши).
+    @GetMapping(value = "/{*url}", params = "raw")
     public CreatureRequest getFormByUrl(@PathVariable String url) {
-        return creatureService.findFormByUrl(url);
+        return creatureService.findFormByUrl(ContentPathUtils.normalizeUrl(url));
     }
 
     @Operation(summary = "Получить метаданные фильтров", description = "Возвращает JSON для построения UI фильтров")
@@ -82,17 +85,17 @@ public class CreatureController {
 
     @Operation(summary = "Обновление существа")
     @Secured({"ADMIN", "MODERATOR"})
-    @PutMapping("/{url}")
+    @PutMapping("/{*url}")
     public String update(@PathVariable String url,
                                       @Valid
                                       @RequestBody CreatureRequest request) {
-        return creatureService.update(url, request);
+        return creatureService.update(ContentPathUtils.normalizeUrl(url), request);
     }
 
     @Operation(summary = "Сокрытие существа")
     @Secured({"ADMIN", "MODERATOR"})
-    @DeleteMapping("/{url}")
+    @DeleteMapping("/{*url}")
     public String delete(@PathVariable String url) {
-        return creatureService.delete(url);
+        return creatureService.delete(ContentPathUtils.normalizeUrl(url));
     }
 }

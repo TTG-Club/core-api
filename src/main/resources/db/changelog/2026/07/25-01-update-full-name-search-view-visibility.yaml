@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 25-01-update-full-name-search-view-visibility
+      author: claude
+      comment: >-
+        Глобальный поиск отдаёт только официальный контент (owner_id IS NULL) — homebrew
+        (в т.ч. публичный) в общий поиск не попадает. Пересоздание full_name_search_view.
+      changes:
+        - sqlFile:
+            path: sql/25-01-update-full-name-search-view-visibility.sql
+            relativeToChangelogFile: true

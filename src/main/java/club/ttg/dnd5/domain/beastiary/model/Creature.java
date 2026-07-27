@@ -7,7 +7,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -33,7 +33,7 @@ import java.util.Collection;
                 @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class Creature extends NamedEntity {
+public class Creature extends OwnableEntity {
     /**
      * Размеры существа.
      */

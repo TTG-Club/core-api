@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-24-02-add-owner-and-visibility-to-spell
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >-
+        Homebrew-контент: владелец (owner_id) и уровень видимости (visibility) для заклинаний.
+        owner_id IS NULL — официальный контент. Пилотная сущность; остальные типы контента
+        получат те же колонки по этому образцу.
+      changes:
+        - addColumn:
+            tableName: spell
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        # Список homebrew по владельцу и по признаку «официальный vs пользовательский».
+        - createIndex:
+            tableName: spell
+            indexName: spell_owner_id_index
+            columns:
+              - column:
+                  name: owner_id

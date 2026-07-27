@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.spell.model;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import club.ttg.dnd5.domain.species.model.Species;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -25,7 +25,7 @@ import java.util.Set;
                 @Index(name = "spell_name_index", columnList = "name, english, alternative")
         }
 )
-public class Spell extends NamedEntity {
+public class Spell extends OwnableEntity {
 
     @Column(nullable = false)
     private Long level;

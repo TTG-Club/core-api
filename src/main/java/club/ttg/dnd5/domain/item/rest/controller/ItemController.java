@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import club.ttg.dnd5.util.ContentPathUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -42,10 +43,10 @@ public class ItemController {
             @ApiResponse(responseCode = "404", description = "Предмет с указанным URL не найден."),
             @ApiResponse(responseCode = "200", description = "Предмет с указанным URL уже существует.")
     })
-    @RequestMapping(value = "/{url}", method = RequestMethod.HEAD)
+    @RequestMapping(value = "/{*url}", method = RequestMethod.HEAD)
     @ResponseStatus(HttpStatus.CONFLICT)
     public boolean exists(@PathVariable("url") String url) {
-        return itemService.existOrThrow(url);
+        return itemService.existOrThrow(ContentPathUtils.normalizeUrl(url));
     }
 
     @Operation(summary = "Получение детального описания предмета")
@@ -53,14 +54,16 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предмет успешно получен"),
             @ApiResponse(responseCode = "404", description = "Предмет не найден")
     })
-    @GetMapping("/{url}")
+    @GetMapping(value = "/{*url}", params = "!raw")
     public ItemDetailResponse getItem(@PathVariable final String url) {
-        return itemService.getItem(url);
+        return itemService.getItem(ContentPathUtils.normalizeUrl(url));
     }
 
-    @GetMapping("/{url}/raw")
+    // Форма редактирования: raw-представление выбирается query-флагом ?raw (catch-all {*url} несовместим
+    // с прежним путём /{url}/raw, т.к. homebrew-url содержат слэши).
+    @GetMapping(value = "/{*url}", params = "raw")
     public ItemRequest getSpellFormByUrl(@PathVariable String url) {
-        return itemService.findFormByUrl(url);
+        return itemService.findFormByUrl(ContentPathUtils.normalizeUrl(url));
     }
 
 
@@ -105,10 +108,10 @@ public class ItemController {
             @ApiResponse(responseCode = "404", description = "Предмет не существует"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PutMapping("{itemUrl}")
+    @PutMapping("/{*itemUrl}")
     public String updateItem(@PathVariable final String itemUrl,
                                          @RequestBody final ItemRequest itemDto) {
-        return itemService.updateItem(itemUrl, itemDto);
+        return itemService.updateItem(ContentPathUtils.normalizeUrl(itemUrl), itemDto);
     }
 
     @Secured({"ADMIN", "MODERATOR"})
@@ -117,8 +120,8 @@ public class ItemController {
             @ApiResponse(responseCode = "200", description = "Предмет удален из общего списка"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @DeleteMapping("{itemUrl}")
+    @DeleteMapping("/{*itemUrl}")
     public String deleteItem(@PathVariable final String itemUrl) {
-        return itemService.delete(itemUrl);
+        return itemService.delete(ContentPathUtils.normalizeUrl(itemUrl));
     }
 }

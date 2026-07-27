@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-25-02-create-user-handle-table
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >-
+        Замороженный slug-хендл пользователя для homebrew-url (u/{handle}/{stem}).
+        Заводится один раз из логина, регистронезависимо уникален.
+      changes:
+        - createTable:
+            tableName: user_handle
+            columns:
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_user_handle
+              - column:
+                  name: handle
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        # Регистронезависимая уникальность хендла: два пользователя не займут одно имя вне зависимости от регистра.
+        - sql:
+            dbms: postgresql
+            sql: create unique index uk_user_handle_lower on user_handle (lower(handle));

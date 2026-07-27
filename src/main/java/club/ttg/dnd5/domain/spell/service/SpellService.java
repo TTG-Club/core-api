@@ -2,7 +2,10 @@ package club.ttg.dnd5.domain.spell.service;
 
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
+import club.ttg.dnd5.domain.common.model.Visibility;
+import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.common.service.slug.HomebrewSlugService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.service.FeatService;
 import club.ttg.dnd5.domain.source.model.Source;
@@ -21,9 +24,15 @@ import club.ttg.dnd5.domain.spell.rest.dto.create.SpellRequest;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
+import club.ttg.dnd5.domain.user.model.User;
+import club.ttg.dnd5.domain.user.service.UserHandleService;
+import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.security.SecurityUtils;
+import club.ttg.dnd5.util.SlugifyUtil;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -35,6 +44,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,6 +63,8 @@ public class SpellService
     private final SpellQueryDslSearchService spellQueryDslSearchService;
     private final SourceSavedFilterService sourceSavedFilterService;
     private final EntityRevisionService revisionService;
+    private final HomebrewSlugService homebrewSlugService;
+    private final UserHandleService userHandleService;
 
     public boolean existOrThrow(String url)
     {
@@ -161,6 +173,68 @@ public class SpellService
         revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
                 spellMapper.toRequest(saved));
         return saved.getUrl();
+    }
+
+    /**
+     * Создание пользовательского (homebrew) заклинания текущим авторизованным пользователем.
+     * <p>
+     * В отличие от {@link #save(SpellRequest)} (официальный контент, только для админов/модераторов),
+     * здесь владелец и url определяются сервером: {@code owner_id} — из аутентификации,
+     * url — {@code u/{handle}/{stem}} с числовым фолбэком на коллизии (клиентский {@code request.url}
+     * игнорируется). Источник (книга) не обязателен — у homebrew его может не быть.
+     *
+     * @param request    тело заклинания (url из него не используется)
+     * @param visibility видимость; {@code null} трактуется как {@link Visibility#PRIVATE}
+     * @return сгенерированный url созданного заклинания
+     */
+    @Transactional
+    @CacheEvict(cacheNames = "countAllMaterials")
+    public String saveHomebrew(SpellRequest request, Visibility visibility)
+    {
+        User user = SecurityUtils.getUser();
+        UUID ownerId = user.getUuid();
+        if (ownerId == null)
+        {
+            throw new ApiException(HttpStatus.UNAUTHORIZED,
+                    "Токен устарел, перелогиньтесь для создания homebrew-контента");
+        }
+
+        String handle = userHandleService.resolveHandle(ownerId, user.getUsername());
+        String stem = SlugifyUtil.getSlug(resolveStemSource(request));
+        String url = homebrewSlugService.generate(handle, stem, spellRepository::existsById);
+
+        Set<CharacterClass> classes = getClasses(request);
+        Set<CharacterClass> subclasses = getSubclasses(request);
+        Set<Species> species = getSpecieses(request);
+        Set<Species> lineages = getLineages(request);
+        Set<Feat> feats = getFeats(request);
+
+        Source source = Optional.ofNullable(request.getSource())
+                .map(SourceRequest::getUrl)
+                .filter(StringUtils::hasText)
+                .map(sourceService::findReferenceByUrl)
+                .orElse(null);
+
+        Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
+        spell.setUrl(url);
+        spell.setOwnerId(ownerId);
+        spell.setVisibility(visibility == null ? Visibility.PRIVATE : visibility);
+        spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
+
+        Spell saved = spellRepository.save(spell);
+        revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
+                spellMapper.toRequest(saved));
+        return saved.getUrl();
+    }
+
+    private String resolveStemSource(SpellRequest request)
+    {
+        NameRequest name = request.getName();
+        if (name == null || (!StringUtils.hasText(name.getEnglish()) && !StringUtils.hasText(name.getName())))
+        {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Не указано название заклинания");
+        }
+        return StringUtils.hasText(name.getEnglish()) ? name.getEnglish() : name.getName();
     }
 
     private Set<CharacterClass> getClasses(SpellRequest request)

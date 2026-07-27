@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,7 +36,7 @@ import java.util.Set;
                 @Index(name = "class_name_index", columnList = "name, english, alternative")
         }
 )
-public class CharacterClass extends NamedEntity {
+public class CharacterClass extends OwnableEntity {
     @Column(name = "parent_url")
     private String parentUrl;
 

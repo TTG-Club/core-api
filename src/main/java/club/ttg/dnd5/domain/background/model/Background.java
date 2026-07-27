@@ -3,7 +3,7 @@ package club.ttg.dnd5.domain.background.model;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -25,7 +25,7 @@ import java.util.Set;
                 @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class Background extends NamedEntity {
+public class Background extends OwnableEntity {
     private String linkImageUrl; //для изоброжения бэкграунда
     /** Характеристики */
     @Type(JsonType.class)

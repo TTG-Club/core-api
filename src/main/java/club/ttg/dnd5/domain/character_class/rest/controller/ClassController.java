@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.character_class.service.ClassFilterService;
 import club.ttg.dnd5.domain.character_class.service.ClassService;
 
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import club.ttg.dnd5.util.ContentPathUtils;
 import io.swagger.v3.oas.annotations.Operation;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -39,9 +40,9 @@ public class ClassController {
             @ApiResponse(responseCode = "200", description = "Класс существует"),
             @ApiResponse(responseCode = "404", description = "Класс не существует")
     })
-    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    @RequestMapping(path = "/{*url}", method = RequestMethod.HEAD)
     public Boolean isClassExist(@PathVariable String url) {
-        if(!classService.exists(url)) {
+        if(!classService.exists(ContentPathUtils.normalizeUrl(url))) {
             throw new EntityNotFoundException("URL класса не существует");
         }
         else {
@@ -57,9 +58,9 @@ public class ClassController {
         return classService.search(request);
     }
 
-    @GetMapping("/{url}")
+    @GetMapping(value = "/{*url}", params = "!raw")
     public ClassDetailedResponse getClassByUrl(@PathVariable String url) {
-        return classService.findDetailedByUrl(url);
+        return classService.findDetailedByUrl(ContentPathUtils.normalizeUrl(url));
     }
 
     @Operation(summary = "Получить метаданные фильтров")
@@ -97,16 +98,19 @@ public class ClassController {
     }
 
     @Secured({"ADMIN", "MODERATOR"})
-    @PutMapping("/{url}")
+    @PutMapping("/{*url}")
     public String updateClass(@PathVariable String url,
                               @Valid
                               @RequestBody ClassRequest request) {
-        return classService.update(url, request);
+        return classService.update(ContentPathUtils.normalizeUrl(url), request);
     }
 
-    @GetMapping("/{url}/raw")
+    // Форма редактирования: raw-представление выбирается query-флагом ?raw (catch-all {*url} несовместим
+    // с прежним путём /{url}/raw, т.к. homebrew-url содержат слэши). Вложенный /{parentUrl}/subclasses
+    // остаётся односегментным — PathPattern отдаёт ему приоритет по специфичности над catch-all.
+    @GetMapping(value = "/{*url}", params = "raw")
     public ClassRequest getClassFormByUrl(@PathVariable String url) {
-        return classService.findFormByUrl(url);
+        return classService.findFormByUrl(ContentPathUtils.normalizeUrl(url));
     }
 
     @Operation(summary = "Предпросмотр класса")

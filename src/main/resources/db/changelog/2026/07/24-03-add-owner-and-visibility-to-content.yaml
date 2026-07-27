@@ -1,0 +1,151 @@
+databaseChangeLog:
+  # Раскатка homebrew-полей (owner_id + visibility) на остальные типы контента по образцу
+  # заклинаний (см. 24-02). owner_id IS NULL — официальный контент. Каждая таблица — отдельный
+  # changeSet, чтобы применялись/откатывались независимо.
+
+  - changeSet:
+      id: 2026-07-24-03-add-owner-and-visibility-to-species
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        - createIndex:
+            tableName: species
+            indexName: species_owner_id_index
+            columns:
+              - column:
+                  name: owner_id
+
+  - changeSet:
+      id: 2026-07-24-03-add-owner-and-visibility-to-feat
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: feat
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        - createIndex:
+            tableName: feat
+            indexName: feat_owner_id_index
+            columns:
+              - column:
+                  name: owner_id
+
+  - changeSet:
+      id: 2026-07-24-03-add-owner-and-visibility-to-class
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        - createIndex:
+            tableName: class
+            indexName: class_owner_id_index
+            columns:
+              - column:
+                  name: owner_id
+
+  - changeSet:
+      id: 2026-07-24-03-add-owner-and-visibility-to-background
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: background
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        - createIndex:
+            tableName: background
+            indexName: background_owner_id_index
+            columns:
+              - column:
+                  name: owner_id
+
+  - changeSet:
+      id: 2026-07-24-03-add-owner-and-visibility-to-magic-item
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        - createIndex:
+            tableName: magic_item
+            indexName: magic_item_owner_id_index
+            columns:
+              - column:
+                  name: owner_id
+
+  - changeSet:
+      id: 2026-07-24-03-add-owner-and-visibility-to-item
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        - createIndex:
+            tableName: item
+            indexName: item_owner_id_index
+            columns:
+              - column:
+                  name: owner_id
+
+  - changeSet:
+      id: 2026-07-24-03-add-owner-and-visibility-to-bestiary
+      author: claude
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+              - column:
+                  name: visibility
+                  type: VARCHAR(16)
+        - createIndex:
+            tableName: bestiary
+            indexName: bestiary_owner_id_index
+            columns:
+              - column:
+                  name: owner_id

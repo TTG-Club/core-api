@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.species.model;
 
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class CreatureProperties extends NamedEntity {
+public abstract class CreatureProperties extends OwnableEntity {
     /** Тип существа */
     @Enumerated(EnumType.STRING)
     private CreatureType type;

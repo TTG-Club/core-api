@@ -2,7 +2,7 @@ package club.ttg.dnd5.domain.feat.model;
 
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
-import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.common.model.OwnableEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -25,7 +25,7 @@ import java.util.Collection;
                 @Index(name = "name_index", columnList = "name, english, alternative")
         }
 )
-public class Feat extends NamedEntity {
+public class Feat extends OwnableEntity {
     /**
      * Категория.
      */

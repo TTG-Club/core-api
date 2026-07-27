@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
+import club.ttg.dnd5.util.ContentPathUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -35,9 +36,9 @@ public class FeatController {
     private final FeatFilterService featFilterService;
 
     @ResponseStatus(HttpStatus.OK)
-    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    @RequestMapping(path = "/{*url}", method = RequestMethod.HEAD)
     public boolean existByUrl(@PathVariable final String url) {
-        return featService.existOrThrow(url);
+        return featService.existOrThrow(ContentPathUtils.normalizeUrl(url));
     }
 
     @Operation(summary = "Получение детального описания черты")
@@ -46,14 +47,16 @@ public class FeatController {
             @ApiResponse(responseCode = "404", description = "Черта не найдена")
     })
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/{url}")
+    @GetMapping(value = "/{*url}", params = "!raw")
     public FeatDetailResponse getFeat(@PathVariable final String url) {
-        return featService.getFeat(url);
+        return featService.getFeat(ContentPathUtils.normalizeUrl(url));
     }
 
-    @GetMapping("/{url}/raw")
+    // Форма редактирования: raw-представление выбирается query-флагом ?raw (catch-all {*url} несовместим
+    // с прежним путём /{url}/raw, т.к. homebrew-url содержат слэши).
+    @GetMapping(value = "/{*url}", params = "raw")
     public FeatRequest getFeatFormByUrl(@PathVariable String url) {
-        return featService.findFormByUrl(url);
+        return featService.findFormByUrl(ContentPathUtils.normalizeUrl(url));
     }
 
 
@@ -113,10 +116,10 @@ public class FeatController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @ResponseStatus(HttpStatus.OK)
-    @PutMapping("{url}")
+    @PutMapping("/{*url}")
     public String updateFeats(@PathVariable final String url,
                                           @RequestBody final FeatRequest featDto) {
-        return featService.updateFeat(url, featDto);
+        return featService.updateFeat(ContentPathUtils.normalizeUrl(url), featDto);
     }
 
     @Secured({"ADMIN", "MODERATOR"})
@@ -126,8 +129,8 @@ public class FeatController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
     @ResponseStatus(HttpStatus.OK)
-    @DeleteMapping("{url}")
+    @DeleteMapping("/{*url}")
     public String deleteFeats(@PathVariable final String url) {
-        return featService.delete(url);
+        return featService.delete(ContentPathUtils.normalizeUrl(url));
     }
 }

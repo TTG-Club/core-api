@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.service.SpeciesFilterService;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
+import club.ttg.dnd5.util.ContentPathUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -37,9 +38,9 @@ public class SpeciesController {
             @ApiResponse(responseCode = "200", description = "Вид существует"),
             @ApiResponse(responseCode = "404", description = "Вид не существует")
     })
-    @RequestMapping(path = "/{url}", method = RequestMethod.HEAD)
+    @RequestMapping(path = "/{*url}", method = RequestMethod.HEAD)
     public Boolean isSpecieExist(@PathVariable String url) {
-        var exist = speciesService.exists(url);
+        var exist = speciesService.exists(ContentPathUtils.normalizeUrl(url));
         if(!exist) {
             throw new EntityNotFoundException("URL вида не существует");
         }
@@ -66,10 +67,10 @@ public class SpeciesController {
             @ApiResponse(responseCode = "200", description = "Вид успешно получен"),
             @ApiResponse(responseCode = "404", description = "Вид не найден")
     })
-    @GetMapping("/{url}")
+    @GetMapping(value = "/{*url}", params = "!raw")
     @ResponseStatus(HttpStatus.OK)
     public SpeciesDetailResponse getSpeciesByUrl(@PathVariable String url) {
-        return speciesService.findById(url);
+        return speciesService.findById(ContentPathUtils.normalizeUrl(url));
     }
 
     @GetMapping("/lineages")
@@ -159,15 +160,18 @@ public class SpeciesController {
             @ApiResponse(responseCode = "404", description = "Вид не найден"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     })
-    @PutMapping("/{url}")
+    @PutMapping("/{*url}")
     @Secured({"ADMIN", "MODERATOR"})
     @ResponseStatus(HttpStatus.OK)
     public String updateSpecies(@PathVariable String url, @RequestBody SpeciesRequest request) {
-        return speciesService.update(url, request);
+        return speciesService.update(ContentPathUtils.normalizeUrl(url), request);
     }
 
-    @GetMapping("/{url}/raw")
+    // Форма редактирования: raw-представление выбирается query-флагом ?raw (catch-all {*url} несовместим
+    // с прежним путём /{url}/raw, т.к. homebrew-url содержат слэши). Вложенные /{url}/lineages остаются
+    // односегментными — PathPattern отдаёт им приоритет по специфичности над catch-all.
+    @GetMapping(value = "/{*url}", params = "raw")
     public SpeciesRequest getSpeciesFormByUrl(@PathVariable String url) {
-        return speciesService.findFormByUrl(url);
+        return speciesService.findFormByUrl(ContentPathUtils.normalizeUrl(url));
     }
 }
