@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.character_class.service;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
+import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
@@ -332,6 +333,7 @@ class MulticlassServiceTest {
         CharacterClass fighter = characterClass("fighter");
         ClassTableColumn fighterCol = new ClassTableColumn();
         fighterCol.setName("Всплески действий");
+        fighterCol.setResourceRecovery(ClassResourceRecovery.SHORT_REST);
         ClassTableItem item1 = new ClassTableItem(); item1.setLevel(2); item1.setValue("1");
         ClassTableItem item2 = new ClassTableItem(); item2.setLevel(3); item2.setValue("1");
         ClassTableItem item3 = new ClassTableItem(); item3.setLevel(4); item3.setValue("2");
@@ -369,6 +371,7 @@ class MulticlassServiceTest {
                 .findFirst()
                 .orElseThrow();
         assertEquals(3, merged.getScaling().size());
+        assertEquals(ClassResourceRecovery.SHORT_REST, merged.getResourceRecovery());
     }
 
     private CharacterClass characterClass(String url) {
