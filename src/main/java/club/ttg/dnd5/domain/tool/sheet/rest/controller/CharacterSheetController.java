@@ -26,14 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * Доступ: лист виден и редактируем только владельцу (uuid из JWT). Пока фича закрыта —
- * {@code @Secured("ADMIN")} на классе (снять при открытии всем): {@code /api/v2/**} на уровне
- * фильтров — permitAll, авторизацию обеспечивают только аннотации методов.
+ * Доступ: лист виден и редактируем только владельцу (uuid из JWT). Инструмент открыт всем
+ * авторизованным — {@code @Secured("USER")} на классе (роль USER есть у каждого
+ * зарегистрированного): {@code /api/v2/**} на уровне фильтров — permitAll, авторизацию
+ * обеспечивают только аннотации методов.
  */
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v2/tools/character-sheet")
-@Secured("ADMIN")
+@Secured("USER")
 @Tag(name = "Лист персонажа",
         description = "REST API листов персонажей: сохранение листа одним JSON-документом, "
                 + "список с лимитом, мягкое удаление и восстановление")
