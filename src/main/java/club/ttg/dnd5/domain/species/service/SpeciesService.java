@@ -6,13 +6,19 @@ import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
+import club.ttg.dnd5.domain.species.repository.SpeciesInnateSpellView;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesInnateSpellRequest;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesInnateSpellResponse;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesFeatureMapper;
 import club.ttg.dnd5.domain.species.rest.mapper.SpeciesMapper;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
+import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -26,6 +32,8 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,6 +50,8 @@ public class SpeciesService {
     private final SpeciesFeatureMapper speciesFeatureMapper;
     private final SourceSavedFilterService sourceSavedFilterService;
     private final EntityRevisionService revisionService;
+    private final SpellRepository spellRepository;
+    private final SpellMapper spellMapper;
 
     public boolean exists(String url) {
         return speciesRepository.existsById(url);
@@ -52,12 +62,17 @@ public class SpeciesService {
         var species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
         var response = speciesMapper.toDetail(species);
+        response.setInnateSpells(loadInnateSpells(species.getUrl()));
 
         if (species.getParent() != null) {
             var features = new ArrayList<SpeciesFeature>();
             Optional.ofNullable(species.getFeatures()).ifPresent(features::addAll);
             Optional.ofNullable(species.getParent().getFeatures()).ifPresent(features::addAll);
             response.setFeatures(speciesFeatureMapper.toResponses(features));
+            response.setInnateSpells(mergeInnateSpells(
+                    loadInnateSpells(species.getParent().getUrl()),
+                    response.getInnateSpells()
+            ));
         }
 
         return response;
@@ -95,13 +110,14 @@ public class SpeciesService {
         return url;
     }
 
+    @Transactional(readOnly = true)
     public List<SpeciesDetailResponse> getLineages(String parentUrl) {
         return speciesRepository.findById(parentUrl)
                 .filter(species -> !species.isHiddenEntity())
                 .map(speciesRepository::findByParent)
                 .orElseThrow(() -> new EntityNotFoundException("Вид не найден для URL: " + parentUrl))
                 .stream()
-                .map(speciesMapper::toDetail)
+                .map(this::toDetailWithInnateSpells)
                 .toList();
     }
 
@@ -162,6 +178,7 @@ public class SpeciesService {
             }
             existing.setSource(sourceService.findByUrl(request.getSource().getUrl()));
             String url = speciesRepository.save(existing).getUrl();
+            syncInnateSpells(url, existing.getParent() != null, request.getInnateSpells());
             revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.UPDATE, findFormByUrl(url));
             return url;
         }
@@ -169,6 +186,8 @@ public class SpeciesService {
         if (speciesRepository.existsById(request.getUrl())) {
             throw new EntityExistException("Р’РёРґ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ СЃ URL: " + request.getUrl());
         }
+        speciesRepository.deleteSpeciesInnateSpells(oldUrl);
+        speciesRepository.deleteLineageInnateSpells(oldUrl);
         speciesRepository.deleteById(oldUrl);
         speciesRepository.flush();
         String url = saveSpecies(request).getUrl();
@@ -191,8 +210,12 @@ public class SpeciesService {
         return speciesMapper.toDetail(speciesRepository.save(species));
     }
 
+    @Transactional(readOnly = true)
     public SpeciesRequest findFormByUrl(final String url) {
-        return speciesMapper.toRequest(findByUrl(url));
+        Species species = findByUrl(url);
+        SpeciesRequest request = speciesMapper.toRequest(species);
+        request.setInnateSpells(loadInnateSpellRequests(url));
+        return request;
     }
 
     // Private methods
@@ -212,6 +235,7 @@ public class SpeciesService {
         species.setSource(source);
 
         Species save = speciesRepository.save(species);
+        syncInnateSpells(save.getUrl(), save.getParent() != null, request.getInnateSpells());
         return speciesMapper.toDetail(save);
     }
 
@@ -219,6 +243,122 @@ public class SpeciesService {
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var species = speciesMapper.toEntity(request);
         species.setSource(source);
-        return speciesMapper.toDetail(species);
+        SpeciesDetailResponse response = speciesMapper.toDetail(species);
+        response.setInnateSpells(resolveInnateSpells(request.getInnateSpells()));
+        return response;
+    }
+
+    private SpeciesDetailResponse toDetailWithInnateSpells(Species species)
+    {
+        SpeciesDetailResponse response = speciesMapper.toDetail(species);
+        response.setInnateSpells(loadInnateSpells(species.getUrl()));
+        return response;
+    }
+
+    private List<SpeciesInnateSpellResponse> loadInnateSpells(String speciesUrl)
+    {
+        return resolveInnateSpells(loadInnateSpellRequests(speciesUrl));
+    }
+
+    private List<SpeciesInnateSpellRequest> loadInnateSpellRequests(String speciesUrl)
+    {
+        return speciesRepository.findInnateSpells(speciesUrl).stream()
+                .map(this::toInnateSpellRequest)
+                .toList();
+    }
+
+    private SpeciesInnateSpellRequest toInnateSpellRequest(SpeciesInnateSpellView view)
+    {
+        SpeciesInnateSpellRequest request = new SpeciesInnateSpellRequest();
+        request.setSpell(view.getSpellUrl());
+        request.setRequiredLevel(view.getRequiredLevel());
+        return request;
+    }
+
+    private List<SpeciesInnateSpellResponse> resolveInnateSpells(Collection<SpeciesInnateSpellRequest> requests)
+    {
+        if (requests == null || requests.isEmpty())
+        {
+            return List.of();
+        }
+
+        Map<String, Spell> spellsByUrl = spellRepository.findAllShortByUrlIn(
+                        requests.stream().map(SpeciesInnateSpellRequest::getSpell).toList())
+                .stream()
+                .collect(Collectors.toMap(Spell::getUrl, spell -> spell));
+
+        return requests.stream()
+                .map(request -> {
+                    Spell spell = Optional.ofNullable(spellsByUrl.get(request.getSpell()))
+                            .orElseThrow(() -> new EntityNotFoundException("Spell not found with URL: " + request.getSpell()));
+                    SpeciesInnateSpellResponse response = new SpeciesInnateSpellResponse();
+                    response.setSpell(spellMapper.toShort(spell));
+                    response.setRequiredLevel(validateRequiredLevel(request.getRequiredLevel()));
+                    return response;
+                })
+                .toList();
+    }
+
+    private List<SpeciesInnateSpellResponse> mergeInnateSpells(
+            Collection<SpeciesInnateSpellResponse> parentSpells,
+            Collection<SpeciesInnateSpellResponse> lineageSpells)
+    {
+        Map<String, SpeciesInnateSpellResponse> spellsByUrl = new LinkedHashMap<>();
+        parentSpells.forEach(spell -> spellsByUrl.put(spell.getSpell().getUrl(), spell));
+        lineageSpells.forEach(spell -> spellsByUrl.merge(
+                spell.getSpell().getUrl(),
+                spell,
+                (parentSpell, lineageSpell) -> lineageSpell.getRequiredLevel() <= parentSpell.getRequiredLevel()
+                        ? lineageSpell
+                        : parentSpell
+        ));
+        return List.copyOf(spellsByUrl.values());
+    }
+
+    private void syncInnateSpells(
+            String speciesUrl,
+            boolean lineage,
+            Collection<SpeciesInnateSpellRequest> requests)
+    {
+        speciesRepository.deleteSpeciesInnateSpells(speciesUrl);
+        speciesRepository.deleteLineageInnateSpells(speciesUrl);
+
+        if (requests == null || requests.isEmpty())
+        {
+            return;
+        }
+
+        Set<String> spellUrls = requests.stream()
+                .map(SpeciesInnateSpellRequest::getSpell)
+                .collect(Collectors.toSet());
+        if (spellUrls.size() != requests.size())
+        {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Врождённое заклинание указано несколько раз");
+        }
+        if (spellRepository.countByUrlIn(spellUrls) != spellUrls.size())
+        {
+            throw new EntityNotFoundException("Одно или несколько врождённых заклинаний не найдены");
+        }
+
+        requests.forEach(request -> {
+            Integer requiredLevel = validateRequiredLevel(request.getRequiredLevel());
+            if (lineage)
+            {
+                speciesRepository.addLineageInnateSpell(speciesUrl, request.getSpell(), requiredLevel);
+            }
+            else
+            {
+                speciesRepository.addSpeciesInnateSpell(speciesUrl, request.getSpell(), requiredLevel);
+            }
+        });
+    }
+
+    private Integer validateRequiredLevel(Integer requiredLevel)
+    {
+        if (requiredLevel == null || requiredLevel < 1 || requiredLevel > 20)
+        {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Уровень врождённого заклинания должен быть от 1 до 20");
+        }
+        return requiredLevel;
     }
 }

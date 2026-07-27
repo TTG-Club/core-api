@@ -16,6 +16,9 @@ public class SpeciesRequest extends BaseRequest {
 
     @Schema(description = "Умения")
     private Collection<FeatureRequest> features;
+
+    @Schema(description = "Врождённые заклинания и уровни их доступности")
+    private Collection<SpeciesInnateSpellRequest> innateSpells;
     @Schema(description = "URL на вид", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String parent;
 
