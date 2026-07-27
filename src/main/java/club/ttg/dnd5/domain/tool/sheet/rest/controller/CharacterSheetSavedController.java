@@ -27,7 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v2/tools/character-sheet/saved")
-@Secured("ADMIN")
+@Secured("USER")
 @Tag(name = "Сохранённые листы персонажей",
         description = "REST API чужих листов, сохранённых по ссылке «поделиться»: только просмотр")
 public class CharacterSheetSavedController {
