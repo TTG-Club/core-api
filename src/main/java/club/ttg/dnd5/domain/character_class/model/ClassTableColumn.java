@@ -18,12 +18,12 @@ public class ClassTableColumn {
     @Schema(description = "Имя колонки")
     private String name;
 
-    @Schema(description = "Является ли значение колонки расходуемым ресурсом класса")
-    private boolean resource;
+    @Schema(description = "Когда восстанавливается ресурс колонки")
+    private ClassResourceRecovery resourceRecovery = ClassResourceRecovery.NONE;
 
     List<ClassTableItem> scaling;
 
     public ClassTableColumn(String name, List<ClassTableItem> scaling) {
-        this(name, false, scaling);
+        this(name, ClassResourceRecovery.NONE, scaling);
     }
 }

@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
+import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
@@ -153,12 +154,15 @@ public class MulticlassService {
                             .findFirst()
                             .orElse(null);
                     if (existing != null) {
-                        existing.setResource(existing.isResource() || column.isResource());
+                        if (existing.getResourceRecovery() == null
+                                || existing.getResourceRecovery() == ClassResourceRecovery.NONE) {
+                            existing.setResourceRecovery(column.getResourceRecovery());
+                        }
                         existing.getScaling().addAll(list);
                     } else {
                         ClassTableColumn columnCopy = new ClassTableColumn();
                         columnCopy.setName(column.getName());
-                        columnCopy.setResource(column.isResource());
+                        columnCopy.setResourceRecovery(column.getResourceRecovery());
                         columnCopy.setScaling(new ArrayList<>(list));
                         table.add(columnCopy);
                     }
