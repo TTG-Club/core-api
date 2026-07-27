@@ -9,6 +9,8 @@ import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.statistics.rest.dto.CharacterSheetStatisticsResponse;
+import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Table;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StatisticsService {
     private final EntityManager entityManager;
+    private final CharacterSheetRepository characterSheetRepository;
     private final List<Class<?>> COUNTED_ENTITIES = List.of(
             Spell.class,
             Species.class,
@@ -47,6 +50,23 @@ public class StatisticsService {
                                 .getSingleResult())
                 .mapToLong(e -> (Long)e)
                 .sum();
+    }
+
+    /**
+     * Листы персонажей всех пользователей: сколько сейчас активных и сколько всего строк.
+     * <p>
+     * {@code total} — это активные плюс лежащие в истории удалённых, а не «созданные
+     * когда-либо»: история обрезается до последних удалений пользователя
+     * ({@code CharacterSheetService.trimDeletedHistory}), вытесненные листы удаляются
+     * из базы физически.
+     * <p>
+     * Без кэша: число меняется постоянно, а кэши сбрасываются только вручную
+     * через {@code /api/v2/cache/evict-all}.
+     */
+    public CharacterSheetStatisticsResponse countCharacterSheets() {
+        return new CharacterSheetStatisticsResponse(
+                characterSheetRepository.count(),
+                characterSheetRepository.countByDeletedFalse());
     }
 }
 

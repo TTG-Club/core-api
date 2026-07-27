@@ -11,6 +11,11 @@ public interface CharacterSheetRepository extends JpaRepository<CharacterSheet, 
 
     long countByUserIdAndDeletedFalse(UUID userId);
 
+    /**
+     * Число активных (неудалённых) листов на сайте — для статистики админ-панели.
+     */
+    long countByDeletedFalse();
+
     List<CharacterSheet> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
     List<CharacterSheet> findAllByUserIdAndDeletedFalseOrderByCreatedAtDesc(UUID userId);
