@@ -492,9 +492,9 @@ class VttgMagicItemMapperTest {
         assertEquals("elven-chain-chain-shirt-dmg", shirt.getId());
     }
 
-    /** Шаблон «+1, +2 или +3»: на связанный доспех — три записи с растущей редкостью и стоимостью. */
+    /** Предмет с варьирующейся редкостью и искусственные варианты «+1/+2/+3» не экспортируются. */
     @Test
-    void expandsArmorBonusTemplate() {
+    void excludesVariesItemAndDerivedBonusVariantsFromExport() {
         MagicItem item = new MagicItem();
         item.setUrl("armor-plus");
         item.setName("Доспех, +1, +2 или +3");
@@ -506,63 +506,8 @@ class VttgMagicItemMapperTest {
         item.setSource(source);
 
         List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
-        assertEquals(3, variants.size());
-
-        VttgMagicItem plus1 = byName(variants, "Латы +1");
-        assertEquals(1, plus1.getMagicBonus());
-        assertEquals("rare", plus1.getRarity());
-        assertEquals("5500 зм", plus1.getCost()); // 4000 + 1500
-
-        VttgMagicItem plus2 = byName(variants, "Латы +2");
-        assertEquals("very-rare", plus2.getRarity());
-        assertEquals("41500 зм", plus2.getCost()); // 40000 + 1500
-
-        VttgMagicItem plus3 = byName(variants, "Латы +3");
-        assertEquals("legendary", plus3.getRarity());
-        assertEquals("201500 зм", plus3.getCost()); // 200000 + 1500
-    }
-
-    /** Шаблон «+N» с несколькими связанными предметами: по три записи на каждый. */
-    @Test
-    void expandsBonusTemplateForEachLinkedItem() {
-        Item leather = armor("leather-armor", "Кожаный доспех", "Leather Armor", "10");
-
-        MagicItem item = new MagicItem();
-        item.setUrl("armor-plus");
-        item.setName("Доспех, +1, +2 или +3");
-        item.setCategory(MagicItemCategory.ARMOR);
-        item.setRarity(Rarity.VARIES);
-        item.setItems(Set.of(plate(), leather));
-        Source source = new Source();
-        source.setAcronym("DMG");
-        item.setSource(source);
-
-        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
-        assertEquals(6, variants.size());
-        byName(variants, "Кожаный доспех +1");
-        byName(variants, "Кожаный доспех +3");
-        byName(variants, "Латы +2");
-    }
-
-    /** Для щита (как и для оружия) шаблон «+N» даёт редкость на уровень ниже брони. */
-    @Test
-    void shieldBonusTemplateUsesLowerRarity() {
-        Item shield = armorWithCategory("shield", "Щит", "Shield", "10", ArmorCategory.SHIELD);
-
-        MagicItem item = new MagicItem();
-        item.setUrl("shield-plus");
-        item.setName("Щит, +1, +2 или +3");
-        item.setCategory(MagicItemCategory.ARMOR);
-        item.setRarity(Rarity.VARIES);
-        item.setItems(Set.of(shield));
-        Source source = new Source();
-        source.setAcronym("DMG");
-        item.setSource(source);
-
-        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
-        assertEquals("uncommon", byName(variants, "Щит +1").getRarity());
-        assertEquals("rare", byName(variants, "Щит +2").getRarity());
-        assertEquals("very-rare", byName(variants, "Щит +3").getRarity());
+        assertTrue(variants.isEmpty());
+        assertEquals(List.of(), mapper.toVttgPayload(item, new HashMap<>()));
     }
 
     private Item armorWithCategory(String url, String name, String english, String cost, ArmorCategory category) {

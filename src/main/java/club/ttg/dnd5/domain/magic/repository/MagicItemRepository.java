@@ -15,27 +15,22 @@ import java.util.List;
 public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
 
     /**
-     * Фрагмент JPQL: исключение «несобственных» записей из выгрузки VTTG (контракт /changes).
+     * Фрагмент JPQL: исключение неподдерживаемых записей из выгрузки VTTG (контракт /changes).
      * Это не конкретные предметы, поэтому в дельту и модуль они не идут:
      * <ul>
+     *   <li>предметы с варьирующейся редкостью, включая созданные из них варианты;</li>
      *   <li>«сборные» заглушки одной записью на три бонуса — «… +1, +2 или +3»;</li>
      *   <li>шаблонные зачарования «применяется к любому предмету» без своих характеристик
      *       (адамантиновое/зачарованное оружие/доспех/посох).</li>
      * </ul>
      * Применяется ко всем {@code *ForVttgExport}-запросам, чтобы /status и /changes были согласованы.
-     * Исключение: если у такого предмета есть явно связанные немагические предметы, он экспортируется
-     * (раскрывается в конкретные предметы по связям — см. {@code VttgMagicItemMapper}).
      */
     String EXCLUDE_NON_CONCRETE = """
-             and (
-                 size(mi.items) > 0
-                 or (
-                     mi.name not like '%+1, +2 или +3%'
-                     and mi.name not in (
-                         'Адамантиновое оружие', 'Адамантиновый доспех',
-                         'Зачарованное оружие', 'Зачарованный доспех', 'Зачарованный посох')
-                 )
-             )
+             and (mi.rarity is null or mi.rarity <> 'VARIES')
+             and mi.name not like '%+1, +2 или +3%'
+             and mi.name not in (
+                 'Адамантиновое оружие', 'Адамантиновый доспех',
+                 'Зачарованное оружие', 'Зачарованный доспех', 'Зачарованный посох')
             """;
 
     /**
@@ -106,7 +101,10 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
 
     /** Полные магические предметы по набору url — для пересчёта недостающих payload (fallback). */
     @EntityGraph(attributePaths = {"source"})
-    @Query("select mi from MagicItem mi where mi.url in :urls")
+    @Query("""
+            select mi from MagicItem mi
+            where mi.url in :urls
+            """ + EXCLUDE_NON_CONCRETE)
     List<MagicItem> findAllForVttgExportByUrls(@Param("urls") Collection<String> urls);
 
     /**
