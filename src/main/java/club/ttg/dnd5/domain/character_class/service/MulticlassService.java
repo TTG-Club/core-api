@@ -517,6 +517,7 @@ public class MulticlassService {
                 .map(ClassFeatureOption::new)
                 .toList());
         copy.setAbilityImprovement(classFeature.isAbilityImprovement());
+        copy.setFightingStyleChoice(classFeature.isFightingStyleChoice());
         copy.setHideInSubclasses(classFeature.isHideInSubclasses());
         copy.setAbilityBonus(classFeature.getAbilityBonus());
         return copy;
