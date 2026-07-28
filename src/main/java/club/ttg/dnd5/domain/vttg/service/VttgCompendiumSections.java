@@ -65,7 +65,7 @@ public class VttgCompendiumSections {
                 leaf("classes", "Классы", "tabler:users-group", "class", null),
                 leaf("species", "Виды", "tabler:users", "species", null),
                 leaf("backgrounds", "Предыстории", "tabler:book", "background", null),
-                leaf("feats", "Черты", "tabler:star", "feat", null),
+                leaf("feats", "Черты", "tabler:star", "feat", featView()),
                 group(List.of(
                         leaf("weapons", "Оружие", "tabler:sword", "weapon", listView()),
                         leaf("armor", "Доспехи", "tabler:shield", "equipment", listView()),
@@ -140,6 +140,13 @@ public class VttgCompendiumSections {
                 enumFilter("rarity", "Редкость", "rarity", "string", "badges"),
                 enumFilter("category", "Категория", "equipmentCategory", "string", "list")
         ));
+        return view;
+    }
+
+    private Map<String, Object> featView() {
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("layout", "list");
+        view.put("groupBy", groupBy("category", "string"));
         return view;
     }
 

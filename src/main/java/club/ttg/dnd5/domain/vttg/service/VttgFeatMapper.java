@@ -50,6 +50,7 @@ public class VttgFeatMapper {
                 .sourceKey(sourceKey(feat.getSource()))
                 .isSRD(feat.getSrdVersion() != null)
                 .featureType(TYPE)
+                .category(categoryName(feat.getCategory()))
                 .repeatable(Boolean.TRUE.equals(feat.getRepeatability()))
                 .description(markupConverter.toText(feat.getDescription()))
                 .typeLabel(TYPE_LABEL)
@@ -97,6 +98,10 @@ public class VttgFeatMapper {
             return new Separator("other_feat", "Прочие черты");
         }
         return new Separator(category.name().toLowerCase(Locale.ROOT), StringUtils.capitalize(category.getName()));
+    }
+
+    private String categoryName(FeatCategory category) {
+        return StringUtils.capitalize(defaultSeparator(category).name());
     }
 
     /** id черты в схеме эталона: {@code "Two-Weapon Fighting" → "srd_feat_two_weapon_fighting"}. */
