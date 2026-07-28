@@ -49,6 +49,9 @@ public class ClassFeatureRequest {
     @Schema(description = "Умение увеличивает характеристики")
     private boolean abilityImprovement;
 
+    @Schema(description = "Умение даёт выбор одной черты категории «Боевой стиль»")
+    private boolean fightingStyleChoice;
+
     @Schema(description = "Бонус к увеличивает характеристик")
     private AbilityBonus abilityBonus;
 
