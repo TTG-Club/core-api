@@ -52,6 +52,9 @@ public class ClassFeature {
     @Schema(description = "Умение увеличивает характеристики")
     private boolean abilityImprovement;
 
+    @Schema(description = "Умение даёт выбор одной черты категории «Боевой стиль»")
+    private boolean fightingStyleChoice;
+
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
 
@@ -74,6 +77,7 @@ public class ClassFeature {
         this.key = SlugifyUtil.getSlug(this.name);
         this.hideInSubclasses = classFeatureRequest.isHideInSubclasses();
         this.abilityImprovement = classFeatureRequest.isAbilityImprovement();
+        this.fightingStyleChoice = classFeatureRequest.isFightingStyleChoice();
         this.abilityBonus = classFeatureRequest.getAbilityBonus();
     }
 }

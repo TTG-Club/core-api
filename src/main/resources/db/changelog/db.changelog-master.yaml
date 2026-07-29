@@ -268,4 +268,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/2026/07/27-01-add-required-level-to-species-spells.yaml
   - include:
-      file: db/changelog/2026/07/29-01-add-class-starting-equipment.yaml
+      file: db/changelog/2026/07/29-01-backfill-ability-improvement-variants.yaml
+  - include:
+      file: db/changelog/2026/07/29-02-add-class-starting-equipment.yaml

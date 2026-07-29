@@ -49,6 +49,12 @@ public class ClassFeatureDto {
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
 
+    @Schema(description = "Умение увеличивает характеристики")
+    private boolean abilityImprovement;
+
+    @Schema(description = "Умение даёт выбор одной черты категории «Боевой стиль»")
+    private boolean fightingStyleChoice;
+
     public ClassFeatureDto(ClassFeature classFeature, boolean isSubclass) {
         this(classFeature, isSubclass, isSubclass);
     }
@@ -62,6 +68,8 @@ public class ClassFeatureDto {
         this.description = classFeature.getDescription();
         this.additional = classFeature.getAdditional();
         this.hideInSubclasses = classFeature.isHideInSubclasses();
+        this.abilityImprovement = classFeature.isAbilityImprovement();
+        this.fightingStyleChoice = classFeature.isFightingStyleChoice();
         if (filterForSubclassContext) {
             this.scaling = Optional.ofNullable(classFeature.getScaling())
                     .orElse(List.of())
