@@ -100,7 +100,7 @@ public class ItemServiceImpl implements ItemService {
 
     private void exist(String url) {
         if (itemRepository.existsById(url)) {
-            throw new EntityExistException();
+            throw new EntityExistException(String.format("Предмет с url %s уже существует", url));
         }
     }
 
