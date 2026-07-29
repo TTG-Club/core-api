@@ -11,6 +11,7 @@ import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,10 +37,20 @@ import static org.mockito.Mockito.when;
  */
 class SavedCharacterSheetServiceTest {
 
+    private static final SheetLimits FREE_LIMITS = new SheetLimits(8, 16, 20, 20);
+    private static final SheetLimits SUBSCRIBER_LIMITS = new SheetLimits(20, 40, 30, 30);
+
     private final SavedCharacterSheetRepository savedRepository = mock(SavedCharacterSheetRepository.class);
     private final CharacterSheetRepository sheetRepository = mock(CharacterSheetRepository.class);
+    private final CharacterSheetLimits sheetLimits = mock(CharacterSheetLimits.class);
     private final SavedCharacterSheetService service =
-            new SavedCharacterSheetService(savedRepository, sheetRepository);
+            new SavedCharacterSheetService(savedRepository, sheetRepository, sheetLimits);
+
+    @BeforeEach
+    void withoutSubscriptionByDefault() {
+        when(sheetLimits.forUser(any())).thenReturn(FREE_LIMITS);
+        when(sheetLimits.subscriberLimits()).thenReturn(SUBSCRIBER_LIMITS);
+    }
 
     @AfterEach
     void clearSecurityContext() {
@@ -120,6 +131,23 @@ class SavedCharacterSheetServiceTest {
     }
 
     @Test
+    void subscriberSavesBeyondBaseLimit() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        when(sheetLimits.forUser(any())).thenReturn(SUBSCRIBER_LIMITS);
+        when(sheetRepository.findByShareTokenAndDeletedFalse(sheet.getShareToken()))
+                .thenReturn(Optional.of(sheet));
+        when(savedRepository.findByUserIdAndSheetId(viewer, sheet.getId())).thenReturn(Optional.empty());
+        when(savedRepository.countByUserId(viewer)).thenReturn(16L);
+        when(savedRepository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SavedCharacterSheetResponse response = service.save(sheet.getShareToken().toString());
+
+        assertEquals(sheet.getId(), response.getSheetId());
+        verify(savedRepository).saveAndFlush(any());
+    }
+
+    @Test
     void saveWithMalformedTokenIsNotFoundInsteadOfServerError() {
         authenticate();
 
@@ -144,6 +172,8 @@ class SavedCharacterSheetServiceTest {
         SavedCharacterSheetListResponse response = service.findMine();
 
         assertEquals(16, response.getLimit());
+        // Лимит подписчика выше выданного — клиент покажет подсказку про подписку
+        assertEquals(40, response.getSubscriberLimit());
         assertEquals(2, response.getCount());
         SavedCharacterSheetResponse first = response.getSheets().getFirst();
         assertFalse(first.isAvailable());

@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 @Service
 public class SavedCharacterSheetService {
 
-    private static final int MAX_SAVED_SHEETS = 16;
     private static final String NOT_FOUND_MESSAGE = "Сохранённый лист персонажа не найден";
 
     private final SavedCharacterSheetRepository savedRepository;
     private final CharacterSheetRepository sheetRepository;
+    private final CharacterSheetLimits sheetLimits;
 
     /**
      * Сохранённые ссылки пользователя, новые первее, с лимитом и числом записей (для «N из M»
@@ -51,7 +51,8 @@ public class SavedCharacterSheetService {
         List<SavedCharacterSheetResponse> responses = saved.stream()
                 .map(savedSheet -> toResponse(savedSheet, sheets.get(savedSheet.getSheetId())))
                 .toList();
-        return new SavedCharacterSheetListResponse(getSavedLimitFor(user), responses.size(), responses);
+        return new SavedCharacterSheetListResponse(sheetLimits.forUser(user).savedSheets(),
+                sheetLimits.subscriberLimits().savedSheets(), responses.size(), responses);
     }
 
     /**
@@ -90,16 +91,8 @@ public class SavedCharacterSheetService {
         savedRepository.delete(savedSheet);
     }
 
-    /**
-     * Лимит сохранённых чужих листов. Пока константа; с появлением подписок здесь появится
-     * расчёт по уровню подписки пользователя — как и у лимита своих листов.
-     */
-    private int getSavedLimitFor(User user) {
-        return MAX_SAVED_SHEETS;
-    }
-
     private void validateLimit(User user) {
-        int limit = getSavedLimitFor(user);
+        int limit = sheetLimits.forUser(user).savedSheets();
         if (savedRepository.countByUserId(user.getUuid()) >= limit) {
             throw new ApiException(HttpStatus.BAD_REQUEST, String.format(
                     "Достигнут лимит сохранённых листов: %d. Уберите один из сохранённых", limit));

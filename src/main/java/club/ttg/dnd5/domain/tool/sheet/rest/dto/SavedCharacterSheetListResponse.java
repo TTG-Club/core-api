@@ -14,8 +14,13 @@ import java.util.List;
 @Setter
 public class SavedCharacterSheetListResponse {
 
-    @Schema(description = "Максимум сохранённых чужих листов у пользователя (в будущем зависит от подписки)")
+    @Schema(description = "Максимум сохранённых чужих листов у пользователя: 16, "
+            + "при действующей подписке — 40")
     private int limit;
+
+    @Schema(description = "Максимум сохранённых чужих листов, который даёт подписка. Равен limit, "
+            + "если подписка уже действует — по этому равенству клиент и понимает, предлагать ли её")
+    private int subscriberLimit;
 
     @Schema(description = "Текущее число сохранённых записей, включая ставшие недоступными")
     private int count;

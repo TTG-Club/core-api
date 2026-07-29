@@ -42,8 +42,8 @@ public class CharacterSheetController {
 
     private final CharacterSheetService sheetService;
 
-    @Operation(summary = "Создание листа: до 8 активных на пользователя (лимит вернёт 400); "
-            + "data — лист целиком, обязателен")
+    @Operation(summary = "Создание листа: до 8 активных на пользователя, до 20 при действующей "
+            + "подписке (лимит вернёт 400); data — лист целиком, обязателен")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public CharacterSheetResponse create(@RequestBody @Valid final CharacterSheetRequest request) {
@@ -72,8 +72,8 @@ public class CharacterSheetController {
         return sheetService.update(id, request);
     }
 
-    @Operation(summary = "Мягкое удаление: лист уходит в историю (хранятся последние 20 удалённых) "
-            + "и может быть восстановлен")
+    @Operation(summary = "Мягкое удаление: лист уходит в историю (хранятся последние 20 удалённых, "
+            + "30 при действующей подписке) и может быть восстановлен")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable final UUID id) {
         sheetService.delete(id);
