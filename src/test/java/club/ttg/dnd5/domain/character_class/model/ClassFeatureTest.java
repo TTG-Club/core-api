@@ -34,4 +34,26 @@ class ClassFeatureTest {
         assertEquals("Maneuvers", dto.getOptionsName());
         assertTrue(dto.isFightingStyleChoice());
     }
+
+    @Test
+    void requestConstructorCopiesAbilityImprovement() {
+        ClassFeatureRequest request = new ClassFeatureRequest();
+        request.setName("Ability Score Improvement");
+        request.setAbilityImprovement(true);
+
+        ClassFeature feature = new ClassFeature(request);
+
+        assertTrue(feature.isAbilityImprovement());
+    }
+
+    @Test
+    void dtoConstructorCopiesAbilityImprovement() {
+        ClassFeature feature = new ClassFeature();
+        feature.setName("Ability Score Improvement");
+        feature.setAbilityImprovement(true);
+
+        ClassFeatureDto dto = new ClassFeatureDto(feature, false);
+
+        assertTrue(dto.isAbilityImprovement());
+    }
 }

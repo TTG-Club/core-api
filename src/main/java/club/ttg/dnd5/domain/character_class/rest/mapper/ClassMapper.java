@@ -300,10 +300,14 @@ public interface ClassMapper
         {
             if (classFeature.isAbilityImprovement())
             {
-                List<Integer> levels = new ArrayList<>(classFeature.getScaling().size() + 1);
+                // Умение может быть без масштабирования (одно повышение за класс),
+                // тогда scaling приходит пустым или вовсе не заполнен.
+                var scaling = Optional.ofNullable(classFeature.getScaling()).orElse(List.of());
+
+                List<Integer> levels = new ArrayList<>(scaling.size() + 1);
                 levels.add(classFeature.getLevel());
 
-                for (var sub : classFeature.getScaling())
+                for (var sub : scaling)
                 {
                     levels.add(sub.getLevel());
                 }

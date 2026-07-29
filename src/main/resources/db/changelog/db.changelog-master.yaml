@@ -267,3 +267,5 @@ databaseChangeLog:
       file: db/changelog/2026/07/26-01-create-character-sheet-saved-table.yaml
   - include:
       file: db/changelog/2026/07/27-01-add-required-level-to-species-spells.yaml
+  - include:
+      file: db/changelog/2026/07/29-01-backfill-ability-improvement-variants.yaml
