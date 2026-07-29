@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.*;
 import club.ttg.dnd5.domain.character_class.rest.dto.*;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
@@ -58,6 +59,7 @@ public interface ClassMapper
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
     @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
+    @Mapping(target = "startingEquipment", source = "startingEquipment", qualifiedByName = "toEquipmentOptionDtos")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping
@@ -90,6 +92,7 @@ public interface ClassMapper
     @Mapping(target = "multiclassProficiency", source = "multiclassProficiency")
     @Mapping(target = "primaryCharacteristics.values", source = "primaryCharacteristics")
     @Mapping(target = "primaryCharacteristics.delimiter", source = "delimiterPrimary")
+    @Mapping(target = "startingEquipment", source = "startingEquipment", qualifiedByName = "toEquipmentForm")
     ClassRequest toRequest(CharacterClass entity);
 
     @Mapping(target = "url", source = "request.url")
@@ -107,6 +110,7 @@ public interface ClassMapper
     @Mapping(target = "toolProficiency", source = "request.proficiency.tool")
     @Mapping(target = "skillProficiency", source = "request.proficiency.skill")
     @Mapping(target = "equipment", source = "request.equipment")
+    @Mapping(target = "startingEquipment", source = "request.startingEquipment", qualifiedByName = "toEquipmentEntities")
     @Mapping(target = "casterType", source = "request.casterType")
     @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics.values")
     @Mapping(target = "delimiterPrimary", source = "request.primaryCharacteristics.delimiter")
@@ -274,6 +278,117 @@ public interface ClassMapper
                 .flatMap(List::stream)
                 .sorted(Comparator.comparing(ClassFeatureDto::getLevel))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Метки вариантов снаряжения — выводятся из порядка вариантов, в базе не хранятся.
+     */
+    String EQUIPMENT_LABELS = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ";
+
+    /**
+     * Количество вариантов снаряжения, которые редактор показывает у класса без снаряжения.
+     */
+    int DEFAULT_EQUIPMENT_OPTIONS = 2;
+
+    /**
+     * Варианты снаряжения для формы редактора: если у класса их нет,
+     * отдаём пустые подблоки «А» и «Б», чтобы редактору было что показать.
+     */
+    @Named("toEquipmentForm")
+    default List<ClassEquipmentOption> toEquipmentForm(List<ClassEquipmentOption> options)
+    {
+        if (!CollectionUtils.isEmpty(options))
+        {
+            return options;
+        }
+
+        List<ClassEquipmentOption> defaults = new ArrayList<>(DEFAULT_EQUIPMENT_OPTIONS);
+        for (int index = 0; index < DEFAULT_EQUIPMENT_OPTIONS; index++)
+        {
+            ClassEquipmentOption option = new ClassEquipmentOption();
+            option.setItems(new ArrayList<>());
+            defaults.add(option);
+        }
+
+        return defaults;
+    }
+
+    /**
+     * Варианты снаряжения для сохранения: пустые предметы и пустые подблоки отбрасываются,
+     * чтобы дефолтные подблоки редактора не попадали в базу.
+     */
+    @Named("toEquipmentEntities")
+    default List<ClassEquipmentOption> toEquipmentEntities(List<ClassEquipmentOption> options)
+    {
+        if (CollectionUtils.isEmpty(options))
+        {
+            return null;
+        }
+
+        List<ClassEquipmentOption> cleaned = new ArrayList<>(options.size());
+        for (ClassEquipmentOption option : options)
+        {
+            if (option == null)
+            {
+                continue;
+            }
+
+            option.setItems(cleanEquipmentItems(option.getItems()));
+
+            if (!option.getItems().isEmpty() || option.getCoins() != null)
+            {
+                cleaned.add(option);
+            }
+        }
+
+        return cleaned.isEmpty() ? null : cleaned;
+    }
+
+    private List<ClassEquipmentItem> cleanEquipmentItems(List<ClassEquipmentItem> items)
+    {
+        if (CollectionUtils.isEmpty(items))
+        {
+            return Collections.emptyList();
+        }
+
+        return items.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> StringUtils.hasText(item.getUrl()) || StringUtils.hasText(item.getDescription()))
+                .toList();
+    }
+
+    @Named("toEquipmentOptionDtos")
+    default List<ClassEquipmentOptionDto> toEquipmentOptionDtos(List<ClassEquipmentOption> options)
+    {
+        if (CollectionUtils.isEmpty(options))
+        {
+            return Collections.emptyList();
+        }
+
+        List<ClassEquipmentOptionDto> dtos = new ArrayList<>(options.size());
+        for (int index = 0; index < options.size(); index++)
+        {
+            ClassEquipmentOption option = options.get(index);
+            Coin coin = option.getCoin() == null ? Coin.GC : option.getCoin();
+
+            dtos.add(new ClassEquipmentOptionDto(
+                    equipmentLabel(index),
+                    toEquipmentItemDtos(option.getItems()),
+                    option.getCoins(),
+                    coin.getShortName()
+            ));
+        }
+
+        return dtos;
+    }
+
+    List<ClassEquipmentItemDto> toEquipmentItemDtos(List<ClassEquipmentItem> items);
+
+    default String equipmentLabel(int index)
+    {
+        return index < EQUIPMENT_LABELS.length()
+                ? String.valueOf(EQUIPMENT_LABELS.charAt(index))
+                : String.valueOf(index + 1);
     }
 
     @Named("hasSubclasses")

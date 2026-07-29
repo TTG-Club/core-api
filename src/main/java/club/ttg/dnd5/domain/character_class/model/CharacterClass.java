@@ -109,6 +109,13 @@ public class CharacterClass extends NamedEntity {
     private String equipment;
 
     /**
+     * Стартовое снаряжение вариантами выбора: «А» — предметы, «Б» — монеты и т.д.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", name = "starting_equipment")
+    private List<ClassEquipmentOption> startingEquipment;
+
+    /**
      * Тип заклинателя
      */
     @Enumerated(EnumType.STRING)
