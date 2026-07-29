@@ -33,6 +33,9 @@ public class ClassDetailedResponse extends BaseResponse {
     @Schema(description = "Снаряжение класса в формате Markdown")
     private String equipment;
 
+    @Schema(description = "Стартовое снаряжение вариантами выбора")
+    private List<ClassEquipmentOptionDto> startingEquipment;
+
     @Schema(description = "Спасброски класса")
     private String savingThrows;
 

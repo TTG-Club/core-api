@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 29-01-add-class-starting-equipment
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: starting_equipment
+                  type: jsonb
