@@ -520,6 +520,58 @@ public class PredicateUtils
     }
 
     /**
+     * Фильтр по строковому полю внутри вложенного JSONB-объекта.
+     * Пример: {@code (weapon->'damage'->>'type') IN ('SLASHING','PIERCING')}.
+     * <p>
+     * Записи без такого объекта (у предмета нет оружейной части) не проходят
+     * ни включающий, ни исключающий фильтр: сравнение с NULL не истинно.
+     *
+     * @param columnName имя JSONB-колонки (например, "weapon")
+     * @param objectKey  ключ вложенного объекта (например, "damage")
+     * @param jsonKey    ключ поля внутри объекта (например, "type")
+     */
+    public <E extends Enum<E>> void applyJsonbNestedObjectEnumFieldFilter(final BooleanBuilder builder,
+                                                                           final QueryFilter<E> filter,
+                                                                           final String columnName,
+                                                                           final String objectKey,
+                                                                           final String jsonKey)
+    {
+        if (filter == null || !filter.isActive())
+        {
+            return;
+        }
+
+        String path = "(" + columnName + "->'" + objectKey + "'->>'" + jsonKey + "')";
+
+        if (filter.isExclude())
+        {
+            builder.and(Expressions.booleanTemplate(path + " NOT IN (" + toQuotedNames(filter) + ")"));
+        }
+        else if (filter.isUnion())
+        {
+            for (E val : filter.getValues())
+            {
+                builder.and(Expressions.booleanTemplate(path + " = '" + val.name() + "'"));
+            }
+        }
+        else
+        {
+            builder.and(Expressions.booleanTemplate(path + " IN (" + toQuotedNames(filter) + ")"));
+        }
+    }
+
+    /**
+     * Значения enum-фильтра в виде списка SQL-строк: {@code 'ACID','COLD'}.
+     */
+    private <E extends Enum<E>> String toQuotedNames(final QueryFilter<E> filter)
+    {
+        return filter.getValues().stream()
+                .map(Enum::name)
+                .map(name -> "'" + name + "'")
+                .collect(java.util.stream.Collectors.joining(","));
+    }
+
+    /**
      * Фильтр по строковому полю внутри JSONB-объекта (не массива).
      * Пример: {@code area_of_effect->>'type' IN ('CONE','SPHERE')}.
      */
