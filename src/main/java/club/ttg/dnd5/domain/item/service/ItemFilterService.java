@@ -8,7 +8,9 @@ import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.item.model.ItemType;
+import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,13 +38,44 @@ public class ItemFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        List<FilterGroupMeta> groups = new ArrayList<>(2);
+        List<FilterGroupMeta> groups = new ArrayList<>(4);
 
         groups.add(FilterGroupMeta.builder()
                 .key(FilterKeys.keyOf(ItemQueryRequest.class, "itemType"))
                 .name("Категория")
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
                 .values(Arrays.stream(ItemType.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
+                        .toList())
+                .build());
+
+        // Свойств у оружия несколько, поэтому объединение (И) имеет смысл:
+        // «тяжёлое и двуручное».
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(ItemQueryRequest.class, "weaponProperty"))
+                .name("Свойства оружия")
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(Property.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
+                        .toList())
+                .build());
+
+        // Тип урона у оружия один, поэтому объединение (И) не предлагается.
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(ItemQueryRequest.class, "damageType"))
+                .name("Тип урона")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Arrays.stream(DamageType.values())
                         .map(v -> FilterValueMeta.builder()
                                 .id(v.name())
                                 .value(v.name())
