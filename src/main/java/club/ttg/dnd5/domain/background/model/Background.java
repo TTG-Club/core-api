@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.background.model;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -51,6 +53,13 @@ public class Background extends NamedEntity {
     private String toolProficiency;
     /** Снаряжение */
     private String equipment;
+
+    /**
+     * Стартовое снаряжение вариантами выбора: «А» — предметы, «Б» — монеты и т.д.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", name = "starting_equipment")
+    private List<EquipmentOption> startingEquipment;
     /** Предлагаемый класс */
     private String proposeClasses;
 

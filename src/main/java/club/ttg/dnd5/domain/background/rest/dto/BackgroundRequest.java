@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.background.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
@@ -13,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 @Schema(description = "Предыстория запрос")
@@ -37,4 +39,6 @@ public class BackgroundRequest extends BaseRequest {
     @JsonSerialize(using = FormattedMarkupDescriptionSerializer.class)
     @Schema(description = "Снаряжение")
     private String equipment;
+    @Schema(description = "Стартовое снаряжение вариантами выбора: предметы с количеством и монеты")
+    private List<EquipmentOption> startingEquipment;
 }

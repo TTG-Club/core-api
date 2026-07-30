@@ -10,8 +10,6 @@ import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassEquipmentItemDto;
-import club.ttg.dnd5.domain.character_class.rest.dto.ClassEquipmentOptionDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassShortResponse;
 import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
@@ -19,8 +17,8 @@ import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
-import club.ttg.dnd5.domain.item.repository.ItemNameRef;
-import club.ttg.dnd5.domain.item.repository.ItemRepository;
+import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
+import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
@@ -36,8 +34,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,7 +52,8 @@ public class ClassService {
     private final GalleryRepository galleryRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
     private final EntityRevisionService revisionService;
-    private final ItemRepository itemRepository;
+    private final EquipmentNameResolver equipmentNameResolver;
+    private final EquipmentMapping equipmentMapping;
 
     public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
@@ -109,7 +107,7 @@ public class ClassService {
         revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
                 findFormByUrl(saved.getUrl()));
         ClassDetailedResponse response = classMapper.toDetailedResponse(saved);
-        resolveEquipmentNames(response.getStartingEquipment());
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
         return response;
     }
 
@@ -184,7 +182,7 @@ public class ClassService {
         var charClass = findByUrl(url);
         var response = classMapper.toDetailedResponse(charClass);
         fillResponseFieldsFromParentClass(charClass, response);
-        resolveEquipmentNames(response.getStartingEquipment());
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)
@@ -199,37 +197,6 @@ public class ClassService {
                 .map(Gallery::getImage)
                 .toList());
         return request;
-    }
-
-    /**
-     * Подставляет актуальные названия предметов из справочника: в снаряжении класса хранится
-     * ссылка на предмет и название на момент сохранения, и снимок мог устареть после переименования.
-     * Название из снимка остаётся запасным — для предметов, которых уже нет в справочнике.
-     */
-    private void resolveEquipmentNames(List<ClassEquipmentOptionDto> options) {
-        if (CollectionUtils.isEmpty(options)) {
-            return;
-        }
-
-        List<ClassEquipmentItemDto> items = options.stream()
-                .map(ClassEquipmentOptionDto::getItems)
-                .filter(Objects::nonNull)
-                .flatMap(List::stream)
-                .filter(item -> StringUtils.hasText(item.getUrl()))
-                .toList();
-
-        if (items.isEmpty()) {
-            return;
-        }
-
-        Set<String> urls = items.stream()
-                .map(ClassEquipmentItemDto::getUrl)
-                .collect(Collectors.toSet());
-
-        Map<String, String> names = itemRepository.findNamesByUrls(urls).stream()
-                .collect(Collectors.toMap(ItemNameRef::getUrl, ItemNameRef::getName));
-
-        items.forEach(item -> item.setName(names.getOrDefault(item.getUrl(), item.getName())));
     }
 
     private void fillResponseFieldsFromParentClass(CharacterClass characterClass, ClassDetailedResponse response) {
@@ -255,7 +222,7 @@ public class ClassService {
         }
 
         if (CollectionUtils.isEmpty(response.getStartingEquipment())) {
-            response.setStartingEquipment(classMapper.toEquipmentOptionDtos(parent.getStartingEquipment()));
+            response.setStartingEquipment(equipmentMapping.toEquipmentOptionDtos(parent.getStartingEquipment()));
         }
 
         if (response.getTable() == null) {
@@ -295,7 +262,7 @@ public class ClassService {
         var entity = classMapper.toEntity(request, source);
         entity.setParent(parent);
         var response = classMapper.toDetailedResponse(entity);
-        resolveEquipmentNames(response.getStartingEquipment());
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)

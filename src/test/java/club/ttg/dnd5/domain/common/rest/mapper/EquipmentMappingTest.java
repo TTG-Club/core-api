@@ -1,13 +1,8 @@
-package club.ttg.dnd5.domain.character_class.rest.mapper;
+package club.ttg.dnd5.domain.common.rest.mapper;
 
-import club.ttg.dnd5.domain.character_class.model.ClassEquipmentItem;
-import club.ttg.dnd5.domain.character_class.model.ClassEquipmentOption;
-import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
+import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,19 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(MockitoExtension.class)
-class ClassMapperTest
+class EquipmentMappingTest
 {
-    @Mock
-    private BaseMapping baseMapping;
-
-    @InjectMocks
-    private ClassMapperImpl mapper;
+    private final EquipmentMapping mapping = new EquipmentMappingImpl();
 
     @Test
-    void formGetsTwoEmptyOptionsWhenClassHasNoEquipment()
+    void formGetsTwoEmptyOptionsWhenEquipmentIsNotFilled()
     {
-        var options = mapper.toEquipmentForm(null);
+        var options = mapping.toEquipmentForm(null);
 
         assertEquals(2, options.size());
         assertTrue(options.get(0).getItems().isEmpty());
@@ -38,18 +28,18 @@ class ClassMapperTest
     @Test
     void formKeepsSavedOptionsAsIs()
     {
-        List<ClassEquipmentOption> saved = List.of(coins(75));
+        List<EquipmentOption> saved = List.of(coins(75));
 
-        assertEquals(saved, mapper.toEquipmentForm(saved));
+        assertEquals(saved, mapping.toEquipmentForm(saved));
     }
 
     @Test
     void emptyOptionsAndItemsAreNotSaved()
     {
-        ClassEquipmentOption filled = new ClassEquipmentOption();
+        EquipmentOption filled = new EquipmentOption();
         filled.setItems(new ArrayList<>(List.of(item("dagger", 2, null), item(null, null, null))));
 
-        var options = mapper.toEquipmentEntities(new ArrayList<>(List.of(filled, new ClassEquipmentOption())));
+        var options = mapping.toEquipmentEntities(new ArrayList<>(List.of(filled, new EquipmentOption())));
 
         assertEquals(1, options.size());
         assertEquals(1, options.getFirst().getItems().size());
@@ -59,10 +49,10 @@ class ClassMapperTest
     @Test
     void itemWithOnlyDescriptionIsSaved()
     {
-        ClassEquipmentOption option = new ClassEquipmentOption();
+        EquipmentOption option = new EquipmentOption();
         option.setItems(new ArrayList<>(List.of(item(null, null, "музыкальный инструмент по вашему выбору"))));
 
-        var options = mapper.toEquipmentEntities(new ArrayList<>(List.of(option)));
+        var options = mapping.toEquipmentEntities(new ArrayList<>(List.of(option)));
 
         assertEquals(1, options.size());
         assertEquals(1, options.getFirst().getItems().size());
@@ -71,17 +61,17 @@ class ClassMapperTest
     @Test
     void formDefaultsAreNotSaved()
     {
-        assertNull(mapper.toEquipmentEntities(mapper.toEquipmentForm(null)));
+        assertNull(mapping.toEquipmentEntities(mapping.toEquipmentForm(null)));
     }
 
     @Test
     void responseDerivesLabelsFromOrderAndCoinName()
     {
-        ClassEquipmentOption gear = new ClassEquipmentOption();
+        EquipmentOption gear = new EquipmentOption();
         gear.setItems(List.of(item("musical-instrument", 1, "по вашему выбору")));
         gear.setCoins(19);
 
-        var response = mapper.toEquipmentOptionDtos(List.of(gear, coins(75)));
+        var response = mapping.toEquipmentOptionDtos(List.of(gear, coins(75)));
 
         assertEquals("А", response.get(0).getLabel());
         assertEquals("Б", response.get(1).getLabel());
@@ -92,16 +82,16 @@ class ClassMapperTest
         assertEquals(75, response.get(1).getCoins());
     }
 
-    private ClassEquipmentOption coins(int amount)
+    private EquipmentOption coins(int amount)
     {
-        ClassEquipmentOption option = new ClassEquipmentOption();
+        EquipmentOption option = new EquipmentOption();
         option.setCoins(amount);
         return option;
     }
 
-    private ClassEquipmentItem item(String url, Integer quantity, String description)
+    private EquipmentItem item(String url, Integer quantity, String description)
     {
-        ClassEquipmentItem item = new ClassEquipmentItem();
+        EquipmentItem item = new EquipmentItem();
         item.setUrl(url);
         item.setQuantity(quantity);
         item.setDescription(description);

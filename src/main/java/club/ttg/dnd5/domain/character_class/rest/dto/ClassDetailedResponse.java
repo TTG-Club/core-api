@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.character_class.rest.dto;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
+import club.ttg.dnd5.domain.common.rest.dto.EquipmentOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -34,7 +35,7 @@ public class ClassDetailedResponse extends BaseResponse {
     private String equipment;
 
     @Schema(description = "Стартовое снаряжение вариантами выбора")
-    private List<ClassEquipmentOptionDto> startingEquipment;
+    private List<EquipmentOptionDto> startingEquipment;
 
     @Schema(description = "Спасброски класса")
     private String savingThrows;
