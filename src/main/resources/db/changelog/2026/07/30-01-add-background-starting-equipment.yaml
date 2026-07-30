@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 30-01-add-background-starting-equipment
+      author: Magistrus
+      changes:
+        - addColumn:
+            tableName: background
+            columns:
+              - column:
+                  name: starting_equipment
+                  type: jsonb

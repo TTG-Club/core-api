@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
@@ -36,11 +37,14 @@ public class BackgroundServiceImpl implements BackgroundService {
     private final SourceService sourceService;
     private final BackgroundMapper backgroundMapper;
     private final EntityRevisionService revisionService;
+    private final EquipmentNameResolver equipmentNameResolver;
 
 
     @Override
     public BackgroundDetailResponse getBackground(final String backgroundUrl) {
-        return backgroundMapper.toDetail(findByUrl(backgroundUrl));
+        BackgroundDetailResponse response = backgroundMapper.toDetail(findByUrl(backgroundUrl));
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
+        return response;
     }
 
 
@@ -137,7 +141,9 @@ public class BackgroundServiceImpl implements BackgroundService {
     public BackgroundDetailResponse preview(final BackgroundRequest request) {
         var book = sourceService.findByUrl(request.getSource().getUrl());
         var feat = getFeat(request.getFeatUrl());
-        return backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
+        BackgroundDetailResponse response = backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
+        return response;
     }
 
     @Override

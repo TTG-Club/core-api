@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.character_class.rest.dto;
+package club.ttg.dnd5.domain.common.rest.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -12,12 +12,12 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClassEquipmentOptionDto {
+public class EquipmentOptionDto {
     @Schema(description = "Метка варианта", example = "А")
     private String label;
 
     @Schema(description = "Предметы варианта")
-    private List<ClassEquipmentItemDto> items;
+    private List<EquipmentItemDto> items;
 
     @Schema(description = "Количество монет", example = "15")
     private Integer coins;

@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.character_class.model;
+package club.ttg.dnd5.domain.common.model;
 
 import club.ttg.dnd5.domain.common.dictionary.Coin;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,7 +11,7 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * Вариант стартового снаряжения класса — подблок «А», «Б» и т.д.
+ * Вариант стартового снаряжения — подблок «А», «Б» и т.д.
  * Состоит из списка предметов с количеством и суммы монет.
  * Метка варианта не хранится: она выводится из порядка при отдаче ответа.
  */
@@ -20,9 +20,9 @@ import java.util.List;
 @EqualsAndHashCode
 @Getter
 @Setter
-public class ClassEquipmentOption {
+public class EquipmentOption {
     @Schema(description = "Предметы варианта")
-    private List<ClassEquipmentItem> items;
+    private List<EquipmentItem> items;
 
     @Schema(description = "Количество монет", example = "15")
     private Integer coins;

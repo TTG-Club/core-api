@@ -1,7 +1,7 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.CasterType;
-import club.ttg.dnd5.domain.character_class.model.ClassEquipmentOption;
+import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -49,7 +49,7 @@ public class ClassRequest extends BaseRequest {
     private String equipment;
 
     @Schema(description = "Стартовое снаряжение вариантами выбора: предметы с количеством и монеты")
-    private List<ClassEquipmentOption> startingEquipment;
+    private List<EquipmentOption> startingEquipment;
 
     @Schema(description = "Особенности класса")
     private List<ClassFeatureRequest> features;
