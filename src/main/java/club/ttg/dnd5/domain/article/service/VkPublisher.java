@@ -222,6 +222,9 @@ public class VkPublisher {
      */
     private Cover uploadCover(Article article) {
         if (!StringUtils.hasText(article.getPreviewImageUrl())) {
+            // Единственная ветка без лога прятала главный сценарий бага: запись создана и опубликована
+            // раньше, чем обложка доехала до БД (гонка на фронте) — пост молча уходил текстом.
+            log.info("У записи {} нет обложки в момент отправки — отправляю текстом", article.getUrl());
             return Cover.none();
         }
         // Байты обложки из S3: null — картинки нет (не S3-путь, напр. внешний URL, или объекта нет в бакете);

@@ -81,6 +81,16 @@ public class ArticleVkPublicationScheduler {
             switch (result.status()) {
                 case POSTED -> {
                     articleService.markVkSent(id, result.postId(), result.attachment());
+                    // Пост ушёл текстом, хотя обложка у записи есть (разовый сбой заливки фото).
+                    // Сама по себе запись после отправки выпадает из findDueForVk навсегда, поэтому
+                    // помечаем её на синхронизацию: следующий тик дольёт обложку через wall.edit.
+                    // Без post_id править нечего (findDirtyForVk такую запись не выберет) — не метим.
+                    if (result.postId() != null && result.attachment() == null
+                            && StringUtils.hasText(article.getPreviewImageUrl())) {
+                        log.info("Пост {} ушёл в VK без обложки при её наличии — помечаю на долив обложки",
+                                article.getUrl());
+                        articleService.markVkDirty(id);
+                    }
                     posted++;
                 }
                 // Временный сбой — снимаем отметку, повторим на следующем тике.
