@@ -35,5 +35,10 @@ public class Weapon  {
      */
     private AmmunitionType ammo;
 
+    /**
+     * Боекомплект: количество выстрелов до перезарядки (свойство {@code MAGAZINE})
+     */
+    private Integer magazine;
+
     private String additional;
 }

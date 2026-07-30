@@ -291,7 +291,7 @@ public class VttgItemMapper {
             case TWO_HANDED -> "two-handed";
             case VERSATILE -> "versatile";
             // Нет точного соответствия в формате VTTG — опускаем.
-            case RANGE, BURST_FIRE -> null;
+            case RANGE, BURST_FIRE, MAGAZINE -> null;
         };
     }
 
@@ -313,6 +313,7 @@ public class VttgItemMapper {
             case ARROW -> "arrows";
             case BOLT -> "bolts";
             case BULLET, SLING_BULLET -> "bullets";
+            case NEEDLE -> "needles";
         };
     }
 

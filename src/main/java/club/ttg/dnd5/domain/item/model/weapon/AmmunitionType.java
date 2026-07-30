@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum AmmunitionType {
     ARROW("Стрела"),
     BOLT("Болт"),
-    SLING_BULLET("Игла для трубки"),
+    SLING_BULLET("Снаряд"),
+    NEEDLE("Игла для трубки"),
     BULLET("Пуля");
 
     private final String name;
