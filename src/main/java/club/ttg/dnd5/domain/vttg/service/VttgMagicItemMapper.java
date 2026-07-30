@@ -87,12 +87,17 @@ public class VttgMagicItemMapper {
     }
 
     /**
-     * Раскрывает предмет в один или несколько экспортируемых: если в {@code clarification} перечислено
+     * Раскрывает предмет в один или несколько экспортируемых. Предметы с варьирующейся редкостью
+     * не экспортируются, поэтому производные варианты «+1/+2/+3» для них также не создаются.
+     * Если в {@code clarification} перечислено
      * несколько базовых предметов (напр. «полулаты или латы»), а в названии присутствует один из них,
      * на каждый базовый предмет создаётся отдельная запись с подменой этого слова в названии
      * (напр. «Латы дварфов» → «Латы дварфов» и «Полулаты дварфов»). Иначе — ровно одна запись.
      */
     public List<VttgMagicItem> toVttgVariants(MagicItem item, Map<String, List<Item>> baseCache) {
+        if (item.getRarity() == Rarity.VARIES) {
+            return List.of();
+        }
         List<Item> linked = linkedItems(item);
         if (!linked.isEmpty()) {
             return variantsFromLinked(item, linked);

@@ -22,6 +22,9 @@ public class SpeciesDetailResponse extends BaseResponse {
 
     @Schema(description = "Умения")
     private Collection<SpeciesFeatureResponse> features;
+
+    @Schema(description = "Врождённые заклинания и уровни их доступности")
+    private Collection<SpeciesInnateSpellResponse> innateSpells;
     @Schema(description = "Ссылки на изображения")
     private boolean hasLineages;
 }

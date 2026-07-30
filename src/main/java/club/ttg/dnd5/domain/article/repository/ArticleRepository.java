@@ -345,6 +345,16 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
     void updateVkAttachment(@Param("id") UUID id, @Param("attachment") String attachment);
 
     /**
+     * Помечает запись на синхронизацию поста ВК без правки самой записи. Нужен, когда пост ушёл на стену
+     * текстом, хотя обложка у записи есть (разовый сбой заливки фото): без флага повторной попытки не будет
+     * никогда — новая запись после отправки выпадает из findDueForVk навсегда. Точечный UPDATE: updatedAt
+     * не трогает, чтобы не сорвать compare-and-clear.
+     */
+    @Modifying
+    @Query("UPDATE Article a SET a.vkDirty = true WHERE a.id = :id")
+    void markVkDirty(@Param("id") UUID id);
+
+    /**
      * Снимает флаг правки — только если запись не изменилась с момента загрузки (updatedAt совпадает).
      * Compare-and-clear: правка, прилетевшая во время отправки на стену, сдвинет updatedAt, clear не сработает,
      * и синхронизация повторится на следующем тике с самым свежим текстом.

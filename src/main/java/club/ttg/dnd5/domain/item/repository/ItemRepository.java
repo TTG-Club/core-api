@@ -37,6 +37,10 @@ public interface ItemRepository extends JpaRepository<Item, String>,
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
 
+    /** Названия предметов по набору url — для подстановки в стартовое снаряжение классов. */
+    @Query("select i.url as url, i.name as name from Item i where i.url in :urls")
+    List<ItemNameRef> findNamesByUrls(@Param("urls") Collection<String> urls);
+
     @Query(value = """
         select distinct i.srd_version
         from item i

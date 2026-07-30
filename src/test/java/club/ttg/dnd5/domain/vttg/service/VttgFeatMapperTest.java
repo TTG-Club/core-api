@@ -30,6 +30,7 @@ class VttgFeatMapperTest {
         assertEquals("feat", json.get("type").asText());
         assertEquals("feats", json.get("section").asText());
         assertEquals("feat", json.get("featureType").asText());
+        assertEquals("Боевой стиль", json.get("category").asText());
         assertEquals("Черты", json.get("typeLabel").asText());
         assertFalse(json.has("source"));
         assertEquals("phb", json.get("sourceKey").asText());
@@ -66,6 +67,7 @@ class VttgFeatMapperTest {
 
         JsonNode json = json(feat);
         assertFalse(json.get("repeatable").asBoolean());
+        assertEquals("Прочие черты", json.get("category").asText());
     }
 
     /** Разделители категорий совпадают с эталоном feats.json (id/name) и идут в его порядке. */

@@ -5,9 +5,12 @@ import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundDetailResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
+import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapperImpl;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMappingImpl;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.model.SourceType;
@@ -15,7 +18,6 @@ import club.ttg.dnd5.domain.source.service.SourceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -41,19 +43,22 @@ class BackgroundServiceImplTest {
     private SourceService sourceService;
     @Mock
     private EntityRevisionService revisionService;
+    @Mock
+    private EquipmentNameResolver equipmentNameResolver;
 
     private BackgroundServiceImpl backgroundService;
 
     @BeforeEach
     void setUp() {
-        BackgroundMapper backgroundMapper = Mappers.getMapper(BackgroundMapper.class);
+        BackgroundMapper backgroundMapper = new BackgroundMapperImpl(new EquipmentMappingImpl());
         backgroundService = new BackgroundServiceImpl(
                 backgroundQueryDslSearchService,
                 backgroundRepository,
                 featRepository,
                 sourceService,
                 backgroundMapper,
-                revisionService
+                revisionService,
+                equipmentNameResolver
         );
     }
 

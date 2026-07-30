@@ -15,6 +15,11 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface SpellRepository extends JpaRepository<Spell, String> {
+    long countByUrlIn(Collection<String> urls);
+
+    @EntityGraph(attributePaths = {"source", "classAffiliation"})
+    @Query("select distinct s from Spell s where s.url in :urls")
+    List<Spell> findAllShortByUrlIn(@Param("urls") Collection<String> urls);
     @EntityGraph(attributePaths = {
             "source",
             "classAffiliation", "classAffiliation.source",

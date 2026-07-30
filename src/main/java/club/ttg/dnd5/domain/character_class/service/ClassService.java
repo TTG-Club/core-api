@@ -17,6 +17,8 @@ import club.ttg.dnd5.domain.common.model.Gallery;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
+import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
+import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
@@ -32,6 +34,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
 import java.util.List;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,6 +52,8 @@ public class ClassService {
     private final GalleryRepository galleryRepository;
     private final SourceSavedFilterService sourceSavedFilterService;
     private final EntityRevisionService revisionService;
+    private final EquipmentNameResolver equipmentNameResolver;
+    private final EquipmentMapping equipmentMapping;
 
     public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
@@ -101,7 +106,9 @@ public class ClassService {
         CharacterClass saved = classRepository.save(toSave);
         revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
                 findFormByUrl(saved.getUrl()));
-        return classMapper.toDetailedResponse(saved);
+        ClassDetailedResponse response = classMapper.toDetailedResponse(saved);
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
+        return response;
     }
 
     @Transactional
@@ -175,6 +182,7 @@ public class ClassService {
         var charClass = findByUrl(url);
         var response = classMapper.toDetailedResponse(charClass);
         fillResponseFieldsFromParentClass(charClass, response);
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)
@@ -211,6 +219,10 @@ public class ClassService {
 
         if (!StringUtils.hasText(response.getEquipment())) {
             response.setEquipment(parent.getEquipment());
+        }
+
+        if (CollectionUtils.isEmpty(response.getStartingEquipment())) {
+            response.setStartingEquipment(equipmentMapping.toEquipmentOptionDtos(parent.getStartingEquipment()));
         }
 
         if (response.getTable() == null) {
@@ -250,6 +262,7 @@ public class ClassService {
         var entity = classMapper.toEntity(request, source);
         entity.setParent(parent);
         var response = classMapper.toDetailedResponse(entity);
+        equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)
                 .stream()
                 .map(Gallery::getImage)

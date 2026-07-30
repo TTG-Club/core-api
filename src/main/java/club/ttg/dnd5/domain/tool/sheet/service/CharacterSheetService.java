@@ -36,23 +36,25 @@ public class CharacterSheetService {
      */
     static final String SHARED_NOT_FOUND_MESSAGE = "Лист персонажа по этой ссылке не найден";
 
-    private static final int MAX_ACTIVE_SHEETS = 8;
-    private static final int MAX_DELETED_HISTORY_PER_USER = 20;
     private static final String DEFAULT_NAME = "Новый персонаж";
 
     private final CharacterSheetRepository sheetRepository;
     private final CharacterSheetMapper sheetMapper;
+    private final CharacterSheetLimits sheetLimits;
 
     /**
-     * Создаёт лист. Лимит — {@link #getLimitFor(User)} активных листов; документ обязателен.
+     * Создаёт лист. Лимит активных листов зависит от подписки ({@link CharacterSheetLimits});
+     * документ обязателен.
      */
     @Transactional
     public CharacterSheetResponse create(CharacterSheetRequest request) {
         User user = SecurityUtils.getUser();
-        validateLimit(user);
+        // Тело проверяем до лимита: лимит стоит похода в subscriber-service, а пустой запрос
+        // отвергается и без него.
         if (request == null || request.getData() == null || request.getData().isNull()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Не переданы данные листа персонажа (data)");
         }
+        validateLimit(user, sheetLimits.forUser(user).activeSheets());
         CharacterSheet sheet = new CharacterSheet();
         sheet.setUserId(user.getUuid());
         sheet.setName(nameOrDefault(request));
@@ -66,14 +68,20 @@ public class CharacterSheetService {
      * на клиенте). {@code includeDeleted=true} — вместе с историей удалённых (без документа).
      * Глубина истории отдаётся тем же ответом: сколько удалённых листов ещё можно восстановить,
      * клиенту иначе неоткуда узнать.
+     * <p>
+     * Рядом с выданными лимитами уходят и лимиты подписки: по разнице клиент понимает, стоит ли
+     * предлагать её, и не хардкодит числа у себя.
      */
     public CharacterSheetListResponse findMine(boolean includeDeleted) {
         User user = SecurityUtils.getUser();
+        SheetLimits limits = sheetLimits.forUser(user);
+        SheetLimits subscriberLimits = sheetLimits.subscriberLimits();
         List<CharacterSheet> sheets = includeDeleted
                 ? sheetRepository.findAllByUserIdOrderByCreatedAtDesc(user.getUuid())
                 : sheetRepository.findAllByUserIdAndDeletedFalseOrderByCreatedAtDesc(user.getUuid());
         long activeCount = sheets.stream().filter(sheet -> !sheet.isDeleted()).count();
-        return new CharacterSheetListResponse(getLimitFor(user), MAX_DELETED_HISTORY_PER_USER,
+        return new CharacterSheetListResponse(limits.activeSheets(), subscriberLimits.activeSheets(),
+                limits.deletedHistory(), subscriberLimits.deletedHistory(),
                 (int) activeCount, sheetMapper.toListItemResponseList(sheets));
     }
 
@@ -98,14 +106,15 @@ public class CharacterSheetService {
 
     /**
      * Мягкое удаление: лист скрыт из активных, документ сохраняется — восстановление без потерь.
-     * История ограничивается последними {@value MAX_DELETED_HISTORY_PER_USER} удалёнными листами —
-     * иначе цикл «создать → удалить» рос бы в БД без ограничений: лимит активных удалённые не считает.
+     * История ограничивается последними удалёнными листами (глубина зависит от подписки) — иначе
+     * цикл «создать → удалить» рос бы в БД без ограничений: лимит активных удалённые не считает.
      */
     @Transactional
     public void delete(UUID sheetId) {
+        User user = SecurityUtils.getUser();
         CharacterSheet sheet = getOwnedActive(sheetId);
         sheet.setDeleted(true);
-        trimDeletedHistory(sheet.getUserId());
+        trimDeletedHistory(user);
     }
 
     /**
@@ -122,7 +131,7 @@ public class CharacterSheetService {
         if (!sheet.isDeleted()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Лист персонажа не удалён");
         }
-        validateLimit(user);
+        validateLimit(user, sheetLimits.forUser(user).activeSheets());
         sheet.setDeleted(false);
         return sheetMapper.toResponse(sheet);
     }
@@ -179,26 +188,25 @@ public class CharacterSheetService {
         }
     }
 
-    /**
-     * Лимит активных листов пользователя. Пока константа; с появлением подписок здесь появится
-     * расчёт по уровню подписки пользователя.
-     */
-    private int getLimitFor(User user) {
-        return MAX_ACTIVE_SHEETS;
-    }
-
-    private void validateLimit(User user) {
-        int limit = getLimitFor(user);
+    private void validateLimit(User user, int limit) {
         if (sheetRepository.countByUserIdAndDeletedFalse(user.getUuid()) >= limit) {
             throw new ApiException(HttpStatus.BAD_REQUEST, String.format(
                     "Достигнут лимит листов персонажей: %d. Удалите один из существующих", limit));
         }
     }
 
-    private void trimDeletedHistory(UUID userId) {
-        List<CharacterSheet> deleted = sheetRepository.findAllByUserIdAndDeletedTrueOrderByUpdatedAtDesc(userId);
-        if (deleted.size() > MAX_DELETED_HISTORY_PER_USER) {
-            sheetRepository.deleteAll(deleted.subList(MAX_DELETED_HISTORY_PER_USER, deleted.size()));
+    /**
+     * Вытесняет из истории самые старые удалённые листы. Подрезаем по
+     * {@link SheetLimits#deletedHistoryToTrim()}, а не по показанной клиенту глубине: удаление
+     * здесь физическое и необратимое, поэтому при неизвестном статусе подписки история сохраняется
+     * по максимуму.
+     */
+    private void trimDeletedHistory(User user) {
+        int keep = sheetLimits.forUser(user).deletedHistoryToTrim();
+        List<CharacterSheet> deleted = sheetRepository
+                .findAllByUserIdAndDeletedTrueOrderByUpdatedAtDesc(user.getUuid());
+        if (deleted.size() > keep) {
+            sheetRepository.deleteAll(deleted.subList(keep, deleted.size()));
         }
     }
 

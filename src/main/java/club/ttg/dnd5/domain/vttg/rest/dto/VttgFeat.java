@@ -28,6 +28,8 @@ public class VttgFeat {
     private String sourceKey;
     /** Подтип записи в VTTG — всегда "feat". */
     private String featureType;
+    /** Человекочитаемая категория для декларативной группировки в компендиуме VTTG. */
+    private String category;
     private String description;
     /** Метка типа для отображения — всегда "Черты". */
     private String typeLabel;

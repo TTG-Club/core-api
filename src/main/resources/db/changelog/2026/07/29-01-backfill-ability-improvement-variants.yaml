@@ -1,0 +1,71 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-29-class-features-backfill-abilityImprovement-variants
+      author: ttg
+      comment: >
+        Прошлый бэкфилл (2026-02-09) сравнивал название умения с «Улучшение
+        характеристик» посимвольно и пропустил два написания: «Улучшение
+        Характеристик» (волшебник) и «Увеличение характеристик» (колдун).
+        Здесь сравнение регистронезависимое и покрывает оба слова.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE "class" c
+              SET features =
+              (
+                SELECT jsonb_agg(
+                  CASE
+                    WHEN lower(elem->>'name') IN ('улучшение характеристик', 'увеличение характеристик')
+                         AND COALESCE((elem->>'abilityImprovement')::boolean, false) = false
+                      THEN elem || jsonb_build_object('abilityImprovement', true)
+                    ELSE elem
+                  END
+                  ORDER BY ord
+                )
+                FROM jsonb_array_elements(c.features) WITH ORDINALITY AS t(elem, ord)
+              )
+              WHERE c.features IS NOT NULL
+                AND jsonb_typeof(c.features) = 'array'
+                AND EXISTS (
+                  SELECT 1
+                  FROM jsonb_array_elements(c.features) AS e
+                  WHERE lower(e->>'name') IN ('улучшение характеристик', 'увеличение характеристик')
+                    AND COALESCE((e->>'abilityImprovement')::boolean, false) = false
+                );
+
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE "class" c
+              SET features =
+              (
+                SELECT jsonb_agg(
+                  CASE
+                    WHEN lower(elem->>'name') IN ('улучшение характеристик', 'увеличение характеристик')
+                         AND elem->>'name' <> 'Улучшение характеристик'
+                      THEN (elem - 'abilityImprovement')
+                    ELSE elem
+                  END
+                  ORDER BY ord
+                )
+                FROM jsonb_array_elements(c.features) WITH ORDINALITY AS t(elem, ord)
+              )
+              WHERE c.features IS NOT NULL
+                AND jsonb_typeof(c.features) = 'array'
+                AND EXISTS (
+                  SELECT 1
+                  FROM jsonb_array_elements(c.features) AS e
+                  WHERE lower(e->>'name') IN ('улучшение характеристик', 'увеличение характеристик')
+                    AND e->>'name' <> 'Улучшение характеристик'
+                    AND (e->'abilityImprovement') IS NOT NULL
+                );

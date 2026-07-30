@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-07-27-add-required-level-to-species-spells
+      author: dev
+      changes:
+        - addColumn:
+            tableName: spell_species_affiliation
+            columns:
+              - column:
+                  name: required_level
+                  type: integer
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: spell_lineages_affiliation
+            columns:
+              - column:
+                  name: required_level
+                  type: integer
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: alter table spell_species_affiliation add constraint chk_spell_species_required_level check (required_level between 1 and 20)
+        - sql:
+            sql: alter table spell_lineages_affiliation add constraint chk_spell_lineages_required_level check (required_level between 1 and 20)

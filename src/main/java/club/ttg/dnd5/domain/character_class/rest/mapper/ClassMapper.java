@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
+import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -28,7 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, uses = {BaseMapping.class}, componentModel = "spring")
+@Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, uses = {BaseMapping.class, EquipmentMapping.class}, componentModel = "spring")
 public interface ClassMapper
 {
     @Named("toShortResponse")
@@ -58,6 +59,7 @@ public interface ClassMapper
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
     @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
+    @Mapping(target = "startingEquipment", source = "startingEquipment", qualifiedByName = "toEquipmentOptionDtos")
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping
@@ -90,6 +92,7 @@ public interface ClassMapper
     @Mapping(target = "multiclassProficiency", source = "multiclassProficiency")
     @Mapping(target = "primaryCharacteristics.values", source = "primaryCharacteristics")
     @Mapping(target = "primaryCharacteristics.delimiter", source = "delimiterPrimary")
+    @Mapping(target = "startingEquipment", source = "startingEquipment", qualifiedByName = "toEquipmentForm")
     ClassRequest toRequest(CharacterClass entity);
 
     @Mapping(target = "url", source = "request.url")
@@ -107,6 +110,7 @@ public interface ClassMapper
     @Mapping(target = "toolProficiency", source = "request.proficiency.tool")
     @Mapping(target = "skillProficiency", source = "request.proficiency.skill")
     @Mapping(target = "equipment", source = "request.equipment")
+    @Mapping(target = "startingEquipment", source = "request.startingEquipment", qualifiedByName = "toEquipmentEntities")
     @Mapping(target = "casterType", source = "request.casterType")
     @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics.values")
     @Mapping(target = "delimiterPrimary", source = "request.primaryCharacteristics.delimiter")
@@ -300,10 +304,14 @@ public interface ClassMapper
         {
             if (classFeature.isAbilityImprovement())
             {
-                List<Integer> levels = new ArrayList<>(classFeature.getScaling().size() + 1);
+                // Умение может быть без масштабирования (одно повышение за класс),
+                // тогда scaling приходит пустым или вовсе не заполнен.
+                var scaling = Optional.ofNullable(classFeature.getScaling()).orElse(List.of());
+
+                List<Integer> levels = new ArrayList<>(scaling.size() + 1);
                 levels.add(classFeature.getLevel());
 
-                for (var sub : classFeature.getScaling())
+                for (var sub : scaling)
                 {
                     levels.add(sub.getLevel());
                 }

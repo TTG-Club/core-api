@@ -110,7 +110,7 @@ public class MagicItemServiceImpl implements MagicItemService {
 
     private void exist(String url) {
         if (magicItemRepository.existsById(url)) {
-            throw new EntityExistException();
+            throw new EntityExistException(String.format("Магический предмет с url %s уже существует", url));
         }
     }
 

@@ -5,6 +5,8 @@ import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
 import club.ttg.dnd5.domain.common.repository.GalleryRepository;
+import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
+import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -28,6 +30,8 @@ class ClassServiceTest {
     private final GalleryRepository galleryRepository = mock(GalleryRepository.class);
     private final SourceSavedFilterService sourceSavedFilterService = mock(SourceSavedFilterService.class);
     private final EntityRevisionService revisionService = mock(EntityRevisionService.class);
+    private final EquipmentNameResolver equipmentNameResolver = mock(EquipmentNameResolver.class);
+    private final EquipmentMapping equipmentMapping = mock(EquipmentMapping.class);
     private final ClassService service = new ClassService(
             classRepository,
             classMapper,
@@ -35,7 +39,9 @@ class ClassServiceTest {
             sourceService,
             galleryRepository,
             sourceSavedFilterService,
-            revisionService
+            revisionService,
+            equipmentNameResolver,
+            equipmentMapping
     );
 
     @Test

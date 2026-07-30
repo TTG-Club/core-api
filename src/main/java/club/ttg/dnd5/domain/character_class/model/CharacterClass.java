@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
+import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
@@ -107,6 +108,13 @@ public class CharacterClass extends NamedEntity {
      */
     @Column(columnDefinition = "TEXT")
     private String equipment;
+
+    /**
+     * Стартовое снаряжение вариантами выбора: «А» — предметы, «Б» — монеты и т.д.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", name = "starting_equipment")
+    private List<EquipmentOption> startingEquipment;
 
     /**
      * Тип заклинателя

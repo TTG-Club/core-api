@@ -41,7 +41,8 @@ public class CharacterSheetSavedController {
         return savedSheetService.findMine();
     }
 
-    @Operation(summary = "Сохранение чужого листа по токену ссылки: до 16 записей (лимит вернёт 400). "
+    @Operation(summary = "Сохранение чужого листа по токену ссылки: до 16 записей, до 40 при "
+            + "действующей подписке (лимит вернёт 400). "
             + "Повторное сохранение того же листа обновляет ссылку, свой лист — 400")
     @PostMapping
     public SavedCharacterSheetResponse save(@RequestBody @Valid final SavedCharacterSheetRequest request) {
