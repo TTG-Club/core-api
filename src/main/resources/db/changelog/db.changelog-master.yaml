@@ -271,3 +271,5 @@ databaseChangeLog:
       file: db/changelog/2026/07/29-01-backfill-ability-improvement-variants.yaml
   - include:
       file: db/changelog/2026/07/29-02-add-class-starting-equipment.yaml
+  - include:
+      file: db/changelog/2026/07/30-01-add-background-starting-equipment.yaml

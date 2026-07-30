@@ -1,25 +1,20 @@
-package club.ttg.dnd5.domain.character_class.model;
+package club.ttg.dnd5.domain.common.rest.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Предмет в варианте стартового снаряжения класса.
- */
-@AllArgsConstructor
-@NoArgsConstructor
-@EqualsAndHashCode
 @Getter
 @Setter
-public class ClassEquipmentItem {
+@NoArgsConstructor
+@AllArgsConstructor
+public class EquipmentItemDto {
     @Schema(description = "URL предмета", example = "dagger")
     private String url;
 
-    @Schema(description = "Название предмета на момент сохранения", example = "Кинжал")
+    @Schema(description = "Название предмета", example = "Кинжал")
     private String name;
 
     @Schema(description = "Количество предметов", example = "2")

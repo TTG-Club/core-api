@@ -8,8 +8,10 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -22,7 +24,10 @@ import java.util.stream.Collectors;
 
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring")
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {EquipmentMapping.class},
+        componentModel = "spring",
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface BackgroundMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
@@ -34,6 +39,7 @@ public interface BackgroundMapper {
     @Mapping(source = ".", target = "feat", qualifiedByName = "featToMarkup")
     @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
     @Mapping(source = "skillProficiencies", target = "skillProficiencies", qualifiedByName = "skillsToString")
+    @Mapping(source = "startingEquipment", target = "startingEquipment", qualifiedByName = "toEquipmentOptionDtos")
     BackgroundDetailResponse toDetail(Background background);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -42,6 +48,7 @@ public interface BackgroundMapper {
     @Mapping(source = "skillProficiencies", target = "skillsProficiencies")
     @Mapping(source = "source.url", target = "source.url")
     @Mapping(source = "sourcePage", target = "source.page")
+    @Mapping(source = "startingEquipment", target = "startingEquipment", qualifiedByName = "toEquipmentForm")
     BackgroundRequest toRequest(Background background);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -62,6 +69,7 @@ public interface BackgroundMapper {
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
+    @Mapping(source = "request.startingEquipment", target = "startingEquipment", qualifiedByName = "toEquipmentEntities")
     Background toEntity(BackgroundRequest request, Feat feat, Source source);
 
     @BaseMapping.BaseEntityNameMapping
@@ -75,6 +83,7 @@ public interface BackgroundMapper {
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
+    @Mapping(source = "request.startingEquipment", target = "startingEquipment", qualifiedByName = "toEquipmentEntities")
     void updateEntity(BackgroundRequest request, Feat feat, Source source, @MappingTarget Background background);
 
     @Named("featToMarkup")

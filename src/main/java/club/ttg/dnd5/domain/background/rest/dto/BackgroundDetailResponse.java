@@ -1,11 +1,14 @@
 package club.ttg.dnd5.domain.background.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
+import club.ttg.dnd5.domain.common.rest.dto.EquipmentOptionDto;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 
@@ -26,4 +29,6 @@ public class BackgroundDetailResponse extends BaseResponse {
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Снаряжение")
     private String equipment;
+    @Schema(description = "Стартовое снаряжение вариантами выбора")
+    private List<EquipmentOptionDto> startingEquipment;
 }
