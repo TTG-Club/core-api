@@ -20,9 +20,15 @@ import java.util.Set;
  * Маппер предыстории TTG Club в формат компендиума VTTG ({@code type = "background"}).
  *
  * <p>Награды раскладываются по блокам эталона: характеристики → {@code abilityGrant},
- * навыки → {@code skillGrant}, черта → {@code featGrant}, снаряжение → {@code equipmentOptions}.
- * Владение инструментами в модели хранится свободным текстом (не id), поэтому {@code toolGrant}
- * не отдаётся; альтернатива снаряжения золотом в источнике отсутствует.</p>
+ * навыки → {@code skillGrant}, инструменты → {@code toolGrant}, черта → {@code featGrant},
+ * снаряжение → {@code equipmentOptions}. Альтернатива снаряжения золотом в источнике
+ * отсутствует.</p>
+ *
+ * <p>Блоки-списки отдаются ВСЕГДА, пустыми при отсутствии данных (см. {@link VttgBackground}):
+ * мастер настройки предыстории в VTTG читает их поля напрямую и падает на вырезанном блоке.
+ * {@code toolGrant.items} при этом пока всегда пуст — в модели владение инструментами
+ * хранится свободным текстом ({@code Background.toolProficiency}), а не идентификаторами,
+ * и отдавать этот текст как id нельзя: VTTG применил бы его актёру как владение.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -46,6 +52,7 @@ public class VttgBackgroundMapper {
                 .isSRD(background.getSrdVersion() != null)
                 .abilityGrant(abilityGrant(background.getAbilities()))
                 .skillGrant(skillGrant(background.getSkillProficiencies()))
+                .toolGrant(new VttgBackground.ToolGrant(List.of()))
                 .featGrant(featGrant(background.getFeat()))
                 .equipmentOptions(equipmentOptions(background.getEquipment()))
                 .type("background")
@@ -55,7 +62,7 @@ public class VttgBackgroundMapper {
     /** Характеристики в каноническом порядке (Сила→Харизма), как в эталоне. */
     private VttgBackground.AbilityGrant abilityGrant(Set<Ability> abilities) {
         if (abilities == null || abilities.isEmpty()) {
-            return null;
+            return new VttgBackground.AbilityGrant(List.of());
         }
         List<String> values = abilities.stream()
                 .filter(Objects::nonNull)
@@ -67,7 +74,7 @@ public class VttgBackgroundMapper {
 
     private VttgBackground.SkillGrant skillGrant(Set<Skill> skills) {
         if (skills == null || skills.isEmpty()) {
-            return null;
+            return new VttgBackground.SkillGrant(List.of());
         }
         List<String> values = skills.stream()
                 .filter(Objects::nonNull)
@@ -86,7 +93,7 @@ public class VttgBackgroundMapper {
 
     private List<VttgBackground.EquipmentOption> equipmentOptions(String equipment) {
         if (!StringUtils.hasText(equipment)) {
-            return null;
+            return List.of();
         }
         return List.of(new VttgBackground.EquipmentOption(markupConverter.toText(equipment), null));
     }
