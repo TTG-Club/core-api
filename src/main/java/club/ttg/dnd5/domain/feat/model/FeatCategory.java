@@ -14,7 +14,8 @@ public enum FeatCategory {
     DRAGONMARK("метка дракона"),
     PATH_OF_THE_DEATH_KNIGHT("Черта пути рыцаря смерти"),
     PATH_OF_THE_LICH("Черта пути лича"),
-    DARK_GIFT("Тёмный дар");
+    DARK_GIFT("Тёмный дар"),
+    KINDRED("Черта Сородича");
 
     private final String name;
 }
