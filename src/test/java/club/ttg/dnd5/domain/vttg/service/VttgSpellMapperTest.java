@@ -38,7 +38,7 @@ class VttgSpellMapperTest {
             new VttgSpellMechanicsExtractor(),
             new VttgSpellScalingExtractor()
     );
-    private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter);
+    private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter, new VttgEquipmentMapper(markupConverter));
 
     @Test
     void mapsStructuredSpellFieldsToVttgFormat() {

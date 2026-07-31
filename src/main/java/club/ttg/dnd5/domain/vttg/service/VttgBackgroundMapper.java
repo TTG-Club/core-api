@@ -21,14 +21,16 @@ import java.util.Set;
  *
  * <p>Награды раскладываются по блокам эталона: характеристики → {@code abilityGrant},
  * навыки → {@code skillGrant}, инструменты → {@code toolGrant}, черта → {@code featGrant},
- * снаряжение → {@code equipmentOptions}. Альтернатива снаряжения золотом в источнике
- * отсутствует.</p>
+ * снаряжение → {@code equipmentOptions}.</p>
  *
  * <p>Блоки-списки отдаются ВСЕГДА, пустыми при отсутствии данных (см. {@link VttgBackground}):
- * мастер настройки предыстории в VTTG читает их поля напрямую и падает на вырезанном блоке.
- * {@code toolGrant.items} при этом пока всегда пуст — в модели владение инструментами
- * хранится свободным текстом ({@code Background.toolProficiency}), а не идентификаторами,
- * и отдавать этот текст как id нельзя: VTTG применил бы его актёру как владение.</p>
+ * мастер настройки предыстории в VTTG читает их поля напрямую и падает на вырезанном блоке.</p>
+ *
+ * <p>{@code toolGrant.items} уезжает ЧЕЛОВЕКОЧИТАЕМЫМ текстом, а не идентификаторами —
+ * в модели владение инструментами так и хранится ({@code Background.toolProficiency}).
+ * Сопоставлять текст с идентификаторами здесь нечем: словарь инструментов живёт в системе
+ * D&D на стороне VTTG, там же заводятся недостающие. Ровно так же владение отдаёт и класс
+ * ({@code VttgClassMapper}) — обе сущности присылают текст, разбирает его потребитель.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class VttgBackgroundMapper {
     private static final String SECTION = "backgrounds";
 
     private final VttgMarkupConverter markupConverter;
+    private final VttgEquipmentMapper equipmentMapper;
 
     public VttgBackground toVttg(Background background) {
         String id = slug(background.getUrl());
@@ -52,9 +55,9 @@ public class VttgBackgroundMapper {
                 .isSRD(background.getSrdVersion() != null)
                 .abilityGrant(abilityGrant(background.getAbilities()))
                 .skillGrant(skillGrant(background.getSkillProficiencies()))
-                .toolGrant(new VttgBackground.ToolGrant(List.of()))
+                .toolGrant(toolGrant(background.getToolProficiency()))
                 .featGrant(featGrant(background.getFeat()))
-                .equipmentOptions(equipmentOptions(background.getEquipment()))
+                .equipmentOptions(equipmentOptions(background))
                 .type("background")
                 .build();
     }
@@ -84,6 +87,15 @@ public class VttgBackgroundMapper {
         return new VttgBackground.SkillGrant(values);
     }
 
+    /**
+     * Владение инструментами — текстом, как хранится в модели (см. javadoc класса).
+     * Разметка разбирается: в тексте встречаются ссылки на карточки инструментов.
+     */
+    private VttgBackground.ToolGrant toolGrant(String toolProficiency) {
+        String text = markupConverter.toText(toolProficiency).trim();
+        return new VttgBackground.ToolGrant(text.isEmpty() ? List.of() : List.of(text));
+    }
+
     private VttgBackground.FeatGrant featGrant(Feat feat) {
         if (feat == null) {
             return null;
@@ -91,7 +103,25 @@ public class VttgBackgroundMapper {
         return new VttgBackground.FeatGrant(featId(feat), feat.getName(), optional(feat.getEnglish()));
     }
 
-    private List<VttgBackground.EquipmentOption> equipmentOptions(String equipment) {
+    /**
+     * Варианты стартового снаряжения. Основной источник — структурированное
+     * {@code startingEquipment}: именно его показывает сайт, предметы лежат в нём
+     * ссылками и количеством, поэтому в VTTG уезжает разметка со ссылками на карточки,
+     * а не проза. Свободный текст {@code equipment} остаётся легаси-запасом для записей,
+     * которые на структуру ещё не перевели: у части предысторий он и вовсе без разметки,
+     * из-за чего снаряжение доезжало плоским текстом, хотя на сайте было со ссылками.
+     */
+    private List<VttgBackground.EquipmentOption> equipmentOptions(Background background) {
+        List<VttgEquipmentMapper.RenderedOption> rendered =
+                equipmentMapper.render(background.getStartingEquipment());
+        if (!rendered.isEmpty()) {
+            return rendered.stream()
+                    .map(option -> new VttgBackground.EquipmentOption(
+                            option.description(), option.goldEquivalent()))
+                    .toList();
+        }
+
+        String equipment = background.getEquipment();
         if (!StringUtils.hasText(equipment)) {
             return List.of();
         }

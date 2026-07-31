@@ -93,6 +93,7 @@ public class VttgClassMapper {
     );
 
     private final VttgMarkupConverter markupConverter;
+    private final VttgEquipmentMapper equipmentMapper;
 
     public VttgClass toVttg(CharacterClass characterClass) {
         String key = classKey(characterClass);
@@ -115,7 +116,7 @@ public class VttgClassMapper {
                 .toolProficiencies(tools(characterClass.getToolProficiency()))
                 .savingThrowProficiencies(abilities(characterClass.getSavingThrows()))
                 .skillChoices(skillChoices(characterClass.getSkillProficiency()))
-                .startingEquipment(startingEquipment(characterClass.getEquipment()))
+                .startingEquipment(startingEquipment(characterClass))
                 .spellcasting(spellcasting(key, characterClass.getCasterType()))
                 .subclassLevel(subclassLevel(subclasses))
                 .subclassLabel(subclassLabel(key))
@@ -393,12 +394,28 @@ public class VttgClassMapper {
     // ── Прочее ───────────────────────────────────────────────────
 
     /**
-     * Стартовое снаряжение. В модели TTG Club это единый markdown-текст (без структуры A/Б/В),
-     * поэтому выгружается одним вариантом; при отсутствии — {@code null} (поле опускается).
+     * Стартовое снаряжение. Основной источник — структурированное {@code startingEquipment}
+     * (варианты «А», «Б», … с предметами и монетами): именно его показывает сайт, и только из
+     * него получаются ссылки на карточки предметов. Свободный текст {@code equipment} —
+     * легаси-запас для записей, которые на структуру ещё не перевели; он выгружается одним
+     * вариантом. Нет ни того, ни другого — {@code null} (поле опускается).
      */
-    private List<VttgClass.StartingEquipment> startingEquipment(String equipment) {
-        String text = description(equipment);
-        return StringUtils.hasText(text) ? List.of(new VttgClass.StartingEquipment("A", text)) : null;
+    private List<VttgClass.StartingEquipment> startingEquipment(CharacterClass characterClass) {
+        List<VttgEquipmentMapper.RenderedOption> rendered =
+                equipmentMapper.render(characterClass.getStartingEquipment());
+        if (!rendered.isEmpty()) {
+            List<VttgClass.StartingEquipment> options = new ArrayList<>(rendered.size());
+            for (int index = 0; index < rendered.size(); index++) {
+                options.add(new VttgClass.StartingEquipment(
+                        equipmentMapper.label(index), rendered.get(index).description()));
+            }
+            return options;
+        }
+
+        String text = description(characterClass.getEquipment());
+        return StringUtils.hasText(text)
+                ? List.of(new VttgClass.StartingEquipment(equipmentMapper.label(0), text))
+                : null;
     }
 
     /** Заклинательство: {@code null}, если класс не заклинатель или неизвестна характеристика. */

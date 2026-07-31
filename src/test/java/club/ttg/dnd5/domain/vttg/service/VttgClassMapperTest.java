@@ -10,9 +10,12 @@ import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
+import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
 import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
@@ -30,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VttgClassMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final VttgClassMapper mapper = new VttgClassMapper(new VttgMarkupConverter(objectMapper));
+    private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
+    private final VttgClassMapper mapper = new VttgClassMapper(markupConverter, new VttgEquipmentMapper(markupConverter));
 
     /** «Воин» — базовая механика, владения, развёртка scaling в умения, таблица и вложенный подкласс. */
     @Test
@@ -161,6 +165,49 @@ class VttgClassMapperTest {
         items.sort(String::compareTo);
         return items.stream().map(value -> "\"" + value + "\"")
                 .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+    }
+
+    /**
+     * Структурированное снаряжение — основной источник: варианты получают метки «А», «Б»,
+     * а предметы уезжают ссылками на карточки сайта.
+     */
+    @Test
+    void mapsStructuredStartingEquipment() {
+        CharacterClass characterClass = baseClass("fighter", "Воин", "Fighter");
+        characterClass.setEquipment("Свободный текст, который не должен победить структуру");
+        characterClass.setStartingEquipment(List.of(
+                new EquipmentOption(List.of(
+                        new EquipmentItem("chain-mail", "Кольчуга", null, null),
+                        new EquipmentItem("javelin", "Метательное копьё", 8, null)
+                ), 4, Coin.GC),
+                new EquipmentOption(List.of(), 155, Coin.GC)
+        ));
+
+        JsonNode options = json(characterClass).get("startingEquipment");
+        assertEquals(2, options.size());
+        assertEquals("А", options.get(0).get("key").asText());
+        assertEquals(
+                "[Кольчуга](https://ttg.club/items/chain-mail), "
+                        + "8 [Метательное копьё](https://ttg.club/items/javelin), 4 зм",
+                options.get(0).get("description").asText()
+        );
+        assertEquals("Б", options.get(1).get("key").asText());
+        assertEquals("155 зм", options.get(1).get("description").asText());
+    }
+
+    /** Без структуры остаётся легаси-текст одним вариантом — с разобранной разметкой. */
+    @Test
+    void fallsBackToLegacyEquipmentText() {
+        CharacterClass characterClass = baseClass("fighter", "Воин", "Fighter");
+        characterClass.setEquipment("{@item Кольчуга|url:chain-mail} и 4 зм");
+
+        JsonNode options = json(characterClass).get("startingEquipment");
+        assertEquals(1, options.size());
+        assertEquals("А", options.get(0).get("key").asText());
+        assertEquals(
+                "[Кольчуга](https://ttg.club/items/chain-mail) и 4 зм",
+                options.get(0).get("description").asText()
+        );
     }
 
     private CharacterClass baseClass(String url, String name, String english) {

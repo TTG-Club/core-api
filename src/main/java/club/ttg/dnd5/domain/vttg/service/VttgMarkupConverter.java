@@ -95,6 +95,22 @@ public class VttgMarkupConverter {
         return convert(markup, false, Target.INTERMEDIATE);
     }
 
+    /**
+     * Markdown-ссылка на карточку раздела сайта — ровно та, в которую разворачивается
+     * маркер {@code {@item ...|url:...}}. Нужна тем, кто строит текст не из разметки, а
+     * из структурированных полей (стартовое снаряжение предыстории и класса), чтобы
+     * адрес карточки собирался в одном месте, а не переписывался у каждого маппера.
+     *
+     * @param section путь раздела (значение {@code SectionType}, например "items")
+     * @param url     стабильный идентификатор сущности; без него остаётся голая метка
+     * @param label   видимый текст ссылки
+     */
+    public String siteLink(String section, String url, String label) {
+        return StringUtils.hasText(url)
+                ? "[" + label + "](" + siteUrl() + "/" + section + "/" + url + ")"
+                : label;
+    }
+
     private String convert(String markup, boolean keepRolls, Target target) {
         if (!StringUtils.hasText(markup)) {
             return "";
