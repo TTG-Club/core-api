@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * Приводит разметку статьи/новости к тексту для Telegram.
  * <p>
  * Контент хранится массивом блоков: строки-абзацы и узлы-объекты (цитата/список/таблица/заголовок).
- * {@link VttgMarkupConverter#toText} разворачивает блок в промежуточный markdown-подобный текст
+ * {@link VttgMarkupConverter#toTextKeepingMarkers} разворачивает блок в промежуточный markdown-подобный текст
  * ({@code **жирный**}, {@code *курсив*}, {@code [метка](url)}) и при этом теряет обёртку цитаты —
  * поэтому цитату ({@code type: quote}) мы выделяем на уровне блоков и оборачиваем в Telegram
  * {@code <blockquote>}. Остальное переводим в Telegram-HTML: {@code <b>/<i>/<u>/<s>/<a>}. Всё, что
@@ -131,7 +131,7 @@ public class TelegramHtmlFormatter {
                 out.add(new Rendered(DIVIDER, DIVIDER, DIVIDER.length()));
                 continue;
             }
-            String text = clean(markupConverter.toText(preprocessLinks(block.markup())));
+            String text = clean(markupConverter.toTextKeepingMarkers(preprocessLinks(block.markup())));
             if (text.isEmpty()) {
                 continue;
             }
@@ -172,7 +172,7 @@ public class TelegramHtmlFormatter {
     }
 
     /**
-     * Пред-обработка ДО {@link VttgMarkupConverter#toText}: маркеры-ссылки {@code {@type label | url:...}}
+     * Пред-обработка ДО {@link VttgMarkupConverter#toTextKeepingMarkers}: маркеры-ссылки {@code {@type label | url:...}}
      * → markdown {@code [label](абсолютный url)}. Нужна потому, что toText теряет ссылки: у обычного
      * {@code {@link}} выкидывает url, а секции со спейсовым {@code | url:} не распознаёт. Остальные маркеры
      * ({@code {@b}}/{@code {@u}}/…) не трогаем — их разберут toText и {@link #applyTags}.

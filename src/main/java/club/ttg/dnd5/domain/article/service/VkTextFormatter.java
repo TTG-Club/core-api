@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * Пост на стене VK — это обычный текст без форматирования: жирный/курсив/подчёркивание VK в постах не
  * рендерит, поэтому все markdown-маркеры и теги {@code {@..}} снимаются, оставляя только содержимое.
  * Контент хранится массивом блоков (строки-абзацы и узлы-объекты: цитата/заголовок/разделитель);
- * {@link VttgMarkupConverter#toText} разворачивает блок в промежуточный markdown-подобный текст, из которого
+ * {@link VttgMarkupConverter#toTextKeepingMarkers} разворачивает блок в промежуточный markdown-подобный текст, из которого
  * мы убираем {@code **}/{@code *} и раскрываем ссылки.
  * <p>
  * Ссылки: внешние URL VK не умеет «маскировать» (подмена текста ссылкой работает только для внутренних
@@ -90,7 +90,7 @@ public class VkTextFormatter {
                 out.add(DIVIDER);
                 continue;
             }
-            String text = clean(markupConverter.toText(preprocessLinks(block.markup())));
+            String text = clean(markupConverter.toTextKeepingMarkers(preprocessLinks(block.markup())));
             if (text.isEmpty()) {
                 continue;
             }
@@ -169,7 +169,7 @@ public class VkTextFormatter {
     }
 
     /**
-     * Пред-обработка ДО {@link VttgMarkupConverter#toText}: маркеры-ссылки {@code {@type label | url:...}}
+     * Пред-обработка ДО {@link VttgMarkupConverter#toTextKeepingMarkers}: маркеры-ссылки {@code {@type label | url:...}}
      * → markdown {@code [label](абсолютный url)}. Нужна потому, что toText теряет ссылки: у обычного
      * {@code {@link}} выкидывает url, а секции со спейсовым {@code | url:} не распознаёт. Остальные маркеры
      * ({@code {@b}}/{@code {@u}}/…) не трогаем — их снимет {@link #stripTags}.
