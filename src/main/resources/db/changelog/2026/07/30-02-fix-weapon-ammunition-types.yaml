@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: 30-02-fix-weapon-ammunition-types
+      author: Magistrus
+      comment: >-
+        Значение SLING_BULLET называлось «Игла для трубки», и духовая трубка
+        использовала его как иглу. Теперь у него своё название («Снаряд»), а для
+        иглы добавлено NEEDLE, поэтому духовую трубку переводим на NEEDLE.
+        Праща же ссылалась на стрелу — за неимением снаряда в справочнике.
+      changes:
+        - sql:
+            sql: >-
+              update item
+              set weapon = jsonb_set(weapon, '{ammo}', '"NEEDLE"')
+              where weapon is not null
+                and weapon->>'ammo' = 'SLING_BULLET'
+                and english ilike '%blowgun%'
+        - sql:
+            sql: >-
+              update item
+              set weapon = jsonb_set(weapon, '{ammo}', '"SLING_BULLET"')
+              where weapon is not null
+                and weapon->>'ammo' = 'ARROW'
+                and english ilike '%sling%'
+      rollback:
+        - sql:
+            sql: >-
+              update item
+              set weapon = jsonb_set(weapon, '{ammo}', '"SLING_BULLET"')
+              where weapon is not null
+                and weapon->>'ammo' = 'NEEDLE'
+        - sql:
+            sql: >-
+              update item
+              set weapon = jsonb_set(weapon, '{ammo}', '"ARROW"')
+              where weapon is not null
+                and weapon->>'ammo' = 'SLING_BULLET'
+                and english ilike '%sling%'

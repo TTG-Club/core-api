@@ -19,7 +19,8 @@ public enum Property {
     THROWN("Метательное"),
     TWO_HANDED("Двуручное"),
     VERSATILE("Универсальное"),
-    BURST_FIRE("Очередь");
+    BURST_FIRE("Очередь"),
+    MAGAZINE("Боекомплект");
 
     private final String name;
 
