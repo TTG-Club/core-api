@@ -46,7 +46,7 @@ public class VttgPayloadStore {
     private static final Logger log = LoggerFactory.getLogger(VttgPayloadStore.class);
 
     /** Версия логики мапперов. Увеличьте при изменении формата payload — все строки пересчитаются. */
-    public static final int SCHEMA_VERSION = 8;
+    public static final int SCHEMA_VERSION = 9;
     /**
      * Размер пакета пересчёта/сохранения: ограничивает {@code IN}-список, объём транзакции и
      * зону поражения при сбое (на поштучную обработку переходит только сбойный пакет).

@@ -2,7 +2,10 @@ package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
+import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,7 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VttgBackgroundMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final VttgBackgroundMapper mapper = new VttgBackgroundMapper(new VttgMarkupConverter(objectMapper));
+    private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
+    private final VttgBackgroundMapper mapper = new VttgBackgroundMapper(markupConverter, new VttgEquipmentMapper(markupConverter));
 
     /** «Послушник» — характеристики в каноническом порядке, навыки, черта, снаряжение. */
     @Test
@@ -82,23 +87,93 @@ class VttgBackgroundMapperTest {
         assertEquals("[]", json.get("equipmentOptions").toString());
     }
 
-    /** {@code toolGrant} отдаётся и у полностью заполненной предыстории. */
+    /**
+     * Владение инструментами уезжает текстом, как хранится в модели: словарь
+     * инструментов живёт на стороне VTTG, там же текст и сопоставляется с ключами.
+     */
     @Test
-    void alwaysEmitsToolGrant() {
+    void emitsToolProficiencyAsText() {
         Background bg = baseBackground("acolyte", "Послушник", "Acolyte");
         bg.setAbilities(orderedAbilities());
         bg.setSkillProficiencies(orderedSkills(Skill.RELIGION, Skill.INSIGHT));
         bg.setFeat(feat("magic-initiate", "Посвящённый в магию", "Magic Initiate"));
-        bg.setToolProficiency("Инструменты каллиграфа");
+        bg.setToolProficiency("{@item Инструменты каллиграфа|url:calligraphers-supplies}");
 
-        JsonNode json = json(bg);
-        assertTrue(json.has("toolGrant"));
-        // Свободный текст владения НЕ уходит в items — VTTG применил бы его как id.
-        assertEquals("[]", json.get("toolGrant").get("items").toString());
+        JsonNode items = json(bg).get("toolGrant").get("items");
+        assertEquals(1, items.size());
+        assertEquals(
+                "[Инструменты каллиграфа](https://ttg.club/items/calligraphers-supplies)",
+                items.get(0).asText()
+        );
+    }
+
+    /** Без владения инструментами блок остаётся, но пустым. */
+    @Test
+    void emitsEmptyToolGrantWithoutProficiency() {
+        Background bg = baseBackground("hermit", "Отшельник", "Hermit");
+
+        assertEquals("[]", json(bg).get("toolGrant").get("items").toString());
+    }
+
+    /**
+     * Структурированное снаряжение — основной источник: предметы уезжают ссылками на
+     * карточки сайта, вариант «только монеты» получает золотой эквивалент.
+     */
+    @Test
+    void mapsStructuredStartingEquipment() {
+        Background bg = baseBackground("criminal", "Преступник", "Criminal");
+        bg.setEquipment("Свободный текст, который не должен победить структуру");
+        bg.setStartingEquipment(List.of(
+                option(List.of(
+                        item("dagger", "Кинжал", 2, null),
+                        item("thieves-tools", "Воровские инструменты", null, null),
+                        item(null, null, null, "древние карты"),
+                        item("parchment", "Пергамент", null, "10 листов")
+                ), 16),
+                option(List.of(), 50)
+        ));
+
+        JsonNode options = json(bg).get("equipmentOptions");
+        assertEquals(2, options.size());
+        assertEquals(
+                "2 [Кинжал](https://ttg.club/items/dagger), "
+                        + "[Воровские инструменты](https://ttg.club/items/thieves-tools), "
+                        + "древние карты, "
+                        + "[Пергамент](https://ttg.club/items/parchment) (10 листов), "
+                        + "16 зм",
+                options.get(0).get("description").asText()
+        );
+        // Вариант с предметами альтернативой золотом не является.
+        assertFalse(options.get(0).has("goldAlternative"));
+
+        assertEquals("50 зм", options.get(1).get("description").asText());
+        assertEquals(50, options.get(1).get("goldAlternative").asInt());
+    }
+
+    /** Без структуры остаётся легаси-текст — с разобранной разметкой. */
+    @Test
+    void fallsBackToLegacyEquipmentText() {
+        Background bg = baseBackground("criminal", "Преступник", "Criminal");
+        bg.setEquipment("2 {@item кинжала|url:dagger-phb} и 16 зм");
+
+        JsonNode options = json(bg).get("equipmentOptions");
+        assertEquals(1, options.size());
+        assertEquals(
+                "2 [кинжала](https://ttg.club/items/dagger-phb) и 16 зм",
+                options.get(0).get("description").asText()
+        );
     }
 
     private JsonNode json(Background bg) {
         return objectMapper.valueToTree(mapper.toVttg(bg));
+    }
+
+    private EquipmentOption option(List<EquipmentItem> items, Integer coins) {
+        return new EquipmentOption(items, coins, Coin.GC);
+    }
+
+    private EquipmentItem item(String url, String name, Integer quantity, String description) {
+        return new EquipmentItem(url, name, quantity, description);
     }
 
     private Background baseBackground(String url, String name, String english) {
