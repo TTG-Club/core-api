@@ -65,16 +65,36 @@ class VttgBackgroundMapperTest {
         assertEquals("srd_feat_alert", json.get("featGrant").get("featId").asText());
     }
 
-    /** Без черты/снаряжения соответствующие блоки опускаются. */
+    /**
+     * Блоки-списки присутствуют пустыми даже без данных: мастер предыстории в VTTG
+     * читает {@code toolGrant.items}/{@code skillGrant.skills} напрямую и падает,
+     * если блок вырезан по {@code NON_NULL}. Опускается только {@code featGrant}.
+     */
     @Test
-    void omitsAbsentGrants() {
+    void emitsEmptyGrantBlocksWhenDataAbsent() {
         Background bg = baseBackground("hermit", "Отшельник", "Hermit");
 
         JsonNode json = json(bg);
         assertFalse(json.has("featGrant"));
-        assertFalse(json.has("equipmentOptions"));
-        assertFalse(json.has("abilityGrant"));
-        assertFalse(json.has("skillGrant"));
+        assertEquals("[]", json.get("abilityGrant").get("abilities").toString());
+        assertEquals("[]", json.get("skillGrant").get("skills").toString());
+        assertEquals("[]", json.get("toolGrant").get("items").toString());
+        assertEquals("[]", json.get("equipmentOptions").toString());
+    }
+
+    /** {@code toolGrant} отдаётся и у полностью заполненной предыстории. */
+    @Test
+    void alwaysEmitsToolGrant() {
+        Background bg = baseBackground("acolyte", "Послушник", "Acolyte");
+        bg.setAbilities(orderedAbilities());
+        bg.setSkillProficiencies(orderedSkills(Skill.RELIGION, Skill.INSIGHT));
+        bg.setFeat(feat("magic-initiate", "Посвящённый в магию", "Magic Initiate"));
+        bg.setToolProficiency("Инструменты каллиграфа");
+
+        JsonNode json = json(bg);
+        assertTrue(json.has("toolGrant"));
+        // Свободный текст владения НЕ уходит в items — VTTG применил бы его как id.
+        assertEquals("[]", json.get("toolGrant").get("items").toString());
     }
 
     private JsonNode json(Background bg) {

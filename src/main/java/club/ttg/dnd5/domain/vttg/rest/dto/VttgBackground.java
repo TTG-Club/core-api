@@ -13,7 +13,15 @@ import java.util.List;
  *
  * <p>Соответствует целевому формату SRD-бэкапа VTTG (см. {@code backgrounds/*.json}):
  * самоописывающаяся запись с {@code id}/{@code type}/{@code isSRD} и блоками наград
- * ({@code abilityGrant}/{@code skillGrant}/{@code featGrant}/{@code equipmentOptions}).</p>
+ * ({@code abilityGrant}/{@code skillGrant}/{@code toolGrant}/{@code featGrant}/
+ * {@code equipmentOptions}).</p>
+ *
+ * <p>Блоки-списки наград отдаются ВСЕГДА, пустыми при отсутствии данных: мастер
+ * настройки предыстории в VTTG читает их поля напрямую ({@code toolGrant.items},
+ * {@code skillGrant.skills}, ...), и вырезанный по {@code NON_NULL} блок роняет
+ * его на первом же обращении. Опускается только {@code featGrant} — «черты нет»
+ * не имеет осмысленного пустого значения (у {@code featName} нет пустого
+ * аналога), и потребитель обязан обрабатывать его отсутствие.</p>
  */
 @Builder
 @Getter
@@ -31,6 +39,7 @@ public class VttgBackground {
     private String sourceKey;
     private AbilityGrant abilityGrant;
     private SkillGrant skillGrant;
+    private ToolGrant toolGrant;
     private FeatGrant featGrant;
     private List<EquipmentOption> equipmentOptions;
     /** Канонический тип сущности для VTTG — всегда "background". */
@@ -50,6 +59,17 @@ public class VttgBackground {
 
     /** Владения навыками (camelCase slug'и: "sleightOfHand", "insight"...). */
     public record SkillGrant(List<String> skills) {
+    }
+
+    /**
+     * Владения инструментами (slug'и: "thieves-tools", "calligraphers-supplies"...).
+     *
+     * <p>В модели TTG Club владение инструментами хранится свободным текстом
+     * ({@code Background.toolProficiency}), а не идентификаторами, поэтому список
+     * пока всегда пуст — но сам блок присутствует, чтобы потребитель мог читать
+     * {@code toolGrant.items} без проверок.</p>
+     */
+    public record ToolGrant(List<String> items) {
     }
 
     /** Даруемая черта. */

@@ -98,7 +98,52 @@ To ensure your Pull Request is accepted, please follow these guidelines:
 
 ---
 
-## 4. Использование CLA Assistant / Use of CLA Assistant
+## 4. Слияние веток / Merging branches
+
+### На русском:
+
+- **Фичевый PR → `dev`** — squash-коммитом: одна задача, один коммит в истории.
+- **Релизный PR `dev` → `main`** — **обычным merge-коммитом** («Create a merge
+  commit»), не squash.
+
+Squash в релизе кладёт в `main` тот же код под новым SHA. Общий предок веток при
+этом не меняется, поэтому следующий релизный PR видит одни и те же строки как
+параллельные правки и требует разрешить конфликт, которого по коду нет. Обычное
+слияние оставляет в `main` те же коммиты, что и в `dev`, и конфликт не
+возникает.
+
+Если релиз всё же ушёл в `main` squash-коммитом, положение исправляется без
+правки кода — слиянием, которое фиксирует релиз в истории и оставляет дерево
+`dev` нетронутым:
+
+```bash
+git checkout dev && git pull
+git merge -s ours origin/main -m "chore: отметить релизный main как влитый в dev"
+git push origin dev
+```
+
+Кнопка «Update branch» в PR этого не сделает: защита `dev` не даёт GitHub
+создать такой коммит, а обычный push его принимает.
+
+### In English:
+
+- **Feature PR → `dev`** — squash merge: one task, one commit in the history.
+- **Release PR `dev` → `main`** — a regular **merge commit**, not a squash.
+
+A squashed release puts the same code into `main` under a new SHA. The merge base
+stays where it was, so the next release PR sees the very same lines as parallel
+edits and reports a conflict that does not exist in the code. A regular merge
+keeps `main` on the same commits as `dev`, and no conflict appears.
+
+If a release did land in `main` as a squash, it is fixed without touching the
+code — by a merge that records the release in the history and leaves the `dev`
+tree untouched (see the commands above). The «Update branch» button will not do
+it: `dev` protection forbids GitHub from creating such a commit, while a plain
+push accepts it.
+
+---
+
+## 5. Использование CLA Assistant / Use of CLA Assistant
 
 ### На русском:
 
