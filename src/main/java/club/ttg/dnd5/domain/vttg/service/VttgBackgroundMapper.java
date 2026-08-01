@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgBackground;
@@ -51,6 +52,8 @@ public class VttgBackgroundMapper {
                 .nameEn(optional(background.getEnglish()))
                 .description(markupConverter.toText(background.getDescription()))
                 .section(SECTION)
+                .srcSection(SectionType.BACKGROUND.getValue())
+                .srcUrl(background.getUrl())
                 .sourceKey(sourceKey(background.getSource()))
                 .isSRD(background.getSrdVersion() != null)
                 .abilityGrant(abilityGrant(background.getAbilities()))

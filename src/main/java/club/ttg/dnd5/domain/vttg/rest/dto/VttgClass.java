@@ -37,6 +37,15 @@ public class VttgClass {
     private String id;
     /** Слаг листа дерева разделов, в котором показывается запись — всегда "classes". */
     private String section;
+    /**
+     * Раздел сайта в адресе страницы-источника ({@code classes} в {@code /classes/druid-phb}).
+     * По паре {@code srcSection}/{@code srcUrl} VTTG находит запись в компендиуме, когда в
+     * описании кликают ссылку. {@code srcUrl} не равен {@code id}: тот собирается из
+     * английского имени ({@code druid}), а слаг сайта несёт суффикс источника.
+     */
+    private String srcSection;
+    /** Слаг страницы-источника на сайте; с {@code srcSection} составляет адрес ссылки. */
+    private String srcUrl;
     /** Стабильный ключ класса (slug из английского имени, как в {@code spell.classKeys}). */
     private String key;
     private String name;

@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.character_class.model.ArmorProficiency;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
@@ -104,6 +105,8 @@ public class VttgClassMapper {
                 .type(TYPE)
                 .id(key)
                 .section(SECTION)
+                .srcSection(SectionType.CLASS.getValue())
+                .srcUrl(characterClass.getUrl())
                 .key(key)
                 .name(characterClass.getName())
                 .nameEn(optional(characterClass.getEnglish()))

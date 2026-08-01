@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.Attunement;
@@ -23,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -167,6 +169,11 @@ public class VttgMagicItemMapper {
                 .type(weapon ? "weapon" : "equipment")
                 .typeLabel(weapon ? "Оружие" : "Снаряжение")
                 .section(section(category))
+                // Страница-источник у всех записей раскрытия одна — родительская: варианты
+                // («полулаты или латы», «+1/+2/+3») своих страниц на сайте не имеют.
+                .srcSection(SectionType.MAGIC_ITEM.getValue())
+                .srcUrl(item.getUrl())
+                .srcVariant(Objects.equals(url, item.getUrl()) ? null : Boolean.TRUE)
                 .quantity(1)
                 // Вес берём у базового предмета (по clarification); иначе 0.
                 .weight(mechanics.weight())

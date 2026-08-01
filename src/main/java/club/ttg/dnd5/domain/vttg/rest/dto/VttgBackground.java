@@ -35,6 +35,14 @@ public class VttgBackground {
     private String description;
     /** Слаг листа дерева разделов, в котором показывается запись — всегда "backgrounds". */
     private String section;
+    /**
+     * Раздел сайта в адресе страницы-источника ({@code backgrounds} в {@code /backgrounds/sage-phb}).
+     * По паре {@code srcSection}/{@code srcUrl} VTTG находит запись в компендиуме, когда в
+     * описании кликают ссылку.
+     */
+    private String srcSection;
+    /** Слаг страницы-источника на сайте; с {@code srcSection} составляет адрес ссылки. */
+    private String srcUrl;
     /** Ключ источника: "phb"/"dmg"/... */
     private String sourceKey;
     private AbilityGrant abilityGrant;

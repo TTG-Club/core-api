@@ -154,6 +154,20 @@ class VttgClassMapperTest {
         return columns.get(0).get("key").asText();
     }
 
+    /**
+     * Идентичность страницы-источника: {@code id}/{@code key} собираются из английского имени,
+     * поэтому адрес страницы из них не выводится — его отдаём отдельно.
+     */
+    @Test
+    void exportsSourcePageIdentity() {
+        JsonNode json = json(baseClass("druid-phb", "Друид", "Druid"));
+
+        assertEquals("classes", json.get("srcSection").asText());
+        assertEquals("druid-phb", json.get("srcUrl").asText());
+        assertEquals("druid", json.get("id").asText());
+        assertEquals("druid", json.get("key").asText());
+    }
+
     private JsonNode json(CharacterClass characterClass) {
         return objectMapper.valueToTree(mapper.toVttg(characterClass));
     }

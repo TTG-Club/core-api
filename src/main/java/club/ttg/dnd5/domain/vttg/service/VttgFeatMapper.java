@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.source.model.Source;
@@ -47,6 +48,8 @@ public class VttgFeatMapper {
                 .nameEn(optional(feat.getEnglish()))
                 .type(TYPE)
                 .section(SECTION)
+                .srcSection(SectionType.FEAT.getValue())
+                .srcUrl(feat.getUrl())
                 .sourceKey(sourceKey(feat.getSource()))
                 .isSRD(feat.getSrdVersion() != null)
                 .featureType(TYPE)

@@ -104,6 +104,15 @@ class VttgSpeciesMapperTest {
         assertEquals("drow", choices.get(1).get("key").asText());
     }
 
+    /** Идентичность страницы-источника вида. */
+    @Test
+    void exportsSourcePageIdentity() {
+        JsonNode json = json(baseSpecies("elf-phb", "Эльф", "Elf"));
+
+        assertEquals("species", json.get("srcSection").asText());
+        assertEquals("elf-phb", json.get("srcUrl").asText());
+    }
+
     private JsonNode json(Species species) {
         return objectMapper.valueToTree(mapper.toVttg(species));
     }

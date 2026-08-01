@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
@@ -97,6 +98,8 @@ public class VttgSpellMapper {
                 .classKeys(classKeys(spell))
                 .type("spell")
                 .section("spells")
+                .srcSection(SectionType.SPELL.getValue())
+                .srcUrl(spell.getUrl())
                 .build();
     }
 

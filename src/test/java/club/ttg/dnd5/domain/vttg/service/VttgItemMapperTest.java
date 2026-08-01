@@ -208,6 +208,20 @@ class VttgItemMapperTest {
         assertFalse(json.has("mastery"));
     }
 
+    /**
+     * Идентичность страницы-источника: раздел сайта — {@code items}, тогда как лист компендиума
+     * зависит от вида предмета, а {@code id} несёт суффикс источника. Ссылку из описания можно
+     * разрешить только по этой паре.
+     */
+    @Test
+    void exportsSourcePageIdentity() {
+        JsonNode json = json(baseItem("longsword", "Длинный меч", "Longsword"));
+
+        assertEquals("items", json.get("srcSection").asText());
+        assertEquals("longsword", json.get("srcUrl").asText());
+        assertEquals("longsword-phb", json.get("id").asText());
+    }
+
     private JsonNode json(Item item) {
         return objectMapper.valueToTree(mapper.toVttg(item));
     }
