@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -87,6 +89,28 @@ class VttgFeatMapperTest {
         assertEquals("origin_feat", mapper.separator(FeatCategory.ORIGIN).get("id"));
         assertEquals("Черта происхождения", mapper.separator(FeatCategory.ORIGIN).get("name"));
         assertEquals("epic_feat", mapper.separator(FeatCategory.EPIC_BOON).get("id"));
+    }
+
+    /**
+     * Идентичность страницы-источника: по ней VTTG находит черту в компендиуме по ссылке из
+     * описания. Именно поэтому её нельзя выводить из {@code id} — тот собран по схеме эталона.
+     */
+    @Test
+    void exportsSourcePageIdentity() {
+        JsonNode json = json(baseFeat("two-weapon-fighting-phb", "Сражение двумя оружиями", "Two-Weapon Fighting"));
+
+        assertEquals("feats", json.get("srcSection").asText());
+        assertEquals("two-weapon-fighting-phb", json.get("srcUrl").asText());
+        assertEquals("srd_feat_two_weapon_fighting", json.get("id").asText());
+    }
+
+    /** У разделителя страницы на сайте нет — идентичности источника он не несёт. */
+    @Test
+    void separatorHasNoSourcePageIdentity() {
+        Map<String, Object> separator = mapper.separator(FeatCategory.FIGHTING_STYLE);
+
+        assertFalse(separator.containsKey("srcSection"));
+        assertFalse(separator.containsKey("srcUrl"));
     }
 
     /** Все категории enum покрыты порядком разделителей — ни одна черта не «потеряется». */

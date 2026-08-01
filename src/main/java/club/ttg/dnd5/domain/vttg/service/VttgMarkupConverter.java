@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.model.SectionType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -586,19 +587,24 @@ public class VttgMarkupConverter {
      * {@code MARKER_URL_MAP} (тот же список, что в форматтерах статей): в контенте
      * встречаются ссылки на любой раздел, а не только на глоссарий и заклинания —
      * например стартовое снаряжение предыстории состоит из {@code {@item ...}}.
+     *
+     * <p>Пути берутся из {@link SectionType}, а не пишутся строками: мапперы выгрузки кладут
+     * в записи компендиума ту же величину полем {@code srcSection}, и по паре
+     * {@code srcSection}/{@code srcUrl} VTTG находит цель ссылки у себя. Разъехаться эти два
+     * места не должны.</p>
      */
     private static Map<String, String> siteLinkSections() {
         Map<String, String> result = new LinkedHashMap<>();
-        result.put("class", "classes");
-        result.put("spell", "spells");
-        result.put("feat", "feats");
-        result.put("background", "backgrounds");
-        result.put("magicItem", "magic-items");
-        result.put("magic-item", "magic-items");
-        result.put("item", "items");
-        result.put("creature", "bestiary");
-        result.put("bestiary", "bestiary");
-        result.put("glossary", "glossary");
+        result.put("class", SectionType.CLASS.getValue());
+        result.put("spell", SectionType.SPELL.getValue());
+        result.put("feat", SectionType.FEAT.getValue());
+        result.put("background", SectionType.BACKGROUND.getValue());
+        result.put("magicItem", SectionType.MAGIC_ITEM.getValue());
+        result.put("magic-item", SectionType.MAGIC_ITEM.getValue());
+        result.put("item", SectionType.ITEM.getValue());
+        result.put("creature", SectionType.BESTIARY.getValue());
+        result.put("bestiary", SectionType.BESTIARY.getValue());
+        result.put("glossary", SectionType.GLOSSARY.getValue());
         return result;
     }
 }

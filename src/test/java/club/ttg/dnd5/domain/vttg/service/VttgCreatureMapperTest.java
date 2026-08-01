@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
 import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
@@ -262,6 +263,24 @@ class VttgCreatureMapperTest {
         Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
 
         assertActiveEffect(action, "prone");
+    }
+
+    /**
+     * Идентичность страницы-источника существа: раздел сайта — {@code bestiary}, тогда как лист
+     * компендиума — {@code creatures}. Разрешать ссылку по {@code section} нельзя.
+     */
+    @Test
+    void exportsSourcePageIdentity() {
+        Creature creature = new Creature();
+        creature.setUrl("goblin-mm");
+        creature.setName("Гоблин");
+        creature.setDescription("");
+
+        VttgCreature result = mapper.toVttg(creature);
+
+        assertEquals("bestiary", result.getSrcSection());
+        assertEquals("goblin-mm", result.getSrcUrl());
+        assertEquals("creatures", result.getSection());
     }
 
     @Test

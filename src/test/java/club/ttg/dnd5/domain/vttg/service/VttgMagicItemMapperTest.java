@@ -239,6 +239,50 @@ class VttgMagicItemMapperTest {
         assertEquals(1, mapper.toVttgVariants(item, new HashMap<>()).size());
     }
 
+    /**
+     * У всех записей раскрытия страница-источник одна — родительская: только по ней VTTG найдёт
+     * цель ссылки. Отличить якорь от производных даёт {@code srcVariant}.
+     */
+    @Test
+    void variantsShareParentSourcePageIdentity() {
+        when(itemRepository.findBaseByNameForVttgExport("латы")).thenReturn(List.of(plate()));
+        when(itemRepository.findBaseByNameForVttgExport("полулаты")).thenReturn(List.of(halfPlate()));
+
+        MagicItem item = new MagicItem();
+        item.setUrl("dwarven-plate");
+        item.setName("Латы дварфов");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setClarification("полулаты или латы");
+        item.setRarity(Rarity.VERY_RARE);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        VttgMagicItem anchor = byName(variants, "Латы дварфов");
+        assertEquals("magic-items", anchor.getSrcSection());
+        assertEquals("dwarven-plate", anchor.getSrcUrl());
+        assertNull(anchor.getSrcVariant());
+
+        VttgMagicItem derived = byName(variants, "Полулаты дварфов");
+        assertEquals("dwarven-plate", derived.getSrcUrl());
+        assertEquals(Boolean.TRUE, derived.getSrcVariant());
+        // id разошёлся с адресом страницы — по нему ссылку не разрешить.
+        assertEquals("dwarven-plate-half-plate-dmg", derived.getId());
+    }
+
+    /** Нерасщеплённый предмет — сам себе страница-источник, флага варианта нет. */
+    @Test
+    void plainItemIsItsOwnSourcePage() {
+        VttgMagicItem wand = mapper.toVttgVariants(wandOfFear(), new HashMap<>()).getFirst();
+
+        assertEquals("magic-items", wand.getSrcSection());
+        assertEquals("wand-of-fear", wand.getSrcUrl());
+        assertNull(wand.getSrcVariant());
+        assertEquals("wand-of-fear-dmg", wand.getId());
+    }
+
     private VttgMagicItem byName(List<VttgMagicItem> variants, String name) {
         return variants.stream()
                 .filter(v -> name.equals(v.getName()))

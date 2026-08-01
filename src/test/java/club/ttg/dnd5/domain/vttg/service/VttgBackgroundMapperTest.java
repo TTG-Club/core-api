@@ -164,6 +164,15 @@ class VttgBackgroundMapperTest {
         );
     }
 
+    /** Идентичность страницы-источника предыстории. */
+    @Test
+    void exportsSourcePageIdentity() {
+        JsonNode json = json(baseBackground("sage-phb", "Мудрец", "Sage"));
+
+        assertEquals("backgrounds", json.get("srcSection").asText());
+        assertEquals("sage-phb", json.get("srcUrl").asText());
+    }
+
     private JsonNode json(Background bg) {
         return objectMapper.valueToTree(mapper.toVttg(bg));
     }

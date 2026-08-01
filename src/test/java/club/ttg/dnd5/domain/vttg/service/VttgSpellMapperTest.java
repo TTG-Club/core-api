@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
@@ -233,6 +234,23 @@ class VttgSpellMapperTest {
         assertEquals(List.of("wizard"), classKeys);
         assertEquals("wizard", classKey);
         assertTrue(classKeys.contains(classKey));
+    }
+
+    /** Идентичность страницы-источника заклинания: раздел сайта и слаг рядом с {@code id}. */
+    @Test
+    void exportsSourcePageIdentity() {
+        Spell spell = new Spell();
+        spell.setUrl("magic-missile-phb");
+        spell.setName("Волшебная стрела");
+        spell.setEnglish("Magic Missile");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+
+        VttgSpell result = mapper.toVttg(spell);
+
+        assertEquals("spells", result.getSrcSection());
+        assertEquals("magic-missile-phb", result.getSrcUrl());
+        assertEquals("magic-missile-phb", result.getId());
     }
 
     /** Несколько принадлежностей: канонические ключи, отсортированы и без дублей; неканонические отброшены. */

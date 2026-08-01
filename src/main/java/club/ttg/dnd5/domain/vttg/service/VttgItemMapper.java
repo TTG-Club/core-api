@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.Roll;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
@@ -56,6 +57,10 @@ public class VttgItemMapper {
         Map<String, Object> data = new LinkedHashMap<>();
 
         data.put("id", id(item, sourceKey));
+        // Страница-источник: id несёт суффикс источника, слаг сайта — не всегда, поэтому
+        // адрес ссылки из описаний выводится только из этой пары, а не из id.
+        data.put("srcSection", SectionType.ITEM.getValue());
+        data.put("srcUrl", item.getUrl());
         data.put("name", item.getName());
         String nameEn = cleanNameEn(item.getEnglish());
         if (nameEn != null) {
