@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -45,6 +46,8 @@ public class VttgSpeciesMapper {
                 // id обязателен для раскладки дельты (routeEntity: <id>.json), иначе вид отбрасывается.
                 .id(key)
                 .section(SECTION)
+                .srcSection(SectionType.SPECIES.getValue())
+                .srcUrl(species.getUrl())
                 .key(key)
                 .isSRD(species.getSrdVersion() != null)
                 .name(species.getName())

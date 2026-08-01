@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
 import club.ttg.dnd5.domain.beastiary.model.CreatureLair;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
@@ -76,6 +77,9 @@ public class VttgCreatureMapper {
                 .entityType("creature")
                 .type("creature")
                 .section("creatures")
+                // Раздел сайта у существ — "bestiary", а лист компендиума — "creatures".
+                .srcSection(SectionType.BESTIARY.getValue())
+                .srcUrl(creature.getUrl())
                 .autoSaves(true)
                 .name(creature.getName())
                 .nameEn(creature.getEnglish())

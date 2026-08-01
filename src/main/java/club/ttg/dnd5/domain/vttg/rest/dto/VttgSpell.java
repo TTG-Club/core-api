@@ -54,6 +54,15 @@ public class VttgSpell {
     private String type;
     /** Slug листа дерева разделов, в котором показывается запись (всегда "spells"). */
     private String section;
+    /**
+     * Раздел сайта в адресе страницы-источника ({@code items} в {@code /items/dagger-phb}).
+     * По паре {@code srcSection}/{@code srcUrl} VTTG находит запись в компендиуме, когда в
+     * описании кликают ссылку. С {@code section} совпадает не всегда: там лист дерева
+     * компендиума, здесь раздел сайта.
+     */
+    private String srcSection;
+    /** Слаг страницы-источника на сайте; с {@code srcSection} составляет адрес ссылки. */
+    private String srcUrl;
 
     @JsonProperty("isSRD")
     public boolean isSRD() {

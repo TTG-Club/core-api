@@ -31,6 +31,27 @@ public class VttgMagicItem {
     private String typeLabel;
     /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous). */
     private String section;
+    /**
+     * Раздел сайта в адресе страницы-источника — всегда {@code magic-items}. По паре
+     * {@code srcSection}/{@code srcUrl} VTTG находит запись в компендиуме, когда в описании
+     * кликают ссылку. С {@code section} не совпадает: там лист дерева компендиума.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String srcSection;
+    /**
+     * Слаг страницы-источника на сайте. У всех записей, на которые раскрылся один предмет,
+     * он ОДИН И ТОТ ЖЕ — слаг родителя: страница на сайте у них общая.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String srcUrl;
+    /**
+     * Запись — производная от страницы-источника, а не сама она: раскрытие по базовому
+     * предмету («полулаты или латы») или по шаблону «+1/+2/+3». Нужен VTTG, чтобы из группы
+     * записей с общим {@code srcUrl} выбрать ту, которую открывать по ссылке. У якорной
+     * записи опускается.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean srcVariant;
     private int quantity;
     /** Вес в фунтах (в модели источника отсутствует — по умолчанию 0). */
     private double weight;

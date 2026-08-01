@@ -24,6 +24,15 @@ public class VttgFeat {
     private String type;
     /** Слаг листа дерева разделов, в котором показывается запись — всегда "feats". */
     private String section;
+    /**
+     * Раздел сайта в адресе страницы-источника ({@code feats} в {@code /feats/alert-phb}).
+     * По паре {@code srcSection}/{@code srcUrl} VTTG находит запись в компендиуме, когда в
+     * описании кликают ссылку. {@code srcUrl} не равен {@code id}: тот собирается по схеме
+     * эталона ({@code srd_feat_alert}).
+     */
+    private String srcSection;
+    /** Слаг страницы-источника на сайте; с {@code srcSection} составляет адрес ссылки. */
+    private String srcUrl;
     /** Ключ источника: "phb"/"dmg"/... */
     private String sourceKey;
     /** Подтип записи в VTTG — всегда "feat". */

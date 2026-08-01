@@ -37,6 +37,14 @@ public class VttgSpecies {
     private String id;
     /** Слаг листа дерева разделов, в котором показывается запись — всегда "species". */
     private String section;
+    /**
+     * Раздел сайта в адресе страницы-источника ({@code species} в {@code /species/elf-phb}).
+     * По паре {@code srcSection}/{@code srcUrl} VTTG находит запись в компендиуме, когда в
+     * описании кликают ссылку.
+     */
+    private String srcSection;
+    /** Слаг страницы-источника на сайте; с {@code srcSection} составляет адрес ссылки. */
+    private String srcUrl;
     /** Стабильный ключ вида (slug из url). */
     private String key;
     /** Признак SRD (для раскладки по пакам); выводится всегда. */
