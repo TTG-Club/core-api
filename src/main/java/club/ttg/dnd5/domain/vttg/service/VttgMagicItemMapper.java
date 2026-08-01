@@ -9,7 +9,6 @@ import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -46,8 +45,6 @@ import java.util.regex.Pattern;
 @Component
 @RequiredArgsConstructor
 public class VttgMagicItemMapper {
-    /** Запасной ключ источника, если у предмета его нет. */
-    private static final String SOURCE = "srd";
     /** Дефолтная редкость магического предмета, когда реальную не удалось определить (none недопустим). */
     private static final Rarity DEFAULT_MAGIC_RARITY = Rarity.UNCOMMON;
     /** Бонус «+1/+2/+3» из названия/уточнения предмета. */
@@ -154,7 +151,7 @@ public class VttgMagicItemMapper {
                                      String english, Rarity rarity, Integer bonus) {
         Attunement attunement = item.getAttunement();
         boolean requiresAttunement = attunement != null && attunement.isRequires();
-        String sourceKey = sourceKey(item.getSource());
+        String sourceKey = VttgSourceKeys.of(item.getSource());
         MagicItemCategory category = item.getCategory();
         boolean weapon = category == MagicItemCategory.WEAPON;
         BaseMechanics mechanics = mechanics(base, category);
@@ -574,17 +571,6 @@ public class VttgMagicItemMapper {
         return null;
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return SOURCE;
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return StringUtils.hasText(source.getAcronym())
-                ? source.getAcronym().toLowerCase(Locale.ROOT)
-                : SOURCE;
-    }
 
     /** Выведенные из базового предмета поля: вес, стоимость в золоте и боевые/доспешные поля ({@code null} — нет). */
     private record BaseMechanics(double weight, Double costGold, Map<String, Object> fields) {

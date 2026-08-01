@@ -40,9 +40,23 @@ public abstract class NamedEntity extends Timestamped implements Persistable<Str
     @Column(name = "is_hidden_entity")
     private boolean isHiddenEntity = false;
 
-    /** Версия SRD, например "5.1" */
+    /** Версия SRD, например "5.1"; {@code null} — сущность не входит в SRD. */
     @Column(name = "srd_version")
     private String srdVersion;
+
+    /**
+     * Пустая строка означает «версии нет», а не «версия пустая». Формы админки при очистке
+     * поля присылают {@code ""}, а признак принадлежности к SRD везде читается как «поле не
+     * null» — и в выгрузке ({@code isSRD}), и в фильтрах «только SRD»
+     * ({@code where srdVersion is not null}). Без нормализации снятая в админке пометка не
+     * снималась бы ни на сайте, ни в компендиуме.
+     *
+     * @param srdVersion версия SRD; пустая строка и пробелы трактуются как её отсутствие
+     */
+    public void setSrdVersion(String srdVersion) {
+        String trimmed = srdVersion == null ? null : srdVersion.trim();
+        this.srdVersion = trimmed == null || trimmed.isEmpty() ? null : trimmed;
+    }
 
     @Override
     @Transient

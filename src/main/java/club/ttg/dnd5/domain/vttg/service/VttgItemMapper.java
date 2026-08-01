@@ -14,7 +14,6 @@ import club.ttg.dnd5.domain.item.model.weapon.Damage;
 import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.Range;
-import club.ttg.dnd5.domain.source.model.Source;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -46,14 +45,12 @@ import java.util.regex.Pattern;
 @Component
 @RequiredArgsConstructor
 public class VttgItemMapper {
-    /** Запасной ключ источника, если у предмета его нет. */
-    private static final String SOURCE = "srd";
     private static final Pattern LEADING_NUMBER = Pattern.compile("(\\d+(?:[.,]\\d+)?)");
 
     private final VttgMarkupConverter markupConverter;
 
     public Map<String, Object> toVttg(Item item) {
-        String sourceKey = sourceKey(item.getSource());
+        String sourceKey = VttgSourceKeys.of(item.getSource());
         Map<String, Object> data = new LinkedHashMap<>();
 
         data.put("id", id(item, sourceKey));
@@ -397,15 +394,4 @@ public class VttgItemMapper {
         return item.getCost() + " " + item.getCoin().getShortName();
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return SOURCE;
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return StringUtils.hasText(source.getAcronym())
-                ? source.getAcronym().toLowerCase(Locale.ROOT)
-                : SOURCE;
-    }
 }
