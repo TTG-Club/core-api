@@ -264,7 +264,7 @@ public class VttgMarkupConverter {
         JsonNode colLabels = node.get("colLabels");
         if (colLabels != null && colLabels.isArray()) {
             List<String> header = new ArrayList<>();
-            colLabels.forEach(label -> header.add(formatTableCell(extractInlineCell(label, target))));
+            colLabels.forEach(label -> header.add(formatTableCell(extractInlineCell(label, target), target)));
             if (!header.isEmpty()) {
                 table.add(header);
             }
@@ -277,7 +277,7 @@ public class VttgMarkupConverter {
                     continue;
                 }
                 List<String> cells = new ArrayList<>();
-                row.forEach(cell -> cells.add(formatTableCell(extractInlineCell(cell, target))));
+                row.forEach(cell -> cells.add(formatTableCell(extractInlineCell(cell, target), target)));
                 if (!cells.isEmpty()) {
                     table.add(cells);
                 }
@@ -380,12 +380,27 @@ public class VttgMarkupConverter {
         }
 
         List<String> result = new ArrayList<>();
-        cells.forEach(cell -> result.add(formatTableCell(extract(cell, target))));
+        cells.forEach(cell -> result.add(formatTableCell(extract(cell, target), target)));
         return result;
     }
 
-    private String formatTableCell(String cell) {
-        return cell.trim()
+    /**
+     * Ячейка markdown-таблицы: разметка раскрывается, служебные символы экранируются.
+     *
+     * <p>Порядок здесь принципиален. Разметку ячейки раскрываем ДО экранирования
+     * разделителей: у маркеров-ссылок «|» — разделитель атрибутов
+     * ({@code {@spell Терновый кнут [Thorn Whip]|url:thorn-whip-phb}}), и если
+     * экранировать раньше, обратный слэш уезжает в конец метки — ссылка выходит
+     * оборванной ({@code [Терновый кнут [Thorn Whip]\](...)}) и markdown её уже не
+     * разбирает. По той же причине здесь раскрывается {@code {@br}}: в общем проходе
+     * он развернулся бы в настоящий перевод строки и разорвал строку таблицы.</p>
+     *
+     * <p>Броски оставляем целыми ({@code keepRolls = true}) — их раскроет общий проход
+     * в нужном режиме; знать про него ячейке не нужно. Всё остальное после раскрытия
+     * уже не содержит маркеров, поэтому повторный проход для ячейки холостой.</p>
+     */
+    private String formatTableCell(String cell, Target target) {
+        return replaceMarkup(cell.trim(), true, target)
                 .replace("|", "\\|")
                 .replace("\r\n", "\n")
                 .replace('\r', '\n')
