@@ -18,9 +18,13 @@ import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.source.repository.SourceRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesResponse;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesStatus;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSource;
+import com.fasterxml.jackson.databind.JsonNode;
 import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import club.ttg.dnd5.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +44,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Collection;
 import java.util.Map;
@@ -81,6 +86,7 @@ public class VttgChangesService {
     private static final Set<String> SUPPORTED_TYPES =
             Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS, FEATS, SPECIES, CLASSES);
 
+    private final SourceRepository sourceRepository;
     private final SpellRepository spellRepository;
     private final CreatureRepository creatureRepository;
     private final MagicItemRepository magicItemRepository;
@@ -257,9 +263,59 @@ public class VttgChangesService {
         upserts.replaceAll(change -> change.updatedAt() != null ? change
                 : new VttgChange(change.type(), change.url(), fallbackStamp, change.data()));
 
-        VttgChangesResponse response = new VttgChangesResponse(window.until(), upserts, compendiumSections.changesTree());
+        VttgChangesResponse response = new VttgChangesResponse(
+                window.until(), upserts, compendiumSections.changesTree(), sources(upserts));
         logTimings(timings, upserts.size(), millisSince(startedAt, System.nanoTime()));
         return response;
+    }
+
+    /**
+     * Словарь источников, встречающихся у отданных записей.
+     *
+     * <p>Отдаём только задействованные: у записи в компендиуме есть лишь {@code sourceKey}, и
+     * потребителю нужны названия ровно для тех ключей, что к нему приехали. Ключ считается тем
+     * же {@link VttgSourceKeys}, что и у самих записей, иначе подпись не нашлась бы.</p>
+     *
+     * <p>Справочник источников маленький и читается целиком: обратного отображения
+     * «ключ → строка таблицы» нет ({@code PHB24} сводится к {@code phb}), а сводить несколько
+     * акронимов к одному ключу приходится здесь же — побеждает первый по алфавиту.</p>
+     */
+    private List<VttgSource> sources(List<VttgChange> upserts) {
+        Set<String> keys = new HashSet<>();
+        for (VttgChange change : upserts) {
+            String key = sourceKeyOf(change.data());
+            if (key != null) {
+                keys.add(key);
+            }
+        }
+        if (keys.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, VttgSource> byKey = new LinkedHashMap<>();
+        sourceRepository.findAll().stream()
+                .sorted(Comparator.comparing(Source::getAcronym,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .forEach(source -> {
+                    String key = VttgSourceKeys.of(source);
+                    if (keys.contains(key)) {
+                        byKey.putIfAbsent(key, new VttgSource(key, source.getName(), source.getEnglish(),
+                                key.toUpperCase(Locale.ROOT)));
+                    }
+                });
+        return List.copyOf(byKey.values());
+    }
+
+    /** Ключ источника записи: payload — либо дерево Jackson, либо карта (разделители черт). */
+    private String sourceKeyOf(Object data) {
+        if (data instanceof JsonNode node) {
+            JsonNode key = node.get("sourceKey");
+            return key != null && key.isTextual() ? key.asText() : null;
+        }
+        if (data instanceof Map<?, ?> map) {
+            return map.get("sourceKey") instanceof String key ? key : null;
+        }
+        return null;
     }
 
     /**

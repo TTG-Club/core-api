@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeat;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -26,7 +25,6 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class VttgFeatMapper {
-    private static final String SOURCE = "srd";
     private static final String TYPE = "feat";
     private static final String TYPE_LABEL = "Черты";
     /** Слаг листа дерева разделов для черт и их разделителей (см. {@link VttgCompendiumSections}). */
@@ -50,7 +48,7 @@ public class VttgFeatMapper {
                 .section(SECTION)
                 .srcSection(SectionType.FEAT.getValue())
                 .srcUrl(feat.getUrl())
-                .sourceKey(sourceKey(feat.getSource()))
+                .sourceKey(VttgSourceKeys.of(feat.getSource()))
                 .isSRD(feat.getSrdVersion() != null)
                 .featureType(TYPE)
                 .category(categoryName(feat.getCategory()))
@@ -115,17 +113,6 @@ public class VttgFeatMapper {
                 .replaceAll("^_+|_+$", ""));
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return SOURCE;
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return StringUtils.hasText(source.getAcronym())
-                ? source.getAcronym().toLowerCase(Locale.ROOT)
-                : SOURCE;
-    }
 
     private String optional(String value) {
         return StringUtils.hasText(value) ? value : null;

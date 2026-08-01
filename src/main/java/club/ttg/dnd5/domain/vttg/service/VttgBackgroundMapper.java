@@ -5,7 +5,6 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.feat.model.Feat;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgBackground;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -36,7 +35,6 @@ import java.util.Set;
 @Component
 @RequiredArgsConstructor
 public class VttgBackgroundMapper {
-    private static final String SOURCE = "srd";
     /** Слаг листа дерева разделов для предысторий (см. {@link VttgCompendiumSections}). */
     private static final String SECTION = "backgrounds";
 
@@ -54,7 +52,7 @@ public class VttgBackgroundMapper {
                 .section(SECTION)
                 .srcSection(SectionType.BACKGROUND.getValue())
                 .srcUrl(background.getUrl())
-                .sourceKey(sourceKey(background.getSource()))
+                .sourceKey(VttgSourceKeys.of(background.getSource()))
                 .isSRD(background.getSrdVersion() != null)
                 .abilityGrant(abilityGrant(background.getAbilities()))
                 .skillGrant(skillGrant(background.getSkillProficiencies()))
@@ -162,15 +160,4 @@ public class VttgBackgroundMapper {
         return StringUtils.hasText(value) ? value : null;
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return SOURCE;
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return StringUtils.hasText(source.getAcronym())
-                ? source.getAcronym().toLowerCase(Locale.ROOT)
-                : SOURCE;
-    }
 }

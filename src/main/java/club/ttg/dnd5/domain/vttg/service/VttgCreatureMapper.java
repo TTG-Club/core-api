@@ -21,7 +21,6 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,7 +86,7 @@ public class VttgCreatureMapper {
                 .header(header(creature))
                 .token(token(creature))
                 .system(system(creature))
-                .sourceKey(sourceKey(creature.getSource()))
+                .sourceKey(VttgSourceKeys.of(creature.getSource()))
                 .isSRD(creature.getSrdVersion() != null)
                 .isReadOnly(true)
                 .build();
@@ -638,17 +637,6 @@ public class VttgCreatureMapper {
         return alignment.name().toLowerCase(Locale.ROOT).replace("_", "-");
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return "srd";
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return StringUtils.hasText(source.getAcronym())
-                ? source.getAcronym().toLowerCase(Locale.ROOT)
-                : "srd";
-    }
 
     private List<String> enumNames(Collection<DamageType> values) {
         return values == null ? List.of() : values.stream().filter(Objects::nonNull)

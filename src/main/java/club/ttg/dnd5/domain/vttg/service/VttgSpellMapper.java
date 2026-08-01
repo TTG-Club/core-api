@@ -4,7 +4,6 @@ import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.SectionType;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
 import club.ttg.dnd5.domain.spell.model.Spell;
@@ -93,7 +92,7 @@ public class VttgSpellMapper {
                 .description(description)
                 .higherLevelDescription(higherLevelDescription)
                 .activeEffects(activeEffects(spell))
-                .sourceKey(sourceKey(spell.getSource()))
+                .sourceKey(VttgSourceKeys.of(spell.getSource()))
                 .isSRD(spell.getSrdVersion() != null)
                 .classKeys(classKeys(spell))
                 .type("spell")
@@ -316,15 +315,6 @@ public class VttgSpellMapper {
         return higherLevelDescription.matches("(?s).*\\b5\\b.*\\b11\\b.*\\b17\\b.*");
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return "srd";
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return source.getAcronym().toLowerCase(Locale.ROOT);
-    }
 
     /**
      * Ключи классов заклинания — источник «списка заклинаний класса» в VTTG (фильтр компендиума

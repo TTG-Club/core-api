@@ -18,7 +18,6 @@ import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgClass;
 import club.ttg.dnd5.util.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
@@ -56,8 +55,6 @@ public class VttgClassMapper {
     private static final String TYPE = "class";
     /** Слаг листа дерева разделов (совпадает с {@code SectionType.CLASS} = "classes"). */
     private static final String SECTION = "classes";
-    /** Запасной ключ источника, если у класса его нет. */
-    private static final String SOURCE = "srd";
     /** Максимальный уровень персонажа D&D 5e — глубина таблицы прогрессии. */
     private static final int MAX_LEVEL = 20;
     /** Уровень выбора подкласса по умолчанию (PHB 2024). */
@@ -111,7 +108,7 @@ public class VttgClassMapper {
                 .name(characterClass.getName())
                 .nameEn(optional(characterClass.getEnglish()))
                 .description(description(characterClass.getDescription()))
-                .sourceKey(sourceKey(characterClass.getSource()))
+                .sourceKey(VttgSourceKeys.of(characterClass.getSource()))
                 .isSRD(characterClass.getSrdVersion() != null)
                 .hitDie(hitDie(characterClass.getHitDice()))
                 .armorProficiencies(armor(characterClass.getArmorProficiency()))
@@ -156,7 +153,7 @@ public class VttgClassMapper {
                 .nameEn(optional(subclass.getEnglish()))
                 .description(description(subclass.getDescription()))
                 .unlockLevel(unlockLevel(features))
-                .sourceKey(sourceKey(subclass.getSource()))
+                .sourceKey(VttgSourceKeys.of(subclass.getSource()))
                 .spellcasting(spellcasting(null, subclass.getCasterType()))
                 .features(features)
                 .levelTable(hasTable(subclass.getTable()) ? levelTable(subclass.getTable(), features) : null)
@@ -468,17 +465,6 @@ public class VttgClassMapper {
         return StringUtils.hasText(text) ? text : null;
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return SOURCE;
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return StringUtils.hasText(source.getAcronym())
-                ? source.getAcronym().toLowerCase(Locale.ROOT)
-                : SOURCE;
-    }
 
     /** Ключ класса: как в {@code spell.classKeys} — транслит/slug английского имени, иначе из url. */
     private String classKey(CharacterClass characterClass) {

@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
-import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
@@ -34,8 +33,6 @@ public class VttgSpeciesMapper {
     private static final String TYPE = "species";
     private static final String SECTION = "species";
     private static final String DARKVISION = "darkvision";
-    /** Запасной ключ источника, если у вида его нет. */
-    private static final String SOURCE = "srd";
 
     private final VttgMarkupConverter markupConverter;
 
@@ -53,7 +50,7 @@ public class VttgSpeciesMapper {
                 .name(species.getName())
                 .nameEn(optional(species.getEnglish()))
                 .description(markupConverter.toText(species.getDescription()))
-                .sourceKey(sourceKey(species.getSource()))
+                .sourceKey(VttgSourceKeys.of(species.getSource()))
                 .creatureType(creatureType(species.getType()))
                 .size(sizes(species.getSizes()))
                 .speed(speed(species))
@@ -185,17 +182,6 @@ public class VttgSpeciesMapper {
         return builder.toString();
     }
 
-    private String sourceKey(Source source) {
-        if (source == null) {
-            return SOURCE;
-        }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
-            return "phb";
-        }
-        return StringUtils.hasText(source.getAcronym())
-                ? source.getAcronym().toLowerCase(Locale.ROOT)
-                : SOURCE;
-    }
 
     /** kebab-case slug из url: {@code "draconic-flight" → "draconic-flight"}. */
     private String slug(String value) {

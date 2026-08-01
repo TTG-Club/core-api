@@ -113,6 +113,22 @@ class VttgSpeciesMapperTest {
         assertEquals("elf-phb", json.get("srcUrl").asText());
     }
 
+    /**
+     * Снятая в админке пометка SRD приезжает пустой строкой, а не null. Признак читается как
+     * «поле не null», поэтому пустая версия нормализуется в null — иначе запись оставалась бы
+     * SRD и уезжала не в тот пак.
+     */
+    @Test
+    void treatsBlankSrdVersionAsNotSrd() {
+        Species species = baseSpecies("elf-lfl", "Эльф", "Elf");
+        species.setSrdVersion("");
+
+        assertFalse(json(species).get("isSRD").asBoolean());
+
+        species.setSrdVersion("5.2");
+        assertTrue(json(species).get("isSRD").asBoolean());
+    }
+
     private JsonNode json(Species species) {
         return objectMapper.valueToTree(mapper.toVttg(species));
     }
