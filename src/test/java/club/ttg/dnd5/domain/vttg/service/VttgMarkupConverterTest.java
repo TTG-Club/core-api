@@ -415,6 +415,68 @@ class VttgMarkupConverterTest {
         );
     }
 
+    /**
+     * Маркер-ссылка внутри ячейки: «|» в нём — разделитель атрибутов, а не колонок.
+     * Экранирование до раскрытия загоняло обратный слэш в конец метки, и markdown
+     * переставал видеть ссылку («Эльфийское происхождение» у видов).
+     */
+    @Test
+    void expandsLinkMarkupInsideTableCell() {
+        String markup = """
+                {
+                  "type": "table",
+                  "colLabels": ["Происхождение", "1-й уровень"],
+                  "rows": [
+                    [
+                      "Лорвин",
+                      "Вы знаете заговор {@spell Терновый кнут [Thorn Whip]|url:thorn-whip-phb}."
+                    ]
+                  ]
+                }
+                """;
+
+        assertEquals(
+                "| Происхождение | 1-й уровень |\n| --- | --- |\n"
+                        + "| Лорвин | Вы знаете заговор "
+                        + "[Терновый кнут [Thorn Whip]](https://ttg.club/spells/thorn-whip-phb). |",
+                converter.toText(markup)
+        );
+    }
+
+    /** Настоящий «|» в прозе ячейки по-прежнему экранируется — иначе он разорвал бы строку. */
+    @Test
+    void escapesLiteralPipeInsideTableCell() {
+        String markup = """
+                {
+                  "type": "table",
+                  "colLabels": ["Запись"],
+                  "rows": [["{@b Сила|Ловкость}"]]
+                }
+                """;
+
+        assertEquals(
+                "| Запись |\n| --- |\n| **Сила\\|Ловкость** |",
+                converter.toText(markup)
+        );
+    }
+
+    /** {@code {@br}} в ячейке — перенос внутри неё (<br>), а не разрыв строки таблицы. */
+    @Test
+    void keepsLineBreakMarkupInsideTableCell() {
+        String markup = """
+                {
+                  "type": "table",
+                  "colLabels": ["Запись"],
+                  "rows": [["Первая{@br}Вторая"]]
+                }
+                """;
+
+        assertEquals(
+                "| Запись |\n| --- |\n| Первая<br>Вторая |",
+                converter.toText(markup)
+        );
+    }
+
     @Test
     void convertsFrontendTableWithNodeArrayHeaders() {
         // Реальный формат редактора (toStoredMarkup): colLabels[i] — МАССИВ инлайн-
