@@ -30,6 +30,16 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
     )
     List<Background> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);
 
+    /** Видимые предыстории, дающие черту — для блока «Предыстории» в детальнике черты. */
+    @Query("""
+            select b from Background b
+            left join fetch b.source
+            where b.feat.url = :featUrl
+              and b.isHiddenEntity = false
+            order by b.name
+            """)
+    List<Background> findVisibleByFeatUrl(@Param("featUrl") String featUrl);
+
     /**
      * Переносит ссылки предысторий со старой черты на новую — используется при смене url черты.
      * Новая черта должна уже существовать в БД (иначе нарушится FK fk_background_on_feat).

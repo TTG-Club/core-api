@@ -41,7 +41,13 @@ public class FeatServiceImpl implements FeatService {
 
     @Override
     public FeatDetailResponse getFeat(final String featUrl) {
-        return featMapper.toDetail(findByUrl(featUrl));
+        var response = featMapper.toDetail(findByUrl(featUrl));
+        var backgrounds = backgroundRepository.findVisibleByFeatUrl(featUrl)
+                .stream()
+                .map(featMapper::toBackgroundDto)
+                .toList();
+        response.setBackgrounds(backgrounds.isEmpty() ? null : backgrounds);
+        return response;
     }
 
     @Secured({"ADMIN", "MODERATOR"})

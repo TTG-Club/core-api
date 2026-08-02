@@ -1,8 +1,10 @@
 package club.ttg.dnd5.domain.feat.rest.mapper;
 
+import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatBackgroundDto;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
@@ -54,6 +56,24 @@ public interface FeatMapper {
     @BaseMapping.BaseSourceMapping
     @Mapping(source = ".", target = "abilityScoreIncreaseOptions", qualifiedByName = "getAbilityScoreIncreaseOptions")
     FeatSelectResponse toSelect(Feat feat);
+
+    /**
+     * Ссылка на предысторию для детальника черты. Аббревиатура источника добавляется к названию,
+     * чтобы различать одноимённые предыстории из разных книг — как в блоках привязок заклинания.
+     */
+    default FeatBackgroundDto toBackgroundDto(Background background) {
+        if (background == null) {
+            return null;
+        }
+
+        String name = background.getName();
+
+        if (background.getSource() != null && StringUtils.hasText(background.getSource().getAcronym())) {
+            name = name + " [" + background.getSource().getAcronym() + "]";
+        }
+
+        return new FeatBackgroundDto(background.getUrl(), name);
+    }
 
     @Named("capitalize")
     default String capitalize(String string) {
