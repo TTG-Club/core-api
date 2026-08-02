@@ -126,7 +126,7 @@ public class ClassService {
 
         if (!existingClass.getUrl().equals(request.getUrl())) {
             if (exists(request.getUrl())) {
-                throw new EntityExistException(String.format("РљР»Р°СЃСЃ СЃ url %s СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚", request.getUrl()));
+                throw new EntityExistException(String.format("Класс с url %s уже существует", request.getUrl()));
             }
             classRepository.delete(existingClass);
             classRepository.flush();

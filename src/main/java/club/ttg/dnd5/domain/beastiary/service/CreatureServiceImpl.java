@@ -113,7 +113,7 @@ public class CreatureServiceImpl implements CreatureService {
     @Override
     public String save(final CreatureRequest request) {
         if (creatureRepository.existsById(request.getUrl())) {
-            throw new EntityExistException("Существо уже существует с URL: " + request.getUrl());
+            throw new EntityExistException(String.format("Существо с url %s уже существует", request.getUrl()));
         }
         if (request.getAlignment() == null) {
             request.setAlignment(Alignment.WITHOUT);
@@ -146,7 +146,7 @@ public class CreatureServiceImpl implements CreatureService {
         }
 
         if (creatureRepository.existsById(request.getUrl())) {
-            throw new EntityExistException("РЎСѓС‰РµСЃС‚РІРѕ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ СЃ URL: " + request.getUrl());
+            throw new EntityExistException(String.format("Существо с url %s уже существует", request.getUrl()));
         }
         creatureRepository.deleteById(url);
         creatureRepository.flush();

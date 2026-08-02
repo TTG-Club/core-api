@@ -226,7 +226,7 @@ public class SpellService
         {
             if (existsByUrl(request.getUrl()))
             {
-                throw new EntityExistException(String.format("Р—Р°РєР»РёРЅР°РЅРёРµ СЃ url %s СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚", request.getUrl()));
+                throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
             }
 
             spellRepository.deleteById(oldUrl);

@@ -46,7 +46,8 @@ public class GlossaryService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(GlossaryRequest glossaryRequest) {
         if (glossaryRepository.existsById(glossaryRequest.getUrl())) {
-            throw new EntityExistException(String.format("Glossary with url %s already exists", glossaryRequest.getUrl()));
+            throw new EntityExistException(String.format("Статья глоссария с url %s уже существует",
+                    glossaryRequest.getUrl()));
         }
 
         Source source = Optional.ofNullable(glossaryRequest.getSource())
@@ -81,7 +82,7 @@ public class GlossaryService {
         }
 
         if (glossaryRepository.existsById(request.getUrl())) {
-            throw new EntityExistException(String.format("Glossary with url %s already exists", request.getUrl()));
+            throw new EntityExistException(String.format("Статья глоссария с url %s уже существует", request.getUrl()));
         }
         glossaryRepository.deleteById(url);
         glossaryRepository.flush();

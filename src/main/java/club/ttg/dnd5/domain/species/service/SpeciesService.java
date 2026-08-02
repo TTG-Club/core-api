@@ -103,7 +103,7 @@ public class SpeciesService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(SpeciesRequest request) {
         if (speciesRepository.existsById(request.getUrl())) {
-            throw new EntityExistException("Вид уже существует с URL: " + request.getUrl());
+            throw new EntityExistException(String.format("Вид с url %s уже существует", request.getUrl()));
         }
         String url = saveSpecies(request).getUrl();
         revisionService.record(REVISION_ENTITY_TYPE, url, RevisionOperation.CREATE, findFormByUrl(url));
@@ -184,7 +184,7 @@ public class SpeciesService {
         }
 
         if (speciesRepository.existsById(request.getUrl())) {
-            throw new EntityExistException("Р’РёРґ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ СЃ URL: " + request.getUrl());
+            throw new EntityExistException(String.format("Вид с url %s уже существует", request.getUrl()));
         }
         speciesRepository.deleteSpeciesInnateSpells(oldUrl);
         speciesRepository.deleteLineageInnateSpells(oldUrl);
