@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
+import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
 import lombok.RequiredArgsConstructor;
@@ -143,7 +144,39 @@ public class VttgMagicItemMapper {
     /** Сборка одной записи VTTG: редкость и бонус выводятся из самого предмета (название/varies). */
     private VttgMagicItem build(MagicItem item, String name, Item base, String url, String english) {
         return buildEntry(item, name, base, url, english,
-                effectiveRarity(item), firstBonus(name, english, item.getClarification()));
+                effectiveRarity(item), magicBonus(item, name, english));
+    }
+
+    /**
+     * Бонус для VTTG: там это одно число {@code magicBonus}, поэтому у оружия берём бонус к атаке
+     * (в правилах он совпадает с бонусом к урону), а у остального — бонус к КД. Заданные в
+     * мастерской бонусы важнее вывода из названия: разбор «+1/+2/+3» остаётся запасным вариантом
+     * для записей, у которых поля не заполнены.
+     */
+    private Integer magicBonus(MagicItem item, String name, String english) {
+        Integer explicit = explicitBonus(item);
+        return explicit != null ? explicit : firstBonus(name, english, item.getClarification());
+    }
+
+    /** Бонус из полей мастерской; {@code null} — поля пустые или все нули. */
+    private Integer explicitBonus(MagicItem item) {
+        MagicItemBonuses bonuses = item.getBonuses();
+        if (bonuses == null) {
+            return null;
+        }
+        int value = item.getCategory() == MagicItemCategory.WEAPON
+                ? firstNonZero(bonuses.getAttack(), bonuses.getDamage())
+                : firstNonZero(bonuses.getArmorClass(), bonuses.getAttack(), bonuses.getDamage());
+        return value == 0 ? null : value;
+    }
+
+    private int firstNonZero(int... values) {
+        for (int value : values) {
+            if (value != 0) {
+                return value;
+            }
+        }
+        return 0;
     }
 
     /** Сборка одной записи VTTG с явно заданными редкостью и бонусом (для раскрытия «+1/+2/+3»). */

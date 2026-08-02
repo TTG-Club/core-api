@@ -15,6 +15,7 @@ import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
+import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
@@ -173,6 +174,48 @@ class VttgMagicItemMapperTest {
 
         assertEquals(1, mapper.toVttg(item).getMagicBonus());
         assertNull(mapper.toVttg(wandOfFear()).getMagicBonus());
+    }
+
+    /**
+     * Бонусы из мастерской важнее разбора названия: у оружия в magicBonus идёт бонус к атаке,
+     * у остального — бонус к КД. Пустые бонусы оставляют прежний вывод из названия.
+     */
+    @Test
+    void prefersExplicitBonusesOverName() {
+        Source source = new Source();
+        source.setAcronym("DMG");
+
+        MagicItem weapon = new MagicItem();
+        weapon.setUrl("shortsword-plus-1");
+        weapon.setName("Короткий меч, +1");
+        weapon.setCategory(MagicItemCategory.WEAPON);
+        weapon.setSource(source);
+        weapon.setBonuses(bonuses(2, 2, 0));
+
+        assertEquals(2, mapper.toVttg(weapon).getMagicBonus());
+
+        MagicItem cloak = new MagicItem();
+        cloak.setUrl("cloak-of-protection");
+        cloak.setName("Плащ защиты");
+        cloak.setCategory(MagicItemCategory.SUBJECT);
+        cloak.setSource(source);
+        cloak.setBonuses(bonuses(0, 0, 1));
+
+        assertEquals(1, mapper.toVttg(cloak).getMagicBonus());
+
+        // Все нули — своего бонуса нет, работает прежний разбор названия.
+        MagicItem empty = wandOfFear();
+        empty.setBonuses(bonuses(0, 0, 0));
+
+        assertNull(mapper.toVttg(empty).getMagicBonus());
+    }
+
+    private MagicItemBonuses bonuses(int attack, int damage, int armorClass) {
+        MagicItemBonuses value = new MagicItemBonuses();
+        value.setAttack(attack);
+        value.setDamage(damage);
+        value.setArmorClass(armorClass);
+        return value;
     }
 
     /** Магический предмет с varies-редкостью получает минимальную упомянутую редкость, а не "none". */
