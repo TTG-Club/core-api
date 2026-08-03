@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collection;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,4 +20,6 @@ public class FeatDetailResponse extends BaseResponse {
     private String category;
     @Schema(description = "Предварительное условие", examples = {"черта происхождения", "общая черта"})
     private String prerequisite;
+    @Schema(description = "Предыстории, дающие эту черту")
+    private Collection<FeatBackgroundDto> backgrounds;
 }

@@ -129,7 +129,7 @@ public class BackgroundServiceImpl implements BackgroundService {
 
     private void checkUrlExist(String url) {
         if (backgroundRepository.existsById(url)) {
-            throw new EntityExistException("Предыстория существует с url: " + url);
+            throw new EntityExistException(String.format("Предыстория с url %s уже существует", url));
         }
     }
 

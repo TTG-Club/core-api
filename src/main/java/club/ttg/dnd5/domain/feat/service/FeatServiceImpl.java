@@ -41,7 +41,13 @@ public class FeatServiceImpl implements FeatService {
 
     @Override
     public FeatDetailResponse getFeat(final String featUrl) {
-        return featMapper.toDetail(findByUrl(featUrl));
+        var response = featMapper.toDetail(findByUrl(featUrl));
+        var backgrounds = backgroundRepository.findVisibleByFeatUrl(featUrl)
+                .stream()
+                .map(featMapper::toBackgroundDto)
+                .toList();
+        response.setBackgrounds(backgrounds.isEmpty() ? null : backgrounds);
+        return response;
     }
 
     @Secured({"ADMIN", "MODERATOR"})
@@ -50,7 +56,7 @@ public class FeatServiceImpl implements FeatService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String addFeat(final FeatRequest dto) {
         if (featRepository.existsById(dto.getUrl())) {
-            throw new EntityExistException("Feat exist by URL: " + dto.getUrl());
+            throw new EntityExistException(String.format("Черта с url %s уже существует", dto.getUrl()));
         }
         var book = sourceService.findByUrl(dto.getSource().getUrl());
         var feat = featMapper.toEntity(dto, book);
@@ -80,7 +86,7 @@ public class FeatServiceImpl implements FeatService {
         // и удаляем старую. Порядок важен: новая черта должна существовать до repoint,
         // а старую удаляем уже без ссылок.
         if (featRepository.existsById(request.getUrl())) {
-            throw new EntityExistException("Feat exist by URL: " + request.getUrl());
+            throw new EntityExistException(String.format("Черта с url %s уже существует", request.getUrl()));
         }
         var feat = featMapper.toEntity(request, book);
         featRepository.saveAndFlush(feat);

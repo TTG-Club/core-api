@@ -52,6 +52,15 @@ public class MagicItem extends NamedEntity {
     private Attunement attunement;
 
     /**
+     * Бонусы, которые магия даёт поверх немагического предмета: к атаке, к урону и к КД.
+     * Используются листом персонажа и экспортом в VTTG. {@code null} — у записей,
+     * сохранённых до появления поля.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private MagicItemBonuses bonuses;
+
+    /**
      * Количество зарядов магического предмета.
      */
     private Short charges;

@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-02-01-add-magic-item-bonuses
+      author: codex
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: bonuses
+                  type: jsonb
+                  constraints:
+                    nullable: true
