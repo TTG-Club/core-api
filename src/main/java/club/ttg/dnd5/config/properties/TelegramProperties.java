@@ -32,6 +32,17 @@ public class TelegramProperties {
     /** Режим разметки текста поста. HTML проще экранировать, чем MarkdownV2. */
     private String parseMode = "HTML";
 
+    /**
+     * {@code rhash} шаблона Instant View с instantview.telegram.org (см. {@code docs/telegram-instant-view.md}).
+     * Задан — пост уходит коротким: заголовок, анонс и ссылка {@code t.me/iv?url=…&rhash=…}, а весь текст
+     * читается в Telegram нативно. Пусто (локально, шаблон ещё не создан) — публикуем по-старому:
+     * длинный пост несколькими сообщениями с обложкой.
+     */
+    private String instantViewRhash;
+
+    /** Предел анонса в посте с Instant View (видимых символов): остальное читают в самой статье. */
+    private int leadLimit = 600;
+
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);
 
