@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.spell.model;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.species.model.Species;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -84,5 +85,5 @@ public class Spell extends NamedEntity {
 
     @Type(JsonType.class)
     @Column(name = "active_effects", columnDefinition = "jsonb")
-    private List<SpellActiveEffect> activeEffects;
+    private List<ActiveEffect> activeEffects;
 }

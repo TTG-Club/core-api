@@ -12,7 +12,7 @@ import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
-import club.ttg.dnd5.domain.spell.model.SpellActiveEffect;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
@@ -338,7 +338,7 @@ class VttgSpellMapperTest {
         spell.setLevel(0L);
         spell.setSchool(SpellSchool.builder().school(MagicSchool.ENCHANTMENT).build());
 
-        SpellActiveEffect effect = new SpellActiveEffect();
+        ActiveEffect effect = new ActiveEffect();
         effect.setId("vicious-mockery-attack-disadvantage");
         effect.setName("Помеха на следующую атаку");
         effect.setEffectTarget("target");

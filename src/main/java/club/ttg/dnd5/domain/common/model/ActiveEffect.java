@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.spell.model;
+package club.ttg.dnd5.domain.common.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
@@ -8,11 +8,16 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * Активный эффект заклинания, совместимый с системой Active Effects VTTG.
+ * Активный эффект, совместимый с системой Active Effects VTTG. Одна и та же
+ * модель у всего, что меняет числа на листе персонажа: заклинаний и магических
+ * предметов.
  * <p>
  * Хранится как JSONB и передаётся в VTTG без преобразования словарей, поэтому
  * значения (характеристики, режимы, ключи состояний, флаги) держим строками в
- * вокабуляре VTTG, а не доменными enum'ами core-api.
+ * вокабуляре VTTG, а не доменными enum'ами core-api. Ключ изменения
+ * ({@link Change#key}) — это {@code EffectTargetKey} VTTG: {@code armorClass},
+ * {@code save.constitution}, {@code skill.stealth}, {@code movement.swim},
+ * {@code ability.strength}, {@code attack.melee} и прочие.
  *
  * @see club.ttg.dnd5.domain.vttg
  */
@@ -20,7 +25,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SpellActiveEffect {
+public class ActiveEffect {
     private String id;
     private String name;
     private String description;

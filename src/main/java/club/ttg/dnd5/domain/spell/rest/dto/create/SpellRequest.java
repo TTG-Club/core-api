@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
-import club.ttg.dnd5.domain.spell.model.SpellActiveEffect;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.SpellSchool;
@@ -67,5 +67,5 @@ public class SpellRequest extends BaseRequest {
     @Schema(description = "Активные эффекты заклинания для экспорта в VTTG")
     @Nullable
     @Valid
-    private List<SpellActiveEffect> activeEffects;
+    private List<ActiveEffect> activeEffects;
 }

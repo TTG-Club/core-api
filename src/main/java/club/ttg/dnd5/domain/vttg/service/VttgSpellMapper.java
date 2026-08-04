@@ -11,7 +11,7 @@ import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
-import club.ttg.dnd5.domain.spell.model.SpellActiveEffect;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
@@ -340,12 +340,12 @@ public class VttgSpellMapper {
     }
 
     /**
-     * Активные эффекты заклинания «как есть»: модель {@link SpellActiveEffect} уже в вокабуляре VTTG
+     * Активные эффекты заклинания «как есть»: модель {@link ActiveEffect} уже в вокабуляре VTTG
      * (Active Effects), поэтому передаётся без преобразования. Пустой/отсутствующий список → {@code null}
      * (поле опускается в выгрузке).
      */
-    private List<SpellActiveEffect> activeEffects(Spell spell) {
-        List<SpellActiveEffect> effects = spell.getActiveEffects();
+    private List<ActiveEffect> activeEffects(Spell spell) {
+        List<ActiveEffect> effects = spell.getActiveEffects();
         return effects == null || effects.isEmpty() ? null : effects;
     }
 
