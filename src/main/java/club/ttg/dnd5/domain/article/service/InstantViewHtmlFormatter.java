@@ -329,23 +329,29 @@ public class InstantViewHtmlFormatter {
     }
 
     private String wrap(String tag, String content, boolean html) {
-        if (!html || !StringUtils.hasText(content)) {
+        if (!StringUtils.hasText(content)) {
             return content;
         }
-        return switch (tag) {
-            case "b", "bold" -> tagged("b", content);
-            case "i", "italic", "em" -> tagged("i", content);
-            case "u", "underline" -> tagged("u", content);
-            case "s", "strike", "strikethrough" -> tagged("s", content);
-            case "kbd", "code" -> tagged("code", content);
-            case "sup" -> tagged("sup", content);
-            case "sub" -> tagged("sub", content);
-            case "mark", "highlight" -> tagged("mark", content);
-            case "h", "heading" -> tagged("b", content);
-            // spoiler/badge/roll/dice и прочее в Instant View не выразить — оставляем только
-            // содержимое (без тега), чтобы ничего не текло сырым.
-            default -> content;
+        String htmlTag = switch (tag) {
+            case "b", "bold" -> "b";
+            case "i", "italic", "em" -> "i";
+            case "u", "underline" -> "u";
+            case "s", "strike", "strikethrough" -> "s";
+            case "kbd", "code" -> "code";
+            case "sup" -> "sup";
+            case "sub" -> "sub";
+            case "mark", "highlight" -> "mark";
+            case "h", "heading" -> "b";
+            default -> null;
         };
+        if (htmlTag == null) {
+            // spoiler/badge/dice и прочее в Instant View не выразить — остаётся видимая метка. Тело
+            // у таких маркеров устроено как «метка|атрибут:значение» ({@dice 1к6|notation:1к6*10}),
+            // поэтому берём часть до трубы: служебные атрибуты в текст статьи попадать не должны.
+            return label(content);
+        }
+        // html=false — оформление просто снимаем, тело оформления остаётся целиком (в нём | обычный символ).
+        return html ? tagged(htmlTag, content) : content;
     }
 
     private static String tagged(String tag, String content) {
