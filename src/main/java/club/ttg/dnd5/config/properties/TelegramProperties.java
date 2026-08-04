@@ -40,9 +40,6 @@ public class TelegramProperties {
      */
     private String instantViewRhash;
 
-    /** Предел анонса в посте с Instant View (видимых символов): остальное читают в самой статье. */
-    private int leadLimit = 600;
-
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);
 

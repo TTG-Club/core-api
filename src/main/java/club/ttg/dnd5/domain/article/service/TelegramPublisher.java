@@ -28,10 +28,11 @@ import java.util.stream.Collectors;
  * <p>
  * Ничего не знает про БД и транзакции — только строит текст/пейлоад и делает HTTP-вызов.
  * <p>
- * Основной режим — Instant View: пост уходит ОДНИМ коротким сообщением (заголовок, анонс и ссылка
- * {@code t.me/iv?url=…&rhash=…}), а весь текст читается в Telegram нативно на нашей странице
- * {@code /iv/articles/<slug>} (см. {@link ArticleInstantViewService}). Обложку и заголовок карточки
- * Telegram берёт из og-разметки этой страницы, поэтому ни лимит 4096, ни заливка картинки тут не при чём.
+ * Основной режим — Instant View: пост уходит ОДНИМ сообщением, где весь смысл несёт карточка превью
+ * ссылки {@code t.me/iv?url=…&rhash=…} — обложку, заголовок и анонс Telegram берёт из og-разметки нашей
+ * страницы {@code /iv/articles/<slug>} (см. {@link ArticleInstantViewService}), а по кнопке на карточке
+ * текст статьи открывается нативно. В самом тексте сообщения — только ссылка на статью на сайте, чтобы
+ * не дублировать карточку. Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
  * Режим включается, когда задан {@code telegram.instant-view-rhash} (шаблон создан на
  * instantview.telegram.org, см. {@code docs/telegram-instant-view.md}).
  * <p>
@@ -115,7 +116,7 @@ public class TelegramPublisher {
         // обложку карточки Telegram берёт из og-разметки страницы. Одно сообщение, без хвоста и заливки фото.
         String instantViewUrl = instantViewUrl(article);
         if (instantViewUrl != null) {
-            String text = instantViewText(article, instantViewUrl);
+            String text = instantViewText(article);
             SendOutcome sent = send("sendMessage", linkPreviewPayload(text, instantViewUrl));
             if (sent.result() == SendResult.REJECTED) {
                 // Карточку собрать не удалось (страница ещё не отдаётся роботу, битый rhash) — новость
@@ -225,16 +226,20 @@ public class TelegramPublisher {
                 + "&rhash=" + rhash.trim();
     }
 
-    /** Текст поста с Instant View: заголовок, короткий анонс и ссылка на полный текст. */
-    private String instantViewText(Article article, String instantViewUrl) {
-        StringBuilder text = new StringBuilder("<b>").append(escape(nullToEmpty(article.getTitle()))).append("</b>");
-        String lead = formatter.toHtmlLead(description(article), Math.max(1, properties.getLeadLimit()));
-        if (StringUtils.hasText(lead)) {
-            text.append("\n\n").append(lead);
-        }
-        // href экранируем: в ссылке есть '&' (rhash), а parse_mode=HTML требует &amp; в значениях атрибутов.
-        return text.append("\n\n<a href=\"").append(escape(instantViewUrl)).append("\">Читать полностью →</a>")
-                .toString();
+    /**
+     * Текст поста с Instant View — одна строка-ссылка на статью НА САЙТЕ. Заголовок, анонс и обложку
+     * показывает карточка превью (Telegram берёт их из og-разметки IV-страницы), а сам текст статьи
+     * открывается кнопкой на карточке — дублировать всё это в сообщении незачем. Совсем пустым текст
+     * быть не может: Bot API требует непустой {@code text}.
+     */
+    private String instantViewText(Article article) {
+        return "<a href=\"" + escape(siteUrl(article)) + "\">Читать на сайте →</a>";
+    }
+
+    /** Адрес статьи на сайте; без публичной базы — сама база (ссылка всё равно должна быть валидной). */
+    private String siteUrl(Article article) {
+        String base = publicBase();
+        return base == null ? "https://ttg.club" : base + "/articles/" + article.getUrl();
     }
 
     /**
@@ -253,7 +258,7 @@ public class TelegramPublisher {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("chat_id", properties.getChatId());
             payload.put("message_id", article.getTelegramMessageId());
-            payload.put("text", instantViewText(article, instantViewUrl));
+            payload.put("text", instantViewText(article));
             payload.put("parse_mode", properties.getParseMode());
             payload.put("link_preview_options", linkPreviewOptions(instantViewUrl));
             return switch (send("editMessageText", payload).result()) {
