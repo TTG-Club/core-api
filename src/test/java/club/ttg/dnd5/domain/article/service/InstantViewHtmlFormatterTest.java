@@ -101,6 +101,16 @@ class InstantViewHtmlFormatterTest {
     }
 
     @Test
+    void markerAttributesDoNotLeakIntoText() {
+        // Тело такого маркера — «метка|атрибут:значение»; на странице должна остаться только метка.
+        String html = formatter.toHtml("""
+                ["Диаметр {@dice 1к6 × 10|notation:1к6*10} футов."]
+                """);
+
+        assertEquals("<p>Диаметр 1к6 × 10 футов.</p>", html);
+    }
+
+    @Test
     void htmlSpecialCharactersAreEscaped() {
         String html = formatter.toHtml("""
                 ["Тег <script> и амперсанд & в тексте"]
