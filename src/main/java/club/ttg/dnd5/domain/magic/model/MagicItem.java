@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -59,6 +60,15 @@ public class MagicItem extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private MagicItemBonuses bonuses;
+
+    /**
+     * Механика влияния предмета на лист персонажа: условие применения, эффекты и заряды.
+     * {@code null} — у записей, сохранённых до появления поля, и у предметов, чьё действие
+     * пока описано только текстом.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private MagicItemMechanics mechanics;
 
     /**
      * Количество зарядов магического предмета.
