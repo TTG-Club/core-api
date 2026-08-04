@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,10 +64,12 @@ class ArticleInstantViewServiceTest {
 
         String page = service.renderPage("obnovlenie-vttg");
 
-        // Служебный двойник статьи: вес отдаём странице сайта, туда же ведёт ссылка со страницы.
+        // Служебный двойник статьи: в поиске не нужен, читателя уводим на сайт ссылкой в конце.
         assertTrue(page.contains("<meta name=\"robots\" content=\"noindex, follow\">"), page);
-        assertTrue(page.contains("<link rel=\"canonical\" href=\"https://ttg.club/articles/obnovlenie-vttg\">"), page);
         assertTrue(page.contains("<a href=\"https://ttg.club/articles/obnovlenie-vttg\">Читать на сайте</a>"), page);
+        // canonical на страницу сайта ставить НЕЛЬЗЯ: Instant View уходит по нему на сайт, где текст
+        // рисуется на клиенте, и шаблон не собирает статью (проверено в редакторе на dev).
+        assertFalse(page.contains("rel=\"canonical\""), page);
         // Обложку и заголовок карточки в Telegram берёт из og-разметки.
         assertTrue(page.contains("<meta property=\"og:title\" content=\"Обновление VTTG 0.9.309\">"), page);
         assertTrue(page.contains(

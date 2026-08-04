@@ -55,7 +55,7 @@ public class ArticleInstantViewService {
 
     private String render(Article article) {
         String title = nullToEmpty(article.getTitle());
-        String canonical = site() + "/articles/" + article.getUrl();
+        String siteUrl = site() + "/articles/" + article.getUrl();
         String pageUrl = site() + "/iv/articles/" + article.getUrl();
         String cover = absolute(article.getPreviewImageUrl());
         String lead = formatter.toHtml(article.getPreview());
@@ -70,9 +70,11 @@ public class ArticleInstantViewService {
                 .append("<meta charset=\"utf-8\">")
                 .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
                 // Служебная страница-двойник статьи: в поиске не нужна, вес отдаём сайту.
+                // canonical здесь СОЗНАТЕЛЬНО нет: Instant View считает его настоящим адресом страницы и
+                // переходит по нему на сайт, где текст рисуется на клиенте, — шаблон не собрал бы статью.
+                // От индексации хватает noindex, а ссылка на сайт есть в конце страницы.
                 .append("<meta name=\"robots\" content=\"noindex, follow\">")
                 .append("<title>").append(escape(title)).append(" | ").append(SITE_NAME).append("</title>")
-                .append("<link rel=\"canonical\" href=\"").append(escape(canonical)).append("\">")
                 .append(meta("og:type", "article"))
                 .append(meta("og:site_name", SITE_NAME))
                 .append(meta("og:title", title))
@@ -102,7 +104,7 @@ public class ArticleInstantViewService {
         if (StringUtils.hasText(content)) {
             html.append("<div class=\"content\">").append(content).append("</div>");
         }
-        html.append("<p class=\"source\"><a href=\"").append(escape(canonical)).append("\">Читать на сайте</a></p>")
+        html.append("<p class=\"source\"><a href=\"").append(escape(siteUrl)).append("\">Читать на сайте</a></p>")
                 .append("</article></body></html>");
         return html.toString();
     }
