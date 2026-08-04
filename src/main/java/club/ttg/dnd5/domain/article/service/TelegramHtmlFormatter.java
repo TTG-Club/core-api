@@ -120,6 +120,41 @@ public class TelegramHtmlFormatter {
         return chunks;
     }
 
+    /**
+     * Разметка → короткий анонс в Telegram-HTML для поста с Instant View: берём целые блоки, пока
+     * они укладываются в {@code limit} видимых символов, и ставим многоточие, если текст на этом не
+     * кончился. Полный текст читается в самой статье, поэтому дробить его на сообщения не нужно.
+     */
+    public String toHtmlLead(String markup, int limit) {
+        List<Rendered> blocks = render(markup);
+        if (blocks.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder lead = new StringBuilder();
+        int visible = 0;
+        int taken = 0;
+        for (Rendered block : blocks) {
+            int addition = (visible == 0 ? 0 : 2) + block.visibleLength();
+            if (visible + addition > limit) {
+                break;
+            }
+            if (visible > 0) {
+                lead.append("\n\n");
+            }
+            lead.append(block.html());
+            visible += addition;
+            taken++;
+        }
+
+        if (taken == 0) {
+            // Первый же блок крупнее лимита — режем его по словам (оформление теряется).
+            List<Rendered> pieces = splitPlain(blocks.getFirst().plain(), Math.max(1, limit - 1));
+            return pieces.isEmpty() ? "" : pieces.getFirst().html() + "…";
+        }
+        return taken < blocks.size() ? lead + "…" : lead.toString();
+    }
+
     /** Один отрендеренный блок: HTML, его плоский текст и видимая длина (по плоскому тексту). */
     private record Rendered(String html, String plain, int visibleLength) {
     }
