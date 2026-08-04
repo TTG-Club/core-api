@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.magic.rest.dto;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,6 +26,10 @@ public class MagicItemRequest extends BaseRequest {
     @Schema(description = "Бонусы поверх немагического предмета: к атаке, к урону и к КД",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private MagicItemBonuses bonuses;
+
+    @Schema(description = "Механика влияния на лист персонажа: условие применения, эффекты и заряды",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private MagicItemMechanics mechanics;
 
     @Schema(description = "Количество зарядов, если есть", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Byte charges;

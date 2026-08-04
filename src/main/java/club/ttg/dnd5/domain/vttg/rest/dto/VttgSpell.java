@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
-import club.ttg.dnd5.domain.spell.model.SpellActiveEffect;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
@@ -41,7 +41,7 @@ public class VttgSpell {
      * Активные эффекты заклинания (система Active Effects VTTG) — например помеха на атаку у
      * «Злой насмешки». Передаются без преобразования (модель уже в вокабуляре VTTG).
      */
-    private List<SpellActiveEffect> activeEffects;
+    private List<ActiveEffect> activeEffects;
     private String cantripScaling;
     private List<VttgCantripScalingTier> cantripScalingTiers;
     private VttgSpellScaling scaling;

@@ -277,3 +277,5 @@ databaseChangeLog:
       file: db/changelog/2026/07/30-02-fix-weapon-ammunition-types.yaml
   - include:
       file: db/changelog/2026/08/02-01-add-magic-item-bonuses.yaml
+  - include:
+      file: db/changelog/2026/08/04-01-add-magic-item-mechanics.yaml

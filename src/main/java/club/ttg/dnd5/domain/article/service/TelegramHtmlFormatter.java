@@ -354,21 +354,28 @@ public class TelegramHtmlFormatter {
     }
 
     private String wrap(String tag, String content, boolean html) {
-        if (!html || !StringUtils.hasText(content)) {
+        if (!StringUtils.hasText(content)) {
             return content;
         }
-        return switch (tag) {
-            case "b", "bold" -> tagged("b", content);
-            case "i", "italic" -> tagged("i", content);
-            case "u", "underline" -> tagged("u", content);
-            case "s", "strike", "strikethrough" -> tagged("s", content);
-            case "kbd", "code" -> tagged("code", content);
-            case "spoiler" -> tagged("tg-spoiler", content);
-            case "h", "heading" -> tagged("b", content);
-            // sup/sub/highlight/mark/badge/roll/dice/separator и прочее Telegram не поддерживает —
-            // оставляем только содержимое (без тега), чтобы ничего не текло сырым.
-            default -> content;
+        String telegramTag = switch (tag) {
+            case "b", "bold" -> "b";
+            case "i", "italic" -> "i";
+            case "u", "underline" -> "u";
+            case "s", "strike", "strikethrough" -> "s";
+            case "kbd", "code" -> "code";
+            case "spoiler" -> "tg-spoiler";
+            case "h", "heading" -> "b";
+            default -> null;
         };
+        if (telegramTag == null) {
+            // sup/sub/highlight/mark/badge/roll/dice/separator и прочее Telegram не поддерживает —
+            // остаётся видимая метка. Тело у таких маркеров устроено как «метка|атрибут:значение»
+            // ({@dice 1к6|notation:1к6*10}), поэтому берём часть до трубы: служебные атрибуты
+            // в текст поста попадать не должны.
+            return label(content);
+        }
+        // html=false — оформление просто снимаем, тело оформления остаётся целиком (в нём | обычный символ).
+        return html ? tagged(telegramTag, content) : content;
     }
 
     private static String tagged(String tag, String content) {

@@ -15,6 +15,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,8 +26,18 @@ import java.util.stream.Collectors;
 /**
  * Отправляет и синхронизирует пост статьи / новости в Telegram-канале через Bot API.
  * <p>
- * Ничего не знает про БД и транзакции — только строит текст/пейлоад и делает HTTP-вызов. Длинный пост не
- * обрезается: он уходит одним текстовым сообщением (≤4096) с обложкой, показанной превью-ссылкой НАД текстом
+ * Ничего не знает про БД и транзакции — только строит текст/пейлоад и делает HTTP-вызов.
+ * <p>
+ * Основной режим — Instant View: пост уходит ОДНИМ сообщением, где весь смысл несёт карточка превью
+ * ссылки {@code t.me/iv?url=…&rhash=…} — обложку, заголовок и анонс Telegram берёт из og-разметки нашей
+ * страницы {@code /iv/articles/<slug>} (см. {@link ArticleInstantViewService}), а по кнопке на карточке
+ * текст статьи открывается нативно. В самом тексте сообщения — только ссылка на статью на сайте, чтобы
+ * не дублировать карточку. Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
+ * Режим включается, когда задан {@code telegram.instant-view-rhash} (шаблон создан на
+ * instantview.telegram.org, см. {@code docs/telegram-instant-view.md}).
+ * <p>
+ * Пока rhash не задан (локально, шаблон ещё не создан) работает прежний режим: длинный пост не обрезается —
+ * он уходит одним текстовым сообщением (≤4096) с обложкой, показанной превью-ссылкой НАД текстом
  * ({@code link_preview_options.show_above_text}), а остаток досылается отдельными сообщениями (≤4096). Если
  * публичный URL обложки собрать нельзя ({@code app.url} не публичный) — фоллбэк на фото с подписью (≤1024).
  * Текст поста — Telegram-HTML (см. {@link TelegramHtmlFormatter}), обложку для фото-фоллбэка заливаем файлом
@@ -86,17 +98,37 @@ public class TelegramPublisher {
     private final TelegramHtmlFormatter formatter;
     private final ArticleImageSource imageSource;
 
-    /** База для абсолютного URL обложки в превью-режиме (см. {@link #coverUrl}). */
+    /** Публичный адрес сайта: база страницы Instant View и обложки в превью-режиме (см. {@link #publicBase}). */
     @Value("${app.url:https://ttg.club}")
     private String appUrl;
 
     /**
-     * Отправляет новый пост в канал (при необходимости — несколькими сообщениями).
+     * Отправляет новый пост в канал: одним сообщением со ссылкой Instant View, а без неё —
+     * прежним способом (при необходимости несколькими сообщениями).
      */
     public PublishResult publish(Article article) {
         if (!StringUtils.hasText(article.getTitle()) && !StringUtils.hasText(formatter.toPlain(description(article)))) {
             log.warn("Пустой заголовок и текст — пропускаю отправку {} в Telegram", article.getUrl());
             return PublishResult.giveUp();
+        }
+
+        // Instant View: короткий пост со ссылкой на нашу IV-страницу — весь текст читается в Telegram,
+        // обложку карточки Telegram берёт из og-разметки страницы. Одно сообщение, без хвоста и заливки фото.
+        String instantViewUrl = instantViewUrl(article);
+        if (instantViewUrl != null) {
+            String text = instantViewText(article);
+            SendOutcome sent = send("sendMessage", linkPreviewPayload(text, instantViewUrl));
+            if (sent.result() == SendResult.REJECTED) {
+                // Карточку собрать не удалось (страница ещё не отдаётся роботу, битый rhash) — новость
+                // всё равно должна уйти: шлём тот же текст без превью, ссылка на статью в нём остаётся.
+                log.warn("Telegram отклонил пост с превью Instant View для {} — отправляю без карточки",
+                        article.getUrl());
+                sent = send("sendMessage", messagePayload(text));
+            }
+            if (sent.result() != SendResult.SENT) {
+                return sent.result() == SendResult.TRANSIENT ? PublishResult.retry() : PublishResult.giveUp();
+            }
+            return PublishResult.posted(sent.messageId(), false, List.of());
         }
 
         // Обложку показываем превью-ссылкой НАД текстом (link_preview_options.show_above_text): пост уходит
@@ -176,11 +208,66 @@ public class TelegramPublisher {
     }
 
     /**
-     * Синхронизирует пост с обновлённой новостью: правит caption (если пост с фото) или text ПЕРВОГО
-     * сообщения на месте. Картинку в посте не трогаем — при смене обложки её меняют вручную. Хвостовые
-     * сообщения многочастного поста правка тоже не трогает (правится только первое).
+     * Ссылка на статью в Instant View ({@code t.me/iv?url=…&rhash=…}) — по ней Telegram показывает нашу
+     * страницу нативной статьёй. {@code null} — режим выключен: не задан rhash шаблона либо
+     * {@code app.url} не публичный (локальная разработка), и робот Telegram до страницы не дойдёт.
+     */
+    private String instantViewUrl(Article article) {
+        String rhash = properties.getInstantViewRhash();
+        if (!StringUtils.hasText(rhash) || !StringUtils.hasText(article.getUrl())) {
+            return null;
+        }
+        String base = publicBase();
+        if (base == null) {
+            return null;
+        }
+        String page = base + "/iv/articles/" + article.getUrl();
+        return "https://t.me/iv?url=" + URLEncoder.encode(page, StandardCharsets.UTF_8)
+                + "&rhash=" + rhash.trim();
+    }
+
+    /**
+     * Текст поста с Instant View — одна строка-ссылка на статью НА САЙТЕ. Заголовок, анонс и обложку
+     * показывает карточка превью (Telegram берёт их из og-разметки IV-страницы), а сам текст статьи
+     * открывается кнопкой на карточке — дублировать всё это в сообщении незачем. Совсем пустым текст
+     * быть не может: Bot API требует непустой {@code text}.
+     */
+    private String instantViewText(Article article) {
+        return "<a href=\"" + escape(siteUrl(article)) + "\">Читать на сайте →</a>";
+    }
+
+    /** Адрес статьи на сайте; без публичной базы — сама база (ссылка всё равно должна быть валидной). */
+    private String siteUrl(Article article) {
+        String base = publicBase();
+        return base == null ? "https://ttg.club" : base + "/articles/" + article.getUrl();
+    }
+
+    /**
+     * Синхронизирует пост с обновлённой новостью: правит text одиночного поста с Instant View либо (в
+     * прежнем режиме) caption поста с фото / text ПЕРВОГО сообщения. Картинку в посте не трогаем — при
+     * смене обложки её меняют вручную. Хвостовые сообщения многочастного поста правка тоже не трогает.
      */
     public EditResult editPost(Article article) {
+        // Одиночный текстовый пост правим как пост с Instant View: даже если его отправили до включения
+        // режима, он станет короче и получит ссылку на статью (обложку карточка возьмёт из og-разметки).
+        // Пост с фото и многочастный пост оставляем на прежнем пути: фото правкой в текст не превратить,
+        // а короткий текст вместо первого сообщения оставил бы хвостовые висеть в канале обрывками.
+        String instantViewUrl = instantViewUrl(article);
+        if (instantViewUrl != null && !article.isTelegramPhoto()
+                && !StringUtils.hasText(article.getTelegramTailMessageIds())) {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("chat_id", properties.getChatId());
+            payload.put("message_id", article.getTelegramMessageId());
+            payload.put("text", instantViewText(article));
+            payload.put("parse_mode", properties.getParseMode());
+            payload.put("link_preview_options", linkPreviewOptions(instantViewUrl));
+            return switch (send("editMessageText", payload).result()) {
+                case SENT -> EditResult.SYNCED;
+                case TRANSIENT -> EditResult.RETRY;
+                case REJECTED -> EditResult.GIVE_UP;
+            };
+        }
+
         boolean photo = article.isTelegramPhoto();
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("chat_id", properties.getChatId());
@@ -362,16 +449,24 @@ public class TelegramPublisher {
         if (previewImageUrl.startsWith("http://") || previewImageUrl.startsWith("https://")) {
             return previewImageUrl;
         }
-        // app.url — публичный адрес сайта, откуда отдаётся /s3/<key> (в проде https://new.ttg.club). Не-публичную
-        // базу (localhost/без схемы) не используем — Telegram качает картинку по ссылке сам и до localhost не дойдёт.
+        String base = publicBase();
+        if (base == null) {
+            return null;
+        }
+        return previewImageUrl.startsWith("/") ? base + previewImageUrl : base + "/" + previewImageUrl;
+    }
+
+    /**
+     * Публичная база адресов сайта ({@code app.url}, в проде {@code https://new.ttg.club}): с неё Telegram
+     * сам качает и обложку {@code /s3/<key>}, и страницу Instant View. {@code null} — база не публичная
+     * (localhost/без схемы, локальная разработка), туда робот Telegram не дойдёт.
+     */
+    private String publicBase() {
         String base = appUrl == null ? "" : appUrl.trim();
         if (!(base.startsWith("http://") || base.startsWith("https://")) || base.contains("localhost")) {
             return null;
         }
-        if (base.endsWith("/")) {
-            base = base.substring(0, base.length() - 1);
-        }
-        return previewImageUrl.startsWith("/") ? base + previewImageUrl : base + "/" + previewImageUrl;
+        return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
     }
 
     private SendOutcome send(String method, Map<String, Object> payload) {
