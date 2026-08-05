@@ -27,6 +27,13 @@ public class SpellEffect {
     private Boolean autoHit;
     private Projectiles projectiles;
     private List<String> damageFormulas;
+    /**
+     * Цели частей урона по индексам {@link #damageFormulas}: {@code selected}
+     * (дефолт), {@code self}, {@code choose} — словарь VTTG {@code DamagePartTarget}.
+     * В формулу цель не пишется: VTTG знает в ней только теги
+     * {@code @target.full}/{@code @target.notFull}.
+     */
+    private List<String> damageFormulaTargets;
     private List<HealingType> healingTypes;
     private List<Ability> savingThrows;
     private SpellSaveEffect saveEffect;

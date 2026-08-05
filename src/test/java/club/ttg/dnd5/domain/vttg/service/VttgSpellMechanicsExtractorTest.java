@@ -124,6 +124,34 @@ class VttgSpellMechanicsExtractorTest {
     }
 
     @Test
+    void mapsDamageFormulaTargetsByFormulaIndex() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2к6@dmg.fire", "1к8@heal"));
+        effect.setDamageFormulaTargets(List.of("selected", "self"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("selected", result.damageParts().get(0).getTarget());
+        assertEquals("self", result.damageParts().get(1).getTarget());
+    }
+
+    @Test
+    void fallsBackToSelectedTargetWhenTargetIsMissingOrUnknown() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2к6@dmg.fire", "1к6@dmg.cold"));
+        effect.setDamageFormulaTargets(List.of("target.separate"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("selected", result.damageParts().get(0).getTarget());
+        assertEquals("selected", result.damageParts().get(1).getTarget());
+    }
+
+    @Test
     void ignoresRollThatIsNotDamageOrHealing() {
         Spell spell = new Spell();
 
