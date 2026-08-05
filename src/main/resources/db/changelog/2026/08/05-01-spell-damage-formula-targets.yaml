@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-05-01-spell-damage-formula-targets
+      author: codex
+      comment: >-
+        Переносит цель части урона из тегов @target.self/@target.separate внутри
+        формулы в отдельный массив effect.damageFormulaTargets (словарь VTTG:
+        selected/self/choose). Внутри формулы такие теги не понимает никто:
+        VTTG знает только @target.full/@target.notFull.
+      changes:
+        - sql:
+            sql: |
+              UPDATE spell
+              SET effect = jsonb_set(
+                  jsonb_set(spell.effect, '{damageFormulas}', damage_part.formulas),
+                  '{damageFormulaTargets}',
+                  damage_part.targets
+              )
+              FROM (
+                  SELECT source.url AS url,
+                         jsonb_agg(
+                             to_jsonb(btrim(regexp_replace(formula, '@target\.(self|separate)', '', 'gi')))
+                             ORDER BY formula_index
+                         ) AS formulas,
+                         jsonb_agg(
+                             CASE
+                                 WHEN formula ~* '@target\.self' THEN '"self"'::jsonb
+                                 WHEN formula ~* '@target\.separate' THEN '"choose"'::jsonb
+                                 ELSE '"selected"'::jsonb
+                             END
+                             ORDER BY formula_index
+                         ) AS targets
+                  FROM spell AS source,
+                       LATERAL jsonb_array_elements_text(source.effect->'damageFormulas')
+                           WITH ORDINALITY AS damage_formula(formula, formula_index)
+                  WHERE jsonb_typeof(source.effect->'damageFormulas') = 'array'
+                    AND source.effect->>'damageFormulas' ~* '@target\.(self|separate)'
+                  GROUP BY source.url
+              ) AS damage_part
+              WHERE spell.url = damage_part.url;

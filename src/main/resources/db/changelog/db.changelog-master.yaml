@@ -279,3 +279,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/02-01-add-magic-item-bonuses.yaml
   - include:
       file: db/changelog/2026/08/04-01-add-magic-item-mechanics.yaml
+  - include:
+      file: db/changelog/2026/08/05-01-spell-damage-formula-targets.yaml

@@ -124,6 +124,77 @@ class VttgSpellMechanicsExtractorTest {
     }
 
     @Test
+    void mapsDamageFormulaTargetsByFormulaIndex() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2к6@dmg.fire", "1к8@heal"));
+        effect.setDamageFormulaTargets(List.of("selected", "self"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("selected", result.damageParts().get(0).getTarget());
+        assertEquals("self", result.damageParts().get(1).getTarget());
+    }
+
+    @Test
+    void movesLegacyTargetTagFromFormulaToDamagePartTarget() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2к6@dmg.fire@target.separate", "1к8@heal@target.self"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("2к6@dmg.fire", result.damageParts().get(0).getFormula());
+        assertEquals("choose", result.damageParts().get(0).getTarget());
+        assertEquals("1к8@heal", result.damageParts().get(1).getFormula());
+        assertEquals("self", result.damageParts().get(1).getTarget());
+        assertEquals("2к6", result.damageFormula());
+    }
+
+    @Test
+    void prefersStructuredTargetOverLegacyTargetTag() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2к6@dmg.fire@target.self"));
+        effect.setDamageFormulaTargets(List.of("choose"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("2к6@dmg.fire", result.damageParts().getFirst().getFormula());
+        assertEquals("choose", result.damageParts().getFirst().getTarget());
+    }
+
+    @Test
+    void keepsTargetStateTokensInsideFormula() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2к6@dmg.fire@target.notFull"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("2к6@dmg.fire@target.notFull", result.damageParts().getFirst().getFormula());
+        assertEquals("selected", result.damageParts().getFirst().getTarget());
+    }
+
+    @Test
+    void fallsBackToSelectedTargetWhenTargetIsMissingOrUnknown() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("2к6@dmg.fire", "1к6@dmg.cold"));
+        effect.setDamageFormulaTargets(List.of("target.separate"));
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("selected", result.damageParts().get(0).getTarget());
+        assertEquals("selected", result.damageParts().get(1).getTarget());
+    }
+
+    @Test
     void ignoresRollThatIsNotDamageOrHealing() {
         Spell spell = new Spell();
 
