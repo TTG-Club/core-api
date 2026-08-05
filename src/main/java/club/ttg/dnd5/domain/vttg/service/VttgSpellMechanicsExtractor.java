@@ -45,11 +45,22 @@ public class VttgSpellMechanicsExtractor {
     private static final Map<String, Pattern> TEXT_DAMAGE_TYPES = textDamageTypes();
     private static final Set<String> DAMAGE_PART_TARGETS = Set.of("selected", "self", "choose");
     private static final String DEFAULT_DAMAGE_PART_TARGET = "selected";
+    /**
+     * Legacy-теги цели, которые редактор писал прямо в формулу до появления
+     * {@code effect.damageFormulaTargets}. В компендиум они попасть не должны:
+     * VTTG понимает в формуле только {@code @target.full}/{@code @target.notFull},
+     * которые под этот шаблон не подпадают.
+     */
+    private static final Pattern LEGACY_TARGET_MARKER = Pattern.compile("(?i)@target\\.(self|separate)\\b");
 
     public VttgSpellMechanics extract(Spell spell, String description) {
         String text = description == null ? "" : description;
         SpellEffect effect = spell.getEffect();
-        List<String> formulas = structuredDamageFormulas(effect);
+        List<String> rawFormulas = structuredDamageFormulas(effect);
+        // Цели резолвятся по «сырым» формулам (в них может остаться legacy-тег),
+        // а наружу уходят формулы уже без него.
+        List<String> damagePartTargets = damagePartTargets(rawFormulas, effect);
+        List<String> formulas = stripLegacyTargets(rawFormulas);
         boolean structuredFormulas = formulas != null;
         boolean formulaHealing = hasHealingMarker(formulas);
         boolean structuredHealing = effect != null && hasValues(effect.getHealingTypes());
@@ -77,7 +88,7 @@ public class VttgSpellMechanicsExtractor {
                 damageParts(
                         formulas,
                         !formulaHealing && (structuredHealing || (!structuredFormulas && healing)),
-                        structuredFormulas ? effect.getDamageFormulaTargets() : null),
+                        damagePartTargets),
                 healing ? true : null,
                 extractSaveEffect(effect, text)
         );
@@ -242,11 +253,59 @@ public class VttgSpellMechanicsExtractor {
     }
 
     private String damagePartTarget(List<String> targets, int index) {
-        if (targets == null || index >= targets.size()) {
-            return DEFAULT_DAMAGE_PART_TARGET;
+        return targets == null || index >= targets.size()
+                ? DEFAULT_DAMAGE_PART_TARGET
+                : targets.get(index);
+    }
+
+    /**
+     * Цели частей урона по индексам формул: структурное поле
+     * {@code effect.damageFormulaTargets} важнее, при пустом или неизвестном
+     * значении подхватывается legacy-тег из самой формулы, иначе — {@code selected}.
+     */
+    private List<String> damagePartTargets(List<String> rawFormulas, SpellEffect effect) {
+        if (rawFormulas == null) {
+            return null;
         }
-        String target = targets.get(index);
-        return DAMAGE_PART_TARGETS.contains(target) ? target : DEFAULT_DAMAGE_PART_TARGET;
+        List<String> structuredTargets = effect == null ? null : effect.getDamageFormulaTargets();
+        List<String> targets = new ArrayList<>();
+        for (int index = 0; index < rawFormulas.size(); index++) {
+            targets.add(resolveDamagePartTarget(structuredTargets, index, rawFormulas.get(index)));
+        }
+        return targets;
+    }
+
+    private String resolveDamagePartTarget(List<String> structuredTargets, int index, String rawFormula) {
+        String structuredTarget = structuredTargets == null || index >= structuredTargets.size()
+                ? null
+                : structuredTargets.get(index);
+        if (structuredTarget != null && DAMAGE_PART_TARGETS.contains(structuredTarget)) {
+            return structuredTarget;
+        }
+        String legacyTarget = legacyTarget(rawFormula);
+        return legacyTarget == null ? DEFAULT_DAMAGE_PART_TARGET : legacyTarget;
+    }
+
+    private String legacyTarget(String formula) {
+        if (!StringUtils.hasText(formula)) {
+            return null;
+        }
+        Matcher marker = LEGACY_TARGET_MARKER.matcher(formula);
+        if (!marker.find()) {
+            return null;
+        }
+        return "self".equalsIgnoreCase(marker.group(1)) ? "self" : "choose";
+    }
+
+    private List<String> stripLegacyTargets(List<String> formulas) {
+        return formulas == null ? null : formulas.stream().map(this::stripLegacyTarget).toList();
+    }
+
+    private String stripLegacyTarget(String formula) {
+        if (!StringUtils.hasText(formula)) {
+            return formula;
+        }
+        return LEGACY_TARGET_MARKER.matcher(formula).replaceAll("").trim();
     }
 
     /**
