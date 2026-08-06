@@ -74,10 +74,10 @@ public class OnlineUserService
 
             if (response == null)
             {
-                return new OnlineCount(0, 0, 0);
+                return new OnlineCount(0, 0, 0, 0);
             }
 
-            return new OnlineCount(response.guests(), response.registered(), response.total());
+            return new OnlineCount(response.guests(), response.registered(), response.players(), response.total());
         }
         catch (RestClientResponseException ex)
         {
@@ -100,7 +100,7 @@ public class OnlineUserService
                     .body(OnlineAdminStatsResponse.class);
 
             return response == null
-                    ? new OnlineAdminStatsResponse(0, new OnlineCount(0, 0, 0), List.of())
+                    ? new OnlineAdminStatsResponse(0, new OnlineCount(0, 0, 0, 0), List.of())
                     : response;
         }
         catch (RestClientResponseException ex)
@@ -147,9 +147,15 @@ public class OnlineUserService
 
     public record HeartbeatResponse(long total) {}
 
-    public record OnlineStatsResponse(long windowMinutes, String siteId, long guests, long registered, long total) {}
+    /**
+     * @param players сколько посетителей сейчас в игровых мирах. Это подмножество гостей и
+     *                зарегистрированных, поэтому в {@code total} оно не складывается. Поле
+     *                отдаёт только online-service, и мы обязаны его пронести дальше: без него
+     *                админка не отличит «никто не играет» от «числа нет».
+     */
+    public record OnlineStatsResponse(long windowMinutes, String siteId, long guests, long registered, long players, long total) {}
 
-    public record OnlineCount(long guests, long registered, long total) {}
+    public record OnlineCount(long guests, long registered, long players, long total) {}
 
     public record OnlineAdminStatsResponse(long windowMinutes, OnlineCount total, List<OnlineStatsResponse> sites) {}
 }
