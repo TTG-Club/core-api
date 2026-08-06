@@ -10,6 +10,8 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.glossary.model.Glossary;
+import club.ttg.dnd5.domain.glossary.repository.GlossaryRepository;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
@@ -83,8 +85,9 @@ public class VttgChangesService {
     private static final String FEATS = SectionType.FEAT.getValue();
     private static final String SPECIES = SectionType.SPECIES.getValue();
     private static final String CLASSES = SectionType.CLASS.getValue();
+    private static final String GLOSSARY = SectionType.GLOSSARY.getValue();
     private static final Set<String> SUPPORTED_TYPES =
-            Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS, FEATS, SPECIES, CLASSES);
+            Set.of(SPELLS, BESTIARY, MAGIC_ITEMS, ITEMS, BACKGROUNDS, FEATS, SPECIES, CLASSES, GLOSSARY);
 
     private final SourceRepository sourceRepository;
     private final SpellRepository spellRepository;
@@ -95,6 +98,7 @@ public class VttgChangesService {
     private final FeatRepository featRepository;
     private final SpeciesRepository speciesRepository;
     private final ClassRepository classRepository;
+    private final GlossaryRepository glossaryRepository;
     private final VttgSpellMapper spellMapper;
     private final VttgCreatureMapper creatureMapper;
     private final VttgMagicItemMapper magicItemMapper;
@@ -103,6 +107,7 @@ public class VttgChangesService {
     private final VttgFeatMapper featMapper;
     private final VttgSpeciesMapper speciesMapper;
     private final VttgClassMapper classMapper;
+    private final VttgGlossaryMapper glossaryMapper;
     private final VttgCompendiumSections compendiumSections;
     private final VttgPayloadStore payloadStore;
     private final PlatformTransactionManager transactionManager;
@@ -161,6 +166,12 @@ public class VttgChangesService {
             long count = classRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
             if (count > 0) {
                 byType.put(CLASSES, count);
+            }
+        }
+        if (selected.contains(GLOSSARY)) {
+            long count = glossaryRepository.countChangedForVttgExport(srdVersion, srdOnly, window.since(), window.until());
+            if (count > 0) {
+                byType.put(GLOSSARY, count);
             }
         }
 
@@ -226,6 +237,10 @@ public class VttgChangesService {
                 () -> classRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 classRepository::maxChangedAtForVttgExport,
                 classRepository::findAllForVttgExportByUrls, CharacterClass::getUrl, classMapper::toVttg);
+        submitStore(futures, GLOSSARY, selected,
+                () -> glossaryRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
+                () -> null,
+                glossaryRepository::findAllForVttgExportByUrls, Glossary::getUrl, glossaryMapper::toVttg);
 
         // Черты выбираются параллельно, но в дельту идут единым блоком ПОСЛЕ сортировки остальных:
         // разделитель категории + её черты в порядке эталона, иначе маркеры «разъедутся» при сортировке.
