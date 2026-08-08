@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-08-01-add-initiative-participant-state
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >-
+        Состояние боя, которое до сих пор жило в localStorage мастера: хиты, класс доспеха
+        игрока, цвет иконки, привязка к листу персонажа и наложенные состояния. На устройстве
+        они терялись при смене браузера — теперь едут за трекером.
+      changes:
+        - addColumn:
+            tableName: initiative_participant
+            columns:
+              - column:
+                  name: current_hit_points
+                  type: INT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: max_hit_points
+                  type: INT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: armor_class
+                  type: INT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: color
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sheet_link
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: conditions
+                  type: jsonb
+                  constraints:
+                    nullable: true

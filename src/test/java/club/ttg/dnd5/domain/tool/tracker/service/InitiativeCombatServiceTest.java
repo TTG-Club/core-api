@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.tool.tracker.service;
 
 import club.ttg.dnd5.domain.tool.tracker.model.InitiativeParticipant;
 import club.ttg.dnd5.domain.tool.tracker.model.InitiativeTracker;
+import club.ttg.dnd5.domain.tool.tracker.model.ParticipantCondition;
 import club.ttg.dnd5.domain.tool.tracker.model.TrackerStatus;
 import club.ttg.dnd5.exception.ApiException;
 import org.junit.jupiter.api.Test;
@@ -489,6 +490,109 @@ class InitiativeCombatServiceTest {
         service.recalculateTotal(participant);
 
         assertNull(participant.getInitiativeTotal());
+    }
+
+    @Test
+    void nextTurnDropsConditionsOfParticipantWhoseTurnBegins() {
+        InitiativeParticipant first = participant(1, 15, 0, 10);
+        InitiativeParticipant second = participant(2, 10, 0, 10);
+        second.setConditions(List.of(
+                new ParticipantCondition("poisoned", 1, "turn-start"),
+                new ParticipantCondition("prone", 2, "turn-start"),
+                new ParticipantCondition("charmed", null, "turn-start")));
+        InitiativeTracker tracker = activeTracker(first.getId());
+
+        // Ход переходит ко второму — на его ходу и проверяется срок
+        service.nextTurn(tracker, List.of(first, second));
+
+        assertEquals(1, tracker.getRound());
+        assertEquals(List.of("prone", "charmed"),
+                second.getConditions().stream().map(ParticipantCondition::getKey).toList());
+    }
+
+    @Test
+    void nextTurnKeepsTurnStartConditionsOfParticipantsWhoseTurnHasNotCome() {
+        InitiativeParticipant first = participant(1, 15, 0, 10);
+        InitiativeParticipant second = participant(2, 10, 0, 10);
+        // Срок вышел, но чужой ход состояния не снимает — только собственный
+        first.setConditions(List.of(new ParticipantCondition("poisoned", 1, "turn-start")));
+        InitiativeTracker tracker = activeTracker(first.getId());
+
+        service.nextTurn(tracker, List.of(first, second));
+
+        assertEquals(1, first.getConditions().size());
+    }
+
+    @Test
+    void nextTurnDropsTurnEndConditionsOfParticipantWhoseTurnEnds() {
+        InitiativeParticipant first = participant(1, 15, 0, 10);
+        first.setConditions(List.of(new ParticipantCondition("poisoned", 1, "turn-end")));
+        InitiativeParticipant second = participant(2, 10, 0, 10);
+        InitiativeTracker tracker = activeTracker(first.getId());
+
+        service.nextTurn(tracker, List.of(first, second));
+
+        assertTrue(first.getConditions().isEmpty());
+    }
+
+    @Test
+    void nextTurnDropsRoundEndConditionsOfEveryoneOnRoundBoundary() {
+        InitiativeParticipant first = participant(1, 15, 0, 10);
+        first.setConditions(List.of(new ParticipantCondition("poisoned", 2, "round-end")));
+        InitiativeParticipant second = participant(2, 10, 0, 10);
+        second.setConditions(List.of(new ParticipantCondition("prone", 2, "round-end")));
+        // Ход последнего в порядке — следующий шаг начинает второй раунд
+        InitiativeTracker tracker = activeTracker(second.getId());
+
+        service.nextTurn(tracker, List.of(first, second));
+
+        assertEquals(2, tracker.getRound());
+        assertTrue(first.getConditions().isEmpty());
+        assertTrue(second.getConditions().isEmpty());
+    }
+
+    @Test
+    void nextTurnKeepsRoundEndConditionsInsideRound() {
+        InitiativeParticipant first = participant(1, 15, 0, 10);
+        InitiativeParticipant second = participant(2, 10, 0, 10);
+        second.setConditions(List.of(new ParticipantCondition("prone", 1, "round-end")));
+        InitiativeTracker tracker = activeTracker(first.getId());
+
+        service.nextTurn(tracker, List.of(first, second));
+
+        assertEquals(1, tracker.getRound());
+        assertEquals(1, second.getConditions().size());
+    }
+
+    @Test
+    void nextTurnDropsConditionsOnOwnTurnOfTheNewRound() {
+        InitiativeParticipant first = participant(1, 15, 0, 10);
+        // Момент не задан (записи прежних версий) — считается началом своего хода
+        first.setConditions(List.of(new ParticipantCondition("poisoned", 2, null)));
+        InitiativeParticipant second = participant(2, 10, 0, 10);
+        // Ход последнего в порядке — следующий шаг начинает второй раунд с первого участника
+        InitiativeTracker tracker = activeTracker(second.getId());
+
+        service.nextTurn(tracker, List.of(first, second));
+
+        assertEquals(2, tracker.getRound());
+        assertTrue(first.getConditions().isEmpty());
+    }
+
+    @Test
+    void resetRevivesAndClearsConditionsKeepingHitPoints() {
+        InitiativeParticipant participant = participant(1, 15, 0, 10);
+        participant.setDead(true);
+        participant.setCurrentHitPoints(3);
+        participant.setConditions(List.of(new ParticipantCondition("poisoned", null, "turn-start")));
+        InitiativeTracker tracker = activeTracker(participant.getId());
+
+        service.reset(tracker, List.of(participant));
+
+        assertFalse(participant.isDead());
+        assertTrue(participant.getConditions().isEmpty());
+        // Конец боя не лечит — хиты остаются мастеру
+        assertEquals(3, participant.getCurrentHitPoints());
     }
 
     private static InitiativeTracker tracker() {

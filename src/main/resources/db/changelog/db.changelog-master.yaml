@@ -281,3 +281,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/04-01-add-magic-item-mechanics.yaml
   - include:
       file: db/changelog/2026/08/05-01-spell-damage-formula-targets.yaml
+  - include:
+      file: db/changelog/2026/08/08-01-add-initiative-participant-state.yaml

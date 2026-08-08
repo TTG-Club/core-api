@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.tool.tracker.model;
 
 import club.ttg.dnd5.domain.common.model.Timestamped;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +14,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -90,4 +93,46 @@ public class InitiativeParticipant extends Timestamped {
      */
     @Column(nullable = false)
     private boolean dead;
+
+    /**
+     * Текущие хиты. NULL — мастер их не вёл: существо считается на полных (максимум статблока),
+     * игрок — без хитов.
+     */
+    @Column(name = "current_hit_points")
+    private Integer currentHitPoints;
+
+    /**
+     * Максимум хитов, заданный мастером (бросок формулы статблока или значение с листа).
+     * NULL — берётся среднее из статблока, а у игрока хитов нет.
+     */
+    @Column(name = "max_hit_points")
+    private Integer maxHitPoints;
+
+    /**
+     * Класс доспеха игрока: у существа он свой, из статблока, и здесь не хранится.
+     * NULL — не задан.
+     */
+    @Column(name = "armor_class")
+    private Integer armorClass;
+
+    /**
+     * Цвет иконки участника, когда картинки нет (ключ семантического цвета темы).
+     * NULL — цвет по умолчанию.
+     */
+    @Column(name = "color", length = 20)
+    private String color;
+
+    /**
+     * Привязка игрока к листу персонажа. NULL — игрок заведён вручную.
+     */
+    @Type(JsonType.class)
+    @Column(name = "sheet_link", columnDefinition = "jsonb")
+    private ParticipantSheetLink sheetLink;
+
+    /**
+     * Наложенные состояния. NULL или пустой список — состояний нет.
+     */
+    @Type(JsonType.class)
+    @Column(name = "conditions", columnDefinition = "jsonb")
+    private List<ParticipantCondition> conditions;
 }
