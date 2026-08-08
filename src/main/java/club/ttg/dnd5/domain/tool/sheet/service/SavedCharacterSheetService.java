@@ -10,6 +10,8 @@ import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.security.SecurityUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,6 +33,10 @@ import java.util.stream.Collectors;
 public class SavedCharacterSheetService {
 
     private static final String NOT_FOUND_MESSAGE = "Сохранённый лист персонажа не найден";
+    private static final String HEALTH_MISSING_MESSAGE = "В листе персонажа нет блока хитов";
+    private static final String HEALTH_FIELD = "health";
+    private static final String CURRENT_FIELD = "current";
+    private static final String MAX_FIELD = "max";
 
     private final SavedCharacterSheetRepository savedRepository;
     private final CharacterSheetRepository sheetRepository;
@@ -78,6 +84,44 @@ public class SavedCharacterSheetService {
         // Флаш сразу: id новой записи генерируется при INSERT, без него в ответе был бы null,
         // а клиент по нему сразу убирает запись из списка.
         return toResponse(savedRepository.saveAndFlush(savedSheet), sheet);
+    }
+
+    /**
+     * Текущие хиты чужого листа. Правит их мастер боя: урон и лечение он отмечает в трекере
+     * инициативы, и лист игрока должен их видеть. Меняется ровно {@code health.current} — максимум
+     * лист считает сам, а остального документа правка не касается: он принадлежит владельцу листа.
+     * <p>
+     * Право на запись даёт сохранённая ссылка, а не сам токен: запись в {@code saved} привязана к
+     * пользователю, поэтому хиты правит тот, кому лист прислали, а не любой, кто увидел ссылку.
+     * Отозванная ссылка или удалённый лист — 404, как и при просмотре.
+     */
+    @Transactional
+    public void updateCurrentHitPoints(UUID savedId, int current) {
+        User user = SecurityUtils.getUser();
+        SavedCharacterSheet savedSheet = savedRepository.findByIdAndUserId(savedId, user.getUuid())
+                .orElseThrow(() -> new EntityNotFoundException(NOT_FOUND_MESSAGE));
+        CharacterSheet sheet = sheetRepository.findById(savedSheet.getSheetId())
+                .filter(found -> !found.isDeleted() && savedSheet.getShareToken().equals(found.getShareToken()))
+                .orElseThrow(() -> new EntityNotFoundException(CharacterSheetService.SHARED_NOT_FOUND_MESSAGE));
+        sheet.setData(withCurrentHitPoints(sheet.getData(), current));
+        sheetRepository.save(sheet);
+    }
+
+    /**
+     * Копия документа с новыми текущими хитами. Именно копия: {@link JsonNode} изменяемый, и правка
+     * «на месте» осталась бы для грязной проверки Hibernate тем же значением. Число зажимается
+     * максимумом самого листа — трекер о правках листа не знает и может прислать устаревшее.
+     * Формат документа сервер по-прежнему не разбирает: читаются только хиты, которые он и пишет.
+     */
+    private static JsonNode withCurrentHitPoints(JsonNode data, int current) {
+        JsonNode document = data.deepCopy();
+        if (!(document instanceof ObjectNode sheetDocument)
+                || !(sheetDocument.get(HEALTH_FIELD) instanceof ObjectNode health)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, HEALTH_MISSING_MESSAGE);
+        }
+        int max = health.path(MAX_FIELD).asInt(0);
+        health.put(CURRENT_FIELD, max > 0 ? Math.clamp(current, 0, max) : Math.max(0, current));
+        return sheetDocument;
     }
 
     /**

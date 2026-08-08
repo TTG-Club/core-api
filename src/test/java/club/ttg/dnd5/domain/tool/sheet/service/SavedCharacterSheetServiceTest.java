@@ -9,7 +9,9 @@ import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetResponse;
 import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -184,6 +186,82 @@ class SavedCharacterSheetServiceTest {
     }
 
     @Test
+    void updateCurrentHitPointsWritesOnlyCurrentValue() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        health(sheet, 27, 38);
+        SavedCharacterSheet saved = savedRecord(viewer, sheet);
+        when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        service.updateCurrentHitPoints(saved.getId(), 12);
+
+        JsonNode health = sheet.getData().get("health");
+        assertEquals(12, health.get("current").asInt());
+        // Максимум считает сам лист — трекер его не двигает
+        assertEquals(38, health.get("max").asInt());
+        assertEquals("Гимли", sheet.getData().get("name").asText());
+        verify(sheetRepository).save(sheet);
+    }
+
+    @Test
+    void updateCurrentHitPointsClampsToSheetMaximum() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        health(sheet, 10, 38);
+        SavedCharacterSheet saved = savedRecord(viewer, sheet);
+        when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        service.updateCurrentHitPoints(saved.getId(), 500);
+
+        assertEquals(38, sheet.getData().get("health").get("current").asInt());
+    }
+
+    @Test
+    void updateCurrentHitPointsOfRevokedLinkIsNotFound() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        health(sheet, 27, 38);
+        SavedCharacterSheet saved = savedRecord(viewer, sheet);
+        // Владелец отозвал доступ и выдал ссылку заново: прежний зритель хиты уже не правит
+        sheet.setShareToken(UUID.randomUUID());
+        when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        assertThrows(EntityNotFoundException.class,
+                () -> service.updateCurrentHitPoints(saved.getId(), 12));
+
+        verify(sheetRepository, never()).save(any());
+    }
+
+    @Test
+    void updateCurrentHitPointsOfForeignRecordIsNotFound() {
+        UUID viewer = authenticate();
+        UUID savedId = UUID.randomUUID();
+        when(savedRepository.findByIdAndUserId(savedId, viewer)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.updateCurrentHitPoints(savedId, 12));
+
+        verify(sheetRepository, never()).save(any());
+    }
+
+    @Test
+    void updateCurrentHitPointsOfSheetWithoutHealthIsRejected() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        SavedCharacterSheet saved = savedRecord(viewer, sheet);
+        when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> service.updateCurrentHitPoints(saved.getId(), 12));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        verify(sheetRepository, never()).save(any());
+    }
+
+    @Test
     void deleteOfForeignRecordIsNotFound() {
         UUID viewer = authenticate();
         UUID savedId = UUID.randomUUID();
@@ -199,9 +277,19 @@ class SavedCharacterSheetServiceTest {
         sheet.setId(UUID.randomUUID());
         sheet.setUserId(UUID.randomUUID());
         sheet.setName("Гимли");
-        sheet.setData(JsonNodeFactory.instance.objectNode());
+        sheet.setData(JsonNodeFactory.instance.objectNode().put("name", "Гимли"));
         sheet.setShareToken(UUID.randomUUID());
         return sheet;
+    }
+
+    /**
+     * Дописывает в документ блок хитов — тот единственный, что правит мастер боя.
+     */
+    private static void health(CharacterSheet sheet, int current, int max) {
+        ((ObjectNode) sheet.getData()).set("health", JsonNodeFactory.instance.objectNode()
+                .put("current", current)
+                .put("max", max)
+                .put("temporary", 0));
     }
 
     private static SavedCharacterSheet savedRecord(UUID userId, CharacterSheet sheet) {
