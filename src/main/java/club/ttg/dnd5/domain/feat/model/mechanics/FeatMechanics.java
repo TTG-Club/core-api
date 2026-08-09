@@ -1,0 +1,44 @@
+package club.ttg.dnd5.domain.feat.model.mechanics;
+
+import club.ttg.dnd5.domain.common.model.AbilityBonus;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.List;
+
+/**
+ * Механика влияния черты на лист персонажа — по образцу
+ * {@code MagicItemMechanics}: один JSONB-контейнер, который растёт по мере того, как
+ * очередной блок эффектов черт переезжает из описания в данные.
+ *
+ * <p>Сейчас здесь только повышение характеристик — единственное, что лист может
+ * применить сам. Остальное (владения, скорость, чувства, заклинания, ресурсы) пока
+ * живёт в описании и добавляется сюда отдельными полями.</p>
+ *
+ * <p>{@code null} — у черт, сохранённых до появления поля, и у тех, чьё действие
+ * описано только текстом.</p>
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class FeatMechanics {
+    /**
+     * Варианты повышения характеристик. Несколько элементов — это выбор «или/или»:
+     * «Улучшение характеристик» даёт {@code +2 к одной} либо {@code +1 к двум}.
+     */
+    @Schema(description = "Варианты повышения характеристик (несколько элементов — выбор «или»)",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<AbilityBonus> abilityBonuses;
+
+    /**
+     * Выборы, которые игрок делает при взятии черты. Повышение характеристик сюда не
+     * дублируется — оно живёт в {@link #abilityBonuses}.
+     */
+    @Schema(description = "Выборы, которые игрок делает при взятии черты",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<FeatChoice> choices;
+}

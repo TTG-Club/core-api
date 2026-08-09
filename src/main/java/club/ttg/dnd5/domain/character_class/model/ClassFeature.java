@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.character_class.model;
 
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureRequest;
+import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.util.SlugifyUtil;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
