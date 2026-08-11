@@ -55,6 +55,9 @@ public class ClassFeature {
     @Schema(description = "Умение даёт выбор одной черты категории «Боевой стиль»")
     private boolean fightingStyleChoice;
 
+    @Schema(description = "Умение даёт выбор владения навыками: сколько и из какого пула")
+    private SkillProficiency skillChoice;
+
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
 
@@ -78,6 +81,7 @@ public class ClassFeature {
         this.hideInSubclasses = classFeatureRequest.isHideInSubclasses();
         this.abilityImprovement = classFeatureRequest.isAbilityImprovement();
         this.fightingStyleChoice = classFeatureRequest.isFightingStyleChoice();
+        this.skillChoice = classFeatureRequest.getSkillChoice();
         this.abilityBonus = classFeatureRequest.getAbilityBonus();
     }
 }
