@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-11-01-add-discord-mention-to-article
+      author: Peterko
+      changes:
+        # Пинг участников Discord-канала при публикации новости: NONE/NULL — без пинга,
+        # EVERYONE — @everyone, SERVER — роль server (её id задаётся в конфиге discord.server-role-id).
+        # Строка enum-а DiscordMention. NULL у записей до миграции читается как «без пинга».
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_mention
+                  type: VARCHAR(16)

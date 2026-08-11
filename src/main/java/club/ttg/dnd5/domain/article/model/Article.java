@@ -149,6 +149,14 @@ public class Article extends Timestamped {
     private boolean discordDirty;
 
     /**
+     * Пинг участников канала при публикации в Discord. Управляется выбором в админке.
+     * NULL (записи до миграции) читается как {@link DiscordMention#NONE} — без пинга.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private DiscordMention discordMention;
+
+    /**
      * Пожелание автора отправить запись на стену сообщества ВКонтакте. Управляется галочкой в админке.
      * Постится только при publishToVk=true И включённой глобально интеграции (заданы токен и id сообщества),
      * один раз при попадании записи в общий доступ (см. {@code vkPostedAt}). Независима от Telegram и Discord.

@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.article.service;
 
 import club.ttg.dnd5.config.properties.DiscordProperties;
 import club.ttg.dnd5.domain.article.model.Article;
+import club.ttg.dnd5.domain.article.model.DiscordMention;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Отправляет и синхронизирует пост статьи / новости в Discord-канале через входящий вебхук.
@@ -30,6 +33,10 @@ import java.util.Map;
  * сообщение (не embed): жирный заголовок + текст в Discord-markdown (см. {@link DiscordMarkdownFormatter}),
  * обложку прикрепляем файлом из S3 (см. {@link ArticleImageSource}). Длинный пост не обрезается: первый кусок
  * (≤2000) идёт первым сообщением с обложкой, остаток досылается отдельными сообщениями (≤2000).
+ * <p>
+ * Пинг ({@link DiscordMention}) — выбор автора в админке: строка {@code @everyone} / упоминания роли идёт
+ * первой строкой первого сообщения, и ровно она разрешается в {@code allowed_mentions}. Всё остальное
+ * ({@code @everyone}, роли и юзеры, случайно попавшие в текст новости) не звенит никогда.
  * <p>
  * Отправляем с {@code ?wait=true}, чтобы получить id сообщения (снежинку) — он нужен для правки
  * ({@code PATCH /messages/{id}}) и удаления ({@code DELETE /messages/{id}}). Итог отправки — явный статус,
@@ -88,7 +95,8 @@ public class DiscordPublisher {
             return PublishResult.giveUp();
         }
 
-        List<String> messages = buildMessages(article);
+        DiscordMention mention = effectiveMention(article);
+        List<String> messages = buildMessages(article, mention);
         if (messages.isEmpty()) {
             // Ни заголовка, ни текста после рендера — постить нечего (страховка; обычно отсекается проверкой выше).
             return PublishResult.giveUp();
@@ -97,7 +105,7 @@ public class DiscordPublisher {
         // Первое сообщение: с обложкой (файлом), если она есть; иначе текстом.
         SendOutcome first = null;
         if (StringUtils.hasText(article.getPreviewImageUrl())) {
-            SendOutcome sent = trySendPhoto(article, messages.get(0));
+            SendOutcome sent = trySendPhoto(article, messages.get(0), mention);
             if (sent != null) {
                 if (sent.result() == SendResult.TRANSIENT) {
                     // Временный сбой (загрузка файла/сеть) — не теряем обложку, повторим весь пост.
@@ -111,7 +119,7 @@ public class DiscordPublisher {
             }
         }
         if (first == null) {
-            first = sendMessage(messages.get(0));
+            first = sendMessage(messages.get(0), mention);
         }
 
         if (first.result() != SendResult.SENT) {
@@ -120,8 +128,9 @@ public class DiscordPublisher {
         String firstId = first.messageId();
 
         // Хвост — отдельными сообщениями (best-effort: если не ушло, пост неполный, но первое не дублируем).
+        // Пинг в хвост не идёт: звеним ровно один раз, первым сообщением поста.
         for (int i = 1; i < messages.size(); i++) {
-            if (sendMessage(messages.get(i)).result() != SendResult.SENT) {
+            if (sendMessage(messages.get(i), DiscordMention.NONE).result() != SendResult.SENT) {
                 log.warn("Не отправлено хвостовое сообщение {}/{} для {} — пост неполный",
                         i, messages.size() - 1, article.getUrl());
             }
@@ -135,13 +144,17 @@ public class DiscordPublisher {
      * Хвостовые сообщения многочастного поста правка тоже не трогает (правится только первое).
      */
     public EditResult editPost(Article article) {
-        List<String> messages = buildMessages(article);
+        // Строку пинга в тексте сохраняем (иначе правка «съела» бы её из поста), но звенеть правке
+        // не даём: allowed_mentions гасим полностью. Discord на PATCH разбирает упоминания заново и,
+        // по своей же документации, без оглядки на исходный запрос — без явного запрета синхронизация
+        // правки могла бы пингануть канал второй раз.
+        List<String> messages = buildMessages(article, effectiveMention(article));
         if (messages.isEmpty()) {
             // Правка сделала запись пустой — пустой content Discord отвергнет, корректной альтернативы нет:
             // прекращаем попытки (планировщик снимет флаг dirty).
             return EditResult.GIVE_UP;
         }
-        Map<String, Object> payload = messagePayload(messages.get(0));
+        Map<String, Object> payload = messagePayload(messages.get(0), DiscordMention.NONE);
         return switch (send(HttpMethod.PATCH, messageUri(article.getDiscordMessageId()), payload,
                 MediaType.APPLICATION_JSON).result()) {
             case SENT -> EditResult.SYNCED;
@@ -162,15 +175,19 @@ public class DiscordPublisher {
     }
 
     /**
-     * Собирает список сообщений: первое включает жирный заголовок и первый кусок описания (≤ MESSAGE_LIMIT),
-     * остальные — продолжение описания (≤ MESSAGE_LIMIT).
+     * Собирает список сообщений: первое включает пинг (если выбран), жирный заголовок и первый кусок
+     * описания (≤ MESSAGE_LIMIT), остальные — продолжение описания (≤ MESSAGE_LIMIT).
      */
-    private List<String> buildMessages(Article article) {
+    private List<String> buildMessages(Article article, DiscordMention mention) {
         String title = nullToEmpty(article.getTitle());
         // Заголовок — литеральный текст: экранируем markdown-метасимволы (в т.ч. `[`/`]`, чтобы `[текст](url)`
         // в названии не стал ссылкой), чтобы разметка в названии не ломала жирную «шапку» поста (тело,
         // наоборот, несёт намеренную разметку и не экранируется).
-        String head = StringUtils.hasText(title) ? "**" + escapeMarkdown(title) + "**" : "";
+        String titleLine = StringUtils.hasText(title) ? "**" + escapeMarkdown(title) + "**" : "";
+        // Пинг — отдельной строкой над заголовком; вместе они образуют «шапку» первого сообщения.
+        String head = Stream.of(mentionText(mention), titleLine)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining("\n\n"));
         int firstBodyLimit = Math.max(0, MESSAGE_LIMIT - head.length() - 2);
         List<String> bodyChunks = formatter.toMarkdownChunks(description(article), firstBodyLimit, MESSAGE_LIMIT);
 
@@ -197,18 +214,18 @@ public class DiscordPublisher {
      * или объекта нет) — тогда уходим текстом. Временный сбой чтения из S3 пробрасывается наружу
      * (планировщик освободит запись и повторит).
      */
-    private SendOutcome trySendPhoto(Article article, String content) {
+    private SendOutcome trySendPhoto(Article article, String content, DiscordMention mention) {
         byte[] bytes = imageSource.bytes(article.getPreviewImageUrl());
         if (bytes == null) {
             return null;
         }
-        return sendMessageWithImage(content, bytes, imageSource.filename(article.getPreviewImageUrl()));
+        return sendMessageWithImage(content, bytes, imageSource.filename(article.getPreviewImageUrl()), mention);
     }
 
-    private SendOutcome sendMessageWithImage(String content, byte[] image, String filename) {
+    private SendOutcome sendMessageWithImage(String content, byte[] image, String filename, DiscordMention mention) {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         // Текст и настройки — JSON-частью payload_json, картинка — отдельным файлом (files[0]).
-        builder.part("payload_json", toJson(messagePayload(content)), MediaType.APPLICATION_JSON);
+        builder.part("payload_json", toJson(messagePayload(content, mention)), MediaType.APPLICATION_JSON);
         builder.part("files[0]", new ByteArrayResource(image) {
             @Override
             public String getFilename() {
@@ -218,16 +235,64 @@ public class DiscordPublisher {
         return send(HttpMethod.POST, sendUri(), builder.build(), MediaType.MULTIPART_FORM_DATA);
     }
 
-    private SendOutcome sendMessage(String content) {
-        return send(HttpMethod.POST, sendUri(), messagePayload(content), MediaType.APPLICATION_JSON);
+    private SendOutcome sendMessage(String content, DiscordMention mention) {
+        return send(HttpMethod.POST, sendUri(), messagePayload(content, mention), MediaType.APPLICATION_JSON);
     }
 
-    private Map<String, Object> messagePayload(String content) {
+    private Map<String, Object> messagePayload(String content, DiscordMention mention) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("content", content);
-        // Не пинговать @everyone/@here/роли, если они случайно окажутся в тексте новости.
-        payload.put("allowed_mentions", Map.of("parse", List.of()));
+        payload.put("allowed_mentions", allowedMentions(mention));
         return payload;
+    }
+
+    /**
+     * Кому разрешено звенеть. По умолчанию — никому: {@code parse: []} гасит {@code @everyone}/{@code @here}
+     * и роли, случайно попавшие в текст новости. Разрешаем ровно то, что выбрано в админке: либо
+     * {@code @everyone}, либо одну конкретную роль (её id — явным списком, прочие роли в тексте молчат).
+     */
+    private Map<String, Object> allowedMentions(DiscordMention mention) {
+        if (mention == DiscordMention.EVERYONE) {
+            return Map.of("parse", List.of("everyone"));
+        }
+        if (mention == DiscordMention.SERVER) {
+            // "roles" в parse и явный список ролей взаимоисключающи — поэтому parse пустой.
+            return Map.of("parse", List.of(), "roles", List.of(properties.getServerRoleId()));
+        }
+        return Map.of("parse", List.of());
+    }
+
+    /**
+     * Пинг, который реально отправим: выбранный в админке, но {@code SERVER} без настроенного id роли
+     * деградирует до «без пинга» — публикацию из-за этого не роняем и не звеним не тем.
+     */
+    private DiscordMention effectiveMention(Article article) {
+        DiscordMention mention = article.getDiscordMention();
+        if (mention == null) {
+            return DiscordMention.NONE;
+        }
+        if (mention == DiscordMention.SERVER && !isRoleId(properties.getServerRoleId())) {
+            // Не задан или задан не снежинкой (напр. вписали название роли): Discord отверг бы запрос
+            // целиком (400), и новость не ушла бы вовсе — лучше опубликовать без пинга.
+            log.warn("Для {} выбран пинг роли, но discord.server-role-id пуст или не id роли — публикую без пинга",
+                    article.getUrl());
+            return DiscordMention.NONE;
+        }
+        return mention;
+    }
+
+    /** id роли Discord — снежинка (только цифры). */
+    private static boolean isRoleId(String value) {
+        return StringUtils.hasText(value) && value.chars().allMatch(Character::isDigit);
+    }
+
+    /** Текст пинга в начале первого сообщения поста. Пусто — без пинга. */
+    private String mentionText(DiscordMention mention) {
+        return switch (mention) {
+            case EVERYONE -> "@everyone";
+            case SERVER -> "<@&" + properties.getServerRoleId() + ">";
+            case NONE -> "";
+        };
     }
 
     private SendOutcome send(HttpMethod method, URI uri, Object body, MediaType contentType) {

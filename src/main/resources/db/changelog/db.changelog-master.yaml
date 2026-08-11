@@ -283,3 +283,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/05-01-spell-damage-formula-targets.yaml
   - include:
       file: db/changelog/2026/08/08-01-add-initiative-participant-state.yaml
+  - include:
+      file: db/changelog/2026/08/11-01-add-discord-mention-to-article.yaml
