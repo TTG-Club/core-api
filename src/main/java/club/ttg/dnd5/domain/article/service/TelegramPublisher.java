@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
  * Основной режим — Instant View: пост уходит ОДНИМ сообщением, где весь смысл несёт карточка превью
  * ссылки {@code t.me/iv?url=…&rhash=…} — обложку, заголовок и анонс Telegram берёт из og-разметки нашей
  * страницы {@code /iv/articles/<slug>} (см. {@link ArticleInstantViewService}), а по кнопке на карточке
- * текст статьи открывается нативно. В самом тексте сообщения — только ссылка на статью на сайте, чтобы
- * не дублировать карточку. Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
+ * текст статьи открывается нативно. Сам текст сообщения — невидимый символ-заглушка: под карточкой не
+ * должно быть ни одной лишней строки. Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
  * Режим включается, когда задан {@code telegram.instant-view-rhash} (шаблон создан на
  * instantview.telegram.org, см. {@code docs/telegram-instant-view.md}).
  * <p>
@@ -52,6 +52,14 @@ public class TelegramPublisher {
     /** Лимиты Bot API: подпись к фото и обычное сообщение (в символах). */
     private static final int CAPTION_LIMIT = 1024;
     private static final int MESSAGE_LIMIT = 4096;
+
+    /**
+     * Текст поста с Instant View: невидимый символ-заглушка (U+2060 WORD JOINER). Заголовок, анонс и
+     * обложку показывает карточка превью, полный текст открывается кнопкой на ней — писать под карточкой
+     * нечего, но и пустым текст быть не может: Bot API требует непустой {@code text}. Пробел не годится
+     * (Telegram обрезает его и считает сообщение пустым), а word joiner не отображается ничем.
+     */
+    private static final String INSTANT_VIEW_TEXT = "\u2060";
 
     /** Итог одного вызова Bot API. */
     private enum SendResult {
@@ -116,14 +124,14 @@ public class TelegramPublisher {
         // обложку карточки Telegram берёт из og-разметки страницы. Одно сообщение, без хвоста и заливки фото.
         String instantViewUrl = instantViewUrl(article);
         if (instantViewUrl != null) {
-            String text = instantViewText(article);
-            SendOutcome sent = send("sendMessage", linkPreviewPayload(text, instantViewUrl));
+            SendOutcome sent = send("sendMessage", linkPreviewPayload(INSTANT_VIEW_TEXT, instantViewUrl));
             if (sent.result() == SendResult.REJECTED) {
                 // Карточку собрать не удалось (страница ещё не отдаётся роботу, битый rhash) — новость
-                // всё равно должна уйти: шлём тот же текст без превью, ссылка на статью в нём остаётся.
+                // всё равно должна уйти. Без карточки пустой текст-заглушка оставил бы в канале пустое
+                // сообщение, поэтому в фоллбэке пишем заголовок и ссылку на статью.
                 log.warn("Telegram отклонил пост с превью Instant View для {} — отправляю без карточки",
                         article.getUrl());
-                sent = send("sendMessage", messagePayload(text));
+                sent = send("sendMessage", messagePayload(noPreviewText(article)));
             }
             if (sent.result() != SendResult.SENT) {
                 return sent.result() == SendResult.TRANSIENT ? PublishResult.retry() : PublishResult.giveUp();
@@ -227,13 +235,14 @@ public class TelegramPublisher {
     }
 
     /**
-     * Текст поста с Instant View — одна строка-ссылка на статью НА САЙТЕ. Заголовок, анонс и обложку
-     * показывает карточка превью (Telegram берёт их из og-разметки IV-страницы), а сам текст статьи
-     * открывается кнопкой на карточке — дублировать всё это в сообщении незачем. Совсем пустым текст
-     * быть не может: Bot API требует непустой {@code text}.
+     * Запасной текст поста, когда карточку Instant View показать не удалось: заголовок и ссылка на статью
+     * на сайте. Нужен только для этого случая — с карточкой в сообщении стоит {@link #INSTANT_VIEW_TEXT},
+     * а без неё пост из одного невидимого символа выглядел бы в канале пустым.
      */
-    private String instantViewText(Article article) {
-        return "<a href=\"" + escape(siteUrl(article)) + "\">Читать на сайте →</a>";
+    private String noPreviewText(Article article) {
+        String link = "<a href=\"" + escape(siteUrl(article)) + "\">Читать на сайте →</a>";
+        String title = nullToEmpty(article.getTitle());
+        return StringUtils.hasText(title) ? "<b>" + escape(title) + "</b>\n\n" + link : link;
     }
 
     /** Адрес статьи на сайте; без публичной базы — сама база (ссылка всё равно должна быть валидной). */
@@ -249,7 +258,7 @@ public class TelegramPublisher {
      */
     public EditResult editPost(Article article) {
         // Одиночный текстовый пост правим как пост с Instant View: даже если его отправили до включения
-        // режима, он станет короче и получит ссылку на статью (обложку карточка возьмёт из og-разметки).
+        // режима, текст уступит место карточке (заголовок, анонс и обложку она возьмёт из og-разметки).
         // Пост с фото и многочастный пост оставляем на прежнем пути: фото правкой в текст не превратить,
         // а короткий текст вместо первого сообщения оставил бы хвостовые висеть в канале обрывками.
         String instantViewUrl = instantViewUrl(article);
@@ -258,7 +267,7 @@ public class TelegramPublisher {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("chat_id", properties.getChatId());
             payload.put("message_id", article.getTelegramMessageId());
-            payload.put("text", instantViewText(article));
+            payload.put("text", INSTANT_VIEW_TEXT);
             payload.put("parse_mode", properties.getParseMode());
             payload.put("link_preview_options", linkPreviewOptions(instantViewUrl));
             return switch (send("editMessageText", payload).result()) {
