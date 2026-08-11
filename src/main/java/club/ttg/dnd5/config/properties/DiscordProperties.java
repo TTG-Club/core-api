@@ -28,6 +28,13 @@ public class DiscordProperties {
      */
     private String webhookUrl;
 
+    /**
+     * id роли server (снежинка) — для пинга роли при публикации ({@code DiscordMention.SERVER}).
+     * Берётся в Discord: режим разработчика → ПКМ по роли → «Копировать ID роли». Пусто — пинг ролью
+     * недоступен: пост уйдёт без него (в лог — предупреждение). Не секрет, но задаём так же из окружения.
+     */
+    private String serverRoleId;
+
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);
 

@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.tool.tracker.service;
 
 import club.ttg.dnd5.domain.tool.tracker.model.InitiativeParticipant;
 import club.ttg.dnd5.domain.tool.tracker.model.InitiativeTracker;
+import club.ttg.dnd5.domain.tool.tracker.model.ParticipantCondition;
 import club.ttg.dnd5.domain.tool.tracker.model.TrackerStatus;
 import club.ttg.dnd5.exception.ApiException;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 
 /**
  * Боевая логика трекера инициативы: броски d20, порядок хода и переключение ходов.
@@ -25,6 +27,15 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @Service
 public class InitiativeCombatService {
+
+    /** Состояние спадает на границе раунда — у всех разом. */
+    private static final String ROUND_END_EXPIRY = "round-end";
+
+    /** Состояние спадает в начале хода того, на кого наложено (значение по умолчанию). */
+    private static final String TURN_START_EXPIRY = "turn-start";
+
+    /** Состояние спадает в конце хода того, на кого наложено. */
+    private static final String TURN_END_EXPIRY = "turn-end";
 
     /**
      * Бросает d20 всем участникам (полный ре-ролл) и пересобирает порядок, но бой НЕ начинает —
@@ -104,15 +115,63 @@ public class InitiativeCombatService {
             tracker.setCurrentParticipantId(null);
             return;
         }
+        // Ход уходит от текущего — снимаем то, что держалось «до конца своего хода».
+        expireConditions(order, tracker.getRound(), TURN_END_EXPIRY,
+                participant -> participant.getId().equals(tracker.getCurrentParticipantId()));
         InitiativeParticipant next = result.participant();
         if (result.wrapped()) {
             tracker.setRound(tracker.getRound() + 1);
+            // Граница раунда: у всех разом, чей бы ход ни начинался.
+            expireConditions(order, tracker.getRound(), ROUND_END_EXPIRY, participant -> true);
             if (tracker.isRerollEachRound()) {
                 order.stream().filter(participant -> !participant.isDead()).forEach(this::roll);
                 next = firstAlive(participants);
             }
         }
+        if (next != null) {
+            InitiativeParticipant starting = next;
+            expireConditions(order, tracker.getRound(), TURN_START_EXPIRY,
+                    participant -> participant == starting);
+        }
         tracker.setCurrentParticipantId(next != null ? next.getId() : null);
+    }
+
+    /**
+     * Снимает состояния, чей срок вышел, у участников, попавших под {@code target}. Считает сервер,
+     * а не клиент: ход переключает он же, и у второго открытого экрана состояния не разъезжаются.
+     * <p>
+     * Момент снятия выбирает сам мастер при наложении: на границе раунда, в начале своего хода
+     * (по умолчанию) или в конце своего хода — до этого момента участник успевает походить под
+     * состоянием. Состояния без срока держатся, пока мастер не снимет их сам.
+     *
+     * @param participants участники боя.
+     * @param round текущий раунд.
+     * @param expiry разбираемый момент снятия.
+     * @param target кого проверяем на этом шаге.
+     */
+    private static void expireConditions(List<InitiativeParticipant> participants,
+                                         int round,
+                                         String expiry,
+                                         Predicate<InitiativeParticipant> target) {
+        for (InitiativeParticipant participant : participants) {
+            List<ParticipantCondition> conditions = participant.getConditions();
+            if (conditions == null || conditions.isEmpty() || !target.test(participant)) {
+                continue;
+            }
+            List<ParticipantCondition> active = conditions.stream()
+                    .filter(condition -> condition.getExpiresAtRound() == null
+                            || condition.getExpiresAtRound() > round
+                            || !expiry.equals(expiryOf(condition)))
+                    .toList();
+            if (active.size() != conditions.size()) {
+                participant.setConditions(active);
+            }
+        }
+    }
+
+    /** Момент снятия состояния; не задан (записи прежних версий) — начало своего хода. */
+    private static String expiryOf(ParticipantCondition condition) {
+        return condition.getExpiresOn() != null ? condition.getExpiresOn() : TURN_START_EXPIRY;
     }
 
     /**
@@ -173,8 +232,9 @@ public class InitiativeCombatService {
     }
 
     /**
-     * Возвращает трекер в подготовку: броски очищаются, повержённые «оживают», состав участников
-     * сохраняется.
+     * Возвращает трекер в подготовку: броски очищаются, повержённые «оживают», наложенные
+     * состояния снимаются, состав участников сохраняется. Хиты не трогаются — конец боя не лечит,
+     * а восстанавливает их мастер сам (отдыхом или вручную).
      */
     public void reset(InitiativeTracker tracker, List<InitiativeParticipant> participants) {
         tracker.setStatus(TrackerStatus.PREPARING);
@@ -185,6 +245,7 @@ public class InitiativeCombatService {
             participant.setInitiativeTotal(null);
             participant.setTieRoll(null);
             participant.setDead(false);
+            participant.setConditions(List.of());
         });
     }
 

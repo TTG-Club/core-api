@@ -185,6 +185,28 @@ public class InitiativeTrackerService {
         if (request.getDead() != null) {
             participant.setDead(request.getDead());
         }
+        // Состояние боя (хиты, КД, цвет, лист, состояния) правится тем же запросом: у клиента это
+        // одна строка участника, и заводить на каждое поле свою ручку незачем.
+        if (request.getCurrentHitPoints() != null) {
+            participant.setCurrentHitPoints(request.getCurrentHitPoints());
+        }
+        if (request.getMaxHitPoints() != null) {
+            participant.setMaxHitPoints(request.getMaxHitPoints());
+        }
+        if (request.getArmorClass() != null) {
+            participant.setArmorClass(request.getArmorClass());
+        }
+        if (StringUtils.hasText(request.getColor())) {
+            participant.setColor(request.getColor().trim());
+        }
+        if (request.getSheetLink() != null) {
+            participant.setSheetLink(request.getSheetLink());
+        }
+        // Список состояний приходит целиком: пустой снимает все, поэтому проверяем на null,
+        // а не на пустоту.
+        if (request.getConditions() != null) {
+            participant.setConditions(request.getConditions());
+        }
         combatService.recalculateTotal(participant);
         touch(tracker);
         return toDetailedResponse(tracker);
@@ -267,6 +289,12 @@ public class InitiativeTrackerService {
                 newParticipant(tracker, ParticipantType.PLAYER, participantRepository.findMaxSeq(tracker.getId()) + 1);
         participant.setName(request.getName().trim());
         participant.setInitiativeBonus(request.getInitiativeBonus() != null ? request.getInitiativeBonus() : 0);
+        // Игрок из листа персонажа приходит сразу с хитами, КД и привязкой: иначе клиенту
+        // пришлось бы дописывать их вторым запросом, вылавливая id нового участника из ответа.
+        participant.setCurrentHitPoints(request.getCurrentHitPoints());
+        participant.setMaxHitPoints(request.getMaxHitPoints());
+        participant.setArmorClass(request.getArmorClass());
+        participant.setSheetLink(request.getSheetLink());
         return participant;
     }
 

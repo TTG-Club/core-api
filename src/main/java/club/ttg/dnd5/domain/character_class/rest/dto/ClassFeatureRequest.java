@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.AbilityBonus;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
+import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -51,6 +52,9 @@ public class ClassFeatureRequest {
 
     @Schema(description = "Умение даёт выбор одной черты категории «Боевой стиль»")
     private boolean fightingStyleChoice;
+
+    @Schema(description = "Умение даёт выбор владения навыками: сколько и из какого пула")
+    private SkillProficiency skillChoice;
 
     @Schema(description = "Бонус к увеличивает характеристик")
     private AbilityBonus abilityBonus;

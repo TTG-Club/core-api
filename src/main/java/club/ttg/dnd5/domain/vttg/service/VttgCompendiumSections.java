@@ -66,6 +66,7 @@ public class VttgCompendiumSections {
                 leaf("species", "Виды", "tabler:users", "species", null),
                 leaf("backgrounds", "Предыстории", "tabler:book", "background", null),
                 leaf("feats", "Черты", "tabler:star", "feat", featView()),
+                leaf("glossary", "Глоссарий", "tabler:book-2", "glossary", glossaryView()),
                 group(List.of(
                         leaf("weapons", "Оружие", "tabler:sword", "weapon", listView()),
                         leaf("armor", "Доспехи", "tabler:shield", "equipment", listView()),
@@ -147,6 +148,19 @@ public class VttgCompendiumSections {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("layout", "list");
         view.put("groupBy", groupBy("category", "string"));
+        return view;
+    }
+
+    /**
+     * Глоссарий — длинный плоский справочник, поэтому список с фильтром и группировкой
+     * по категории тега («Действие», «Состояние», …), которую отдаёт {@link VttgGlossaryMapper}.
+     */
+    private Map<String, Object> glossaryView() {
+        Map<String, Object> view = filtered();
+        view.put("groupBy", groupBy("category", "string"));
+        view.put("filters", List.of(
+                enumFilter("category", "Категория", "category", "string", "list")
+        ));
         return view;
     }
 
