@@ -41,4 +41,13 @@ public class FeatMechanics {
     @Schema(description = "Выборы, которые игрок делает при взятии черты",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<FeatChoice> choices;
+
+    /**
+     * Постоянные модификаторы листа: хиты, скорости, КД, чувства, защиты. Сгруппированы
+     * отдельно, чтобы механика не превратилась в плоский мешок из тридцати полей, когда
+     * подтянутся владения, магия и ресурсы.
+     */
+    @Schema(description = "Постоянные модификаторы листа персонажа",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private FeatModifiers modifiers;
 }
