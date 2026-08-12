@@ -291,3 +291,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/09-03-backfill-feat-prerequisite-details.yaml
   - include:
       file: db/changelog/2026/08/09-04-backfill-feat-spellcasting-ability-choice.yaml
+  - include:
+      file: db/changelog/2026/08/11-01-add-discord-mention-to-article.yaml

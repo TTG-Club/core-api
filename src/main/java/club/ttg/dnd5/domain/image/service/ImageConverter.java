@@ -7,6 +7,7 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.color.ColorSpace;
@@ -55,6 +56,111 @@ public final class ImageConverter
         byte[] webp = writeWebp(normalized, effectiveOptions);
 
         return new ConvertedImage(webp, "image/webp", normalized.getWidth(), normalized.getHeight(), sourceFormat);
+    }
+
+    /**
+     * Перекодирует картинку в формат, который принимают площадки без поддержки WebP (загрузка фото на стену
+     * ВКонтакте — только JPG / PNG / GIF): PNG, если у картинки есть альфа-канал, иначе JPEG (прозрачность
+     * JPEG не хранит). Картинку, уже лежащую в JPEG или PNG, возвращает как есть — лишнее перекодирование
+     * только теряет качество.
+     * <p>
+     * Нужно потому, что все загруженные на сайт картинки хранятся в S3 в WebP (см. {@code ImageService#upload}),
+     * а upload-сервер ВК на WebP молча отвечает {@code photo: "[]"} — обложка теряется, пост уходит текстом.
+     *
+     * @param inputBytes  байты исходной картинки
+     * @param jpegQuality качество JPEG (0..1), если перекодировать пришлось в JPEG
+     * @throws IOException если картинку не удалось прочитать или записать
+     */
+    public static EncodedImage toJpegOrPng(byte[] inputBytes, float jpegQuality) throws IOException
+    {
+        Objects.requireNonNull(inputBytes, "inputBytes");
+        if (inputBytes.length == 0)
+        {
+            throw new IllegalArgumentException("inputBytes is empty");
+        }
+
+        SourceFormat source = SourceFormat.fromSignature(inputBytes).orElse(SourceFormat.UNKNOWN);
+        if (source == SourceFormat.JPEG)
+        {
+            return new EncodedImage(inputBytes, SourceFormat.JPEG.contentType, "jpg");
+        }
+        if (source == SourceFormat.PNG)
+        {
+            return new EncodedImage(inputBytes, SourceFormat.PNG.contentType, "png");
+        }
+
+        BufferedImage image = readSingleImage(inputBytes);
+        if (image.getColorModel() != null && image.getColorModel().hasAlpha())
+        {
+            return new EncodedImage(writePng(image), SourceFormat.PNG.contentType, "png");
+        }
+        return new EncodedImage(writeJpeg(image, jpegQuality), SourceFormat.JPEG.contentType, "jpg");
+    }
+
+    private static byte[] writePng(BufferedImage image) throws IOException
+    {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
+        {
+            if (!ImageIO.write(image, "png", baos))
+            {
+                throw new IOException("Не найден PNG ImageWriter");
+            }
+            return baos.toByteArray();
+        }
+    }
+
+    private static byte[] writeJpeg(BufferedImage image, float quality) throws IOException
+    {
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
+        if (!writers.hasNext())
+        {
+            throw new IOException("Не найден JPEG ImageWriter");
+        }
+        ImageWriter writer = writers.next();
+
+        // JPEG не хранит альфу и не умеет писать ARGB-растр: если она есть — подкладываем белый фон.
+        BufferedImage opaque = image.getColorModel() != null && image.getColorModel().hasAlpha()
+                ? flattenOnWhite(image)
+                : image;
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ImageOutputStream ios = ImageIO.createImageOutputStream(baos))
+        {
+            writer.setOutput(ios);
+
+            ImageWriteParam param = writer.getDefaultWriteParam();
+            if (param.canWriteCompressed())
+            {
+                param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                param.setCompressionQuality(clamp01(quality));
+            }
+
+            writer.write(null, new IIOImage(opaque, null, null), param);
+            ios.flush();
+            return baos.toByteArray();
+        }
+        finally
+        {
+            writer.dispose();
+        }
+    }
+
+    /** Кладёт картинку на белый фон: прозрачные области иначе стали бы чёрными. */
+    private static BufferedImage flattenOnWhite(BufferedImage src)
+    {
+        BufferedImage rgb = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = rgb.createGraphics();
+        try
+        {
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, src.getWidth(), src.getHeight());
+            g.drawImage(src, 0, 0, null);
+        }
+        finally
+        {
+            g.dispose();
+        }
+        return rgb;
     }
 
     private static BufferedImage readSingleImage(byte[] inputBytes) throws IOException
@@ -291,6 +397,14 @@ public final class ImageConverter
     }
 
     public record ConvertedImage(byte[] bytes, String contentType, int width, int height, SourceFormat sourceFormat)
+    {
+    }
+
+    /**
+     * Готовые к отправке байты картинки: content-type и расширение — фактические (по ним собирается
+     * имя файла и заголовок части multipart-запроса, см. {@code VkPublisher#uploadCover}).
+     */
+    public record EncodedImage(byte[] bytes, String contentType, String extension)
     {
     }
 

@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.article.service;
 
 import club.ttg.dnd5.config.properties.VkProperties;
 import club.ttg.dnd5.domain.article.model.Article;
+import club.ttg.dnd5.domain.image.service.ImageConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
 
@@ -25,7 +27,8 @@ import java.util.Set;
  * <p>
  * Ничего не знает про БД и транзакции — только строит текст и делает HTTP-вызовы. Пост — обычный текст
  * (VK не рендерит форматирование, см. {@link VkTextFormatter}): заголовок + текст, обложку заливаем на
- * стену файлом из S3 (см. {@link ArticleImageSource}). В отличие от Telegram/Discord пост один (стена — это
+ * стену файлом из S3 (см. {@link ArticleImageSource}) — предварительно перекодировав её из WebP в JPEG/PNG,
+ * потому что upload-сервер VK WebP не принимает. В отличие от Telegram/Discord пост один (стена — это
  * лента, дробить новость на несколько записей неуместно): очень длинный текст усекаем до лимита VK.
  * <p>
  * Пост уходит от имени сообщества ({@code wall.post}, {@code owner_id=-<groupId>}, {@code from_group=1});
@@ -41,6 +44,9 @@ public class VkPublisher {
 
     /** Практический лимит длины текста поста на стене VK (символы). Реальный предел ~16384 — берём с запасом. */
     private static final int MESSAGE_LIMIT = 16000;
+
+    /** Качество JPEG при перекодировании обложки из WebP под требования ВК (см. {@link #toVkFormat}). */
+    private static final float COVER_JPEG_QUALITY = 0.9f;
 
     /** Коды ошибок VK, при которых имеет смысл повторить (временные). Остальное — перманентный отказ. */
     private static final Set<Integer> TRANSIENT_ERROR_CODES = Set.of(
@@ -251,7 +257,11 @@ public class VkPublisher {
             return Cover.none();
         }
 
-        ApiOutcome uploaded = uploadFile(uploadUrl, bytes, imageSource.filename(article.getPreviewImageUrl()));
+        // Обложки лежат в S3 в WebP (см. ImageService#upload), а upload-сервер ВК принимает только JPG/PNG/GIF
+        // и на WebP молча отвечает photo="[]" — поэтому перекодируем перед загрузкой.
+        ImageConverter.EncodedImage encoded = toVkFormat(bytes, article);
+        ApiOutcome uploaded = uploadFile(uploadUrl, encoded,
+                coverFilename(imageSource.filename(article.getPreviewImageUrl()), encoded.extension()));
         if (uploaded.result() == SendResult.TRANSIENT) {
             return Cover.retry();
         }
@@ -260,11 +270,11 @@ public class VkPublisher {
             return Cover.none();
         }
         String photo = uploaded.response().path("photo").asText("");
-        // Пустой photo (или "[]") — VK не принял файл (частая причина — формат/размер/пропорции картинки,
-        // которые ВК фильтрует строже Telegram/Discord): постим без обложки.
+        // Пустой photo (или "[]") — VK не принял файл. Формат мы уже привели к JPEG/PNG, так что остаются
+        // размер/пропорции картинки, которые ВК фильтрует строже Telegram/Discord: постим без обложки.
         if (!StringUtils.hasText(photo) || "[]".equals(photo)) {
-            log.info("VK не принял картинку обложки для {} (формат/размер/пропорции?) — отправляю текстом",
-                    article.getUrl());
+            log.warn("VK не принял картинку обложки {} для {} (размер/пропорции?) — отправляю текстом",
+                    article.getPreviewImageUrl(), article.getUrl());
             return Cover.none();
         }
 
@@ -323,15 +333,39 @@ public class VkPublisher {
         }
     }
 
+    /**
+     * Перекодирует обложку в формат, который принимает ВК (JPEG / PNG). Если перекодировать не вышло
+     * (битый файл / нет ImageIO-плагина) — отдаём исходные байты: хуже, чем сейчас, не станет, а VK
+     * ответит «не принял картинку» и пост уйдёт текстом.
+     */
+    private ImageConverter.EncodedImage toVkFormat(byte[] bytes, Article article) {
+        try {
+            return ImageConverter.toJpegOrPng(bytes, COVER_JPEG_QUALITY);
+        } catch (IOException | RuntimeException ex) {
+            log.warn("Не удалось перекодировать обложку {} для VK ({}) — пробую загрузить как есть",
+                    article.getPreviewImageUrl(), ex.getMessage());
+            return new ImageConverter.EncodedImage(bytes, MediaType.APPLICATION_OCTET_STREAM_VALUE, null);
+        }
+    }
+
+    /** Имя файла обложки с расширением под фактический формат загружаемых байт ({@code cover.jpg}). */
+    private static String coverFilename(String filename, String extension) {
+        if (!StringUtils.hasText(extension)) {
+            return filename;
+        }
+        int dot = filename.lastIndexOf('.');
+        return (dot > 0 ? filename.substring(0, dot) : filename) + "." + extension;
+    }
+
     /** Загрузка файла обложки на выданный VK upload-сервер (multipart, поле {@code photo}). */
-    private ApiOutcome uploadFile(String uploadUrl, byte[] bytes, String filename) {
+    private ApiOutcome uploadFile(String uploadUrl, ImageConverter.EncodedImage image, String filename) {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("photo", new ByteArrayResource(bytes) {
+        builder.part("photo", new ByteArrayResource(image.bytes()) {
             @Override
             public String getFilename() {
                 return filename;
             }
-        });
+        }).contentType(MediaType.parseMediaType(image.contentType()));
         try {
             JsonNode json = vkRestClient.post().uri(URI.create(uploadUrl))
                     .contentType(MediaType.MULTIPART_FORM_DATA)

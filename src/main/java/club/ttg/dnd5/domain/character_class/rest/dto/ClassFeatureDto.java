@@ -55,6 +55,9 @@ public class ClassFeatureDto {
     @Schema(description = "Умение даёт выбор одной черты категории «Боевой стиль»")
     private boolean fightingStyleChoice;
 
+    @Schema(description = "Выбор владения навыками, который даёт умение")
+    private ClassFeatureSkillChoiceDto skillChoice;
+
     public ClassFeatureDto(ClassFeature classFeature, boolean isSubclass) {
         this(classFeature, isSubclass, isSubclass);
     }
@@ -70,6 +73,9 @@ public class ClassFeatureDto {
         this.hideInSubclasses = classFeature.isHideInSubclasses();
         this.abilityImprovement = classFeature.isAbilityImprovement();
         this.fightingStyleChoice = classFeature.isFightingStyleChoice();
+        this.skillChoice = Optional.ofNullable(classFeature.getSkillChoice())
+                .map(ClassFeatureSkillChoiceDto::new)
+                .orElse(null);
         if (filterForSubclassContext) {
             this.scaling = Optional.ofNullable(classFeature.getScaling())
                     .orElse(List.of())

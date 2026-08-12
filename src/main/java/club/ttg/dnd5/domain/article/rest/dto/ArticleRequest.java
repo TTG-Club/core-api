@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.article.rest.dto;
 
 import club.ttg.dnd5.domain.article.model.ArticleType;
+import club.ttg.dnd5.domain.article.model.DiscordMention;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -63,6 +64,12 @@ public class ArticleRequest {
             + "запись один раз уйдёт в канал, если интеграция включена глобально. false — в канал не отправлять. "
             + "Независима от Telegram.")
     private boolean publishToDiscord;
+
+    @Schema(description = "Пинг участников Discord-канала при публикации: NONE (по умолчанию) — без пинга, "
+            + "EVERYONE — @everyone, SERVER — роль server. Учитывается только при publishToDiscord=true и "
+            + "только в первом сообщении поста; правка поста повторно не пингует.")
+    @Nullable
+    private DiscordMention discordMention;
 
     @Schema(description = "Опубликовать на стену сообщества ВКонтакте. true — при публикации (сейчас или по "
             + "наступлении даты) запись один раз уйдёт на стену, если интеграция включена глобально. false — "
