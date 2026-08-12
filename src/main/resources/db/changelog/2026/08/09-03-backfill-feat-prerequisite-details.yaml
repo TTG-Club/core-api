@@ -1,0 +1,102 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-09-03-backfill-feat-prerequisite-details
+      author: claude
+      comment: >
+        Разбирает строку prerequisite в prerequisite_details. Требование уровня в справочнике
+        написано двумя десятками способов («Уровень 4+», «4-й уровень и выше», «4+ уровень»),
+        поэтому берётся двумя шаблонами. Разбираются: уровень, характеристика 13+, классовое
+        умение, сеттинг кампании и требование любой метки дракона. Ссылки на конкретные черты,
+        классы, виды и предыстории остаются на ручную разметку — по названию из текста url
+        однозначно не находится, а в редакторе это выбор из справочника.
+        Запрет «нельзя иметь другую черту метки дракона» здесь не переносится: это
+        взаимоисключение, а не требование, и ему нужно отдельное поле.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              WITH parsed AS (
+                SELECT f.url, lower(f.prerequisite) AS txt
+                FROM feat f
+                WHERE f.prerequisite_details IS NULL
+                  AND f.prerequisite IS NOT NULL
+                  AND btrim(f.prerequisite) <> ''
+              ),
+              ability_frag AS (
+                SELECT url, txt, substring(txt from '([а-яё, ]+)\s*13\s*\+') AS frag
+                FROM parsed
+              ),
+              ability_req AS (
+                SELECT a.url, jsonb_agg(d.code ORDER BY d.ord) AS codes
+                FROM ability_frag a
+                JOIN (VALUES
+                    ('сил',        'STRENGTH',     1),
+                    ('ловкост',    'DEXTERITY',    2),
+                    ('телосложен', 'CONSTITUTION', 3),
+                    ('интеллект',  'INTELLIGENCE', 4),
+                    ('мудрост',    'WISDOM',       5),
+                    ('харизм',     'CHARISMA',     6)
+                ) AS d(needle, code, ord) ON a.frag LIKE '%' || d.needle || '%'
+                WHERE a.frag IS NOT NULL
+                GROUP BY a.url
+              ),
+              class_feature AS (
+                SELECT p.url, jsonb_agg(DISTINCT d.code) AS codes
+                FROM parsed p
+                JOIN (VALUES
+                    ('использование заклинаний', 'SPELLCASTING'),
+                    ('накладывать заклинания',   'SPELLCASTING'),
+                    ('магия договора',           'PACT_MAGIC'),
+                    ('боевой стил',              'FIGHTING_STYLE'),
+                    ('боевого стил',             'FIGHTING_STYLE'),
+                    ('оружейные приёмы',         'WEAPON_MASTERY')
+                ) AS d(needle, code) ON p.txt LIKE '%' || d.needle || '%'
+                GROUP BY p.url
+              ),
+              built AS (
+                SELECT p.url,
+                       jsonb_strip_nulls(jsonb_build_object(
+                         'minCharacterLevel',
+                           NULLIF(COALESCE(
+                             substring(p.txt from 'уровень\s+(\d+)\s*\+'),
+                             substring(p.txt from '(\d+)\s*[-–]?\s*(?:й|ый)?\s*\+?\s*уровень')
+                           ), '')::int,
+                         'abilities',
+                           CASE WHEN ar.codes IS NOT NULL
+                             THEN jsonb_build_array(
+                               jsonb_build_object('anyOf', ar.codes, 'minValue', 13))
+                           END,
+                         'classFeatures', cf.codes,
+                         'anyDragonmark',
+                           CASE WHEN p.txt LIKE '%любая черта метки дракона%' THEN true END,
+                         'campaign',
+                           CASE
+                             WHEN p.txt LIKE '%эберрон%' THEN 'Эберрон'
+                             WHEN p.txt LIKE '%равенлофт%' THEN 'Равенлофт'
+                           END
+                       )) AS details
+                FROM parsed p
+                LEFT JOIN ability_req ar ON ar.url = p.url
+                LEFT JOIN class_feature cf ON cf.url = p.url
+              )
+              UPDATE feat f
+              SET prerequisite_details = b.details
+              FROM built b
+              WHERE f.url = b.url
+                AND b.details <> '{}'::jsonb;
+
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE feat
+              SET prerequisite_details = NULL
+              WHERE prerequisite_details IS NOT NULL;

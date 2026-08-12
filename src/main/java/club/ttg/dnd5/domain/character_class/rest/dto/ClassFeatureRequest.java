@@ -1,8 +1,8 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
-import club.ttg.dnd5.domain.character_class.model.AbilityBonus;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
+import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

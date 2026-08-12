@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.feat.model;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
+import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -32,16 +34,34 @@ public class Feat extends NamedEntity {
     @Enumerated(EnumType.STRING)
     private FeatCategory category;
     /**
-     * Улучшаемые характеристики
+     * Улучшаемые характеристики — плоская проекция
+     * {@code mechanics.abilityBonuses[*].abilities} для SQL-фильтра «Характеристика»
+     * (см. {@code FeatPredicateBuilder}). Не редактируется руками: пересобирается
+     * маппером при сохранении черты.
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<Ability> abilities;
 
     /**
-     * Предварительное условие
+     * Механика влияния черты на лист персонажа.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private FeatMechanics mechanics;
+
+    /**
+     * Предварительное условие, как оно напечатано в книге. Показывается игроку;
+     * для проверок служит {@link #prerequisiteDetails}.
      */
     private String prerequisite;
+
+    /**
+     * Предварительное условие в разобранном виде.
+     */
+    @Type(JsonType.class)
+    @Column(name = "prerequisite_details", columnDefinition = "jsonb")
+    private FeatPrerequisite prerequisiteDetails;
     /**
      * Можно брать черту больше чем один раз
      */

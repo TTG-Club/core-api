@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-09-02-backfill-feat-ability-bonuses
+      author: claude
+      comment: >
+        Переносит плоское abilities в mechanics.abilityBonuses. Предел берётся из категории:
+        эпические дары поднимают характеристику до 30, остальные черты — до 20. «Улучшение
+        характеристик» — единственная черта с двумя вариантами: +2 к одной или +1 к двум.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE feat f
+              SET mechanics = jsonb_build_object(
+                'abilityBonuses',
+                CASE
+                  WHEN f.url = 'ability-score-improvement-phb' THEN jsonb_build_array(
+                    jsonb_build_object('abilities', f.abilities, 'bonus', 2, 'upto', 20, 'count', 1),
+                    jsonb_build_object('abilities', f.abilities, 'bonus', 1, 'upto', 20, 'count', 2)
+                  )
+                  ELSE jsonb_build_array(
+                    jsonb_build_object(
+                      'abilities', f.abilities,
+                      'bonus', 1,
+                      'upto', CASE WHEN f.category = 'EPIC_BOON' THEN 30 ELSE 20 END,
+                      'count', 1
+                    )
+                  )
+                END
+              )
+              WHERE f.mechanics IS NULL
+                AND f.abilities IS NOT NULL
+                AND jsonb_typeof(f.abilities) = 'array'
+                AND jsonb_array_length(f.abilities) > 0;
+
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE feat
+              SET mechanics = NULL
+              WHERE mechanics IS NOT NULL
+                AND mechanics - 'abilityBonuses' = '{}'::jsonb;

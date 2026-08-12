@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-09-04-backfill-feat-spellcasting-ability-choice
+      author: claude
+      comment: >
+        Самый частый выбор при взятии черты после повышения характеристик — «Интеллект,
+        Мудрость или Харизма в качестве заклинательной характеристики». Ищется тройка в
+        именительном падеже рядом со словом «характеристик» в пределах одного предложения,
+        в обоих порядках. Проверено на выгрузке прода: 38 черт, ложных срабатываний нет.
+        Строки, где та же тройка стоит в винительном падеже («Увеличьте ваш Интеллект,
+        Мудрость или Харизму на 1»), не подходят — это повышение характеристик, у него своя
+        модель. Черты, где характеристика заклинаний равна «увеличенной этой чертой»,
+        сюда тоже не попадают: там выбор не отдельный, и его добавит блок магии.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE feat f
+              SET mechanics = COALESCE(f.mechanics, '{}'::jsonb) || jsonb_build_object(
+                'choices', jsonb_build_array(
+                  jsonb_build_object(
+                    'key', 'spellcasting-ability',
+                    'type', 'SPELLCASTING_ABILITY',
+                    'label', 'Заклинательная характеристика',
+                    'count', 1,
+                    'options', jsonb_build_array(
+                      jsonb_build_object('value', 'INTELLIGENCE', 'name', 'Интеллект'),
+                      jsonb_build_object('value', 'WISDOM',       'name', 'Мудрость'),
+                      jsonb_build_object('value', 'CHARISMA',     'name', 'Харизма')
+                    )
+                  )
+                )
+              )
+              WHERE f.description IS NOT NULL
+                AND (f.mechanics IS NULL OR NOT jsonb_exists(f.mechanics, 'choices'))
+                AND (
+                  lower(f.description) ~ 'интеллект, мудрость или харизм[^.]{0,200}характеристик'
+                  OR lower(f.description) ~ 'характеристик[^.]{0,200}интеллект, мудрость или харизм'
+                );
+
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE feat
+              SET mechanics = NULLIF(mechanics - 'choices', '{}'::jsonb)
+              WHERE jsonb_exists(mechanics, 'choices')
+                AND mechanics -> 'choices' @> '[{"key": "spellcasting-ability"}]'::jsonb;
