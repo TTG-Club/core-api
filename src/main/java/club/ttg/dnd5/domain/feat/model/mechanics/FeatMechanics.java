@@ -45,9 +45,18 @@ public class FeatMechanics {
     /**
      * Постоянные модификаторы листа: хиты, скорости, КД, чувства, защиты. Сгруппированы
      * отдельно, чтобы механика не превратилась в плоский мешок из тридцати полей, когда
-     * подтянутся владения, магия и ресурсы.
+     * подтянутся магия и ресурсы.
      */
     @Schema(description = "Постоянные модификаторы листа персонажа",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private FeatModifiers modifiers;
+
+    /**
+     * Владения, выданные чертой без выбора. Отдельным блоком от {@link #modifiers}:
+     * тот описывает числа шапки и блока защит, а владения — свой раздел листа со своим
+     * справочником категорий. Выбираемые владения живут в {@link #choices}.
+     */
+    @Schema(description = "Владения, которые черта выдаёт без выбора",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private ProficiencyGrant proficiencies;
 }
