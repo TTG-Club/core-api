@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
+import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
@@ -33,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Маппер класса TTG Club в формат компендиума VTTG ({@code type = "class"}, эталон
@@ -124,8 +126,113 @@ public class VttgClassMapper {
                 .features(features)
                 .levelTable(levelTable(characterClass.getTable(), features))
                 .tableColumns(tableColumns(characterClass.getTable()))
+                .counters(counters(characterClass, subclasses))
                 .multiclassProficiencies(multiclass(characterClass.getMulticlassProficiency()))
                 .build();
+    }
+
+    // ── Счётчики ресурсов ────────────────────────────────────────
+
+    /**
+     * Счётчики класса и его подклассов: по одному на колонку таблицы с заданным
+     * восстановлением ({@code resourceRecovery}). Колонка без восстановления — это
+     * обычная колонка прогрессии (ячейки заклинаний, известные заговоры), и счётчиком
+     * она не становится.
+     */
+    private List<VttgClass.Counter> counters(CharacterClass characterClass,
+                                             List<VttgClass.Subclass> subclasses) {
+        List<VttgClass.Counter> result = new ArrayList<>(counters(characterClass.getTable(), null));
+
+        Set<String> exported = subclasses.stream()
+                .map(VttgClass.Subclass::getKey)
+                .collect(Collectors.toSet());
+
+        for (CharacterClass child : subclassSource(characterClass)) {
+            String subclassKey = subclassKey(child);
+            // Ресурсы берём только у подклассов, попавших в запись: иначе счётчик
+            // ссылался бы на подкласс, которого в выгрузке нет
+            if (exported.contains(subclassKey)) {
+                result.addAll(counters(child.getTable(), subclassKey));
+            }
+        }
+        return result.isEmpty() ? null : result;
+    }
+
+    /** Дочерние классы источника без скрытых — тот же отбор, что и у {@link #subclasses}. */
+    private List<CharacterClass> subclassSource(CharacterClass characterClass) {
+        Collection<CharacterClass> children = characterClass.getSubclasses();
+        if (children == null) {
+            return List.of();
+        }
+        return children.stream()
+                .filter(Objects::nonNull)
+                .filter(child -> !child.isHiddenEntity())
+                .toList();
+    }
+
+    /** Счётчики одной таблицы прогрессии. */
+    private List<VttgClass.Counter> counters(List<ClassTableColumn> columns, String subclassKey) {
+        if (columns == null) {
+            return List.of();
+        }
+        List<VttgClass.Counter> result = new ArrayList<>();
+        for (ClassTableColumn column : columns) {
+            VttgClass.Counter counter = counter(column, subclassKey);
+            if (counter != null) {
+                result.add(counter);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Счётчик из колонки таблицы. Прогрессия собирается только из числовых значений:
+     * колонка ресурса может нести прочерк или «безлимит» — такие уровни в максимум не
+     * переводятся, и на них счётчик просто не меняется.
+     */
+    private VttgClass.Counter counter(ClassTableColumn column, String subclassKey) {
+        if (column == null || !StringUtils.hasText(column.getName())
+                || column.getResourceRecovery() == null
+                || column.getResourceRecovery() == ClassResourceRecovery.NONE
+                || column.getScaling() == null) {
+            return null;
+        }
+
+        Map<String, Integer> progression = new LinkedHashMap<>();
+        int startLevel = Integer.MAX_VALUE;
+
+        for (ClassTableItem item : column.getScaling()) {
+            if (item == null || !StringUtils.hasText(item.getValue())) {
+                continue;
+            }
+            Integer value = numeric(item.getValue());
+            if (value == null) {
+                continue;
+            }
+            progression.put(String.valueOf(item.getLevel()), value);
+            startLevel = Math.min(startLevel, item.getLevel());
+        }
+
+        if (progression.isEmpty()) {
+            return null;
+        }
+
+        return new VttgClass.Counter(columnKey(column.getName()), column.getName(),
+                startLevel, recovery(column.getResourceRecovery()), progression, subclassKey);
+    }
+
+    /** Способ восстановления в словаре потребителя. */
+    private String recovery(ClassResourceRecovery recovery) {
+        return recovery == ClassResourceRecovery.SHORT_REST ? "short" : "long";
+    }
+
+    /** Целое из значения ячейки; нечисловое («—», «∞») даёт {@code null}. */
+    private Integer numeric(String value) {
+        try {
+            return Integer.valueOf(value.trim());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     // ── Подклассы ────────────────────────────────────────────────
@@ -189,7 +296,9 @@ public class VttgClassMapper {
             String key = featureKey(feature);
             result.add(new VttgClass.Feature(key, feature.getName(),
                     description(feature.getDescription()), feature.getLevel(),
-                    subclassKey, choices(feature.getOptions())));
+                    subclassKey, choices(feature.getOptions()),
+                    flag(feature.isAbilityImprovement()), flag(feature.isFightingStyleChoice()),
+                    featureSkillChoice(feature.getSkillChoice())));
             appendScaling(result, feature, key, subclassKey);
         }
         result.sort(Comparator.comparing(feature -> feature.level() == null ? 0 : feature.level()));
@@ -368,6 +477,29 @@ public class VttgClassMapper {
                 .toList();
     }
 
+    /**
+     * Взведённый флаг умения; снятый опускается ({@code null}).
+     *
+     * <p>Флаги — это подсказки мастеру повышения уровня, а не свойства записи: «здесь
+     * спроси про характеристики». Ложь в выгрузке несла бы ровно ноль сведений и
+     * висела бы у каждого умения каждого класса.</p>
+     */
+    private Boolean flag(boolean value) {
+        return value ? Boolean.TRUE : null;
+    }
+
+    /**
+     * Выбор навыков у САМОГО умения. В отличие от {@link #skillChoices(SkillProficiency)}
+     * пустое значение здесь опускается: у класса блок выбора есть всегда (пусть и с
+     * нулём), а у умения его отсутствие и означает «умение навыков не даёт».
+     */
+    private VttgClass.SkillChoices featureSkillChoice(SkillProficiency proficiency) {
+        if (proficiency == null || proficiency.getCount() <= 0) {
+            return null;
+        }
+        return skillChoices(proficiency);
+    }
+
     private VttgClass.SkillChoices skillChoices(SkillProficiency proficiency) {
         if (proficiency == null) {
             return new VttgClass.SkillChoices(0, List.of());
@@ -406,8 +538,9 @@ public class VttgClassMapper {
         if (!rendered.isEmpty()) {
             List<VttgClass.StartingEquipment> options = new ArrayList<>(rendered.size());
             for (int index = 0; index < rendered.size(); index++) {
-                options.add(new VttgClass.StartingEquipment(
-                        equipmentMapper.label(index), rendered.get(index).description()));
+                VttgEquipmentMapper.RenderedOption option = rendered.get(index);
+                options.add(new VttgClass.StartingEquipment(equipmentMapper.label(index),
+                        option.description(), option.items(), option.coins(), option.coin()));
             }
             return options;
         }

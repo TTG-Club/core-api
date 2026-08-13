@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VttgFeatMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final VttgFeatMapper mapper = new VttgFeatMapper(new VttgMarkupConverter(objectMapper));
+    private final VttgFeatMapper mapper = new VttgFeatMapper(new VttgMarkupConverter(objectMapper), new VttgFeatMechanicsMapper());
 
     /** «Оборона» — постоянные поля типа, ключ/имя источника, повторяемость false. */
     @Test

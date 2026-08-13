@@ -5,10 +5,15 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
+import club.ttg.dnd5.domain.species.repository.SpeciesInnateSpellView;
+import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
+import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpecies;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -16,7 +21,11 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Маппер вида TTG Club в формат компендиума VTTG ({@code type = "species"}).
@@ -33,8 +42,13 @@ public class VttgSpeciesMapper {
     private static final String TYPE = "species";
     private static final String SECTION = "species";
     private static final String DARKVISION = "darkvision";
+    /** Ключ синтетического умения врождённых заклинаний; дальше идёт уровень. */
+    private static final String INNATE_SPELLS_KEY = "innate-spells";
+    private static final String INNATE_SPELLS_NAME = "Врождённые заклинания";
 
     private final VttgMarkupConverter markupConverter;
+    private final SpeciesRepository speciesRepository;
+    private final SpellRepository spellRepository;
 
     public VttgSpecies toVttg(Species species) {
         String key = slug(species.getUrl());
@@ -109,7 +123,63 @@ public class VttgSpeciesMapper {
         if (!choices.isEmpty() && lineageIndex < 0) {
             result.add(new VttgSpecies.Feature("lineage", "Происхождения", null, choices));
         }
+        result.addAll(innateSpellFeatures(species));
         return result;
+    }
+
+    /**
+     * Врождённые заклинания вида — отдельными умениями, по одному на требуемый уровень.
+     *
+     * <p>В источнике заклинание связано с самим видом, а не с конкретным умением, поэтому
+     * привязать его к записи из {@code features} не к чему. Потребителю же выдача
+     * заклинаний описывается именно умением с уровнем — так устроены и «Наследие
+     * преисподней», и высший эльф. Отсюда синтетическое умение со стабильным ключом
+     * {@code innate-spells-<уровень>}.</p>
+     *
+     * <p>Запрос идёт на каждый вид отдельно. Это осознанно: видов десятки, а результат
+     * маппинга кэшируется ({@link VttgPayloadStore}) — заново он считается только для
+     * изменившихся записей, а не на каждую выгрузку.</p>
+     */
+    private List<VttgSpecies.Feature> innateSpellFeatures(Species species) {
+        List<SpeciesInnateSpellView> innate = speciesRepository.findInnateSpells(species.getUrl());
+        if (CollectionUtils.isEmpty(innate)) {
+            return List.of();
+        }
+
+        Map<String, String> names = spellNames(innate);
+        Map<Integer, List<VttgSpecies.GrantedSpell>> byLevel = new TreeMap<>();
+
+        for (SpeciesInnateSpellView view : innate) {
+            String spellUrl = view.getSpellUrl();
+            String name = names.get(spellUrl);
+            if (!StringUtils.hasText(name)) {
+                // Заклинания нет в справочнике — выдавать нечего, и подписать нечем
+                continue;
+            }
+            int level = view.getRequiredLevel() == null ? 1 : Math.max(1, view.getRequiredLevel());
+            byLevel.computeIfAbsent(level, key -> new ArrayList<>())
+                    .add(new VttgSpecies.GrantedSpell(name, spellUrl));
+        }
+
+        List<VttgSpecies.Feature> result = new ArrayList<>(byLevel.size());
+        for (Map.Entry<Integer, List<VttgSpecies.GrantedSpell>> entry : byLevel.entrySet()) {
+            result.add(new VttgSpecies.Feature(INNATE_SPELLS_KEY + "-" + entry.getKey(),
+                    INNATE_SPELLS_NAME, null, null, entry.getKey(), entry.getValue()));
+        }
+        return result;
+    }
+
+    /** Названия заклинаний по их url — одним запросом на вид. */
+    private Map<String, String> spellNames(List<SpeciesInnateSpellView> innate) {
+        Set<String> urls = innate.stream()
+                .map(SpeciesInnateSpellView::getSpellUrl)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+        return spellRepository.findAllShortByUrlIn(urls).stream()
+                .collect(Collectors.toMap(Spell::getUrl, Spell::getName, (first, second) -> first));
     }
 
     private VttgSpecies.Feature feature(SpeciesFeature feature, List<VttgSpecies.Choice> choices) {

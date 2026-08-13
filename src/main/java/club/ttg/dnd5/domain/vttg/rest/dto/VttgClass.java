@@ -101,6 +101,16 @@ public class VttgClass {
     /** Владения при взятии класса мультиклассом; опускается, если в источнике не задано. */
     private MulticlassProficiencies multiclassProficiencies;
 
+    /**
+     * Счётчики классовых ресурсов: ярость, очки чародейства, кости превосходства.
+     *
+     * <p>Выводятся из колонок таблицы прогрессии, у которых задано восстановление
+     * ({@code ClassTableColumn.resourceRecovery}): такая колонка — это и есть ресурс,
+     * а её значения по уровням — его максимум. Колонки без восстановления остаются
+     * обычными колонками таблицы и в счётчики не идут.</p>
+     */
+    private List<Counter> counters;
+
     /** Явный геттер: без него Jackson сериализует boolean-{@code isSRD} как ключ «SRD» (как в {@code VttgSpell}). */
     @JsonProperty("isSRD")
     public boolean isSRD() {
@@ -111,8 +121,21 @@ public class VttgClass {
     public record SkillChoices(int count, List<String> from) {
     }
 
-    /** Вариант стартового снаряжения: ключ («A»/«B»/…) и человекочитаемое описание. */
-    public record StartingEquipment(String key, String description) {
+    /**
+     * Вариант стартового снаряжения: ключ («А»/«Б»/…), человекочитаемое описание и позиции.
+     *
+     * <p>Описание и позиции идут вместе: строка нужна для чтения (в ней живые ссылки на
+     * карточки), позиции — чтобы мастер настройки положил предметы в инвентарь сам.
+     * У вариантов, заданных в источнике свободным текстом, позиций нет.</p>
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record StartingEquipment(String key, String description,
+                                    List<VttgEquipmentItem> items, Integer coins, String coin) {
+
+        /** Вариант из свободного текста: позиций и монет у него нет. */
+        public StartingEquipment(String key, String description) {
+            this(key, description, null, null, null);
+        }
     }
 
     /** Заклинательство: тип ("full"/"half"/"third"/"pact"), характеристика и стартовый уровень. */
@@ -128,14 +151,47 @@ public class VttgClass {
      * Умение класса/подкласса: стабильный {@code key}, {@code name}, текст {@code description},
      * уровень получения {@code level}, ключ подкласса {@code subclassKey} (для умений подкласса)
      * и варианты выбора {@code choices} (напр. боевые стили). Пустые поля опускаются.
+     *
+     * <p>Три флага описывают, что мастер повышения уровня должен спросить у игрока на
+     * уровне этого умения: {@code abilityImprovement} — повышение характеристик,
+     * {@code fightingStyleChoice} — выбор боевого стиля, {@code skillChoice} — выбор
+     * владения навыками. Без них потребитель угадывает ASI по виду ключа
+     * ({@code asi-4}), и на переведённых или самописных классах шаг молча пропадает.
+     * Флаги выводятся только когда взведены — у обычного умения полей нет.</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Feature(String key, String name, String description, Integer level,
-                          String subclassKey, List<Choice> choices) {
+                          String subclassKey, List<Choice> choices,
+                          Boolean abilityImprovement, Boolean fightingStyleChoice,
+                          SkillChoices skillChoice) {
+
+        /**
+         * Умение без собственных флагов: развороты {@code scaling} и записи, у которых в
+         * источнике ничего не отмечено.
+         */
+        public Feature(String key, String name, String description, Integer level,
+                       String subclassKey, List<Choice> choices) {
+            this(key, name, description, level, subclassKey, choices, null, null, null);
+        }
     }
 
     /** Вариант выбора в рамках умения (боевой стиль, манёвр): {@code key}, {@code name}, {@code description}. */
     public record Choice(String key, String name, String description) {
+    }
+
+    /**
+     * Счётчик классового ресурса.
+     *
+     * @param key         стабильный ключ (он же ключ колонки таблицы)
+     * @param name        подпись счётчика на листе
+     * @param startLevel  уровень, с которого счётчик появляется
+     * @param recovery    когда восстанавливается: {@code short} или {@code long}
+     * @param progression максимум по уровням: ключ — уровень строкой, значение — число
+     * @param subclassKey ключ подкласса, если счётчик принадлежит ему; иначе {@code null}
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Counter(String key, String name, int startLevel, String recovery,
+                          Map<String, Integer> progression, String subclassKey) {
     }
 
     /**

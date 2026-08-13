@@ -310,12 +310,22 @@ public class VttgItemMapper {
         return result;
     }
 
+    /**
+     * Тип боеприпаса в словаре системы VTTG (`AmmunitionType`).
+     *
+     * <p>Ключи взяты у потребителя дословно: у него это {@code arrows},
+     * {@code bolts}, {@code bullets}, {@code sling-bullets} и
+     * {@code blowgun-needles}. Снаряд пращи и игла для трубки — свои позиции, а
+     * не синонимы пуль: иначе праща и духовая трубка приезжают с чужим
+     * боеприпасом и расход патронов на листе не работает.</p>
+     */
     private String ammunitionType(AmmunitionType ammo) {
         return switch (ammo) {
             case ARROW -> "arrows";
             case BOLT -> "bolts";
-            case BULLET, SLING_BULLET -> "bullets";
-            case NEEDLE -> "needles";
+            case BULLET -> "bullets";
+            case SLING_BULLET -> "sling-bullets";
+            case NEEDLE -> "blowgun-needles";
         };
     }
 

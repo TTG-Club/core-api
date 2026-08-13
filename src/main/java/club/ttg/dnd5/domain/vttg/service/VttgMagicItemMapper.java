@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
@@ -10,9 +11,13 @@ import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemRechargeEvent;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemResource;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -219,10 +224,77 @@ public class VttgMagicItemMapper {
                 .isMagical(true)
                 .magicAttunement(requiresAttunement ? "required" : "none")
                 .magicBonus(bonus)
+                // Механика влияния на лист персонажа: эффекты идут как есть (модель уже
+                // в вокабуляре VTTG), заряды — своим блоком, пассивные свойства — текстом
+                .activeEffects(activeEffects(item))
+                .uses(uses(item))
+                .passive(passive(item))
                 .sourceKey(sourceKey)
                 .isSRD(item.getSrdVersion() != null)
                 .isReadOnly(true)
                 .build();
+    }
+
+    /**
+     * Активные эффекты предмета. Отдаются без преобразования: {@link ActiveEffect}
+     * заполняется в мастерской сразу в вокабуляре VTTG — ключи изменений там
+     * {@code armorClass}, {@code save.constitution}, {@code movement.swim} и прочие
+     * {@code EffectTargetKey}.
+     */
+    private List<ActiveEffect> activeEffects(MagicItem item) {
+        MagicItemMechanics mechanics = item.getMechanics();
+        if (mechanics == null || CollectionUtils.isEmpty(mechanics.getActiveEffects())) {
+            return null;
+        }
+        return mechanics.getActiveEffects();
+    }
+
+    /**
+     * Заряды предмета. {@code current} равен максимуму: справочник описывает предмет, а
+     * не конкретный экземпляр — остаток живёт на листе персонажа.
+     *
+     * <p>Расход применения выводится только когда он больше одного: единица — значение
+     * по умолчанию у потребителя, и повторять её у каждого предмета незачем.</p>
+     */
+    private VttgMagicItem.Uses uses(MagicItem item) {
+        MagicItemMechanics mechanics = item.getMechanics();
+        if (mechanics == null || mechanics.getResource() == null) {
+            return null;
+        }
+        MagicItemResource resource = mechanics.getResource();
+        Integer max = resource.getMaxCharges();
+        if (max == null || max < 1) {
+            return null;
+        }
+        Integer cost = resource.getCost();
+        return new VttgMagicItem.Uses(max, max,
+                rechargeEvent(resource.getRechargeEvent()),
+                StringUtils.hasText(resource.getRecharge()) ? resource.getRecharge().trim() : null,
+                cost != null && cost > 1 ? cost : null);
+    }
+
+    /**
+     * Событие возврата зарядов в словаре потребителя. Не задано при заданном максимуме —
+     * заряды возвращает только мастер вручную.
+     */
+    private String rechargeEvent(MagicItemRechargeEvent event) {
+        if (event == null) {
+            return "manual";
+        }
+        return switch (event) {
+            case DAWN -> "dawn";
+            case SHORT_REST -> "shortRest";
+            case LONG_REST -> "longRest";
+        };
+    }
+
+    /** Пассивные свойства предмета текстом; разметка снимается, как у описания. */
+    private String passive(MagicItem item) {
+        MagicItemMechanics mechanics = item.getMechanics();
+        if (mechanics == null || !StringUtils.hasText(mechanics.getPassive())) {
+            return null;
+        }
+        return markupConverter.toText(mechanics.getPassive());
     }
 
     /**

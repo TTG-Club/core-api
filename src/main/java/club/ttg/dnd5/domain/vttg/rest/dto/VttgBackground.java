@@ -84,8 +84,20 @@ public class VttgBackground {
     public record FeatGrant(String featId, String featName, String featNameEn) {
     }
 
-    /** Вариант стартового снаряжения; {@code goldAlternative} — альтернатива золотом (опц.). */
+    /**
+     * Вариант стартового снаряжения; {@code goldAlternative} — альтернатива золотом (опц.).
+     *
+     * <p>Описание и позиции идут вместе: строка нужна для чтения — в ней живые ссылки на
+     * карточки, — а позиции для того, чтобы мастер настройки положил предметы в инвентарь
+     * сам. У вариантов, заданных в источнике свободным текстом, позиций нет.</p>
+     */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record EquipmentOption(String description, Integer goldAlternative) {
+    public record EquipmentOption(String description, Integer goldAlternative,
+                                  List<VttgEquipmentItem> items, Integer coins, String coin) {
+
+        /** Вариант из свободного текста: позиций и монет у него нет. */
+        public EquipmentOption(String description, Integer goldAlternative) {
+            this(description, goldAlternative, null, null, null);
+        }
     }
 }

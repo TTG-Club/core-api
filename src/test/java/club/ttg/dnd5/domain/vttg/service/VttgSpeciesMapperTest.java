@@ -5,7 +5,9 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
+import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -15,10 +17,22 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class VttgSpeciesMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final VttgSpeciesMapper mapper = new VttgSpeciesMapper(new VttgMarkupConverter(objectMapper));
+    private final SpeciesRepository speciesRepository = mock(SpeciesRepository.class);
+    private final SpellRepository spellRepository = mock(SpellRepository.class);
+
+    private final VttgSpeciesMapper mapper = new VttgSpeciesMapper(
+            new VttgMarkupConverter(objectMapper), speciesRepository, spellRepository);
+
+    {
+        // По умолчанию врождённых заклинаний нет — их проверяет отдельный тест
+        when(speciesRepository.findInnateSpells(anyString())).thenReturn(List.of());
+    }
 
     /** «Драконорождённый» — тип/размер/скорость, тёмное зрение в grants, умения в features. */
     @Test

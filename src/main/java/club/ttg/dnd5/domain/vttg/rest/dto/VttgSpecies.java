@@ -88,9 +88,30 @@ public class VttgSpecies {
      * Видовое умение: {@code key} (slug), {@code name}, текст {@code description} и, для
      * «происхожденческих» умений, варианты выбора {@code choices} (происхождения вида).
      * Пустые {@code choices} опускаются.
+     *
+     * <p>{@code level} — уровень персонажа, с которого умение действует (по умолчанию
+     * первый), {@code grantedSpells} — заклинания, которые оно выдаёт. Врождённые
+     * заклинания вида в источнике не привязаны к конкретному умению, поэтому при
+     * экспорте они собираются в отдельные умения — по одному на требуемый уровень
+     * (см. {@code VttgSpeciesMapper}).</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Feature(String key, String name, String description, List<Choice> choices) {
+    public record Feature(String key, String name, String description, List<Choice> choices,
+                          Integer level, List<GrantedSpell> grantedSpells) {
+
+        /** Обычное умение источника: без уровня и без выдаваемых заклинаний. */
+        public Feature(String key, String name, String description, List<Choice> choices) {
+            this(key, name, description, choices, null, null);
+        }
+    }
+
+    /**
+     * Заклинание, выдаваемое умением вида.
+     *
+     * @param name    название заклинания — показывается, даже если записи нет в паках
+     * @param spellId {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     */
+    public record GrantedSpell(String name, String spellId) {
     }
 
     /** Вариант происхождения вида (дочерний вид): {@code key} (slug), {@code name}, {@code description}. */

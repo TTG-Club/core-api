@@ -118,7 +118,8 @@ public class VttgBackgroundMapper {
         if (!rendered.isEmpty()) {
             return rendered.stream()
                     .map(option -> new VttgBackground.EquipmentOption(
-                            option.description(), option.goldEquivalent()))
+                            option.description(), option.goldEquivalent(),
+                            option.items(), option.coins(), option.coin()))
                     .toList();
         }
 
