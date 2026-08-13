@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.feat.rest.mapper;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceGrant;
 import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatChoice;
@@ -25,6 +26,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class FeatMechanicsMappingTest {
@@ -89,6 +91,40 @@ class FeatMechanicsMappingTest {
 
         assertEquals("saving-throw", feat.getMechanics().getAbilityBonuses().getFirst().getFromChoiceKey());
         assertIterableEquals(List.of(Ability.CONSTITUTION), feat.getAbilities());
+    }
+
+    /**
+     * «Знаток»: выбрать можно только навык, которым персонаж уже владеет, и выбор сразу
+     * поднимает его до компетентности.
+     */
+    @Test
+    void choiceCanGrantExpertiseFromOwnedSkills() throws Exception {
+        FeatChoice choice = new FeatChoice();
+        choice.setKey("skill");
+        choice.setType(ChoiceType.SKILL);
+        choice.setOnlyIfProficient(true);
+        choice.setGrants(ChoiceGrant.EXPERTISE);
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(choice));
+
+        assertEquals("EXPERTISE", json.get("grants").asText());
+        assertTrue(json.get("onlyIfProficient").asBoolean());
+        assertEquals(ChoiceGrant.EXPERTISE, choice.resolveGrant());
+    }
+
+    /** Записи до появления исхода давали владение — им он и подставляется. */
+    @Test
+    void choiceGrantDefaultsToProficiency() throws Exception {
+        FeatChoice choice = new FeatChoice();
+        choice.setKey("skill");
+        choice.setType(ChoiceType.SKILL);
+
+        assertEquals(ChoiceGrant.PROFICIENCY, choice.resolveGrant());
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(choice));
+
+        assertFalse(json.has("grants"));
+        assertFalse(json.has("onlyIfProficient"));
     }
 
     @Test
