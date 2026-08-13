@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.feat.rest.mapper;
 
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -70,7 +71,30 @@ class FeatProficiencyGrantMappingTest {
 
         assertEquals("LIGHT", json.get("armorCategories").get(0).asText());
         assertFalse(json.has("weaponCategories"));
+        assertFalse(json.has("skills"));
         assertFalse(json.has("tools"));
+    }
+
+    /**
+     * Навыки уходят константами словаря, а не названиями: механика хранится в JSONB, и
+     * переименование навыка в справочнике не должно расходиться с записанным. Название
+     * подставляет потребитель — так же, как у категорий оружия и доспехов.
+     */
+    @Test
+    void skillsSerializeAsDictionaryConstants() throws Exception {
+        Feat feat = new Feat();
+        feat.setMechanics(skilled(Skill.PERCEPTION));
+
+        FeatDetailResponse response = mapper.toDetail(feat);
+
+        assertEquals(
+                Set.of(Skill.PERCEPTION),
+                response.getMechanics().getProficiencies().getSkills());
+
+        JsonNode json = objectMapper.readTree(
+                objectMapper.writeValueAsString(feat.getMechanics().getProficiencies()));
+
+        assertEquals("PERCEPTION", json.get("skills").get(0).asText());
     }
 
     @Test
@@ -89,6 +113,16 @@ class FeatProficiencyGrantMappingTest {
         ProficiencyGrant proficiencies = new ProficiencyGrant();
         proficiencies.setWeaponCategories(
                 Set.of(WeaponCategory.MATERIAL_MELEE, WeaponCategory.MATERIAL_RANGED));
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setProficiencies(proficiencies);
+        return mechanics;
+    }
+
+    /** Черта, наделяющая навыками без выбора. */
+    private static FeatMechanics skilled(Skill... skills) {
+        ProficiencyGrant proficiencies = new ProficiencyGrant();
+        proficiencies.setSkills(Set.of(skills));
 
         FeatMechanics mechanics = new FeatMechanics();
         mechanics.setProficiencies(proficiencies);
