@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.feat.model.mechanics;
 
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -29,8 +30,8 @@ import java.util.Set;
  * <p>Владение с условием сюда не идёт — как и в {@link FeatModifiers}, условные
  * эффекты остаются в описании.</p>
  *
- * <p>Навыков, спасбросков и языков здесь нет намеренно. Первые два черты выдают
- * выбором («Умелый», «Устойчивый») — это {@code choices}. С языками сложнее:
+ * <p>Спасбросков и языков здесь нет намеренно. Спасбросками черты наделяют выбором
+ * («Устойчивый» — характеристика на выбор), а это {@code choices}. С языками сложнее:
  * словарь {@link club.ttg.dnd5.domain.common.dictionary.Language} и справочник языков
  * листа расходятся и в названиях («дварфский» против «Дварфийский», «бездны» против
  * «Абиссальный»), и в группировке (драконий здесь стандартный, на листе — редкий).
@@ -52,6 +53,14 @@ public class ProficiencyGrant {
 
     @Schema(description = "Категории доспехов", examples = {"MEDIUM", "SHIELD"})
     private Set<ArmorCategory> armorCategories;
+
+    /**
+     * Навыки, которыми черта наделяет без выбора. Выбор навыков («Умелый» — три на
+     * выбор) сюда не идёт: у него есть количество и пул, и живёт он в
+     * {@code mechanics.choices}.
+     */
+    @Schema(description = "Навыки", examples = {"PERCEPTION", "STEALTH"})
+    private Set<Skill> skills;
 
     /**
      * Инструменты. Ссылками на предметы справочника, а не словарём: инструменты живут в
