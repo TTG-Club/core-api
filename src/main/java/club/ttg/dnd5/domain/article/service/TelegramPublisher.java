@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.article.service;
 
 import club.ttg.dnd5.config.properties.TelegramProperties;
 import club.ttg.dnd5.domain.article.model.Article;
+import club.ttg.dnd5.domain.article.model.TelegramPostFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +35,11 @@ import java.util.stream.Collectors;
  * текст статьи открывается нативно. Сам текст сообщения — невидимый символ-заглушка: под карточкой не
  * должно быть ни одной лишней строки. Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
  * Режим включается, когда задан {@code telegram.instant-view-rhash} (шаблон создан на
- * instantview.telegram.org, см. {@code docs/telegram-instant-view.md}).
+ * instantview.telegram.org, см. {@code docs/telegram-instant-view.md}), а у записи выбран вид
+ * {@link TelegramPostFormat#INSTANT_VIEW} (по умолчанию).
  * <p>
- * Пока rhash не задан (локально, шаблон ещё не создан) работает прежний режим: длинный пост не обрезается —
+ * Когда rhash не задан (локально, шаблон ещё не создан) ИЛИ автор выбрал в админке вид
+ * {@link TelegramPostFormat#FULL_TEXT}, работает прежний режим: длинный пост не обрезается —
  * он уходит одним текстовым сообщением (≤4096) с обложкой, показанной превью-ссылкой НАД текстом
  * ({@code link_preview_options.show_above_text}), а остаток досылается отдельными сообщениями (≤4096). Если
  * публичный URL обложки собрать нельзя ({@code app.url} не публичный) — фоллбэк на фото с подписью (≤1024).
@@ -217,10 +220,15 @@ public class TelegramPublisher {
 
     /**
      * Ссылка на статью в Instant View ({@code t.me/iv?url=…&rhash=…}) — по ней Telegram показывает нашу
-     * страницу нативной статьёй. {@code null} — режим выключен: не задан rhash шаблона либо
-     * {@code app.url} не публичный (локальная разработка), и робот Telegram до страницы не дойдёт.
+     * страницу нативной статьёй. {@code null} — режим выключен: для записи выбран прежний вид поста
+     * ({@link TelegramPostFormat#FULL_TEXT}), не задан rhash шаблона либо {@code app.url} не публичный
+     * (локальная разработка), и робот Telegram до страницы не дойдёт.
      */
     private String instantViewUrl(Article article) {
+        if (article.getTelegramFormat() == TelegramPostFormat.FULL_TEXT) {
+            // Автор выбрал в админке прежний вид: полный текст в самом посте, без карточки IV.
+            return null;
+        }
         String rhash = properties.getInstantViewRhash();
         if (!StringUtils.hasText(rhash) || !StringUtils.hasText(article.getUrl())) {
             return null;
@@ -278,11 +286,17 @@ public class TelegramPublisher {
         }
 
         boolean photo = article.isTelegramPhoto();
+        List<String> messages = buildMessages(article, photo ? CAPTION_LIMIT : MESSAGE_LIMIT);
+        if (messages.size() > 1) {
+            // Правка трогает только ПЕРВОЕ сообщение (см. javadoc): остаток длинного текста в канал не
+            // досылается. Актуально и при переключении уже опубликованного поста на вид «полный текст».
+            log.warn("Правка поста {} в прежнем виде: в сообщение вошёл только первый кусок из {} — "
+                    + "остаток текста в канал не досылается", article.getUrl(), messages.size());
+        }
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("chat_id", properties.getChatId());
         payload.put("message_id", article.getTelegramMessageId());
-        payload.put(photo ? "caption" : "text",
-                buildMessages(article, photo ? CAPTION_LIMIT : MESSAGE_LIMIT).get(0));
+        payload.put(photo ? "caption" : "text", messages.get(0));
         payload.put("parse_mode", properties.getParseMode());
 
         // Текстовый пост с обложкой-превью: пере-передаём link_preview_options, иначе editMessageText потеряет
