@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.article.rest.dto;
 
 import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.domain.article.model.DiscordMention;
+import club.ttg.dnd5.domain.article.model.TelegramPostFormat;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -59,6 +60,14 @@ public class ArticleRequest {
     @Schema(description = "Опубликовать в Telegram-канал. true — при публикации (сейчас или по наступлении даты) "
             + "запись один раз уйдёт в канал, если интеграция включена глобально. false — в канал не отправлять.")
     private boolean publishToTelegram;
+
+    @Schema(description = "Вид поста в Telegram: INSTANT_VIEW (по умолчанию) — одно сообщение с карточкой "
+            + "Instant View, полный текст открывается в Telegram по кнопке на ней; FULL_TEXT — прежний вид, "
+            + "полный текст в самом посте (при необходимости несколькими сообщениями) с обложкой. Учитывается "
+            + "только при publishToTelegram=true. INSTANT_VIEW без настроенного шаблона (telegram.instant-view-rhash) "
+            + "или без публичного адреса сайта автоматически публикуется как FULL_TEXT.")
+    @Nullable
+    private TelegramPostFormat telegramFormat;
 
     @Schema(description = "Опубликовать в Discord-канал. true — при публикации (сейчас или по наступлении даты) "
             + "запись один раз уйдёт в канал, если интеграция включена глобально. false — в канал не отправлять. "
