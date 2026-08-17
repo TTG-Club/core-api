@@ -120,6 +120,15 @@ public class Article extends Timestamped {
     private boolean telegramDirty;
 
     /**
+     * Вид поста в Telegram-канале: карточка Instant View или полный текст (как было раньше).
+     * Управляется выбором в админке. NULL (записи до миграции) читается как
+     * {@link TelegramPostFormat#INSTANT_VIEW} — вид как прежде определяет только конфиг.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private TelegramPostFormat telegramFormat;
+
+    /**
      * Пожелание автора отправить запись в Discord-канал. Управляется галочкой в админке.
      * Постится только при publishToDiscord=true И включённой глобально интеграции (задан webhook),
      * один раз при попадании записи в общий доступ (см. {@code discordPostedAt}). Независима от Telegram.
