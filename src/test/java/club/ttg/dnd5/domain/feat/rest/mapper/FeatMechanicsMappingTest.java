@@ -26,6 +26,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
@@ -141,6 +142,57 @@ class FeatMechanicsMappingTest {
         assertFalse(json.has("rechooseOnLongRest"));
         assertFalse(json.has("spellFilter"));
         assertFalse(json.has("count"));
+    }
+
+    /**
+     * «Посвящённый в магию»: класс не задан заранее — игрок выбирает список жреца, друида
+     * или волшебника, и пул заговоров сужается до выбранного, а не до всех трёх сразу.
+     */
+    @Test
+    void spellFilterCanFollowChosenClassList() {
+        Feat feat = new Feat();
+        feat.setMechanics(magicInitiate());
+
+        FeatRequest request = mapper.toRequest(feat);
+        SpellFilter filter = request.getMechanics().getChoices().getLast().getSpellFilter();
+
+        assertEquals("spell-list", filter.getClassesFromChoiceKey());
+        // Список задан ответом игрока, поэтому своего перечня классов у фильтра нет.
+        assertNull(filter.getClasses());
+    }
+
+    /** Незаполненная ссылка на выбор в JSON не уходит: пул тогда задан классами. */
+    @Test
+    void emptyClassChoiceKeyIsOmitted() throws Exception {
+        SpellFilter filter = new SpellFilter();
+        filter.setLevel(0);
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(filter));
+
+        assertFalse(json.has("classesFromChoiceKey"));
+        assertFalse(json.has("classes"));
+    }
+
+    private static FeatMechanics magicInitiate() {
+        FeatChoice list = new FeatChoice();
+        list.setKey("spell-list");
+        list.setType(ChoiceType.SPELL_LIST);
+        list.setLabel("Список заклинаний: жрец, друид или волшебник");
+
+        SpellFilter filter = new SpellFilter();
+        filter.setLevel(0);
+        filter.setClassesFromChoiceKey("spell-list");
+
+        FeatChoice cantrip = new FeatChoice();
+        cantrip.setKey("cantrip");
+        cantrip.setType(ChoiceType.CANTRIP);
+        cantrip.setCount(2);
+        cantrip.setLabel("Два заговора из выбранного списка");
+        cantrip.setSpellFilter(filter);
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setChoices(List.of(list, cantrip));
+        return mechanics;
     }
 
     private static FeatMechanics shadowTouched() {
