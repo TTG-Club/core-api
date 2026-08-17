@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.feat.rest.dto;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -30,4 +31,15 @@ public class FeatDetailResponse extends BaseResponse {
     private Boolean repeatability;
     @Schema(description = "Предыстории, дающие эту черту")
     private Collection<FeatBackgroundDto> backgrounds;
+
+    /**
+     * Заклинания из {@code mechanics.spells}, дополненные данными справочника.
+     *
+     * <p>В механике они лежат ссылками — круг и школа берутся из самой записи заклинания
+     * и в снимке разошлись бы с каталогом. Но потребителю их знать нужно: лист персонажа
+     * без круга не положит заклинание в книгу. Поэтому деталь отдаёт их отдельным полем,
+     * дополненными, — ровно как вид отдаёт врождённые заклинания.</p>
+     */
+    @Schema(description = "Выдаваемые чертой заклинания с данными справочника")
+    private Collection<SpellShortResponse> grantedSpells;
 }
