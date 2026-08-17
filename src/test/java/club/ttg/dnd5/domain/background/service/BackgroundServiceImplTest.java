@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapperImpl;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMappingImpl;
+import club.ttg.dnd5.dto.base.mapping.BaseMappingImpl;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
@@ -50,7 +51,8 @@ class BackgroundServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        BackgroundMapper backgroundMapper = new BackgroundMapperImpl(new EquipmentMappingImpl());
+        BackgroundMapper backgroundMapper =
+                new BackgroundMapperImpl(new EquipmentMappingImpl(), new BaseMappingImpl());
         backgroundService = new BackgroundServiceImpl(
                 backgroundQueryDslSearchService,
                 backgroundRepository,
