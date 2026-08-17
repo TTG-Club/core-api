@@ -45,7 +45,7 @@ public class FeatMechanics {
     /**
      * Постоянные модификаторы листа: хиты, скорости, КД, чувства, защиты. Сгруппированы
      * отдельно, чтобы механика не превратилась в плоский мешок из тридцати полей, когда
-     * подтянутся магия и ресурсы.
+     * подтянутся ресурсы.
      */
     @Schema(description = "Постоянные модификаторы листа персонажа",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
@@ -59,4 +59,14 @@ public class FeatMechanics {
     @Schema(description = "Владения, которые черта выдаёт без выбора",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private ProficiencyGrant proficiencies;
+
+    /**
+     * Заклинания, которые черта даёт знать без выбора. Своим блоком по той же причине,
+     * что и владения: у заклинаний свой раздел листа — книга заклинаний — со своей
+     * подготовкой и заклинательной характеристикой. Выбираемые заклинания живут в
+     * {@link #choices} вместе со своим фильтром.
+     */
+    @Schema(description = "Заклинания, которые черта даёт знать без выбора",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private SpellGrant spells;
 }
