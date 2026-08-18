@@ -19,13 +19,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -36,7 +35,6 @@ import static org.mockito.Mockito.when;
  * ссылками, а листу персонажа нужен круг, иначе заклинание некуда положить.
  */
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class FeatGrantedSpellsTest {
 
     @Mock
@@ -74,12 +72,15 @@ class FeatGrantedSpellsTest {
         Spell mending = spellWithUrl("mending-phb");
 
         when(spellRepository.findAllShortByUrlIn(any())).thenReturn(List.of(light, mending));
-        when(spellMapper.toShort(light)).thenReturn(shortOf("Свет"));
-        when(spellMapper.toShort(mending)).thenReturn(shortOf("Починка"));
+        when(spellMapper.toShort(light)).thenReturn(spellShort("light-phb"));
+        when(spellMapper.toShort(mending)).thenReturn(spellShort("mending-phb"));
 
         var granted = service.getFeat("dragonmarked-phb").getGrantedSpells();
 
-        assertEquals(2, granted.size());
+        // Порядок — как в механике: игрок видит заклинания так, как их перечислил редактор.
+        assertIterableEquals(
+                List.of("light-phb", "mending-phb"),
+                granted.stream().map(SpellShortResponse::getUrl).toList());
     }
 
     /**
@@ -93,11 +94,13 @@ class FeatGrantedSpellsTest {
         Spell light = spellWithUrl("light-phb");
 
         when(spellRepository.findAllShortByUrlIn(any())).thenReturn(List.of(light));
-        when(spellMapper.toShort(light)).thenReturn(shortOf("Свет"));
+        when(spellMapper.toShort(light)).thenReturn(spellShort("light-phb"));
 
         var granted = service.getFeat("dragonmarked-phb").getGrantedSpells();
 
-        assertEquals(1, granted.size());
+        assertIterableEquals(
+                List.of("light-phb"),
+                granted.stream().map(SpellShortResponse::getUrl).toList());
     }
 
     /** Черта заклинаний не выдаёт — поля в ответе нет вовсе. */
@@ -127,7 +130,7 @@ class FeatGrantedSpellsTest {
 
     private static FeatMechanics grantOf(String... urls) {
         SpellGrant spells = new SpellGrant();
-        spells.setSpells(List.of(urls).stream().map(url -> new EntityRef(url, null)).toList());
+        spells.setSpells(Arrays.stream(urls).map(url -> new EntityRef(url, null)).toList());
 
         FeatMechanics mechanics = new FeatMechanics();
         mechanics.setSpells(spells);
@@ -140,9 +143,9 @@ class FeatGrantedSpellsTest {
         return spell;
     }
 
-    private static SpellShortResponse shortOf(String name) {
+    private static SpellShortResponse spellShort(String url) {
         SpellShortResponse response = new SpellShortResponse();
-        response.setUrl(name);
+        response.setUrl(url);
         return response;
     }
 }
