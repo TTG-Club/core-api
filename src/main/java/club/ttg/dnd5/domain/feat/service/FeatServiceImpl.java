@@ -183,7 +183,11 @@ public class FeatServiceImpl implements FeatService {
 
     public FeatDetailResponse preview(final FeatRequest request) {
         var book = sourceService.findByUrl(request.getSource().getUrl());
-        return featMapper.toDetail(featMapper.toEntity(request, book));
+        var response = featMapper.toDetail(featMapper.toEntity(request, book));
+        // Как и у сохранённой черты: без дополнения превью показало бы выдаваемые
+        // заклинания пустыми, и редактор не увидел бы того, что набрал.
+        response.setGrantedSpells(resolveGrantedSpells(response));
+        return response;
     }
 
     @Override
