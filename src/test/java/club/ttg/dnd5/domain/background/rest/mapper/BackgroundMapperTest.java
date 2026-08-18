@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.background.rest.mapper;
 import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.common.model.EquipmentItem;
+import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
 import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMappingImpl;
@@ -40,6 +41,38 @@ class BackgroundMapperTest {
     @Test
     void formGetsTwoEmptyOptionsWhenEquipmentIsNotFilled() {
         assertEquals(2, mapper.toRequest(new Background()).getStartingEquipment().size());
+    }
+
+    /**
+     * Список предысторий показывает черту прямо в строке: за деталью каждой строки
+     * ради одного названия ходить нельзя.
+     */
+    @Test
+    void shortResponseCarriesFeat() {
+        Feat feat = new Feat();
+        feat.setUrl("magic-initiate");
+        feat.setName("Посвящённый в магию");
+
+        Background background = new Background();
+        background.setAbilities(Set.of());
+        background.setFeat(feat);
+
+        var response = mapper.toShort(background);
+
+        assertEquals("Посвящённый в магию", response.getFeatName());
+        assertEquals("magic-initiate", response.getFeatUrl());
+    }
+
+    /** Предыстория без черты: полям неоткуда взяться, и в ответе их нет. */
+    @Test
+    void shortResponseWithoutFeatKeepsFieldsNull() {
+        Background background = new Background();
+        background.setAbilities(Set.of());
+
+        var response = mapper.toShort(background);
+
+        assertNull(response.getFeatName());
+        assertNull(response.getFeatUrl());
     }
 
     @Test
