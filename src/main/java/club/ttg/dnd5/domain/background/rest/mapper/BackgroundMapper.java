@@ -31,6 +31,8 @@ public interface BackgroundMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
+    @Mapping(source = "feat.name", target = "featName")
+    @Mapping(source = "feat.url", target = "featUrl")
     BackgroundShortResponse toShort(Background background);
 
     @BaseMapping.BaseShortResponseNameMapping
