@@ -286,8 +286,6 @@ public class SpellPredicateBuilder {
     }
 
     private String damageTypeKey(DamageType value) {
-        return value == DamageType.FAIR
-                ? "fire"
-                : value.name().toLowerCase(Locale.ROOT);
+        return value.name().toLowerCase(Locale.ROOT);
     }
 }

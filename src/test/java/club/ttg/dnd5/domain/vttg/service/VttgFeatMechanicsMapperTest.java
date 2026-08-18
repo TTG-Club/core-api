@@ -168,8 +168,7 @@ class VttgFeatMechanicsMapperTest {
         modifiers.setTelepathyRange(120);
 
         DamageAffinity damage = new DamageAffinity();
-        // FAIR — опечатка в словаре источника: это огонь, и наружу он идёт как fire
-        damage.setResistances(Set.of(DamageType.FAIR));
+        damage.setResistances(Set.of(DamageType.FIRE));
         modifiers.setDamage(damage);
 
         modifiers.setConditionImmunities(Set.of(Condition.POISONED));

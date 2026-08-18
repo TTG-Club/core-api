@@ -1,0 +1,71 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-18-01-rename-damage-type-fair-to-fire
+      author: claude
+      comment: >
+        Переименовывает огненный тип урона FAIR → FIRE в сохранённых данных. Тип урона
+        лежит в jsonb на разной глубине (оружие предмета, сопротивления и действия
+        существа, механика черты, лист персонажа), поэтому обход идёт по всем jsonb-колонкам
+        схемы. Заменяется только целый JSON-токен "FAIR": внутри строки кавычки
+        экранированы (\"), так что описания и заметки замена не задевает.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              DO $$
+              DECLARE
+                  target record;
+              BEGIN
+                  FOR target IN
+                      SELECT c.table_name, c.column_name
+                      FROM information_schema.columns c
+                      JOIN information_schema.tables t
+                        ON t.table_schema = c.table_schema
+                       AND t.table_name = c.table_name
+                      WHERE c.table_schema = current_schema()
+                        AND t.table_type = 'BASE TABLE'
+                        AND c.udt_name = 'jsonb'
+                  LOOP
+                      EXECUTE format(
+                          'UPDATE %I SET %I = replace(%I::text, %L, %L)::jsonb WHERE %I::text LIKE %L',
+                          target.table_name::text, target.column_name::text, target.column_name::text,
+                          '"FAIR"', '"FIRE"',
+                          target.column_name::text, '%"FAIR"%'
+                      );
+                  END LOOP;
+              END $$;
+
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              DO $$
+              DECLARE
+                  target record;
+              BEGIN
+                  FOR target IN
+                      SELECT c.table_name, c.column_name
+                      FROM information_schema.columns c
+                      JOIN information_schema.tables t
+                        ON t.table_schema = c.table_schema
+                       AND t.table_name = c.table_name
+                      WHERE c.table_schema = current_schema()
+                        AND t.table_type = 'BASE TABLE'
+                        AND c.udt_name = 'jsonb'
+                  LOOP
+                      EXECUTE format(
+                          'UPDATE %I SET %I = replace(%I::text, %L, %L)::jsonb WHERE %I::text LIKE %L',
+                          target.table_name::text, target.column_name::text, target.column_name::text,
+                          '"FIRE"', '"FAIR"',
+                          target.column_name::text, '%"FIRE"%'
+                      );
+                  END LOOP;
+              END $$;

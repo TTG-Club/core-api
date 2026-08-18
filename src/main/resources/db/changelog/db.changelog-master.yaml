@@ -295,3 +295,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/11-01-add-discord-mention-to-article.yaml
   - include:
       file: db/changelog/2026/08/17-01-add-telegram-format-to-article.yaml
+  - include:
+      file: db/changelog/2026/08/18-01-rename-damage-type-fair-to-fire.yaml

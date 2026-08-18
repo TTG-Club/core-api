@@ -645,7 +645,7 @@ public class VttgCreatureMapper {
     }
 
     private String damageType(DamageType value) {
-        return value == DamageType.FAIR ? "fire" : value.name().toLowerCase(Locale.ROOT);
+        return value.name().toLowerCase(Locale.ROOT);
     }
 
     private List<String> conditionNames(Collection<Condition> values) {

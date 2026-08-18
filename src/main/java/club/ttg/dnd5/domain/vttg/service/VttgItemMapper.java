@@ -263,7 +263,7 @@ public class VttgItemMapper {
     }
 
     private String damageType(DamageType type) {
-        return type == DamageType.FAIR ? "fire" : type.name().toLowerCase(Locale.ROOT);
+        return type.name().toLowerCase(Locale.ROOT);
     }
 
     private List<String> weaponProperties(Set<Property> properties, boolean special) {

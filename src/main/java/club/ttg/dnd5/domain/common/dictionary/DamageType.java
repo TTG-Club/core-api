@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.dictionary;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -9,7 +10,13 @@ public enum DamageType {
     ACID("Кислотный"),
     BLUDGEONING("Дробящий"),
     COLD("Холодный"),
-    FAIR("Огненный"),
+    /**
+     * Огненный урон. {@code FAIR} — историческая опечатка в имени константы; значение
+     * принимается на входе, чтобы не ломались сохранённые фильтры и старые ссылки.
+     * Алиас можно убрать, когда такие ссылки перестанут встречаться.
+     */
+    @JsonAlias("FAIR")
+    FIRE("Огненный"),
     FORCE("Силовое поле"),
     LIGHTNING("Электрический"),
     NECROTIC("Некротический"),

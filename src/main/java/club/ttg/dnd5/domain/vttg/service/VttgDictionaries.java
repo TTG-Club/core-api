@@ -86,15 +86,12 @@ final class VttgDictionaries {
         return map(categories, VttgDictionaries::weaponCategory).stream().distinct().toList();
     }
 
-    /**
-     * Тип урона. {@code FAIR} — опечатка в словаре источника: это огонь, и у потребителя
-     * он называется {@code fire}.
-     */
+    /** Тип урона. */
     static String damageType(DamageType type) {
         if (type == null) {
             return null;
         }
-        return type == DamageType.FAIR ? "fire" : type.name().toLowerCase(Locale.ROOT);
+        return type.name().toLowerCase(Locale.ROOT);
     }
 
     static List<String> damageTypes(Collection<DamageType> types) {

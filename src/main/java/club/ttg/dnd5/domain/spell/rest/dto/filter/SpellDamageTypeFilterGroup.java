@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class SpellDamageTypeFilterGroup extends AbstractFilterGroup<DamageType, SpellDamageTypeFilterGroup.SpellDamageTypeFilterItem> {
 
     private final static Set<DamageType> DAMAGE_TYPES = Set.of(
-            DamageType.FAIR,
+            DamageType.FIRE,
             DamageType.COLD,
             DamageType.LIGHTNING,
             DamageType.POISON,
