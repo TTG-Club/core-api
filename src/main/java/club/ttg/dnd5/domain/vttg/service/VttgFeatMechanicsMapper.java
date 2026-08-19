@@ -1,6 +1,10 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
+import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -16,22 +20,30 @@ import club.ttg.dnd5.domain.feat.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.feat.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.feat.model.mechanics.SpeedModifier;
 import club.ttg.dnd5.domain.feat.model.mechanics.SpellFilter;
+import club.ttg.dnd5.domain.feat.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
+import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgEntityRef;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatMechanics;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatPrerequisite;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Требования и механика черты → формат компендиума VTTG.
@@ -45,10 +57,25 @@ import java.util.Objects;
  * {@code prerequisite} в записи нет вовсе, а не пустые объекты.</p>
  */
 @Component
+@RequiredArgsConstructor
 public class VttgFeatMechanicsMapper {
 
     /** Дискриминант блоба даров у потребителя. */
     private static final String FEAT_DATA_TYPE = "feat";
+
+    /**
+     * Нужен одному полю — строке требования: на сайте она размечена так же, как описание
+     * ({@code {@class Волшебник|url:wizard-phb}}), и без раскрытия маркеров уехала бы в
+     * компендиум фигурными скобками наружу.
+     */
+    private final VttgMarkupConverter markupConverter;
+
+    /**
+     * Названия выдаваемых чертой заклинаний: редактор сохраняет только ссылку, и без
+     * справочника в выгрузку уехал бы слаг вместо названия. Запрос идёт только у черт,
+     * которые заклинания выдают, — как это устроено и у вида ({@code VttgSpeciesMapper}).
+     */
+    private final SpellRepository spellRepository;
 
     /** Классовые умения-требования в словаре потребителя. */
     private static String classFeature(ClassFeatureRequirement requirement) {
@@ -100,11 +127,16 @@ public class VttgFeatMechanicsMapper {
         List<String> weapons = grant == null ? List.of()
                 : VttgDictionaries.weaponCategories(grant.getWeaponCategories());
 
+        SpellGrant spellGrant = mechanics == null ? null : mechanics.getSpells();
+
         VttgFeatData result = VttgFeatData.builder()
                 .type(FEAT_DATA_TYPE)
                 .skillProficiencies(emptyToNull(skills))
                 .armorProficiencies(emptyToNull(armor))
                 .weaponProficiencies(emptyToNull(weapons))
+                .toolProficiencies(grant == null ? null : emptyToNull(toolKeys(grant.getTools())))
+                .languages(grant == null ? null
+                        : emptyToNull(VttgDictionaries.languages(grant.getLanguages())))
                 .damageDefenses(damageDefenses(sourceModifiers))
                 .conditionImmunities(sourceModifiers == null ? null
                         : emptyToNull(VttgDictionaries.conditions(sourceModifiers.getConditionImmunities())))
@@ -113,9 +145,79 @@ public class VttgFeatMechanicsMapper {
                 .modifiers(featModifiers(sourceModifiers))
                 .choices(choices(mechanics == null ? null : mechanics.getChoices()))
                 .prerequisite(prerequisite)
+                .grantedSpells(grantedSpells(spellGrant))
+                .spellcastingAbility(spellGrant == null ? null
+                        : VttgDictionaries.ability(spellGrant.getSpellcastingAbility()))
+                .grantedSpellsAlwaysPrepared(spellGrant == null ? null
+                        : flag(spellGrant.getAlwaysPrepared()))
                 .build();
 
         return isEmpty(result) ? null : result;
+    }
+
+    /**
+     * Заклинания, которые черта даёт знать без выбора.
+     *
+     * <p>Название берётся из справочника, как у врождённых заклинаний вида: редактор черты
+     * сохраняет только url и снимок имени не пишет, поэтому без запроса в выгрузку уехал бы
+     * слаг под видом названия — он же осел бы в данных мира при первой правке черты.
+     * Снимок имени, если он всё-таки есть, служит запасным вариантом для заклинания,
+     * которого в справочнике уже нет.</p>
+     *
+     * <p>Ссылка без url пропускается: без неё потребитель заклинание не выдаст, а строка в
+     * книге заклинаний появилась бы пустой. Порядок редактора сохраняется.</p>
+     */
+    private List<VttgFeatData.GrantedSpell> grantedSpells(SpellGrant grant) {
+        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
+            return null;
+        }
+        List<EntityRef> refs = grant.getSpells().stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> trimmed(ref.getUrl()) != null)
+                .toList();
+        if (refs.isEmpty()) {
+            return null;
+        }
+
+        Map<String, String> names = spellNames(refs);
+        List<VttgFeatData.GrantedSpell> result = new ArrayList<>(refs.size());
+        for (EntityRef ref : refs) {
+            String url = trimmed(ref.getUrl());
+            String name = names.get(url);
+            if (name == null) {
+                name = trimmed(ref.getName());
+            }
+            result.add(new VttgFeatData.GrantedSpell(name == null ? url : name, url));
+        }
+        return result;
+    }
+
+    /** Названия заклинаний по их url — одним запросом на черту, как это делает вид. */
+    private Map<String, String> spellNames(List<EntityRef> refs) {
+        Set<String> urls = refs.stream()
+                .map(ref -> trimmed(ref.getUrl()))
+                .collect(Collectors.toSet());
+
+        return spellRepository.findAllShortByUrlIn(urls).stream()
+                .filter(spell -> StringUtils.hasText(spell.getUrl()) && StringUtils.hasText(spell.getName()))
+                .collect(Collectors.toMap(Spell::getUrl, Spell::getName, (first, second) -> first));
+    }
+
+    /**
+     * Инструменты ключами справочника листа. Ссылка, которой ключа не нашлось, сюда не
+     * попадает — она остаётся в {@code mechanics.proficiencies} (см. {@link #toolGrant}),
+     * чтобы владение было хотя бы видно.
+     */
+    private List<String> toolKeys(Collection<EntityRef> tools) {
+        if (CollectionUtils.isEmpty(tools)) {
+            return List.of();
+        }
+        return tools.stream()
+                .filter(Objects::nonNull)
+                .map(ref -> VttgToolKeys.ofUrl(ref.getUrl()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 
     /**
@@ -175,27 +277,40 @@ public class VttgFeatMechanicsMapper {
         return new VttgFeatData.AbilityScoreIncrease(
                 new VttgFeatData.AbilityScoreIncrease.Choice(bonus.getBonus(), bonus.resolveCount(),
                         emptyToNull(VttgDictionaries.abilities(bonus.getAbilities()))),
-                trimmed(bonus.getFromChoiceKey()));
+                trimmed(bonus.getFromChoiceKey()),
+                bonus.getUpto());
     }
 
     private boolean isEmpty(VttgFeatData featData) {
         return featData.getSkillProficiencies() == null
                 && featData.getArmorProficiencies() == null
                 && featData.getWeaponProficiencies() == null
+                && featData.getToolProficiencies() == null
+                && featData.getLanguages() == null
                 && featData.getDamageDefenses() == null
                 && featData.getConditionImmunities() == null
                 && featData.getDarkvision() == null
                 && featData.getAbilityScoreIncrease() == null
                 && featData.getModifiers() == null
                 && featData.getChoices() == null
-                && featData.getPrerequisite() == null;
+                && featData.getPrerequisite() == null
+                // Заклинательная характеристика и признак подготовки описывают ВЫДАННЫЕ
+                // заклинания: без них самих блок даров пуст, и создавать его незачем
+                && featData.getGrantedSpells() == null;
     }
 
-    /** Разобранное требование черты; {@code null} — требований нет. */
+    /**
+     * Разобранное требование черты; {@code null} — требований нет.
+     *
+     * <p>Черта с одной лишь человекочитаемой строкой требования тоже даёт результат: строка
+     * едет полем {@code text}. Иначе требование пропадало бы совсем — в описании его нет,
+     * оно лежит отдельной колонкой записи ({@code Feat.prerequisite}).</p>
+     */
     public VttgFeatPrerequisite prerequisite(Feat feat) {
         FeatPrerequisite source = feat.getPrerequisiteDetails();
+        String text = prerequisiteText(feat, source);
         if (source == null) {
-            return null;
+            return text == null ? null : VttgFeatPrerequisite.builder().text(text).build();
         }
 
         List<VttgFeatPrerequisite.AbilityRequirement> abilities = abilityRequirements(source);
@@ -216,12 +331,25 @@ public class VttgFeatMechanicsMapper {
                 .armorProficiency(emptyToNull(VttgDictionaries.armorCategories(source.getArmorProficiency())))
                 .anyDragonmark(Boolean.TRUE.equals(source.getAnyDragonmark()) ? Boolean.TRUE : null)
                 .campaign(trimmed(source.getCampaign()))
-                .custom(trimmed(source.getCustom()))
+                .text(text)
                 .build();
 
-        // Требование, из которого ничего не перевелось, выводить незачем: потребитель
-        // всё равно покажет человекочитаемую строку из описания
+        // Требование, из которого не перевелось вообще ничего — даже строки, — выводить
+        // незачем: пустой объект потребителю ничего не сообщает
         return isEmpty(result) ? null : result;
+    }
+
+    /**
+     * Требование текстом: сначала то, что редактор отметил как непроверяемое условие, иначе
+     * строка требования, как она напечатана в книге.
+     *
+     * <p>Приоритет у разобранного {@code custom}: его писали именно для листа, а книжная
+     * строка перечисляет заодно и то, что уже разобрано в поля, — показывать её поверх
+     * значило бы дублировать требования.</p>
+     */
+    private String prerequisiteText(Feat feat, FeatPrerequisite source) {
+        String custom = source == null ? null : trimmed(source.getCustom());
+        return custom != null ? custom : trimmed(markupConverter.toText(feat.getPrerequisite()));
     }
 
     /** Механика черты; {@code null} — механики нет. */
@@ -275,7 +403,7 @@ public class VttgFeatMechanicsMapper {
                 && prerequisite.getArmorProficiency() == null
                 && prerequisite.getAnyDragonmark() == null
                 && prerequisite.getCampaign() == null
-                && prerequisite.getCustom() == null;
+                && prerequisite.getText() == null;
     }
 
     // ── Механика ─────────────────────────────────────────────────
@@ -297,15 +425,20 @@ public class VttgFeatMechanicsMapper {
     }
 
     /**
-     * Владение инструментами. Навыки, оружие и доспехи уезжают в {@code featData} —
-     * их лист применяет сам; инструменты остаются здесь, потому что применить их нечем:
-     * словарь инструментов сайта и справочник листа расходятся.
+     * Инструменты, которых нет в справочнике листа. Те, что есть, уехали ключами в
+     * {@code featData.toolProficiencies} и применяются сами; сюда попадает только остаток —
+     * ссылкой, чтобы владение было видно и открывалось карточкой. Так один и тот же
+     * инструмент не едет в записи дважды.
      */
     private VttgFeatMechanics.ProficiencyGrant toolGrant(ProficiencyGrant grant) {
-        if (grant == null) {
+        if (grant == null || CollectionUtils.isEmpty(grant.getTools())) {
             return null;
         }
-        List<VttgEntityRef> tools = refs(grant.getTools());
+        List<EntityRef> unmapped = grant.getTools().stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> VttgToolKeys.ofUrl(ref.getUrl()) == null)
+                .toList();
+        List<VttgEntityRef> tools = refs(unmapped);
 
         return tools == null ? null : new VttgFeatMechanics.ProficiencyGrant(tools);
     }
@@ -329,7 +462,8 @@ public class VttgFeatMechanicsMapper {
                 senses(source.getSenses()),
                 source.getTelepathyRange(),
                 damage == null ? null : trimmed(damage.getResistanceFromChoiceKey()),
-                Boolean.TRUE.equals(source.getInitiativeProficiencyBonus()) ? Boolean.TRUE : null);
+                Boolean.TRUE.equals(source.getInitiativeProficiencyBonus()) ? Boolean.TRUE : null,
+                source.getInitiativeBonus());
 
         return isEmpty(result) ? null : result;
     }
@@ -339,7 +473,8 @@ public class VttgFeatMechanicsMapper {
                 && modifiers.armorClassBonus() == null && modifiers.senses() == null
                 && modifiers.telepathyRange() == null
                 && modifiers.resistanceFromChoiceKey() == null
-                && modifiers.initiativeProficiencyBonus() == null;
+                && modifiers.initiativeProficiencyBonus() == null
+                && modifiers.initiativeBonus() == null;
     }
 
     private VttgFeatMechanics.HitPoints hitPoints(HitPointsModifier source) {
@@ -405,7 +540,7 @@ public class VttgFeatMechanicsMapper {
                     trimmed(choice.getLabel()),
                     choice.resolveCount(),
                     flag(choice.getCountEqualsProficiencyBonus()),
-                    options(choice.getOptions()),
+                    options(choice.getType(), choice.getOptions()),
                     spellFilter(choice.getSpellFilter()),
                     flag(choice.getOnlyIfNotProficient()),
                     flag(choice.getOnlyIfProficient()),
@@ -424,19 +559,87 @@ public class VttgFeatMechanicsMapper {
         return grant == ChoiceGrant.EXPERTISE ? "expertise" : null;
     }
 
-    private List<VttgFeatMechanics.Option> options(List<ChoiceOption> options) {
+    /**
+     * Варианты выбора — значениями в словаре ПОТРЕБИТЕЛЯ.
+     *
+     * <p>Значение выбранного варианта лист кладёт прямо во владения актора, поэтому имя
+     * enum'а источника ({@code STEALTH}) до него доезжать не должно: навык с таким ключом
+     * молча не проставится, а инструмент со слагом страницы так же молча исчезнет при
+     * следующем открытии окна владений. Отсюда перевод по типу выбора.</p>
+     */
+    private List<VttgFeatMechanics.Option> options(ChoiceType type, List<ChoiceOption> options) {
         if (CollectionUtils.isEmpty(options)) {
             return null;
         }
         List<VttgFeatMechanics.Option> result = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
         for (ChoiceOption option : options) {
             if (option == null || !StringUtils.hasText(option.getValue())) {
                 continue;
             }
-            result.add(new VttgFeatMechanics.Option(option.getValue().trim(),
-                    trimmed(option.getName())));
+            String value = optionValue(type, option.getValue().trim());
+            if (value == null) {
+                // Значение не из словаря типа: у таких выборов у листа есть свой полный
+                // справочник, и пустой список вариантов он раскроет целиком — это лучше,
+                // чем положить игроку во владения строку, которой в справочнике нет
+                continue;
+            }
+            if (seen.contains(value)) {
+                // Разные значения источника сходятся в одно у потребителя: рукопашное и
+                // дальнобойное воинское оружие — одна категория правил. Двух одинаковых
+                // кнопок в выборе быть не должно
+                continue;
+            }
+            seen.add(value);
+            result.add(new VttgFeatMechanics.Option(value, trimmed(option.getName())));
         }
         return emptyToNull(result);
+    }
+
+    /**
+     * Значение варианта в словаре потребителя; {@code null} — значение непереводимо и
+     * вариант выводить нельзя.
+     *
+     * <p>Что делать с непереведённым значением, решает не тип ошибки, а наличие у листа
+     * своего справочника. Для навыка, характеристики, типа урона, языка и инструмента он
+     * есть: выброшенный вариант лист заменит полным списком, а вот чужая строка молча
+     * осела бы во владениях актора — инструмент бы из них потом исчез, язык остался бы
+     * латинским токеном. Для оружия, «варианта» и заклинаний справочника нет, пул берётся
+     * ТОЛЬКО из этого списка — там непереведённое значение сохраняется, иначе выбор
+     * остался бы пустым.</p>
+     *
+     * <p>Заклинание и заговор не переводятся: их значение и так url записи справочника —
+     * ровно то, чем потребитель ищет заклинание в компендиуме.</p>
+     */
+    private String optionValue(ChoiceType type, String raw) {
+        return switch (type) {
+            case SKILL -> VttgDictionaries.skill(VttgDictionaries.enumValue(Skill.class, raw));
+            case ABILITY, SAVING_THROW, SPELLCASTING_ABILITY ->
+                    VttgDictionaries.ability(VttgDictionaries.enumValue(Ability.class, raw));
+            case DAMAGE_TYPE -> VttgDictionaries.damageType(VttgDictionaries.damageTypeValue(raw));
+            case LANGUAGE -> VttgDictionaries.language(VttgDictionaries.enumValue(Language.class, raw));
+            case TOOL -> VttgToolKeys.ofUrl(raw);
+            case SPELL_LIST -> firstNonNull(VttgClassKeys.ofUrl(raw), raw);
+            case WEAPON -> firstNonNull(weaponOption(raw), raw);
+            case SPELL, CANTRIP, OPTION -> raw;
+        };
+    }
+
+    private String firstNonNull(String value, String fallback) {
+        return value != null ? value : fallback;
+    }
+
+    /**
+     * Вид оружия в выборе. Редактор задаёт его либо категорией правил, либо ссылкой на
+     * конкретное оружие — потребитель принимает и то, и другое, но ссылку ждёт без суффикса
+     * источника ({@code longsword}, а не {@code longsword-phb}).
+     */
+    private String weaponOption(String raw) {
+        WeaponCategory category = VttgDictionaries.enumValue(WeaponCategory.class, raw);
+        if (category != null) {
+            return VttgDictionaries.weaponCategory(category);
+        }
+        return VttgWeaponKeys.ofUrl(raw);
     }
 
     private VttgFeatMechanics.SpellFilter spellFilter(SpellFilter source) {
@@ -449,15 +652,33 @@ public class VttgFeatMechanicsMapper {
                         .map(school -> school.name().toLowerCase(Locale.ROOT))
                         .toList();
         List<VttgEntityRef> classes = refs(source.getClasses());
+        List<String> classKeys = classKeys(source.getClasses());
         String castingTime = source.getCastingTime() == null ? null
                 : source.getCastingTime().name().toLowerCase(Locale.ROOT);
+        String classesFromChoiceKey = trimmed(source.getClassesFromChoiceKey());
 
         if (source.getLevel() == null && source.getMaxLevel() == null && schools.isEmpty()
-                && classes == null && castingTime == null) {
+                && classes == null && castingTime == null && classesFromChoiceKey == null) {
             return null;
         }
         return new VttgFeatMechanics.SpellFilter(source.getLevel(), source.getMaxLevel(),
-                emptyToNull(schools), classes, castingTime);
+                emptyToNull(schools), classes, emptyToNull(classKeys), classesFromChoiceKey,
+                castingTime);
+    }
+
+    /**
+     * Классы фильтра каноническими ключами — по ним потребитель сверяет
+     * {@code spell.classKeys} и собирает пул. Слаг страницы для сверки не годится: он несёт
+     * суффикс источника, а ключ заклинания — нет.
+     */
+    private List<String> classKeys(Collection<EntityRef> classes) {
+        if (CollectionUtils.isEmpty(classes)) {
+            return List.of();
+        }
+        return VttgClassKeys.ofUrls(classes.stream()
+                .filter(Objects::nonNull)
+                .map(EntityRef::getUrl)
+                .toList());
     }
 
     // ── Общее ────────────────────────────────────────────────────

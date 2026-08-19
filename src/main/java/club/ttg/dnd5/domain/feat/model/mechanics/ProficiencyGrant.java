@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.feat.model.mechanics;
 
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.EntityRef;
@@ -30,13 +31,14 @@ import java.util.Set;
  * <p>Владение с условием сюда не идёт — как и в {@link FeatModifiers}, условные
  * эффекты остаются в описании.</p>
  *
- * <p>Спасбросков и языков здесь нет намеренно. Спасбросками черты наделяют выбором
- * («Устойчивый» — характеристика на выбор), а это {@code choices}. С языками сложнее:
- * словарь {@link club.ttg.dnd5.domain.common.dictionary.Language} и справочник языков
- * листа расходятся и в названиях («дварфский» против «Дварфийский», «бездны» против
- * «Абиссальный»), и в группировке (драконий здесь стандартный, на листе — редкий).
- * Пока это не сведено, поле лист принять не сможет, а отдавать то, что молча
- * игнорируется, — хуже, чем не отдавать.</p>
+ * <p>Спасбросков здесь нет намеренно: спасбросками черты наделяют выбором («Устойчивый» —
+ * характеристика на выбор), а это {@code choices}.</p>
+ *
+ * <p>Языки, наоборот, есть. Словарь {@link club.ttg.dnd5.domain.common.dictionary.Language}
+ * и справочник языков листа расходятся и в названиях («дварфский» против «Дварфийский»,
+ * «бездны» против «Абиссальный»), и в группировке (драконий здесь стандартный, на листе —
+ * редкий), но расхождение сведено таблицей на стороне выгрузки, и лист принимает язык
+ * своим названием.</p>
  */
 @Getter
 @Setter
@@ -69,4 +71,14 @@ public class ProficiencyGrant {
      */
     @Schema(description = "Инструменты из справочника")
     private List<EntityRef> tools;
+
+    /**
+     * Языки, которые черта даёт знать без выбора («Знаток языков» — три языка на выбор,
+     * и это уже {@code choices}, а вот «Дар Общения» даёт язык прямо).
+     *
+     * <p>Словарём, а не ссылками: языки — не записи справочника, и лист хранит их простым
+     * списком названий.</p>
+     */
+    @Schema(description = "Языки", examples = {"DWARVISH", "ELVISH"})
+    private Set<Language> languages;
 }

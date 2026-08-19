@@ -15,8 +15,8 @@ import java.util.List;
  * выражают, лежит здесь — и больше нигде, чтобы одни и те же данные не ехали дважды.</p>
  *
  * <p>То, чего форма листа не выражает, остаётся в {@link VttgFeatMechanics}: варианты
- * повышения характеристик «или/или», владение инструментами и смена типа существа.
- * Дублирования между блоками нет.</p>
+ * повышения характеристик «или/или», смена типа существа и те инструменты, которым не
+ * нашлось ключа в справочнике листа. Дублирования между блоками нет.</p>
  */
 @Builder
 @Getter
@@ -30,6 +30,18 @@ public class VttgFeatData {
     private List<String> armorProficiencies;
     /** Владение оружием: {@code simple}/{@code martial}. */
     private List<String> weaponProficiencies;
+    /**
+     * Владение инструментами — ключами справочника листа ({@code thieves-tools}), а не
+     * слагами страниц сайта: незнакомый ключ лист молча выбрасывает при первом же
+     * открытии окна владений. Перевод — {@code VttgToolKeys}; инструменты, которых у
+     * листа нет, остаются ссылками в {@code mechanics.proficiencies}.
+     */
+    private List<String> toolProficiencies;
+    /**
+     * Известные языки — РУССКИМИ названиями из справочника листа: ключей у языков там нет,
+     * владение хранится подписью.
+     */
+    private List<String> languages;
     /** Защиты от типов урона. */
     private List<DamageDefense> damageDefenses;
     /** Иммунитеты к состояниям. */
@@ -48,6 +60,37 @@ public class VttgFeatData {
     private List<VttgFeatMechanics.Choice> choices;
     /** Разобранное предварительное условие. */
     private VttgFeatPrerequisite prerequisite;
+    /**
+     * Заклинания, которые черта даёт знать без выбора. Выбираемые заклинания сюда не идут:
+     * у них есть количество и фильтр, и живут они в {@link #choices}.
+     */
+    private List<GrantedSpell> grantedSpells;
+    /**
+     * Заклинательная характеристика заклинаний черты ({@code intelligence}/{@code wisdom}/
+     * {@code charisma}). Пусто — черта её не задаёт: либо характеристику выбирает игрок
+     * (выбор типа {@code spellcastingAbility}), либо она берётся от класса.
+     */
+    private String spellcastingAbility;
+    /**
+     * Выданные чертой заклинания не нужно готовить. Пусто читается как «готовить нужно»:
+     * заклинание ложится в книгу наравне с остальными.
+     */
+    private Boolean grantedSpellsAlwaysPrepared;
+
+    /**
+     * Заклинание, которое черта даёт знать.
+     *
+     * <p>Форма та же, что у врождённых заклинаний вида ({@code VttgSpecies.GrantedSpell}):
+     * потребитель ищет запись по {@code spellId}, а {@code name} показывает, даже когда
+     * такой записи в паках нет. Круг и школа не дублируются — они берутся из самой записи
+     * заклинания и в снимке разошлись бы с каталогом.</p>
+     *
+     * @param name    название заклинания на момент сохранения
+     * @param spellId {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record GrantedSpell(String name, String spellId) {
+    }
 
     /**
      * Защита от типа урона.
@@ -75,6 +118,9 @@ public class VttgFeatData {
      * @param resistanceFromChoiceKey    ключ выбора типа урона, к которому даётся
      *                                   сопротивление: сам тип известен только после выбора
      * @param initiativeProficiencyBonus к инициативе прибавляется бонус мастерства
+     * @param initiativeBonus            постоянная числовая прибавка к инициативе;
+     *                                   складывается с {@code initiativeProficiencyBonus},
+     *                                   если стоят оба
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Modifiers(VttgFeatMechanics.HitPoints hitPoints,
@@ -83,7 +129,8 @@ public class VttgFeatData {
                             List<VttgFeatMechanics.Sense> senses,
                             Integer telepathyRange,
                             String resistanceFromChoiceKey,
-                            Boolean initiativeProficiencyBonus) {
+                            Boolean initiativeProficiencyBonus,
+                            Integer initiativeBonus) {
     }
 
     /**
@@ -94,9 +141,11 @@ public class VttgFeatData {
      * @param fromChoiceKey ключ ранее сделанного выбора, к которому привязано повышение
      *                      («Устойчивый» поднимает ту характеристику, спасбросками
      *                      которой овладел)
+     * @param upto          предел, выше которого характеристику не поднять: 20 у черт,
+     *                      30 у эпических даров — тем они и отличаются
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record AbilityScoreIncrease(Choice choice, String fromChoiceKey) {
+    public record AbilityScoreIncrease(Choice choice, String fromChoiceKey, Integer upto) {
 
         /**
          * @param amount на сколько поднимается каждая выбранная характеристика

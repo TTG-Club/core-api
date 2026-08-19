@@ -40,10 +40,6 @@ import java.util.stream.Stream;
 public class VttgSpellMapper {
     private static final List<Integer> CANTRIP_SCALING_LEVELS = List.of(5, 11, 17);
     private static final Pattern DICE_COUNT = Pattern.compile("(?iu)(\\d+)(\\s*[кkd]\\s*\\d+)");
-    private static final Set<String> CLASS_KEYS = Set.of(
-            "artificer", "barbarian", "bard", "cleric", "druid", "fighter",
-            "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"
-    );
 
     private final VttgMarkupConverter markupConverter;
     private final VttgSpellMechanicsExtractor mechanicsExtractor;
@@ -324,16 +320,16 @@ public class VttgSpellMapper {
      * принадлежности подклассам ({@code subclassAffiliation}) — подкласс отображается на ключ
      * РОДИТЕЛЬСКОГО класса. Так заклинания, привязанные только к подклассу (домены/клятвы/традиции),
      * тоже попадают в список базового класса, и результат не зависит целиком от заполненности
-     * {@code classAffiliation}. Ключ нормализуется идентично ключу записи класса
-     * ({@code VttgClassMapper}) для 12 канонических классов, иначе фильтр не сойдётся.</p>
+     * {@code classAffiliation}. Ключ считается общим правилом выгрузки
+     * ({@link VttgClassKeys}) — тем же, которым ключ получает запись класса и фильтр
+     * выбора заклинаний у черты, иначе фильтр не сойдётся.</p>
      */
     private List<String> classKeys(Spell spell) {
         return Stream.concat(
                         classEnglishNames(spell.getClassAffiliation()),
                         subclassParentEnglishNames(spell.getSubclassAffiliation()))
-                .filter(StringUtils::hasText)
-                .map(value -> value.toLowerCase(Locale.ROOT).replaceAll("[^a-z]", ""))
-                .filter(CLASS_KEYS::contains)
+                .map(VttgClassKeys::ofEnglishName)
+                .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
                 .toList();

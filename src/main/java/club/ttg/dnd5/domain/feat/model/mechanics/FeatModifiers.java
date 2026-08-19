@@ -79,4 +79,12 @@ public class FeatModifiers {
      */
     @Schema(description = "Бонус мастерства прибавляется к инициативе")
     private Boolean initiativeProficiencyBonus;
+
+    /**
+     * Постоянная прибавка к инициативе числом — так устроен «Бдительный» издания 2014 года
+     * (+5). Отдельным полем от {@link #initiativeProficiencyBonus}: у черты бывает либо
+     * одно, либо другое, а лист складывает оба, если стоят оба.
+     */
+    @Schema(description = "Постоянная прибавка к инициативе", example = "5")
+    private Integer initiativeBonus;
 }
