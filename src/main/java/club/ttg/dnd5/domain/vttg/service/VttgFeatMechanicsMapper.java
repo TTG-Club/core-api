@@ -8,19 +8,19 @@ import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceOption;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceType;
-import club.ttg.dnd5.domain.feat.model.mechanics.DamageAffinity;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatModifiers;
-import club.ttg.dnd5.domain.feat.model.mechanics.HitPointsModifier;
-import club.ttg.dnd5.domain.feat.model.mechanics.ProficiencyGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.SenseGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpeedModifier;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpellFilter;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
@@ -119,7 +119,7 @@ public class VttgFeatMechanicsMapper {
         FeatMechanics mechanics = feat.getMechanics();
         VttgFeatPrerequisite prerequisite = prerequisite(feat);
         ProficiencyGrant grant = mechanics == null ? null : mechanics.getProficiencies();
-        FeatModifiers sourceModifiers = mechanics == null ? null : mechanics.getModifiers();
+        SheetModifiers sourceModifiers = mechanics == null ? null : mechanics.getModifiers();
 
         List<String> skills = grant == null ? List.of() : VttgDictionaries.skills(grant.getSkills());
         List<String> armor = grant == null ? List.of()
@@ -225,7 +225,7 @@ public class VttgFeatMechanicsMapper {
      * плоским списком пар «тип урона + вид защиты». Сопротивление по выбору
      * ({@code resistanceFromChoiceKey}) сюда не идёт: тип урона ещё не выбран.
      */
-    private List<VttgFeatData.DamageDefense> damageDefenses(FeatModifiers modifiers) {
+    private List<VttgFeatData.DamageDefense> damageDefenses(SheetModifiers modifiers) {
         DamageAffinity damage = modifiers == null ? null : modifiers.getDamage();
         if (damage == null) {
             return null;
@@ -246,7 +246,7 @@ public class VttgFeatMechanicsMapper {
     }
 
     /** Тёмное зрение — единственное чувство, доходящее до зрения токена. */
-    private Integer darkvision(FeatModifiers modifiers) {
+    private Integer darkvision(SheetModifiers modifiers) {
         if (modifiers == null || CollectionUtils.isEmpty(modifiers.getSenses())) {
             return null;
         }
@@ -359,7 +359,7 @@ public class VttgFeatMechanicsMapper {
             return null;
         }
 
-        FeatModifiers modifiers = source.getModifiers();
+        SheetModifiers modifiers = source.getModifiers();
 
         VttgFeatMechanics result = VttgFeatMechanics.builder()
                 .abilityBonuses(abilityBonuses(source.getAbilityBonuses()))
@@ -448,7 +448,7 @@ public class VttgFeatMechanicsMapper {
      * тёмного зрения — они едут своими полями {@code featData}, и повторять их здесь
      * значило бы отдать одно и то же дважды.
      */
-    private VttgFeatData.Modifiers featModifiers(FeatModifiers source) {
+    private VttgFeatData.Modifiers featModifiers(SheetModifiers source) {
         if (source == null) {
             return null;
         }
@@ -525,12 +525,12 @@ public class VttgFeatMechanicsMapper {
         return emptyToNull(result);
     }
 
-    private List<VttgFeatMechanics.Choice> choices(List<FeatChoice> choices) {
+    private List<VttgFeatMechanics.Choice> choices(List<MechanicChoice> choices) {
         if (CollectionUtils.isEmpty(choices)) {
             return null;
         }
         List<VttgFeatMechanics.Choice> result = new ArrayList<>();
-        for (FeatChoice choice : choices) {
+        for (MechanicChoice choice : choices) {
             if (choice == null || choice.getType() == null) {
                 continue;
             }

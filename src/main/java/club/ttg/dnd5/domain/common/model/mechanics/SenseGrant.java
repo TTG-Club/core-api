@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.feat.model.mechanics;
+package club.ttg.dnd5.domain.common.model.mechanics;
 
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import com.fasterxml.jackson.annotation.JsonInclude;

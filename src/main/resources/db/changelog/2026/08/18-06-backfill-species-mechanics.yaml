@@ -1,0 +1,49 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-18-06-backfill-species-mechanics
+      author: claude
+      comment: >
+        Заполняет механику происхождений, у которых нет умений: всё их правило лежит в
+        описании, и до появления species.mechanics записать эти эффекты было некуда.
+
+        Три тифлинговых происхождения дают сопротивление уровня 1 («У вас есть сопротивление
+        к урону огнём» и далее по наследию). Лесной эльф поднимает скорость до 35 футов —
+        это прибавка 5 к скорости родителя, а не своя скорость: в записи происхождения
+        скорость хранится копией родительской и правится вместе с ней.
+
+        Великаньи благословения голиафа сюда не идут: реакция на 1к12, телепорт бонусным
+        действием и сбивание с ног — эффекты с активацией, а модель описывает постоянные.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE species SET mechanics =
+                '{"modifiers":{"damage":{"resistances":["FIRE"]}}}'::jsonb
+              WHERE url = 'tiefling-infernal-phb' AND mechanics IS NULL;
+
+              UPDATE species SET mechanics =
+                '{"modifiers":{"damage":{"resistances":["POISON"]}}}'::jsonb
+              WHERE url = 'tiefling-abyssal-phb' AND mechanics IS NULL;
+
+              UPDATE species SET mechanics =
+                '{"modifiers":{"damage":{"resistances":["NECROTIC"]}}}'::jsonb
+              WHERE url = 'tiefling-chthonic-phb' AND mechanics IS NULL;
+
+              UPDATE species SET mechanics =
+                '{"modifiers":{"speed":{"walkBonus":5}}}'::jsonb
+              WHERE url = 'wood-elf-phb' AND mechanics IS NULL;
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE species SET mechanics = NULL
+              WHERE url IN ('tiefling-infernal-phb', 'tiefling-abyssal-phb',
+                            'tiefling-chthonic-phb', 'wood-elf-phb');

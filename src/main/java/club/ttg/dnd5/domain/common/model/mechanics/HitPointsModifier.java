@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.feat.model.mechanics;
+package club.ttg.dnd5.domain.common.model.mechanics;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,6 +17,10 @@ import lombok.Setter;
  *
  * <p>Из-за двух последних лист обязан хранить <b>уровень, на котором черта взята</b>:
  * «Крепкий» на 4 уровне и он же на 12 дают разную прибавку навсегда.</p>
+ *
+ * <p>У умения вида уровень взятия — всегда первый, поэтому «Дварфийская выдержка»
+ * («максимум хитов увеличивается на 1 и ещё на 1 за каждый новый уровень») описывается
+ * парой {@code flat = 1}, {@code perLevelAfterAcquisition = 1}.</p>
  */
 @Getter
 @Setter

@@ -12,19 +12,19 @@ import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceOption;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceType;
-import club.ttg.dnd5.domain.feat.model.mechanics.DamageAffinity;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatModifiers;
-import club.ttg.dnd5.domain.feat.model.mechanics.HitPointsModifier;
-import club.ttg.dnd5.domain.feat.model.mechanics.ProficiencyGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.SenseGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpeedModifier;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpellFilter;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
@@ -207,7 +207,7 @@ class VttgFeatMechanicsMapperTest {
     void mapsModifiers() {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
 
         HitPointsModifier hitPoints = new HitPointsModifier();
         hitPoints.setPerAcquisitionLevel(2);
@@ -265,7 +265,7 @@ class VttgFeatMechanicsMapperTest {
     void skipsDarkvisionAmongSenses() {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
         modifiers.setSenses(List.of(new SenseGrant(SenseType.DARKVISION, 60)));
         mechanics.setModifiers(modifiers);
         feat.setMechanics(mechanics);
@@ -282,7 +282,7 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
 
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("expertise-skill");
         choice.setType(ChoiceType.SKILL);
         choice.setLabel("Выберите навык");
@@ -315,7 +315,7 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
 
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("skill");
         choice.setType(ChoiceType.SKILL);
         mechanics.setChoices(List.of(choice));
@@ -385,7 +385,7 @@ class VttgFeatMechanicsMapperTest {
     void collapsesDuplicateOptionValues() {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("weapon");
         choice.setType(ChoiceType.WEAPON);
         choice.setOptions(List.of(
@@ -533,7 +533,7 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
 
-        FeatChoice list = new FeatChoice();
+        MechanicChoice list = new MechanicChoice();
         list.setKey("spell-list");
         list.setType(ChoiceType.SPELL_LIST);
         list.setOptions(List.of(new ChoiceOption("wizard-phb", "Волшебник")));
@@ -542,7 +542,7 @@ class VttgFeatMechanicsMapperTest {
         filter.setLevel(0);
         filter.setClassesFromChoiceKey("spell-list");
 
-        FeatChoice cantrip = new FeatChoice();
+        MechanicChoice cantrip = new MechanicChoice();
         cantrip.setKey("cantrip");
         cantrip.setType(ChoiceType.CANTRIP);
         cantrip.setCount(2);
@@ -566,7 +566,7 @@ class VttgFeatMechanicsMapperTest {
         SpellFilter filter = new SpellFilter();
         filter.setClasses(List.of(new EntityRef("wizard-phb", "Волшебник")));
 
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("spell");
         choice.setType(ChoiceType.SPELL);
         choice.setSpellFilter(filter);
@@ -590,7 +590,7 @@ class VttgFeatMechanicsMapperTest {
         SpellFilter filter = new SpellFilter();
         filter.setClassesFromChoiceKey("spell-list");
 
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("cantrip");
         choice.setType(ChoiceType.CANTRIP);
         choice.setSpellFilter(filter);
@@ -662,7 +662,7 @@ class VttgFeatMechanicsMapperTest {
     void mapsFlatInitiativeBonus() {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
         modifiers.setInitiativeBonus(5);
         mechanics.setModifiers(modifiers);
         feat.setMechanics(mechanics);
@@ -677,7 +677,7 @@ class VttgFeatMechanicsMapperTest {
     private String optionValue(ChoiceType type, String raw) {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("choice");
         choice.setType(type);
         choice.setOptions(List.of(new ChoiceOption(raw, "Подпись")));

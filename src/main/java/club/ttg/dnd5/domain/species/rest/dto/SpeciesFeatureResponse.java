@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
+import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,4 +18,9 @@ public class SpeciesFeatureResponse {
     @Schema(description = "описание", requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String description;
+    @Schema(description = "Уровень персонажа, с которого умение действует; null — с первого",
+            example = "3")
+    private Integer level;
+    @Schema(description = "Механика влияния умения на лист персонажа")
+    private SpeciesMechanics mechanics;
 }

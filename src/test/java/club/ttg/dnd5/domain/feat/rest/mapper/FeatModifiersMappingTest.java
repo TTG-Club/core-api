@@ -5,12 +5,12 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.feat.model.Feat;
-import club.ttg.dnd5.domain.feat.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatModifiers;
-import club.ttg.dnd5.domain.feat.model.mechanics.HitPointsModifier;
-import club.ttg.dnd5.domain.feat.model.mechanics.SenseGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpeedModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
@@ -47,7 +47,7 @@ class FeatModifiersMappingTest {
         feat.setMechanics(lichAscension());
 
         FeatDetailResponse response = mapper.toDetail(feat);
-        FeatModifiers modifiers = response.getMechanics().getModifiers();
+        SheetModifiers modifiers = response.getMechanics().getModifiers();
 
         assertEquals(CreatureType.UNDEAD, modifiers.getCreatureType());
         assertEquals(Set.of(DamageType.NECROTIC, DamageType.POISON), modifiers.getDamage().getResistances());
@@ -93,7 +93,7 @@ class FeatModifiersMappingTest {
 
     @Test
     void sensesAndConditionImmunitiesSerializeAsDictionaryNames() throws Exception {
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
         modifiers.setSenses(List.of(new SenseGrant(SenseType.BLINDSIGHT, 10)));
         modifiers.setConditionImmunities(Set.of(Condition.POISONED));
         modifiers.setTelepathyRange(120);
@@ -111,7 +111,7 @@ class FeatModifiersMappingTest {
         DamageAffinity damage = new DamageAffinity();
         damage.setResistances(Set.of(DamageType.NECROTIC, DamageType.POISON));
 
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
         modifiers.setCreatureType(CreatureType.UNDEAD);
         modifiers.setDamage(damage);
 
@@ -125,7 +125,7 @@ class FeatModifiersMappingTest {
         hitPoints.setPerAcquisitionLevel(2);
         hitPoints.setPerLevelAfterAcquisition(2);
 
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
         modifiers.setHitPoints(hitPoints);
 
         FeatMechanics mechanics = new FeatMechanics();

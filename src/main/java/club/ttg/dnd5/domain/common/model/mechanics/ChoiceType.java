@@ -1,11 +1,13 @@
-package club.ttg.dnd5.domain.feat.model.mechanics;
+package club.ttg.dnd5.domain.common.model.mechanics;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
  * Что именно выбирает игрок. Набор вырос из разбора описаний 294 черт прода: типов,
- * которых в тексте не нашлось, здесь нет.
+ * которых в тексте не нашлось, здесь нет. Разбор 135 умений видов новых типов не добавил —
+ * виды выбирают навык, инструмент, тип урона и заклинательную характеристику, и всё это
+ * здесь уже есть.
  */
 @Getter
 @AllArgsConstructor

@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.feat.model.mechanics;
+package club.ttg.dnd5.domain.common.model.mechanics;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
