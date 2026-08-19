@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
+import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -16,6 +17,9 @@ public class SpeciesRequest extends BaseRequest {
 
     @Schema(description = "Умения")
     private Collection<FeatureRequest> features;
+
+    @Schema(description = "Механика влияния вида или происхождения на лист персонажа")
+    private SpeciesMechanics mechanics;
 
     @Schema(description = "Врождённые заклинания и уровни их доступности")
     private Collection<SpeciesInnateSpellRequest> innateSpells;

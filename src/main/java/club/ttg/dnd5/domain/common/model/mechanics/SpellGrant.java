@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.feat.model.mechanics;
+package club.ttg.dnd5.domain.common.model.mechanics;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.EntityRef;
@@ -11,8 +11,9 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * Заклинания, которые черта даёт знать без выбора: «Отмеченный драконом» приносит свой
- * набор, «Дар совершенного полёта» — «Полёт».
+ * Заклинания, которые черта или умение вида даёт знать без выбора: «Отмеченный драконом»
+ * приносит свой набор, «Дар совершенного полёта» — «Полёт», «Носитель света» аасимара —
+ * заговор «Свет».
  *
  * <p>Выбор заклинания сюда не идёт и остаётся в {@code mechanics.choices}: у него есть
  * количество и фильтр ({@link SpellFilter} — круг, школа, время накладывания), а
@@ -26,7 +27,7 @@ import java.util.List;
  *
  * <p>Ограничений использования («один раз до продолжительного отдыха») здесь нет: это
  * счётчик, а не свойство заклинания. Ресурсы черт лист пока не описывает вовсе, и они
- * остаются в описании — как условные эффекты в {@link FeatModifiers}.</p>
+ * остаются в описании — как условные эффекты в {@link SheetModifiers}.</p>
  */
 @Getter
 @Setter

@@ -1,4 +1,4 @@
-package club.ttg.dnd5.domain.feat.model.mechanics;
+package club.ttg.dnd5.domain.common.model.mechanics;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,8 +9,8 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * Выбор, который игрок делает <b>в момент взятия черты</b>: навык, тип урона, заклинание,
- * заклинательная характеристика.
+ * Выбор, который игрок делает <b>один раз, получая источник эффекта</b>: беря черту или
+ * выбирая вид. Навык, тип урона, заклинание, заклинательная характеристика.
  *
  * <p>Выборы по ходу игры («выберите существо в пределах 30 футов», «оттолкнуть или сбить
  * с ног — на ваш выбор») сюда не попадают: лист их не запоминает, они остаются в описании.</p>
@@ -24,7 +24,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FeatChoice {
+public class MechanicChoice {
     /**
      * Стабильный ключ в пределах черты: на него ссылается {@code AbilityBonus.fromChoiceKey},
      * по нему лист хранит сделанный выбор и переживает правку описания.

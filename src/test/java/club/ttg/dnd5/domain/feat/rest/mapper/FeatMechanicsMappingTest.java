@@ -3,12 +3,12 @@ package club.ttg.dnd5.domain.feat.rest.mapper;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.feat.model.Feat;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceOption;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceType;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpellFilter;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
@@ -42,7 +42,7 @@ class FeatMechanicsMappingTest {
 
     @Test
     void choiceCountDefaultsToOne() {
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
 
         assertEquals(1, choice.resolveCount());
 
@@ -59,7 +59,7 @@ class FeatMechanicsMappingTest {
         feat.setMechanics(shadowTouched());
 
         FeatRequest request = mapper.toRequest(feat);
-        FeatChoice choice = request.getMechanics().getChoices().getFirst();
+        MechanicChoice choice = request.getMechanics().getChoices().getFirst();
 
         assertEquals("spell", choice.getKey());
         assertEquals(ChoiceType.SPELL, choice.getType());
@@ -70,7 +70,7 @@ class FeatMechanicsMappingTest {
     @Test
     void abilityBonusCanFollowEarlierChoice() {
         FeatMechanics mechanics = new FeatMechanics();
-        FeatChoice save = new FeatChoice();
+        MechanicChoice save = new MechanicChoice();
         save.setKey("saving-throw");
         save.setType(ChoiceType.SAVING_THROW);
         save.setOnlyIfNotProficient(true);
@@ -100,7 +100,7 @@ class FeatMechanicsMappingTest {
      */
     @Test
     void choiceCanGrantExpertiseFromOwnedSkills() throws Exception {
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("skill");
         choice.setType(ChoiceType.SKILL);
         choice.setOnlyIfProficient(true);
@@ -116,7 +116,7 @@ class FeatMechanicsMappingTest {
     /** Записи до появления исхода давали владение — им он и подставляется. */
     @Test
     void choiceGrantDefaultsToProficiency() throws Exception {
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("skill");
         choice.setType(ChoiceType.SKILL);
 
@@ -130,7 +130,7 @@ class FeatMechanicsMappingTest {
 
     @Test
     void emptyFlagsAreNotSerialized() throws Exception {
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("damage-type");
         choice.setType(ChoiceType.DAMAGE_TYPE);
         choice.setOptions(List.of(new ChoiceOption("FIRE", "Огненный")));
@@ -174,7 +174,7 @@ class FeatMechanicsMappingTest {
     }
 
     private static FeatMechanics magicInitiate() {
-        FeatChoice list = new FeatChoice();
+        MechanicChoice list = new MechanicChoice();
         list.setKey("spell-list");
         list.setType(ChoiceType.SPELL_LIST);
         list.setLabel("Список заклинаний: жрец, друид или волшебник");
@@ -183,7 +183,7 @@ class FeatMechanicsMappingTest {
         filter.setLevel(0);
         filter.setClassesFromChoiceKey("spell-list");
 
-        FeatChoice cantrip = new FeatChoice();
+        MechanicChoice cantrip = new MechanicChoice();
         cantrip.setKey("cantrip");
         cantrip.setType(ChoiceType.CANTRIP);
         cantrip.setCount(2);
@@ -200,7 +200,7 @@ class FeatMechanicsMappingTest {
         filter.setLevel(1);
         filter.setSchools(Set.of(MagicSchool.ILLUSION, MagicSchool.NECROMANCY));
 
-        FeatChoice spell = new FeatChoice();
+        MechanicChoice spell = new MechanicChoice();
         spell.setKey("spell");
         spell.setType(ChoiceType.SPELL);
         spell.setLabel("Заклинание 1 уровня школы иллюзии или некромантии");

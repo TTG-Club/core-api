@@ -1,6 +1,15 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -13,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -141,6 +151,144 @@ class VttgSpeciesMapperTest {
 
         species.setSrdVersion("5.2");
         assertTrue(json(species).get("isSRD").asBoolean());
+    }
+
+    /**
+     * «Дварф» — сопротивления умений сводятся в одну награду, владения навыками идут
+     * отдельными: у выданного без выбора количество равно списку.
+     */
+    @Test
+    void collectsGrantsFromFeatureMechanics() {
+        Species species = baseSpecies("dwarf", "Дварф", "Dwarf");
+        species.setType(CreatureType.HUMANOID);
+        species.setSizes(List.of(size(Size.MEDIUM)));
+        species.setSpeed(30);
+        species.setDarkVision(120);
+
+        SpeciesFeature resilience = new SpeciesFeature("dwarven-resilience", "Дварфийская стойкость",
+                "Dwarven Resilience", "Сопротивление яду.", null);
+        resilience.setMechanics(mechanics(modifiers(DamageType.POISON), null, null));
+
+        SpeciesFeature keenSenses = new SpeciesFeature("keen-senses", "Обострённые чувства",
+                "Keen Senses", "Владение Внимательностью.", null);
+        keenSenses.setMechanics(mechanics(null, skills(Skill.PERCEPTION), null));
+
+        species.setFeatures(List.of(resilience, keenSenses));
+
+        JsonNode grants = json(species).get("grants");
+        assertEquals(3, grants.size());
+        assertEquals("darkvision", grants.get(0).get("type").asText());
+        assertEquals(120, grants.get(0).get("range").asInt());
+        assertEquals("resistance", grants.get(1).get("type").asText());
+        assertEquals("[\"poison\"]", grants.get(1).get("damageTypes").toString());
+        assertEquals("skillProficiency", grants.get(2).get("type").asText());
+        assertEquals(1, grants.get(2).get("count").asInt());
+        assertEquals("[\"perception\"]", grants.get(2).get("from").toString());
+    }
+
+    /** Выбор навыка отдаётся количеством и пулом, а не списком выданного. */
+    @Test
+    void mapsSkillChoiceAsGrantWithPool() {
+        Species species = baseSpecies("gnoll", "Гнолл", "Gnoll");
+        species.setSpeed(30);
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("skill");
+        choice.setType(ChoiceType.SKILL);
+        choice.setOptions(List.of(new ChoiceOption("PERCEPTION", "Внимательность"),
+                new ChoiceOption("STEALTH", "Скрытность"),
+                new ChoiceOption("SURVIVAL", "Выживание")));
+
+        SpeciesFeature feature = new SpeciesFeature("hunters-senses", "Чувства охотника",
+                "Hunter's Senses", "Один навык на выбор.", null);
+        feature.setMechanics(mechanics(null, null, List.of(choice)));
+        species.setFeatures(List.of(feature));
+
+        JsonNode grant = json(species).get("grants").get(0);
+        assertEquals("skillProficiency", grant.get("type").asText());
+        assertEquals(1, grant.get("count").asInt());
+        assertEquals("[\"perception\",\"stealth\",\"survival\"]", grant.get("from").toString());
+    }
+
+    /**
+     * Уровень умения уезжает в {@code level}. Первый уровень не отдаётся: это значение
+     * по умолчанию у потребителя, и проставлять его каждому умению незачем.
+     */
+    @Test
+    void exportsFeatureLevel() {
+        Species species = baseSpecies("high-elf", "Высший эльф", "High Elf");
+        species.setSpeed(30);
+
+        SpeciesFeature magic = new SpeciesFeature("elf-lineage", "Эльфийское происхождение",
+                "Elf Lineage", "Туманный шаг с 5 уровня.", null);
+        magic.setLevel(5);
+
+        SpeciesFeature trance = new SpeciesFeature("trance", "Транс", "Trance", "Не нужно спать.", null);
+        trance.setLevel(1);
+
+        species.setFeatures(List.of(magic, trance));
+
+        JsonNode features = json(species).get("features");
+        assertEquals(5, features.get(0).get("level").asInt());
+        assertFalse(features.get(1).has("level"));
+    }
+
+    /**
+     * «Инфернальный тифлинг» — происхождение без умений: награда приходит из механики
+     * самой записи, иначе взять её неоткуда.
+     */
+    @Test
+    void collectsGrantsFromSpeciesMechanics() {
+        Species lineage = baseSpecies("tiefling-infernal", "Инфернальный тифлинг", "Infernal");
+        lineage.setSpeed(30);
+        lineage.setMechanics(mechanics(modifiers(DamageType.FIRE), null, null));
+
+        JsonNode grants = json(lineage).get("grants");
+        assertEquals(1, grants.size());
+        assertEquals("resistance", grants.get(0).get("type").asText());
+        assertEquals("[\"fire\"]", grants.get(0).get("damageTypes").toString());
+    }
+
+    /** Механика записи и механика её умений складываются в одну награду. */
+    @Test
+    void mergesSpeciesAndFeatureResistances() {
+        Species species = baseSpecies("tiefling", "Тифлинг", "Tiefling");
+        species.setSpeed(30);
+        species.setMechanics(mechanics(modifiers(DamageType.FIRE), null, null));
+
+        SpeciesFeature feature = new SpeciesFeature("infernal-legacy", "Наследие",
+                "Infernal Legacy", "Сопротивление яду.", null);
+        feature.setMechanics(mechanics(modifiers(DamageType.POISON), null, null));
+        species.setFeatures(List.of(feature));
+
+        JsonNode grants = json(species).get("grants");
+        assertEquals(1, grants.size());
+        // Порядок словаря: FIRE идёт раньше POISON.
+        assertEquals("[\"fire\",\"poison\"]", grants.get(0).get("damageTypes").toString());
+    }
+
+    private SpeciesMechanics mechanics(SheetModifiers modifiers,
+                                              ProficiencyGrant proficiencies,
+                                              List<MechanicChoice> choices) {
+        SpeciesMechanics mechanics = new SpeciesMechanics();
+        mechanics.setModifiers(modifiers);
+        mechanics.setProficiencies(proficiencies);
+        mechanics.setChoices(choices);
+        return mechanics;
+    }
+
+    private SheetModifiers modifiers(DamageType resistance) {
+        DamageAffinity damage = new DamageAffinity();
+        damage.setResistances(Set.of(resistance));
+        SheetModifiers modifiers = new SheetModifiers();
+        modifiers.setDamage(damage);
+        return modifiers;
+    }
+
+    private ProficiencyGrant skills(Skill... skills) {
+        ProficiencyGrant grant = new ProficiencyGrant();
+        grant.setSkills(Set.of(skills));
+        return grant;
     }
 
     private JsonNode json(Species species) {

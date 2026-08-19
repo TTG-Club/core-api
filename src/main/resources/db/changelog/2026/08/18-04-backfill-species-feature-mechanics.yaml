@@ -1,0 +1,149 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-18-04-backfill-species-feature-mechanics
+      author: claude
+      comment: >
+        Переносит в features[].mechanics то, что разобрано по текстам прода однозначно:
+        сопротивления без выбора, владения навыками без выбора и выборы навыка с явным пулом.
+        26 умений у 22 записей.
+
+        Остальное остаётся текстом до отдельной правки руками. Сопротивление драконорождённого
+        зависит от таблицы предков, а не от умения; тифлинговым происхождениям приписать
+        сопротивление некуда — у них вообще нет умений, всё правило лежит в описании;
+        «навык или инструмент на выбор» хоравара одним выбором не описать — типов выбора два.
+
+        Условные и разовые эффекты сюда не идут по тем же причинам, что и у черт: преимущество
+        на проверки — не число, а «БМ раз до продолжительного отдыха» — счётчик, которого в
+        модели нет.
+
+        Умения находятся по имени с обрезкой пробелов: в паре записей прода имя сохранено с
+        ведущим или хвостовым пробелом. Порядок умений сохраняется — массив пересобирается
+        с сортировкой по исходному индексу.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              WITH patch(species_url, feature_name, mechanics) AS (VALUES
+                ('aasimar-phb', 'Небесное сопротивление',
+                 '{"modifiers":{"damage":{"resistances":["NECROTIC","RADIANT"]}}}'::jsonb),
+                ('dhampir-abh', 'Отпечаток нежити',
+                 '{"modifiers":{"damage":{"resistances":["NECROTIC"]}}}'::jsonb),
+                ('dhampir-rhw', 'Отпечаток нежити',
+                 '{"modifiers":{"damage":{"resistances":["NECROTIC"]}}}'::jsonb),
+                ('dwarf-phb', 'Дварфийская стойкость',
+                 '{"modifiers":{"damage":{"resistances":["POISON"]}}}'::jsonb),
+                ('flamekin-lfl', 'Сопротивление к огню',
+                 '{"modifiers":{"damage":{"resistances":["FIRE"]}}}'::jsonb),
+                ('gargoyle-feq', 'Природа элементаля',
+                 '{"modifiers":{"damage":{"resistances":["POISON"]}}}'::jsonb),
+                ('kalashtar-efa', 'Ментальная стойкость',
+                 '{"modifiers":{"damage":{"resistances":["PSYCHIC"]}}}'::jsonb),
+                ('rimekin-lfl', 'Сопротивление холоду',
+                 '{"modifiers":{"damage":{"resistances":["COLD"]}}}'::jsonb),
+                ('warforged-efa', 'Устойчивость конструкта',
+                 '{"modifiers":{"damage":{"resistances":["POISON"]}}}'::jsonb),
+                ('warforged-feq', 'Стойкость конструкта',
+                 '{"modifiers":{"damage":{"resistances":["POISON"]}}}'::jsonb),
+                ('reborn-rhw', 'Необычная стойкость',
+                 '{"modifiers":{"damage":{"resistanceFromChoiceKey":"damage-type"}},"choices":[{"key":"damage-type","type":"DAMAGE_TYPE","label":"Выберите тип урона","count":1,"options":[{"value":"COLD","name":"Холодный"},{"value":"NECROTIC","name":"Некротический"},{"value":"POISON","name":"Ядовитый"}]}]}'::jsonb),
+                ('worg-feq', 'Обостренные чувства',
+                 '{"proficiencies":{"skills":["PERCEPTION"]}}'::jsonb),
+                ('harpy-feq', 'Певчая',
+                 '{"proficiencies":{"skills":["PERFORMANCE"]}}'::jsonb),
+                ('lorwyn-changeling-lfl', 'Очаровательный имитатор',
+                 '{"proficiencies":{"skills":["PERFORMANCE"]}}'::jsonb),
+                ('medusa-feq', 'Устрашающее присутствие',
+                 '{"proficiencies":{"skills":["INTIMIDATION"]}}'::jsonb),
+                ('gnoll-feq', 'Чувства охотника',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1,"options":[{"value":"PERCEPTION","name":"Внимательность"},{"value":"STEALTH","name":"Скрытность"},{"value":"SURVIVAL","name":"Выживание"}]}]}'::jsonb),
+                ('lupin-rhw', 'Инстинкты верволка',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1,"options":[{"value":"PERCEPTION","name":"Внимательность"},{"value":"STEALTH","name":"Скрытность"},{"value":"SURVIVAL","name":"Выживание"}]}]}'::jsonb),
+                ('elf-phb', 'Обострённые чувства',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1,"options":[{"value":"INSIGHT","name":"Проницательность"},{"value":"PERCEPTION","name":"Внимательность"},{"value":"SURVIVAL","name":"Выживание"}]}]}'::jsonb),
+                ('elf-lfl', 'Обострённые чувства',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1,"options":[{"value":"INSIGHT","name":"Проницательность"},{"value":"PERCEPTION","name":"Внимательность"},{"value":"SURVIVAL","name":"Выживание"}]}]}'::jsonb),
+                ('shifter-efa', 'Звериные инстинкты',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1,"options":[{"value":"ACROBATICS","name":"Акробатика"},{"value":"ATHLETICS","name":"Атлетика"},{"value":"INTIMIDATION","name":"Запугивание"},{"value":"SURVIVAL","name":"Выживание"}]}]}'::jsonb),
+                ('changeling-efa', 'Инстинкты Изменяющегося',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите два навыка","count":2,"options":[{"value":"DECEPTION","name":"Обман"},{"value":"INSIGHT","name":"Проницательность"},{"value":"INTIMIDATION","name":"Запугивание"},{"value":"PERFORMANCE","name":"Выступление"},{"value":"PERSUASION","name":"Убеждение"}]}]}'::jsonb),
+                ('human-phb', 'Умелость',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1}]}'::jsonb),
+                ('reborn-rhw', 'Знания прошлой жизни',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1}]}'::jsonb),
+                ('kalashtar-efa', 'Отсечённый от снов',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1,"rechooseOnLongRest":true}]}'::jsonb),
+                ('warforged-efa', 'Специализированная конструкция',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1},{"key":"tool","type":"TOOL","label":"Выберите инструмент","count":1}]}'::jsonb),
+                ('warforged-feq', 'Специализированный дизайн',
+                 '{"choices":[{"key":"skill","type":"SKILL","label":"Выберите навык","count":1},{"key":"tool","type":"TOOL","label":"Выберите инструмент","count":1}]}'::jsonb)
+              )
+              UPDATE species s
+              SET features = (
+                SELECT jsonb_agg(
+                  CASE WHEN p.mechanics IS NULL THEN t.feature
+                       ELSE jsonb_set(t.feature, '{mechanics}', p.mechanics)
+                  END ORDER BY t.idx)
+                FROM jsonb_array_elements(s.features) WITH ORDINALITY AS t(feature, idx)
+                LEFT JOIN patch p
+                  ON p.species_url = s.url
+                 AND p.feature_name = btrim(t.feature->>'name')
+              )
+              WHERE s.url IN (SELECT species_url FROM patch)
+                AND s.features IS NOT NULL
+                AND jsonb_typeof(s.features) = 'array'
+                AND jsonb_array_length(s.features) > 0;
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              WITH patched(species_url, feature_name) AS (VALUES
+                ('aasimar-phb', 'Небесное сопротивление'),
+                ('dhampir-abh', 'Отпечаток нежити'),
+                ('dhampir-rhw', 'Отпечаток нежити'),
+                ('dwarf-phb', 'Дварфийская стойкость'),
+                ('flamekin-lfl', 'Сопротивление к огню'),
+                ('gargoyle-feq', 'Природа элементаля'),
+                ('kalashtar-efa', 'Ментальная стойкость'),
+                ('kalashtar-efa', 'Отсечённый от снов'),
+                ('rimekin-lfl', 'Сопротивление холоду'),
+                ('warforged-efa', 'Устойчивость конструкта'),
+                ('warforged-efa', 'Специализированная конструкция'),
+                ('warforged-feq', 'Стойкость конструкта'),
+                ('warforged-feq', 'Специализированный дизайн'),
+                ('reborn-rhw', 'Необычная стойкость'),
+                ('reborn-rhw', 'Знания прошлой жизни'),
+                ('worg-feq', 'Обостренные чувства'),
+                ('harpy-feq', 'Певчая'),
+                ('lorwyn-changeling-lfl', 'Очаровательный имитатор'),
+                ('medusa-feq', 'Устрашающее присутствие'),
+                ('gnoll-feq', 'Чувства охотника'),
+                ('lupin-rhw', 'Инстинкты верволка'),
+                ('elf-phb', 'Обострённые чувства'),
+                ('elf-lfl', 'Обострённые чувства'),
+                ('shifter-efa', 'Звериные инстинкты'),
+                ('changeling-efa', 'Инстинкты Изменяющегося'),
+                ('human-phb', 'Умелость')
+              )
+              UPDATE species s
+              SET features = (
+                SELECT jsonb_agg(
+                  CASE WHEN p.feature_name IS NULL THEN t.feature
+                       ELSE t.feature - 'mechanics'
+                  END ORDER BY t.idx)
+                FROM jsonb_array_elements(s.features) WITH ORDINALITY AS t(feature, idx)
+                LEFT JOIN patched p
+                  ON p.species_url = s.url
+                 AND p.feature_name = btrim(t.feature->>'name')
+              )
+              WHERE s.url IN (SELECT species_url FROM patched)
+                AND s.features IS NOT NULL
+                AND jsonb_typeof(s.features) = 'array'
+                AND jsonb_array_length(s.features) > 0;

@@ -11,17 +11,17 @@ import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceOption;
-import club.ttg.dnd5.domain.feat.model.mechanics.ChoiceType;
-import club.ttg.dnd5.domain.feat.model.mechanics.DamageAffinity;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.feat.model.mechanics.FeatModifiers;
-import club.ttg.dnd5.domain.feat.model.mechanics.HitPointsModifier;
-import club.ttg.dnd5.domain.feat.model.mechanics.ProficiencyGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.SenseGrant;
-import club.ttg.dnd5.domain.feat.model.mechanics.SpeedModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
+import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
@@ -151,7 +151,7 @@ class VttgFeatMechanicsMapperTest {
     void mapsModifiers() {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
 
         HitPointsModifier hitPoints = new HitPointsModifier();
         hitPoints.setPerAcquisitionLevel(2);
@@ -209,7 +209,7 @@ class VttgFeatMechanicsMapperTest {
     void skipsDarkvisionAmongSenses() {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
-        FeatModifiers modifiers = new FeatModifiers();
+        SheetModifiers modifiers = new SheetModifiers();
         modifiers.setSenses(List.of(new SenseGrant(SenseType.DARKVISION, 60)));
         mechanics.setModifiers(modifiers);
         feat.setMechanics(mechanics);
@@ -226,7 +226,7 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
 
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("expertise-skill");
         choice.setType(ChoiceType.SKILL);
         choice.setLabel("Выберите навык");
@@ -257,7 +257,7 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
 
-        FeatChoice choice = new FeatChoice();
+        MechanicChoice choice = new MechanicChoice();
         choice.setKey("skill");
         choice.setType(ChoiceType.SKILL);
         mechanics.setChoices(List.of(choice));

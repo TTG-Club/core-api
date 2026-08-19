@@ -18,4 +18,7 @@ public class SpeciesPropertiesResponse {
     private String size;
     @Schema(description = "Тип существа")
     private String type;
+    /** Числом, а не строкой как скорость и размер: лист складывает его с чужими чувствами. */
+    @Schema(description = "Дальность тёмного зрения в футах", example = "60")
+    private Integer darkVision;
 }

@@ -1,6 +1,10 @@
 package club.ttg.dnd5.domain.feat.model.mechanics;
 
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -40,7 +44,7 @@ public class FeatMechanics {
      */
     @Schema(description = "Выборы, которые игрок делает при взятии черты",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private List<FeatChoice> choices;
+    private List<MechanicChoice> choices;
 
     /**
      * Постоянные модификаторы листа: хиты, скорости, КД, чувства, защиты. Сгруппированы
@@ -49,7 +53,7 @@ public class FeatMechanics {
      */
     @Schema(description = "Постоянные модификаторы листа персонажа",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private FeatModifiers modifiers;
+    private SheetModifiers modifiers;
 
     /**
      * Владения, выданные чертой без выбора. Отдельным блоком от {@link #modifiers}:
