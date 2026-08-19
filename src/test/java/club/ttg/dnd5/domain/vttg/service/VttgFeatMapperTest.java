@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.vttg.service;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -12,10 +13,14 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 class VttgFeatMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final VttgFeatMapper mapper = new VttgFeatMapper(new VttgMarkupConverter(objectMapper), new VttgFeatMechanicsMapper());
+    private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
+
+    private final VttgFeatMapper mapper = new VttgFeatMapper(markupConverter,
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
 
     /** «Оборона» — постоянные поля типа, ключ/имя источника, повторяемость false. */
     @Test

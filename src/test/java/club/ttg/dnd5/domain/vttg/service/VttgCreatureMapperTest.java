@@ -311,6 +311,237 @@ class VttgCreatureMapperTest {
         assertEquals("half", mappedAction.get("saveEffect"));
     }
 
+    /**
+     * Записи редакции 2024: бонус атаки стоит после зачина, а не перед оборотом «к попаданию».
+     * Без него VTTG не показывает бросок попадания и сразу катит урон.
+     */
+    @Test
+    void extractsAttackBonusFromAttackOpening() {
+        Creature creature = creature("aboleth-mm");
+        creature.setActions(List.of(action(
+                "Щупальце",
+                "[\"*Бросок рукопашной атаки:* +9, досягаемость 15 фт., одна цель. "
+                        + "*Попадание:* 12 (2к6 + 5) дробящего урона.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(9, action.get("attackBonus"));
+        assertEquals("melee", action.get("rangeType"));
+        assertEquals(15, action.get("reach"));
+        assertDamagePart(action, "2к6 + 5", "bludgeoning");
+        assertNull(action.get("saveType"));
+    }
+
+    /** «Рукопашная или дальнобойная» — бросок совершается как рукопашный, дистанция едет рядом. */
+    @Test
+    void mapsMeleeOrRangedAttackAsMelee() {
+        Creature creature = creature("bugbear-warrior-mm");
+        creature.setActions(List.of(action(
+                "Лёгкий молот",
+                "[\"*Бросок рукопашной или дальнобойной атаки:* +4, досягаемость 10 фт. "
+                        + "или дистанция 20/60 фт. *Попадание:* 9 (3к4 + 2) дробящего урона.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+        Map<?, ?> range = (Map<?, ?>) action.get("range");
+
+        assertEquals(4, action.get("attackBonus"));
+        assertEquals("melee", action.get("rangeType"));
+        assertEquals(10, action.get("reach"));
+        assertEquals(20, range.get("normal"));
+        assertEquals(60, range.get("long"));
+    }
+
+    /** Плоский урон стоит сразу за зачином: закрывающая звёздочка не должна его прятать. */
+    @Test
+    void extractsFlatDamageAfterBoldHitOpening() {
+        Creature creature = creature("cat-mm");
+        creature.setActions(List.of(action(
+                "Царапать",
+                "[\"*Бросок рукопашной атаки:* +4, досягаемость 5 фт. *Попадание:* 1 рубящего урона.\"]"
+        )));
+
+        assertDamagePart(firstAction(mapper.toVttg(creature).getSystem()), "1", "slashing");
+    }
+
+    /** «Сл.» приезжает ссылкой на глоссарий — разбор по сырому тексту обязан это пережить. */
+    @Test
+    void extractsSaveFromDescriptionWithGlossaryLink() {
+        Creature creature = creature("aboleth-mm");
+        creature.setActions(List.of(action(
+                "Поглощение воспоминаний",
+                "[\"*Спасбросок Интеллекта:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 16, "
+                        + "одно существо в пределах 30 фт. *Провал:* 10 (3к6) урона психической энергией. "
+                        + "*Успех:* половина урона.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals("intelligence", action.get("saveType"));
+        assertEquals(16, action.get("saveDC"));
+        assertEquals("half", action.get("saveEffect"));
+        assertDamagePart(action, "3к6", "psychic");
+        assertNull(action.get("attackBonus"));
+    }
+
+    /** Без блока «*Успех:*» при успешном спасброске не происходит ничего. */
+    @Test
+    void marksSaveWithoutSuccessBlockAsNone() {
+        Creature creature = creature("aboleth-mm");
+        creature.setActions(List.of(action(
+                "Господство над разумом (2/день)",
+                "[\"*Спасбросок Мудрости:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 16, "
+                        + "одно видимое существо в пределах 30 фт. *Провал:* цель получает состояние очарованный. "
+                        + "Цель повторяет спасбросок, когда получает урон. При успехе эффект оканчивается.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals("wisdom", action.get("saveType"));
+        assertEquals("none", action.get("saveEffect"));
+    }
+
+    @Test
+    void extractsLineAreaOfEffect() {
+        Creature creature = creature("adult-black-dragon-mm");
+        creature.setActions(List.of(action(
+                "Кислотное дыхание (перезарядка 5-6)",
+                "[\"*Спасбросок Ловкости:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 18, "
+                        + "каждое существо в [линии](https://new.ttg.club/glossary/line-phb) длиной 60 фт. "
+                        + "и шириной 5 фт. *Провал:* 54 (12к8) урона кислотой. *Успех:* половина урона.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+        Map<?, ?> area = (Map<?, ?>) action.get("areaOfEffect");
+
+        assertEquals("line", area.get("shape"));
+        assertEquals(60, area.get("size"));
+        assertEquals(5, area.get("width"));
+        assertEquals("ft", area.get("unit"));
+        assertEquals("dexterity", action.get("saveType"));
+        assertEquals(18, action.get("saveDC"));
+        assertEquals("half", action.get("saveEffect"));
+        assertDamagePart(action, "12к8", "acid");
+    }
+
+    @Test
+    void extractsConeAreaOfEffect() {
+        Creature creature = creature("adult-gold-dragon-mm");
+        creature.setActions(List.of(action(
+                "Огненное дыхание (перезарядка 5-6)",
+                "[\"*Спасбросок Ловкости:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 21, "
+                        + "каждое существо в 60-футовом [конусе](https://new.ttg.club/glossary/cone-phb). "
+                        + "*Провал:* 66 (12к10) урона огнём. *Успех:* половина урона.\"]"
+        )));
+
+        Map<?, ?> area = (Map<?, ?>) firstAction(mapper.toVttg(creature).getSystem()).get("areaOfEffect");
+
+        assertEquals("cone", area.get("shape"));
+        assertEquals(60, area.get("size"));
+        assertNull(area.get("width"));
+    }
+
+    /**
+     * Спас заменяет бросок попадания, поэтому у атаки с довеском-спасом он не пишется в
+     * saveType, а гейтит наложение состояния: иначе паралич лёг бы на цель безусловно.
+     */
+    @Test
+    void movesRiderSaveOntoEffectOfAttack() {
+        Creature creature = creature("ghoul-mm");
+        creature.setActions(List.of(action(
+                "Когти",
+                "[\"*Бросок рукопашной атаки:* +4, досягаемость 5 фт. *Попадание:* 4 (1к4 + 2) рубящего урона. "
+                        + "Если цель — существо, которое не является нежитью или эльфом, то она подвергается "
+                        + "следующему эффекту. *Спасбросок Телосложения:* "
+                        + "[Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 10. "
+                        + "*Провал:* цель [парализована](https://new.ttg.club/glossary/paralyzed-phb) "
+                        + "до конца своего следующего хода.\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+        Map<?, ?> effect = (Map<?, ?>) ((List<?>) action.get("activeEffects")).getFirst();
+        Map<?, ?> applySave = (Map<?, ?>) effect.get("applySave");
+
+        assertEquals(4, action.get("attackBonus"));
+        assertDamagePart(action, "1к4 + 2", "slashing");
+        assertNull(action.get("saveType"));
+        assertNull(action.get("saveDC"));
+        assertNull(action.get("areaOfEffect"));
+        assertEquals("paralyzed", effect.get("id"));
+        assertEquals("constitution", applySave.get("ability"));
+        assertEquals(10, applySave.get("dc"));
+        assertEquals("negate", applySave.get("onSuccess"));
+    }
+
+    /** Состояние из блока попадания спасом не гейтится: спас ниже по тексту — про другое. */
+    @Test
+    void keepsEffectFromHitBlockUngated() {
+        Creature creature = creature("otyugh-mm");
+        creature.setActions(List.of(action(
+                "Укус",
+                "[\"*Бросок рукопашной атаки:* +6, досягаемость 5 фт. *Попадание:* 12 (2к8 + 3) колющего урона "
+                        + "и цель [отравлена](https://new.ttg.club/glossary/poisoned-phb). Каждый раз, когда "
+                        + "отравленная цель завершает продолжительный отдых, то она подвергается следующему "
+                        + "эффекту: *Спасбросок Телосложения:* "
+                        + "[Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 15. "
+                        + "*Провал:* максимальное количество хитов цели опускается на 5 (1к10).\"]"
+        )));
+
+        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
+        Map<?, ?> effect = (Map<?, ?>) ((List<?>) action.get("activeEffects")).getFirst();
+
+        assertEquals(6, action.get("attackBonus"));
+        assertEquals("poisoned", effect.get("id"));
+        assertNull(effect.get("applySave"));
+    }
+
+    /** «+9 к попаданию атаками» в «Использовании заклинаний» — бонус заклинательства, не атака. */
+    @Test
+    void doesNotTreatSpellcastingBonusAsAttack() {
+        Creature creature = creature("adult-black-dragon-mm");
+        creature.setActions(List.of(action(
+                "Использование заклинаний",
+                "[\"Дракон накладывает одно из следующих заклинаний, используя Харизму как "
+                        + "заклинательную характеристику (Сл. 17, +9 к попаданию атаками):\"]"
+        )));
+
+        assertNull(firstAction(mapper.toVttg(creature).getSystem()).get("attackBonus"));
+    }
+
+    /** Черта тоже бывает бросаемой, а структурированных полей у неё нет вовсе. */
+    @Test
+    void extractsMechanicsFromTrait() {
+        Creature creature = creature("aboleth-mm");
+        CreatureTrait trait = new CreatureTrait();
+        trait.setName("Облако слизи");
+        trait.setDescription(
+                "[\"Находясь под водой, аболет окружён слизью. *Спасбросок Телосложения:* "
+                        + "[Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 14, каждое существо в пределах "
+                        + "5-футовой [эманации](https://new.ttg.club/glossary/emanation-phb) с центром на аболете. "
+                        + "*Провал:* цель проклята и получает 6 (1к12) урона кислотой в конце каждых 10 минут.\"]"
+        );
+        creature.setTraits(List.of(trait));
+
+        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) mapper.toVttg(creature).getSystem().get("traits")).getFirst();
+        Map<?, ?> area = (Map<?, ?>) mappedTrait.get("areaOfEffect");
+
+        assertEquals("constitution", mappedTrait.get("saveType"));
+        assertEquals(14, mappedTrait.get("saveDC"));
+        assertEquals("none", mappedTrait.get("saveEffect"));
+        assertEquals("emanation", area.get("shape"));
+        assertEquals(5, area.get("size"));
+        assertDamagePart(mappedTrait, "1к12", "acid");
+    }
+
+    private Creature creature(String url) {
+        Creature result = new Creature();
+        result.setUrl(url);
+        result.setName(url);
+        result.setDescription("");
+        return result;
+    }
+
     private CreatureAbility ability(Ability ability, int value, int multiplier) {
         CreatureAbility result = new CreatureAbility();
         result.setAbility(ability);

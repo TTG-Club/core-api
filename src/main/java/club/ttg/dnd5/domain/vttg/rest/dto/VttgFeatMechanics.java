@@ -27,9 +27,9 @@ public class VttgFeatMechanics {
      */
     private List<AbilityBonus> abilityBonuses;
     /**
-     * Владение инструментами, выданное без выбора. Навыки, оружие и доспехи потребитель
-     * применяет сам и берёт их из {@code featData}; инструменты остаются здесь: словарь
-     * инструментов сайта и справочник листа расходятся, и применить их нечем.
+     * Инструменты, которым не нашлось ключа в справочнике листа. Те, что нашлись, уезжают
+     * ключами в {@code featData.toolProficiencies} и применяются сами; сюда попадает
+     * остаток — ссылкой, чтобы владение было хотя бы видно и открывалось карточкой.
      */
     private ProficiencyGrant proficiencies;
     /**
@@ -124,9 +124,16 @@ public class VttgFeatMechanics {
     }
 
     /**
-     * Допустимое значение выбора.
+     * Допустимое значение выбора — в СЛОВАРЕ ПОТРЕБИТЕЛЯ, а не источника.
      *
-     * @param value значение в словаре своего типа: слаг навыка, ключ типа урона, url записи
+     * <p>Значение потребитель кладёт прямо во владения актора, поэтому оно переводится по
+     * типу выбора: навык — слагом ({@code sleightOfHand}), характеристика и тип урона —
+     * ключом ({@code charisma}, {@code fire}), язык — русским названием справочника листа,
+     * инструмент — ключом владения ({@code thieves-tools}), список заклинаний — ключом
+     * класса ({@code wizard}). Заклинание и «вариант» остаются как есть: у первого значение
+     * и так url записи, у второго общего словаря нет.</p>
+     *
+     * @param value значение в словаре своего типа
      * @param name  подпись для игрока
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -136,14 +143,24 @@ public class VttgFeatMechanics {
     /**
      * Чем ограничен выбор заклинания.
      *
-     * @param level       точный уровень; 0 — заговор
-     * @param maxLevel    наибольший допустимый уровень
-     * @param schools     школы магии
-     * @param classes     классы, из списков которых можно выбирать
-     * @param castingTime время накладывания ({@code ritual}, {@code action}, …)
+     * @param level                точный уровень; 0 — заговор
+     * @param maxLevel             наибольший допустимый уровень
+     * @param schools              школы магии
+     * @param classes              классы, из списков которых можно выбирать — ссылками на
+     *                             записи, для показа
+     * @param classKeys            те же классы каноническими ключами ({@code wizard}): по
+     *                             ним потребитель собирает пул, сверяя со
+     *                             {@code spell.classKeys}. Слаг страницы для этого не годится —
+     *                             он несёт суффикс источника ({@code wizard-phb})
+     * @param classesFromChoiceKey ключ выбора, из ответа на который берётся класс:
+     *                             «Посвящённый в магию» сперва спрашивает список — жреца,
+     *                             друида или волшебника, — и только потом даёт выбрать из
+     *                             него заговоры
+     * @param castingTime          время накладывания ({@code ritual}, {@code action}, …)
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SpellFilter(Integer level, Integer maxLevel, List<String> schools,
-                              List<VttgEntityRef> classes, String castingTime) {
+                              List<VttgEntityRef> classes, List<String> classKeys,
+                              String classesFromChoiceKey, String castingTime) {
     }
 }
