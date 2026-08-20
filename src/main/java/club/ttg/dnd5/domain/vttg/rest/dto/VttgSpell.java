@@ -35,6 +35,11 @@ public class VttgSpell {
     private String deliveryType;
     private List<VttgDamagePart> damageParts;
     private Boolean autoHit;
+    /**
+     * Характеристика, от которой считается заклинание; {@code null} — её берёт
+     * потребитель у класса, как у заклинаний книги.
+     */
+    private String spellcastingAbility;
     private String saveType;
     private String saveEffect;
     /**

@@ -80,6 +80,7 @@ public class VttgSpellMapper {
                 .deliveryType(deliveryType(effect, range))
                 .damageParts(mechanics.damageParts())
                 .autoHit(effect == null ? null : effect.getAutoHit())
+                .spellcastingAbility(spellcastingAbility(effect))
                 .saveType(saveType(effect))
                 .saveEffect(mechanics.saveEffect())
                 .cantripScaling(cantripScalingTiers == null ? null : "level")
@@ -242,6 +243,17 @@ public class VttgSpellMapper {
             case SIGHT -> "sight";
             default -> "none";
         };
+    }
+
+    /**
+     * Характеристика заклинания в словаре потребителя; {@code null} — не задана,
+     * и потребитель считает заклинание от характеристики класса.
+     */
+    private String spellcastingAbility(SpellEffect effect) {
+        if (effect == null || effect.getSpellcastingAbility() == null) {
+            return null;
+        }
+        return VttgDictionaries.ability(effect.getSpellcastingAbility());
     }
 
     private String saveType(SpellEffect effect) {

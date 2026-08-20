@@ -20,5 +20,11 @@ public class SpellShortResponse extends ShortResponse {
     private Boolean ritual;
     private SpellShortComponents components;
     private Set<SpellAffiliationDto> classes;
+    /**
+     * Характеристика заклинания из {@code effect.spellcastingAbility}; {@code null} —
+     * не задана, и потребитель берёт характеристику класса. Едет в кратком ответе,
+     * потому что лист персонажа собирает книгу заклинаний именно из него.
+     */
+    private String spellcastingAbility;
 
 }
