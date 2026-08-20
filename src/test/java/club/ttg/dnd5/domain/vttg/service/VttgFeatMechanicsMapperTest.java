@@ -29,6 +29,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
@@ -39,6 +40,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -533,21 +535,103 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
         SpellListExpansion expansion = new SpellListExpansion();
-        expansion.setSpells(List.of(new EntityRef("identify-phb", null)));
+        expansion.setGroups(List.of(spellListGroup(null, null, "identify-phb")));
         expansion.setRequiresSpellcasting(Boolean.TRUE);
         mechanics.setSpellList(expansion);
         feat.setMechanics(mechanics);
 
-        JsonNode featData = json(feat).get("featData");
+        JsonNode group = json(feat).get("featData").get("spellList").get("groups").get(0);
 
         // Черта ничего не выдаёт — только расширяет список
-        assertFalse(featData.has("grantedSpells"));
-        assertEquals("Опознание", featData.get("spellList").get("spells").get(0).get("name").asText());
-        assertEquals("identify-phb",
-                featData.get("spellList").get("spells").get(0).get("spellId").asText());
-        assertTrue(featData.get("spellList").get("requiresSpellcasting").asBoolean());
+        assertFalse(json(feat).get("featData").has("grantedSpells"));
+        assertEquals("Опознание", group.get("spells").get(0).get("name").asText());
+        assertEquals("identify-phb", group.get("spells").get(0).get("spellId").asText());
+        assertTrue(json(feat).get("featData").get("spellList").get("requiresSpellcasting").asBoolean());
         // Круг не дублируется: лист берёт его из записи компендиума
-        assertFalse(featData.get("spellList").get("spells").get(0).has("level"));
+        assertFalse(group.get("spells").get(0).has("level"));
+        // Список без уровня и количества полей не несёт — он доступен сразу и целиком
+        assertFalse(group.has("requiredLevel"));
+        assertFalse(group.has("count"));
+    }
+
+    /**
+     * Списки открываются ступенями, и каждая едет своим уровнем и количеством: без
+     * разбивки лист открыл бы всю таблицу на первом уровне.
+     */
+    @Test
+    void mapsSpellListGroupsWithLevelAndCount() {
+        when(spellRepository.findAllShortByUrlIn(any()))
+                .thenReturn(List.of(spell("identify-phb", "Опознание"),
+                        spell("fireball-phb", "Огненный шар")));
+
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setGroups(List.of(
+                spellListGroup(null, null, "identify-phb"),
+                spellListGroup(5, "@prof", "fireball-phb")));
+        mechanics.setSpellList(expansion);
+        feat.setMechanics(mechanics);
+
+        JsonNode groups = json(feat).get("featData").get("spellList").get("groups");
+
+        assertEquals(2, groups.size());
+        assertFalse(groups.get(0).has("requiredLevel"));
+        assertEquals(5, groups.get(1).get("requiredLevel").asInt());
+        assertEquals("@prof", groups.get(1).get("count").asText());
+        assertEquals("fireball-phb", groups.get(1).get("spells").get(0).get("spellId").asText());
+    }
+
+    /**
+     * Запись, сохранённая до появления списков, читается как один список — доступен сразу
+     * и целиком. Иначе у неё пропала бы вся таблица.
+     */
+    @Test
+    void readsFlatSpellListAsSingleGroup() {
+        when(spellRepository.findAllShortByUrlIn(any()))
+                .thenReturn(List.of(spell("identify-phb", "Опознание")));
+
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setSpells(List.of(new EntityRef("identify-phb", null)));
+        mechanics.setSpellList(expansion);
+        feat.setMechanics(mechanics);
+
+        JsonNode groups = json(feat).get("featData").get("spellList").get("groups");
+
+        assertEquals(1, groups.size());
+        assertFalse(groups.get(0).has("requiredLevel"));
+        assertEquals("identify-phb", groups.get(0).get("spells").get(0).get("spellId").asText());
+    }
+
+    /** Список, все ссылки которого битые, выбрасывается: пустая ступень читалась бы как «тут пусто». */
+    @Test
+    void dropsSpellListGroupWithoutUsableSpells() {
+        when(spellRepository.findAllShortByUrlIn(any()))
+                .thenReturn(List.of(spell("identify-phb", "Опознание")));
+
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setGroups(List.of(
+                spellListGroup(null, null, "identify-phb"),
+                spellListGroup(5, null, (String) null)));
+        mechanics.setSpellList(expansion);
+        feat.setMechanics(mechanics);
+
+        JsonNode groups = json(feat).get("featData").get("spellList").get("groups");
+
+        assertEquals(1, groups.size());
+        assertFalse(groups.get(0).has("requiredLevel"));
+    }
+
+    private static SpellListGroup spellListGroup(Integer requiredLevel, String count, String... urls) {
+        SpellListGroup group = new SpellListGroup();
+        group.setRequiredLevel(requiredLevel);
+        group.setCount(count);
+        group.setSpells(Arrays.stream(urls).map(url -> new EntityRef(url, null)).toList());
+        return group;
     }
 
     /**

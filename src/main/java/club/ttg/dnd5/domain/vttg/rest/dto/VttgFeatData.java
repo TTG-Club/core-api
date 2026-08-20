@@ -141,14 +141,30 @@ public class VttgFeatData {
     }
 
     /**
+     * Один список расширения — со своим уровнем доступа и своим количеством.
+     *
+     * <p>Списков у черты может быть несколько, и это НЕ взаимоисключающие варианты: каждый
+     * открывается на своём уровне и складывается с предыдущими. Без разбивки лист открыл бы
+     * всю таблицу на первом уровне.</p>
+     *
+     * @param requiredLevel уровень персонажа, с которого список открывается; пусто — сразу
+     * @param count         сколько заклинаний берут: число либо выражение с {@code @prof},
+     *                      {@code @level}, {@code @mod.<abbr>}; пусто — весь список
+     * @param spells        заклинания списка
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SpellListGroup(Integer requiredLevel, String count, List<SpellListSpell> spells) {
+    }
+
+    /**
      * Расширение списка заклинаний класса — таблица «Заклинания метки».
      *
-     * @param spells               заклинания, добавляемые в список
+     * @param groups               списки заклинаний по уровням доступа
      * @param requiresSpellcasting нужно умение «Использование заклинаний» или «Магия
      *                             договора»; пусто — расширяет всегда
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record SpellList(List<SpellListSpell> spells, Boolean requiresSpellcasting) {
+    public record SpellList(List<SpellListGroup> groups, Boolean requiresSpellcasting) {
     }
 
     /**

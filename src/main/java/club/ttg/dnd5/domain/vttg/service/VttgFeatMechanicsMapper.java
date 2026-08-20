@@ -25,6 +25,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
@@ -294,28 +295,69 @@ public class VttgFeatMechanicsMapper {
      * ничего, а в записи мира занял бы место и сбил бы сравнение при обновлении.</p>
      */
     private VttgFeatData.SpellList spellList(SpellListExpansion expansion) {
-        if (expansion == null || CollectionUtils.isEmpty(expansion.getSpells())) {
+        if (expansion == null) {
             return null;
         }
-        List<EntityRef> refs = expansion.getSpells().stream()
-                .filter(Objects::nonNull)
-                .filter(ref -> trimmed(ref.getUrl()) != null)
-                .toList();
-        if (refs.isEmpty()) {
+        // Прежняя плоская форма читается как один список — приведение живёт в модели,
+        // чтобы выгрузка и деталь черты разбирали блок одинаково.
+        List<SpellListGroup> source = expansion.resolveGroups();
+        if (source.isEmpty()) {
             return null;
         }
 
-        Map<String, String> names = spellNames(refs);
+        // Названия — одним запросом на всю черту, а не на каждый список: списков у метки
+        // до пяти, и запрос на каждый превратил бы выгрузку в N+1.
+        List<EntityRef> allRefs = source.stream()
+                .map(SpellListGroup::getSpells)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(Objects::nonNull)
+                .filter(ref -> trimmed(ref.getUrl()) != null)
+                .toList();
+        if (allRefs.isEmpty()) {
+            return null;
+        }
+        Map<String, String> names = spellNames(allRefs);
+
+        List<VttgFeatData.SpellListGroup> groups = new ArrayList<>(source.size());
+        for (SpellListGroup group : source) {
+            List<VttgFeatData.SpellListSpell> spells = spellListSpells(group.getSpells(), names);
+            // Список без единого пригодного заклинания выбрасывается: пустая ступень в
+            // записи мира читалась бы как «на этом уровне не открывается ничего».
+            if (spells.isEmpty()) {
+                continue;
+            }
+            groups.add(new VttgFeatData.SpellListGroup(group.getRequiredLevel(),
+                    trimmed(group.getCount()), spells));
+        }
+        if (groups.isEmpty()) {
+            return null;
+        }
+        return new VttgFeatData.SpellList(groups, flag(expansion.getRequiresSpellcasting()));
+    }
+
+    /** Заклинания одного списка: ссылка без url пропускается, порядок редактора сохраняется. */
+    private List<VttgFeatData.SpellListSpell> spellListSpells(List<EntityRef> refs,
+                                                              Map<String, String> names) {
+        if (CollectionUtils.isEmpty(refs)) {
+            return List.of();
+        }
         List<VttgFeatData.SpellListSpell> spells = new ArrayList<>(refs.size());
         for (EntityRef ref : refs) {
+            if (ref == null) {
+                continue;
+            }
             String url = trimmed(ref.getUrl());
+            if (url == null) {
+                continue;
+            }
             String name = names.get(url);
             if (name == null) {
                 name = trimmed(ref.getName());
             }
             spells.add(new VttgFeatData.SpellListSpell(name == null ? url : name, url));
         }
-        return new VttgFeatData.SpellList(spells, flag(expansion.getRequiresSpellcasting()));
+        return spells;
     }
 
     /** Названия заклинаний по их url — одним запросом на черту, как это делает вид. */

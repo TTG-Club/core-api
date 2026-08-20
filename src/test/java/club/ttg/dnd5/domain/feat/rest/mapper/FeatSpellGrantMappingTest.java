@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
@@ -153,6 +154,82 @@ class FeatSpellGrantMappingTest {
 
         assertFalse(json.get("spells").get(0).has("level"));
         assertFalse(json.has("requiresSpellcasting"));
+    }
+
+    /**
+     * Списки расширения открываются ступенями: у каждого свой уровень доступа и своё
+     * количество. Без этого таблица метки открывалась бы целиком на первом уровне.
+     */
+    @Test
+    void spellListGroupKeepsLevelAndCount() throws Exception {
+        SpellListGroup group = new SpellListGroup();
+        group.setRequiredLevel(5);
+        group.setCount("@prof");
+        group.setSpells(List.of(new EntityRef("identify-phb", "Опознание")));
+
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setGroups(List.of(group));
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(expansion));
+        JsonNode first = json.get("groups").get(0);
+
+        assertEquals(5, first.get("requiredLevel").asInt());
+        assertEquals("@prof", first.get("count").asText());
+        assertEquals("identify-phb", first.get("spells").get(0).get("url").asText());
+        // Доступный сразу и целиком список полей не несёт — как и прочие пустые поля
+        assertFalse(json.has("spells"));
+    }
+
+    /**
+     * Запись, сохранённая до появления списков, читается как один список — доступный сразу
+     * и целиком. Иначе заводить поле было бы нельзя, не мигрируя весь JSONB.
+     */
+    @Test
+    void flatSpellListIsResolvedAsSingleGroup() throws Exception {
+        SpellListExpansion expansion = objectMapper.readValue(
+                "{\"spells\":[{\"url\":\"identify-phb\"}],\"requiresSpellcasting\":true}",
+                SpellListExpansion.class);
+
+        var groups = expansion.resolveGroups();
+
+        assertEquals(1, groups.size());
+        assertNull(groups.getFirst().getRequiredLevel());
+        assertNull(groups.getFirst().getCount());
+        assertEquals("identify-phb", groups.getFirst().getSpells().getFirst().getUrl());
+    }
+
+    /** Заполненные списки старое плоское поле перебивают: две формы одного блока не смешиваются. */
+    @Test
+    void groupsWinOverFlatSpells() {
+        SpellListGroup group = new SpellListGroup();
+        group.setSpells(List.of(new EntityRef("fireball-phb", null)));
+
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setGroups(List.of(group));
+        expansion.setSpells(List.of(new EntityRef("identify-phb", null)));
+
+        var groups = expansion.resolveGroups();
+
+        assertEquals(1, groups.size());
+        assertEquals("fireball-phb", groups.getFirst().getSpells().getFirst().getUrl());
+    }
+
+    /** Пустой блок списков не создаёт — расширять нечем. */
+    @Test
+    void emptySpellListResolvesToNoGroups() {
+        assertTrue(new SpellListExpansion().resolveGroups().isEmpty());
+    }
+
+    /** Служебное поле разбора в JSON не уходит — оно не часть контракта. */
+    @Test
+    void resolvedGroupsAreNotSerialized() throws Exception {
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setSpells(List.of(new EntityRef("identify-phb", null)));
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(expansion));
+
+        assertFalse(json.has("resolvedGroups"));
+        assertFalse(json.has("groups"));
     }
 
     /** Заклинаний у черты может не быть вовсе — блока тогда нет. */

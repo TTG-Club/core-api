@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
@@ -16,6 +17,7 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.feat.rest.mapper.FeatMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -63,7 +65,9 @@ public class FeatServiceImpl implements FeatService {
                 .toList();
         response.setBackgrounds(backgrounds.isEmpty() ? null : backgrounds);
         response.setGrantedSpells(resolveGrantedSpells(response));
-        response.setSpellListSpells(resolveSpellListSpells(response));
+        var spellListGroups = resolveSpellListGroups(response);
+        response.setSpellListGroups(spellListGroups);
+        response.setSpellListSpells(flattenSpellList(spellListGroups));
         return response;
     }
 
@@ -106,34 +110,78 @@ public class FeatServiceImpl implements FeatService {
     }
 
     /**
-     * Дополняет данными справочника заклинания, которые черта добавляет в список класса.
+     * Все заклинания списка подряд — из уже разобранных списков доступа.
      *
-     * <p>Круг здесь нужен даже больше, чем у выданных: таблица «Заклинания метки» в книге
-     * разбита по кругам, и без круга сайту её не собрать. В механике круг не хранится
-     * намеренно — он свойство самой записи и разошёлся бы с каталогом при её правке.</p>
+     * <p>Считается из них, а не отдельным разбором: второй проход означал бы второй запрос
+     * в справочник и вторую точку, где плоское поле могло разойтись со списками.</p>
      *
-     * @param response деталь черты с разобранной механикой.
-     * @return заклинания списка с данными справочника; null — черта список не расширяет.
+     * <p>Заклинание, стоящее сразу в двух списках, попадает сюда один раз: поле нужно для
+     * таблицы по кругам, и дубль показал бы там лишнюю строку.</p>
+     *
+     * @param groups разобранные списки доступа; null — черта список не расширяет.
+     * @return заклинания списка с данными справочника; null — расширять нечем.
      */
-    private Collection<SpellShortResponse> resolveSpellListSpells(final FeatDetailResponse response) {
-        var refs = Optional.ofNullable(response.getMechanics())
-                .map(FeatMechanics::getSpellList)
-                .map(SpellListExpansion::getSpells)
-                .orElse(List.of());
-
-        if (CollectionUtils.isEmpty(refs)) {
+    private Collection<SpellShortResponse> flattenSpellList(
+            final Collection<FeatSpellListGroupResponse> groups) {
+        if (CollectionUtils.isEmpty(groups)) {
             return null;
         }
 
-        var spellsByUrl = shortSpellsByUrl(refs);
+        var result = groups.stream()
+                .map(FeatSpellListGroupResponse::getSpells)
+                .flatMap(Collection::stream)
+                .distinct()
+                .toList();
 
-        var result = refs.stream()
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Раскладывает заклинания списка по спискам доступа, дополняя их справочником.
+     *
+     * <p>Список без единого найденного заклинания выбрасывается целиком: пустая ступень на
+     * странице выглядела бы как «на этом уровне ничего не открывается», хотя на деле там
+     * опечатка в url.</p>
+     *
+     * @param response деталь черты с разобранной механикой.
+     * @return списки с данными справочника; null — черта список не расширяет.
+     */
+    private Collection<FeatSpellListGroupResponse> resolveSpellListGroups(final FeatDetailResponse response) {
+        var groups = spellListGroups(response);
+
+        if (groups.isEmpty()) {
+            return null;
+        }
+
+        var spellsByUrl = shortSpellsByUrl(groups.stream()
+                .map(SpellListGroup::getSpells)
                 .filter(Objects::nonNull)
-                .map(ref -> spellsByUrl.get(ref.getUrl()))
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .toList());
+
+        var result = groups.stream()
+                .map(group -> {
+                    var spells = Optional.ofNullable(group.getSpells()).orElse(List.<EntityRef>of()).stream()
+                            .filter(Objects::nonNull)
+                            .map(ref -> spellsByUrl.get(ref.getUrl()))
+                            .filter(Objects::nonNull)
+                            .toList();
+                    return spells.isEmpty() ? null : new FeatSpellListGroupResponse(
+                            group.getRequiredLevel(), group.getCount(), spells);
+                })
                 .filter(Objects::nonNull)
                 .toList();
 
         return result.isEmpty() ? null : result;
+    }
+
+    /** Списки блока с поправкой на прежнюю плоскую форму — см. {@link SpellListExpansion#resolveGroups()}. */
+    private List<SpellListGroup> spellListGroups(final FeatDetailResponse response) {
+        return Optional.ofNullable(response.getMechanics())
+                .map(FeatMechanics::getSpellList)
+                .map(SpellListExpansion::resolveGroups)
+                .orElse(List.of());
     }
 
     /**
@@ -243,7 +291,9 @@ public class FeatServiceImpl implements FeatService {
         // Как и у сохранённой черты: без дополнения превью показало бы выдаваемые
         // заклинания пустыми, и редактор не увидел бы того, что набрал.
         response.setGrantedSpells(resolveGrantedSpells(response));
-        response.setSpellListSpells(resolveSpellListSpells(response));
+        var spellListGroups = resolveSpellListGroups(response);
+        response.setSpellListGroups(spellListGroups);
+        response.setSpellListSpells(flattenSpellList(spellListGroups));
         return response;
     }
 

@@ -1,11 +1,13 @@
 package club.ttg.dnd5.domain.common.model.mechanics;
 
 import club.ttg.dnd5.domain.common.model.EntityRef;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -22,14 +24,32 @@ import java.util.List;
  * свойство самой записи справочника, и снимок разошёлся бы с каталогом при первой же
  * правке заклинания. Потребитель группирует список по кругу сам, взяв его из записи —
  * ровно так же, как деталь черты добирает круг и школу выданным заклинаниям.</p>
+ *
+ * <p>Заклинания лежат в {@link SpellListGroup списках}: у части черт таблица открывается
+ * ступенями, и из каждой ступени берут ограниченное число заклинаний. Плоское поле
+ * {@link #getSpells()} — прежняя форма того же блока; читать блок надо через
+ * {@link #resolveGroups()}, чтобы обе формы разбирались одинаково.</p>
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SpellListExpansion {
-    /** Заклинания, добавляемые в список. Круг берётся из записи справочника. */
-    @Schema(description = "Заклинания, добавляемые в список заклинаний")
+    /**
+     * Списки заклинаний по уровням доступа. Несколько — это НЕ «или»: каждый открывается
+     * на своём уровне и складывается с предыдущими.
+     */
+    @Schema(description = "Списки заклинаний по уровням доступа")
+    private List<SpellListGroup> groups;
+
+    /**
+     * Все заклинания блока подряд, без разбивки на списки, — прежняя форма.
+     *
+     * <p>Осталась ради записей, сохранённых до появления уровней доступа: у них весь блок
+     * лежит здесь, и выбросить поле значило бы потерять им заклинания. Новые записи
+     * пишут {@link #getGroups()}; читать надо через {@link #resolveGroups()}.</p>
+     */
+    @Schema(description = "Заклинания блока без разбивки на списки (прежняя форма)")
     private List<EntityRef> spells;
 
     /**
@@ -42,4 +62,27 @@ public class SpellListExpansion {
      */
     @Schema(description = "Нужно умение «Использование заклинаний» или «Магия договора»")
     private Boolean requiresSpellcasting;
+
+    /**
+     * Списки блока с поправкой на прежнюю форму: запись без {@link #getGroups()} читается
+     * как один список — доступен сразу, берётся целиком.
+     *
+     * <p>Приведение здесь, а не у каждого потребителя: две формы одного блока обязаны
+     * разбираться одним кодом, иначе деталь черты и выгрузка разойдутся на первой же
+     * записи, которую не успели пересохранить.</p>
+     *
+     * @return списки заклинаний; пусто — черта список не расширяет.
+     */
+    @JsonIgnore
+    public List<SpellListGroup> resolveGroups() {
+        if (!CollectionUtils.isEmpty(groups)) {
+            return groups;
+        }
+        if (CollectionUtils.isEmpty(spells)) {
+            return List.of();
+        }
+        SpellListGroup legacy = new SpellListGroup();
+        legacy.setSpells(spells);
+        return List.of(legacy);
+    }
 }
