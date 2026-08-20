@@ -213,7 +213,7 @@ public class VttgModuleService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", moduleId);
         result.put("name", packName);
-        result.put("version", "1.2.0");
+        result.put("version", "1.2.1");
         result.put("description", packName + ", экспортировано с TTG Club");
         result.put("author", "TTG Club");
         result.put("compatibleSystems", List.of("dnd5e"));
