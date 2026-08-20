@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
@@ -178,6 +179,14 @@ final class VttgDictionaries {
 
     static List<String> languages(Collection<Language> languages) {
         return map(languages, VttgDictionaries::language);
+    }
+
+    /**
+     * Откат ресурса: {@code LONG_REST → "long"}. Правилом не выводится — у потребителя это
+     * {@code short}/{@code long} без суффикса, и тот же перевод делает выгрузка класса.
+     */
+    static String recovery(ResourceRecovery recovery) {
+        return recovery == ResourceRecovery.SHORT_REST ? "short" : "long";
     }
 
     /**

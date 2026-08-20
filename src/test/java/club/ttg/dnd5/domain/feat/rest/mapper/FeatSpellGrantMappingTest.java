@@ -4,7 +4,9 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
@@ -64,7 +66,7 @@ class FeatSpellGrantMappingTest {
     @Test
     void spellsSerializeAsCatalogRefs() throws Exception {
         SpellGrant spells = new SpellGrant();
-        spells.setSpells(List.of(new EntityRef("fly-phb", "Полёт")));
+        spells.setSpells(List.of(new GrantedSpellRef("fly-phb", "Полёт", null)));
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(spells));
 
@@ -78,12 +80,79 @@ class FeatSpellGrantMappingTest {
     @Test
     void emptyFieldsAreOmitted() throws Exception {
         SpellGrant spells = new SpellGrant();
-        spells.setSpells(List.of(new EntityRef("fly-phb", "Полёт")));
+        spells.setSpells(List.of(new GrantedSpellRef("fly-phb", "Полёт", null)));
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(spells));
 
         assertFalse(json.has("spellcastingAbility"));
         assertFalse(json.has("alwaysPrepared"));
+    }
+
+    /**
+     * Уровень выдачи едет вместе со ссылкой и плоско: у метки дракона «Малое
+     * восстановление» приходит на третьем уровне, и без уровня лист выдал бы его сразу.
+     */
+    @Test
+    void grantedSpellKeepsRequiredLevel() throws Exception {
+        SpellGrant spells = new SpellGrant();
+        spells.setSpells(List.of(
+                new GrantedSpellRef("cure-wounds-phb", "Лечение ран", null),
+                new GrantedSpellRef("lesser-restoration-phb", "Малое восстановление", 3)));
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(spells));
+
+        // Доступное сразу поля не несёт: пустой уровень и читается как «с момента взятия»
+        assertFalse(json.get("spells").get(0).has("requiredLevel"));
+        assertEquals(3, json.get("spells").get(1).get("requiredLevel").asInt());
+        assertEquals("lesser-restoration-phb", json.get("spells").get(1).get("url").asText());
+    }
+
+    /**
+     * Ссылка, сохранённая до появления уровня, читается без правок — иначе поле нельзя
+     * было бы завести, не мигрируя весь JSONB.
+     */
+    @Test
+    void grantWithoutLevelStaysReadable() throws Exception {
+        SpellGrant spells = objectMapper.readValue(
+                "{\"spells\":[{\"url\":\"fly-phb\",\"name\":\"Полёт\"}]}", SpellGrant.class);
+
+        assertEquals("fly-phb", spells.getSpells().getFirst().getUrl());
+        assertNull(spells.getSpells().getFirst().getRequiredLevel());
+    }
+
+    /**
+     * Расширение списка заклинаний — отдельный блок: такое заклинание игрок не знает, а
+     * лишь может подготовить наравне с классовыми.
+     */
+    @Test
+    void spellListIsSeparateFromGrant() {
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setSpells(List.of(new EntityRef("identify-phb", "Опознание")));
+        expansion.setRequiresSpellcasting(true);
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setSpellList(expansion);
+        Feat feat = new Feat();
+        feat.setMechanics(mechanics);
+
+        FeatDetailResponse response = mapper.toDetail(feat);
+
+        assertNull(response.getMechanics().getSpells());
+        assertEquals("identify-phb",
+                response.getMechanics().getSpellList().getSpells().getFirst().getUrl());
+        assertTrue(response.getMechanics().getSpellList().getRequiresSpellcasting());
+    }
+
+    /** Круг в расширении не хранится: он свойство записи и разошёлся бы с каталогом. */
+    @Test
+    void spellListDoesNotSnapshotSpellLevel() throws Exception {
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setSpells(List.of(new EntityRef("identify-phb", "Опознание")));
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(expansion));
+
+        assertFalse(json.get("spells").get(0).has("level"));
+        assertFalse(json.has("requiresSpellcasting"));
     }
 
     /** Заклинаний у черты может не быть вовсе — блока тогда нет. */
@@ -101,7 +170,8 @@ class FeatSpellGrantMappingTest {
     private static FeatMechanics dragonmarked() {
         SpellGrant spells = new SpellGrant();
         spells.setSpells(
-                List.of(new EntityRef("light-phb", "Свет"), new EntityRef("mending-phb", "Починка")));
+                List.of(new GrantedSpellRef("light-phb", "Свет", null),
+                        new GrantedSpellRef("mending-phb", "Починка", null)));
         spells.setSpellcastingAbility(Ability.CHARISMA);
         spells.setAlwaysPrepared(true);
 

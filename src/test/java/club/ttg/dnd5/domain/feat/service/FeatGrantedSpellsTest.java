@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
@@ -80,7 +81,7 @@ class FeatGrantedSpellsTest {
         // Порядок — как в механике: игрок видит заклинания так, как их перечислил редактор.
         assertIterableEquals(
                 List.of("light-phb", "mending-phb"),
-                granted.stream().map(SpellShortResponse::getUrl).toList());
+                granted.stream().map(entry -> entry.getSpell().getUrl()).toList());
     }
 
     /**
@@ -100,7 +101,7 @@ class FeatGrantedSpellsTest {
 
         assertIterableEquals(
                 List.of("light-phb"),
-                granted.stream().map(SpellShortResponse::getUrl).toList());
+                granted.stream().map(entry -> entry.getSpell().getUrl()).toList());
     }
 
     /** Черта заклинаний не выдаёт — поля в ответе нет вовсе. */
@@ -130,7 +131,7 @@ class FeatGrantedSpellsTest {
 
     private static FeatMechanics grantOf(String... urls) {
         SpellGrant spells = new SpellGrant();
-        spells.setSpells(Arrays.stream(urls).map(url -> new EntityRef(url, null)).toList());
+        spells.setSpells(Arrays.stream(urls).map(url -> new GrantedSpellRef(url, null, null)).toList());
 
         FeatMechanics mechanics = new FeatMechanics();
         mechanics.setSpells(spells);

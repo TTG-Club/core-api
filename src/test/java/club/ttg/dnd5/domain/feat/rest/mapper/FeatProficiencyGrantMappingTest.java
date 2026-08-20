@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.mapper;
 
+import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
@@ -106,6 +107,63 @@ class FeatProficiencyGrantMappingTest {
 
         assertEquals("thieves-tools-phb", json.get("tools").get(0).get("url").asText());
         assertEquals("Воровские инструменты", json.get("tools").get(0).get("name").asText());
+    }
+
+    /**
+     * «Мастер оружия»: конкретный вид оружия и оружейный приём — разные дары. Форма шлёт их
+     * ссылками на предметы справочника, как инструменты.
+     */
+    @Test
+    void rawFormKeepsWeaponsAndMasteries() {
+        Feat feat = new Feat();
+        feat.setMechanics(weaponMaster());
+
+        FeatRequest request = mapper.toRequest(feat);
+        ProficiencyGrant proficiencies = request.getMechanics().getProficiencies();
+
+        assertEquals("longsword-phb", proficiencies.getWeapons().getFirst().getUrl());
+        assertEquals("rapier-phb", proficiencies.getWeaponMasteries().getFirst().getUrl());
+    }
+
+    /** Владение спасбросками без выбора — свой набор, не характеристики повышения. */
+    @Test
+    void rawFormKeepsFixedSavingThrows() {
+        ProficiencyGrant proficiencies = new ProficiencyGrant();
+        proficiencies.setSavingThrows(Set.of(Ability.WISDOM));
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setProficiencies(proficiencies);
+        Feat feat = new Feat();
+        feat.setMechanics(mechanics);
+
+        assertEquals(Set.of(Ability.WISDOM),
+                mapper.toRequest(feat).getMechanics().getProficiencies().getSavingThrows());
+    }
+
+    /** Новые дары попадают в JSONB своими именами — по ним же их читает мастерская. */
+    @Test
+    void weaponsAndMasteriesSerializeAsCatalogRefs() throws Exception {
+        ProficiencyGrant proficiencies = new ProficiencyGrant();
+        proficiencies.setWeapons(List.of(new EntityRef("longsword-phb", "Длинный меч")));
+        proficiencies.setWeaponMasteries(List.of(new EntityRef("rapier-phb", "Рапира")));
+        proficiencies.setSavingThrows(Set.of(Ability.CONSTITUTION));
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(proficiencies));
+
+        assertEquals("longsword-phb", json.get("weapons").get(0).get("url").asText());
+        assertEquals("rapier-phb", json.get("weaponMasteries").get(0).get("url").asText());
+        assertEquals("CONSTITUTION", json.get("savingThrows").get(0).asText());
+    }
+
+    /** «Мастер оружия»: владение видом оружия и приём этим же оружием — разными полями. */
+    private static FeatMechanics weaponMaster() {
+        ProficiencyGrant proficiencies = new ProficiencyGrant();
+        proficiencies.setWeapons(List.of(new EntityRef("longsword-phb", "Длинный меч")));
+        proficiencies.setWeaponMasteries(List.of(new EntityRef("rapier-phb", "Рапира")));
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setProficiencies(proficiencies);
+        return mechanics;
     }
 
     /** «Обучение воинскому оружию»: воинское оружие целиком, обе половины словаря. */

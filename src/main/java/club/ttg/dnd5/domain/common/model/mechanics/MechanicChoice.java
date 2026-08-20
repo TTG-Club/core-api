@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Выбор, который игрок делает <b>один раз, получая источник эффекта</b>: беря черту или
@@ -32,8 +34,30 @@ public class MechanicChoice {
     @Schema(description = "Стабильный ключ выбора в пределах черты", example = "damage-type")
     private String key;
 
-    @Schema(description = "Что выбирают", example = "DAMAGE_TYPE")
+    /**
+     * Основной вид выбора. Когда вид один — он здесь и есть; когда их несколько, здесь
+     * первый, а полный набор в {@link #types}. Так запись остаётся читаемой для тех, кто
+     * про смешанные наборы не знает.
+     */
+    @Schema(description = "Что выбирают (основной вид)", example = "DAMAGE_TYPE")
     private ChoiceType type;
+
+    /**
+     * Полный набор видов, когда выбирают из нескольких справочников сразу: «Умелый» берёт
+     * три штуки вперемешку из навыков и инструментов.
+     *
+     * <p>Заполняется только при нескольких видах — у обычного выбора хватает {@link #type}.
+     * Куда лечь выбранному значению, решает принадлежность самого значения:
+     * {@code sleightOfHand} есть среди навыков, {@code thieves-tools} — среди
+     * инструментов.</p>
+     *
+     * <p>Поэтому смешивать можно ТОЛЬКО виды со справочником правил (см. {@link ChoiceType}).
+     * Оружие, приёмы оружия, заклинания и «вариант» описаны данными мира, и по значению их
+     * не разложить — набор с ними выгрузка сворачивает до одного вида.</p>
+     */
+    @Schema(description = "Полный набор видов при выборе из нескольких справочников сразу",
+            examples = {"SKILL", "TOOL"})
+    private List<ChoiceType> types;
 
     @Schema(description = "Подпись для игрока", example = "Выберите тип урона")
     private String label;
@@ -98,6 +122,33 @@ public class MechanicChoice {
      */
     @Schema(description = "Выбор можно менять на продолжительном отдыхе")
     private Boolean rechooseOnLongRest;
+
+    /**
+     * Виды выбора одним списком: {@link #types}, если набор смешанный, иначе один
+     * {@link #type}. Пустой список — у записи не заполнено ни то, ни другое; такой выбор
+     * бессмыслен и до потребителя не едет.
+     *
+     * @return виды в порядке, заданном автором.
+     */
+    public List<ChoiceType> resolveTypes() {
+        if (!CollectionUtils.isEmpty(types)) {
+            return types.stream().filter(Objects::nonNull).distinct().toList();
+        }
+        return type == null ? List.of() : List.of(type);
+    }
+
+    /**
+     * Основной вид выбора с поправкой на записи, где заполнен только смешанный набор.
+     *
+     * @return {@link #type}, иначе первый вид из {@link #types}; {@code null} — видов нет.
+     */
+    public ChoiceType resolveType() {
+        if (type != null) {
+            return type;
+        }
+        List<ChoiceType> resolved = resolveTypes();
+        return resolved.isEmpty() ? null : resolved.get(0);
+    }
 
     /** Количество с поправкой на записи, где поле не заполнено: это один выбор. */
     public int resolveCount() {

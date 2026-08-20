@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
@@ -12,6 +13,7 @@ import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.rest.mapper.FeatMapper;
@@ -32,6 +34,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -60,6 +63,7 @@ public class FeatServiceImpl implements FeatService {
                 .toList();
         response.setBackgrounds(backgrounds.isEmpty() ? null : backgrounds);
         response.setGrantedSpells(resolveGrantedSpells(response));
+        response.setSpellListSpells(resolveSpellListSpells(response));
         return response;
     }
 
@@ -73,10 +77,13 @@ public class FeatServiceImpl implements FeatService {
      * свободный JSONB, набранный руками в редакторе, и опечатка в url не должна ронять
      * страницу черты целиком.</p>
      *
+     * <p>Вместе с записью едет требуемый уровень: заклинание, которое черта открывает на
+     * третьем уровне, страница обязана показать иначе, чем доступное сразу.</p>
+     *
      * @param response деталь черты с разобранной механикой.
      * @return выдаваемые заклинания с данными справочника; null — черта их не выдаёт.
      */
-    private Collection<SpellShortResponse> resolveGrantedSpells(final FeatDetailResponse response) {
+    private Collection<FeatGrantedSpellResponse> resolveGrantedSpells(final FeatDetailResponse response) {
         var granted = Optional.ofNullable(response.getMechanics())
                 .map(FeatMechanics::getSpells)
                 .map(SpellGrant::getSpells)
@@ -86,22 +93,71 @@ public class FeatServiceImpl implements FeatService {
             return null;
         }
 
-        var urls = granted.stream()
+        var spellsByUrl = shortSpellsByUrl(granted);
+
+        var result = granted.stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
+                .map(ref -> new FeatGrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                        ref.getRequiredLevel()))
+                .toList();
+
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Дополняет данными справочника заклинания, которые черта добавляет в список класса.
+     *
+     * <p>Круг здесь нужен даже больше, чем у выданных: таблица «Заклинания метки» в книге
+     * разбита по кругам, и без круга сайту её не собрать. В механике круг не хранится
+     * намеренно — он свойство самой записи и разошёлся бы с каталогом при её правке.</p>
+     *
+     * @param response деталь черты с разобранной механикой.
+     * @return заклинания списка с данными справочника; null — черта список не расширяет.
+     */
+    private Collection<SpellShortResponse> resolveSpellListSpells(final FeatDetailResponse response) {
+        var refs = Optional.ofNullable(response.getMechanics())
+                .map(FeatMechanics::getSpellList)
+                .map(SpellListExpansion::getSpells)
+                .orElse(List.of());
+
+        if (CollectionUtils.isEmpty(refs)) {
+            return null;
+        }
+
+        var spellsByUrl = shortSpellsByUrl(refs);
+
+        var result = refs.stream()
+                .filter(Objects::nonNull)
+                .map(ref -> spellsByUrl.get(ref.getUrl()))
+                .filter(Objects::nonNull)
+                .toList();
+
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Достаёт записи справочника по ссылкам механики — одним запросом на список.
+     *
+     * <p>Ненайденное заклинание в карту просто не попадёт, и вызывающий его пропустит.
+     * Ронять страницу целиком из-за опечатки в url нельзя: это свободный JSONB, набранный
+     * руками в редакторе, а не запись связующей таблицы.</p>
+     */
+    private Map<String, SpellShortResponse> shortSpellsByUrl(final Collection<? extends EntityRef> refs) {
+        var urls = refs.stream()
+                .filter(Objects::nonNull)
                 .map(EntityRef::getUrl)
                 .filter(Objects::nonNull)
+                .distinct()
                 .toList();
 
-        var spellsByUrl = spellRepository.findAllShortByUrlIn(urls)
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+
+        return spellRepository.findAllShortByUrlIn(urls)
                 .stream()
-                .collect(Collectors.toMap(Spell::getUrl, spell -> spell));
-
-        var spells = urls.stream()
-                .map(spellsByUrl::get)
-                .filter(Objects::nonNull)
-                .map(spellMapper::toShort)
-                .toList();
-
-        return spells.isEmpty() ? null : spells;
+                .collect(Collectors.toMap(Spell::getUrl, spellMapper::toShort));
     }
 
     @Secured({"ADMIN", "MODERATOR"})
@@ -187,6 +243,7 @@ public class FeatServiceImpl implements FeatService {
         // Как и у сохранённой черты: без дополнения превью показало бы выдаваемые
         // заклинания пустыми, и редактор не увидел бы того, что набрал.
         response.setGrantedSpells(resolveGrantedSpells(response));
+        response.setSpellListSpells(resolveSpellListSpells(response));
         return response;
     }
 

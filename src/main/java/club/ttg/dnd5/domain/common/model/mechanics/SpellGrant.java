@@ -1,7 +1,6 @@
 package club.ttg.dnd5.domain.common.model.mechanics;
 
 import club.ttg.dnd5.domain.common.dictionary.Ability;
-import club.ttg.dnd5.domain.common.model.EntityRef;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -26,17 +25,23 @@ import java.util.List;
  * бы с каталогом при правке заклинания.</p>
  *
  * <p>Ограничений использования («один раз до продолжительного отдыха») здесь нет: это
- * счётчик, а не свойство заклинания. Ресурсы черт лист пока не описывает вовсе, и они
- * остаются в описании — как условные эффекты в {@link SheetModifiers}.</p>
+ * счётчик, а не свойство заклинания, и описывается он ресурсом
+ * ({@link ResourceCounter}) — там у него есть и максимум, и откат от отдыха.</p>
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SpellGrant {
-    /** Заклинания и заговоры, которые черта даёт знать. */
+    /**
+     * Заклинания и заговоры, которые черта даёт знать.
+     *
+     * <p>Каждое со своим {@link GrantedSpellRef#getRequiredLevel()}: часть приходит не с
+     * момента взятия черты, а по достижении уровня персонажа. Пустой уровень — «сразу»,
+     * поэтому ссылки, сохранённые до появления поля, читаются без правок.</p>
+     */
     @Schema(description = "Заклинания из справочника")
-    private List<EntityRef> spells;
+    private List<GrantedSpellRef> spells;
 
     /**
      * Заклинательная характеристика для этих заклинаний. {@code null} — черта её не

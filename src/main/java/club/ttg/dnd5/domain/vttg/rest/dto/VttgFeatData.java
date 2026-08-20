@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * «Дары» черты в том виде, в каком их применяет лист персонажа VTTG
@@ -15,8 +16,9 @@ import java.util.List;
  * выражают, лежит здесь — и больше нигде, чтобы одни и те же данные не ехали дважды.</p>
  *
  * <p>То, чего форма листа не выражает, остаётся в {@link VttgFeatMechanics}: варианты
- * повышения характеристик «или/или», смена типа существа и те инструменты, которым не
- * нашлось ключа в справочнике листа. Дублирования между блоками нет.</p>
+ * повышения характеристик «или/или», смена типа существа и те владения-ссылки, которым не
+ * нашлось ключа в справочнике листа. Дублирования между блоками нет — единственный вариант
+ * повышения едет только сюда, а список вариантов только туда.</p>
  */
 @Builder
 @Getter
@@ -26,10 +28,24 @@ public class VttgFeatData {
     private String type;
     /** Владение навыками (camelCase-слаги). */
     private List<String> skillProficiencies;
+    /** Владение спасбросками (слаги характеристик: {@code constitution}). */
+    private List<String> savingThrowProficiencies;
     /** Владение доспехами: {@code light}/{@code medium}/{@code heavy}/{@code shield}. */
     private List<String> armorProficiencies;
-    /** Владение оружием: {@code simple}/{@code martial}. */
+    /**
+     * Владение оружием: категория ({@code simple}/{@code martial}) либо конкретный вид
+     * ({@code longsword}). Потребитель принимает оба — «Мастер оружия» даёт владение
+     * именно видом.
+     */
     private List<String> weaponProficiencies;
+    /**
+     * Оружейные приёмы (weapon mastery, 2024) — ключами видов оружия.
+     *
+     * <p>Отдельным списком от {@link #weaponProficiencies}, потому что на листе это
+     * отдельный раздел владений ({@code proficiencies.weaponMasteries}), а не подмножество
+     * владения оружием. «Мастер оружия» даёт и то, и другое.</p>
+     */
+    private List<String> weaponMasteries;
     /**
      * Владение инструментами — ключами справочника листа ({@code thieves-tools}), а не
      * слагами страниц сайта: незнакомый ключ лист молча выбрасывает при первом же
@@ -50,8 +66,11 @@ public class VttgFeatData {
     private Integer darkvision;
     /**
      * Повышение характеристик. Заполняется, только когда вариант ОДИН: форма
-     * потребителя описывает один выбор, а «+2 к одной либо +1 к двум» — это два
+     * потребителя описывает одно повышение, а «+2 к одной либо +1 к двум» — это два
      * взаимоисключающих варианта, и они целиком лежат в {@code mechanics.abilityBonuses}.
+     *
+     * <p>Готовая прибавка и прибавка на выбор различаются внутри — см.
+     * {@link AbilityScoreIncrease}.</p>
      */
     private AbilityScoreIncrease abilityScoreIncrease;
     /** Постоянные модификаторы листа: хиты, скорости, КД, чувства, инициатива. */
@@ -76,6 +95,14 @@ public class VttgFeatData {
      * заклинание ложится в книгу наравне с остальными.
      */
     private Boolean grantedSpellsAlwaysPrepared;
+    /**
+     * Заклинания, которые черта добавляет в список заклинаний класса — таблица
+     * «Заклинания метки». Не выдача: подготовку и ячейку на них персонаж тратит сам,
+     * поэтому отдельным полем от {@link #grantedSpells}.
+     */
+    private SpellList spellList;
+    /** Ресурсы черты со счётчиком: очки удачи «Удачливого», применения «Целителя». */
+    private List<Counter> counters;
 
     /**
      * Заклинание, которое черта даёт знать.
@@ -85,11 +112,43 @@ public class VttgFeatData {
      * такой записи в паках нет. Круг и школа не дублируются — они берутся из самой записи
      * заклинания и в снимке разошлись бы с каталогом.</p>
      *
+     * <p>{@code requiredLevel} — уровень персонажа, с которого заклинание доступно: у
+     * метки дракона «Лечение ран» есть сразу, а «Малое восстановление» приходит на
+     * третьем. Пусто — с момента взятия черты. Без уровня лист выдал бы весь список сразу,
+     * и черта на первом уровне оказалась бы сильнее книжной.</p>
+     *
+     * @param name          название заклинания на момент сохранения
+     * @param spellId       {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     * @param requiredLevel уровень персонажа, с которого заклинание доступно
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record GrantedSpell(String name, String spellId, Integer requiredLevel) {
+    }
+
+    /**
+     * Заклинание, добавленное чертой в список заклинаний класса.
+     *
+     * <p>Своим типом, а не {@link GrantedSpell}: то заклинание персонаж знает и
+     * накладывает, а это он лишь может подготовить наравне с классовыми. Уровня здесь нет
+     * намеренно — доступность определяет круг самого заклинания и ячейки персонажа, а круг
+     * лист берёт из записи компендиума.</p>
+     *
      * @param name    название заклинания на момент сохранения
      * @param spellId {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record GrantedSpell(String name, String spellId) {
+    public record SpellListSpell(String name, String spellId) {
+    }
+
+    /**
+     * Расширение списка заклинаний класса — таблица «Заклинания метки».
+     *
+     * @param spells               заклинания, добавляемые в список
+     * @param requiresSpellcasting нужно умение «Использование заклинаний» или «Магия
+     *                             договора»; пусто — расширяет всегда
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SpellList(List<SpellListSpell> spells, Boolean requiresSpellcasting) {
     }
 
     /**
@@ -134,18 +193,43 @@ public class VttgFeatData {
     }
 
     /**
-     * Повышение характеристик на выбор: {@code +amount} к {@code count} характеристикам
-     * из набора {@code from} (пусто — любая).
+     * Ресурс черты со счётчиком.
      *
-     * @param choice        описание выбора
-     * @param fromChoiceKey ключ ранее сделанного выбора, к которому привязано повышение
-     *                      («Устойчивый» поднимает ту характеристику, спасбросками
-     *                      которой овладел)
+     * <p>Уже классового счётчика ({@code VttgClass.Counter}): у черты нет ни уровня
+     * начала, ни прогрессии по уровням — она либо взята, либо нет.</p>
+     *
+     * @param key       стабильный ключ ресурса в пределах черты
+     * @param name      название на листе («Очки удачи»)
+     * @param shortName краткое название для компактной плитки; пусто — плитка подпишется
+     *                  полным
+     * @param max       формула максимума: число либо выражение с {@code @prof},
+     *                  {@code @level}, {@code @mod.<abbr>}
+     * @param recovery  каким отдыхом восстанавливается: {@code short} или {@code long}
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Counter(String key, String name, String shortName, String max, String recovery) {
+    }
+
+    /**
+     * Повышение характеристик.
+     *
+     * <p>Два взаимоисключающих вида. {@link #fixed} — готовая прибавка, которую лист
+     * ставит сам при перетаскивании черты. {@link #choice} — прибавка на выбор: лист её
+     * НЕ применяет, пока не знает выбранного, и без {@link #fromChoiceKey} она остаётся
+     * подсказкой в сводке даров. Поэтому черта, у которой выбирать нечего («Крепкий» —
+     * всегда +1 Телосложения), едет именно {@code fixed}: иначе прибавка не встала бы.</p>
+     *
+     * @param fixed         готовая прибавка: характеристика → на сколько поднять
+     * @param choice        прибавка на выбор
+     * @param fromChoiceKey ключ ранее сделанного выбора, из ответа на который берётся
+     *                      характеристика («Устойчивый» поднимает ту, спасбросками которой
+     *                      овладел). Без него лист повышение по выбору не применяет
      * @param upto          предел, выше которого характеристику не поднять: 20 у черт,
      *                      30 у эпических даров — тем они и отличаются
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record AbilityScoreIncrease(Choice choice, String fromChoiceKey, Integer upto) {
+    public record AbilityScoreIncrease(Map<String, Integer> fixed, Choice choice,
+                                       String fromChoiceKey, Integer upto) {
 
         /**
          * @param amount на сколько поднимается каждая выбранная характеристика

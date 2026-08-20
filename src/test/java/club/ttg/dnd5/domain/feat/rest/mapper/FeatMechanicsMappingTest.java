@@ -8,6 +8,8 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
@@ -39,6 +41,79 @@ class FeatMechanicsMappingTest {
     private FeatMapperImpl mapper;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * «Умелый»: смешанный набор видов. Один вид описывает {@code type}, несколько —
+     * {@code types}, и {@code resolveTypes} возвращает их одинаково.
+     */
+    @Test
+    void choiceResolvesMixedTypes() {
+        MechanicChoice single = new MechanicChoice();
+        single.setType(ChoiceType.SKILL);
+
+        assertEquals(List.of(ChoiceType.SKILL), single.resolveTypes());
+        assertEquals(ChoiceType.SKILL, single.resolveType());
+
+        MechanicChoice mixed = new MechanicChoice();
+        mixed.setType(ChoiceType.SKILL);
+        mixed.setTypes(List.of(ChoiceType.SKILL, ChoiceType.TOOL));
+
+        assertEquals(List.of(ChoiceType.SKILL, ChoiceType.TOOL), mixed.resolveTypes());
+        // Основной вид — первый в наборе: на него смотрит тот, кто про смешивание не знает
+        assertEquals(ChoiceType.SKILL, mixed.resolveType());
+
+        MechanicChoice typesOnly = new MechanicChoice();
+        typesOnly.setTypes(List.of(ChoiceType.TOOL, ChoiceType.SKILL));
+
+        assertEquals(ChoiceType.TOOL, typesOnly.resolveType());
+        assertEquals(List.of(), new MechanicChoice().resolveTypes());
+    }
+
+    /** Смешанный набор доезжает до мастерской своим полем, а не сворачивается в один вид. */
+    @Test
+    void rawFormKeepsMixedChoiceTypes() {
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("skill-or-tool");
+        choice.setType(ChoiceType.SKILL);
+        choice.setTypes(List.of(ChoiceType.SKILL, ChoiceType.TOOL));
+        choice.setCount(3);
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setChoices(List.of(choice));
+        Feat feat = new Feat();
+        feat.setMechanics(mechanics);
+
+        MechanicChoice raw = mapper.toRequest(feat).getMechanics().getChoices().getFirst();
+        assertEquals(List.of(ChoiceType.SKILL, ChoiceType.TOOL), raw.getTypes());
+        assertEquals(3, raw.resolveCount());
+    }
+
+    /**
+     * «Удачливый»: ресурс с максимумом по бонусу мастерства. Максимум — формулой, откат по
+     * умолчанию продолжительный.
+     */
+    @Test
+    void rawFormKeepsCounters() throws Exception {
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("luck-points");
+        counter.setName("Очки удачи");
+        counter.setMax("@prof");
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        Feat feat = new Feat();
+        feat.setMechanics(mechanics);
+
+        ResourceCounter raw = mapper.toRequest(feat).getMechanics().getCounters().getFirst();
+        assertEquals("@prof", raw.getMax());
+        assertEquals(ResourceRecovery.LONG_REST, raw.resolveRecovery());
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(counter));
+        assertEquals("luck-points", json.get("key").asText());
+        assertEquals("@prof", json.get("max").asText());
+        // Незаполненный откат в JSONB не пишется: его подставляет resolveRecovery
+        assertNull(json.get("recovery"));
+    }
 
     @Test
     void choiceCountDefaultsToOne() {

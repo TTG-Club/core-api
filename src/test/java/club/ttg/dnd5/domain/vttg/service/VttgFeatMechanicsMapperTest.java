@@ -21,10 +21,14 @@ import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
@@ -438,8 +442,8 @@ class VttgFeatMechanicsMapperTest {
         FeatMechanics mechanics = new FeatMechanics();
         SpellGrant spells = new SpellGrant();
         spells.setSpells(List.of(
-                new EntityRef("thaumaturgy-phb", "Чудотворство"),
-                new EntityRef("command-phb", "Приказ")));
+                new GrantedSpellRef("thaumaturgy-phb", "Чудотворство", null),
+                new GrantedSpellRef("command-phb", "Приказ", null)));
         spells.setSpellcastingAbility(Ability.CHARISMA);
         spells.setAlwaysPrepared(Boolean.TRUE);
         mechanics.setSpells(spells);
@@ -469,7 +473,7 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
         SpellGrant spells = new SpellGrant();
-        spells.setSpells(List.of(new EntityRef("fly-phb", null)));
+        spells.setSpells(List.of(new GrantedSpellRef("fly-phb", null, null)));
         mechanics.setSpells(spells);
         feat.setMechanics(mechanics);
 
@@ -485,14 +489,65 @@ class VttgFeatMechanicsMapperTest {
         FeatMechanics mechanics = new FeatMechanics();
         SpellGrant spells = new SpellGrant();
         spells.setSpells(List.of(
-                new EntityRef("removed-spell-hb", "Забытое заклинание"),
-                new EntityRef("nameless-hb", null)));
+                new GrantedSpellRef("removed-spell-hb", "Забытое заклинание", null),
+                new GrantedSpellRef("nameless-hb", null, null)));
         mechanics.setSpells(spells);
         feat.setMechanics(mechanics);
 
         JsonNode granted = json(feat).get("featData").get("grantedSpells");
         assertEquals("Забытое заклинание", granted.get(0).get("name").asText());
         assertEquals("nameless-hb", granted.get(1).get("name").asText());
+    }
+
+    /**
+     * Уровень выдачи доезжает до листа: у метки дракона «Малое восстановление» приходит
+     * на третьем уровне, и без уровня лист выдал бы его вместе с «Лечением ран».
+     */
+    @Test
+    void mapsRequiredLevelOfGrantedSpell() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellGrant spells = new SpellGrant();
+        spells.setSpells(List.of(
+                new GrantedSpellRef("cure-wounds-phb", "Лечение ран", null),
+                new GrantedSpellRef("lesser-restoration-phb", "Малое восстановление", 3)));
+        mechanics.setSpells(spells);
+        feat.setMechanics(mechanics);
+
+        JsonNode granted = json(feat).get("featData").get("grantedSpells");
+
+        // Доступное сразу поля не несёт — пустое поле лист читает как «с момента взятия»
+        assertFalse(granted.get(0).has("requiredLevel"));
+        assertEquals(3, granted.get(1).get("requiredLevel").asInt());
+    }
+
+    /**
+     * «Заклинания метки» — не выдача: лист лишь добавляет их в список класса, и подготовку
+     * с ячейкой персонаж тратит сам. Поэтому отдельным полем от {@code grantedSpells}.
+     */
+    @Test
+    void mapsSpellListSeparatelyFromGrant() {
+        when(spellRepository.findAllShortByUrlIn(any()))
+                .thenReturn(List.of(spell("identify-phb", "Опознание")));
+
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setSpells(List.of(new EntityRef("identify-phb", null)));
+        expansion.setRequiresSpellcasting(Boolean.TRUE);
+        mechanics.setSpellList(expansion);
+        feat.setMechanics(mechanics);
+
+        JsonNode featData = json(feat).get("featData");
+
+        // Черта ничего не выдаёт — только расширяет список
+        assertFalse(featData.has("grantedSpells"));
+        assertEquals("Опознание", featData.get("spellList").get("spells").get(0).get("name").asText());
+        assertEquals("identify-phb",
+                featData.get("spellList").get("spells").get(0).get("spellId").asText());
+        assertTrue(featData.get("spellList").get("requiresSpellcasting").asBoolean());
+        // Круг не дублируется: лист берёт его из записи компендиума
+        assertFalse(featData.get("spellList").get("spells").get(0).has("level"));
     }
 
     /**
@@ -517,7 +572,7 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
         SpellGrant spells = new SpellGrant();
-        spells.setSpells(List.of(new EntityRef(null, "Забытое заклинание")));
+        spells.setSpells(List.of(new GrantedSpellRef(null, "Забытое заклинание", null)));
         mechanics.setSpells(spells);
         feat.setMechanics(mechanics);
 
@@ -649,12 +704,333 @@ class VttgFeatMechanicsMapperTest {
         Feat feat = baseFeat();
         FeatMechanics mechanics = new FeatMechanics();
         mechanics.setAbilityBonuses(List.of(
-                abilityBonus(List.of(Ability.STRENGTH), 1, 30, 1)));
+                abilityBonus(List.of(Ability.STRENGTH, Ability.DEXTERITY), 1, 30, 1)));
         feat.setMechanics(mechanics);
 
         JsonNode increase = json(feat).get("featData").get("abilityScoreIncrease");
         assertEquals(30, increase.get("upto").asInt());
         assertEquals(1, increase.get("choice").get("amount").asInt());
+    }
+
+    /**
+     * «Крепкий»: характеристика одна и выбирать нечего — повышение едет готовой прибавкой,
+     * и лист ставит его сам. Выбором оно осталось бы подсказкой в сводке даров.
+     */
+    @Test
+    void mapsAbilityScoreIncreaseWithoutChoiceAsFixed() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setAbilityBonuses(List.of(
+                abilityBonus(List.of(Ability.CONSTITUTION), 1, 20, 1)));
+        HitPointsModifier hitPoints = new HitPointsModifier();
+        hitPoints.setPerAcquisitionLevel(2);
+        hitPoints.setPerLevelAfterAcquisition(2);
+        SheetModifiers modifiers = new SheetModifiers();
+        modifiers.setHitPoints(hitPoints);
+        mechanics.setModifiers(modifiers);
+        feat.setMechanics(mechanics);
+
+        JsonNode json = json(feat);
+        JsonNode increase = json.get("featData").get("abilityScoreIncrease");
+        assertEquals(1, increase.get("fixed").get("constitution").asInt());
+        assertFalse(increase.has("choice"));
+        assertEquals(20, increase.get("upto").asInt());
+
+        JsonNode hp = json.get("featData").get("modifiers").get("hitPoints");
+        assertEquals(2, hp.get("perAcquisitionLevel").asInt());
+        assertEquals(2, hp.get("perLevelAfterAcquisition").asInt());
+        // Единственный вариант целиком уехал в featData — копией в mechanics он не едет
+        assertFalse(json.has("mechanics"));
+    }
+
+    /**
+     * «Устойчивый»: выбор спасброска даёт владение им, а повышение привязано к тому же
+     * выбору — характеристика берётся оттуда, а не спрашивается второй раз.
+     */
+    @Test
+    void bindsAbilityScoreIncreaseToSavingThrowChoice() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("saving-throw");
+        choice.setType(ChoiceType.SAVING_THROW);
+        choice.setOnlyIfNotProficient(Boolean.TRUE);
+        mechanics.setChoices(List.of(choice));
+
+        AbilityBonus bonus = new AbilityBonus();
+        bonus.setBonus(1);
+        bonus.setUpto(20);
+        bonus.setFromChoiceKey("saving-throw");
+        mechanics.setAbilityBonuses(List.of(bonus));
+        feat.setMechanics(mechanics);
+
+        JsonNode featData = json(feat).get("featData");
+        assertEquals("savingThrow", featData.get("choices").get(0).get("type").asText());
+        JsonNode increase = featData.get("abilityScoreIncrease");
+        assertEquals("saving-throw", increase.get("fromChoiceKey").asText());
+        // Характеристика придёт из выбора — готовой прибавки здесь быть не может
+        assertFalse(increase.has("fixed"));
+    }
+
+    /**
+     * Привязки в записи нет — берётся единственный выбор спасброска: без неё лист повышение
+     * не применяет вовсе, и у черт, сохранённых до появления поля, оно молча не работало бы.
+     */
+    @Test
+    void bindsAbilityScoreIncreaseToTheOnlySavingThrowChoiceWithoutExplicitKey() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("saving-throw");
+        choice.setType(ChoiceType.SAVING_THROW);
+        mechanics.setChoices(List.of(choice));
+        mechanics.setAbilityBonuses(List.of(abilityBonus(List.of(), 1, 20, 1)));
+        feat.setMechanics(mechanics);
+
+        assertEquals("saving-throw", json(feat).get("featData")
+                .get("abilityScoreIncrease").get("fromChoiceKey").asText());
+    }
+
+    /** Два выбора спасброска — угадывать нечего: привязка не подставляется. */
+    @Test
+    void doesNotGuessAbilityScoreIncreaseBindingAmongSeveralSavingThrowChoices() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setChoices(List.of(
+                choice("first", ChoiceType.SAVING_THROW),
+                choice("second", ChoiceType.SAVING_THROW)));
+        mechanics.setAbilityBonuses(List.of(abilityBonus(List.of(), 1, 20, 1)));
+        feat.setMechanics(mechanics);
+
+        assertFalse(json(feat).get("featData").get("abilityScoreIncrease").has("fromChoiceKey"));
+    }
+
+    /**
+     * У повышения есть свой список характеристик — значит, оно описывает собственный выбор,
+     * и привязка подменила бы его ответом на чужой вопрос.
+     */
+    @Test
+    void doesNotBindAbilityScoreIncreaseThatPicksItsOwnAbilities() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setChoices(List.of(choice("saving-throw", ChoiceType.SAVING_THROW)));
+        mechanics.setAbilityBonuses(List.of(
+                abilityBonus(List.of(Ability.STRENGTH, Ability.DEXTERITY), 1, 20, 1)));
+        feat.setMechanics(mechanics);
+
+        JsonNode increase = json(feat).get("featData").get("abilityScoreIncrease");
+        assertFalse(increase.has("fromChoiceKey"));
+        assertEquals(2, increase.get("choice").get("from").size());
+    }
+
+    /**
+     * Выбор характеристики с повышением не связан: {@code ABILITY} — это характеристика
+     * вне повышения и спасбросков, и привязывать к ней повышение было бы догадкой.
+     */
+    @Test
+    void doesNotBindAbilityScoreIncreaseToAbilityChoice() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setChoices(List.of(choice("ability", ChoiceType.ABILITY)));
+        mechanics.setAbilityBonuses(List.of(abilityBonus(List.of(), 1, 20, 1)));
+        feat.setMechanics(mechanics);
+
+        assertFalse(json(feat).get("featData").get("abilityScoreIncrease").has("fromChoiceKey"));
+    }
+
+    /**
+     * «Умелый»: три штуки вперемешку из навыков и инструментов. Куда лечь выбранному,
+     * решает сам справочник, поэтому едет весь набор видов.
+     */
+    @Test
+    void mapsMixedChoiceTypes() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("skill-or-tool");
+        choice.setType(ChoiceType.SKILL);
+        choice.setTypes(List.of(ChoiceType.SKILL, ChoiceType.TOOL));
+        choice.setCount(3);
+        choice.setOptions(List.of(
+                new ChoiceOption("SLEIGHT_OF_HAND", "Ловкость рук"),
+                new ChoiceOption("thieves-tools-phb", "Воровские инструменты")));
+        mechanics.setChoices(List.of(choice));
+        feat.setMechanics(mechanics);
+
+        JsonNode json = json(feat).get("featData").get("choices").get(0);
+        // В type — первый вид набора: запись остаётся читаемой и без знания о смешивании
+        assertEquals("skill", json.get("type").asText());
+        assertEquals(List.of("skill", "tool"), names(json.get("types")));
+        assertEquals(3, json.get("count").asInt());
+        // Каждое значение переведено своим словарём
+        assertEquals("sleightOfHand", json.get("options").get(0).get("value").asText());
+        assertEquals("thieves-tools", json.get("options").get(1).get("value").asText());
+    }
+
+    /**
+     * Смешивать можно только виды со справочником правил: оружие в наборе разложить по
+     * значению нечем, и набор сворачивается до основного вида.
+     */
+    @Test
+    void collapsesMixedChoiceWithVocabularylessType() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("skill-or-weapon");
+        choice.setType(ChoiceType.SKILL);
+        choice.setTypes(List.of(ChoiceType.SKILL, ChoiceType.WEAPON));
+        mechanics.setChoices(List.of(choice));
+        feat.setMechanics(mechanics);
+
+        JsonNode json = json(feat).get("featData").get("choices").get(0);
+        assertEquals("skill", json.get("type").asText());
+        assertFalse(json.has("types"));
+    }
+
+    /** Один вид описан полем type — списком он повторял бы его без нужды. */
+    @Test
+    void omitsTypesForSingleTypeChoice() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("skill");
+        choice.setTypes(List.of(ChoiceType.SKILL));
+        mechanics.setChoices(List.of(choice));
+        feat.setMechanics(mechanics);
+
+        JsonNode json = json(feat).get("featData").get("choices").get(0);
+        assertEquals("skill", json.get("type").asText());
+        assertFalse(json.has("types"));
+    }
+
+    /**
+     * «Мастер оружия»: владение конкретным видом оружия и оружейный приём. На листе это
+     * разные списки, и приём не подмножество владения.
+     */
+    @Test
+    void mapsWeaponsAndWeaponMasteries() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        ProficiencyGrant grant = new ProficiencyGrant();
+        grant.setWeaponCategories(Set.of(WeaponCategory.SIMPLE_MELEE));
+        grant.setWeapons(List.of(new EntityRef("longsword-phb", "Длинный меч")));
+        grant.setWeaponMasteries(List.of(new EntityRef("rapier-phb", "Рапира")));
+        mechanics.setProficiencies(grant);
+        feat.setMechanics(mechanics);
+
+        JsonNode featData = json(feat).get("featData");
+        // Категория и конкретный вид — один список: потребитель принимает и то, и другое
+        assertEquals(List.of("simple", "longsword"), names(featData.get("weaponProficiencies")));
+        assertEquals(List.of("rapier"), names(featData.get("weaponMasteries")));
+    }
+
+    /** Оружейный приём на выбор — тем же ключом вида оружия, что и владение. */
+    @Test
+    void mapsWeaponMasteryChoiceValue() {
+        assertEquals("longsword", optionValue(ChoiceType.WEAPON_MASTERY, "longsword-phb"));
+    }
+
+    /** Доспехи как вид выбора — категориями справочника листа. */
+    @Test
+    void mapsArmorChoiceValue() {
+        assertEquals("medium", optionValue(ChoiceType.ARMOR, "MEDIUM"));
+        assertEquals("shield", optionValue(ChoiceType.ARMOR, "SHIELD"));
+    }
+
+    /** Владение спасбросками без выбора: у листа это свой список, не характеристики. */
+    @Test
+    void mapsFixedSavingThrowProficiencies() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        ProficiencyGrant grant = new ProficiencyGrant();
+        grant.setSavingThrows(Set.of(Ability.WISDOM));
+        mechanics.setProficiencies(grant);
+        feat.setMechanics(mechanics);
+
+        assertEquals(List.of("wisdom"),
+                names(json(feat).get("featData").get("savingThrowProficiencies")));
+    }
+
+    /**
+     * Вид оружия, которого в справочнике листа нет, остаётся ссылкой в механике: применить
+     * его нечем, но показать нужно — как и незнакомый инструмент.
+     */
+    @Test
+    void keepsUnknownWeaponAsReference() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        ProficiencyGrant grant = new ProficiencyGrant();
+        grant.setWeapons(List.of(new EntityRef("astral-blade-hb", "Астральный клинок")));
+        grant.setWeaponMasteries(List.of(new EntityRef("astral-blade-hb", "Астральный клинок")));
+        mechanics.setProficiencies(grant);
+        feat.setMechanics(mechanics);
+
+        JsonNode json = json(feat);
+        assertFalse(json.has("featData"));
+        JsonNode proficiencies = json.get("mechanics").get("proficiencies");
+        assertEquals("astral-blade-hb", proficiencies.get("weapons").get(0).get("url").asText());
+        assertEquals("astral-blade-hb",
+                proficiencies.get("weaponMasteries").get(0).get("url").asText());
+    }
+
+    /**
+     * «Удачливый»: очки удачи по бонусу мастерства, откат на продолжительном отдыхе.
+     * Максимум — формулой: он обязан расти вместе с бонусом мастерства.
+     */
+    @Test
+    void mapsCounters() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("luck-points", "@prof", ResourceRecovery.LONG_REST)));
+        feat.setMechanics(mechanics);
+
+        JsonNode counter = json(feat).get("featData").get("counters").get(0);
+        assertEquals("luck-points", counter.get("key").asText());
+        assertEquals("Очки удачи", counter.get("name").asText());
+        assertEquals("Удача", counter.get("shortName").asText());
+        assertEquals("@prof", counter.get("max").asText());
+        assertEquals("long", counter.get("recovery").asText());
+    }
+
+    /** Откат коротким отдыхом — «Целитель» и прочие ресурсы, что возвращаются между боями. */
+    @Test
+    void mapsShortRestCounter() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("uses", "1", ResourceRecovery.SHORT_REST)));
+        feat.setMechanics(mechanics);
+
+        assertEquals("short",
+                json(feat).get("featData").get("counters").get(0).get("recovery").asText());
+    }
+
+    /** Откат не задан — продолжительный отдых: короткий проставляют явно. */
+    @Test
+    void defaultsCounterRecoveryToLongRest() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("uses", "1", null)));
+        feat.setMechanics(mechanics);
+
+        assertEquals("long",
+                json(feat).get("featData").get("counters").get(0).get("recovery").asText());
+    }
+
+    /** Ресурс без ключа или без формулы максимума не едет: счётчик, всегда пустой, только мешает. */
+    @Test
+    void skipsIncompleteCounters() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("uses", null, ResourceRecovery.LONG_REST),
+                counter(null, "@prof", ResourceRecovery.LONG_REST)));
+        feat.setMechanics(mechanics);
+
+        assertFalse(json(feat).has("featData"));
     }
 
     /** Числовая прибавка к инициативе — «Бдительный» издания 2014 года. */
@@ -699,6 +1075,23 @@ class VttgFeatMechanicsMapperTest {
     private List<String> names(JsonNode array) {
         return objectMapper.convertValue(array, objectMapper.getTypeFactory()
                 .constructCollectionType(List.class, String.class));
+    }
+
+    private MechanicChoice choice(String key, ChoiceType type) {
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey(key);
+        choice.setType(type);
+        return choice;
+    }
+
+    private ResourceCounter counter(String key, String max, ResourceRecovery recovery) {
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey(key);
+        counter.setName("Очки удачи");
+        counter.setShortName("Удача");
+        counter.setMax(max);
+        counter.setRecovery(recovery);
+        return counter;
     }
 
     private AbilityBonus abilityBonus(List<Ability> abilities, int bonus, int upto, int count) {

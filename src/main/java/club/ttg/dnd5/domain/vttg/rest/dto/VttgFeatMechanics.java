@@ -13,6 +13,24 @@ import java.util.List;
  * применять, лежит там. Здесь остаётся только то, чему в его типах места нет — иначе
  * одни и те же данные ехали бы в записи дважды и разошлись бы при первой же правке.</p>
  *
+ * <p>Остатка ровно три вида, и у каждого своя причина:</p>
+ * <ul>
+ *   <li>{@link #abilityBonuses} — варианты повышения «или/или». У потребителя
+ *       {@code abilityScoreIncrease} описывает ОДНО повышение, а «+2 к одной либо +1 к
+ *       двум» — это выбор между двумя разными повышениями, и вторым полем его не задать.
+ *       Единственный вариант сюда не едет: он целиком укладывается в
+ *       {@code featData.abilityScoreIncrease};</li>
+ *   <li>{@link #proficiencies} — владения, которым не нашлось ключа в справочнике листа.
+ *       Незнакомый ключ лист молча выбрасывает при первом же открытии окна владений,
+ *       поэтому такое владение отдаётся ссылкой: применить его нельзя, но видно будет,
+ *       и карточка записи откроется;</li>
+ *   <li>{@link #creatureType} — смена типа существа. На листе тип существа не свойство
+ *       персонажа, и менять его пока нечем.</li>
+ * </ul>
+ *
+ * <p>Всё остальное — владения, защиты, модификаторы, выборы, ресурсы, требования — лист
+ * применяет сам, и живёт оно в {@link VttgFeatData}.</p>
+ *
  * <p>Словарь — потребителя: характеристики и навыки слагами, категории ключами.</p>
  */
 @Builder
@@ -20,16 +38,17 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class VttgFeatMechanics {
     /**
-     * Варианты повышения характеристик. Несколько элементов — это выбор «или/или»:
-     * «Улучшение характеристик» — это {@code +2 к одной} либо {@code +1 к двум}. Форма
-     * листа описывает один выбор, поэтому единственный вариант уезжает ещё и в
-     * {@code featData.abilityScoreIncrease}, а полный список — только сюда.
+     * Варианты повышения характеристик — ТОЛЬКО когда их больше одного:
+     * «Улучшение характеристик» — это {@code +2 к одной} либо {@code +1 к двум}.
+     * Единственный вариант сюда не попадает: он целиком уехал в
+     * {@code featData.abilityScoreIncrease}, и второй копией разошёлся бы с ним при
+     * первой же правке.
      */
     private List<AbilityBonus> abilityBonuses;
     /**
-     * Инструменты, которым не нашлось ключа в справочнике листа. Те, что нашлись, уезжают
-     * ключами в {@code featData.toolProficiencies} и применяются сами; сюда попадает
-     * остаток — ссылкой, чтобы владение было хотя бы видно и открывалось карточкой.
+     * Владения, которым не нашлось ключа в справочнике листа. Те, что нашлись, уезжают
+     * ключами в {@code featData} и применяются сами; сюда попадает остаток — ссылкой,
+     * чтобы владение было хотя бы видно и открывалось карточкой.
      */
     private ProficiencyGrant proficiencies;
     /**
@@ -56,12 +75,21 @@ public class VttgFeatMechanics {
     }
 
     /**
-     * Владение инструментами, выданное без выбора — ссылками на записи справочника.
+     * Владения, выданные без выбора, которых нет в справочнике листа — ссылками на записи
+     * сайта.
      *
-     * @param tools инструменты
+     * <p>Инструменты и оружие лист хранит ключами своего закрытого справочника
+     * ({@code thieves-tools}, {@code longsword}) и незнакомый ключ молча выбрасывает.
+     * Поэтому владение записью, которой у листа нет, применить нечем — но и потерять его
+     * нельзя, и оно отдаётся ссылкой.</p>
+     *
+     * @param tools           инструменты без ключа справочника листа
+     * @param weapons         виды оружия без ключа справочника листа
+     * @param weaponMasteries оружейные приёмы, чьего вида оружия у листа нет
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record ProficiencyGrant(List<VttgEntityRef> tools) {
+    public record ProficiencyGrant(List<VttgEntityRef> tools, List<VttgEntityRef> weapons,
+                                   List<VttgEntityRef> weaponMasteries) {
     }
 
     /**
@@ -103,7 +131,14 @@ public class VttgFeatMechanics {
      *                                   {@code language}, {@code damageType}, {@code spell},
      *                                   {@code cantrip}, {@code spellList},
      *                                   {@code spellcastingAbility}, {@code weapon},
-     *                                   {@code ability}, {@code savingThrow}, {@code option}
+     *                                   {@code weaponMastery}, {@code armor},
+     *                                   {@code ability}, {@code savingThrow}, {@code option}.
+     *                                   При смешанном наборе — первый вид набора
+     * @param types                      полный набор видов, когда выбирают из нескольких
+     *                                   справочников сразу («Умелый» — навык ИЛИ
+     *                                   инструмент). Задан только при нескольких видах;
+     *                                   куда лечь выбранному, решает принадлежность самого
+     *                                   значения
      * @param label                      подпись для игрока
      * @param count                      сколько значений выбирают
      * @param countEqualsProficiencyBonus количество равно бонусу мастерства
@@ -116,11 +151,12 @@ public class VttgFeatMechanics {
      * @param rechooseOnLongRest         выбор пересматривается на продолжительном отдыхе
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Choice(String key, String type, String label, Integer count,
-                         Boolean countEqualsProficiencyBonus, List<Option> options,
-                         SpellFilter spellFilter, Boolean onlyIfNotProficient,
-                         Boolean onlyIfProficient, Boolean expertiseIfProficient,
-                         String grants, Boolean rechooseOnLongRest) {
+    public record Choice(String key, String type, List<String> types, String label,
+                         Integer count, Boolean countEqualsProficiencyBonus,
+                         List<Option> options, SpellFilter spellFilter,
+                         Boolean onlyIfNotProficient, Boolean onlyIfProficient,
+                         Boolean expertiseIfProficient, String grants,
+                         Boolean rechooseOnLongRest) {
     }
 
     /**
@@ -130,8 +166,13 @@ public class VttgFeatMechanics {
      * типу выбора: навык — слагом ({@code sleightOfHand}), характеристика и тип урона —
      * ключом ({@code charisma}, {@code fire}), язык — русским названием справочника листа,
      * инструмент — ключом владения ({@code thieves-tools}), список заклинаний — ключом
-     * класса ({@code wizard}). Заклинание и «вариант» остаются как есть: у первого значение
-     * и так url записи, у второго общего словаря нет.</p>
+     * класса ({@code wizard}), оружие и оружейный приём — ключом вида оружия
+     * ({@code longsword}), доспехи — категорией ({@code medium}). Заклинание и «вариант»
+     * остаются как есть: у первого значение и так url записи, у второго общего словаря
+     * нет.</p>
+     *
+     * <p>У смешанного выбора вид значения решает не {@code type}, а сам справочник: перевод
+     * пробуется по каждому виду набора, пока не найдётся тот, где значение есть.</p>
      *
      * @param value значение в словаре своего типа
      * @param name  подпись для игрока

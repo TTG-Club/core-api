@@ -3,8 +3,10 @@ package club.ttg.dnd5.domain.feat.model.mechanics;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -18,9 +20,17 @@ import java.util.List;
  * {@code MagicItemMechanics}: один JSONB-контейнер, который растёт по мере того, как
  * очередной блок эффектов черт переезжает из описания в данные.
  *
- * <p>Сейчас здесь только повышение характеристик — единственное, что лист может
- * применить сам. Остальное (владения, скорость, чувства, заклинания, ресурсы) пока
- * живёт в описании и добавляется сюда отдельными полями.</p>
+ * <p>Блоки заводятся по одному, по мере того как очередной кусок эффектов черты переезжает
+ * из описания в данные: повышение характеристик, выборы при взятии, постоянные модификаторы
+ * листа, владения, заклинания, ресурсы. Условные эффекты («Оборона» — +1 к КД только в
+ * доспехе) сюда не идут и остаются в описании: условие пришлось бы описывать отдельным
+ * языком, а лист такие эффекты всё равно показывает справкой.</p>
+ *
+ * <p><b>Формат — контракт с сайтом.</b> Ответ детальника и тело запроса мастерской отдают
+ * эту модель как есть (см. {@code FeatDetailResponse.mechanics},
+ * {@code FeatRequest.mechanics}), поэтому имена полей и значения enum'ов менять нельзя
+ * молча: это ломает и редактор, и уже сохранённый JSONB. Выгрузка в VTTG свою форму строит
+ * отдельно ({@code VttgFeatMechanicsMapper}) — правки здесь до неё не доезжают сами.</p>
  *
  * <p>{@code null} — у черт, сохранённых до появления поля, и у тех, чьё действие
  * описано только текстом.</p>
@@ -73,4 +83,28 @@ public class FeatMechanics {
     @Schema(description = "Заклинания, которые черта даёт знать без выбора",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private SpellGrant spells;
+
+    /**
+     * Заклинания, которые черта добавляет в список заклинаний класса — таблица
+     * «Заклинания метки» у черт метки дракона.
+     *
+     * <p>Отдельно от {@link #spells}, потому что это не выдача: такое заклинание игрок не
+     * знает, а только может подготовить наравне с классовыми, потратив на него подготовку
+     * и ячейку. См. {@link SpellListExpansion}.</p>
+     */
+    @Schema(description = "Заклинания, добавляемые в список заклинаний класса",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private SpellListExpansion spellList;
+
+    /**
+     * Ресурсы черты со счётчиком: очки удачи «Удачливого», применения «Целителя».
+     *
+     * <p>Отдельным блоком от {@link #modifiers}: тот описывает постоянные числа шапки, а
+     * ресурс тратится и восстанавливается — у него свой раздел листа со своим откатом от
+     * отдыха. Ограничение «один раз до продолжительного отдыха» у выданного заклинания —
+     * это тоже ресурс и описывается здесь, а не в {@link #spells}.</p>
+     */
+    @Schema(description = "Ресурсы черты со счётчиком",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<ResourceCounter> counters;
 }
