@@ -6,6 +6,8 @@ import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseFromChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseKind;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
@@ -89,6 +91,27 @@ class FeatModifiersMappingTest {
 
         assertEquals("damage-type", json.get("resistanceFromChoiceKey").asText());
         assertFalse(json.has("resistances"));
+    }
+
+    @Test
+    void defenseByChoiceKeepsKindAndSurvivesRoundTrip() throws Exception {
+        DamageAffinity damage = new DamageAffinity();
+        damage.setDefenseChoices(List.of(
+                new DamageDefenseFromChoice("damage-type", DamageDefenseKind.IMMUNITY),
+                new DamageDefenseFromChoice("second-type", DamageDefenseKind.VULNERABILITY)));
+
+        String serialized = objectMapper.writeValueAsString(damage);
+        JsonNode json = objectMapper.readTree(serialized);
+
+        assertEquals("damage-type", json.get("defenseChoices").get(0).get("choiceKey").asText());
+        assertEquals("IMMUNITY", json.get("defenseChoices").get(0).get("kind").asText());
+        assertEquals("VULNERABILITY", json.get("defenseChoices").get(1).get("kind").asText());
+        // Иммунитет по выбору легаси-полем не описать — оно остаётся пустым
+        assertFalse(json.has("resistanceFromChoiceKey"));
+
+        DamageAffinity parsed = objectMapper.readValue(serialized, DamageAffinity.class);
+        assertEquals(2, parsed.getDefenseChoices().size());
+        assertEquals(DamageDefenseKind.IMMUNITY, parsed.getDefenseChoices().get(0).getKind());
     }
 
     @Test

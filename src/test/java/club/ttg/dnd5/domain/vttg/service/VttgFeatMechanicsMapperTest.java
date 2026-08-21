@@ -16,6 +16,8 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseFromChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseKind;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
@@ -261,6 +263,62 @@ class VttgFeatMechanicsMapperTest {
 
         // Смену типа существа лист не применяет — она остаётся в mechanics
         assertEquals("undead", json(feat).get("mechanics").get("creatureType").asText());
+    }
+
+    /**
+     * Защита по выбору игрока едет своим полем: тип урона ещё не назван, и в плоский
+     * список пар «тип + вид» такая защита не укладывается.
+     */
+    @Test
+    void exportsDamageDefensesByChoice() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SheetModifiers modifiers = new SheetModifiers();
+
+        DamageAffinity damage = new DamageAffinity();
+        damage.setDefenseChoices(List.of(
+                new DamageDefenseFromChoice("damage-type", DamageDefenseKind.RESISTANCE),
+                new DamageDefenseFromChoice("second-type", DamageDefenseKind.IMMUNITY)));
+        modifiers.setDamage(damage);
+        mechanics.setModifiers(modifiers);
+        feat.setMechanics(mechanics);
+
+        JsonNode featData = json(feat).get("featData");
+        JsonNode choices = featData.get("damageDefenseChoices");
+
+        assertEquals("damage-type", choices.get(0).get("choiceKey").asText());
+        assertEquals("resistance", choices.get(0).get("kind").asText());
+        assertEquals("second-type", choices.get(1).get("choiceKey").asText());
+        assertEquals("immunity", choices.get(1).get("kind").asText());
+
+        // Легаси-поле держит первое сопротивление: сборки, не знающие о новом списке,
+        // читают его и получают тот же случай, что и раньше
+        assertEquals("damage-type",
+                featData.get("modifiers").get("resistanceFromChoiceKey").asText());
+        assertFalse(featData.has("damageDefenses"));
+    }
+
+    /** Запись, сделанная до появления списка, приходит одним легаси-полем. */
+    @Test
+    void unfoldsLegacyResistanceChoiceKey() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SheetModifiers modifiers = new SheetModifiers();
+
+        DamageAffinity damage = new DamageAffinity();
+        damage.setResistanceFromChoiceKey("damage-type");
+        modifiers.setDamage(damage);
+        mechanics.setModifiers(modifiers);
+        feat.setMechanics(mechanics);
+
+        JsonNode featData = json(feat).get("featData");
+
+        assertEquals("damage-type",
+                featData.get("damageDefenseChoices").get(0).get("choiceKey").asText());
+        assertEquals("resistance",
+                featData.get("damageDefenseChoices").get(0).get("kind").asText());
+        assertEquals("damage-type",
+                featData.get("modifiers").get("resistanceFromChoiceKey").asText());
     }
 
     /**

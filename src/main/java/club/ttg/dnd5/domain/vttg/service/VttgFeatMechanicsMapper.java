@@ -13,6 +13,8 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseFromChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseKind;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
@@ -177,6 +179,7 @@ public class VttgFeatMechanicsMapper {
                 .languages(grant == null ? null
                         : emptyToNull(VttgDictionaries.languages(grant.getLanguages())))
                 .damageDefenses(damageDefenses(sourceModifiers))
+                .damageDefenseChoices(damageDefenseChoices(sourceModifiers))
                 .conditionImmunities(sourceModifiers == null ? null
                         : emptyToNull(VttgDictionaries.conditions(sourceModifiers.getConditionImmunities())))
                 .darkvision(darkvision(sourceModifiers))
@@ -407,8 +410,9 @@ public class VttgFeatMechanicsMapper {
 
     /**
      * Защиты от урона в форме листа: источник хранит их тремя наборами, потребитель —
-     * плоским списком пар «тип урона + вид защиты». Сопротивление по выбору
-     * ({@code resistanceFromChoiceKey}) сюда не идёт: тип урона ещё не выбран.
+     * плоским списком пар «тип урона + вид защиты». Защита по выбору игрока сюда не идёт:
+     * тип урона ещё не выбран, и она едет своим полем — см.
+     * {@link #damageDefenseChoices(SheetModifiers)}.
      */
     private List<VttgFeatData.DamageDefense> damageDefenses(SheetModifiers modifiers) {
         DamageAffinity damage = modifiers == null ? null : modifiers.getDamage();
@@ -428,6 +432,54 @@ public class VttgFeatMechanicsMapper {
         for (String damageType : VttgDictionaries.damageTypes(types)) {
             target.add(new VttgFeatData.DamageDefense(damageType, kind));
         }
+    }
+
+    /**
+     * Защиты от типов урона, которые называет игрок: пара «ключ выбора + исход». Сам тип
+     * сюда не едет — он известен только после ответа на выбор из {@code choices}.
+     *
+     * <p>Записи, сделанные до появления списка, приходят одним легаси-полем
+     * {@code resistanceFromChoiceKey}: оно разворачивается в ту же форму, чтобы
+     * потребитель знал один способ читать защиту по выбору, а не два.</p>
+     */
+    private List<VttgFeatData.DamageDefenseChoice> damageDefenseChoices(SheetModifiers modifiers) {
+        DamageAffinity damage = modifiers == null ? null : modifiers.getDamage();
+        if (damage == null) {
+            return null;
+        }
+        List<DamageDefenseFromChoice> sources = defenseChoices(damage);
+        List<VttgFeatData.DamageDefenseChoice> result = sources.stream()
+                .map(source -> new VttgFeatData.DamageDefenseChoice(
+                        trimmed(source.getChoiceKey()), defenseKind(source.getKind())))
+                .filter(choice -> choice.choiceKey() != null)
+                .toList();
+        return emptyToNull(result);
+    }
+
+    /**
+     * Защиты по выбору вместе с легаси-полем: список — источник истины, а пустой список
+     * с заполненным {@code resistanceFromChoiceKey} означает запись, сделанную до его
+     * появления.
+     */
+    private List<DamageDefenseFromChoice> defenseChoices(DamageAffinity damage) {
+        if (!CollectionUtils.isEmpty(damage.getDefenseChoices())) {
+            return damage.getDefenseChoices().stream().filter(Objects::nonNull).toList();
+        }
+        String legacy = trimmed(damage.getResistanceFromChoiceKey());
+        return legacy == null ? List.of()
+                : List.of(new DamageDefenseFromChoice(legacy, DamageDefenseKind.RESISTANCE));
+    }
+
+    /** Исход защиты в словаре потребителя; вид не задан — по умолчанию сопротивление. */
+    private String defenseKind(DamageDefenseKind kind) {
+        if (kind == null) {
+            return "resistance";
+        }
+        return switch (kind) {
+            case RESISTANCE -> "resistance";
+            case IMMUNITY -> "immunity";
+            case VULNERABILITY -> "vulnerability";
+        };
     }
 
     /** Тёмное зрение — единственное чувство, доходящее до зрения токена. */
@@ -541,6 +593,7 @@ public class VttgFeatMechanicsMapper {
                 && featData.getToolProficiencies() == null
                 && featData.getLanguages() == null
                 && featData.getDamageDefenses() == null
+                && featData.getDamageDefenseChoices() == null
                 && featData.getConditionImmunities() == null
                 && featData.getDarkvision() == null
                 && featData.getAbilityScoreIncrease() == null
@@ -735,11 +788,28 @@ public class VttgFeatMechanicsMapper {
                 source.getArmorClassBonus(),
                 senses(source.getSenses()),
                 source.getTelepathyRange(),
-                damage == null ? null : trimmed(damage.getResistanceFromChoiceKey()),
+                damage == null ? null : resistanceFromChoiceKey(damage),
                 Boolean.TRUE.equals(source.getInitiativeProficiencyBonus()) ? Boolean.TRUE : null,
                 source.getInitiativeBonus());
 
         return isEmpty(result) ? null : result;
+    }
+
+    /**
+     * Ключ выбора для легаси-поля {@code modifiers.resistanceFromChoiceKey}: первая защита
+     * по выбору, дающая сопротивление. Сборки потребителя, не знающие о
+     * {@code damageDefenseChoices}, читают его и получают тот же случай, что и раньше;
+     * иммунитет и уязвимость по выбору им остаются не видны — описать их этим полем
+     * нечем.
+     */
+    private String resistanceFromChoiceKey(DamageAffinity damage) {
+        return defenseChoices(damage).stream()
+                .filter(choice -> choice.getKind() == null
+                        || choice.getKind() == DamageDefenseKind.RESISTANCE)
+                .map(choice -> trimmed(choice.getChoiceKey()))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     private boolean isEmpty(VttgFeatData.Modifiers modifiers) {

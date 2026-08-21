@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,12 +34,22 @@ public class DamageAffinity {
     private Set<DamageType> vulnerabilities;
 
     /**
-     * Сопротивление к типу урона, который игрок выбирает при взятии черты: «Отмеченный
-     * драконом» выбирает один тип из пяти, «Дар устойчивости к энергиям» — два,
-     * «Закалённая кожа» — дробящий или рубящий. Ссылается на {@code key} выбора из
-     * {@code mechanics.choices}.
+     * Защиты от типов урона, которые называет игрок: «Отмеченный драконом» выбирает один
+     * тип из пяти, «Дар устойчивости к энергиям» — два, «Закалённая кожа» — дробящий или
+     * рубящий. Каждая запись ссылается на {@code key} выбора из {@code mechanics.choices}
+     * и говорит, что выбранный тип получает.
      */
-    @Schema(description = "Ключ выбора типа урона, к которому даётся сопротивление",
+    @Schema(description = "Защиты от типов урона, выбираемых игроком",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<DamageDefenseFromChoice> defenseChoices;
+
+    /**
+     * Легаси-псевдоним первой записи {@link #defenseChoices} с видом
+     * {@link DamageDefenseKind#RESISTANCE}: до появления списка выбор мог дать только
+     * сопротивление и только один. Пишется вместе со списком, чтобы потребители, читающие
+     * старое поле, продолжали работать; на входе разворачивается в список, если тот пуст.
+     */
+    @Schema(description = "Ключ выбора типа урона, к которому даётся сопротивление (легаси)",
             example = "damage-type")
     private String resistanceFromChoiceKey;
 }

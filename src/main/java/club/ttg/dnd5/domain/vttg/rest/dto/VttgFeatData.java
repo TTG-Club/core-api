@@ -60,6 +60,12 @@ public class VttgFeatData {
     private List<String> languages;
     /** Защиты от типов урона. */
     private List<DamageDefense> damageDefenses;
+    /**
+     * Защиты от типов урона, которые называет игрок: сам тип известен только после
+     * ответа на выбор из {@link #choices}, поэтому в {@link #damageDefenses} такая защита
+     * лечь не может.
+     */
+    private List<DamageDefenseChoice> damageDefenseChoices;
     /** Иммунитеты к состояниям. */
     private List<String> conditionImmunities;
     /** Тёмное зрение в футах — единственное чувство, влияющее на зрение токена. */
@@ -177,6 +183,16 @@ public class VttgFeatData {
     }
 
     /**
+     * Защита от типа урона, который называет игрок.
+     *
+     * @param choiceKey ключ выбора из {@link VttgFeatData#choices}, ответ на который даёт
+     *                  тип урона
+     * @param kind      {@code resistance}, {@code immunity} или {@code vulnerability}
+     */
+    public record DamageDefenseChoice(String choiceKey, String kind) {
+    }
+
+    /**
      * Постоянные модификаторы листа в форме потребителя.
      *
      * <p>Уже, чем модификаторы источника: защиты от урона едут в
@@ -190,8 +206,11 @@ public class VttgFeatData {
      * @param armorClassBonus            постоянная прибавка к КД
      * @param senses                     чувства с дистанцией (без тёмного зрения)
      * @param telepathyRange             дальность телепатии в футах
-     * @param resistanceFromChoiceKey    ключ выбора типа урона, к которому даётся
-     *                                   сопротивление: сам тип известен только после выбора
+     * @param resistanceFromChoiceKey    легаси-поле: ключ выбора типа урона, к которому
+     *                                   даётся сопротивление. Дублирует первую запись
+     *                                   {@link VttgFeatData#damageDefenseChoices} с видом
+     *                                   {@code resistance} — там же лежат иммунитет и
+     *                                   уязвимость по выбору, которых это поле не знает
      * @param initiativeProficiencyBonus к инициативе прибавляется бонус мастерства
      * @param initiativeBonus            постоянная числовая прибавка к инициативе;
      *                                   складывается с {@code initiativeProficiencyBonus},
