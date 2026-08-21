@@ -101,7 +101,7 @@ public interface CreatureMapper {
     @Mapping(target = "defenses.resistances.text", source = "resistanceText")
     @Mapping(target = "defenses.immunities.damage", source = "immunityToDamage")
     @Mapping(target = "defenses.immunities.condition", source = "immunityToCondition")
-    @Mapping(target = "defenses.immunities.text", source = "vulnerabilitiesText")
+    @Mapping(target = "defenses.immunities.text", source = "immunityText")
     CreatureRequest toRequest(Creature creature);
 
     @BaseMapping.BaseEntityNameMapping

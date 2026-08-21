@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.filter.rest;
 
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureGrouping;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
@@ -224,6 +225,16 @@ class QueryRequestArgumentResolverTest
             assertEquals(Set.of(MagicSchool.EVOCATION, MagicSchool.ABJURATION), filter.getValues());
             assertTrue(filter.isExclude());
             assertFalse(filter.isUnion());
+        }
+
+        @Test
+        @DisplayName("enum фильтр по устаревшему имени: damageType=FAIR → FIRE")
+        void enumFilterLegacyAlias() throws Exception
+        {
+            SpellQueryRequest request = resolve("damageType=FAIR,COLD");
+            QueryFilter<DamageType> filter = request.getDamageType();
+            assertNotNull(filter);
+            assertEquals(Set.of(DamageType.FIRE, DamageType.COLD), filter.getValues());
         }
 
         @Test

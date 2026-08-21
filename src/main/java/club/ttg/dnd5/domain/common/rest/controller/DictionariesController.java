@@ -134,7 +134,7 @@ public class DictionariesController {
                                             [
                                               {
                                                 "label": "огонь",
-                                                "value": "FAIR"
+                                                "value": "FIRE"
                                               },
                                               {
                                                 "label": "холод",

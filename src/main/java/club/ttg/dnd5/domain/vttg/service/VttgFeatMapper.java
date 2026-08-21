@@ -38,6 +38,7 @@ public class VttgFeatMapper {
     private static final Map<FeatCategory, Separator> SEPARATORS = separators();
 
     private final VttgMarkupConverter markupConverter;
+    private final VttgFeatMechanicsMapper mechanicsMapper;
 
     public VttgFeat toVttg(Feat feat) {
         return VttgFeat.builder()
@@ -55,6 +56,8 @@ public class VttgFeatMapper {
                 .repeatable(Boolean.TRUE.equals(feat.getRepeatability()))
                 .description(markupConverter.toText(feat.getDescription()))
                 .typeLabel(TYPE_LABEL)
+                .featData(mechanicsMapper.featData(feat))
+                .mechanics(mechanicsMapper.mechanics(feat))
                 .build();
     }
 

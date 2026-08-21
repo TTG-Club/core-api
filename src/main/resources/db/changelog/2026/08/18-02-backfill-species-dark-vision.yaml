@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-18-02-backfill-species-dark-vision
+      author: claude
+      comment: >
+        Заполняет species.dark_vision из текстов умений: колонка есть с самого начала, но
+        записать в неё было нечем — поля не было ни в форме вида, ни в мапперах, и выгрузка
+        компендиума всегда отдавала пустые grants. 26 записей с 60 фт., 4 со 120 фт.
+
+        Происхождения (дочерние виды) получают значение родителя: в модели они самостоятельны
+        и уже хранят свои копии типа, размеров и скорости. Исключение — дроу: у него текст
+        поднимает дальность до 120 фт., и это единственное происхождение, которое родителя
+        переопределяет.
+
+        Киткин и фэйри тёмного зрения не получают: у них оно есть только в тенеборском
+        варианте происхождения, а вариант живёт в тексте умения, а не отдельной записью.
+        Голиаф и его благословения — тоже: тёмного зрения у него нет по источнику.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE species SET dark_vision = 60
+              WHERE dark_vision IS NULL AND url IN (
+                'aasimar-phb', 'boggart-lfl', 'dhampir-abh', 'dhampir-rhw', 'dragonborn-phb',
+                'elf-lfl', 'elf-phb', 'flamekin-lfl', 'gargoyle-feq', 'gnoll-feq', 'gnome-phb',
+                'hexblood-rhw', 'khoravar-efa', 'lupin-rhw', 'medusa-feq', 'rimekin-lfl',
+                'shifter-efa', 'tiefling-phb', 'worg-feq',
+                'forest-gnome-phb', 'rock-gnome-phb', 'tiefling-infernal-phb',
+                'tiefling-abyssal-phb', 'tiefling-chthonic-phb', 'high-elf-phb', 'wood-elf-phb');
+
+              UPDATE species SET dark_vision = 120
+              WHERE dark_vision IS NULL AND url IN (
+                'dwarf-phb', 'orc-phb', 'lorwyn-changeling-lfl', 'elf-drow-phb');
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE species SET dark_vision = NULL
+              WHERE url IN (
+                'aasimar-phb', 'boggart-lfl', 'dhampir-abh', 'dhampir-rhw', 'dragonborn-phb',
+                'elf-lfl', 'elf-phb', 'flamekin-lfl', 'gargoyle-feq', 'gnoll-feq', 'gnome-phb',
+                'hexblood-rhw', 'khoravar-efa', 'lupin-rhw', 'medusa-feq', 'rimekin-lfl',
+                'shifter-efa', 'tiefling-phb', 'worg-feq',
+                'forest-gnome-phb', 'rock-gnome-phb', 'tiefling-infernal-phb',
+                'tiefling-abyssal-phb', 'tiefling-chthonic-phb', 'high-elf-phb', 'wood-elf-phb',
+                'dwarf-phb', 'orc-phb', 'lorwyn-changeling-lfl', 'elf-drow-phb');

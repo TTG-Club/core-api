@@ -57,7 +57,7 @@ public class VttgBackgroundMapper {
                 .abilityGrant(abilityGrant(background.getAbilities()))
                 .skillGrant(skillGrant(background.getSkillProficiencies()))
                 .toolGrant(toolGrant(background.getToolProficiency()))
-                .featGrant(featGrant(background.getFeat()))
+                .featGrant(featGrant(background))
                 .equipmentOptions(equipmentOptions(background))
                 .type("background")
                 .build();
@@ -97,11 +97,34 @@ public class VttgBackgroundMapper {
         return new VttgBackground.ToolGrant(text.isEmpty() ? List.of() : List.of(text));
     }
 
-    private VttgBackground.FeatGrant featGrant(Feat feat) {
+    /**
+     * Черта-происхождение вместе с уточнением: «Мудрец» даёт «Посвящённого в магию
+     * (Волшебник)» — класс списка заклинаний назван самой предысторией, и без уточнения
+     * потребитель спросил бы его у игрока заново.
+     */
+    private VttgBackground.FeatGrant featGrant(Background background) {
+        Feat feat = background.getFeat();
         if (feat == null) {
             return null;
         }
-        return new VttgBackground.FeatGrant(featId(feat), feat.getName(), optional(feat.getEnglish()));
+        return new VttgBackground.FeatGrant(featId(feat), feat.getName(), optional(feat.getEnglish()),
+                featSuffix(background.getFeatSuffix()));
+    }
+
+    /**
+     * Уточнение черты без обрамляющих скобок: в модели оно хранится ровно так, как
+     * дописывается к названию на странице («(Волшебник)»), а скобки — оформление, а не
+     * часть значения.
+     */
+    private String featSuffix(String suffix) {
+        if (!StringUtils.hasText(suffix)) {
+            return null;
+        }
+        String text = suffix.trim();
+        if (text.startsWith("(") && text.endsWith(")")) {
+            text = text.substring(1, text.length() - 1).trim();
+        }
+        return optional(text);
     }
 
     /**
@@ -118,7 +141,8 @@ public class VttgBackgroundMapper {
         if (!rendered.isEmpty()) {
             return rendered.stream()
                     .map(option -> new VttgBackground.EquipmentOption(
-                            option.description(), option.goldEquivalent()))
+                            option.description(), option.goldEquivalent(),
+                            option.items(), option.coins(), option.coin()))
                     .toList();
         }
 

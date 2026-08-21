@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-18-05-add-species-mechanics
+      author: claude
+      comment: >
+        Механика влияния самой записи вида на лист персонажа. У умений она лежит внутри
+        features (колонка и так jsonb), но происхождениям этого мало: умений у них нет —
+        правило целиком в описании, — и сопротивление инфернального тифлинга или скорость
+        лесного эльфа приписать было некуда.
+      changes:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: mechanics
+                  type: jsonb
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: species
+            columnName: mechanics

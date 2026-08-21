@@ -35,6 +35,17 @@ public class SpellEffect {
      */
     private List<String> damageFormulaTargets;
     private List<HealingType> healingTypes;
+    /**
+     * Характеристика, от которой считаются Сл спасброска и бонус атаки этого
+     * заклинания.
+     *
+     * <p>Обычно её задаёт заклинатель, а не запись справочника: «Огненный снаряд»
+     * считается от Интеллекта у волшебника и от Харизмы у колдуна. Поле нужно
+     * тем заклинаниям, у которых характеристика своя независимо от источника —
+     * хоумбрю и заклинаниям, выданным чертой. Не задано — характеристику берёт
+     * потребитель у класса.</p>
+     */
+    private Ability spellcastingAbility;
     private List<Ability> savingThrows;
     private SpellSaveEffect saveEffect;
     private List<Condition> conditions;

@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.species.model;
 
 import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,6 +30,19 @@ public class Species extends CreatureProperties {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Collection<SpeciesFeature> features;
+
+    /**
+     * Механика влияния самого вида или происхождения на лист персонажа: то, что даёт
+     * выбор записи целиком, а не отдельное её умение.
+     *
+     * <p>Нужна прежде всего происхождениям: умений у них нет — правило целиком лежит в
+     * описании, — и приписать сопротивление инфернального тифлинга или скорость лесного
+     * эльфа было бы больше некуда. Виду с умениями это поле обычно не нужно: там эффект
+     * лучше держать у того умения, которое его даёт.</p>
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private SpeciesMechanics mechanics;
 
     private String linkImageUrl; //для изоброжения бэкграунда
 

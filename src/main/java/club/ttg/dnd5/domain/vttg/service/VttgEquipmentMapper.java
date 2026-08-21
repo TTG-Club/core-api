@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgEquipmentItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -39,8 +40,13 @@ public class VttgEquipmentMapper {
      * @param description     видимая строка варианта
      * @param goldEquivalent  золотой эквивалент для варианта «только монеты»; {@code null},
      *                        если в варианте есть предметы — тогда это не альтернатива деньгами
+     * @param items           позиции варианта — по ним потребитель кладёт предметы в инвентарь;
+     *                        пусто, если в варианте только монеты
+     * @param coins           количество монет варианта; {@code null}, если монет нет
+     * @param coin            код монеты ({@code GC}, {@code SC}, …); {@code null} без монет
      */
-    public record RenderedOption(String description, Integer goldEquivalent) {
+    public record RenderedOption(String description, Integer goldEquivalent,
+                                 List<VttgEquipmentItem> items, Integer coins, String coin) {
     }
 
     /**
@@ -83,10 +89,15 @@ public class VttgEquipmentMapper {
         boolean hasCoins = coins != null && coins > 0;
 
         List<String> parts = new ArrayList<>();
+        List<VttgEquipmentItem> exported = new ArrayList<>();
         for (EquipmentItem item : items) {
             String part = renderItem(item);
             if (StringUtils.hasText(part)) {
                 parts.add(part);
+            }
+            VttgEquipmentItem entry = exportItem(item);
+            if (entry != null) {
+                exported.add(entry);
             }
         }
         if (hasCoins) {
@@ -99,7 +110,31 @@ public class VttgEquipmentMapper {
         Integer goldEquivalent = parts.size() == 1 && hasCoins
                 ? Math.round(coins * coin.getExchangeForGold())
                 : null;
-        return new RenderedOption(String.join(", ", parts), goldEquivalent);
+        return new RenderedOption(String.join(", ", parts), goldEquivalent,
+                exported.isEmpty() ? null : exported,
+                hasCoins ? coins : null,
+                hasCoins ? coin.name() : null);
+    }
+
+    /**
+     * Позиция варианта для автовыдачи. Уточнение отдаётся отдельным полем, а не внутри
+     * названия: потребитель ищет предмет по слагу, а уточнение показывает игроку.
+     * Позиция без названия — пустая строка источника, её отбрасываем.
+     */
+    private VttgEquipmentItem exportItem(EquipmentItem item) {
+        String name = StringUtils.hasText(item.getName()) ? item.getName().trim() : null;
+        if (name == null) {
+            return null;
+        }
+        Integer quantity = item.getQuantity();
+        String note = StringUtils.hasText(item.getDescription())
+                ? markupConverter.toText(item.getDescription()).trim()
+                : null;
+        return new VttgEquipmentItem(
+                StringUtils.hasText(item.getUrl()) ? item.getUrl() : null,
+                name,
+                quantity != null && quantity > 1 ? quantity : null,
+                StringUtils.hasText(note) ? note : null);
     }
 
     /**

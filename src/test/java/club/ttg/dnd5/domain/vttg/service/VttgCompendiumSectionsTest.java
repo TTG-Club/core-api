@@ -26,6 +26,29 @@ class VttgCompendiumSectionsTest {
         assertEquals(Map.of("path", "category", "format", "string"), groupBy);
     }
 
+    /**
+     * Инструменты — лист внутри группы «Снаряжение». Без него папка {@code tools} остаётся вне
+     * дерева, и VTTG рисует её generic-фоллбэком: «Tools» с иконкой {@code tabler:cards}.
+     */
+    @Test
+    void exposesToolsLeafInsideEquipmentGroup() {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> equipment = (List<Map<String, Object>>) sections.changesTree().stream()
+                .filter(node -> "equipment".equals(node.get("group")))
+                .findFirst()
+                .orElseThrow()
+                .get("children");
+
+        Map<String, Object> tools = equipment.stream()
+                .filter(node -> "tools".equals(node.get("section")))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("Инструменты", tools.get("name"));
+        assertEquals("tabler:tools", tools.get("icon"));
+        assertEquals("tool", tools.get("dataKind"));
+    }
+
     /** Глоссарий — отдельный лист дерева: слаг совпадает с {@code section} записей, есть фильтр категорий. */
     @Test
     void exposesGlossaryLeaf() {

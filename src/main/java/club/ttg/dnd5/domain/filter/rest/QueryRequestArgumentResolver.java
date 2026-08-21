@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.filter.rest;
 
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -303,6 +304,42 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
             if (constant.name().equalsIgnoreCase(value))
             {
                 return constant;
+            }
+        }
+
+        return parseEnumAlias(value, enumClass);
+    }
+
+    /**
+     * Разбор устаревшего имени константы: переименованные значения объявляют прежнее имя
+     * через {@link JsonAlias}, чтобы сохранённые фильтры и старые ссылки продолжали работать.
+     * В теле запроса тот же алиас разбирает Jackson.
+     */
+    private <E extends Enum<E>> E parseEnumAlias(String value, Class<E> enumClass)
+    {
+        for (E constant : enumClass.getEnumConstants())
+        {
+            JsonAlias aliases;
+            try
+            {
+                aliases = enumClass.getField(constant.name()).getAnnotation(JsonAlias.class);
+            }
+            catch (NoSuchFieldException e)
+            {
+                continue;
+            }
+
+            if (aliases == null)
+            {
+                continue;
+            }
+
+            for (String alias : aliases.value())
+            {
+                if (alias.equalsIgnoreCase(value))
+                {
+                    return constant;
+                }
             }
         }
 

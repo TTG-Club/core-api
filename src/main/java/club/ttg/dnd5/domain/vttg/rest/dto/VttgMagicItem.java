@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -87,6 +89,32 @@ public class VttgMagicItem {
     private String sourceKey;
 
     /**
+     * Активные эффекты предмета — что он меняет на листе персонажа
+     * ({@code MagicItemMechanics.activeEffects}). Передаются без преобразования: модель
+     * уже в вокабуляре VTTG, как у заклинаний ({@code VttgSpell.activeEffects}).
+     *
+     * <p>Потребитель собирает эффекты надетых предметов наравне с эффектами самого
+     * персонажа, поэтому плащ защиты поднимает КД и спасброски сам. Различения
+     * «при себе / надет / в руке» ({@code MagicItemActivation}) у него нет — эффекты
+     * включает пара «надет + настроен», — поэтому условие активации в выгрузку не идёт.</p>
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<ActiveEffect> activeEffects;
+
+    /**
+     * Заряды предмета ({@code MagicItemResource}). Опускается у предметов без зарядов.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Uses uses;
+
+    /**
+     * Свойства, которые лист показывает справкой, но не считает: дыхание под водой,
+     * иммунитет к чтению мыслей и прочее ({@code MagicItemMechanics.passive}).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String passive;
+
+    /**
      * Боевые/доспешные поля, выведенные из базового предмета (по {@code clarification}):
      * {@code baseType}, {@code damageParts}, {@code weaponCategory}, {@code baseArmorAC} и т.д.
      * Сериализуются как поля верхнего уровня (см. {@code VttgItemMapper}); пусто — не выводятся.
@@ -119,5 +147,23 @@ public class VttgMagicItem {
     @JsonProperty("isReadOnly")
     public boolean isReadOnly() {
         return isReadOnly;
+    }
+
+    /**
+     * Заряды предмета в формате компендиума VTTG ({@code GameItem.uses}).
+     *
+     * <p>{@code current} в справочнике всегда равен {@code max}: остаток — состояние
+     * конкретного экземпляра на листе, а не свойство записи каталога. Потребитель
+     * заводит предмет полным и списывает заряды сам.</p>
+     *
+     * @param max      максимум зарядов
+     * @param current  остаток; в выгрузке всегда равен {@code max}
+     * @param recovery когда заряды возвращаются: {@code dawn}, {@code shortRest},
+     *                 {@code longRest}, {@code manual}
+     * @param formula  формула возврата («1к6+4»); пусто — восстановить все
+     * @param cost     расход одного применения; опускается, если он равен единице
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Uses(int max, int current, String recovery, String formula, Integer cost) {
     }
 }

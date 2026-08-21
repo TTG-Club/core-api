@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.feat.rest.mapper;
 
 import club.ttg.dnd5.domain.background.model.Background;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -9,13 +11,19 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import org.mapstruct.ReportingPolicy;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {BaseMapping.class})
 public interface FeatMapper {
@@ -36,6 +44,8 @@ public interface FeatMapper {
     @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(source = "request.mechanics", target = "mechanics")
+    @Mapping(source = "request.prerequisiteDetails", target = "prerequisiteDetails")
     @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Source source);
 
@@ -45,6 +55,8 @@ public interface FeatMapper {
     @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(source = "request.mechanics", target = "mechanics")
+    @Mapping(source = "request.prerequisiteDetails", target = "prerequisiteDetails")
     @Mapping(target = "source", source = "source")
     void updateEntity(FeatRequest request, Source source, @MappingTarget Feat feat);
 
@@ -80,14 +92,51 @@ public interface FeatMapper {
         return StringUtils.capitalize(string);
     }
 
+    /**
+     * Держит плоское {@code abilities} в согласии с механикой: по этой колонке работает
+     * публичный SQL-фильтр «Характеристика», а форма её не присылает вовсе — в
+     * {@link FeatRequest} такого поля нет.
+     *
+     * <p>Пока механика у черты не заполнена — или заполнена так, что своего списка
+     * характеристик в ней нет (повышение привязано к выбору через
+     * {@code AbilityBonus.fromChoiceKey}), — прежнее значение записи остаётся как есть:
+     * иначе правка черты вычеркнула бы её из фильтра. У новой черты в таком случае колонка
+     * так и останется пустой — фильтровать по ней всё равно нечего.</p>
+     */
+    @AfterMapping
+    default void syncAbilitiesWithMechanics(@MappingTarget Feat feat) {
+        List<Ability> flat = abilityBonuses(feat).stream()
+                .map(AbilityBonus::getAbilities)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .distinct()
+                .toList();
+        if (flat.isEmpty()) {
+            return;
+        }
+        feat.setAbilities(flat);
+    }
+
+    /**
+     * Сколько характеристик поднимает черта. Для «Улучшения характеристик» это 2:
+     * вариант {@code +1 к двум} задаёт {@code count = 2}.
+     */
     @Named("getAbilityScoreIncreaseOptions")
     default int getAbilityScoreIncreaseOptions(Feat feat) {
-        if (feat.getName().equals("Улучшение характеристик")) {
-            return 2;
+        List<AbilityBonus> bonuses = abilityBonuses(feat);
+        if (!bonuses.isEmpty()) {
+            return bonuses.stream()
+                    .mapToInt(AbilityBonus::resolveCount)
+                    .max()
+                    .orElse(0);
         }
-        if (feat.getAbilities() == null || feat.getAbilities().isEmpty()) {{
-            return 0;
-        }}
-        return 1;
+        return CollectionUtils.isEmpty(feat.getAbilities()) ? 0 : 1;
+    }
+
+    private static List<AbilityBonus> abilityBonuses(Feat feat) {
+        if (feat.getMechanics() == null || CollectionUtils.isEmpty(feat.getMechanics().getAbilityBonuses())) {
+            return List.of();
+        }
+        return List.copyOf(feat.getMechanics().getAbilityBonuses());
     }
 }

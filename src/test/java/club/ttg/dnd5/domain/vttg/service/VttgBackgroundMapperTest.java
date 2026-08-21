@@ -52,9 +52,48 @@ class VttgBackgroundMapperTest {
         assertEquals("srd_feat_magic_initiate", featGrant.get("featId").asText());
         assertEquals("Посвящённый в магию", featGrant.get("featName").asText());
         assertEquals("Magic Initiate", featGrant.get("featNameEn").asText());
+        // Уточнения у «Послушника» нет — поле опускается, а не едет пустым
+        assertFalse(featGrant.has("featSuffix"));
 
         assertEquals(1, json.get("equipmentOptions").size());
         assertTrue(json.get("equipmentOptions").get(0).get("description").asText().contains("Священный символ"));
+    }
+
+    /**
+     * «Мудрец» даёт «Посвящённого в магию (Волшебник)»: класс списка заклинаний назван
+     * самой предысторией. В названии черты его нет — оно приходит из каталога, — поэтому
+     * уточнение едет своим полем, иначе потребитель спросил бы список у игрока заново.
+     */
+    @Test
+    void mapsFeatSuffixAsSeparateField() {
+        Background bg = baseBackground("sage", "Мудрец", "Sage");
+        bg.setFeat(feat("magic-initiate", "Посвящённый в магию", "Magic Initiate"));
+        bg.setFeatSuffix("(Волшебник)");
+
+        JsonNode featGrant = json(bg).get("featGrant");
+        assertEquals("Посвящённый в магию", featGrant.get("featName").asText());
+        // Скобки — оформление страницы, а не часть значения
+        assertEquals("Волшебник", featGrant.get("featSuffix").asText());
+    }
+
+    /** Уточнение без скобок доезжает как есть: в модели оно хранится обеими формами. */
+    @Test
+    void keepsFeatSuffixWithoutBrackets() {
+        Background bg = baseBackground("acolyte", "Послушник", "Acolyte");
+        bg.setFeat(feat("magic-initiate", "Посвящённый в магию", "Magic Initiate"));
+        bg.setFeatSuffix(" Жрец ");
+
+        assertEquals("Жрец", json(bg).get("featGrant").get("featSuffix").asText());
+    }
+
+    /** Пустое уточнение полем не едет: {@code NON_NULL} и так вырезал бы его. */
+    @Test
+    void omitsBlankFeatSuffix() {
+        Background bg = baseBackground("criminal", "Преступник", "Criminal");
+        bg.setFeat(feat("alert", "Бдительный", "Alert"));
+        bg.setFeatSuffix("   ");
+
+        assertFalse(json(bg).get("featGrant").has("featSuffix"));
     }
 
     /** «Преступник» — составной навык slug в camelCase (sleightOfHand). */

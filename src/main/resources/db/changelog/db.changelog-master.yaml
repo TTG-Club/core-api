@@ -284,4 +284,26 @@ databaseChangeLog:
   - include:
       file: db/changelog/2026/08/08-01-add-initiative-participant-state.yaml
   - include:
+      file: db/changelog/2026/08/09-01-add-feat-mechanics-and-prerequisite.yaml
+  - include:
+      file: db/changelog/2026/08/09-02-backfill-feat-ability-bonuses.yaml
+  - include:
+      file: db/changelog/2026/08/09-03-backfill-feat-prerequisite-details.yaml
+  - include:
+      file: db/changelog/2026/08/09-04-backfill-feat-spellcasting-ability-choice.yaml
+  - include:
       file: db/changelog/2026/08/11-01-add-discord-mention-to-article.yaml
+  - include:
+      file: db/changelog/2026/08/17-01-add-telegram-format-to-article.yaml
+  - include:
+      file: db/changelog/2026/08/18-01-rename-damage-type-fair-to-fire.yaml
+  - include:
+      file: db/changelog/2026/08/18-02-backfill-species-dark-vision.yaml
+  - include:
+      file: db/changelog/2026/08/18-03-fix-species-innate-spell-levels.yaml
+  - include:
+      file: db/changelog/2026/08/18-04-backfill-species-feature-mechanics.yaml
+  - include:
+      file: db/changelog/2026/08/18-05-add-species-mechanics.yaml
+  - include:
+      file: db/changelog/2026/08/18-06-backfill-species-mechanics.yaml

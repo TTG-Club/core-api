@@ -25,6 +25,10 @@ public class GlossaryPredicateBuilder
         // Категория тега (String поле)
         PredicateUtils.applyFilter(builder, request.getTagCategory(), Q.tagCategory);
 
+        // Источники: список отдаёт их фильтром, и без этой строки выбор книг в
+        // выдаче ничего не менял.
+        PredicateUtils.applySourcesFilter(builder, request.getSource(), "glossary", "source");
+
         return builder;
     }
 }

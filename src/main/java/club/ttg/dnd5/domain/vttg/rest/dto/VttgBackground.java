@@ -80,12 +80,43 @@ public class VttgBackground {
     public record ToolGrant(List<String> items) {
     }
 
-    /** Даруемая черта. */
-    public record FeatGrant(String featId, String featName, String featNameEn) {
+    /**
+     * Даруемая черта.
+     *
+     * <p>{@code featSuffix} — уточнение черты, которым предыстория отвечает за игрока:
+     * «Мудрец» даёт «Посвящённого в магию (Волшебник)», и список заклинаний назван ею
+     * самой. В названии черты его нет — {@code featName} приходит из каталога, — а без
+     * него потребитель спросил бы список второй раз и предложил передумать за
+     * предысторию.</p>
+     *
+     * <p>Текстом источника, а не ключом класса: уточнением бывает не только класс, и
+     * переводить его здесь значило бы завести второй словарь названий классов рядом с
+     * тем, который уже есть у потребителя. Скобки сняты — они оформление страницы, а не
+     * часть значения.</p>
+     *
+     * @param featId     id черты в схеме эталона
+     * @param featName   название черты из каталога
+     * @param featNameEn английское название черты
+     * @param featSuffix уточнение черты; пусто — предыстория ничего не уточняет
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record FeatGrant(String featId, String featName, String featNameEn, String featSuffix) {
     }
 
-    /** Вариант стартового снаряжения; {@code goldAlternative} — альтернатива золотом (опц.). */
+    /**
+     * Вариант стартового снаряжения; {@code goldAlternative} — альтернатива золотом (опц.).
+     *
+     * <p>Описание и позиции идут вместе: строка нужна для чтения — в ней живые ссылки на
+     * карточки, — а позиции для того, чтобы мастер настройки положил предметы в инвентарь
+     * сам. У вариантов, заданных в источнике свободным текстом, позиций нет.</p>
+     */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record EquipmentOption(String description, Integer goldAlternative) {
+    public record EquipmentOption(String description, Integer goldAlternative,
+                                  List<VttgEquipmentItem> items, Integer coins, String coin) {
+
+        /** Вариант из свободного текста: позиций и монет у него нет. */
+        public EquipmentOption(String description, Integer goldAlternative) {
+            this(description, goldAlternative, null, null, null);
+        }
     }
 }

@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-17-01-add-telegram-format-to-article
+      author: Peterko
+      changes:
+        # Вид поста новости в Telegram-канале: INSTANT_VIEW/NULL — карточка Instant View (одно сообщение,
+        # текст открывается по кнопке), FULL_TEXT — прежний вид, полный текст в самом посте с обложкой.
+        # Строка enum-а TelegramPostFormat. NULL у записей до миграции читается как INSTANT_VIEW —
+        # поведение прежнее: вид определяет только конфиг telegram.instant-view-rhash.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_format
+                  type: VARCHAR(16)

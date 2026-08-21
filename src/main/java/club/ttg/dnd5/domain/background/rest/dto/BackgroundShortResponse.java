@@ -11,4 +11,17 @@ import lombok.Setter;
 public class BackgroundShortResponse extends ShortResponse {
     @Schema(description = "Характеристики:")
     private String abilityScores;
+
+    /**
+     * Черта предыстории названием и ссылкой.
+     *
+     * <p>Списку предысторий этого достаточно: и на сайте, и в мастере листа персонажа
+     * черта — это то, чем предыстории отличаются друг от друга, а за ней самой ходить
+     * в деталь каждой строки списка нельзя.</p>
+     */
+    @Schema(description = "Название черты, которую даёт предыстория", examples = "Посвящённый в магию")
+    private String featName;
+
+    @Schema(description = "Ссылка на черту, которую даёт предыстория", examples = "magic-initiate")
+    private String featUrl;
 }

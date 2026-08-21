@@ -15,6 +15,14 @@ import java.util.Set;
 /**
  * Утилитные методы для построения QueryDSL предикатов.
  * Переиспользуемые во всех доменных PredicateBuilder.
+ * <p>
+ * <b>Режим «исключить».</b> Исключающий предикат строится как положительное условие,
+ * обёрнутое в {@code IS NOT TRUE} (для колонок — {@code notIn(...).or(path.isNull())}).
+ * Голое {@code NOT ...} / {@code NOT IN ...} здесь не годится: когда поля у записи нет,
+ * JSON-путь даёт SQL NULL, отрицание NULL — снова NULL, а {@code WHERE} пропускает
+ * только TRUE. Из-за этого «исключить спас на Силу» выбрасывало заодно и все
+ * заклинания, у которых спасбросков нет вовсе, а «исключить рубящий урон» — верёвку
+ * и прочие непредметы. Запись без поля под исключение не подпадает и остаётся в выдаче.
  */
 @UtilityClass
 public class PredicateUtils
@@ -80,7 +88,7 @@ public class PredicateUtils
 
         if (filter.isExclude())
         {
-            builder.and(path.notIn(filter.getValues()));
+            builder.and(path.notIn(filter.getValues()).or(path.isNull()));
         }
         else if (filter.isUnion())
         {
@@ -110,7 +118,7 @@ public class PredicateUtils
 
         if (filter.isExclude())
         {
-            builder.and(path.notIn(filter.getValues()));
+            builder.and(path.notIn(filter.getValues()).or(path.isNull()));
         }
         else if (filter.isUnion())
         {
@@ -146,7 +154,7 @@ public class PredicateUtils
 
         if (filter.isExclude())
         {
-            builder.and(path.notIn(names));
+            builder.and(path.notIn(names).or(path.isNull()));
         }
         else if (filter.isUnion())
         {
@@ -199,7 +207,7 @@ public class PredicateUtils
                     .map(s -> "'" + s + "'")
                     .collect(java.util.stream.Collectors.joining(","));
             builder.and(Expressions.booleanTemplate(
-                    "NOT jsonb_exists_any(" + columnName + ", array[" + values + "]::text[])"
+                    "(jsonb_exists_any(" + columnName + ", array[" + values + "]::text[]) IS NOT TRUE)"
             ));
         }
         else if (filter.isUnion())
@@ -242,7 +250,7 @@ public class PredicateUtils
             for (E val : filter.getValues())
             {
                 builder.and(Expressions.booleanTemplate(
-                        "NOT ((" + columnName + "->'" + jsonKey + "') @> '[\"" + val.name() + "\"]'::jsonb)"
+                        "(((" + columnName + "->'" + jsonKey + "') @> '[\"" + val.name() + "\"]'::jsonb) IS NOT TRUE)"
                 ));
             }
         }
@@ -347,7 +355,7 @@ public class PredicateUtils
                     .collect(java.util.stream.Collectors.joining(" or "));
 
             builder.and(Expressions.booleanTemplate(
-                    "(" + columnName + " is not null and not exists (select 1 from jsonb_array_elements(" + columnName + ") as elem where " + condition + "))"
+                    "(not exists (select 1 from jsonb_array_elements(coalesce(" + columnName + ", '[]'::jsonb)) as elem where " + condition + "))"
             ));
         }
         else if (filter.isUnion())
@@ -523,8 +531,10 @@ public class PredicateUtils
      * Фильтр по строковому полю внутри вложенного JSONB-объекта.
      * Пример: {@code (weapon->'damage'->>'type') IN ('SLASHING','PIERCING')}.
      * <p>
-     * Записи без такого объекта (у предмета нет оружейной части) не проходят
-     * ни включающий, ни исключающий фильтр: сравнение с NULL не истинно.
+     * Записи без такого объекта (у предмета нет оружейной части) не проходят включающий
+     * фильтр, но проходят исключающий: верёвка не рубящее оружие, а значит не должна
+     * пропадать из списка при исключении рубящего урона. См. замечание о режиме «исключить»
+     * в javadoc класса.
      *
      * @param columnName имя JSONB-колонки (например, "weapon")
      * @param objectKey  ключ вложенного объекта (например, "damage")
@@ -545,7 +555,7 @@ public class PredicateUtils
 
         if (filter.isExclude())
         {
-            builder.and(Expressions.booleanTemplate(path + " NOT IN (" + toQuotedNames(filter) + ")"));
+            builder.and(Expressions.booleanTemplate("((" + path + " IN (" + toQuotedNames(filter) + ")) IS NOT TRUE)"));
         }
         else if (filter.isUnion())
         {
@@ -592,7 +602,7 @@ public class PredicateUtils
                     .map(s -> "'" + s + "'")
                     .collect(java.util.stream.Collectors.joining(","));
             builder.and(Expressions.booleanTemplate(
-                    "(" + columnName + "->>'" + jsonKey + "') NOT IN (" + values + ")"
+                    "(((" + columnName + "->>'" + jsonKey + "') IN (" + values + ")) IS NOT TRUE)"
             ));
         }
         else if (filter.isUnion())

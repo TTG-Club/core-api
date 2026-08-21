@@ -17,7 +17,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,13 +24,15 @@ import java.util.stream.Collectors;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {EquipmentMapping.class},
+        uses = {EquipmentMapping.class, BaseMapping.class},
         componentModel = "spring",
         injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface BackgroundMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "abilities", target = "abilityScores", qualifiedByName = "abilitiesToString")
+    @Mapping(source = "feat.name", target = "featName")
+    @Mapping(source = "feat.url", target = "featUrl")
     BackgroundShortResponse toShort(Background background);
 
     @BaseMapping.BaseShortResponseNameMapping
@@ -42,7 +43,7 @@ public interface BackgroundMapper {
     @Mapping(source = "startingEquipment", target = "startingEquipment", qualifiedByName = "toEquipmentOptionDtos")
     BackgroundDetailResponse toDetail(Background background);
 
-    @BaseMapping.BaseShortResponseNameMapping
+    @BaseMapping.BaseRequestNameMapping
     @Mapping(source = "abilities", target = "abilityScores")
     @Mapping(source = "feat.url", target = "featUrl")
     @Mapping(source = "skillProficiencies", target = "skillsProficiencies")
@@ -111,10 +112,5 @@ public interface BackgroundMapper {
                 .sorted(Comparator.comparing(Skill::ordinal))
                 .map(Skill::getName)
                 .collect(Collectors.joining(", "));
-    }
-
-    @Named("collectToString")
-    default String collectToString(Collection<String> names) {
-        return String.join(";", names);
     }
 }

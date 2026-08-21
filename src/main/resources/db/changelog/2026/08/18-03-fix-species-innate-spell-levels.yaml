@@ -1,0 +1,95 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-18-03-fix-species-innate-spell-levels
+      author: claude
+      comment: >
+        Проставляет требуемый уровень 18 врождённым заклинаниям. Поле required_level появилось
+        вместе с уровнями врождённых заклинаний, но заполнено осталось единицей у всех связок,
+        и персонаж 1 уровня получал заклинания, которые вид даёт на 3 и 5: тифлинг — Тьму и
+        Удержание личности, высший эльф — Туманный шаг.
+
+        Уровни взяты из текстов самих записей («Уровень 3:», «Уровень 5:», «Когда вы достигаете
+        3-го и 5-го уровней»). Заклинания первого уровня не трогаются — у них уже верная
+        единица.
+
+        Правка идёт по обеим таблицам привязок: у видов заклинания лежат в
+        spell_species_affiliation, у происхождений — в spell_lineages_affiliation, и связка
+        находится по паре «запись + заклинание» независимо от того, где она заведена.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              WITH levels(species_url, spell_url, required_level) AS (VALUES
+                ('tiefling-infernal-phb', 'hellish-rebuke-phb', 3),
+                ('tiefling-infernal-phb', 'darkness-phb', 5),
+                ('tiefling-abyssal-phb', 'ray-of-sickness-phb', 3),
+                ('tiefling-abyssal-phb', 'hold-person-phb', 5),
+                ('tiefling-chthonic-phb', 'false-life-phb', 3),
+                ('tiefling-chthonic-phb', 'ray-of-enfeeblement-phb', 5),
+                ('high-elf-phb', 'detect-magic-phb', 3),
+                ('high-elf-phb', 'misty-step-phb', 5),
+                ('elf-drow-phb', 'faerie-fire-phb', 3),
+                ('elf-drow-phb', 'darkness-phb', 5),
+                ('wood-elf-phb', 'longstrider-phb', 3),
+                ('wood-elf-phb', 'pass-without-trace-phb', 5),
+                ('rimekin-lfl', 'ice-knife-phb', 3),
+                ('rimekin-lfl', 'flame-blade-phb', 5),
+                ('flamekin-lfl', 'burning-hands-phb', 3),
+                ('flamekin-lfl', 'flame-blade-phb', 5),
+                ('faerie-lfl', 'faerie-fire-phb', 3),
+                ('faerie-lfl', 'enlarge-reduce-phb', 5)
+              )
+              UPDATE spell_species_affiliation a
+              SET required_level = l.required_level
+              FROM levels l
+              WHERE a.species_affiliation_url = l.species_url
+                AND a.spell_url = l.spell_url;
+
+              WITH levels(species_url, spell_url, required_level) AS (VALUES
+                ('tiefling-infernal-phb', 'hellish-rebuke-phb', 3),
+                ('tiefling-infernal-phb', 'darkness-phb', 5),
+                ('tiefling-abyssal-phb', 'ray-of-sickness-phb', 3),
+                ('tiefling-abyssal-phb', 'hold-person-phb', 5),
+                ('tiefling-chthonic-phb', 'false-life-phb', 3),
+                ('tiefling-chthonic-phb', 'ray-of-enfeeblement-phb', 5),
+                ('high-elf-phb', 'detect-magic-phb', 3),
+                ('high-elf-phb', 'misty-step-phb', 5),
+                ('elf-drow-phb', 'faerie-fire-phb', 3),
+                ('elf-drow-phb', 'darkness-phb', 5),
+                ('wood-elf-phb', 'longstrider-phb', 3),
+                ('wood-elf-phb', 'pass-without-trace-phb', 5),
+                ('rimekin-lfl', 'ice-knife-phb', 3),
+                ('rimekin-lfl', 'flame-blade-phb', 5),
+                ('flamekin-lfl', 'burning-hands-phb', 3),
+                ('flamekin-lfl', 'flame-blade-phb', 5),
+                ('faerie-lfl', 'faerie-fire-phb', 3),
+                ('faerie-lfl', 'enlarge-reduce-phb', 5)
+              )
+              UPDATE spell_lineages_affiliation a
+              SET required_level = l.required_level
+              FROM levels l
+              WHERE a.lineages_affiliation_url = l.species_url
+                AND a.spell_url = l.spell_url;
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE spell_species_affiliation SET required_level = 1
+              WHERE species_affiliation_url IN (
+                'tiefling-infernal-phb', 'tiefling-abyssal-phb', 'tiefling-chthonic-phb',
+                'high-elf-phb', 'elf-drow-phb', 'wood-elf-phb',
+                'rimekin-lfl', 'flamekin-lfl', 'faerie-lfl');
+
+              UPDATE spell_lineages_affiliation SET required_level = 1
+              WHERE lineages_affiliation_url IN (
+                'tiefling-infernal-phb', 'tiefling-abyssal-phb', 'tiefling-chthonic-phb',
+                'high-elf-phb', 'elf-drow-phb', 'wood-elf-phb',
+                'rimekin-lfl', 'flamekin-lfl', 'faerie-lfl');

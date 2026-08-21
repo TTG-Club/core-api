@@ -1,12 +1,23 @@
 package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
+import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
+import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.feat.rest.mapper.FeatMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -24,6 +35,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +52,8 @@ public class FeatServiceImpl implements FeatService {
     private final FeatQueryDslSearchService featQueryDslSearchService;
     private final SourceService sourceService;
     private final FeatMapper featMapper;
+    private final SpellRepository spellRepository;
+    private final SpellMapper spellMapper;
     private final EntityRevisionService revisionService;
 
     @Override
@@ -47,7 +64,148 @@ public class FeatServiceImpl implements FeatService {
                 .map(featMapper::toBackgroundDto)
                 .toList();
         response.setBackgrounds(backgrounds.isEmpty() ? null : backgrounds);
+        response.setGrantedSpells(resolveGrantedSpells(response));
+        var spellListGroups = resolveSpellListGroups(response);
+        response.setSpellListGroups(spellListGroups);
+        response.setSpellListSpells(flattenSpellList(spellListGroups));
         return response;
+    }
+
+    /**
+     * Дополняет выдаваемые чертой заклинания данными справочника: в механике они лежат
+     * ссылками, а потребителю нужны круг и школа — лист персонажа без круга не положит
+     * заклинание в книгу.
+     *
+     * <p>Ненайденное заклинание пропускается, а не роняет ответ. У вида такая ссылка —
+     * запись связующей таблицы, и её отсутствие означает битые данные; здесь же это
+     * свободный JSONB, набранный руками в редакторе, и опечатка в url не должна ронять
+     * страницу черты целиком.</p>
+     *
+     * <p>Вместе с записью едет требуемый уровень: заклинание, которое черта открывает на
+     * третьем уровне, страница обязана показать иначе, чем доступное сразу.</p>
+     *
+     * @param response деталь черты с разобранной механикой.
+     * @return выдаваемые заклинания с данными справочника; null — черта их не выдаёт.
+     */
+    private Collection<FeatGrantedSpellResponse> resolveGrantedSpells(final FeatDetailResponse response) {
+        var granted = Optional.ofNullable(response.getMechanics())
+                .map(FeatMechanics::getSpells)
+                .map(SpellGrant::getSpells)
+                .orElse(List.of());
+
+        if (CollectionUtils.isEmpty(granted)) {
+            return null;
+        }
+
+        var spellsByUrl = shortSpellsByUrl(granted);
+
+        var result = granted.stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
+                .map(ref -> new FeatGrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                        ref.getRequiredLevel()))
+                .toList();
+
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Все заклинания списка подряд — из уже разобранных списков доступа.
+     *
+     * <p>Считается из них, а не отдельным разбором: второй проход означал бы второй запрос
+     * в справочник и вторую точку, где плоское поле могло разойтись со списками.</p>
+     *
+     * <p>Заклинание, стоящее сразу в двух списках, попадает сюда один раз: поле нужно для
+     * таблицы по кругам, и дубль показал бы там лишнюю строку.</p>
+     *
+     * @param groups разобранные списки доступа; null — черта список не расширяет.
+     * @return заклинания списка с данными справочника; null — расширять нечем.
+     */
+    private Collection<SpellShortResponse> flattenSpellList(
+            final Collection<FeatSpellListGroupResponse> groups) {
+        if (CollectionUtils.isEmpty(groups)) {
+            return null;
+        }
+
+        var result = groups.stream()
+                .map(FeatSpellListGroupResponse::getSpells)
+                .flatMap(Collection::stream)
+                .distinct()
+                .toList();
+
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Раскладывает заклинания списка по спискам доступа, дополняя их справочником.
+     *
+     * <p>Список без единого найденного заклинания выбрасывается целиком: пустая ступень на
+     * странице выглядела бы как «на этом уровне ничего не открывается», хотя на деле там
+     * опечатка в url.</p>
+     *
+     * @param response деталь черты с разобранной механикой.
+     * @return списки с данными справочника; null — черта список не расширяет.
+     */
+    private Collection<FeatSpellListGroupResponse> resolveSpellListGroups(final FeatDetailResponse response) {
+        var groups = spellListGroups(response);
+
+        if (groups.isEmpty()) {
+            return null;
+        }
+
+        var spellsByUrl = shortSpellsByUrl(groups.stream()
+                .map(SpellListGroup::getSpells)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .toList());
+
+        var result = groups.stream()
+                .map(group -> {
+                    var spells = Optional.ofNullable(group.getSpells()).orElse(List.<EntityRef>of()).stream()
+                            .filter(Objects::nonNull)
+                            .map(ref -> spellsByUrl.get(ref.getUrl()))
+                            .filter(Objects::nonNull)
+                            .toList();
+                    return spells.isEmpty() ? null : new FeatSpellListGroupResponse(
+                            group.getRequiredLevel(), group.getCount(), spells);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return result.isEmpty() ? null : result;
+    }
+
+    /** Списки блока с поправкой на прежнюю плоскую форму — см. {@link SpellListExpansion#resolveGroups()}. */
+    private List<SpellListGroup> spellListGroups(final FeatDetailResponse response) {
+        return Optional.ofNullable(response.getMechanics())
+                .map(FeatMechanics::getSpellList)
+                .map(SpellListExpansion::resolveGroups)
+                .orElse(List.of());
+    }
+
+    /**
+     * Достаёт записи справочника по ссылкам механики — одним запросом на список.
+     *
+     * <p>Ненайденное заклинание в карту просто не попадёт, и вызывающий его пропустит.
+     * Ронять страницу целиком из-за опечатки в url нельзя: это свободный JSONB, набранный
+     * руками в редакторе, а не запись связующей таблицы.</p>
+     */
+    private Map<String, SpellShortResponse> shortSpellsByUrl(final Collection<? extends EntityRef> refs) {
+        var urls = refs.stream()
+                .filter(Objects::nonNull)
+                .map(EntityRef::getUrl)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+
+        return spellRepository.findAllShortByUrlIn(urls)
+                .stream()
+                .collect(Collectors.toMap(Spell::getUrl, spellMapper::toShort));
     }
 
     @Secured({"ADMIN", "MODERATOR"})
@@ -129,7 +287,14 @@ public class FeatServiceImpl implements FeatService {
 
     public FeatDetailResponse preview(final FeatRequest request) {
         var book = sourceService.findByUrl(request.getSource().getUrl());
-        return featMapper.toDetail(featMapper.toEntity(request, book));
+        var response = featMapper.toDetail(featMapper.toEntity(request, book));
+        // Как и у сохранённой черты: без дополнения превью показало бы выдаваемые
+        // заклинания пустыми, и редактор не увидел бы того, что набрал.
+        response.setGrantedSpells(resolveGrantedSpells(response));
+        var spellListGroups = resolveSpellListGroups(response);
+        response.setSpellListGroups(spellListGroups);
+        response.setSpellListSpells(flattenSpellList(spellListGroups));
+        return response;
     }
 
     @Override

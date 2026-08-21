@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-09-01-add-feat-mechanics-and-prerequisite
+      author: claude
+      comment: >
+        Механика черты (пока — варианты повышения характеристик) и разобранное
+        предварительное условие. Строка prerequisite остаётся: её показывают игроку,
+        разобрать удаётся не всё.
+      changes:
+        - addColumn:
+            tableName: feat
+            columns:
+              - column:
+                  name: mechanics
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: prerequisite_details
+                  type: jsonb
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: feat
+            columnName: mechanics
+        - dropColumn:
+            tableName: feat
+            columnName: prerequisite_details

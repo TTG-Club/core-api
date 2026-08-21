@@ -70,6 +70,7 @@ public interface SpellMapper
     @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
     @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
     @Mapping(target = "classes", source = "classAffiliation", qualifiedByName = "toAffiliations")
+    @Mapping(target = "spellcastingAbility", source = "effect.spellcastingAbility")
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     SpellShortResponse toShort(Spell spell);
