@@ -32,10 +32,12 @@ import java.util.stream.Stream;
  * Ничего не знает про БД и транзакции — только строит текст/пейлоад и делает HTTP-вызов. Пост — обычное
  * сообщение (не embed): жирный заголовок + текст в Discord-markdown (см. {@link DiscordMarkdownFormatter}),
  * обложку прикрепляем файлом из S3 (см. {@link ArticleImageSource}). Длинный пост не обрезается: первый кусок
- * (≤2000) идёт первым сообщением с обложкой, остаток досылается отдельными сообщениями (≤2000).
+ * (≤2000) идёт первым сообщением, остаток досылается отдельными сообщениями (≤2000), а обложка едет с
+ * ПОСЛЕДНИМ из них — так картинка закрывает пост, а не разрывает текст в середине.
  * <p>
  * Пинг ({@link DiscordMention}) — выбор автора в админке: строка {@code @everyone} / упоминания роли идёт
- * первой строкой первого сообщения, и ровно она разрешается в {@code allowed_mentions}. Всё остальное
+ * первой строкой КАЖДОГО сообщения поста (хвост длинной новости читают отдельно от «шапки», поэтому звеним
+ * в каждом), и ровно она разрешается в {@code allowed_mentions}. Всё остальное
  * ({@code @everyone}, роли и юзеры, случайно попавшие в текст новости) не звенит никогда.
  * <p>
  * Отправляем с {@code ?wait=true}, чтобы получить id сообщения (снежинку) — он нужен для правки
@@ -102,20 +104,29 @@ public class DiscordPublisher {
             return PublishResult.giveUp();
         }
 
-        // Первое сообщение: с обложкой (файлом), если она есть; иначе текстом.
+        int last = messages.size() - 1;
+
+        // Обложку читаем ДО первой отправки: временный сбой чтения из S3 пробрасывается наружу (планировщик
+        // освободит запись и повторит), и пост не окажется отправленным наполовину и без картинки.
+        // null — обложки нет (это не S3-путь или объекта нет): пост уйдёт текстом.
+        byte[] cover = StringUtils.hasText(article.getPreviewImageUrl())
+                ? imageSource.bytes(article.getPreviewImageUrl())
+                : null;
+        String coverName = cover != null ? imageSource.filename(article.getPreviewImageUrl()) : null;
+
+        // Первое сообщение: именно его id мы храним (правка/удаление). Обложка едет с последним сообщением,
+        // поэтому файлом первое уходит только тогда, когда оно же и последнее (пост из одного сообщения).
         SendOutcome first = null;
-        if (StringUtils.hasText(article.getPreviewImageUrl())) {
-            SendOutcome sent = trySendPhoto(article, messages.get(0), mention);
-            if (sent != null) {
-                if (sent.result() == SendResult.TRANSIENT) {
-                    // Временный сбой (загрузка файла/сеть) — не теряем обложку, повторим весь пост.
-                    return PublishResult.retry();
-                }
-                if (sent.result() == SendResult.SENT) {
-                    first = sent;
-                } else {
-                    log.info("Отправка обложки отклонена Discord для {} — отправляю текстом", article.getUrl());
-                }
+        if (cover != null && last == 0) {
+            SendOutcome sent = sendMessageWithImage(messages.get(0), cover, coverName, mention);
+            if (sent.result() == SendResult.TRANSIENT) {
+                // Временный сбой (загрузка файла/сеть) — не теряем обложку, повторим весь пост.
+                return PublishResult.retry();
+            }
+            if (sent.result() == SendResult.SENT) {
+                first = sent;
+            } else {
+                log.info("Отправка обложки отклонена Discord для {} — отправляю текстом", article.getUrl());
             }
         }
         if (first == null) {
@@ -128,11 +139,22 @@ public class DiscordPublisher {
         String firstId = first.messageId();
 
         // Хвост — отдельными сообщениями (best-effort: если не ушло, пост неполный, но первое не дублируем).
-        // Пинг в хвост не идёт: звеним ровно один раз, первым сообщением поста.
-        for (int i = 1; i < messages.size(); i++) {
-            if (sendMessage(messages.get(i), DiscordMention.NONE).result() != SendResult.SENT) {
+        // Пинг звенит в каждом сообщении, обложка прикрепляется к последнему.
+        for (int i = 1; i <= last; i++) {
+            boolean withCover = cover != null && i == last;
+            SendOutcome outcome = withCover
+                    ? sendMessageWithImage(messages.get(i), cover, coverName, mention)
+                    : sendMessage(messages.get(i), mention);
+            if (withCover && outcome.result() == SendResult.REJECTED) {
+                // Discord отверг именно файл (битая/слишком большая обложка) — досылаем последний кусок
+                // текстом. На TRANSIENT так не делаем: сообщение могло уйти, а ответ потеряться — был бы дубль.
+                log.info("Отправка обложки отклонена Discord для {} — досылаю последнее сообщение текстом",
+                        article.getUrl());
+                outcome = sendMessage(messages.get(i), mention);
+            }
+            if (outcome.result() != SendResult.SENT) {
                 log.warn("Не отправлено хвостовое сообщение {}/{} для {} — пост неполный",
-                        i, messages.size() - 1, article.getUrl());
+                        i, last, article.getUrl());
             }
         }
         return PublishResult.posted(firstId);
@@ -141,7 +163,8 @@ public class DiscordPublisher {
     /**
      * Синхронизирует пост с обновлённой новостью: правит content ПЕРВОГО сообщения на месте. Вложение
      * (обложку) не трогаем — поле {@code attachments} не передаём, и Discord сохраняет уже загруженный файл.
-     * Хвостовые сообщения многочастного поста правка тоже не трогает (правится только первое).
+     * Хвостовые сообщения многочастного поста правка тоже не трогает (правится только первое) — в том числе
+     * последнее, к которому прикреплена обложка.
      */
     public EditResult editPost(Article article) {
         // Строку пинга в тексте сохраняем (иначе правка «съела» бы её из поста), но звенеть правке
@@ -176,7 +199,7 @@ public class DiscordPublisher {
 
     /**
      * Собирает список сообщений: первое включает пинг (если выбран), жирный заголовок и первый кусок
-     * описания (≤ MESSAGE_LIMIT), остальные — продолжение описания (≤ MESSAGE_LIMIT).
+     * описания (≤ MESSAGE_LIMIT), остальные — пинг и продолжение описания (≤ MESSAGE_LIMIT).
      */
     private List<String> buildMessages(Article article, DiscordMention mention) {
         String title = nullToEmpty(article.getTitle());
@@ -184,18 +207,19 @@ public class DiscordPublisher {
         // в названии не стал ссылкой), чтобы разметка в названии не ломала жирную «шапку» поста (тело,
         // наоборот, несёт намеренную разметку и не экранируется).
         String titleLine = StringUtils.hasText(title) ? "**" + escapeMarkdown(title) + "**" : "";
-        // Пинг — отдельной строкой над заголовком; вместе они образуют «шапку» первого сообщения.
-        String head = Stream.of(mentionText(mention), titleLine)
+        // Пинг — отдельной строкой над текстом; в первом сообщении вместе с заголовком он образует «шапку».
+        String mentionLine = mentionText(mention);
+        String head = Stream.of(mentionLine, titleLine)
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining("\n\n"));
-        int firstBodyLimit = Math.max(0, MESSAGE_LIMIT - head.length() - 2);
-        List<String> bodyChunks = formatter.toMarkdownChunks(description(article), firstBodyLimit, MESSAGE_LIMIT);
+        int firstBodyLimit = Math.max(0, MESSAGE_LIMIT - headLength(head));
+        // «Шапка» хвостовых сообщений — один пинг, и под него тоже нужно оставить место в лимите.
+        int restBodyLimit = Math.max(0, MESSAGE_LIMIT - headLength(mentionLine));
+        List<String> bodyChunks = formatter.toMarkdownChunks(description(article), firstBodyLimit, restBodyLimit);
 
         List<String> messages = new ArrayList<>();
         String firstBody = bodyChunks.isEmpty() ? "" : bodyChunks.get(0);
-        String first = StringUtils.hasText(firstBody)
-                ? (head.isEmpty() ? firstBody : head + "\n\n" + firstBody)
-                : head;
+        String first = withHead(head, firstBody);
         // Пустое первое сообщение не шлём (Discord отвергнет content=""): если заголовок пуст и первый
         // кусок описания «отложен» (пустой), пост начнётся с первого непустого куска.
         if (StringUtils.hasText(first)) {
@@ -203,23 +227,23 @@ public class DiscordPublisher {
         }
         for (int i = 1; i < bodyChunks.size(); i++) {
             if (StringUtils.hasText(bodyChunks.get(i))) {
-                messages.add(bodyChunks.get(i));
+                messages.add(withHead(mentionLine, bodyChunks.get(i)));
             }
         }
         return messages;
     }
 
-    /**
-     * Пытается отправить первое сообщение с обложкой файлом. {@code null} — обложки нет (это не S3-путь
-     * или объекта нет) — тогда уходим текстом. Временный сбой чтения из S3 пробрасывается наружу
-     * (планировщик освободит запись и повторит).
-     */
-    private SendOutcome trySendPhoto(Article article, String content, DiscordMention mention) {
-        byte[] bytes = imageSource.bytes(article.getPreviewImageUrl());
-        if (bytes == null) {
-            return null;
+    /** «Шапка» и текст сообщения через пустую строку; пустая часть просто выпадает. */
+    private static String withHead(String head, String body) {
+        if (!StringUtils.hasText(head)) {
+            return body;
         }
-        return sendMessageWithImage(content, bytes, imageSource.filename(article.getPreviewImageUrl()), mention);
+        return StringUtils.hasText(body) ? head + "\n\n" + body : head;
+    }
+
+    /** Сколько символов лимита съедает «шапка» — вместе с пустой строкой под ней. */
+    private static int headLength(String head) {
+        return StringUtils.hasText(head) ? head.length() + 2 : 0;
     }
 
     private SendOutcome sendMessageWithImage(String content, byte[] image, String filename, DiscordMention mention) {
