@@ -33,7 +33,9 @@ import java.util.stream.Collectors;
  * ссылки {@code t.me/iv?url=…&rhash=…} — обложку, заголовок и анонс Telegram берёт из og-разметки нашей
  * страницы {@code /iv/articles/<slug>} (см. {@link ArticleInstantViewService}), а по кнопке на карточке
  * текст статьи открывается нативно. Сам текст сообщения — невидимый символ-заглушка: под карточкой не
- * должно быть ни одной лишней строки. Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
+ * должно быть ни одной лишней строки. Исключение — включённое в админке короткое описание
+ * ({@code telegramSummaryEnabled}): тогда вместо заглушки под карточкой идёт выжимка новости.
+ * Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
  * Режим включается, когда задан {@code telegram.instant-view-rhash} (шаблон создан на
  * instantview.telegram.org, см. {@code docs/telegram-instant-view.md}), а у записи выбран вид
  * {@link TelegramPostFormat#INSTANT_VIEW} (по умолчанию).
@@ -127,7 +129,8 @@ public class TelegramPublisher {
         // обложку карточки Telegram берёт из og-разметки страницы. Одно сообщение, без хвоста и заливки фото.
         String instantViewUrl = instantViewUrl(article);
         if (instantViewUrl != null) {
-            SendOutcome sent = send("sendMessage", linkPreviewPayload(INSTANT_VIEW_TEXT, instantViewUrl));
+            SendOutcome sent = send("sendMessage",
+                    linkPreviewPayload(instantViewText(article), instantViewUrl));
             if (sent.result() == SendResult.REJECTED) {
                 // Карточку собрать не удалось (страница ещё не отдаётся роботу, битый rhash) — новость
                 // всё равно должна уйти. Без карточки пустой текст-заглушка оставил бы в канале пустое
@@ -243,14 +246,56 @@ public class TelegramPublisher {
     }
 
     /**
-     * Запасной текст поста, когда карточку Instant View показать не удалось: заголовок и ссылка на статью
-     * на сайте. Нужен только для этого случая — с карточкой в сообщении стоит {@link #INSTANT_VIEW_TEXT},
-     * а без неё пост из одного невидимого символа выглядел бы в канале пустым.
+     * Текст сообщения с карточкой Instant View: короткое описание (выжимка), если автор включил его в
+     * админке, иначе — невидимая заглушка {@link #INSTANT_VIEW_TEXT}. Заголовок и обложку в текст не
+     * дублируем — их показывает сама карточка.
+     */
+    private String instantViewText(Article article) {
+        String summary = summaryHtml(article);
+        return summary == null ? INSTANT_VIEW_TEXT : summary;
+    }
+
+    /**
+     * Короткое описание под карточкой Instant View → Telegram-HTML. {@code null} — описание выключено
+     * галочкой либо пусто: тогда под карточкой не должно быть ни одной лишней строки, как и раньше.
+     * <p>
+     * Выжимка по смыслу короткая, но если автор всё же не уложился в сообщение — берём первый кусок:
+     * хвост отдельными сообщениями рядом с карточкой смотрелся бы обрывком. Обрезку пишем в лог.
+     */
+    private String summaryHtml(Article article) {
+        if (!article.isTelegramSummaryEnabled() || !StringUtils.hasText(article.getTelegramSummary())) {
+            return null;
+        }
+        List<String> chunks = formatter.toHtmlChunks(article.getTelegramSummary(), MESSAGE_LIMIT, MESSAGE_LIMIT);
+        String html = chunks.isEmpty() ? "" : chunks.get(0);
+        if (!StringUtils.hasText(html)) {
+            return null;
+        }
+        if (chunks.size() > 1) {
+            log.warn("Короткое описание {} длиннее {} символов — в пост вошёл только первый кусок из {}",
+                    article.getUrl(), MESSAGE_LIMIT, chunks.size());
+        }
+        return html;
+    }
+
+    /**
+     * Запасной текст поста, когда карточку Instant View показать не удалось: заголовок, короткое описание
+     * (если включено) и ссылка на статью на сайте. Нужен только для этого случая — с карточкой в сообщении
+     * стоит {@link #INSTANT_VIEW_TEXT} либо одна выжимка, а без карточки пост из невидимого символа
+     * выглядел бы в канале пустым.
      */
     private String noPreviewText(Article article) {
         String link = "<a href=\"" + escape(siteUrl(article)) + "\">Читать на сайте →</a>";
+        StringBuilder text = new StringBuilder();
         String title = nullToEmpty(article.getTitle());
-        return StringUtils.hasText(title) ? "<b>" + escape(title) + "</b>\n\n" + link : link;
+        if (StringUtils.hasText(title)) {
+            text.append("<b>").append(escape(title)).append("</b>\n\n");
+        }
+        String summary = summaryHtml(article);
+        if (summary != null) {
+            text.append(summary).append("\n\n");
+        }
+        return text.append(link).toString();
     }
 
     /** Адрес статьи на сайте; без публичной базы — сама база (ссылка всё равно должна быть валидной). */
@@ -275,7 +320,7 @@ public class TelegramPublisher {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("chat_id", properties.getChatId());
             payload.put("message_id", article.getTelegramMessageId());
-            payload.put("text", INSTANT_VIEW_TEXT);
+            payload.put("text", instantViewText(article));
             payload.put("parse_mode", properties.getParseMode());
             payload.put("link_preview_options", linkPreviewOptions(instantViewUrl));
             return switch (send("editMessageText", payload).result()) {

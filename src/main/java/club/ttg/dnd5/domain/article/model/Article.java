@@ -129,6 +129,23 @@ public class Article extends Timestamped {
     private TelegramPostFormat telegramFormat;
 
     /**
+     * Добавить к компактному посту ({@link TelegramPostFormat#INSTANT_VIEW}) короткое описание —
+     * выжимку новости под карточкой. Управляется галочкой в админке. При {@code false} пост уходит
+     * как прежде: одна карточка без текста. В виде {@link TelegramPostFormat#FULL_TEXT} не учитывается —
+     * там весь текст и так в посте.
+     */
+    @Column(nullable = false)
+    private boolean telegramSummaryEnabled;
+
+    /**
+     * Текст короткой выжимки под карточкой Instant View. Хранится как разметка новости
+     * (те же {@code {@...}}-маркеры), в пост уходит Telegram-HTML. Учитывается только при
+     * {@code telegramSummaryEnabled=true} и виде {@link TelegramPostFormat#INSTANT_VIEW}.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String telegramSummary;
+
+    /**
      * Пожелание автора отправить запись в Discord-канал. Управляется галочкой в админке.
      * Постится только при publishToDiscord=true И включённой глобально интеграции (задан webhook),
      * один раз при попадании записи в общий доступ (см. {@code discordPostedAt}). Независима от Telegram.

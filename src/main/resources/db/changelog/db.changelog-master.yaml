@@ -307,3 +307,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/18-05-add-species-mechanics.yaml
   - include:
       file: db/changelog/2026/08/18-06-backfill-species-mechanics.yaml
+  - include:
+      file: db/changelog/2026/08/23-01-add-telegram-summary-to-article.yaml
