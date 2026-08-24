@@ -69,6 +69,18 @@ public class ArticleRequest {
     @Nullable
     private TelegramPostFormat telegramFormat;
 
+    @Schema(description = "Добавить короткое описание (выжимку) под карточкой Instant View. Учитывается "
+            + "только при publishToTelegram=true и telegramFormat=INSTANT_VIEW: пост уходит карточкой, "
+            + "а под ней — текст из telegramSummary. false — карточка без текста, как прежде.")
+    private boolean telegramSummaryEnabled;
+
+    @Schema(description = "Текст короткого описания под карточкой Instant View. Учитывается только при "
+            + "telegramSummaryEnabled=true; пустой текст равнозначен выключенной галочке. Обычный текст "
+            + "(в админке — текстовое поле): переносы строк сохраняются, поддержаны markdown-выделение "
+            + "(**жирный**, *курсив*) и маркеры {@…} — в пост уходит Telegram-HTML.")
+    @Nullable
+    private String telegramSummary;
+
     @Schema(description = "Опубликовать в Discord-канал. true — при публикации (сейчас или по наступлении даты) "
             + "запись один раз уйдёт в канал, если интеграция включена глобально. false — в канал не отправлять. "
             + "Независима от Telegram.")

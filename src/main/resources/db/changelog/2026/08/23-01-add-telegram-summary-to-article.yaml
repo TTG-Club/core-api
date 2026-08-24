@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-23-01-add-telegram-summary-to-article
+      author: Peterko
+      changes:
+        # Галочка «короткое описание» у компактного поста (вид INSTANT_VIEW): добавить под карточкой
+        # выжимку новости. По умолчанию false — существующие записи постятся как прежде, одной карточкой.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_summary_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_summary_enabled
+                  valueBoolean: false
+            where: telegram_summary_enabled IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: telegram_summary_enabled
+            columnDataType: BOOLEAN
+            defaultNullValue: false
+        # Текст выжимки — разметка новости (те же {@...}-маркеры), в пост уходит Telegram-HTML.
+        # NULL/пусто при включённой галочке = поста без текста, как будто галочка выключена.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: telegram_summary
+                  type: TEXT
