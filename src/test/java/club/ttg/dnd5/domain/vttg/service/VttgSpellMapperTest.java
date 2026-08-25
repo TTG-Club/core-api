@@ -234,6 +234,84 @@ class VttgSpellMapperTest {
         assertEquals("self", result.getDamageParts().get(1).getTarget());
     }
 
+    @Test
+    void explicitDeliveryTypeAndAttackBonusWinOverDerivedOnes() {
+        Spell spell = new Spell();
+        spell.setUrl("basilisk-gaze");
+        spell.setName("Взгляд василиска");
+        spell.setEnglish("Basilisk Gaze");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.TRANSMUTATION).build());
+        spell.setRange(List.of(SpellDistance.of(60L, DistanceUnit.FEET)));
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDeliveryType("sight");
+        effect.setAttackBonus(1);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Дальность в футах вывела бы «none»; автор сказал «взглядом» — его слово главнее.
+        assertEquals("sight", result.getDeliveryType());
+        assertEquals(1, result.getAttackBonus());
+    }
+
+    @Test
+    void explicitScalingFillsGapsFromParsedDescription() {
+        Spell spell = new Spell();
+        spell.setUrl("scorching-ray");
+        spell.setName("Огненный луч");
+        spell.setEnglish("Scorching Ray");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setUpcastable(true);
+        spell.setUpper("[\"Вы создаёте один дополнительный луч за каждый круг ячейки выше второго.\"]");
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Scaling scaling = new SpellEffect.Scaling();
+        scaling.setAdditionalTargets(1);
+        effect.setScaling(scaling);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals(1, result.getScaling().getAdditionalTargets());
+        // Незаполненное поле явного блока добирается из разбора текста.
+        assertTrue(result.getScaling().getDescription().contains("дополнительный луч"));
+    }
+
+    @Test
+    void explicitCantripTiersReplaceDiceMultiplication() {
+        Spell spell = new Spell();
+        spell.setUrl("toll-the-dead");
+        spell.setName("Похоронный звон");
+        spell.setEnglish("Toll the Dead");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.NECROMANCY).build());
+        spell.setUpper("[\"Урон возрастает на 5, 11 и 17 уровнях.\"]");
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("1к8@dmg.necrotic"));
+
+        SpellEffect.DamagePart part = new SpellEffect.DamagePart();
+        part.setFormula("2к12@dmg.necrotic");
+        part.setTarget("selected");
+
+        SpellEffect.CantripScalingTier tier = new SpellEffect.CantripScalingTier();
+        tier.setLevel(5);
+        tier.setParts(List.of(part));
+        effect.setCantripScalingTiers(List.of(tier));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Ручной тир может сменить кость целиком, а не только умножить её.
+        assertEquals(1, result.getCantripScalingTiers().size());
+        assertEquals(5, result.getCantripScalingTiers().getFirst().getLevel());
+        assertEquals("2к12@dmg.necrotic",
+                result.getCantripScalingTiers().getFirst().getParts().getFirst().getFormula());
+    }
+
     /**
      * Список заклинаний класса в VTTG строится фильтром по {@code spell.classKeys}
      * (отдельного поля-списка на классе нет). Проверяем, что ключ, который кладёт

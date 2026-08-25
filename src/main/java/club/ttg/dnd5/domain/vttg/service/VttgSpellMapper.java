@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -39,6 +40,10 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class VttgSpellMapper {
     private static final List<Integer> CANTRIP_SCALING_LEVELS = List.of(5, 11, 17);
+    /** Способы применения VTTG: чужое значение к потребителю не уезжает. */
+    private static final Set<String> DELIVERY_TYPES =
+            Set.of("ranged", "melee", "self", "touch", "sight", "none");
+    private static final Set<String> DAMAGE_PART_TARGETS = Set.of("selected", "self", "choose");
     private static final Pattern DICE_COUNT = Pattern.compile("(?iu)(\\d+)(\\s*[кkd]\\s*\\d+)");
 
     private final VttgMarkupConverter markupConverter;
@@ -54,8 +59,9 @@ public class VttgSpellMapper {
         SpellEffect effect = spell.getEffect();
         VttgSpellAreaOfEffect areaOfEffect = areaOfEffect(effect == null ? null : effect.getAreaOfEffect());
         String higherLevelDescription = optionalText(spell.getUpper());
-        VttgSpellScaling scaling = scalingExtractor.extract(spell.getUpcastable(), higherLevelDescription);
-        List<VttgCantripScalingTier> cantripScalingTiers = cantripScalingTiers(spell, mechanics, higherLevelDescription);
+        VttgSpellScaling scaling = scaling(effect, spell, higherLevelDescription);
+        List<VttgCantripScalingTier> cantripScalingTiers =
+                cantripScalingTiers(spell, effect, mechanics, higherLevelDescription);
 
         return VttgSpell.builder()
                 .id(spell.getUrl())
@@ -81,6 +87,7 @@ public class VttgSpellMapper {
                 .damageParts(mechanics.damageParts())
                 .autoHit(effect == null ? null : effect.getAutoHit())
                 .spellcastingAbility(spellcastingAbility(effect))
+                .attackBonus(attackBonus(effect))
                 .saveType(saveType(effect))
                 .saveEffect(mechanics.saveEffect())
                 .cantripScaling(cantripScalingTiers == null ? null : "level")
@@ -227,6 +234,10 @@ public class VttgSpellMapper {
     }
 
     private String deliveryType(SpellEffect effect, SpellDistance range) {
+        String explicit = effect == null ? null : effect.getDeliveryType();
+        if (explicit != null && DELIVERY_TYPES.contains(explicit)) {
+            return explicit;
+        }
         AttackType attackType = effect == null ? null : effect.getAttackType();
         if (attackType == AttackType.MELEE) {
             return "melee";
@@ -264,8 +275,91 @@ public class VttgSpellMapper {
         return ability.name().toLowerCase(Locale.ROOT);
     }
 
+    /** Ноль бонуса и его отсутствие равнозначны — в компендиум ноль не пишется. */
+    private Integer attackBonus(SpellEffect effect) {
+        Integer attackBonus = effect == null ? null : effect.getAttackBonus();
+        return attackBonus == null || attackBonus == 0 ? null : attackBonus;
+    }
+
+    /**
+     * Масштабирование заклинания: заданное автором важнее выведенного из текста
+     * «На более высоких уровнях» — разбор текста лишь угадывает, а форма знает.
+     * Пустые поля явного блока добираются из разбора, чтобы автор мог уточнить
+     * только кости и не потерять описание.
+     */
+    private VttgSpellScaling scaling(SpellEffect effect, Spell spell, String higherLevelDescription) {
+        VttgSpellScaling extracted = scalingExtractor.extract(spell.getUpcastable(), higherLevelDescription);
+        SpellEffect.Scaling explicit = effect == null ? null : effect.getScaling();
+        if (explicit == null) {
+            return extracted;
+        }
+
+        String additionalDice = StringUtils.hasText(explicit.getAdditionalDice())
+                ? explicit.getAdditionalDice().trim()
+                : (extracted == null ? null : extracted.getAdditionalDice());
+        Integer additionalTargets = explicit.getAdditionalTargets() != null && explicit.getAdditionalTargets() > 0
+                ? explicit.getAdditionalTargets()
+                : (extracted == null ? null : extracted.getAdditionalTargets());
+        String description = StringUtils.hasText(explicit.getDescription())
+                ? explicit.getDescription().trim()
+                : (extracted == null ? null : extracted.getDescription());
+
+        if (additionalDice == null && additionalTargets == null && !StringUtils.hasText(description)) {
+            return null;
+        }
+
+        return VttgSpellScaling.builder()
+                .additionalDice(additionalDice)
+                .additionalTargets(additionalTargets)
+                .description(description)
+                .build();
+    }
+
+    /**
+     * Тиры масштабирования заговора: заданные автором важнее умножения кубиков
+     * по тексту. Ручные тиры позволяют не только нарастить кости, но и сменить
+     * тип урона или добавить часть.
+     */
+    private List<VttgCantripScalingTier> explicitCantripScalingTiers(SpellEffect effect) {
+        List<SpellEffect.CantripScalingTier> tiers = effect == null ? null : effect.getCantripScalingTiers();
+        if (!hasValues(tiers)) {
+            return null;
+        }
+
+        List<VttgCantripScalingTier> mapped = tiers.stream()
+                .filter(Objects::nonNull)
+                .filter(tier -> tier.getLevel() != null && tier.getLevel() > 0)
+                .filter(tier -> hasValues(tier.getParts()))
+                .sorted(Comparator.comparingInt(SpellEffect.CantripScalingTier::getLevel))
+                .map(this::cantripScalingTier)
+                .filter(Objects::nonNull)
+                .toList();
+        return mapped.isEmpty() ? null : mapped;
+    }
+
+    private VttgCantripScalingTier cantripScalingTier(SpellEffect.CantripScalingTier tier) {
+        List<VttgDamagePart> parts = tier.getParts().stream()
+                .filter(Objects::nonNull)
+                .filter(part -> StringUtils.hasText(part.getFormula()))
+                .map(part -> VttgDamagePart.builder()
+                        .formula(part.getFormula().trim())
+                        .target(DAMAGE_PART_TARGETS.contains(part.getTarget())
+                                ? part.getTarget()
+                                : "selected")
+                        .requiresDamage(Boolean.TRUE.equals(part.getRequiresDamage()) ? Boolean.TRUE : null)
+                        .build())
+                .toList();
+        return parts.isEmpty()
+                ? null
+                : VttgCantripScalingTier.builder().level(tier.getLevel()).parts(parts).build();
+    }
+
     private List<VttgCantripScalingTier> cantripScalingTiers(
-            Spell spell, VttgSpellMechanics mechanics, String higherLevelDescription) {
+            Spell spell, SpellEffect effect, VttgSpellMechanics mechanics, String higherLevelDescription) {
+        List<VttgCantripScalingTier> explicit = explicitCantripScalingTiers(effect);
+        if (explicit != null) {
+            return explicit;
+        }
         if (!Objects.equals(spell.getLevel(), 0L)
                 || !hasValues(mechanics.damageParts())
                 || !isCharacterLevelScaling(higherLevelDescription)) {

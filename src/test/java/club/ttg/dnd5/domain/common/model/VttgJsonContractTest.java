@@ -44,6 +44,47 @@ class VttgJsonContractTest {
     }
 
     @Test
+    void spellEffectKeepsDeliveryAttackBonusAndScaling() throws Exception {
+        String json = """
+                {
+                  "deliveryType": "sight",
+                  "attackBonus": 2,
+                  "scaling": {
+                    "additionalDice": "1к6",
+                    "additionalTargets": 1,
+                    "description": "Урон увеличивается на 1к6 за круг."
+                  },
+                  "cantripScalingTiers": [
+                    {
+                      "level": 5,
+                      "parts": [
+                        { "formula": "2к12@dmg.necrotic", "target": "selected", "requiresDamage": true }
+                      ]
+                    }
+                  ]
+                }
+                """;
+
+        SpellEffect effect = mapper.readValue(json, SpellEffect.class);
+
+        assertEquals("sight", effect.getDeliveryType());
+        assertEquals(2, effect.getAttackBonus());
+        assertEquals("1к6", effect.getScaling().getAdditionalDice());
+        assertEquals(1, effect.getScaling().getAdditionalTargets());
+        assertEquals(5, effect.getCantripScalingTiers().getFirst().getLevel());
+        assertEquals("2к12@dmg.necrotic",
+                effect.getCantripScalingTiers().getFirst().getParts().getFirst().getFormula());
+        assertEquals(Boolean.TRUE,
+                effect.getCantripScalingTiers().getFirst().getParts().getFirst().getRequiresDamage());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains("\"deliveryType\":\"sight\""));
+        assertTrue(serialized.contains("\"attackBonus\":2"));
+        assertTrue(serialized.contains("\"cantripScalingTiers\""));
+    }
+
+    @Test
     void activeEffectKeepsTurnDurationAndOneShotFields() throws Exception {
         String json = """
                 {

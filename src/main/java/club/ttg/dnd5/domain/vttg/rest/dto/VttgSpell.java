@@ -40,6 +40,8 @@ public class VttgSpell {
      * потребитель у класса, как у заклинаний книги.
      */
     private String spellcastingAbility;
+    /** Фиксированный бонус к броску атаки заклинанием сверх характеристики. */
+    private Integer attackBonus;
     private String saveType;
     private String saveEffect;
     /**

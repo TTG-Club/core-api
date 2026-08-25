@@ -56,4 +56,59 @@ public class SpellEffect {
     private List<Ability> savingThrows;
     private SpellSaveEffect saveEffect;
     private List<Condition> conditions;
+    /**
+     * Способ применения заклинания в словаре VTTG: {@code ranged}, {@code melee},
+     * {@code self}, {@code touch}, {@code sight}, {@code none}.
+     *
+     * <p>Переопределяет вывод по типу атаки и единице дистанции: у заклинания
+     * вроде «Взгляд василиска» дальность в футах, а достаёт оно взглядом. Не
+     * задан — способ выводится как раньше.</p>
+     */
+    private String deliveryType;
+    /** Фиксированный бонус к броску атаки заклинанием сверх характеристики. */
+    private Integer attackBonus;
+    /** Усиление при трате ячейки выше круга заклинания. */
+    private Scaling scaling;
+    /**
+     * Поуровневые тиры масштабирования заговора: с каждого порога уровня
+     * персонажа набор частей урона заменяется целиком.
+     */
+    private List<CantripScalingTier> cantripScalingTiers;
+
+    /** Усиление заклинания на высших кругах. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Scaling {
+        /** Формула дополнительного урона за круг усиления (напр. {@code 1к6}). */
+        private String additionalDice;
+        /** Дополнительных целей или снарядов за круг усиления. */
+        private Integer additionalTargets;
+        /** Текстовое описание усиления. */
+        private String description;
+    }
+
+    /** Тир масштабирования заговора по уровню заклинателя. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class CantripScalingTier {
+        /** Минимальный уровень персонажа, с которого действует набор. */
+        private Integer level;
+        /** Полный набор частей урона на этом уровне (заменяет базовые). */
+        private List<DamagePart> parts;
+    }
+
+    /** Часть урона тира: та же форма, что и у частей урона заклинания. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class DamagePart {
+        private String formula;
+        private String target;
+        private Boolean requiresDamage;
+    }
 }
