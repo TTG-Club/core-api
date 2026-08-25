@@ -311,3 +311,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/23-01-add-telegram-summary-to-article.yaml
   - include:
       file: db/changelog/2026/08/25-01-add-feat-active-effects.yaml
+  - include:
+      file: db/changelog/2026/08/26-01-add-item-tool-effects.yaml
