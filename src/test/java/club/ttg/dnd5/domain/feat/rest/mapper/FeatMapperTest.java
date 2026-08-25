@@ -122,6 +122,19 @@ class FeatMapperTest {
         assertTrue(feat.getActiveEffects().isEmpty());
     }
 
+    /**
+     * Эффекты доезжают и до публичной детали: по ней лист персонажа сайта считает
+     * пассивные бонусы черты, а «сырой» ответ мастерской он не берёт.
+     */
+    @Test
+    void exposesActiveEffectsInDetailResponse() {
+        Feat feat = new Feat();
+        feat.setActiveEffects(List.of(effect("feat-tough-hp")));
+
+        assertEquals("feat-tough-hp",
+                mapper.toDetail(feat).getActiveEffects().getFirst().getId());
+    }
+
     private static ActiveEffect effect(String id) {
         ActiveEffect effect = new ActiveEffect();
         effect.setId(id);

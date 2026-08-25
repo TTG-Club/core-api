@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.item.rest.mapper;
 
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -133,6 +135,21 @@ class ItemMapperTest {
         mapper.updateEntity(request, null, item);
 
         assertTrue(item.getActiveEffects().isEmpty());
+    }
+
+    /**
+     * Эффекты доезжают и до публичной детали: по ней лист персонажа сайта
+     * считает пассивные бонусы предмета, а «сырой» ответ он для этого не берёт.
+     */
+    @Test
+    void exposesActiveEffectsInDetailResponse() {
+        Item item = new Item();
+        // Типы у детали обязательны: их подпись собирает тот же маппер.
+        item.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+        item.setActiveEffects(List.of(effect("boots-of-speed")));
+
+        assertEquals("boots-of-speed",
+                mapper.toDetailResponse(item).getActiveEffects().getFirst().getId());
     }
 
     /**

@@ -1,9 +1,12 @@
 package club.ttg.dnd5.domain.item.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 
@@ -21,4 +24,15 @@ public class ItemDetailResponse extends BaseResponse {
     /** Вес предмета */
     @Schema(description = "Вес", examples = "2 фунта")
     private String weight;
+
+    /**
+     * Активные эффекты предмета в вокабуляре VTTG.
+     *
+     * <p>Отдаются вместе с деталью, а не только в «сыром» ответе мастерской: их считает
+     * лист персонажа сайта — так же, как эффекты магического предмета. Пустой список в
+     * ответ не пишется.</p>
+     */
+    @Schema(description = "Активные эффекты предмета")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<ActiveEffect> activeEffects;
 }

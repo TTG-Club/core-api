@@ -265,9 +265,13 @@ public class VttgItemMapper {
      * как раньше», и ключ с {@code null} потребитель разбирал бы как явный отказ.
      */
     private void putIfPresent(Map<String, Object> data, String key, Object value) {
-        if (value instanceof String text ? StringUtils.hasText(text) : value != null) {
-            data.put(key, value);
+        if (value == null) {
+            return;
         }
+        if (value instanceof String text && !StringUtils.hasText(text)) {
+            return;
+        }
+        data.put(key, value);
     }
 
     /** Значение справочника либо значение по умолчанию, если оно не задано. */
