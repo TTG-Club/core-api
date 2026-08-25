@@ -49,6 +49,8 @@ public class VttgSpell {
      * «Злой насмешки». Передаются без преобразования (модель уже в вокабуляре VTTG).
      */
     private List<ActiveEffect> activeEffects;
+    /** Заряды использования: врождённая магия и заклинания существ. */
+    private VttgSpellUses uses;
     private String cantripScaling;
     private List<VttgCantripScalingTier> cantripScalingTiers;
     private VttgSpellScaling scaling;

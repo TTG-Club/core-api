@@ -67,6 +67,11 @@ public class SpellEffect {
     private String deliveryType;
     /** Фиксированный бонус к броску атаки заклинанием сверх характеристики. */
     private Integer attackBonus;
+    /**
+     * Заряды использования: врождённая магия и заклинания существ тратят их, а
+     * не ячейки заклинателя. Не заданы — заклинание идёт по ячейкам, как раньше.
+     */
+    private Uses uses;
     /** Усиление при трате ячейки выше круга заклинания. */
     private Scaling scaling;
     /**
@@ -74,6 +79,23 @@ public class SpellEffect {
      * персонажа набор частей урона заменяется целиком.
      */
     private List<CantripScalingTier> cantripScalingTiers;
+
+    /**
+     * Заряды использования заклинания.
+     *
+     * <p>Текущее число зарядов здесь не хранится: оно принадлежит конкретному
+     * персонажу, а не записи справочника — потребитель получает полный запас.</p>
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Uses {
+        /** Максимум зарядов. */
+        private Integer max;
+        /** Способ восстановления: {@code atWill}, {@code shortRest}, {@code longRest}. */
+        private String recovery;
+    }
 
     /** Усиление заклинания на высших кругах. */
     @Getter

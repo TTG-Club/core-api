@@ -22,6 +22,7 @@ import club.ttg.dnd5.domain.vttg.rest.dto.VttgCantripScalingTier;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgDamagePart;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellComponents;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellScaling;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellUses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -44,6 +45,9 @@ public class VttgSpellMapper {
     private static final Set<String> DELIVERY_TYPES =
             Set.of("ranged", "melee", "self", "touch", "sight", "none");
     private static final Set<String> DAMAGE_PART_TARGETS = Set.of("selected", "self", "choose");
+    /** Способы восстановления зарядов VTTG. */
+    private static final Set<String> SPELL_USES_RECOVERIES =
+            Set.of("atWill", "shortRest", "longRest");
     private static final Pattern DICE_COUNT = Pattern.compile("(?iu)(\\d+)(\\s*[кkd]\\s*\\d+)");
 
     private final VttgMarkupConverter markupConverter;
@@ -88,6 +92,7 @@ public class VttgSpellMapper {
                 .autoHit(effect == null ? null : effect.getAutoHit())
                 .spellcastingAbility(spellcastingAbility(effect))
                 .attackBonus(attackBonus(effect))
+                .uses(uses(effect))
                 .saveType(saveType(effect))
                 .saveEffect(mechanics.saveEffect())
                 .cantripScaling(cantripScalingTiers == null ? null : "level")
@@ -273,6 +278,30 @@ public class VttgSpellMapper {
         }
         Ability ability = effect.getSavingThrows().getFirst();
         return ability.name().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Заряды использования. Справочник знает только максимум: текущее число
+     * принадлежит персонажу, поэтому в компендиум уходит полный запас.
+     * У режима «по желанию» заряды не расходуются, и максимум ему не нужен.
+     */
+    private VttgSpellUses uses(SpellEffect effect) {
+        SpellEffect.Uses uses = effect == null ? null : effect.getUses();
+        if (uses == null || !SPELL_USES_RECOVERIES.contains(uses.getRecovery())) {
+            return null;
+        }
+
+        boolean atWill = "atWill".equals(uses.getRecovery());
+        Integer max = uses.getMax() == null || uses.getMax() < 1 ? null : uses.getMax();
+        if (!atWill && max == null) {
+            return null;
+        }
+
+        return VttgSpellUses.builder()
+                .max(atWill ? 0 : max)
+                .current(atWill ? 0 : max)
+                .recovery(uses.getRecovery())
+                .build();
     }
 
     /** Ноль бонуса и его отсутствие равнозначны — в компендиум ноль не пишется. */

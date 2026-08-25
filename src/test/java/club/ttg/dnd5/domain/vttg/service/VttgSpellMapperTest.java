@@ -312,6 +312,54 @@ class VttgSpellMapperTest {
                 result.getCantripScalingTiers().getFirst().getParts().getFirst().getFormula());
     }
 
+    @Test
+    void spellUsesGoToCompendiumWithFullCharge() {
+        Spell spell = new Spell();
+        spell.setUrl("misty-step-innate");
+        spell.setName("Туманный шаг");
+        spell.setEnglish("Misty Step");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.CONJURATION).build());
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Uses uses = new SpellEffect.Uses();
+        uses.setMax(2);
+        uses.setRecovery("longRest");
+        effect.setUses(uses);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Текущее число зарядов принадлежит персонажу — справочник отдаёт полный запас.
+        assertEquals(2, result.getUses().getMax());
+        assertEquals(2, result.getUses().getCurrent());
+        assertEquals("longRest", result.getUses().getRecovery());
+    }
+
+    @Test
+    void spellUsesWithoutMaxAreDroppedUnlessAtWill() {
+        Spell spell = new Spell();
+        spell.setUrl("prestidigitation");
+        spell.setName("Фокусы");
+        spell.setEnglish("Prestidigitation");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.TRANSMUTATION).build());
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Uses uses = new SpellEffect.Uses();
+        uses.setRecovery("longRest");
+        effect.setUses(uses);
+        spell.setEffect(effect);
+
+        // Ограничение без числа применений ничего не ограничивает.
+        assertNull(mapper.toVttg(spell).getUses());
+
+        uses.setRecovery("atWill");
+
+        // «По желанию» заряды не тратит, и максимум ему не нужен.
+        assertEquals("atWill", mapper.toVttg(spell).getUses().getRecovery());
+    }
+
     /**
      * Список заклинаний класса в VTTG строится фильтром по {@code spell.classKeys}
      * (отдельного поля-списка на классе нет). Проверяем, что ключ, который кладёт
