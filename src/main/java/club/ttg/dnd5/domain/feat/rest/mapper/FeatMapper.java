@@ -45,6 +45,7 @@ public interface FeatMapper {
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "request.mechanics", target = "mechanics")
+    @Mapping(source = "request.activeEffects", target = "activeEffects")
     @Mapping(source = "request.prerequisiteDetails", target = "prerequisiteDetails")
     @Mapping(target = "source", source = "source")
     Feat toEntity(FeatRequest request, Source source);
@@ -56,6 +57,7 @@ public interface FeatMapper {
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "request.mechanics", target = "mechanics")
+    @Mapping(source = "request.activeEffects", target = "activeEffects")
     @Mapping(source = "request.prerequisiteDetails", target = "prerequisiteDetails")
     @Mapping(target = "source", source = "source")
     void updateEntity(FeatRequest request, Source source, @MappingTarget Feat feat);

@@ -1,13 +1,18 @@
 package club.ttg.dnd5.domain.feat.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 /**
  * Тело запроса на создание и правку черты — то, что шлёт мастерская.
@@ -68,4 +73,17 @@ public class FeatRequest extends BaseRequest {
      */
     @Schema(description = "Механика влияния черты на лист персонажа")
     private FeatMechanics mechanics;
+
+    /**
+     * Активные эффекты черты для экспорта в VTTG — рядом с механикой, а не внутри неё:
+     * механика описывает дары, которые лист проставляет сам, а эффект меняет числа
+     * готовой формулой (см. {@code Feat.activeEffects}).
+     *
+     * <p>Как и механика, перезаписывается ЦЕЛИКОМ: пустой список стирает прежние
+     * эффекты записи.</p>
+     */
+    @Schema(description = "Активные эффекты черты для экспорта в VTTG")
+    @Nullable
+    @Valid
+    private List<ActiveEffect> activeEffects;
 }
