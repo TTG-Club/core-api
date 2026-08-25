@@ -304,6 +304,7 @@ public class VttgSpellMapper {
                 .formula(formula)
                 .target(part.getTarget())
                 .type(part.getType())
+                .requiresDamage(part.getRequiresDamage())
                 .build();
     }
 

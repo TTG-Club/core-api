@@ -210,6 +210,30 @@ class VttgSpellMapperTest {
         assertEquals("2Рє4@heal+@mod.spell", result.getDamageParts().getFirst().getFormula());
     }
 
+    @Test
+    void carriesRequiresDamageFlagIntoVttgDamageParts() {
+        Spell spell = new Spell();
+        spell.setUrl("vampiric-touch");
+        spell.setName("Прикосновение вампира");
+        spell.setEnglish("Vampiric Touch");
+        spell.setLevel(3L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.NECROMANCY).build());
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("3к6@dmg.necrotic", "1к6@heal"));
+        effect.setDamageFormulaTargets(List.of("selected", "self"));
+        effect.setDamageFormulaRequiresDamage(List.of(false, true));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Часть лечения гасится, если урон не прошёл; у обычной части флага нет —
+        // ложь равнозначна дефолту и в компендиум не пишется.
+        assertNull(result.getDamageParts().getFirst().getRequiresDamage());
+        assertEquals(Boolean.TRUE, result.getDamageParts().get(1).getRequiresDamage());
+        assertEquals("self", result.getDamageParts().get(1).getTarget());
+    }
+
     /**
      * Список заклинаний класса в VTTG строится фильтром по {@code spell.classKeys}
      * (отдельного поля-списка на классе нет). Проверяем, что ключ, который кладёт

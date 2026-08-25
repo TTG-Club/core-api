@@ -34,6 +34,13 @@ public class SpellEffect {
      * {@code @target.full}/{@code @target.notFull}.
      */
     private List<String> damageFormulaTargets;
+    /**
+     * Признак «применять часть, только если по цели фактически нанесён урон»
+     * по индексам {@link #damageFormulas} — словарь VTTG
+     * {@code DamagePart.requiresDamage}. Покрывает «лечусь, только если задел
+     * врага»: часть лечения гасится, когда урон не прошёл.
+     */
+    private List<Boolean> damageFormulaRequiresDamage;
     private List<HealingType> healingTypes;
     /**
      * Характеристика, от которой считаются Сл спасброска и бонус атаки этого

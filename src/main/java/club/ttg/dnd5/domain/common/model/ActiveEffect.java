@@ -60,6 +60,16 @@ public class ActiveEffect {
         private String type;
         private Integer value;
         private Integer remaining;
+        /**
+         * Якорь хода для {@code type: "turn"} — чей ход прекращает эффект:
+         * {@code carrier} (носитель, по умолчанию) либо {@code source} (кастер).
+         */
+        private String turnAnchor;
+        /**
+         * Момент хода якоря для {@code type: "turn"}: {@code start} либо
+         * {@code end} (по умолчанию).
+         */
+        private String turnTiming;
     }
 
     /** Числовой модификатор (change). */
