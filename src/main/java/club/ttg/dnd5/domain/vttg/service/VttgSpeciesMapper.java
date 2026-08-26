@@ -1,8 +1,10 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -57,7 +60,16 @@ public class VttgSpeciesMapper {
     private static final String TYPE = "species";
     private static final String SECTION = "species";
     private static final String DARKVISION = "darkvision";
-    private static final String RESISTANCE = "resistance";
+    private static final String DAMAGE_DEFENSE = "damageDefense";
+    private static final String CONDITION_IMMUNITY = "conditionImmunity";
+    private static final String SAVING_THROW_PROFICIENCY = "savingThrowProficiency";
+    private static final String WEAPON_PROFICIENCY = "weaponProficiency";
+    private static final String ARMOR_PROFICIENCY = "armorProficiency";
+    private static final String TOOL_PROFICIENCY = "toolProficiency";
+    private static final String LANGUAGE = "language";
+    private static final String RESISTANCE_KIND = "resistance";
+    private static final String IMMUNITY_KIND = "immunity";
+    private static final String VULNERABILITY_KIND = "vulnerability";
     private static final String SKILL_PROFICIENCY = "skillProficiency";
     /** Ключ синтетического умения врождённых заклинаний; дальше идёт уровень. */
     private static final String INNATE_SPELLS_KEY = "innate-spells";
@@ -87,6 +99,7 @@ public class VttgSpeciesMapper {
                 .speed(speed(species))
                 .grants(grants(species))
                 .features(features(species))
+                .activeEffects(activeEffects(species))
                 .build();
     }
 
@@ -105,6 +118,15 @@ public class VttgSpeciesMapper {
                 .filter(size -> size != Size.UNDEFINED)
                 .map(size -> size.name().toLowerCase(Locale.ROOT))
                 .toList();
+    }
+
+    /**
+     * Активные эффекты самой записи вида. Отдаются без преобразования — так же, как у
+     * черты: мастерская заполняет их сразу в вокабуляре VTTG. Эффекты умений уезжают у
+     * своих умений и сюда не сводятся: потребителю важно, какое умение дало эффект.
+     */
+    private List<ActiveEffect> activeEffects(Species species) {
+        return CollectionUtils.isEmpty(species.getActiveEffects()) ? null : species.getActiveEffects();
     }
 
     /** Скорость пешком всегда присутствует; полёт/лазание/плавание — только при наличии. */
@@ -127,25 +149,154 @@ public class VttgSpeciesMapper {
         if (species.getDarkVision() != null) {
             grants.add(new VttgSpecies.Grant(DARKVISION, species.getDarkVision(), null, null, null));
         }
-        List<String> resistances = VttgDictionaries.damageTypes(resistances(species));
-        if (!resistances.isEmpty()) {
-            grants.add(new VttgSpecies.Grant(RESISTANCE, null, resistances, null, null));
+        List<VttgSpecies.DamageDefense> defenses = damageDefenses(species);
+        if (!defenses.isEmpty()) {
+            grants.add(new VttgSpecies.Grant(DAMAGE_DEFENSE, null, null, null, null,
+                    defenses, null, null, null, null));
+        }
+        List<String> conditionImmunities = conditionImmunities(species);
+        if (!conditionImmunities.isEmpty()) {
+            grants.add(new VttgSpecies.Grant(CONDITION_IMMUNITY, null, null, null, null,
+                    null, conditionImmunities, null, null, null));
         }
         grants.addAll(skillGrants(species));
+        grants.addAll(proficiencyGrants(species));
         return grants;
     }
 
-    /** Сопротивления записи и её умений в порядке словаря, без повторов. */
-    private Set<DamageType> resistances(Species species) {
-        Set<DamageType> result = new TreeSet<>();
-        for (SheetModifiers modifiers : mechanics(species).map(SpeciesMechanics::getModifiers)
-                .filter(Objects::nonNull).toList()) {
+    /**
+     * Защиты от типов урона — сопротивления, иммунитеты и уязвимости записи и её умений.
+     *
+     * <p>Одной наградой на все источники: у потребителя это единый блок защит, и из какого
+     * умения пришёл тип урона, лист не показывает. Защита по выбору игрока
+     * ({@code defenseChoices}) сюда не идёт — тип урона ещё не назван, как и в
+     * {@code VttgFeatMechanicsMapper}.</p>
+     *
+     * <p>Прежний вид награды {@code resistance} со списком типов система не разбирает:
+     * в её словаре даров есть только {@code damageDefense} с парами «тип — вид защиты»,
+     * поэтому сопротивления вида до неё попросту не доезжали.</p>
+     */
+    private List<VttgSpecies.DamageDefense> damageDefenses(Species species) {
+        Map<String, String> byType = new TreeMap<>();
+        for (SheetModifiers modifiers : modifiers(species)) {
             DamageAffinity damage = modifiers.getDamage();
-            if (damage != null && !CollectionUtils.isEmpty(damage.getResistances())) {
-                result.addAll(damage.getResistances());
+            if (damage == null) {
+                continue;
+            }
+            putDefenses(byType, damage.getImmunities(), IMMUNITY_KIND);
+            putDefenses(byType, damage.getResistances(), RESISTANCE_KIND);
+            putDefenses(byType, damage.getVulnerabilities(), VULNERABILITY_KIND);
+        }
+        return byType.entrySet().stream()
+                .map(entry -> new VttgSpecies.DamageDefense(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    /**
+     * Кладёт защиты одного вида. Тип урона, у которого защита уже есть, не переписывается:
+     * иммунитет и сопротивление к одному типу вместе не читаются, и выигрывает более
+     * сильный — порядок вызовов задаёт приоритет.
+     */
+    private void putDefenses(Map<String, String> target, Collection<DamageType> types, String kind) {
+        if (CollectionUtils.isEmpty(types)) {
+            return;
+        }
+        for (String type : VttgDictionaries.damageTypes(types)) {
+            target.putIfAbsent(type, kind);
+        }
+    }
+
+    /** Иммунитеты к состояниям записи и её умений в порядке словаря, без повторов. */
+    private List<String> conditionImmunities(Species species) {
+        Set<String> result = new TreeSet<>();
+        for (SheetModifiers modifiers : modifiers(species)) {
+            if (!CollectionUtils.isEmpty(modifiers.getConditionImmunities())) {
+                result.addAll(VttgDictionaries.conditions(modifiers.getConditionImmunities()));
             }
         }
+        return List.copyOf(result);
+    }
+
+    /** Модификаторы листа записи и всех её умений. */
+    private List<SheetModifiers> modifiers(Species species) {
+        return mechanics(species).map(SpeciesMechanics::getModifiers)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /**
+     * Владения и языки, которые вид выдаёт без выбора, и выборы игрока к ним.
+     *
+     * <p>По награде на вид владения: у потребителя это разные списки листа, и слить их в
+     * один — значит выдать владение доспехом вместо языка.</p>
+     */
+    private List<VttgSpecies.Grant> proficiencyGrants(Species species) {
+        List<VttgSpecies.Grant> result = new ArrayList<>();
+        mechanics(species).forEach(mechanics -> {
+            ProficiencyGrant granted = mechanics.getProficiencies();
+            if (granted != null) {
+                addItems(result, SAVING_THROW_PROFICIENCY, VttgDictionaries.abilities(granted.getSavingThrows()));
+                addItems(result, WEAPON_PROFICIENCY, VttgDictionaries.weaponCategories(granted.getWeaponCategories()));
+                addItems(result, ARMOR_PROFICIENCY, VttgDictionaries.armorCategories(granted.getArmorCategories()));
+                addItems(result, TOOL_PROFICIENCY, entityRefNames(granted.getTools()));
+                addItems(result, LANGUAGE, VttgDictionaries.languages(granted.getLanguages()));
+            }
+            for (MechanicChoice choice : Optional.ofNullable(mechanics.getChoices()).orElse(List.of())) {
+                if (choice == null || choice.getType() == null) {
+                    continue;
+                }
+                String type = choiceGrantType(choice.getType());
+                if (type == null) {
+                    continue;
+                }
+                result.add(VttgSpecies.Grant.choices(type, null,
+                        new VttgSpecies.Choices(choice.resolveCount(), choiceValues(choice))));
+            }
+        });
         return result;
+    }
+
+    /** Вид награды по виду выбора; выбор, которому у вида награды нет, пропускается. */
+    private String choiceGrantType(ChoiceType type) {
+        return switch (type) {
+            case TOOL -> TOOL_PROFICIENCY;
+            case LANGUAGE -> LANGUAGE;
+            case WEAPON -> WEAPON_PROFICIENCY;
+            case ARMOR -> ARMOR_PROFICIENCY;
+            case SAVING_THROW -> SAVING_THROW_PROFICIENCY;
+            default -> null;
+        };
+    }
+
+    /** Значения выбора как есть: словарь у каждого вида владения свой, и сводить его нечем. */
+    private List<String> choiceValues(MechanicChoice choice) {
+        if (CollectionUtils.isEmpty(choice.getOptions())) {
+            return null;
+        }
+        return choice.getOptions().stream()
+                .filter(Objects::nonNull)
+                .map(ChoiceOption::getValue)
+                .filter(StringUtils::hasText)
+                .toList();
+    }
+
+    /** Названия ссылок на записи справочника: инструменты у потребителя названы словами. */
+    private List<String> entityRefNames(List<EntityRef> refs) {
+        if (CollectionUtils.isEmpty(refs)) {
+            return List.of();
+        }
+        return refs.stream()
+                .filter(Objects::nonNull)
+                .map(reference -> StringUtils.hasText(reference.getName())
+                        ? reference.getName() : reference.getUrl())
+                .filter(StringUtils::hasText)
+                .toList();
+    }
+
+    private void addItems(List<VttgSpecies.Grant> target, String type, List<String> items) {
+        if (!CollectionUtils.isEmpty(items)) {
+            target.add(VttgSpecies.Grant.items(type, items));
+        }
     }
 
     /**
@@ -283,7 +434,7 @@ public class VttgSpeciesMapper {
         List<VttgSpecies.Feature> result = new ArrayList<>(byLevel.size());
         for (Map.Entry<Integer, List<VttgSpecies.GrantedSpell>> entry : byLevel.entrySet()) {
             result.add(new VttgSpecies.Feature(INNATE_SPELLS_KEY + "-" + entry.getKey(),
-                    INNATE_SPELLS_NAME, null, null, entry.getKey(), entry.getValue()));
+                    INNATE_SPELLS_NAME, null, null, entry.getKey(), entry.getValue(), null));
         }
         return result;
     }
@@ -312,8 +463,11 @@ public class VttgSpeciesMapper {
         String key = StringUtils.hasText(feature.getUrl()) ? slug(feature.getUrl()) : slug(feature.getEnglish());
         List<VttgSpecies.Choice> attached = (choices == null || choices.isEmpty()) ? null : choices;
         Integer level = feature.getLevel() != null && feature.getLevel() > 1 ? feature.getLevel() : null;
+        List<ActiveEffect> effects = CollectionUtils.isEmpty(feature.getActiveEffects())
+                ? null
+                : feature.getActiveEffects();
         return new VttgSpecies.Feature(key, feature.getName(),
-                markupConverter.toText(feature.getDescription()), attached, level, null);
+                markupConverter.toText(feature.getDescription()), attached, level, null, effects);
     }
 
     /** Индекс «происхожденческого» умения (lineage/legacy/ancestry/происхожд/наследие) или -1. */

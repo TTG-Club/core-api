@@ -7,15 +7,23 @@ import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
+import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
+import club.ttg.dnd5.domain.character_class.model.ClassTableColumnPurpose;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
 import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
@@ -222,6 +230,149 @@ class VttgClassMapperTest {
                 "[Кольчуга](https://ttg.club/items/chain-mail) и 4 зм",
                 options.get(0).get("description").asText()
         );
+    }
+
+
+    /**
+     * Заклинательная конфигурация берётся из записи, а не из карты канонических классов:
+     * у самописного класса в карте его нет, и до появления полей вся конфигурация молча
+     * пропадала.
+     */
+    @Test
+    void takesSpellcastingFromRecord() {
+        CharacterClass homebrew = baseClass("mystic", "Мистик", "Mystic");
+        homebrew.setCasterType(CasterType.HALF);
+        homebrew.setSpellcastingAbility(Ability.INTELLIGENCE);
+        homebrew.setSpellcastingStartLevel(3);
+        homebrew.setSubclassLabel("Мистический орден");
+        homebrew.setSubclassLevel(2);
+
+        JsonNode json = json(homebrew);
+        assertEquals("half", json.get("spellcasting").get("type").asText());
+        assertEquals("intelligence", json.get("spellcasting").get("ability").asText());
+        assertEquals(3, json.get("spellcasting").get("startLevel").asInt());
+        assertEquals("Мистический орден", json.get("subclassLabel").asText());
+        assertEquals(2, json.get("subclassLevel").asInt());
+    }
+
+    /** У записи без своих полей остаётся прежнее поведение — каноническая карта по ключу. */
+    @Test
+    void fallsBackToCanonicalSpellcasting() {
+        CharacterClass wizard = baseClass("wizard", "Волшебник", "Wizard");
+        wizard.setCasterType(CasterType.FULL);
+
+        JsonNode json = json(wizard);
+        assertEquals("intelligence", json.get("spellcasting").get("ability").asText());
+        assertEquals(1, json.get("spellcasting").get("startLevel").asInt());
+        assertEquals("Магическая традиция", json.get("subclassLabel").asText());
+    }
+
+    /** Эффекты класса и его умений уезжают как есть — той же моделью, что у черты. */
+    @Test
+    void exportsActiveEffects() {
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        barbarian.setActiveEffects(List.of(effect("unarmored-defense", "Защита без доспехов")));
+
+        ClassFeature rage = feature("rage", 1, "Ярость", "Вы впадаете в ярость.");
+        rage.setActiveEffects(List.of(effect("rage", "Ярость")));
+        barbarian.setFeatures(List.of(rage));
+
+        JsonNode json = json(barbarian);
+        assertEquals(1, json.get("activeEffects").size());
+        assertEquals("Защита без доспехов", json.get("activeEffects").get(0).get("name").asText());
+        assertEquals("Ярость", json.get("features").get(0).get("activeEffects").get(0).get("name").asText());
+    }
+
+    /** Заклинания, выданные умением, уезжают списком id — как их ждёт эталон. */
+    @Test
+    void exportsGrantedSpellsOfFeature() {
+        CharacterClass ranger = baseClass("ranger", "Следопыт", "Ranger");
+        ClassFeature favoredEnemy = feature("favored-enemy", 1, "Избранный враг", "Вы знаете «Метку охотника».");
+
+        GrantedSpellRef reference = new GrantedSpellRef();
+        reference.setUrl("hunters-mark");
+        reference.setName("Метка охотника");
+        SpellGrant grant = new SpellGrant();
+        grant.setSpells(List.of(reference));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setSpells(grant);
+        favoredEnemy.setMechanics(mechanics);
+
+        ranger.setFeatures(List.of(favoredEnemy));
+
+        JsonNode feature = json(ranger).get("features").get(0);
+        assertEquals("[\"hunters-mark\"]", feature.get("grantedSpells").toString());
+    }
+
+    /**
+     * Колонка «известных заговоров» хранит итог, а мастер повышения уровня спрашивает
+     * прирост: он и считается разностью с предыдущим заполненным уровнем.
+     */
+    @Test
+    void derivesNewCantripsFromColumnPurpose() {
+        CharacterClass wizard = baseClass("wizard", "Волшебник", "Wizard");
+        ClassTableColumn cantrips = new ClassTableColumn("Известные заговоры",
+                List.of(new ClassTableItem(1, "3"), new ClassTableItem(4, "4"), new ClassTableItem(10, "5")));
+        cantrips.setPurpose(ClassTableColumnPurpose.CANTRIPS_KNOWN);
+        wizard.setTable(List.of(cantrips));
+
+        JsonNode levels = json(wizard).get("levelTable");
+        assertEquals(3, levels.get(0).get("newCantrips").asInt());
+        assertFalse(levels.get(1).has("newCantrips"));
+        assertEquals(1, levels.get(3).get("newCantrips").asInt());
+        assertEquals(1, levels.get(9).get("newCantrips").asInt());
+    }
+
+    /** Ресурс с формульным максимумом приходит из механики: колонки таблицы у него нет. */
+    @Test
+    void exportsFormulaCounterFromMechanics() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassFeature secondWind = feature("second-wind", 1, "Второе дыхание", "Восстановите хиты.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("second-wind");
+        counter.setName("Второе дыхание");
+        counter.setShortName("Дыхание");
+        counter.setMax("@prof");
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        secondWind.setMechanics(mechanics);
+
+        fighter.setFeatures(List.of(secondWind));
+
+        JsonNode counters = json(fighter).get("counters");
+        assertEquals(1, counters.size());
+        assertEquals("second-wind", counters.get(0).get("key").asText());
+        assertEquals("Дыхание", counters.get(0).get("shortName").asText());
+        assertEquals("@prof", counters.get(0).get("formula").asText());
+        assertEquals("long", counters.get(0).get("recovery").asText());
+    }
+
+    /**
+     * Свой ключ колонки важнее выведенного из подписи: по нему лист хранит потраченный
+     * остаток, и перевод подписи не должен обнулять счётчики.
+     */
+    @Test
+    void prefersExplicitColumnKey() {
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        ClassTableColumn rages = new ClassTableColumn("Ярости",
+                List.of(new ClassTableItem(1, "2"), new ClassTableItem(3, "3")));
+        rages.setKey("rages");
+        rages.setResourceRecovery(ClassResourceRecovery.LONG_REST);
+        barbarian.setTable(List.of(rages));
+
+        JsonNode json = json(barbarian);
+        assertEquals("rages", json.get("counters").get(0).get("key").asText());
+        assertEquals("rages", json.get("tableColumns").get(0).get("key").asText());
+        assertEquals("2", json.get("levelTable").get(0).get("rages").asText());
+    }
+
+    private ActiveEffect effect(String id, String name) {
+        ActiveEffect effect = new ActiveEffect();
+        effect.setId(id);
+        effect.setName(name);
+        return effect;
     }
 
     private CharacterClass baseClass(String url, String name, String english) {

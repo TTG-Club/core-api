@@ -1,9 +1,11 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Map;
 
 @Builder
@@ -34,4 +36,13 @@ public class VttgCreature {
     private String sourceKey;
     private Boolean isSRD;
     private Boolean isReadOnly;
+
+    /**
+     * Активные эффекты существа в вокабуляре VTTG — та же модель, что у черты и предмета.
+     *
+     * <p>Соседом {@link #system}, а не его полем: статблок описывает существо числами, а
+     * эффект — то, чем существо постоянно отличается от своих чисел или что оно
+     * накладывает. На столе такой эффект уезжает на токен как есть.</p>
+     */
+    private List<ActiveEffect> activeEffects;
 }

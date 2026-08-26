@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
@@ -7,6 +8,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -23,4 +26,6 @@ public class SpeciesFeatureResponse {
     private Integer level;
     @Schema(description = "Механика влияния умения на лист персонажа")
     private SpeciesMechanics mechanics;
+    @Schema(description = "Активные эффекты умения в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
 }

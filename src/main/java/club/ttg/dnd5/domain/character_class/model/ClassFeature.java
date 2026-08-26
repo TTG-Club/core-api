@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.character_class.model;
 
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureRequest;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.util.SlugifyUtil;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -65,6 +67,15 @@ public class ClassFeature {
     @Schema(description = "Бонус к увеличивает характеристик")
     private AbilityBonus abilityBonus;
 
+    @Schema(description = "Умение только информирует и не попадает в лист персонажа")
+    private boolean informationalOnly;
+
+    @Schema(description = "Механика влияния умения на лист персонажа")
+    private ClassMechanics mechanics;
+
+    @Schema(description = "Активные эффекты умения в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
+
     public ClassFeature(ClassFeatureRequest classFeatureRequest) {
         this.level = classFeatureRequest.getLevel();
         this.name = classFeatureRequest.getName();
@@ -84,5 +95,8 @@ public class ClassFeature {
         this.fightingStyleChoice = classFeatureRequest.isFightingStyleChoice();
         this.skillChoice = classFeatureRequest.getSkillChoice();
         this.abilityBonus = classFeatureRequest.getAbilityBonus();
+        this.informationalOnly = classFeatureRequest.isInformationalOnly();
+        this.mechanics = classFeatureRequest.getMechanics();
+        this.activeEffects = classFeatureRequest.getActiveEffects();
     }
 }

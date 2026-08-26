@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -64,6 +65,13 @@ public class VttgSpecies {
     /** Видовые умения; пустой список, если их нет. */
     private List<Feature> features;
 
+    /**
+     * Активные эффекты вида в вокабуляре VTTG. Отдаются без преобразования — так же, как
+     * у черты ({@code VttgFeat.activeEffects}): мастерская заполняет их сразу в словаре
+     * VTTG. Опускаются, когда эффектов нет.
+     */
+    private List<ActiveEffect> activeEffects;
+
     /** Явный геттер: без него Jackson сериализует boolean-{@code isSRD} как ключ «SRD». */
     @JsonProperty("isSRD")
     public boolean isSRD() {
@@ -81,7 +89,37 @@ public class VttgSpecies {
      * {@code skillProficiency} → {@code count}/{@code from}. Пустые поля опускаются.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Grant(String type, Integer range, List<String> damageTypes, Integer count, List<String> from) {
+    public record Grant(String type, Integer range, List<String> damageTypes, Integer count, List<String> from,
+                        List<DamageDefense> entries, List<String> conditions, List<String> abilities,
+                        List<String> items, Choices choices) {
+
+        /** Награда прежней формы: тёмное зрение, сопротивления, выбор навыков. */
+        public Grant(String type, Integer range, List<String> damageTypes, Integer count, List<String> from) {
+            this(type, range, damageTypes, count, from, null, null, null, null, null);
+        }
+
+        /** Безвыборная выдача списком: владения оружием, доспехами, инструментами, языки. */
+        public static Grant items(String type, List<String> items) {
+            return new Grant(type, null, null, null, null, null, null, null, items, null);
+        }
+
+        /** Выдача с выбором: {@code items} — то, что дано сразу, {@code choices} — что выбирают. */
+        public static Grant choices(String type, List<String> items, Choices choices) {
+            return new Grant(type, null, null, null, null, null, null, null, items, choices);
+        }
+    }
+
+    /**
+     * Защита вида по одному типу урона.
+     *
+     * @param damageType slug типа урона ({@code fire}, {@code poison})
+     * @param kind       вид защиты: {@code resistance}/{@code immunity}/{@code vulnerability}
+     */
+    public record DamageDefense(String damageType, String kind) {
+    }
+
+    /** Выбор внутри награды: сколько ({@code count}) и из чего ({@code from}). */
+    public record Choices(int count, List<String> from) {
     }
 
     /**
@@ -98,11 +136,12 @@ public class VttgSpecies {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Feature(String key, String name, String description, List<Choice> choices,
-                          Integer level, List<GrantedSpell> grantedSpells) {
+                          Integer level, List<GrantedSpell> grantedSpells,
+                          List<ActiveEffect> activeEffects) {
 
-        /** Обычное умение источника: без уровня и без выдаваемых заклинаний. */
+        /** Обычное умение источника: без уровня, заклинаний и эффектов. */
         public Feature(String key, String name, String description, List<Choice> choices) {
-            this(key, name, description, choices, null, null);
+            this(key, name, description, choices, null, null, null);
         }
     }
 

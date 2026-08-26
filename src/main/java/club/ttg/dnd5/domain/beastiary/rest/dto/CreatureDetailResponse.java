@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -7,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 
 @Setter
 @Getter
@@ -62,4 +64,7 @@ public class CreatureDetailResponse extends BaseResponse {
 
     @Schema(description = "Описании общей секции")
     private CreatureSectionResponse section;
+
+    @Schema(description = "Активные эффекты существа в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
 }

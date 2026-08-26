@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-29-03-add-creature-active-effects
+      author: Peterko
+      comment: >
+        Активные эффекты существа. Статблок описывает существо числами, а эффект — то, что
+        существо накладывает или чем постоянно отличается от своих чисел: аура, врождённое
+        состояние, защита с условием. На виртуальном столе такой эффект уезжает на токен
+        как есть — той же моделью, что у черты и предмета.
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: active_effects
+                  type: jsonb
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: bestiary
+            columnName: active_effects

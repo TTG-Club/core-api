@@ -179,8 +179,9 @@ class VttgSpeciesMapperTest {
         assertEquals(3, grants.size());
         assertEquals("darkvision", grants.get(0).get("type").asText());
         assertEquals(120, grants.get(0).get("range").asInt());
-        assertEquals("resistance", grants.get(1).get("type").asText());
-        assertEquals("[\"poison\"]", grants.get(1).get("damageTypes").toString());
+        assertEquals("damageDefense", grants.get(1).get("type").asText());
+        assertEquals("[{\"damageType\":\"poison\",\"kind\":\"resistance\"}]",
+                grants.get(1).get("entries").toString());
         assertEquals("skillProficiency", grants.get(2).get("type").asText());
         assertEquals(1, grants.get(2).get("count").asInt());
         assertEquals("[\"perception\"]", grants.get(2).get("from").toString());
@@ -245,8 +246,9 @@ class VttgSpeciesMapperTest {
 
         JsonNode grants = json(lineage).get("grants");
         assertEquals(1, grants.size());
-        assertEquals("resistance", grants.get(0).get("type").asText());
-        assertEquals("[\"fire\"]", grants.get(0).get("damageTypes").toString());
+        assertEquals("damageDefense", grants.get(0).get("type").asText());
+        assertEquals("[{\"damageType\":\"fire\",\"kind\":\"resistance\"}]",
+                grants.get(0).get("entries").toString());
     }
 
     /** Механика записи и механика её умений складываются в одну награду. */
@@ -263,8 +265,10 @@ class VttgSpeciesMapperTest {
 
         JsonNode grants = json(species).get("grants");
         assertEquals(1, grants.size());
-        // Порядок словаря: FIRE идёт раньше POISON.
-        assertEquals("[\"fire\",\"poison\"]", grants.get(0).get("damageTypes").toString());
+        // Порядок алфавитный по типу урона: fire идёт раньше poison.
+        assertEquals("[{\"damageType\":\"fire\",\"kind\":\"resistance\"},"
+                        + "{\"damageType\":\"poison\",\"kind\":\"resistance\"}]",
+                grants.get(0).get("entries").toString());
     }
 
     private SpeciesMechanics mechanics(SheetModifiers modifiers,
