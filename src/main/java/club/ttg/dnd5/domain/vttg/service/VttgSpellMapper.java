@@ -418,6 +418,13 @@ public class VttgSpellMapper {
                 : VttgCantripScalingTier.builder().level(level).parts(parts).build();
     }
 
+    /**
+     * Часть урона тира с умноженным числом костей.
+     *
+     * Часть пересобирается билдером, поэтому каждое поле переносится явно, и
+     * забытое здесь молча пропадает у масштабированного тира, хотя у базовой
+     * части оно есть. Так уже терялась формула двуручного хвата.
+     */
     private VttgDamagePart scaleDamagePart(VttgDamagePart part, int multiplier) {
         String formula = scaleDiceCount(part.getFormula(), multiplier);
         if (!StringUtils.hasText(formula)) {
@@ -428,6 +435,7 @@ public class VttgSpellMapper {
                 .target(part.getTarget())
                 .type(part.getType())
                 .requiresDamage(part.getRequiresDamage())
+                .versatileFormula(scaleDiceCount(part.getVersatileFormula(), multiplier))
                 .build();
     }
 
