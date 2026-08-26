@@ -153,8 +153,21 @@ public class VttgFeatMechanicsMapper {
      * @return блок даров или {@code null}, если применять нечего
      */
     public VttgFeatData featData(Feat feat) {
-        FeatMechanics mechanics = feat.getMechanics();
-        VttgFeatPrerequisite prerequisite = prerequisite(feat);
+        return featData(feat.getMechanics(), prerequisite(feat));
+    }
+
+    /**
+     * Те же дары, но от механики напрямую — их выдаёт не только черта.
+     *
+     * <p>Предыстория хранит расширенные дары той же моделью ({@code Background.mechanics})
+     * и уезжает в компендиум тем же блоком {@code featData}: набор полей у них общий, и
+     * второй маппинг для того же самого разошёлся бы с этим при первой же правке.</p>
+     *
+     * @param mechanics    дары записи; {@code null} — давать нечего
+     * @param prerequisite требования записи; {@code null} — их нет (у предыстории всегда)
+     * @return блок даров или {@code null}, если применять нечего
+     */
+    public VttgFeatData featData(FeatMechanics mechanics, VttgFeatPrerequisite prerequisite) {
         ProficiencyGrant grant = mechanics == null ? null : mechanics.getProficiencies();
         SheetModifiers sourceModifiers = mechanics == null ? null : mechanics.getModifiers();
 

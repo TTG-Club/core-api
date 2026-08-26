@@ -7,6 +7,10 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
+import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
@@ -23,8 +27,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -38,13 +46,48 @@ public class BackgroundServiceImpl implements BackgroundService {
     private final BackgroundMapper backgroundMapper;
     private final EntityRevisionService revisionService;
     private final EquipmentNameResolver equipmentNameResolver;
+    private final GrantedSpellResolver grantedSpellResolver;
 
 
     @Override
     public BackgroundDetailResponse getBackground(final String backgroundUrl) {
         BackgroundDetailResponse response = backgroundMapper.toDetail(findByUrl(backgroundUrl));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
+        response.setGrantedSpells(resolveGrantedSpells(response));
         return response;
+    }
+
+    /**
+     * Дополняет выдаваемые предысторией заклинания данными справочника: в дарах они лежат
+     * ссылками, а потребителю нужны круг и школа — лист персонажа без круга не положит
+     * заклинание в книгу. Ровно так же поступает деталь черты: дары у них одной модели.
+     *
+     * <p>Ненайденное заклинание пропускается, а не роняет ответ: это свободный JSONB,
+     * набранный руками в редакторе, и опечатка в url не должна ронять страницу целиком.</p>
+     *
+     * @param response деталь предыстории с разобранными дарами.
+     * @return выдаваемые заклинания с данными справочника; null — предыстория их не выдаёт.
+     */
+    private Collection<FeatGrantedSpellResponse> resolveGrantedSpells(final BackgroundDetailResponse response) {
+        var granted = Optional.ofNullable(response.getMechanics())
+                .map(FeatMechanics::getSpells)
+                .map(SpellGrant::getSpells)
+                .orElse(List.of());
+
+        if (CollectionUtils.isEmpty(granted)) {
+            return null;
+        }
+
+        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(granted);
+
+        var result = granted.stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
+                .map(ref -> new FeatGrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                        ref.getRequiredLevel()))
+                .toList();
+
+        return result.isEmpty() ? null : result;
     }
 
 
@@ -143,6 +186,7 @@ public class BackgroundServiceImpl implements BackgroundService {
         var feat = getFeat(request.getFeatUrl());
         BackgroundDetailResponse response = backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
+        response.setGrantedSpells(resolveGrantedSpells(response));
         return response;
     }
 

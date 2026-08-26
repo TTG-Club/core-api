@@ -4,10 +4,18 @@ import club.ttg.dnd5.domain.background.model.Background;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.dictionary.Language;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.background.model.BackgroundToolChoice;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
+import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.source.model.Source;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -19,11 +27,18 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyIterable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class VttgBackgroundMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
-    private final VttgBackgroundMapper mapper = new VttgBackgroundMapper(markupConverter, new VttgEquipmentMapper(markupConverter));
+    private final FeatRepository featRepository = mock(FeatRepository.class);
+    private final VttgBackgroundMapper mapper = new VttgBackgroundMapper(markupConverter,
+            new VttgEquipmentMapper(markupConverter),
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)),
+            featRepository);
 
     /** «Послушник» — характеристики в каноническом порядке, навыки, черта, снаряжение. */
     @Test
@@ -212,8 +227,113 @@ class VttgBackgroundMapperTest {
         assertEquals("sage-phb", json.get("srcUrl").asText());
     }
 
+    /**
+     * Владение инструментами ссылками уезжает КЛЮЧАМИ справочника листа: адрес страницы
+     * ({@code calligrapher-s-supplies-phb}) лист не знает и молча выбросил бы владение.
+     */
+    @Test
+    void mapsToolReferencesToVocabularyKeys() {
+        Background bg = baseBackground("acolyte", "Послушник", "Acolyte");
+        bg.setToolProficiency("текст, который структура перебивает");
+        bg.setToolProficiencies(List.of(
+                ref("calligrapher-s-supplies-phb", "Инструменты каллиграфа"),
+                ref("thieves-tools-phb", "Воровские инструменты"),
+                ref("shovel-phb", "Лопата")
+        ));
+
+        JsonNode toolGrant = json(bg).get("toolGrant");
+        // Лопата инструментом владения не является — её ключа у листа нет, и она отброшена
+        assertEquals("[\"calligraphers-supplies\",\"thieves-tools\"]",
+                toolGrant.get("items").toString());
+        assertFalse(toolGrant.has("choices"));
+    }
+
+    /** Владение на выбор едет своим блоком: пул — теми же ключами вокабуляра. */
+    @Test
+    void mapsToolChoice() {
+        Background bg = baseBackground("entertainer", "Артист", "Entertainer");
+        bg.setToolChoice(new BackgroundToolChoice(1, List.of(
+                ref("lute-phb", "Лютня"),
+                ref("drum-phb", "Барабан")
+        )));
+
+        JsonNode choices = json(bg).get("toolGrant").get("choices");
+        assertEquals(1, choices.get("count").asInt());
+        assertEquals("[\"lute\",\"drum\"]", choices.get("from").toString());
+    }
+
+    /** Выбор на ноль инструментов блоком не едет: выбирать в нём нечего. */
+    @Test
+    void omitsEmptyToolChoice() {
+        Background bg = baseBackground("hermit", "Отшельник", "Hermit");
+        bg.setToolChoice(new BackgroundToolChoice(0, List.of()));
+
+        assertFalse(json(bg).get("toolGrant").has("choices"));
+    }
+
+    /**
+     * Черты на выбор уезжают идентификаторами схемы эталона — по записям справочника:
+     * идентификатор собирается из английского названия, а не из слага страницы.
+     */
+    @Test
+    void mapsFeatChoices() {
+        Background bg = baseBackground("guard", "Стражник", "Guard");
+        bg.setFeatChoices(List.of(
+                ref("alert-phb", "Бдительный"),
+                ref("skilled-phb", "Умелый"),
+                ref("deleted-feat", "Удалённая черта")
+        ));
+        when(featRepository.findAllById(anyIterable())).thenReturn(List.of(
+                feat("alert-phb", "Бдительный", "Alert"),
+                feat("skilled-phb", "Умелый", "Skilled")
+        ));
+
+        JsonNode featGrant = json(bg).get("featGrant");
+        // Ссылка на удалённую черту пропускается: выбор из несуществующей записи не показать
+        assertEquals("[\"srd_feat_alert\",\"srd_feat_skilled\"]",
+                featGrant.get("featChoices").toString());
+        assertFalse(featGrant.has("featId"));
+    }
+
+    /**
+     * Расширенные дары уезжают блоком {@code featData} — тем же, что у черты, а активные
+     * эффекты соседним полем.
+     */
+    @Test
+    void mapsFeatDataAndActiveEffects() {
+        Background bg = baseBackground("sage", "Мудрец", "Sage");
+        FeatMechanics mechanics = new FeatMechanics();
+        ProficiencyGrant grant = new ProficiencyGrant();
+        grant.setLanguages(Set.of(Language.DWARVISH));
+        mechanics.setProficiencies(grant);
+        bg.setMechanics(mechanics);
+
+        ActiveEffect effect = new ActiveEffect();
+        effect.setId("sage-insight");
+        effect.setName("Учёный");
+        bg.setActiveEffects(List.of(effect));
+
+        JsonNode json = json(bg);
+        assertEquals("[\"Дварфийский\"]", json.get("featData").get("languages").toString());
+        assertEquals(1, json.get("activeEffects").size());
+        assertEquals("Учёный", json.get("activeEffects").get(0).get("name").asText());
+    }
+
+    /** Без даров и эффектов блоков нет: пустые поля вырезаны по {@code NON_NULL}. */
+    @Test
+    void omitsEmptyFeatDataAndActiveEffects() {
+        JsonNode json = json(baseBackground("hermit", "Отшельник", "Hermit"));
+
+        assertFalse(json.has("featData"));
+        assertFalse(json.has("activeEffects"));
+    }
+
     private JsonNode json(Background bg) {
         return objectMapper.valueToTree(mapper.toVttg(bg));
+    }
+
+    private EntityRef ref(String url, String name) {
+        return new EntityRef(url, name);
     }
 
     private EquipmentOption option(List<EquipmentItem> items, Integer coins) {

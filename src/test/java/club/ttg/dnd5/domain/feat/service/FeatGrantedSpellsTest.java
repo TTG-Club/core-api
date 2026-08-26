@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
@@ -17,9 +18,9 @@ import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -65,8 +66,18 @@ class FeatGrantedSpellsTest {
     @Mock
     private EntityRevisionService revisionService;
 
-    @InjectMocks
     private FeatServiceImpl service;
+
+    /**
+     * Резолвер собирается настоящий, поверх замоканного справочника: проверяется путь
+     * «ссылка механики → запись каталога» целиком, как он работает в приложении.
+     */
+    @BeforeEach
+    void setUp() {
+        service = new FeatServiceImpl(featRepository, backgroundRepository, featQueryDslSearchService,
+                sourceService, featMapper, new GrantedSpellResolver(spellRepository, spellMapper),
+                revisionService);
+    }
 
     @Test
     void grantedSpellsAreResolvedFromCatalog() {
