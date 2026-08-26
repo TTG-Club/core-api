@@ -18,4 +18,14 @@ public class VttgDamagePart {
     private String formula;
     private String type;
     private String target;
+    /**
+     * Применять часть, только если по цели фактически нанесён урон ({@code > 0}).
+     * Не задано — часть применяется независимо.
+     */
+    private Boolean requiresDamage;
+    /**
+     * Формула при удержании оружия двумя руками (свойство «Универсальное»). Заклинания
+     * и существа поле игнорируют; у оружия оно заполняется только у первой части.
+     */
+    private String versatileFormula;
 }

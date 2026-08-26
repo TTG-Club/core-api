@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-26-01-add-item-tool-effects
+      author: Peterko
+      comment: >
+        Паритет раздела «Предметы» с системой D&D приложения. В системе предмет разделён
+        на оружие, снаряжение и инструмент, у каждого свои параметры; на сайте это один
+        раздел, поэтому недостающие блоки приезжают своими колонками.
+
+        tool — параметры инструмента (категория, базовый вид, характеристика проверки,
+        бонус, режим владения). До этого их не было вовсе, и выгрузка в компендиум
+        угадывала категорию по типам предмета, а базовый вид — по английскому названию.
+
+        equipment_category — чем предмет считается на виртуальном столе. Раньше всё
+        снаряжение уезжало безделушкой (trinket).
+
+        active_effects — активные эффекты в вокабуляре VTTG, та же модель и та же
+        отдельная колонка, что у заклинания (spell.active_effects), черты
+        (feat.active_effects) и магического предмета.
+
+        Все колонки nullable: пустое значение означает «считать как раньше», и девять
+        сотен существующих записей не трогаются.
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: tool
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: equipment_category
+                  type: varchar(64)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: active_effects
+                  type: jsonb
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: item
+            columnName: tool
+        - dropColumn:
+            tableName: item
+            columnName: equipment_category
+        - dropColumn:
+            tableName: item
+            columnName: active_effects

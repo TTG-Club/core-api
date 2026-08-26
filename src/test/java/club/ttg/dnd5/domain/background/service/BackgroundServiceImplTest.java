@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapperImpl;
 import club.ttg.dnd5.domain.common.rest.dto.NameRequest;
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMappingImpl;
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.dto.base.mapping.BaseMappingImpl;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
@@ -46,6 +47,8 @@ class BackgroundServiceImplTest {
     private EntityRevisionService revisionService;
     @Mock
     private EquipmentNameResolver equipmentNameResolver;
+    @Mock
+    private GrantedSpellResolver grantedSpellResolver;
 
     private BackgroundServiceImpl backgroundService;
 
@@ -60,7 +63,8 @@ class BackgroundServiceImplTest {
                 sourceService,
                 backgroundMapper,
                 revisionService,
-                equipmentNameResolver
+                equipmentNameResolver,
+                grantedSpellResolver
         );
     }
 

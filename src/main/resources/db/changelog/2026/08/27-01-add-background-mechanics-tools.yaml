@@ -1,0 +1,70 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-27-01-add-background-mechanics-tools
+      author: Peterko
+      comment: >
+        Паритет раздела «Предыстории» с системой D&D приложения. В системе предыстория
+        кроме характеристик, навыков и черты умеет ещё пять вещей, которых на сайте не
+        было вовсе, — они приезжают своими колонками.
+
+        mechanics — расширенные дары предыстории (владения, языки, защиты, чувства,
+        выборы игрока, выдаваемые заклинания). Моделью черты: набор даров тот же, и в
+        системе они лежат в том же блобе (featData).
+
+        active_effects — активные эффекты в вокабуляре VTTG, та же модель и та же
+        отдельная колонка, что у заклинания, черты и предмета.
+
+        tool_proficiencies и tool_choice — владение инструментами ссылками на записи
+        раздела «Предметы» и владение на выбор игрока. До этого владение хранилось только
+        свободным текстом (tool_proficiency), и в компендиум оно уезжало текстом же,
+        хотя лист персонажа стола понимает лишь ключи своего справочника.
+
+        feat_choices — черты на выбор, когда предыстория не называет одну.
+
+        Все колонки nullable: пустое значение означает «считать как раньше», и
+        существующие записи не трогаются.
+      changes:
+        - addColumn:
+            tableName: background
+            columns:
+              - column:
+                  name: mechanics
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: active_effects
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: tool_proficiencies
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: tool_choice
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: feat_choices
+                  type: jsonb
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: background
+            columnName: mechanics
+        - dropColumn:
+            tableName: background
+            columnName: active_effects
+        - dropColumn:
+            tableName: background
+            columnName: tool_proficiencies
+        - dropColumn:
+            tableName: background
+            columnName: tool_choice
+        - dropColumn:
+            tableName: background
+            columnName: feat_choices

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
@@ -43,6 +45,17 @@ public class FeatDetailResponse extends BaseResponse {
      */
     @Schema(description = "Механика влияния черты на лист персонажа")
     private FeatMechanics mechanics;
+
+    /**
+     * Активные эффекты черты в вокабуляре VTTG.
+     *
+     * <p>Отдаются вместе с деталью, а не только в «сыром» ответе мастерской: их считает
+     * лист персонажа сайта — так же, как эффекты магического предмета. Пустой список в
+     * ответ не пишется.</p>
+     */
+    @Schema(description = "Активные эффекты черты")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<ActiveEffect> activeEffects;
     @Schema(description = "Повторяемость")
     private Boolean repeatability;
     @Schema(description = "Предыстории, дающие эту черту")

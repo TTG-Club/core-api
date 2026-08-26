@@ -41,6 +41,7 @@ public interface ItemMapper {
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "request.category", target = "category", defaultValue = "ITEM")
+    @Mapping(source = "request.activeEffects", target = "activeEffects")
     @Mapping(target = "source", source = "source")
     Item toEntity(ItemRequest request, Source source);
 
@@ -51,6 +52,7 @@ public interface ItemMapper {
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "request.category", target = "category", defaultValue = "ITEM")
+    @Mapping(source = "request.activeEffects", target = "activeEffects")
     @Mapping(target = "source", source = "source")
     void updateEntity(ItemRequest request, Source source, @MappingTarget Item item);
 

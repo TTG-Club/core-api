@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
@@ -50,6 +51,17 @@ public class VttgBackground {
     private ToolGrant toolGrant;
     private FeatGrant featGrant;
     private List<EquipmentOption> equipmentOptions;
+    /**
+     * Расширенные дары предыстории — то же поле записи компендиума, что у черты
+     * ({@code GameItem.featData}). Владения, языки, защиты, чувства и выборы игрока,
+     * которых канонические блоки наград не выражают.
+     */
+    private VttgFeatData featData;
+    /**
+     * Активные эффекты предыстории — соседом {@link #featData}, а не его частью: дары лист
+     * проставляет сам, а эффект меняет числа готовой формулой и работает на столе.
+     */
+    private List<ActiveEffect> activeEffects;
     /** Канонический тип сущности для VTTG — всегда "background". */
     private String type;
 
@@ -70,14 +82,34 @@ public class VttgBackground {
     }
 
     /**
-     * Владения инструментами (slug'и: "thieves-tools", "calligraphers-supplies"...).
+     * Владения инструментами (slug'и: "thieves-tools", "calligraphers-supplies"...) и
+     * владение на выбор игрока.
      *
-     * <p>В модели TTG Club владение инструментами хранится свободным текстом
-     * ({@code Background.toolProficiency}), а не идентификаторами, поэтому список
-     * пока всегда пуст — но сам блок присутствует, чтобы потребитель мог читать
-     * {@code toolGrant.items} без проверок.</p>
+     * <p>{@code items} — ключи вокабуляра стола: в мастерской инструменты выбираются
+     * ссылками на карточки раздела «Предметы», а адрес страницы
+     * ({@code calligrapher-s-supplies}) справочник листа не знает и молча выбросил бы
+     * такое владение (см. {@code VttgToolKeys}). У записей, которые на ссылки ещё не
+     * перевели, владение хранится свободным текстом — он и уезжает, как уезжал.</p>
+     *
+     * <p>{@code choices} опускается, когда выбора нет: у «выбрать ноль инструментов» нет
+     * осмысленного пустого значения, а сам блок {@code toolGrant} отдаётся всегда.</p>
      */
-    public record ToolGrant(List<String> items) {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ToolGrant(List<String> items, ToolChoice choices) {
+
+        /** Владение без выбора — как отдавалось до его появления. */
+        public ToolGrant(List<String> items) {
+            this(items, null);
+        }
+    }
+
+    /**
+     * Владение инструментами на выбор игрока: «выберите один музыкальный инструмент».
+     *
+     * @param count сколько инструментов выбирают
+     * @param from  пул выбора ключами вокабуляра; пусто — любой инструмент
+     */
+    public record ToolChoice(Integer count, List<String> from) {
     }
 
     /**
@@ -98,9 +130,17 @@ public class VttgBackground {
      * @param featName   название черты из каталога
      * @param featNameEn английское название черты
      * @param featSuffix уточнение черты; пусто — предыстория ничего не уточняет
+     * @param featChoices черты на выбор, когда предыстория не называет одну; пусто — черта
+     *                    одна и лежит в {@code featId}
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record FeatGrant(String featId, String featName, String featNameEn, String featSuffix) {
+    public record FeatGrant(String featId, String featName, String featNameEn, String featSuffix,
+                            List<String> featChoices) {
+
+        /** Единственная черта — как отдавалось до появления выбора. */
+        public FeatGrant(String featId, String featName, String featNameEn, String featSuffix) {
+            this(featId, featName, featNameEn, featSuffix, null);
+        }
     }
 
     /**

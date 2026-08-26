@@ -1,10 +1,13 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.util.List;
 
 /**
  * Черта (feat) в формате компендиума VTTG.
@@ -56,6 +59,13 @@ public class VttgFeat {
      * не является — см. {@link VttgFeatMechanics}.
      */
     private VttgFeatMechanics mechanics;
+    /**
+     * Активные эффекты черты — то же поле записи компендиума, что у магического предмета
+     * ({@code BaseGameItem.activeEffects}). Соседом {@link #featData}, а не его частью:
+     * дары лист проставляет сам, а эффект меняет числа готовой формулой и работает на
+     * столе (ауры, состояния, периодический урон).
+     */
+    private List<ActiveEffect> activeEffects;
 
     @Getter(AccessLevel.NONE)
     private boolean isSRD;

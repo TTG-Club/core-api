@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.source.model.Source;
@@ -123,6 +124,41 @@ class VttgFeatMapperTest {
     void separatorOrderCoversAllCategories() {
         assertTrue(mapper.separatorOrder().containsAll(
                 java.util.Arrays.asList(FeatCategory.values())));
+    }
+
+    /**
+     * Активные эффекты уезжают в компендиум как есть — соседом {@code featData}, тем же
+     * полем записи, что у магического предмета: мастерская заполняет их сразу в
+     * вокабуляре VTTG, переводить нечего.
+     */
+    @Test
+    void exportsActiveEffectsAsIs() {
+        Feat feat = baseFeat("tough", "Крепкий", "Tough");
+        ActiveEffect effect = new ActiveEffect();
+        effect.setId("feat-tough-hp");
+        effect.setName("Крепкий");
+        ActiveEffect.Change change = new ActiveEffect.Change();
+        change.setKey("hitPoints.max");
+        change.setMode("add");
+        change.setValue("@level*2");
+        effect.setChanges(java.util.List.of(change));
+        feat.setActiveEffects(java.util.List.of(effect));
+
+        JsonNode json = json(feat);
+        JsonNode effects = json.get("activeEffects");
+
+        assertEquals(1, effects.size());
+        assertEquals("feat-tough-hp", effects.get(0).get("id").asText());
+        assertEquals("hitPoints.max", effects.get(0).get("changes").get(0).get("key").asText());
+    }
+
+    /** Без эффектов поля в записи нет вовсе: пустой список равнозначен его отсутствию. */
+    @Test
+    void omitsActiveEffectsWhenEmpty() {
+        Feat feat = baseFeat("alert", "Бдительный", "Alert");
+        feat.setActiveEffects(java.util.List.of());
+
+        assertFalse(json(feat).has("activeEffects"));
     }
 
     private JsonNode json(Feat feat) {

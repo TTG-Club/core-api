@@ -65,6 +65,18 @@ public class VttgMagicItemMapper {
             "baseType", "equipmentCategory", "baseArmorAC", "maxDexBonus",
             "stealthDisadvantage", "strengthRequirement");
 
+    /** Ключ изменения класса доспеха в вокабуляре VTTG ({@code EffectTargetKey}). */
+    private static final String ARMOR_CLASS_KEY = "armorClass";
+
+    /** Название достроенного эффекта бонуса к КД. */
+    private static final String ARMOR_CLASS_EFFECT_NAME = "Бонус к классу доспеха";
+
+    /** Иконка достроенного эффекта — та же, что редактор ставит новым эффектам. */
+    private static final String ARMOR_CLASS_EFFECT_ICON = "tabler:sparkles";
+
+    /** Приоритет изменения по умолчанию — тот же, что проставляет редактор эффектов. */
+    private static final int DEFAULT_EFFECT_PRIORITY = 20;
+
     private final VttgMarkupConverter markupConverter;
     private final ItemRepository itemRepository;
     private final VttgItemMapper itemMapper;
@@ -153,26 +165,52 @@ public class VttgMagicItemMapper {
     }
 
     /**
-     * Бонус для VTTG: там это одно число {@code magicBonus}, поэтому у оружия берём бонус к атаке
-     * (в правилах он совпадает с бонусом к урону), а у остального — бонус к КД. Заданные в
-     * мастерской бонусы важнее вывода из названия: разбор «+1/+2/+3» остаётся запасным вариантом
-     * для записей, у которых поля не заполнены.
+     * Бонус для VTTG: там {@code magicBonus} одним числом идёт и в атаку, и в урон, поэтому у
+     * оружия берём бонус к атаке, а у остального — бонус к КД. Заданные в мастерской бонусы
+     * важнее вывода из названия: разбор «+1/+2/+3» остаётся запасным вариантом для записей,
+     * у которых поля не заполнены.
      */
     private Integer magicBonus(MagicItem item, String name, String english) {
-        Integer explicit = explicitBonus(item);
-        return explicit != null ? explicit : firstBonus(name, english, item.getClarification());
+        return hasExplicitBonuses(item)
+                ? explicitBonus(item)
+                : firstBonus(name, english, item.getClarification());
     }
 
-    /** Бонус из полей мастерской; {@code null} — поля пустые или все нули. */
+    /** Хоть один бонус мастерской заполнен: разбор названия такой записи уже не нужен. */
+    private boolean hasExplicitBonuses(MagicItem item) {
+        MagicItemBonuses bonuses = item.getBonuses();
+        return bonuses != null
+                && firstNonZero(bonuses.getAttack(), bonuses.getDamage(), bonuses.getArmorClass()) != 0;
+    }
+
+    /** Бонус из полей мастерской; {@code null} — поля пустые или нужного бонуса нет. */
     private Integer explicitBonus(MagicItem item) {
         MagicItemBonuses bonuses = item.getBonuses();
         if (bonuses == null) {
             return null;
         }
         int value = item.getCategory() == MagicItemCategory.WEAPON
-                ? firstNonZero(bonuses.getAttack(), bonuses.getDamage())
+                // Бонус к урону сюда не подставляем: он одинаковый только у обычного «+N»,
+                // а разницу («+1 к атаке, +3 к урону») отдаёт отдельный damageBonus.
+                ? bonuses.getAttack()
                 : firstNonZero(bonuses.getArmorClass(), bonuses.getAttack(), bonuses.getDamage());
         return value == 0 ? null : value;
+    }
+
+    /**
+     * Надбавка к урону сверх магического бонуса. Обычному «+N» она не нужна — такой бонус
+     * потребитель уже прибавил и к атаке, и к урону; сюда попадает только разница у оружия,
+     * бьющего сильнее, чем попадающего. {@code null} — надбавки нет.
+     *
+     * <p>Считаем лишь по заполненным полям мастерской: бонус, выведенный из названия, о
+     * раздельных значениях ничего не знает, и вычитание из него дало бы отрицательную чушь.</p>
+     */
+    private Integer damageBonus(MagicItem item, Integer magicBonus) {
+        if (item.getCategory() != MagicItemCategory.WEAPON || !hasExplicitBonuses(item)) {
+            return null;
+        }
+        int extra = item.getBonuses().getDamage() - (magicBonus == null ? 0 : magicBonus);
+        return extra == 0 ? null : extra;
     }
 
     private int firstNonZero(int... values) {
@@ -192,7 +230,7 @@ public class VttgMagicItemMapper {
         String sourceKey = VttgSourceKeys.of(item.getSource());
         MagicItemCategory category = item.getCategory();
         boolean weapon = category == MagicItemCategory.WEAPON;
-        BaseMechanics mechanics = mechanics(base, category);
+        BaseMechanics mechanics = mechanics(item, base);
 
         return VttgMagicItem.builder()
                 .id(id(url, sourceKey))
@@ -222,8 +260,13 @@ public class VttgMagicItemMapper {
                 // для «общих» зачарований и нерешённых уточнений их нет — это допустимо.
                 .mechanics(mechanics.fields())
                 .isMagical(true)
+                // Фокусировка — либо свойство самой записи, либо унаследованное от базы:
+                // магический посох на основе боевого посоха фокусировкой быть не перестаёт.
+                .isFocus(item.isFocus() || mechanics.focus())
+                .isAdamantine(item.isAdamantine())
                 .magicAttunement(requiresAttunement ? "required" : "none")
                 .magicBonus(bonus)
+                .damageBonus(damageBonus(item, bonus))
                 // Механика влияния на лист персонажа: эффекты идут как есть (модель уже
                 // в вокабуляре VTTG), заряды — своим блоком, пассивные свойства — текстом
                 .activeEffects(activeEffects(item))
@@ -243,10 +286,66 @@ public class VttgMagicItemMapper {
      */
     private List<ActiveEffect> activeEffects(MagicItem item) {
         MagicItemMechanics mechanics = item.getMechanics();
-        if (mechanics == null || CollectionUtils.isEmpty(mechanics.getActiveEffects())) {
+        List<ActiveEffect> effects = mechanics == null || mechanics.getActiveEffects() == null
+                ? List.of()
+                : mechanics.getActiveEffects();
+        ActiveEffect armorClass = armorClassEffect(item, effects);
+        if (armorClass == null) {
+            return effects.isEmpty() ? null : effects;
+        }
+        List<ActiveEffect> result = new ArrayList<>(effects);
+        result.add(armorClass);
+        return result;
+    }
+
+    /**
+     * Бонус к КД предмета, который бронёй не является (плащ и кольцо защиты), эффектом.
+     * У потребителя {@code magicBonus} поднимает класс доспеха только у самой брони и щита,
+     * поэтому кольцу он ничего не даёт — такой бонус там описывают изменением
+     * {@code armorClass}, и здесь оно достраивается за автора.
+     *
+     * <p>{@code null} — бонуса нет, категория его выражает сама (доспех, оружие) либо
+     * изменение с этим ключом автор уже завёл руками: второе слагаемое подняло бы КД дважды.</p>
+     */
+    private ActiveEffect armorClassEffect(MagicItem item, List<ActiveEffect> effects) {
+        MagicItemCategory category = item.getCategory();
+        MagicItemBonuses bonuses = item.getBonuses();
+        if (category == MagicItemCategory.ARMOR || category == MagicItemCategory.WEAPON
+                || bonuses == null || bonuses.getArmorClass() == 0) {
             return null;
         }
-        return mechanics.getActiveEffects();
+        boolean described = effects.stream()
+                .filter(effect -> effect.getChanges() != null)
+                .flatMap(effect -> effect.getChanges().stream())
+                .anyMatch(change -> ARMOR_CLASS_KEY.equals(change.getKey()));
+        if (described) {
+            return null;
+        }
+        ActiveEffect.Change change = new ActiveEffect.Change();
+        change.setKey(ARMOR_CLASS_KEY);
+        change.setMode("add");
+        change.setValue(String.valueOf(bonuses.getArmorClass()));
+        change.setPriority(DEFAULT_EFFECT_PRIORITY);
+
+        ActiveEffect.Duration duration = new ActiveEffect.Duration();
+        duration.setType("permanent");
+
+        // Заполняем и то, что кажется необязательным: у потребителя `flags`,
+        // `duration`, `disabled` и `transfer` обязательны (по ним он идёт циклом
+        // и сравнением), и эффект без них уронил бы сборку эффектов надетого.
+        ActiveEffect effect = new ActiveEffect();
+        effect.setId(item.getUrl() + "-armor-class");
+        effect.setName(ARMOR_CLASS_EFFECT_NAME);
+        effect.setDescription("");
+        effect.setIcon(ARMOR_CLASS_EFFECT_ICON);
+        effect.setDisabled(Boolean.FALSE);
+        effect.setOrigin("item");
+        effect.setTransfer(Boolean.TRUE);
+        effect.setDuration(duration);
+        effect.setChanges(List.of(change));
+        effect.setFlags(List.of());
+        effect.setEffectTarget("self");
+        return effect;
     }
 
     /**
@@ -326,11 +425,20 @@ public class VttgMagicItemMapper {
         return suffix.isEmpty() ? item.getUrl() : item.getUrl() + "-" + suffix;
     }
 
-    /** Боевые/доспешные поля и вес/стоимость базового предмета; {@code EMPTY} — база не найдена. */
-    private BaseMechanics mechanics(Item base, MagicItemCategory category) {
+    /**
+     * Боевые/доспешные поля и вес/стоимость базового предмета плюс собственный урон магии;
+     * {@code EMPTY} — базы нет и добавлять магии нечего.
+     */
+    private BaseMechanics mechanics(MagicItem item, Item base) {
+        List<Map<String, Object>> ownParts = ownDamageParts(item);
         if (base == null) {
-            return BaseMechanics.EMPTY;
+            // Без базы остаются только собственные части магии: потерять их молча хуже,
+            // чем отдать запись без основного броска — уточнение всё равно не разрешилось.
+            return ownParts.isEmpty()
+                    ? BaseMechanics.EMPTY
+                    : new BaseMechanics(0, null, false, Map.of("damageParts", ownParts));
         }
+        MagicItemCategory category = item.getCategory();
         Map<String, Object> baseMap = itemMapper.toVttg(base);
         Map<String, Object> fields = new LinkedHashMap<>();
         // Боевые/доспешные поля имеют смысл только для оружия/брони; для прочих категорий берём лишь вес/стоимость.
@@ -344,8 +452,50 @@ public class VttgMagicItemMapper {
                 fields.put(key, baseMap.get(key));
             }
         }
+        if (!ownParts.isEmpty()) {
+            // Урон магии идёт после броска основы: «2к6 огнём» Огненного языка — добавка
+            // к рубящему урону длинного меча, а не замена ему.
+            List<Map<String, Object>> parts = new ArrayList<>(baseDamageParts(baseMap));
+            parts.addAll(ownParts);
+            fields.put("damageParts", parts);
+        }
         double weight = baseMap.get("weight") instanceof Number number ? number.doubleValue() : 0;
-        return new BaseMechanics(weight, goldCost(base), fields.isEmpty() ? null : fields);
+        return new BaseMechanics(weight, goldCost(base), Boolean.TRUE.equals(baseMap.get("isFocus")),
+                fields.isEmpty() ? null : fields);
+    }
+
+    /**
+     * Собственные части урона магического предмета в формате VTTG. Незаполненные строки
+     * формы отбрасываются: пустая часть — обычное состояние редактора, а не значение.
+     */
+    private List<Map<String, Object>> ownDamageParts(MagicItem item) {
+        if (CollectionUtils.isEmpty(item.getDamageParts())) {
+            return List.of();
+        }
+        return item.getDamageParts().stream()
+                .filter(part -> part != null && StringUtils.hasText(part.getFormula()))
+                .map(itemMapper::damagePart)
+                .toList();
+    }
+
+    /**
+     * Части урона базового предмета из его же выгрузки. Читаем через {@code instanceof},
+     * а не приведением типа: значение пришло из карты {@code Object}, и непроверенное
+     * приведение сломалось бы молча, попадись там что-то другое.
+     */
+    private List<Map<String, Object>> baseDamageParts(Map<String, Object> baseMap) {
+        if (!(baseMap.get("damageParts") instanceof List<?> parts)) {
+            return List.of();
+        }
+        List<Map<String, Object>> result = new ArrayList<>(parts.size());
+        for (Object part : parts) {
+            if (part instanceof Map<?, ?> map) {
+                Map<String, Object> copy = new LinkedHashMap<>();
+                map.forEach((key, value) -> copy.put(String.valueOf(key), value));
+                result.add(copy);
+            }
+        }
+        return result;
     }
 
     /** Связанные немагические предметы магического предмета в стабильном порядке (по url); пусто — связей нет. */
@@ -677,8 +827,11 @@ public class VttgMagicItemMapper {
     }
 
 
-    /** Выведенные из базового предмета поля: вес, стоимость в золоте и боевые/доспешные поля ({@code null} — нет). */
-    private record BaseMechanics(double weight, Double costGold, Map<String, Object> fields) {
-        private static final BaseMechanics EMPTY = new BaseMechanics(0, null, null);
+    /**
+     * Выведенные из базового предмета поля: вес, стоимость в золоте, признак заклинательной
+     * фокусировки и боевые/доспешные поля ({@code null} — нет).
+     */
+    private record BaseMechanics(double weight, Double costGold, boolean focus, Map<String, Object> fields) {
+        private static final BaseMechanics EMPTY = new BaseMechanics(0, null, false, null);
     }
 }

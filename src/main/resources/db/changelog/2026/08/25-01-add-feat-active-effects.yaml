@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-25-01-add-feat-active-effects
+      author: Peterko
+      comment: >
+        Активные эффекты черты в вокабуляре VTTG — та же модель, что у заклинания
+        (spell.active_effects) и магического предмета. Своей колонкой, а не полем внутри
+        mechanics: механика описывает дары, которые лист персонажа проставляет сам
+        (владения, повышения, выборы при взятии), а эффект меняет числа готовой формулой и
+        уезжает на виртуальный стол как есть. Так же лежит и в самой системе dnd5e-2024,
+        где activeEffects — сосед featData, а не его часть.
+      changes:
+        - addColumn:
+            tableName: feat
+            columns:
+              - column:
+                  name: active_effects
+                  type: jsonb
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: feat
+            columnName: active_effects

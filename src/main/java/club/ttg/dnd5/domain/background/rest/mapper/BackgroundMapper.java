@@ -70,6 +70,8 @@ public interface BackgroundMapper {
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
+    @Mapping(source = "request.mechanics", target = "mechanics")
+    @Mapping(source = "request.activeEffects", target = "activeEffects")
     @Mapping(source = "request.startingEquipment", target = "startingEquipment", qualifiedByName = "toEquipmentEntities")
     Background toEntity(BackgroundRequest request, Feat feat, Source source);
 
@@ -84,6 +86,8 @@ public interface BackgroundMapper {
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "feat", target = "feat")
     @Mapping(source = "source", target = "source")
+    @Mapping(source = "request.mechanics", target = "mechanics")
+    @Mapping(source = "request.activeEffects", target = "activeEffects")
     @Mapping(source = "request.startingEquipment", target = "startingEquipment", qualifiedByName = "toEquipmentEntities")
     void updateEntity(BackgroundRequest request, Feat feat, Source source, @MappingTarget Background background);
 
