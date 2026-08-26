@@ -127,4 +127,73 @@ class VttgJsonContractTest {
         assertTrue(serialized.contains("\"conditionImmunities\":[\"poisoned\"]"));
         assertTrue(serialized.contains("\"requiresDamage\":true"));
     }
+
+    /**
+     * Флаги — свободный список строк, и бэкенд их не знает. Тест закрепляет
+     * именно это: словарь растёт на стороне системы D&D, а сюда новые ключи
+     * («против магии», понавыковые) обязаны доезжать без правок модели.
+     */
+    @Test
+    void activeEffectKeepsUnknownToBackendFlagKeys() throws Exception {
+        String json = """
+                {
+                  "id": "effect-2",
+                  "name": "Мантия сопротивления заклинаниям",
+                  "origin": "item",
+                  "transfer": true,
+                  "duration": { "type": "permanent" },
+                  "changes": [],
+                  "flags": ["save.advantage.vsMagic", "skill.perception.advantage"]
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals(
+                List.of("save.advantage.vsMagic", "skill.perception.advantage"),
+                effect.getFlags());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains("\"save.advantage.vsMagic\""));
+        assertTrue(serialized.contains("\"skill.perception.advantage\""));
+    }
+
+    /**
+     * Условный урон по виду атаки описывается изменением с ключом
+     * {@code damage.ranged} и кость-формулой в значении: движок системы
+     * собирает такие в момент броска. Отдельного поля условия у части урона для
+     * этого не нужно, и тест держит форму, на которую опираются записи каталога.
+     */
+    @Test
+    void activeEffectKeepsDiceValuedDamageChange() throws Exception {
+        String json = """
+                {
+                  "id": "effect-3",
+                  "name": "Дварфийский метатель",
+                  "origin": "item",
+                  "transfer": true,
+                  "duration": { "type": "permanent" },
+                  "flags": [],
+                  "changes": [
+                    {
+                      "key": "damage.ranged",
+                      "mode": "add",
+                      "value": "1к8@dmg.force",
+                      "priority": 20
+                    }
+                  ]
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+        ActiveEffect.Change change = effect.getChanges().getFirst();
+
+        assertEquals("damage.ranged", change.getKey());
+        assertEquals("1к8@dmg.force", change.getValue());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains("\"key\":\"damage.ranged\""));
+    }
 }
