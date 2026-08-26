@@ -323,3 +323,11 @@ databaseChangeLog:
       file: db/changelog/2026/08/29-02-add-species-active-effects.yaml
   - include:
       file: db/changelog/2026/08/29-03-add-creature-active-effects.yaml
+  - include:
+      file: db/changelog/2026/08/29-04-backfill-class-spellcasting.yaml
+  - include:
+      file: db/changelog/2026/08/29-05-backfill-class-subclass-info.yaml
+  - include:
+      file: db/changelog/2026/08/29-06-backfill-class-table-column-purpose.yaml
+  - include:
+      file: db/changelog/2026/08/29-07-backfill-class-informational-features.yaml

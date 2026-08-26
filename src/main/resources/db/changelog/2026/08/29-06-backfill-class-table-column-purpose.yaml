@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-29-06-backfill-class-table-column-purpose
+      author: Peterko
+      comment: >
+        Проставляет назначение колонкам таблицы прогрессии. Колонка «Заговоры» и колонка
+        «Скрытая атака» выглядят одинаково — подпись и значения по уровням, — но означают
+        разное: по первой мастер повышения уровня спрашивает выбор заговоров, вторая только
+        показывается. Без явного признака потребитель угадывал бы назначение по подписи, а на
+        переведённом классе она любая.
+
+        Разбор подписи здесь уместен ровно один раз: это перевод уже существующих записей
+        справочника, где подписи известны наперечёт — «Заговоры», «Заг.», «Подг. закл.» в
+        разных написаниях. Дальше назначение задаёт автор в форме.
+
+        Написания перечислены явно, а не сводятся lower(): свёртка регистра кириллицы зависит
+        от локали базы, и в локали C она не сработала бы вовсе.
+
+        Колонки, которым назначение не подошло, получают NONE: явное «обычная колонка»
+        отличает разобранную запись от той, до которой миграция не дошла.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET class_table = (
+                SELECT jsonb_agg(
+                  CASE
+                    WHEN replace(column_item->>'name', 'ё', 'е') LIKE 'Заговор%'
+                      OR replace(column_item->>'name', 'ё', 'е') LIKE 'заговор%'
+                      OR column_item->>'name' LIKE 'Заг.%'
+                      OR column_item->>'name' LIKE 'заг.%'
+                      THEN jsonb_set(column_item, '{purpose}', '"CANTRIPS_KNOWN"')
+                    WHEN column_item->>'name' LIKE 'Подг%'
+                      OR column_item->>'name' LIKE 'подг%'
+                      THEN jsonb_set(column_item, '{purpose}', '"PREPARED_SPELLS"')
+                    ELSE jsonb_set(column_item, '{purpose}', '"NONE"')
+                  END
+                  ORDER BY element_order
+                )
+                FROM jsonb_array_elements(class.class_table)
+                  WITH ORDINALITY AS parsed(column_item, element_order)
+              )
+              WHERE class_table IS NOT NULL
+                AND jsonb_typeof(class_table) = 'array'
+                AND jsonb_array_length(class_table) > 0
+                AND EXISTS (
+                  SELECT 1 FROM jsonb_array_elements(class.class_table) AS existing(column_item)
+                  WHERE column_item->>'purpose' IS NULL
+                );
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET class_table = (
+                SELECT jsonb_agg(column_item - 'purpose' ORDER BY element_order)
+                FROM jsonb_array_elements(class.class_table)
+                  WITH ORDINALITY AS parsed(column_item, element_order)
+              )
+              WHERE class_table IS NOT NULL
+                AND jsonb_typeof(class_table) = 'array'
+                AND jsonb_array_length(class_table) > 0;
