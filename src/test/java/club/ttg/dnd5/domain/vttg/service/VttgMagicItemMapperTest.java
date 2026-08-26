@@ -5,18 +5,22 @@ import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.Roll;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
+import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.weapon.Damage;
+import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -620,6 +624,248 @@ class VttgMagicItemMapperTest {
         damage.setRoll(roll);
         damage.setType(DamageType.PIERCING);
         weapon.setDamage(damage);
+        base.setWeapon(weapon);
+        Source source = new Source();
+        source.setAcronym("PHB");
+        base.setSource(source);
+        return base;
+    }
+
+    /** Собственный урон магии дописывается к броску базового оружия, а не заменяет его. */
+    @Test
+    void appendsOwnDamagePartsToBaseWeaponParts() {
+        when(itemRepository.findBaseByNameForVttgExport(anyString())).thenReturn(List.of(longsword()));
+
+        MagicItem item = new MagicItem();
+        item.setUrl("flame-tongue");
+        item.setName("Огненный язык");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setClarification("Длинный меч");
+        item.setDamageParts(List.of(damagePart("2к6@dmg.fire")));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        JsonNode parts = objectMapper.valueToTree(mapper.toVttg(item)).get("damageParts");
+
+        assertEquals(2, parts.size());
+        assertEquals("1к8", parts.get(0).get("formula").asText());
+        assertEquals("2к6@dmg.fire", parts.get(1).get("formula").asText());
+    }
+
+    /** Базы нет — собственный урон магии всё равно уезжает: молча терять его нельзя. */
+    @Test
+    void keepsOwnDamagePartsWithoutBaseItem() {
+        MagicItem item = new MagicItem();
+        item.setUrl("frost-brand");
+        item.setName("Клинок мороза");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setDamageParts(List.of(damagePart("1к6@dmg.cold")));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        JsonNode parts = objectMapper.valueToTree(mapper.toVttg(item)).get("damageParts");
+
+        assertEquals(1, parts.size());
+        assertEquals("1к6@dmg.cold", parts.get(0).get("formula").asText());
+    }
+
+    /** Незаполненные строки редактора урона в выгрузку не идут. */
+    @Test
+    void skipsEmptyOwnDamageParts() {
+        MagicItem item = wandOfFear();
+        item.setDamageParts(List.of(damagePart(" ")));
+
+        assertNull(objectMapper.valueToTree(mapper.toVttg(item)).get("damageParts"));
+    }
+
+    /** Фокусировка и адамантин — свои флаги записи. */
+    @Test
+    void mapsOwnFocusAndAdamantineFlags() {
+        MagicItem item = wandOfFear();
+        item.setFocus(true);
+        item.setAdamantine(true);
+
+        VttgMagicItem result = mapper.toVttg(item);
+
+        assertTrue(result.isFocus());
+        assertTrue(result.isAdamantine());
+        assertFalse(mapper.toVttg(wandOfFear()).isFocus());
+        assertFalse(mapper.toVttg(wandOfFear()).isAdamantine());
+    }
+
+    /** Фокусировка наследуется от связанного предмета: посох на основе боевого посоха ею остаётся. */
+    @Test
+    void inheritsFocusFromLinkedItem() {
+        MagicItem item = new MagicItem();
+        item.setUrl("staff-of-fire");
+        item.setName("Посох огня");
+        item.setCategory(MagicItemCategory.STAFF);
+        item.setItems(Set.of(focusStaff()));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertTrue(mapper.toVttg(item).isFocus());
+    }
+
+    /**
+     * Оружие, бьющее сильнее, чем попадающее: magicBonus повторяет бонус к атаке (потребитель
+     * прибавит его и к урону), разницу забирает damageBonus.
+     */
+    @Test
+    void splitsWeaponAttackAndDamageBonuses() {
+        Source source = new Source();
+        source.setAcronym("DMG");
+
+        MagicItem item = new MagicItem();
+        item.setUrl("sword-of-sharpness");
+        item.setName("Меч остроты");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setSource(source);
+        item.setBonuses(bonuses(1, 3, 0));
+
+        VttgMagicItem result = mapper.toVttg(item);
+
+        assertEquals(1, result.getMagicBonus());
+        assertEquals(2, result.getDamageBonus());
+
+        // Обычное «+N» одинаково в атаке и уроне — надбавке взяться неоткуда.
+        MagicItem plain = new MagicItem();
+        plain.setUrl("longsword-plus-2");
+        plain.setName("Длинный меч, +2");
+        plain.setCategory(MagicItemCategory.WEAPON);
+        plain.setSource(source);
+        plain.setBonuses(bonuses(2, 2, 0));
+
+        assertEquals(2, mapper.toVttg(plain).getMagicBonus());
+        assertNull(mapper.toVttg(plain).getDamageBonus());
+
+        // Бонус только к урону: попадание магия не улучшает.
+        MagicItem damageOnly = new MagicItem();
+        damageOnly.setUrl("dagger-of-venom");
+        damageOnly.setName("Кинжал яда");
+        damageOnly.setCategory(MagicItemCategory.WEAPON);
+        damageOnly.setSource(source);
+        damageOnly.setBonuses(bonuses(0, 2, 0));
+
+        assertNull(mapper.toVttg(damageOnly).getMagicBonus());
+        assertEquals(2, mapper.toVttg(damageOnly).getDamageBonus());
+    }
+
+    /** Бонус, выведенный из названия, надбавки к урону не порождает. */
+    @Test
+    void doesNotDeriveDamageBonusFromName() {
+        MagicItem item = new MagicItem();
+        item.setUrl("shortsword-plus-2");
+        item.setName("Короткий меч, +2");
+        item.setCategory(MagicItemCategory.WEAPON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals(2, mapper.toVttg(item).getMagicBonus());
+        assertNull(mapper.toVttg(item).getDamageBonus());
+    }
+
+    /**
+     * Бонус к КД предмета, который бронёй не является, достраивается эффектом: magicBonus
+     * поднимает КД только у самой брони и щита.
+     */
+    @Test
+    void buildsArmorClassEffectForNonArmorItems() {
+        MagicItem item = new MagicItem();
+        item.setUrl("ring-of-protection");
+        item.setName("Кольцо защиты");
+        item.setCategory(MagicItemCategory.RING);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        item.setBonuses(bonuses(0, 0, 1));
+
+        List<ActiveEffect> effects = mapper.toVttg(item).getActiveEffects();
+        ActiveEffect effect = effects.get(0);
+
+        assertEquals(1, effects.size());
+        assertEquals("armorClass", effect.getChanges().get(0).getKey());
+        assertEquals("add", effect.getChanges().get(0).getMode());
+        assertEquals("1", effect.getChanges().get(0).getValue());
+        // Поля, по которым потребитель идёт циклом и сравнением: без них сборка
+        // эффектов надетого предмета падает, а не просто теряет бонус.
+        assertEquals(List.of(), effect.getFlags());
+        assertEquals("permanent", effect.getDuration().getType());
+        assertEquals(Boolean.FALSE, effect.getDisabled());
+        assertEquals(Boolean.TRUE, effect.getTransfer());
+        assertEquals("", effect.getDescription());
+    }
+
+    /** Автор описал класс доспеха сам — второго слагаемого не появляется. */
+    @Test
+    void doesNotDuplicateArmorClassDescribedByAuthor() {
+        MagicItem item = new MagicItem();
+        item.setUrl("cloak-of-protection");
+        item.setName("Плащ защиты");
+        item.setCategory(MagicItemCategory.SUBJECT);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        item.setBonuses(bonuses(0, 0, 1));
+        item.setMechanics(mechanicsWithArmorClassEffect());
+
+        List<ActiveEffect> effects = mapper.toVttg(item).getActiveEffects();
+
+        assertEquals(1, effects.size());
+        assertEquals("Плащ защиты", effects.get(0).getName());
+    }
+
+    /** У доспеха бонус к КД выражает сам magicBonus — эффект ему не нужен. */
+    @Test
+    void doesNotBuildArmorClassEffectForArmor() {
+        MagicItem item = new MagicItem();
+        item.setUrl("plate-armor-plus-1");
+        item.setName("Латы, +1");
+        item.setCategory(MagicItemCategory.ARMOR);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        item.setBonuses(bonuses(0, 0, 1));
+
+        assertNull(mapper.toVttg(item).getActiveEffects());
+        assertEquals(1, mapper.toVttg(item).getMagicBonus());
+    }
+
+    private DamagePart damagePart(String formula) {
+        DamagePart part = new DamagePart();
+        part.setFormula(formula);
+        return part;
+    }
+
+    private MagicItemMechanics mechanicsWithArmorClassEffect() {
+        ActiveEffect.Change change = new ActiveEffect.Change();
+        change.setKey("armorClass");
+        change.setMode("add");
+        change.setValue("1");
+        ActiveEffect effect = new ActiveEffect();
+        effect.setId("cloak-of-protection-ac");
+        effect.setName("Плащ защиты");
+        effect.setChanges(List.of(change));
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActiveEffects(List.of(effect));
+        return mechanics;
+    }
+
+    private Item focusStaff() {
+        Item base = new Item();
+        base.setUrl("quarterstaff");
+        base.setName("Боевой посох");
+        base.setEnglish("Quarterstaff");
+        base.setDescription("");
+        base.setWeight("4 фунта");
+        base.setCategory(ItemCategory.WEAPON);
+        base.setTypes(Set.of(ItemType.SPELLCASTING_FOCUS));
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.SIMPLE_MELEE);
         base.setWeapon(weapon);
         Source source = new Source();
         source.setAcronym("PHB");

@@ -339,8 +339,13 @@ public class VttgItemMapper {
         return legacyDamageParts(weapon);
     }
 
-    /** Часть урона справочника в формате VTTG; незаполненные поля не пишутся. */
-    private Map<String, Object> damagePart(DamagePart part) {
+    /**
+     * Часть урона справочника в формате VTTG; незаполненные поля не пишутся.
+     *
+     * <p>Доступна соседям по пакету: магический предмет дописывает к частям базового
+     * оружия свои ({@code VttgMagicItemMapper}) и переводит их той же функцией.</p>
+     */
+    Map<String, Object> damagePart(DamagePart part) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("formula", part.getFormula());
         putIfPresent(result, "target", part.getTarget());

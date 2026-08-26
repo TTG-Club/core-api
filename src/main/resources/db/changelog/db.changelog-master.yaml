@@ -315,3 +315,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/26-01-add-item-tool-effects.yaml
   - include:
       file: db/changelog/2026/08/27-01-add-background-mechanics-tools.yaml
+  - include:
+      file: db/changelog/2026/08/28-01-add-magic-item-damage-properties.yaml

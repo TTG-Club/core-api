@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.magic.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
+import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
@@ -31,6 +32,10 @@ public class MagicItemRequest extends BaseRequest {
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private MagicItemMechanics mechanics;
 
+    @Schema(description = "Дополнительный урон, который магия добавляет к броску немагической основы",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<DamagePart> damageParts;
+
     @Schema(description = "Количество зарядов, если есть", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Byte charges;
 
@@ -39,6 +44,12 @@ public class MagicItemRequest extends BaseRequest {
 
     @Schema(description = "true если предмет расходуемый")
     private boolean consumable;
+
+    @Schema(description = "true если предмет — заклинательная фокусировка")
+    private boolean focus;
+
+    @Schema(description = "true если предмет адамантиновый")
+    private boolean adamantine;
 
     @Schema(description = "URL связанных немагических предметов (для веса/стоимости при экспорте в VTTG и фильтрации)",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
