@@ -15,7 +15,8 @@ public enum FeatCategory {
     PATH_OF_THE_DEATH_KNIGHT("Черта пути рыцаря смерти"),
     PATH_OF_THE_LICH("Черта пути лича"),
     DARK_GIFT("Тёмный дар"),
-    KINDRED("Черта Сородича");
+    KINDRED("Черта Сородича"),
+    PATH_OF_CEREMORPHOSIS("Черта пути цереморфоза");
 
     private final String name;
 }
