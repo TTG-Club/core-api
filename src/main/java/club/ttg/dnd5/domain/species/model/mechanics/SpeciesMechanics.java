@@ -47,8 +47,9 @@ import java.util.List;
 public class SpeciesMechanics implements GrantingMechanics {
     /**
      * Постоянные модификаторы листа: чувства, сопротивления, скорости, хиты, КД,
-     * тип существа. Тёмное зрение сюда не дублируется — оно свойство вида и живёт
-     * в {@code properties.darkVision}.
+     * тип существа. Тёмное зрение — тоже чувство здесь ({@code senses}, тип
+     * {@code DARKVISION}): его дарит умение, своего поля у записи нет, а деталь
+     * отдаёт в {@code properties.darkVision} вычисленный максимум по механике.
      */
     @Schema(description = "Постоянные модификаторы листа персонажа",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)

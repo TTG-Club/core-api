@@ -8,7 +8,9 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
+import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Size;
@@ -46,16 +48,16 @@ class VttgSpeciesMapperTest {
         when(speciesRepository.findInnateSpells(anyString())).thenReturn(List.of());
     }
 
-    /** «Драконорождённый» — тип/размер/скорость, тёмное зрение в grants, умения в features. */
+    /** «Драконорождённый» — тип/размер/скорость, тёмное зрение из механики умения в grants. */
     @Test
     void mapsDragonbornToVttgFormat() {
         Species species = baseSpecies("dragonborn", "Драконорожденный", "Dragonborn");
         species.setType(CreatureType.DRAGON);
         species.setSizes(List.of(size(Size.MEDIUM)));
         species.setSpeed(30);
-        species.setDarkVision(60);
         species.setFeatures(List.of(
-                new SpeciesFeature("draconic-flight", "Драконий Полёт", "Draconic Flight", "Призрачные крылья.", null)));
+                new SpeciesFeature("draconic-flight", "Драконий Полёт", "Draconic Flight", "Призрачные крылья.", null),
+                darkVisionFeature(60)));
 
         JsonNode json = json(species);
         assertEquals("species", json.get("type").asText());
@@ -76,7 +78,7 @@ class VttgSpeciesMapperTest {
         assertEquals("darkvision", json.get("grants").get(0).get("type").asText());
         assertEquals(60, json.get("grants").get(0).get("range").asInt());
 
-        assertEquals(1, json.get("features").size());
+        assertEquals(2, json.get("features").size());
         JsonNode feature = json.get("features").get(0);
         assertEquals("draconic-flight", feature.get("key").asText());
         assertEquals("Драконий Полёт", feature.get("name").asText());
@@ -156,8 +158,9 @@ class VttgSpeciesMapperTest {
     }
 
     /**
-     * «Дварф» — сопротивления умений сводятся в одну награду, владения навыками идут
-     * отдельными: у выданного без выбора количество равно списку.
+     * «Дварф» — тёмное зрение приходит чувством из механики умения, сопротивления умений
+     * сводятся в одну награду, владения навыками идут отдельными: у выданного без выбора
+     * количество равно списку.
      */
     @Test
     void collectsGrantsFromFeatureMechanics() {
@@ -165,11 +168,12 @@ class VttgSpeciesMapperTest {
         species.setType(CreatureType.HUMANOID);
         species.setSizes(List.of(size(Size.MEDIUM)));
         species.setSpeed(30);
-        species.setDarkVision(120);
 
+        SheetModifiers resilienceModifiers = modifiers(DamageType.POISON);
+        resilienceModifiers.setSenses(List.of(new SenseGrant(SenseType.DARKVISION, 120)));
         SpeciesFeature resilience = new SpeciesFeature("dwarven-resilience", "Дварфийская стойкость",
                 "Dwarven Resilience", "Сопротивление яду.", null);
-        resilience.setMechanics(mechanics(modifiers(DamageType.POISON), null, null));
+        resilience.setMechanics(mechanics(resilienceModifiers, null, null));
 
         SpeciesFeature keenSenses = new SpeciesFeature("keen-senses", "Обострённые чувства",
                 "Keen Senses", "Владение Внимательностью.", null);
@@ -334,6 +338,16 @@ class VttgSpeciesMapperTest {
         SheetModifiers modifiers = new SheetModifiers();
         modifiers.setDamage(damage);
         return modifiers;
+    }
+
+    /** Умение «Тёмное зрение» с чувством DARKVISION заданной дальности — как в справочнике. */
+    private SpeciesFeature darkVisionFeature(int range) {
+        SheetModifiers modifiers = new SheetModifiers();
+        modifiers.setSenses(List.of(new SenseGrant(SenseType.DARKVISION, range)));
+        SpeciesFeature feature = new SpeciesFeature("darkvision", "Тёмное зрение", "Darkvision",
+                "Тёмное зрение %d фт.".formatted(range), null);
+        feature.setMechanics(mechanics(modifiers, null, null));
+        return feature;
     }
 
     private ProficiencyGrant skills(Skill... skills) {

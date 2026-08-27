@@ -11,8 +11,10 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
+import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
@@ -51,10 +53,10 @@ import java.util.stream.Stream;
  * сохраняется как в источнике. {@code key} строится из {@code url} так же, как в
  * {@link VttgBackgroundMapper}.</p>
  *
- * <p>{@code grants} собираются из трёх мест: тёмное зрение — свойство вида
- * ({@code properties.darkVision}), сопротивления и владения навыками — механика самой
- * записи ({@code mechanics}) и механика её умений ({@code features[].mechanics}). Запись,
- * действие которой описано только текстом, даёт пустой {@code grants}.</p>
+ * <p>{@code grants} собираются из механики самой записи ({@code mechanics}) и механики её
+ * умений ({@code features[].mechanics}): тёмное зрение — наибольшая дальность чувства
+ * {@code DARKVISION}, дальше сопротивления и владения. Запись, действие которой описано
+ * только текстом, даёт пустой {@code grants}.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -138,8 +140,8 @@ public class VttgSpeciesMapper {
     }
 
     /**
-     * Структурные награды вида: тёмное зрение из свойств, сопротивления и владения
-     * навыками — из механики самой записи и её умений.
+     * Структурные награды вида: тёмное зрение, сопротивления и владения навыками — из
+     * механики самой записи и её умений.
      *
      * <p>Сопротивления всех источников сводятся в одну награду: у потребителя это единый блок
      * защит, а из какого источника пришёл тип урона, лист не показывает. Сопротивление по
@@ -148,8 +150,9 @@ public class VttgSpeciesMapper {
      */
     private List<VttgSpecies.Grant> grants(Species species) {
         List<VttgSpecies.Grant> grants = new ArrayList<>();
-        if (species.getDarkVision() != null) {
-            grants.add(new VttgSpecies.Grant(DARKVISION, species.getDarkVision(), null, null, null));
+        Integer darkVision = darkvision(species);
+        if (darkVision != null) {
+            grants.add(new VttgSpecies.Grant(DARKVISION, darkVision, null, null, null));
         }
         List<VttgSpecies.DamageDefense> defenses = damageDefenses(species);
         if (!defenses.isEmpty()) {
@@ -224,6 +227,24 @@ public class VttgSpeciesMapper {
         return mechanics(species).map(SpeciesMechanics::getModifiers)
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    /**
+     * Тёмное зрение — наибольшая дальность чувства {@code DARKVISION} в механике записи и
+     * её умений. Своего поля у записи нет: тёмное зрение дарит умение, как и остальные
+     * чувства, а у потребителя это по-прежнему одна награда с дальностью.
+     */
+    private Integer darkvision(Species species) {
+        return modifiers(species).stream()
+                .map(SheetModifiers::getSenses)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .filter(sense -> sense.getType() == SenseType.DARKVISION)
+                .map(SenseGrant::getRange)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(null);
     }
 
     /**

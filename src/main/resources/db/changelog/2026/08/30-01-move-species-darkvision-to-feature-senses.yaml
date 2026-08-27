@@ -1,0 +1,155 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-30-01-move-species-darkvision-to-feature-senses
+      author: Peterko
+      comment: >
+        Переносит тёмное зрение вида из колонки species.dark_vision в механику умений:
+        чувство DARKVISION дописывается в features[].mechanics.modifiers.senses умения
+        «Тёмное зрение» (имя сравнивается без регистра, пробелов по краям и с обоими
+        написаниями ё/е). Кандидату без такого умения чувство пишется в механику самой
+        записи (species.mechanics) — на деве это только дроу: его 120 фт. лежат в
+        описании, а отдельного умения у записи нет.
+
+        Происхождения, чьё значение совпадает с родительским, не переносятся вовсе:
+        копию им раздал бэкфилл 18-02, а деталь теперь вычисляет тёмное зрение с учётом
+        умений родителя, и копия давала бы то же самое дважды. Дроу (120 против 60 у
+        эльфа) — единственное происхождение с собственным значением, оно сохраняется.
+
+        Существующие чувства умений не затираются — DARKVISION дописывается в конец
+        массива senses.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE species s
+              SET features = (
+                SELECT jsonb_agg(
+                  CASE WHEN lower(btrim(t.feature->>'name')) IN ('тёмное зрение', 'темное зрение')
+                       THEN jsonb_set(
+                              jsonb_set(
+                                jsonb_set(t.feature, '{mechanics}',
+                                  coalesce(t.feature->'mechanics', '{}'::jsonb)),
+                                '{mechanics,modifiers}',
+                                coalesce(t.feature->'mechanics'->'modifiers', '{}'::jsonb)),
+                              '{mechanics,modifiers,senses}',
+                              coalesce(t.feature->'mechanics'->'modifiers'->'senses', '[]'::jsonb)
+                                || jsonb_build_array(jsonb_build_object('type', 'DARKVISION', 'range', s.dark_vision)))
+                       ELSE t.feature
+                  END ORDER BY t.idx)
+                FROM jsonb_array_elements(s.features) WITH ORDINALITY AS t(feature, idx)
+              )
+              WHERE s.dark_vision IS NOT NULL
+                AND s.features IS NOT NULL
+                AND jsonb_typeof(s.features) = 'array'
+                AND jsonb_array_length(s.features) > 0
+                AND EXISTS (
+                  SELECT 1 FROM jsonb_array_elements(s.features) AS f(feature)
+                  WHERE lower(btrim(f.feature->>'name')) IN ('тёмное зрение', 'темное зрение'))
+                AND (SELECT p.dark_vision FROM species p WHERE p.url = s.parent_url)
+                    IS DISTINCT FROM s.dark_vision;
+
+              UPDATE species s
+              SET mechanics = jsonb_set(
+                jsonb_set(
+                  coalesce(s.mechanics, '{}'::jsonb),
+                  '{modifiers}', coalesce(s.mechanics->'modifiers', '{}'::jsonb)),
+                '{modifiers,senses}',
+                coalesce(s.mechanics->'modifiers'->'senses', '[]'::jsonb)
+                  || jsonb_build_array(jsonb_build_object('type', 'DARKVISION', 'range', s.dark_vision)))
+              WHERE s.dark_vision IS NOT NULL
+                AND NOT EXISTS (
+                  SELECT 1 FROM jsonb_array_elements(
+                    CASE WHEN jsonb_typeof(s.features) = 'array' THEN s.features ELSE '[]'::jsonb END
+                  ) AS f(feature)
+                  WHERE lower(btrim(f.feature->>'name')) IN ('тёмное зрение', 'темное зрение'))
+                AND (SELECT p.dark_vision FROM species p WHERE p.url = s.parent_url)
+                    IS DISTINCT FROM s.dark_vision;
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE species s
+              SET dark_vision = sub.max_range
+              FROM (
+                SELECT s2.url, max((sense_entry.sense->>'range')::int) AS max_range
+                FROM species s2,
+                     LATERAL (
+                       SELECT sense
+                       FROM jsonb_array_elements(coalesce(s2.mechanics->'modifiers'->'senses', '[]'::jsonb)) AS sense
+                       UNION ALL
+                       SELECT sense
+                       FROM jsonb_array_elements(
+                              CASE WHEN jsonb_typeof(s2.features) = 'array' THEN s2.features ELSE '[]'::jsonb END
+                            ) AS f(feature),
+                            jsonb_array_elements(coalesce(f.feature->'mechanics'->'modifiers'->'senses', '[]'::jsonb)) AS sense
+                     ) AS sense_entry(sense)
+                WHERE sense_entry.sense->>'type' = 'DARKVISION'
+                  AND sense_entry.sense->>'range' IS NOT NULL
+                GROUP BY s2.url
+              ) sub
+              WHERE sub.url = s.url;
+
+              UPDATE species s
+              SET dark_vision = p.dark_vision
+              FROM species p
+              WHERE s.parent_url = p.url
+                AND s.dark_vision IS NULL
+                AND p.dark_vision IS NOT NULL;
+
+              UPDATE species s
+              SET features = (
+                SELECT jsonb_agg(
+                  CASE WHEN (t.feature #> '{mechanics,modifiers,senses}') IS NULL THEN t.feature
+                       ELSE jsonb_set(t.feature, '{mechanics,modifiers,senses}',
+                              coalesce(
+                                (SELECT jsonb_agg(sense)
+                                 FROM jsonb_array_elements(t.feature #> '{mechanics,modifiers,senses}') AS sense
+                                 WHERE sense->>'type' <> 'DARKVISION'),
+                                '[]'::jsonb))
+                  END ORDER BY t.idx)
+                FROM jsonb_array_elements(s.features) WITH ORDINALITY AS t(feature, idx)
+              )
+              WHERE jsonb_typeof(s.features) = 'array'
+                AND jsonb_array_length(s.features) > 0
+                AND EXISTS (
+                  SELECT 1 FROM jsonb_array_elements(s.features) AS f(feature)
+                  WHERE (f.feature #> '{mechanics,modifiers,senses}') IS NOT NULL);
+
+              UPDATE species s
+              SET mechanics = jsonb_set(s.mechanics, '{modifiers,senses}',
+                coalesce(
+                  (SELECT jsonb_agg(sense)
+                   FROM jsonb_array_elements(s.mechanics #> '{modifiers,senses}') AS sense
+                   WHERE sense->>'type' <> 'DARKVISION'),
+                  '[]'::jsonb))
+              WHERE (s.mechanics #> '{modifiers,senses}') IS NOT NULL;
+  - changeSet:
+      id: 2026-08-30-02-drop-species-dark-vision-column
+      author: Peterko
+      comment: >
+        Удаляет колонку species.dark_vision: тёмное зрение теперь живёт чувством
+        DARKVISION в механике умений (см. предыдущий changeSet), деталь вида отдаёт
+        вычисленный максимум, а форма мастерской поле больше не присылает.
+
+        Откат возвращает колонку; значения ей возвращает откат предыдущего changeSet —
+        числа восстанавливаются из механики, происхождения снова получают копию
+        родительского значения. Какое именно умение несло чувство, откат не запоминает.
+      changes:
+        - dropColumn:
+            tableName: species
+            columnName: dark_vision
+      rollback:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: dark_vision
+                  type: INT

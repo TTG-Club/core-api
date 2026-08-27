@@ -33,6 +33,4 @@ public abstract class CreatureProperties extends NamedEntity {
     private Integer climb;
     /** плавание */
     private Integer swim;
-    /** темное зрение */
-    private Integer darkVision;
 }
