@@ -149,6 +149,10 @@ public class VttgFeatMechanics {
      * @param expertiseIfProficient      владеет выбранным — получает компетентность
      * @param grants                     что даёт выбор: {@code proficiency}/{@code expertise}
      * @param rechooseOnLongRest         выбор пересматривается на продолжительном отдыхе
+     * @param requiredLevel              уровень, с которого выбор открывается; пусто —
+     *                                   сразу. По нему мастер повышения спрашивает
+     *                                   компетентность плута и на первом уровне, и на
+     *                                   шестом, где умение в книге одно
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Choice(String key, String type, List<String> types, String label,
@@ -156,7 +160,7 @@ public class VttgFeatMechanics {
                          List<Option> options, SpellFilter spellFilter,
                          Boolean onlyIfNotProficient, Boolean onlyIfProficient,
                          Boolean expertiseIfProficient, String grants,
-                         Boolean rechooseOnLongRest) {
+                         Boolean rechooseOnLongRest, Integer requiredLevel) {
     }
 
     /**

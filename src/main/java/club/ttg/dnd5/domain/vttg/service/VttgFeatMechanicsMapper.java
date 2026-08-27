@@ -912,7 +912,8 @@ public class VttgFeatMechanicsMapper {
                     flag(choice.getOnlyIfProficient()),
                     flag(choice.getExpertiseIfProficient()),
                     grant(choice.resolveGrant()),
-                    flag(choice.getRechooseOnLongRest())));
+                    flag(choice.getRechooseOnLongRest()),
+                    choice.getRequiredLevel()));
         }
         return emptyToNull(result);
     }
