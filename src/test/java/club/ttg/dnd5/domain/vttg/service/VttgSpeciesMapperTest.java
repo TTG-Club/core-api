@@ -136,6 +136,18 @@ class VttgSpeciesMapperTest {
         assertEquals("high-magic", lineageJson.get("features").get(0).get("key").asText());
     }
 
+    /** Обычное зрение уезжает числом в футах; не задано — поля нет, токен оставит своё. */
+    @Test
+    void exportsNormalVision() {
+        Species species = baseSpecies("human", "Человек", "Human");
+        species.setSpeed(30);
+
+        assertFalse(json(species).has("vision"));
+
+        species.setVision(120);
+        assertEquals(120, json(species).get("vision").asInt());
+    }
+
     /** Идентичность страницы-источника вида. */
     @Test
     void exportsSourcePageIdentity() {

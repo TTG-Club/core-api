@@ -27,4 +27,7 @@ public class SpeciesPropertiesResponse {
      */
     @Schema(description = "Дальность тёмного зрения в футах", example = "60")
     private Integer darkVision;
+    /** Обычное зрение в футах — поле записи, как есть; {@code null} — не задано. */
+    @Schema(description = "Дальность обычного зрения в футах", example = "60")
+    private Integer vision;
 }

@@ -21,4 +21,7 @@ public class SpeciesPropertiesRequest {
     private Collection<SpeciesSizeDto> sizes;
     @Schema(description = "Тип существа")
     private CreatureType type;
+    /** Обычное зрение в футах; {@code null} — не задано, лист и токен оставляют своё значение. */
+    @Schema(description = "Дальность обычного зрения в футах", example = "60")
+    private Integer vision;
 }

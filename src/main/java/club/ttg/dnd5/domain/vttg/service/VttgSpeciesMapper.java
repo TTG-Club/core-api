@@ -79,6 +79,7 @@ public class VttgSpeciesMapper {
                 .creatureType(creatureType(species.getType()))
                 .size(sizes(species.getSizes()))
                 .speed(speed(species))
+                .vision(species.getVision())
                 .featData(mechanicsMapper.featData(species.getMechanics(), null))
                 .features(features(species))
                 .activeEffects(activeEffects(species))

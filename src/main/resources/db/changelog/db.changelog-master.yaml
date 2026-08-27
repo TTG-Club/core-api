@@ -333,3 +333,5 @@ databaseChangeLog:
       file: db/changelog/2026/08/29-07-backfill-class-informational-features.yaml
   - include:
       file: db/changelog/2026/08/30-01-move-species-darkvision-to-feature-senses.yaml
+  - include:
+      file: db/changelog/2026/08/30-02-add-species-vision.yaml

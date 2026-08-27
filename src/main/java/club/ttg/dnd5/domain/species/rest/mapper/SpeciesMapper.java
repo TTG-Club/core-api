@@ -28,6 +28,7 @@ public interface SpeciesMapper {
     @Mapping(source = "type.name", target = "properties.type")
     @Mapping(source = ".", target = "properties.speed", qualifiedByName = "toSpeed")
     @Mapping(source = "sizes", target = "properties.size", qualifiedByName = "collectSizes")
+    @Mapping(source = "vision", target = "properties.vision")
 
     @BaseMapping.BaseSourceMapping
     @Mapping(source = "galleryUrl", target = "gallery")
@@ -52,6 +53,7 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.fly", target = "fly")
     @Mapping(source = "properties.movementAttributes.climb", target = "climb")
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
+    @Mapping(source = "properties.vision", target = "vision")
     @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     @Mapping(source = "gallery", target = "galleryUrl")
@@ -68,6 +70,7 @@ public interface SpeciesMapper {
     @Mapping(source = "properties.movementAttributes.fly", target = "fly")
     @Mapping(source = "properties.movementAttributes.climb", target = "climb")
     @Mapping(source = "properties.movementAttributes.swim", target = "swim")
+    @Mapping(source = "properties.vision", target = "vision")
     @Mapping(source = "features", target = "features")
     @Mapping(source = "name.alternative", target = "alternative", qualifiedByName = "collectToString")
     @Mapping(source = "gallery", target = "galleryUrl")
