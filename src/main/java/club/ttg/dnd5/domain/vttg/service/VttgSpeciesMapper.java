@@ -90,12 +90,12 @@ public class VttgSpeciesMapper {
     }
 
     /**
-     * Обычное зрение записи. Ноль не уезжает: у потребителя ноль дальности значит
-     * «без ограничений», а в форме сайта — «не задано».
+     * Обычное зрение записи как есть. Ноль уезжает нулём: и у справочника, и у потребителя
+     * он значит «без ограничений» — дальность зрения токена без предела; «не задано» —
+     * только {@code null}.
      */
     private Integer vision(Species species) {
-        Integer vision = species.getVision();
-        return vision != null && vision > 0 ? vision : null;
+        return species.getVision();
     }
 
     /** Ключ родительского вида; {@code null} — запись верхнеуровневая. */

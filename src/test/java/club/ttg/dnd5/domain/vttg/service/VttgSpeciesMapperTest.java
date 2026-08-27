@@ -144,9 +144,9 @@ class VttgSpeciesMapperTest {
 
         assertFalse(json(species).has("vision"));
 
-        // Ноль из формы — «не задано», а у потребителя значил бы «без ограничений»
+        // Ноль — «без ограничений» и у справочника, и у токена: уезжает нулём
         species.setVision(0);
-        assertFalse(json(species).has("vision"));
+        assertEquals(0, json(species).get("vision").asInt());
 
         species.setVision(120);
         assertEquals(120, json(species).get("vision").asInt());
