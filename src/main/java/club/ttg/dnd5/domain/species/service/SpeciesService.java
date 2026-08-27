@@ -258,6 +258,11 @@ public class SpeciesService {
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var species = speciesMapper.toEntity(request);
         species.setSource(source);
+        // Родитель нужен предпросмотру происхождения: без него вычисленное
+        // тёмное зрение разошлось бы с тем, что покажет сохранённая запись
+        if (StringUtils.hasText(request.getParent())) {
+            species.setParent(findByUrl(request.getParent()));
+        }
         SpeciesDetailResponse response = speciesMapper.toDetail(species);
         // Заклинания умений — оттуда же, откуда их берёт сохранённый вид: иначе
         // предпросмотр показывал бы вид без них

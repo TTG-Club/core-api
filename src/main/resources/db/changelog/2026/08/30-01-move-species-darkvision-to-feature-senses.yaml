@@ -16,7 +16,16 @@ databaseChangeLog:
         эльфа) — единственное происхождение с собственным значением, оно сохраняется.
 
         Существующие чувства умений не затираются — DARKVISION дописывается в конец
-        массива senses.
+        массива senses. Узлы mechanics/modifiers/senses, оказавшиеся не объектом и не
+        массивом (скаляр, json-null), заменяются пустыми — jsonb_set по такому пути
+        иначе молча вернул бы вход без изменений и перенос бы потерялся.
+
+        Откат восстанавливает числа в колонке из механики и раздаёт происхождениям
+        копию родительского значения (семантика бэкфилла 18-02), после чего вычищает
+        ВСЕ чувства DARKVISION — в том числе заведённые вручную до миграции: пометки
+        «это чувство добавила миграция» в данных нет. Пустые массивы senses и объекты
+        modifiers/mechanics после отката остаются — функционально они эквивалентны
+        отсутствующим.
       changes:
         - sql:
             dbms: postgresql
@@ -32,11 +41,14 @@ databaseChangeLog:
                        THEN jsonb_set(
                               jsonb_set(
                                 jsonb_set(t.feature, '{mechanics}',
-                                  coalesce(t.feature->'mechanics', '{}'::jsonb)),
+                                  CASE WHEN jsonb_typeof(t.feature->'mechanics') = 'object'
+                                       THEN t.feature->'mechanics' ELSE '{}'::jsonb END),
                                 '{mechanics,modifiers}',
-                                coalesce(t.feature->'mechanics'->'modifiers', '{}'::jsonb)),
+                                CASE WHEN jsonb_typeof(t.feature->'mechanics'->'modifiers') = 'object'
+                                     THEN t.feature->'mechanics'->'modifiers' ELSE '{}'::jsonb END),
                               '{mechanics,modifiers,senses}',
-                              coalesce(t.feature->'mechanics'->'modifiers'->'senses', '[]'::jsonb)
+                              CASE WHEN jsonb_typeof(t.feature->'mechanics'->'modifiers'->'senses') = 'array'
+                                   THEN t.feature->'mechanics'->'modifiers'->'senses' ELSE '[]'::jsonb END
                                 || jsonb_build_array(jsonb_build_object('type', 'DARKVISION', 'range', s.dark_vision)))
                        ELSE t.feature
                   END ORDER BY t.idx)
@@ -55,10 +67,14 @@ databaseChangeLog:
               UPDATE species s
               SET mechanics = jsonb_set(
                 jsonb_set(
-                  coalesce(s.mechanics, '{}'::jsonb),
-                  '{modifiers}', coalesce(s.mechanics->'modifiers', '{}'::jsonb)),
+                  CASE WHEN jsonb_typeof(s.mechanics) = 'object'
+                       THEN s.mechanics ELSE '{}'::jsonb END,
+                  '{modifiers}',
+                  CASE WHEN jsonb_typeof(s.mechanics->'modifiers') = 'object'
+                       THEN s.mechanics->'modifiers' ELSE '{}'::jsonb END),
                 '{modifiers,senses}',
-                coalesce(s.mechanics->'modifiers'->'senses', '[]'::jsonb)
+                CASE WHEN jsonb_typeof(s.mechanics->'modifiers'->'senses') = 'array'
+                     THEN s.mechanics->'modifiers'->'senses' ELSE '[]'::jsonb END
                   || jsonb_build_array(jsonb_build_object('type', 'DARKVISION', 'range', s.dark_vision)))
               WHERE s.dark_vision IS NOT NULL
                 AND NOT EXISTS (
@@ -83,16 +99,22 @@ databaseChangeLog:
                 FROM species s2,
                      LATERAL (
                        SELECT sense
-                       FROM jsonb_array_elements(coalesce(s2.mechanics->'modifiers'->'senses', '[]'::jsonb)) AS sense
+                       FROM jsonb_array_elements(
+                              CASE WHEN jsonb_typeof(s2.mechanics->'modifiers'->'senses') = 'array'
+                                   THEN s2.mechanics->'modifiers'->'senses' ELSE '[]'::jsonb END
+                            ) AS sense
                        UNION ALL
                        SELECT sense
                        FROM jsonb_array_elements(
                               CASE WHEN jsonb_typeof(s2.features) = 'array' THEN s2.features ELSE '[]'::jsonb END
                             ) AS f(feature),
-                            jsonb_array_elements(coalesce(f.feature->'mechanics'->'modifiers'->'senses', '[]'::jsonb)) AS sense
+                            jsonb_array_elements(
+                              CASE WHEN jsonb_typeof(f.feature->'mechanics'->'modifiers'->'senses') = 'array'
+                                   THEN f.feature->'mechanics'->'modifiers'->'senses' ELSE '[]'::jsonb END
+                            ) AS sense
                      ) AS sense_entry(sense)
                 WHERE sense_entry.sense->>'type' = 'DARKVISION'
-                  AND sense_entry.sense->>'range' IS NOT NULL
+                  AND sense_entry.sense->>'range' ~ '^[0-9]+$'
                 GROUP BY s2.url
               ) sub
               WHERE sub.url = s.url;
@@ -107,13 +129,14 @@ databaseChangeLog:
               UPDATE species s
               SET features = (
                 SELECT jsonb_agg(
-                  CASE WHEN (t.feature #> '{mechanics,modifiers,senses}') IS NULL THEN t.feature
-                       ELSE jsonb_set(t.feature, '{mechanics,modifiers,senses}',
+                  CASE WHEN jsonb_typeof(t.feature #> '{mechanics,modifiers,senses}') = 'array'
+                       THEN jsonb_set(t.feature, '{mechanics,modifiers,senses}',
                               coalesce(
                                 (SELECT jsonb_agg(sense)
                                  FROM jsonb_array_elements(t.feature #> '{mechanics,modifiers,senses}') AS sense
                                  WHERE sense->>'type' <> 'DARKVISION'),
                                 '[]'::jsonb))
+                       ELSE t.feature
                   END ORDER BY t.idx)
                 FROM jsonb_array_elements(s.features) WITH ORDINALITY AS t(feature, idx)
               )
@@ -121,7 +144,7 @@ databaseChangeLog:
                 AND jsonb_array_length(s.features) > 0
                 AND EXISTS (
                   SELECT 1 FROM jsonb_array_elements(s.features) AS f(feature)
-                  WHERE (f.feature #> '{mechanics,modifiers,senses}') IS NOT NULL);
+                  WHERE jsonb_typeof(f.feature #> '{mechanics,modifiers,senses}') = 'array');
 
               UPDATE species s
               SET mechanics = jsonb_set(s.mechanics, '{modifiers,senses}',
@@ -130,9 +153,9 @@ databaseChangeLog:
                    FROM jsonb_array_elements(s.mechanics #> '{modifiers,senses}') AS sense
                    WHERE sense->>'type' <> 'DARKVISION'),
                   '[]'::jsonb))
-              WHERE (s.mechanics #> '{modifiers,senses}') IS NOT NULL;
+              WHERE jsonb_typeof(s.mechanics #> '{modifiers,senses}') = 'array';
   - changeSet:
-      id: 2026-08-30-02-drop-species-dark-vision-column
+      id: 2026-08-30-01-drop-species-dark-vision-column
       author: Peterko
       comment: >
         Удаляет колонку species.dark_vision: тёмное зрение теперь живёт чувством
@@ -141,7 +164,8 @@ databaseChangeLog:
 
         Откат возвращает колонку; значения ей возвращает откат предыдущего changeSet —
         числа восстанавливаются из механики, происхождения снова получают копию
-        родительского значения. Какое именно умение несло чувство, откат не запоминает.
+        родительского значения. Оба changeSet живут в одном файле, поэтому полный
+        откат миграции — rollbackCount 2, не 1.
       changes:
         - dropColumn:
             tableName: species

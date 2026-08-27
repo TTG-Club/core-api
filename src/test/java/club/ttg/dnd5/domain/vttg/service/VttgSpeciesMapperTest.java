@@ -50,7 +50,7 @@ class VttgSpeciesMapperTest {
         when(speciesRepository.findInnateSpells(anyString())).thenReturn(List.of());
     }
 
-    /** «Драконорождённый» — тип/размер/скорость, тёмное зрение из механики умения в grants. */
+    /** «Драконорождённый» — тип/размер/скорость, тёмное зрение в featData своего умения. */
     @Test
     void mapsDragonbornToVttgFormat() {
         Species species = baseSpecies("dragonborn", "Драконорожденный", "Dragonborn");
@@ -76,7 +76,6 @@ class VttgSpeciesMapperTest {
         assertEquals(30, json.get("speed").get("walk").asInt());
         assertFalse(json.get("speed").has("fly"));
 
-        assertFalse(json.has("grants"));
         assertFalse(json.has("parentKey"));
 
         assertEquals(2, json.get("features").size());
@@ -101,7 +100,6 @@ class VttgSpeciesMapperTest {
 
         JsonNode json = json(species);
         assertEquals("[\"small\",\"medium\"]", json.get("size").toString());
-        assertFalse(json.has("grants"));
         assertFalse(json.has("featData"));
     }
 
@@ -124,7 +122,6 @@ class VttgSpeciesMapperTest {
         high.setDescription("Магия высших эльфов.");
         high.setParent(elf);
         high.setFeatures(List.of(new SpeciesFeature("high-magic", "Магия", "Magic", "Престидижитация.", null)));
-        elf.setLineages(List.of(high));
 
         JsonNode parentJson = json(elf);
         assertEquals(2, parentJson.get("features").size());
