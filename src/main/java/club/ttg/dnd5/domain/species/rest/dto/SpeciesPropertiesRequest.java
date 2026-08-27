@@ -21,15 +21,4 @@ public class SpeciesPropertiesRequest {
     private Collection<SpeciesSizeDto> sizes;
     @Schema(description = "Тип существа")
     private CreatureType type;
-    /**
-     * Дальность тёмного зрения в футах; {@code null} — вида его не имеет.
-     *
-     * <p>Отдельным полем, а не чувством в механике умения: тёмное зрение есть у половины
-     * видов справочника, лист показывает его в шапке рядом со скоростью, а выгрузка
-     * компендиума ждёт его в наградах вида ({@code grants}), а не в тексте умения.
-     * Чувства, которые вид даёт умением («слепое зрение 10»), живут в
-     * {@code features[].mechanics.modifiers.senses}.</p>
-     */
-    @Schema(description = "Дальность тёмного зрения в футах", example = "60")
-    private Integer darkVision;
 }

@@ -1,6 +1,10 @@
 package club.ttg.dnd5.domain.species.service;
 
+import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
@@ -36,9 +40,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -77,6 +83,7 @@ public class SpeciesService {
             ));
         }
 
+        applyComputedDarkVision(response, species);
         return response;
     }
 
@@ -156,7 +163,10 @@ public class SpeciesService {
                     })
                     .add(species);
 
-            return speciesMapper.toDetail(speciesRepository.save(species));
+            Species saved = speciesRepository.save(species);
+            SpeciesDetailResponse response = speciesMapper.toDetail(saved);
+            applyComputedDarkVision(response, saved);
+            return response;
         } else {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "This is not a parent Species");
@@ -209,7 +219,10 @@ public class SpeciesService {
                 .toList();
 
         species.setLineages(subSpeciesEntities);
-        return speciesMapper.toDetail(speciesRepository.save(species));
+        Species saved = speciesRepository.save(species);
+        SpeciesDetailResponse response = speciesMapper.toDetail(saved);
+        applyComputedDarkVision(response, saved);
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -245,6 +258,11 @@ public class SpeciesService {
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var species = speciesMapper.toEntity(request);
         species.setSource(source);
+        // Родитель нужен предпросмотру происхождения: без него вычисленное
+        // тёмное зрение разошлось бы с тем, что покажет сохранённая запись
+        if (StringUtils.hasText(request.getParent())) {
+            species.setParent(findByUrl(request.getParent()));
+        }
         SpeciesDetailResponse response = speciesMapper.toDetail(species);
         // Заклинания умений — оттуда же, откуда их берёт сохранённый вид: иначе
         // предпросмотр показывал бы вид без них
@@ -252,6 +270,7 @@ public class SpeciesService {
                 resolveInnateSpells(existingSpellsOnly(featureInnateSpellRequests(species))),
                 resolveInnateSpells(request.getInnateSpells())
         ));
+        applyComputedDarkVision(response, species);
         return response;
     }
 
@@ -259,6 +278,7 @@ public class SpeciesService {
     {
         SpeciesDetailResponse response = speciesMapper.toDetail(species);
         response.setInnateSpells(innateSpellsOf(species));
+        applyComputedDarkVision(response, species);
         return response;
     }
 
@@ -447,5 +467,48 @@ public class SpeciesService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Уровень врождённого заклинания должен быть от 1 до 20");
         }
         return requiredLevel;
+    }
+
+    /**
+     * Проставляет детали вычисленное тёмное зрение — наибольшую дальность чувства
+     * {@code DARKVISION} в механике записи и её умений; у происхождения учитывается и
+     * родитель. Своего поля у записи больше нет: тёмное зрение дарит умение, а статблок
+     * и лист персонажа продолжают читать {@code properties.darkVision} как раньше.
+     */
+    private void applyComputedDarkVision(SpeciesDetailResponse response, Species species)
+    {
+        if (response.getProperties() == null)
+        {
+            return;
+        }
+        Integer own = darkVisionOf(species);
+        Integer inherited = species.getParent() == null ? null : darkVisionOf(species.getParent());
+        response.getProperties().setDarkVision(Stream.of(own, inherited)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(null));
+    }
+
+    /** Наибольшая дальность {@code DARKVISION} в механике записи и её умений; {@code null} — нет. */
+    private Integer darkVisionOf(Species species)
+    {
+        Stream<SpeciesMechanics> featureMechanics = CollectionUtils.isEmpty(species.getFeatures())
+                ? Stream.empty()
+                : species.getFeatures().stream()
+                        .filter(Objects::nonNull)
+                        .map(SpeciesFeature::getMechanics);
+        return Stream.concat(Stream.ofNullable(species.getMechanics()), featureMechanics)
+                .filter(Objects::nonNull)
+                .map(SpeciesMechanics::getModifiers)
+                .filter(Objects::nonNull)
+                .map(SheetModifiers::getSenses)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .filter(sense -> sense.getType() == SenseType.DARKVISION)
+                .map(SenseGrant::getRange)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(null);
     }
 }

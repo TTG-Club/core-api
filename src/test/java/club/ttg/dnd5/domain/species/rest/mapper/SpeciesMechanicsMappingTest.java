@@ -31,7 +31,6 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Механика умения вида в форме редактора и в детальнике: маппер не должен терять её по
@@ -138,16 +137,26 @@ class SpeciesMechanicsMappingTest {
                 restored.getMechanics().getModifiers().getDamage().getResistances());
     }
 
-    /** Тёмное зрение вида — свойство, а не механика умения: пустая механика не создаётся. */
+    /**
+     * Тёмное зрение вида — чувство {@code DARKVISION} в механике умения, а не свойство
+     * записи: своего поля у вида нет, и форма получает дальность вместе с остальной
+     * механикой умения «Тёмное зрение».
+     */
     @Test
-    void darkVisionStaysSpeciesProperty() {
-        Species species = new Species();
-        species.setDarkVision(60);
-        species.setFeatures(List.of(new SpeciesFeature("darkvision", "Тёмное зрение", "Darkvision",
-                "Тёмное зрение 60 фт.", null)));
+    void darkVisionLivesInFeatureSenses() {
+        SheetModifiers modifiers = new SheetModifiers();
+        modifiers.setSenses(List.of(new SenseGrant(SenseType.DARKVISION, 60)));
+        SpeciesMechanics mechanics = new SpeciesMechanics();
+        mechanics.setModifiers(modifiers);
+        SpeciesFeature feature = new SpeciesFeature("darkvision", "Тёмное зрение", "Darkvision",
+                "Тёмное зрение 60 фт.", null);
+        feature.setMechanics(mechanics);
 
-        assertEquals(60, species.getDarkVision());
-        assertTrue(species.getFeatures().stream().allMatch(feature -> feature.getMechanics() == null));
+        FeatureRequest request = featureMapper.toRequest(feature);
+
+        SenseGrant sense = request.getMechanics().getModifiers().getSenses().getFirst();
+        assertEquals(SenseType.DARKVISION, sense.getType());
+        assertEquals(60, sense.getRange());
     }
 
     private SpeciesFeature dwarvenResilience() {
