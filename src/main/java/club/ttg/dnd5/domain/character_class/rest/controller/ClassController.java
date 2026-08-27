@@ -109,6 +109,14 @@ public class ClassController {
         return classService.findFormByUrl(url);
     }
 
+    @Operation(summary = "Помечает класс как скрытый для списков",
+            description = "Мягкое удаление: запись остаётся в базе с ревизией, но пропадает из списков и выгрузки.")
+    @Secured({"ADMIN", "MODERATOR"})
+    @DeleteMapping("/{url}")
+    public void deleteClass(@PathVariable String url) {
+        classService.delete(url);
+    }
+
     @Operation(summary = "Предпросмотр класса")
     @Secured({"ADMIN", "MODERATOR"})
     @PostMapping("/preview")

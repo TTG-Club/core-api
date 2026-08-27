@@ -5,6 +5,8 @@ import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
+import club.ttg.dnd5.domain.item.repository.ItemNameRef;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgEquipmentItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -13,7 +15,10 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Стартовое снаряжение вариантами выбора → формат компендиума VTTG.
@@ -27,12 +32,17 @@ import java.util.Objects;
  * <p>Предметы уезжают ссылками на карточки сайта: раздел «Снаряжение» в VTTG
  * отрисовывается разбором markdown, поэтому ссылка ведёт туда же, куда маркер
  * {@code {@item ...|url:...}} из свободного текста.</p>
+ *
+ * <p>Название позиции берётся из снимка в записи, а когда снимка нет — из справочника
+ * предметов по ссылке: форма сайта пишет в снаряжение только ссылку, и без подстановки
+ * такие позиции выпадали бы из выгрузки целиком.</p>
  */
 @Component
 @RequiredArgsConstructor
 public class VttgEquipmentMapper {
 
     private final VttgMarkupConverter markupConverter;
+    private final ItemRepository itemRepository;
 
     /**
      * Развёрнутый вариант снаряжения.
@@ -59,11 +69,46 @@ public class VttgEquipmentMapper {
         if (CollectionUtils.isEmpty(options)) {
             return List.of();
         }
+        Map<String, String> catalogNames = catalogNames(options);
         return options.stream()
                 .filter(Objects::nonNull)
-                .map(this::renderOption)
+                .map(option -> renderOption(option, catalogNames))
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    /**
+     * Названия из справочника для позиций со ссылкой, но без снимка названия — одним
+     * запросом на все варианты. Позиции со снимком и свободные уточнения не запрашиваются.
+     */
+    private Map<String, String> catalogNames(List<EquipmentOption> options) {
+        Set<String> urls = options.stream()
+                .filter(Objects::nonNull)
+                .map(EquipmentOption::getItems)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(Objects::nonNull)
+                .filter(item -> StringUtils.hasText(item.getUrl()) && !StringUtils.hasText(item.getName()))
+                .map(EquipmentItem::getUrl)
+                .collect(Collectors.toSet());
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+        return itemRepository.findNamesByUrls(urls).stream()
+                .filter(ref -> StringUtils.hasText(ref.getName()))
+                .collect(Collectors.toMap(ItemNameRef::getUrl, ItemNameRef::getName, (first, second) -> first));
+    }
+
+    /**
+     * Название позиции: снимок из записи, иначе справочник по ссылке;
+     * {@code null} — позиция без карточки (свободное уточнение).
+     */
+    private static String itemName(EquipmentItem item, Map<String, String> catalogNames) {
+        if (StringUtils.hasText(item.getName())) {
+            return item.getName().trim();
+        }
+        String resolved = StringUtils.hasText(item.getUrl()) ? catalogNames.get(item.getUrl()) : null;
+        return StringUtils.hasText(resolved) ? resolved.trim() : null;
     }
 
     /**
@@ -82,7 +127,7 @@ public class VttgEquipmentMapper {
      * Вариант → строка: предметы через запятую, монеты последней позицией. Вариант без
      * предметов и без монет отбрасывается ({@code null}).
      */
-    private RenderedOption renderOption(EquipmentOption option) {
+    private RenderedOption renderOption(EquipmentOption option, Map<String, String> catalogNames) {
         List<EquipmentItem> items = option.getItems() == null ? List.of() : option.getItems();
         Coin coin = option.getCoin() == null ? Coin.GC : option.getCoin();
         Integer coins = option.getCoins();
@@ -91,11 +136,12 @@ public class VttgEquipmentMapper {
         List<String> parts = new ArrayList<>();
         List<VttgEquipmentItem> exported = new ArrayList<>();
         for (EquipmentItem item : items) {
-            String part = renderItem(item);
+            String name = itemName(item, catalogNames);
+            String part = renderItem(item, name);
             if (StringUtils.hasText(part)) {
                 parts.add(part);
             }
-            VttgEquipmentItem entry = exportItem(item);
+            VttgEquipmentItem entry = exportItem(item, name);
             if (entry != null) {
                 exported.add(entry);
             }
@@ -121,8 +167,7 @@ public class VttgEquipmentMapper {
      * названия: потребитель ищет предмет по слагу, а уточнение показывает игроку.
      * Позиция без названия — пустая строка источника, её отбрасываем.
      */
-    private VttgEquipmentItem exportItem(EquipmentItem item) {
-        String name = StringUtils.hasText(item.getName()) ? item.getName().trim() : null;
+    private VttgEquipmentItem exportItem(EquipmentItem item, String name) {
         if (name == null) {
             return null;
         }
@@ -142,11 +187,10 @@ public class VttgEquipmentMapper {
      * названия — это свободное уточнение вроде «древние карты»: карточки за ним нет,
      * поэтому оно идёт голым текстом, без скобок.
      */
-    private String renderItem(EquipmentItem item) {
+    private String renderItem(EquipmentItem item, String name) {
         String note = StringUtils.hasText(item.getDescription())
                 ? markupConverter.toText(item.getDescription()).trim()
                 : null;
-        String name = StringUtils.hasText(item.getName()) ? item.getName().trim() : null;
         if (name == null) {
             return note == null ? "" : note;
         }
