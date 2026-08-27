@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Вид (species) в формате компендиума VTTG.
@@ -64,6 +65,15 @@ public class VttgSpecies {
     private String creatureType;
     /** Размеры в порядке источника (slug'и: "small"/"medium"/...). */
     private List<String> size;
+    /**
+     * Рост в футах по размерам: ключ — тот же slug, что в {@link #size}, значение — границы
+     * «от»/«до». Величина справочная: потребитель показывает её рядом с размером, чтобы
+     * игроку было по чему выбирать, когда размеров у вида несколько.
+     *
+     * <p>Опускается целиком, когда рост не задан ни одному размеру; размер без границ в
+     * карту не попадает.</p>
+     */
+    private Map<String, Height> heights;
     private Speed speed;
     /**
      * Обычное зрение в футах — дальность зрения токена в дневном режиме. Опускается,
@@ -94,6 +104,14 @@ public class VttgSpecies {
     /** Скорости перемещения в футах; отсутствующие виды движения опускаются. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Speed(Integer walk, Integer fly, Integer climb, Integer swim) {
+    }
+
+    /**
+     * Границы роста одного размера в футах. Задана бывает и одна из двух — у «Среднего,
+     * от 5 фт.» верхней границы попросту нет, поэтому пустая граница опускается.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Height(Integer from, Integer to) {
     }
 
     /**

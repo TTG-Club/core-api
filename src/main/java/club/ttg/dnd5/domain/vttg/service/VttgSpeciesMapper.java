@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -34,7 +35,8 @@ import java.util.stream.Collectors;
  *
  * <p>{@code type}/{@code creatureType}/{@code size} берутся из enum'ов и приводятся к нижнему
  * регистру (slug эталона: {@code DRAGON → "dragon"}, {@code MEDIUM → "medium"}); порядок размеров
- * сохраняется как в источнике. {@code key} строится из {@code url} так же, как в
+ * сохраняется как в источнике. Рост, заданный размеру в мастерской, уезжает рядом картой
+ * {@code heights} с теми же ключами. {@code key} строится из {@code url} так же, как в
  * {@link VttgBackgroundMapper}.</p>
  *
  * <p>Дары уезжают блоками {@code featData} — тем же сборщиком, что у черты, предыстории и
@@ -78,6 +80,7 @@ public class VttgSpeciesMapper {
                 .sourceKey(VttgSourceKeys.of(species.getSource()))
                 .creatureType(creatureType(species.getType()))
                 .size(sizes(species.getSizes()))
+                .heights(heights(species.getSizes()))
                 .speed(speed(species))
                 .vision(vision(species))
                 .featData(mechanicsMapper.featData(species.getMechanics(), null))
@@ -115,6 +118,38 @@ public class VttgSpeciesMapper {
                 .filter(size -> size != Size.UNDEFINED)
                 .map(size -> size.name().toLowerCase(Locale.ROOT))
                 .toList();
+    }
+
+    /**
+     * Рост по размерам: ключ — тот же slug, что в {@code size}. Размер без границ в карту не
+     * попадает, а пустая карта не уезжает вовсе — поле в записи просто отсутствует.
+     *
+     * <p>Ноль в границу не идёт по той же причине, что и в {@code vision}: в форме сайта ноль
+     * означает «не задано», а у потребителя прочитался бы ростом в ноль футов.</p>
+     */
+    private Map<String, VttgSpecies.Height> heights(Collection<SpeciesSizeDto> sizes) {
+        if (sizes == null) {
+            return null;
+        }
+        Map<String, VttgSpecies.Height> heights = new LinkedHashMap<>();
+        for (SpeciesSizeDto size : sizes) {
+            Size type = size.getType();
+            if (type == null || type == Size.UNDEFINED) {
+                continue;
+            }
+            Integer from = bound(size.getFrom());
+            Integer to = bound(size.getTo());
+            if (from == null && to == null) {
+                continue;
+            }
+            heights.put(type.name().toLowerCase(Locale.ROOT), new VttgSpecies.Height(from, to));
+        }
+        return heights.isEmpty() ? null : heights;
+    }
+
+    /** Граница роста: пустая и неположительная одинаково значат «не задана». */
+    private Integer bound(Short value) {
+        return value != null && value > 0 ? value.intValue() : null;
     }
 
     /**

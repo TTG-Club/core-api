@@ -152,6 +152,42 @@ class VttgSpeciesMapperTest {
         assertEquals(120, json(species).get("vision").asInt());
     }
 
+    /** Рост по размерам: ключи те же, что у {@code size}; пустые границы не уезжают. */
+    @Test
+    void exportsHeightsBySize() {
+        Species species = baseSpecies("human", "Человек", "Human");
+        species.setSpeed(30);
+        species.setSizes(List.of(size(Size.MEDIUM), size(Size.SMALL)));
+
+        // Рост не задан ни одному размеру — поля в записи нет вовсе
+        assertFalse(json(species).has("heights"));
+
+        species.setSizes(List.of(sized(Size.MEDIUM, (short) 4, (short) 6), size(Size.SMALL)));
+
+        JsonNode heights = json(species).get("heights");
+        assertEquals(4, heights.get("medium").get("from").asInt());
+        assertEquals(6, heights.get("medium").get("to").asInt());
+        // Размер без границ в карту не попадает, хотя в size он есть
+        assertFalse(heights.has("small"));
+        assertEquals("[\"medium\",\"small\"]", json(species).get("size").toString());
+    }
+
+    /** Одна граница роста — вторая просто опускается; ноль значит «не задано». */
+    @Test
+    void exportsSingleHeightBound() {
+        Species species = baseSpecies("goliath", "Голиаф", "Goliath");
+        species.setSpeed(35);
+        species.setSizes(List.of(sized(Size.MEDIUM, (short) 5, null)));
+
+        JsonNode medium = json(species).get("heights").get("medium");
+        assertEquals(5, medium.get("from").asInt());
+        assertFalse(medium.has("to"));
+
+        // Ноль из формы — «не задано», как и у обычного зрения
+        species.setSizes(List.of(sized(Size.MEDIUM, (short) 0, (short) 0)));
+        assertFalse(json(species).has("heights"));
+    }
+
     /** Идентичность страницы-источника вида. */
     @Test
     void exportsSourcePageIdentity() {
@@ -398,6 +434,14 @@ class VttgSpeciesMapperTest {
     private SpeciesSizeDto size(Size type) {
         SpeciesSizeDto dto = new SpeciesSizeDto();
         dto.setType(type);
+        return dto;
+    }
+
+    /** Размер с ростом: границы задаются как в мастерской — любая из двух может быть пустой. */
+    private SpeciesSizeDto sized(Size type, Short from, Short to) {
+        SpeciesSizeDto dto = size(type);
+        dto.setFrom(from);
+        dto.setTo(to);
         return dto;
     }
 }
