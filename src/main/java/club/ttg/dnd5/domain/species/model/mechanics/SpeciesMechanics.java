@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.model.mechanics;
 
+import club.ttg.dnd5.domain.common.model.mechanics.GrantingMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
@@ -43,7 +44,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SpeciesMechanics {
+public class SpeciesMechanics implements GrantingMechanics {
     /**
      * Постоянные модификаторы листа: чувства, сопротивления, скорости, хиты, КД,
      * тип существа. Тёмное зрение сюда не дублируется — оно свойство вида и живёт

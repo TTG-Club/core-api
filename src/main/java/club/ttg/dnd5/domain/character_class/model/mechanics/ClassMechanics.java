@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.model.mechanics;
 
+import club.ttg.dnd5.domain.common.model.mechanics.GrantingMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
@@ -42,7 +43,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ClassMechanics {
+public class ClassMechanics implements GrantingMechanics {
     /**
      * Постоянные модификаторы листа: хиты, скорости, КД, чувства, защиты. Условные
      * («Защита без доспехов» варвара считает КД только без доспеха) сюда не идут —

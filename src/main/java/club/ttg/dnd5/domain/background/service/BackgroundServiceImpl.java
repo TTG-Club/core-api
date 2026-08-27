@@ -10,7 +10,7 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
@@ -68,7 +68,7 @@ public class BackgroundServiceImpl implements BackgroundService {
      * @param response деталь предыстории с разобранными дарами.
      * @return выдаваемые заклинания с данными справочника; null — предыстория их не выдаёт.
      */
-    private Collection<FeatGrantedSpellResponse> resolveGrantedSpells(final BackgroundDetailResponse response) {
+    private Collection<GrantedSpellResponse> resolveGrantedSpells(final BackgroundDetailResponse response) {
         var granted = Optional.ofNullable(response.getMechanics())
                 .map(FeatMechanics::getSpells)
                 .map(SpellGrant::getSpells)
@@ -83,7 +83,7 @@ public class BackgroundServiceImpl implements BackgroundService {
         var result = granted.stream()
                 .filter(Objects::nonNull)
                 .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
-                .map(ref -> new FeatGrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
                         ref.getRequiredLevel()))
                 .toList();
 

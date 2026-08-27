@@ -27,6 +27,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgClass;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
 import club.ttg.dnd5.util.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -103,6 +104,7 @@ public class VttgClassMapper {
 
     private final VttgMarkupConverter markupConverter;
     private final VttgEquipmentMapper equipmentMapper;
+    private final VttgFeatMechanicsMapper mechanicsMapper;
 
     public VttgClass toVttg(CharacterClass characterClass) {
         String key = classKey(characterClass);
@@ -138,7 +140,21 @@ public class VttgClassMapper {
                 .counters(counters(characterClass, subclasses))
                 .multiclassProficiencies(multiclass(characterClass.getMulticlassProficiency()))
                 .activeEffects(effects(characterClass.getActiveEffects()))
+                .featData(featData(characterClass.getMechanics()))
                 .build();
+    }
+
+    /**
+     * Дары записи блоком {@code featData} — тем же, каким уезжают дары черты и предыстории.
+     *
+     * <p>Требований у класса нет: их проверяет мультиклассирование по ключевым
+     * характеристикам, а не список предусловий записи.</p>
+     *
+     * @param mechanics механика записи или её умения; {@code null} — выдавать нечего
+     * @return блок даров либо {@code null}
+     */
+    private VttgFeatData featData(ClassMechanics mechanics) {
+        return mechanics == null ? null : mechanicsMapper.featData(mechanics, null);
     }
 
     // ── Счётчики ресурсов ────────────────────────────────────────
@@ -324,6 +340,7 @@ public class VttgClassMapper {
                 .levelTable(hasTable(subclass.getTable()) ? levelTable(subclass.getTable(), features) : null)
                 .tableColumns(tableColumns(subclass.getTable()))
                 .activeEffects(effects(subclass.getActiveEffects()))
+                .featData(featData(subclass.getMechanics()))
                 .build();
     }
 
@@ -358,7 +375,8 @@ public class VttgClassMapper {
                     subclassKey, choices(feature.getOptions()),
                     flag(feature.isAbilityImprovement()), flag(feature.isFightingStyleChoice()),
                     featureSkillChoice(feature.getSkillChoice()), flag(feature.isInformationalOnly()),
-                    grantedSpells(feature.getMechanics()), effects(feature.getActiveEffects())));
+                    grantedSpells(feature.getMechanics()), effects(feature.getActiveEffects()),
+                    featData(feature.getMechanics())));
             appendScaling(result, feature, key, subclassKey);
         }
         result.sort(Comparator.comparing(feature -> feature.level() == null ? 0 : feature.level()));

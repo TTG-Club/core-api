@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.feat.model.mechanics;
 
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantingMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
@@ -39,7 +40,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FeatMechanics {
+public class FeatMechanics implements GrantingMechanics {
     /**
      * Варианты повышения характеристик. Несколько элементов — это выбор «или/или»:
      * «Улучшение характеристик» даёт {@code +2 к одной} либо {@code +1 к двум}.

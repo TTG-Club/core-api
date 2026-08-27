@@ -20,7 +20,12 @@ import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
+import club.ttg.dnd5.domain.common.dictionary.Language;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
@@ -30,11 +35,13 @@ import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
 import club.ttg.dnd5.domain.source.model.Source;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.Mockito.mock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,7 +49,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class VttgClassMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
-    private final VttgClassMapper mapper = new VttgClassMapper(markupConverter, new VttgEquipmentMapper(markupConverter));
+    private final VttgClassMapper mapper = new VttgClassMapper(markupConverter,
+            new VttgEquipmentMapper(markupConverter),
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
 
     /** «Воин» — базовая механика, владения, развёртка scaling в умения, таблица и вложенный подкласс. */
     @Test
@@ -366,6 +375,42 @@ class VttgClassMapperTest {
         assertEquals("rages", json.get("counters").get(0).get("key").asText());
         assertEquals("rages", json.get("tableColumns").get(0).get("key").asText());
         assertEquals("2", json.get("levelTable").get(0).get("rages").asText());
+    }
+
+
+    /**
+     * Дары умения уезжают тем же блоком, что у черты и предыстории: у потребителя их
+     * применяет один и тот же код, и вторая форма означала бы второй разбор.
+     */
+    @Test
+    void exportsFeatureGrantsAsFeatData() {
+        CharacterClass rogue = baseClass("rogue", "Плут", "Rogue");
+        ClassFeature expertise = feature("expertise", 1, "Экспертиза", "Удвойте бонус мастерства.");
+
+        ProficiencyGrant granted = new ProficiencyGrant();
+
+        granted.setLanguages(Set.of(Language.COMMON));
+
+        MechanicChoice choice = new MechanicChoice();
+
+        choice.setKey("skill");
+        choice.setType(ChoiceType.SKILL);
+        choice.setCount(2);
+        choice.setOptions(List.of(new ChoiceOption("STEALTH", "Скрытность")));
+
+        ClassMechanics mechanics = new ClassMechanics();
+
+        mechanics.setProficiencies(granted);
+        mechanics.setChoices(List.of(choice));
+        expertise.setMechanics(mechanics);
+
+        rogue.setFeatures(List.of(expertise));
+
+        JsonNode featData = json(rogue).get("features").get(0).get("featData");
+        assertEquals("feat", featData.get("type").asText());
+        assertEquals("[\"Общий\"]", featData.get("languages").toString());
+        assertEquals("skill", featData.get("choices").get(0).get("type").asText());
+        assertEquals(2, featData.get("choices").get(0).get("count").asInt());
     }
 
     private ActiveEffect effect(String id, String name) {
