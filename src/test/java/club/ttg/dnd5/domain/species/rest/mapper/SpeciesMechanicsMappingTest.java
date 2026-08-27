@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -135,6 +136,30 @@ class SpeciesMechanicsMappingTest {
         Species restored = speciesMapper.toEntity(request);
         assertEquals(Set.of(DamageType.FIRE),
                 restored.getMechanics().getModifiers().getDamage().getResistances());
+    }
+
+    /**
+     * Счётчик ресурса умения ходит через маппер формы: «Дыхание дракона» на листе — тот же
+     * счётчик, что у черты и умения класса, и без поля в механике вида он бы пропадал.
+     */
+    @Test
+    void featureCounterSurvivesFormMapping() {
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("breath-weapon");
+        counter.setName("Дыхание дракона");
+        counter.setMax("@prof");
+        SpeciesMechanics mechanics = new SpeciesMechanics();
+        mechanics.setCounters(List.of(counter));
+        SpeciesFeature feature = new SpeciesFeature("breath-weapon", "Дыхание дракона",
+                "Breath Weapon", "Выдох стихии.", null);
+        feature.setMechanics(mechanics);
+
+        FeatureRequest request = featureMapper.toRequest(feature);
+        SpeciesFeature restored = featureMapper.toEntity(request);
+
+        ResourceCounter restoredCounter = restored.getMechanics().getCounters().getFirst();
+        assertEquals("breath-weapon", restoredCounter.getKey());
+        assertEquals("@prof", restoredCounter.getMax());
     }
 
     /**

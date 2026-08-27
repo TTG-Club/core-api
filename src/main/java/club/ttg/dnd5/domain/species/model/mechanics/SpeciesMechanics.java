@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.species.model.mechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantingMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -70,4 +71,13 @@ public class SpeciesMechanics implements GrantingMechanics {
     @Schema(description = "Выборы, которые игрок делает при выборе вида",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<MechanicChoice> choices;
+
+    /**
+     * Ресурсы со своим счётчиком на листе: «Дыхание дракона» — бонус мастерства раз до
+     * продолжительного отдыха, «Исцеляющие руки» аасимара. Та же модель, что у черты и
+     * умения класса: лист и выгрузка VTTG заводят счётчик одинаково, откуда бы он ни пришёл.
+     */
+    @Schema(description = "Ресурсы со своим счётчиком на листе",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<ResourceCounter> counters;
 }
