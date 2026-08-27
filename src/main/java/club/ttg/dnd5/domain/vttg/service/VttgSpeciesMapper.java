@@ -79,11 +79,20 @@ public class VttgSpeciesMapper {
                 .creatureType(creatureType(species.getType()))
                 .size(sizes(species.getSizes()))
                 .speed(speed(species))
-                .vision(species.getVision())
+                .vision(vision(species))
                 .featData(mechanicsMapper.featData(species.getMechanics(), null))
                 .features(features(species))
                 .activeEffects(activeEffects(species))
                 .build();
+    }
+
+    /**
+     * Обычное зрение записи. Ноль не уезжает: у потребителя ноль дальности значит
+     * «без ограничений», а в форме сайта — «не задано».
+     */
+    private Integer vision(Species species) {
+        Integer vision = species.getVision();
+        return vision != null && vision > 0 ? vision : null;
     }
 
     /** Ключ родительского вида; {@code null} — запись верхнеуровневая. */
