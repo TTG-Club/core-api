@@ -13,17 +13,17 @@ import java.util.List;
  *
  * <p>Соответствует целевому формату SRD-бэкапа VTTG (см. {@code species/*.json}):
  * самоописывающаяся запись с постоянным {@code type = "species"}, ключом {@code key},
- * характеристиками существа ({@code creatureType}/{@code size}/{@code speed}), списком
- * {@code grants} (структурные награды вида) и {@code features} (видовые умения).</p>
+ * характеристиками существа ({@code creatureType}/{@code size}/{@code speed}), дарами
+ * записи ({@code featData}) и {@code features} (видовые умения со своими дарами).</p>
  *
- * <p>{@link #grants} собираются из механики записи и её умений: тёмное зрение
- * ({@code darkvision}) — наибольшая дальность чувства {@code DARKVISION}, сопротивления
- * ({@code damageDefense}) и владения навыками ({@code skillProficiency}) — оттуда же.
- * Умение, действие которого описано только текстом, наград не даёт.</p>
+ * <p>Дары уезжают тем же блоком {@link VttgFeatData}, что у черты, предыстории и класса:
+ * {@code featData} записи — механика самой записи, {@code featData} умения — механика
+ * этого умения. Так потребитель видит, какое именно умение дало владение или чувство.
+ * Умение, действие которого описано только текстом, даров не даёт.</p>
  *
- * <p>Происхождения (lineages) — это дочерние виды в модели TTG Club; при экспорте они
- * сворачиваются в {@link Feature#choices()} «происхожденческого» умения родителя
- * (см. {@code VttgSpeciesMapper}).</p>
+ * <p>Происхождения (lineages) — это дочерние виды в модели TTG Club; каждый экспортируется
+ * самостоятельной записью со ссылкой {@link #parentKey} на родителя. Комбинирование
+ * «вид + происхождение» — забота потребителя (см. {@code VttgSpeciesMapper}).</p>
  */
 @Builder
 @Getter
@@ -48,6 +48,11 @@ public class VttgSpecies {
     private String srcUrl;
     /** Стабильный ключ вида (slug из url). */
     private String key;
+    /**
+     * Ключ родительского вида для происхождения (slug из url родителя); {@code null} —
+     * запись верхнеуровневая. По нему потребитель собирает список происхождений вида.
+     */
+    private String parentKey;
     /** Признак SRD (для раскладки по пакам); выводится всегда. */
     private boolean isSRD;
     private String name;
@@ -60,8 +65,11 @@ public class VttgSpecies {
     /** Размеры в порядке источника (slug'и: "small"/"medium"/...). */
     private List<String> size;
     private Speed speed;
-    /** Структурные награды вида; пустой список, если их нет (эталон выгружает {@code []}). */
-    private List<Grant> grants;
+    /**
+     * Дары самой записи — механика вида или происхождения целиком, блоком
+     * {@link VttgFeatData} (как у черты). Опускается, когда давать нечего.
+     */
+    private VttgFeatData featData;
     /** Видовые умения; пустой список, если их нет. */
     private List<Feature> features;
 
@@ -84,48 +92,8 @@ public class VttgSpecies {
     }
 
     /**
-     * Награда вида в формате эталона. Поля заполняются в зависимости от {@code type}:
-     * {@code darkvision} → {@code range}; {@code resistance} → {@code damageTypes};
-     * {@code skillProficiency} → {@code count}/{@code from}. Пустые поля опускаются.
-     */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Grant(String type, Integer range, List<String> damageTypes, Integer count, List<String> from,
-                        List<DamageDefense> entries, List<String> conditions, List<String> abilities,
-                        List<String> items, Choices choices) {
-
-        /** Награда прежней формы: тёмное зрение, сопротивления, выбор навыков. */
-        public Grant(String type, Integer range, List<String> damageTypes, Integer count, List<String> from) {
-            this(type, range, damageTypes, count, from, null, null, null, null, null);
-        }
-
-        /** Безвыборная выдача списком: владения оружием, доспехами, инструментами, языки. */
-        public static Grant items(String type, List<String> items) {
-            return new Grant(type, null, null, null, null, null, null, null, items, null);
-        }
-
-        /** Выдача с выбором: {@code items} — то, что дано сразу, {@code choices} — что выбирают. */
-        public static Grant choices(String type, List<String> items, Choices choices) {
-            return new Grant(type, null, null, null, null, null, null, null, items, choices);
-        }
-    }
-
-    /**
-     * Защита вида по одному типу урона.
-     *
-     * @param damageType slug типа урона ({@code fire}, {@code poison})
-     * @param kind       вид защиты: {@code resistance}/{@code immunity}/{@code vulnerability}
-     */
-    public record DamageDefense(String damageType, String kind) {
-    }
-
-    /** Выбор внутри награды: сколько ({@code count}) и из чего ({@code from}). */
-    public record Choices(int count, List<String> from) {
-    }
-
-    /**
-     * Видовое умение: {@code key} (slug), {@code name}, текст {@code description} и, для
-     * «происхожденческих» умений, варианты выбора {@code choices} (происхождения вида).
-     * Пустые {@code choices} опускаются.
+     * Видовое умение: {@code key} (slug), {@code name}, текст {@code description} и дары
+     * умения блоком {@code featData} — той же формы, что у черты.
      *
      * <p>{@code level} — уровень персонажа, с которого умение действует (по умолчанию
      * первый), {@code grantedSpells} — заклинания, которые оно выдаёт: они приходят из
@@ -135,14 +103,9 @@ public class VttgSpecies {
      * (см. {@code VttgSpeciesMapper}).</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Feature(String key, String name, String description, List<Choice> choices,
+    public record Feature(String key, String name, String description,
                           Integer level, List<GrantedSpell> grantedSpells,
-                          List<ActiveEffect> activeEffects) {
-
-        /** Обычное умение источника: без уровня, заклинаний и эффектов. */
-        public Feature(String key, String name, String description, List<Choice> choices) {
-            this(key, name, description, choices, null, null, null);
-        }
+                          List<ActiveEffect> activeEffects, VttgFeatData featData) {
     }
 
     /**
@@ -152,9 +115,5 @@ public class VttgSpecies {
      * @param spellId {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
      */
     public record GrantedSpell(String name, String spellId) {
-    }
-
-    /** Вариант происхождения вида (дочерний вид): {@code key} (slug), {@code name}, {@code description}. */
-    public record Choice(String key, String name, String description) {
     }
 }
