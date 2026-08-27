@@ -26,6 +26,17 @@ databaseChangeLog:
         «это чувство добавила миграция» в данных нет. Пустые массивы senses и объекты
         modifiers/mechanics после отката остаются — функционально они эквивалентны
         отсутствующим.
+
+        Дев применил первую редакцию этого changeSet до правок guards; контрольная
+        сумма поэтому не проверяется, а предусловие пропускает перенос там, где колонки
+        уже нет — иначе повторный деплой дева упал бы на валидации.
+      validCheckSum:
+        - ANY
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: species
+            columnName: dark_vision
       changes:
         - sql:
             dbms: postgresql
@@ -166,6 +177,15 @@ databaseChangeLog:
         числа восстанавливаются из механики, происхождения снова получают копию
         родительского значения. Оба changeSet живут в одном файле, поэтому полный
         откат миграции — rollbackCount 2, не 1.
+
+        Предусловие: колонку мог удалить этот же changeSet под прежним id
+        (2026-08-30-02-…) — на деве так и было; без колонки changeSet помечается
+        выполненным, а не падает.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: species
+            columnName: dark_vision
       changes:
         - dropColumn:
             tableName: species
