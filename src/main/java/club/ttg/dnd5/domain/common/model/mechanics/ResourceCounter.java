@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * Ресурс со счётчиком: очки удачи «Удачливого», применения «Целителя», заряды
  * «Ритуального заклинателя».
@@ -55,6 +57,17 @@ public class ResourceCounter {
     @Schema(description = "Формула максимума: число либо выражение с @prof, @level, @mod.<abbr>",
             example = "@prof")
     private String max;
+
+    /**
+     * Ступени максимума по уровням; пусто — максимум задан формулой.
+     *
+     * <p>Нужны ресурсу, у которого ряд значений формулой не пишется: костей превосходства
+     * мастера боевых искусств четыре с третьего уровня, пять с седьмого и шесть с
+     * пятнадцатого. Заполнены обе формы — старшей считается ступень: она точнее.</p>
+     */
+    @Schema(description = "Ступени максимума по уровням; пусто — максимум задан формулой",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<CounterScaling> scaling;
 
     @Schema(description = "Каким отдыхом восстанавливается",
             examples = {"SHORT_REST", "LONG_REST"})

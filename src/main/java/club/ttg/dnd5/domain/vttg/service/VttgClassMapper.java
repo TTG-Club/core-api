@@ -21,6 +21,7 @@ import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
@@ -219,14 +220,57 @@ public class VttgClassMapper {
 
         List<VttgClass.Counter> result = new ArrayList<>();
         for (ResourceCounter counter : counters) {
-            if (!StringUtils.hasText(counter.getKey()) || !StringUtils.hasText(counter.getMax())) {
+            Map<String, Integer> progression = counterProgression(counter);
+            boolean hasMax = StringUtils.hasText(counter.getMax());
+            if (!StringUtils.hasText(counter.getKey()) || (!hasMax && progression == null)) {
                 continue;
             }
             result.add(new VttgClass.Counter(counter.getKey(), counterName(counter),
-                    optional(counter.getShortName()), 1, recovery(counter.getRecovery()),
-                    null, counter.getMax(), subclassKey));
+                    optional(counter.getShortName()), counterStartLevel(counter),
+                    recovery(counter.getRecovery()),
+                    progression, hasMax ? counter.getMax() : null, subclassKey));
         }
         return result;
+    }
+
+    /**
+     * Ступени максимума счётчика прогрессией по уровням: у потребителя это тот же вид
+     * записи, что и у колонки таблицы, и ему всё равно, откуда ряд пришёл.
+     *
+     * @param counter ресурс из механики.
+     * @return прогрессия по уровням; {@code null} — ступеней нет.
+     */
+    private Map<String, Integer> counterProgression(ResourceCounter counter) {
+        if (CollectionUtils.isEmpty(counter.getScaling())) {
+            return null;
+        }
+        Map<String, Integer> progression = new LinkedHashMap<>();
+        counter.getScaling().stream()
+                .filter(step -> step != null && step.getLevel() != null && step.getMax() != null)
+                .sorted(Comparator.comparingInt(CounterScaling::getLevel))
+                .forEach(step -> progression.put(String.valueOf(step.getLevel()), step.getMax()));
+        return progression.isEmpty() ? null : progression;
+    }
+
+    /**
+     * Уровень, с которого счётчик появляется: первая ступень, а без ступеней — первый.
+     *
+     * <p>Ресурс со ступенями до первой из них не существует вовсе: кости превосходства
+     * появляются на третьем уровне вместе с подклассом, и счётчик «0 из 0» на первых двух
+     * уровнях листа только мешал бы.</p>
+     *
+     * @param counter ресурс из механики.
+     * @return уровень появления счётчика.
+     */
+    private int counterStartLevel(ResourceCounter counter) {
+        if (CollectionUtils.isEmpty(counter.getScaling())) {
+            return 1;
+        }
+        return counter.getScaling().stream()
+                .filter(step -> step != null && step.getLevel() != null && step.getMax() != null)
+                .mapToInt(CounterScaling::getLevel)
+                .min()
+                .orElse(1);
     }
 
     private void collectCounters(ClassMechanics mechanics, List<ResourceCounter> target) {

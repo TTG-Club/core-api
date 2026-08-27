@@ -26,6 +26,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
@@ -356,6 +357,47 @@ class VttgClassMapperTest {
         assertEquals("Дыхание", counters.get(0).get("shortName").asText());
         assertEquals("@prof", counters.get(0).get("formula").asText());
         assertEquals("long", counters.get(0).get("recovery").asText());
+    }
+
+    /**
+     * Ресурс со ступенями по уровням уезжает прогрессией: формулой ряд «4 с третьего,
+     * 5 с седьмого, 6 с пятнадцатого» не пишется, а у потребителя это тот же вид записи,
+     * что и у колонки таблицы.
+     */
+    @Test
+    void exportsScaledCounterFromMechanics() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassFeature superiority = feature("combat-superiority", 3, "Боевое превосходство",
+                "Кости превосходства.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("superiority-dice");
+        counter.setName("Кости превосходства");
+        counter.setRecovery(ResourceRecovery.SHORT_REST);
+        counter.setScaling(List.of(
+                new CounterScaling(7, 5),
+                new CounterScaling(3, 4),
+                new CounterScaling(15, 6)));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        superiority.setMechanics(mechanics);
+
+        fighter.setFeatures(List.of(superiority));
+
+        JsonNode counters = json(fighter).get("counters");
+        assertEquals(1, counters.size());
+
+        JsonNode exported = counters.get(0);
+        assertEquals("superiority-dice", exported.get("key").asText());
+        assertEquals("short", exported.get("recovery").asText());
+        // Счётчик появляется с первой ступени: до третьего уровня ресурса нет вовсе
+        assertEquals(3, exported.get("startLevel").asInt());
+        assertFalse(exported.has("formula"));
+
+        JsonNode progression = exported.get("progression");
+        assertEquals(4, progression.get("3").asInt());
+        assertEquals(5, progression.get("7").asInt());
+        assertEquals(6, progression.get("15").asInt());
     }
 
     /**
