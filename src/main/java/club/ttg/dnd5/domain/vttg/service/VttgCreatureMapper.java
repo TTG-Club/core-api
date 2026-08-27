@@ -25,6 +25,7 @@ import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -139,6 +140,8 @@ public class VttgCreatureMapper {
                 .sourceKey(VttgSourceKeys.of(creature.getSource()))
                 .isSRD(creature.getSrdVersion() != null)
                 .isReadOnly(true)
+                .activeEffects(CollectionUtils.isEmpty(creature.getActiveEffects())
+                        ? null : creature.getActiveEffects())
                 .build();
     }
 

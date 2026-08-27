@@ -6,7 +6,7 @@ import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.common.rest.dto.EquipmentOptionDto;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -79,7 +79,7 @@ public class BackgroundDetailResponse extends BaseResponse {
      * чем.</p>
      */
     @Schema(description = "Выдаваемые предысторией заклинания с данными справочника")
-    private Collection<FeatGrantedSpellResponse> grantedSpells;
+    private Collection<GrantedSpellResponse> grantedSpells;
 
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Снаряжение")

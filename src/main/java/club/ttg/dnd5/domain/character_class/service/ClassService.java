@@ -1,5 +1,12 @@
 package club.ttg.dnd5.domain.character_class.service;
 
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
+import java.util.Collection;
+import java.util.Objects;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassProficiencyDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassQueryRequest;
@@ -54,6 +61,7 @@ public class ClassService {
     private final EntityRevisionService revisionService;
     private final EquipmentNameResolver equipmentNameResolver;
     private final EquipmentMapping equipmentMapping;
+    private final GrantedSpellResolver grantedSpellResolver;
 
     public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
@@ -182,6 +190,7 @@ public class ClassService {
         var charClass = findByUrl(url);
         var response = classMapper.toDetailedResponse(charClass);
         fillResponseFieldsFromParentClass(charClass, response);
+        resolveFeatureGrantedSpells(response);
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
                 .stream()
@@ -197,6 +206,54 @@ public class ClassService {
                 .map(Gallery::getImage)
                 .toList());
         return request;
+    }
+
+    /**
+     * Подставляет умениям записи справочника по ссылкам их механики — одним запросом на
+     * весь класс.
+     *
+     * <p>Ссылок в механике достаточно виртуальному столу, но не листу персонажа: чтобы
+     * положить заклинание в книгу, ему нужен круг, а чтобы подписать — школа. Ненайденная
+     * ссылка просто пропускается: это свободный JSONB, набранный руками в редакторе.</p>
+     *
+     * @param response деталь класса с уже собранными умениями.
+     */
+    private void resolveFeatureGrantedSpells(ClassDetailedResponse response) {
+        var features = Optional.ofNullable(response.getFeatures()).orElse(List.of());
+
+        var refs = features.stream()
+                .map(ClassFeatureDto::getMechanics)
+                .filter(Objects::nonNull)
+                .map(ClassMechanics::getSpells)
+                .filter(Objects::nonNull)
+                .map(SpellGrant::getSpells)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (refs.isEmpty()) {
+            return;
+        }
+
+        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(refs);
+
+        for (ClassFeatureDto feature : features) {
+            var granted = Optional.ofNullable(feature.getMechanics())
+                    .map(ClassMechanics::getSpells)
+                    .map(SpellGrant::getSpells)
+                    .orElse(List.of())
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
+                    .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                            ref.getRequiredLevel()))
+                    .toList();
+
+            if (!granted.isEmpty()) {
+                feature.setGrantedSpells(granted);
+            }
+        }
     }
 
     private void fillResponseFieldsFromParentClass(CharacterClass characterClass, ClassDetailedResponse response) {

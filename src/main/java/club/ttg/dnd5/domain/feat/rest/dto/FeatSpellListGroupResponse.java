@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.dto;
 
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,7 +17,7 @@ import java.util.Collection;
  *
  * <p>Записи справочника нужны именно здесь: круг заклинания в механике не хранится, а без
  * круга сайту таблицу «Заклинания метки» не собрать. Форма повторяет
- * {@link FeatGrantedSpellResponse} по замыслу — механика плюс дополненная запись, — но
+ * {@link GrantedSpellResponse} по замыслу — механика плюс дополненная запись, — но
  * своим типом: там уровень у ОДНОГО заклинания, здесь у целого списка.</p>
  */
 @Getter

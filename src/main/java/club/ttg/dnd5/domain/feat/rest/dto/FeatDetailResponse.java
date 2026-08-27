@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.feat.rest.dto;
 
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
@@ -74,7 +75,7 @@ public class FeatDetailResponse extends BaseResponse {
      * третьем уровне, и без уровня страница показала бы его наравне с первым.</p>
      */
     @Schema(description = "Выдаваемые чертой заклинания с данными справочника")
-    private Collection<FeatGrantedSpellResponse> grantedSpells;
+    private Collection<GrantedSpellResponse> grantedSpells;
 
     /**
      * Заклинания из {@code mechanics.spellList}, дополненные данными справочника —

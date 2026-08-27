@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-29-04-backfill-class-spellcasting
+      author: Peterko
+      comment: >
+        Заполняет заклинательную характеристику и стартовый уровень заклинательства у
+        классов справочника. Колонки только что появились, и до сих пор потребитель выводил
+        характеристику из карты канонических классов по ключу — у переведённого или
+        самописного класса её там нет, и вся заклинательная конфигурация у него молча
+        пропадала.
+
+        Отбор по английскому названию, а не по url: url несёт суффикс источника
+        ('wizard-phb'), и в другой среде он может отличаться, а название класса каноническое.
+        Классы без заклинательства (caster_type NONE или пусто) не трогаются вовсе.
+
+        Подклассы-трети (Мистический рыцарь, Таинственный плут) получают Интеллект и третий
+        уровень начала: своей магией они обзаводятся не с первого уровня, и без этого
+        мастер повышения уровня спросил бы заклинания слишком рано.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET spellcasting_ability = 'CHARISMA'
+              WHERE spellcasting_ability IS NULL
+                AND parent_url IS NULL
+                AND caster_type IS NOT NULL AND caster_type <> 'NONE'
+                AND lower(english) IN ('bard', 'warlock', 'paladin', 'sorcerer');
+
+              UPDATE class SET spellcasting_ability = 'INTELLIGENCE'
+              WHERE spellcasting_ability IS NULL
+                AND parent_url IS NULL
+                AND caster_type IS NOT NULL AND caster_type <> 'NONE'
+                AND lower(english) IN ('wizard', 'artificer', 'psion');
+
+              UPDATE class SET spellcasting_ability = 'WISDOM'
+              WHERE spellcasting_ability IS NULL
+                AND parent_url IS NULL
+                AND caster_type IS NOT NULL AND caster_type <> 'NONE'
+                AND lower(english) IN ('cleric', 'druid', 'ranger');
+
+              UPDATE class
+              SET spellcasting_ability = COALESCE(spellcasting_ability, 'INTELLIGENCE'),
+                  spellcasting_start_level = COALESCE(spellcasting_start_level, 3)
+              WHERE caster_type = 'THIRD';
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET spellcasting_ability = NULL, spellcasting_start_level = NULL;

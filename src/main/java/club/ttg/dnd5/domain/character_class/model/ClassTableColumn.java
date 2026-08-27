@@ -18,12 +18,24 @@ public class ClassTableColumn {
     @Schema(description = "Имя колонки")
     private String name;
 
+    @Schema(description = """
+            Стабильный ключ колонки. Пусто — ключ выводится из подписи, как было до его
+            появления; заполняют его, когда подпись переводят или меняют, а потраченный
+            остаток ресурса на уже сохранённых листах терять нельзя.""")
+    private String key;
+
+    @Schema(description = "Краткая подпись для компактной плитки ресурса; пусто — берётся имя колонки")
+    private String shortName;
+
     @Schema(description = "Когда восстанавливается ресурс колонки")
     private ClassResourceRecovery resourceRecovery = ClassResourceRecovery.NONE;
+
+    @Schema(description = "Что колонка означает для мастера повышения уровня")
+    private ClassTableColumnPurpose purpose = ClassTableColumnPurpose.NONE;
 
     List<ClassTableItem> scaling;
 
     public ClassTableColumn(String name, List<ClassTableItem> scaling) {
-        this(name, ClassResourceRecovery.NONE, scaling);
+        this(name, null, null, ClassResourceRecovery.NONE, ClassTableColumnPurpose.NONE, scaling);
     }
 }

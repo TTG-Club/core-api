@@ -1,9 +1,11 @@
 package club.ttg.dnd5.domain.character_class.model;
 
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -123,6 +125,38 @@ public class CharacterClass extends NamedEntity {
     private CasterType casterType;
 
     /**
+     * Характеристика, которой класс колдует.
+     *
+     * <p>До её появления потребители выводили характеристику по каноническому ключу
+     * класса, и у самописного или переведённого класса она молча пропадала. Пусто —
+     * класс не заклинатель либо характеристика в источнике не указана.</p>
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "spellcasting_ability")
+    private Ability spellcastingAbility;
+
+    /**
+     * Уровень класса, с которого работает заклинательство. Пусто — с первого
+     * (у трети-заклинателей это третий).
+     */
+    @Column(name = "spellcasting_start_level")
+    private Integer spellcastingStartLevel;
+
+    /**
+     * Подпись группы подклассов: «Воинский архетип», «Магическая традиция». Пусто —
+     * потребитель показывает нейтральное «Подкласс».
+     */
+    @Column(name = "subclass_label")
+    private String subclassLabel;
+
+    /**
+     * Уровень, на котором выбирается подкласс. Пусто — уровень берётся из уровня
+     * первого умения подкласса.
+     */
+    @Column(name = "subclass_level")
+    private Integer subclassLevel;
+
+    /**
      * Спасброски
      */
     @Type(JsonType.class)
@@ -149,6 +183,26 @@ public class CharacterClass extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb", name = "ability_template")
     private List<Integer> abilityTemplate;
+
+    /**
+     * Механика влияния самого класса на лист персонажа: то, что даёт взятие класса
+     * целиком, а не отдельное его умение.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private ClassMechanics mechanics;
+
+    /**
+     * Активные эффекты класса в вокабуляре VTTG — та же модель и та же колонка, что у
+     * черты ({@code Feat.activeEffects}) и предмета.
+     *
+     * <p>Своей колонкой, а не полем внутри {@link #mechanics}: механика описывает дары,
+     * которые лист проставляет сам, а эффект меняет числа готовой формулой и уезжает на
+     * виртуальный стол как есть.</p>
+     */
+    @Type(JsonType.class)
+    @Column(name = "active_effects", columnDefinition = "jsonb")
+    private List<ActiveEffect> activeEffects;
 
     @ManyToOne
     @JoinColumn(name = "source")

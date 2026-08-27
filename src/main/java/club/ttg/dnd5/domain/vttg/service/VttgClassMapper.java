@@ -13,16 +13,25 @@ import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
 import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
 import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
+import club.ttg.dnd5.domain.character_class.model.ClassTableColumnPurpose;
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgClass;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
 import club.ttg.dnd5.util.SlugifyUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -33,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -94,6 +104,7 @@ public class VttgClassMapper {
 
     private final VttgMarkupConverter markupConverter;
     private final VttgEquipmentMapper equipmentMapper;
+    private final VttgFeatMechanicsMapper mechanicsMapper;
 
     public VttgClass toVttg(CharacterClass characterClass) {
         String key = classKey(characterClass);
@@ -119,16 +130,45 @@ public class VttgClassMapper {
                 .savingThrowProficiencies(abilities(characterClass.getSavingThrows()))
                 .skillChoices(skillChoices(characterClass.getSkillProficiency()))
                 .startingEquipment(startingEquipment(characterClass))
-                .spellcasting(spellcasting(key, characterClass.getCasterType()))
-                .subclassLevel(subclassLevel(subclasses))
-                .subclassLabel(subclassLabel(key))
+                .spellcasting(spellcasting(key, characterClass))
+                .subclassLevel(subclassLevel(characterClass, subclasses))
+                .subclassLabel(subclassLabel(key, characterClass))
                 .subclasses(subclasses)
                 .features(features)
                 .levelTable(levelTable(characterClass.getTable(), features))
                 .tableColumns(tableColumns(characterClass.getTable()))
                 .counters(counters(characterClass, subclasses))
                 .multiclassProficiencies(multiclass(characterClass.getMulticlassProficiency()))
+                .activeEffects(effects(characterClass.getActiveEffects()))
+                .featData(featData(characterClass.getMechanics()))
                 .build();
+    }
+
+    /**
+     * Дары записи блоком {@code featData} — тем же, каким уезжают дары черты и предыстории.
+     *
+     * <p>Требований у класса нет: их проверяет мультиклассирование по ключевым
+     * характеристикам, а не список предусловий записи.</p>
+     *
+     * @param mechanics механика записи или её умения; {@code null} — выдавать нечего
+     * @return блок даров либо {@code null}
+     */
+    private VttgFeatData featData(ClassMechanics mechanics) {
+        if (mechanics == null) {
+            return null;
+        }
+
+        // Заклинания и ресурсы у класса уже выведены своими полями записи
+        // ({@code Feature.grantedSpells}, {@code counters}); повтори их блок даров — и
+        // потребитель выдал бы то же самое дважды
+        ClassMechanics withoutDuplicates = new ClassMechanics();
+
+        withoutDuplicates.setModifiers(mechanics.getModifiers());
+        withoutDuplicates.setProficiencies(mechanics.getProficiencies());
+        withoutDuplicates.setChoices(mechanics.getChoices());
+        withoutDuplicates.setSpellList(mechanics.getSpellList());
+
+        return mechanicsMapper.featData(withoutDuplicates, null);
     }
 
     // ── Счётчики ресурсов ────────────────────────────────────────
@@ -142,6 +182,7 @@ public class VttgClassMapper {
     private List<VttgClass.Counter> counters(CharacterClass characterClass,
                                              List<VttgClass.Subclass> subclasses) {
         List<VttgClass.Counter> result = new ArrayList<>(counters(characterClass.getTable(), null));
+        result.addAll(mechanicsCounters(characterClass, null));
 
         Set<String> exported = subclasses.stream()
                 .map(VttgClass.Subclass::getKey)
@@ -153,9 +194,55 @@ public class VttgClassMapper {
             // ссылался бы на подкласс, которого в выгрузке нет
             if (exported.contains(subclassKey)) {
                 result.addAll(counters(child.getTable(), subclassKey));
+                result.addAll(mechanicsCounters(child, subclassKey));
             }
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Счётчики из механики записи и её умений: ресурсы, у которых нет колонки таблицы,
+     * потому что максимум задан формулой («Второе дыхание» — по бонусу мастерства).
+     *
+     * <p>Колонка таблицы и формула — два способа записать один и тот же ресурс, поэтому
+     * счётчик с уже занятым ключом пропускается: если у ресурса есть колонка, она и есть
+     * его прогрессия.</p>
+     */
+    private List<VttgClass.Counter> mechanicsCounters(CharacterClass characterClass, String subclassKey) {
+        List<ResourceCounter> counters = new ArrayList<>();
+        collectCounters(characterClass.getMechanics(), counters);
+        for (ClassFeature feature : Optional.ofNullable(characterClass.getFeatures()).orElse(List.of())) {
+            if (feature != null) {
+                collectCounters(feature.getMechanics(), counters);
+            }
+        }
+
+        List<VttgClass.Counter> result = new ArrayList<>();
+        for (ResourceCounter counter : counters) {
+            if (!StringUtils.hasText(counter.getKey()) || !StringUtils.hasText(counter.getMax())) {
+                continue;
+            }
+            result.add(new VttgClass.Counter(counter.getKey(), counterName(counter),
+                    optional(counter.getShortName()), 1, recovery(counter.getRecovery()),
+                    null, counter.getMax(), subclassKey));
+        }
+        return result;
+    }
+
+    private void collectCounters(ClassMechanics mechanics, List<ResourceCounter> target) {
+        if (mechanics != null && !CollectionUtils.isEmpty(mechanics.getCounters())) {
+            target.addAll(mechanics.getCounters());
+        }
+    }
+
+    /** Подпись счётчика: своя, иначе ключ — иначе плитка на листе осталась бы безымянной. */
+    private String counterName(ResourceCounter counter) {
+        return StringUtils.hasText(counter.getName()) ? counter.getName() : counter.getKey();
+    }
+
+    /** Способ восстановления ресурса механики в словаре потребителя. */
+    private String recovery(ResourceRecovery recovery) {
+        return recovery == ResourceRecovery.SHORT_REST ? "short" : "long";
     }
 
     /** Дочерние классы источника без скрытых — тот же отбор, что и у {@link #subclasses}. */
@@ -217,8 +304,9 @@ public class VttgClassMapper {
             return null;
         }
 
-        return new VttgClass.Counter(columnKey(column.getName()), column.getName(),
-                startLevel, recovery(column.getResourceRecovery()), progression, subclassKey);
+        return new VttgClass.Counter(columnKey(column), column.getName(),
+                optional(column.getShortName()), startLevel, recovery(column.getResourceRecovery()),
+                progression, null, subclassKey);
     }
 
     /** Способ восстановления в словаре потребителя. */
@@ -261,10 +349,12 @@ public class VttgClassMapper {
                 .description(description(subclass.getDescription()))
                 .unlockLevel(unlockLevel(features))
                 .sourceKey(VttgSourceKeys.of(subclass.getSource()))
-                .spellcasting(spellcasting(null, subclass.getCasterType()))
+                .spellcasting(spellcasting(null, subclass))
                 .features(features)
                 .levelTable(hasTable(subclass.getTable()) ? levelTable(subclass.getTable(), features) : null)
                 .tableColumns(tableColumns(subclass.getTable()))
+                .activeEffects(effects(subclass.getActiveEffects()))
+                .featData(featData(subclass.getMechanics()))
                 .build();
     }
 
@@ -298,7 +388,9 @@ public class VttgClassMapper {
                     description(feature.getDescription()), feature.getLevel(),
                     subclassKey, choices(feature.getOptions()),
                     flag(feature.isAbilityImprovement()), flag(feature.isFightingStyleChoice()),
-                    featureSkillChoice(feature.getSkillChoice())));
+                    featureSkillChoice(feature.getSkillChoice()), flag(feature.isInformationalOnly()),
+                    grantedSpells(feature.getMechanics()), effects(feature.getActiveEffects()),
+                    featData(feature.getMechanics())));
             appendScaling(result, feature, key, subclassKey);
         }
         result.sort(Comparator.comparing(feature -> feature.level() == null ? 0 : feature.level()));
@@ -345,6 +437,9 @@ public class VttgClassMapper {
     private List<Map<String, Object>> levelTable(List<ClassTableColumn> columns, List<VttgClass.Feature> features) {
         Map<Integer, List<String>> keysByLevel = featureKeysByLevel(features);
         Map<String, Map<Integer, String>> columnValues = columnValues(columns);
+        Map<Integer, Integer> newCantrips = newByLevel(columns, ClassTableColumnPurpose.CANTRIPS_KNOWN);
+        Map<Integer, Integer> newSpells = newByLevel(columns, ClassTableColumnPurpose.SPELLS_KNOWN,
+                ClassTableColumnPurpose.PREPARED_SPELLS);
 
         List<Map<String, Object>> table = new ArrayList<>();
         for (int level = 1; level <= MAX_LEVEL; level++) {
@@ -352,6 +447,8 @@ public class VttgClassMapper {
             row.put("level", level);
             row.put("proficiencyBonus", proficiencyBonus(level));
             row.put("featureKeys", keysByLevel.getOrDefault(level, List.of()));
+            putIfPresent(row, "newCantrips", newCantrips.get(level));
+            putIfPresent(row, "newSpells", newSpells.get(level));
             for (Map.Entry<String, Map<Integer, String>> column : columnValues.entrySet()) {
                 String value = column.getValue().get(level);
                 if (value != null) {
@@ -361,6 +458,59 @@ public class VttgClassMapper {
             table.add(row);
         }
         return table;
+    }
+
+    private void putIfPresent(Map<String, Object> row, String key, Integer value) {
+        if (value != null && value > 0) {
+            row.put(key, value);
+        }
+    }
+
+    /**
+     * Сколько НОВЫХ заговоров или заклинаний игрок выбирает на каждом уровне.
+     *
+     * <p>В таблице класса такая колонка хранит итог («известно заговоров: 3, 3, 3, 4…»), а
+     * мастер повышения уровня спрашивает прирост. Прирост и считается — разностью с
+     * предыдущим заполненным уровнем; убыль (её не бывает у канонических классов, но
+     * бывает у самописных) в вопрос не превращается.</p>
+     *
+     * <p>Колонки без назначения ({@link ClassTableColumnPurpose#NONE}) в расчёт не идут:
+     * подпись угадывать нельзя — на переведённом классе она любая.</p>
+     */
+    private Map<Integer, Integer> newByLevel(List<ClassTableColumn> columns,
+                                             ClassTableColumnPurpose... purposes) {
+        Map<Integer, Integer> result = new LinkedHashMap<>();
+        if (columns == null) {
+            return result;
+        }
+        Set<ClassTableColumnPurpose> wanted = Set.of(purposes);
+        for (ClassTableColumn column : columns) {
+            if (column == null || column.getScaling() == null
+                    || column.getPurpose() == null || !wanted.contains(column.getPurpose())) {
+                continue;
+            }
+            int previous = 0;
+            for (ClassTableItem item : sortedByLevel(column.getScaling())) {
+                Integer total = item.getValue() == null ? null : numeric(item.getValue());
+                if (total == null) {
+                    continue;
+                }
+                int gain = total - previous;
+                previous = total;
+                if (gain > 0) {
+                    result.merge(item.getLevel(), gain, Integer::sum);
+                }
+            }
+        }
+        return result;
+    }
+
+    /** Значения колонки по возрастанию уровня: в источнике порядок строк не гарантирован. */
+    private List<ClassTableItem> sortedByLevel(List<ClassTableItem> scaling) {
+        return scaling.stream()
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparingInt(ClassTableItem::getLevel))
+                .toList();
     }
 
     /** Ключи умений (включая развёрнутый scaling), сгруппированные по уровню получения. */
@@ -392,7 +542,7 @@ public class VttgClassMapper {
                 }
             }
             if (!byLevel.isEmpty()) {
-                result.put(columnKey(column.getName()), byLevel);
+                result.put(columnKey(column), byLevel);
             }
         }
         return result;
@@ -408,7 +558,7 @@ public class VttgClassMapper {
             if (column == null || !hasTableValues(column) || !StringUtils.hasText(column.getName())) {
                 continue;
             }
-            result.add(new VttgClass.TableColumn(columnKey(column.getName()), column.getName(), null));
+            result.add(new VttgClass.TableColumn(columnKey(column), column.getName(), null));
         }
         return result.isEmpty() ? null : result;
     }
@@ -489,6 +639,39 @@ public class VttgClassMapper {
     }
 
     /**
+     * Активные эффекты как есть: {@link ActiveEffect} заполняется в мастерской сразу в
+     * вокабуляре VTTG — так же, как у черты и предмета. Пустой список опускается.
+     */
+    private List<ActiveEffect> effects(List<ActiveEffect> effects) {
+        return CollectionUtils.isEmpty(effects) ? null : effects;
+    }
+
+    /**
+     * Заклинания, которые умение выдаёт без выбора, — списком id (они же url записей
+     * справочника), как их ждёт {@code ClassFeature.grantedSpells} эталона.
+     *
+     * <p>Уровень доступности отдельного заклинания здесь не нужен: у класса гейт задан
+     * уровнем самого умения, и вторым уровнем внутри умения он бы только разошёлся с
+     * первым.</p>
+     */
+    private List<String> grantedSpells(ClassMechanics mechanics) {
+        if (mechanics == null) {
+            return null;
+        }
+        SpellGrant grant = mechanics.getSpells();
+        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
+            return null;
+        }
+        List<String> result = grant.getSpells().stream()
+                .filter(Objects::nonNull)
+                .map(GrantedSpellRef::getUrl)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
      * Выбор навыков у САМОГО умения. В отличие от {@link #skillChoices(SkillProficiency)}
      * пустое значение здесь опускается: у класса блок выбора есть всегда (пусть и с
      * нулём), а у умения его отсутствие и означает «умение навыков не даёт».
@@ -552,16 +735,33 @@ public class VttgClassMapper {
     }
 
     /** Заклинательство: {@code null}, если класс не заклинатель или неизвестна характеристика. */
-    private VttgClass.Spellcasting spellcasting(String classKey, CasterType casterType) {
-        String type = casterTypeKey(casterType);
+    private VttgClass.Spellcasting spellcasting(String classKey, CharacterClass characterClass) {
+        String type = casterTypeKey(characterClass.getCasterType());
         if (type == null) {
             return null;
         }
-        String ability = classKey == null ? null : CASTING_ABILITY.get(classKey);
+        String ability = castingAbility(classKey, characterClass);
         if (ability == null) {
             return null;
         }
-        return new VttgClass.Spellcasting(type, ability, SPELLCASTING_START_LEVEL);
+        Integer startLevel = characterClass.getSpellcastingStartLevel();
+        return new VttgClass.Spellcasting(type, ability,
+                startLevel == null ? SPELLCASTING_START_LEVEL : startLevel);
+    }
+
+    /**
+     * Заклинательная характеристика: своя у записи, иначе каноническая по ключу класса.
+     *
+     * <p>Карта осталась запасным вариантом ради записей, сохранённых до появления поля:
+     * у переведённого или самописного класса её в карте нет, и до появления поля вся
+     * заклинательная конфигурация у него молча пропадала.</p>
+     */
+    private String castingAbility(String classKey, CharacterClass characterClass) {
+        Ability ability = characterClass.getSpellcastingAbility();
+        if (ability != null) {
+            return ability.name().toLowerCase(Locale.ROOT);
+        }
+        return classKey == null ? null : CASTING_ABILITY.get(classKey);
     }
 
     private String casterTypeKey(CasterType casterType) {
@@ -577,7 +777,10 @@ public class VttgClassMapper {
         };
     }
 
-    private Integer subclassLevel(List<VttgClass.Subclass> subclasses) {
+    private Integer subclassLevel(CharacterClass characterClass, List<VttgClass.Subclass> subclasses) {
+        if (characterClass.getSubclassLevel() != null) {
+            return characterClass.getSubclassLevel();
+        }
         return subclasses.stream()
                 .map(VttgClass.Subclass::getUnlockLevel)
                 .filter(Objects::nonNull)
@@ -585,7 +788,10 @@ public class VttgClassMapper {
                 .orElse(DEFAULT_SUBCLASS_LEVEL);
     }
 
-    private String subclassLabel(String classKey) {
+    private String subclassLabel(String classKey, CharacterClass characterClass) {
+        if (StringUtils.hasText(characterClass.getSubclassLabel())) {
+            return characterClass.getSubclassLabel();
+        }
         return classKey == null ? null : SUBCLASS_LABEL.getOrDefault(classKey, "Подкласс");
     }
 
@@ -638,9 +844,18 @@ public class VttgClassMapper {
         return StringUtils.hasText(name.getName()) ? name.getName() : name.getEnglish();
     }
 
-    /** Ключ колонки таблицы из её подписи (транслит-slug, чтобы кириллица не схлопывалась в пустоту). */
-    private String columnKey(String name) {
-        String slug = SlugifyUtil.getSlug(name == null ? "" : name);
+    /**
+     * Ключ колонки таблицы: заданный в источнике, иначе выведенный из подписи
+     * (транслит-slug, чтобы кириллица не схлопывалась в пустоту).
+     *
+     * <p>Явный ключ нужен ресурсам: по нему лист хранит потраченный остаток, и перевод
+     * подписи не должен обнулять счётчики на уже сохранённых листах.</p>
+     */
+    private String columnKey(ClassTableColumn column) {
+        if (StringUtils.hasText(column.getKey())) {
+            return column.getKey();
+        }
+        String slug = SlugifyUtil.getSlug(column.getName() == null ? "" : column.getName());
         return StringUtils.hasText(slug) ? slug : "col";
     }
 

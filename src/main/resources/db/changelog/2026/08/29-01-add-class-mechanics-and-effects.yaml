@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-29-01-add-class-mechanics-and-effects
+      author: Peterko
+      comment: >
+        Класс догоняет разделы, уже переведённые на структуру: своя механика влияния на
+        лист (mechanics) и активные эффекты в вокабуляре VTTG (active_effects) — те же
+        колонки и та же модель, что у черты, вида и предмета. Плюс поля, которые
+        потребитель до сих пор выводил из канонической карты по ключу класса и терял на
+        самописных и переведённых записях: характеристика заклинательства, уровень её
+        начала, подпись группы подклассов и уровень их выбора.
+      changes:
+        - addColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: mechanics
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: active_effects
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: spellcasting_ability
+                  type: varchar(32)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: spellcasting_start_level
+                  type: integer
+                  constraints:
+                    nullable: true
+              - column:
+                  name: subclass_label
+                  type: varchar(128)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: subclass_level
+                  type: integer
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: class
+            columns:
+              - column:
+                  name: mechanics
+              - column:
+                  name: active_effects
+              - column:
+                  name: spellcasting_ability
+              - column:
+                  name: spellcasting_start_level
+              - column:
+                  name: subclass_label
+              - column:
+                  name: subclass_level

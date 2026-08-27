@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -102,6 +104,21 @@ public class VttgClass {
     private MulticlassProficiencies multiclassProficiencies;
 
     /**
+     * Активные эффекты класса в вокабуляре VTTG. Отдаются без преобразования — так же, как
+     * у черты ({@code VttgFeat.activeEffects}). Опускаются, когда эффектов нет.
+     */
+    private List<ActiveEffect> activeEffects;
+
+    /**
+     * Дары самого класса тем же блоком, что у черты и предыстории.
+     *
+     * <p>Одна форма на всех, кто что-то выдаёт листу: у потребителя дары черты,
+     * предыстории и класса применяет один и тот же код, и вторая форма для того же смысла
+     * означала бы второй разбор. Опускается, когда выдавать нечего.</p>
+     */
+    private VttgFeatData featData;
+
+    /**
      * Счётчики классовых ресурсов: ярость, очки чародейства, кости превосходства.
      *
      * <p>Выводятся из колонок таблицы прогрессии, у которых задано восстановление
@@ -163,7 +180,9 @@ public class VttgClass {
     public record Feature(String key, String name, String description, Integer level,
                           String subclassKey, List<Choice> choices,
                           Boolean abilityImprovement, Boolean fightingStyleChoice,
-                          SkillChoices skillChoice) {
+                          SkillChoices skillChoice, Boolean isInformationalOnly,
+                          List<String> grantedSpells, List<ActiveEffect> activeEffects,
+                          VttgFeatData featData) {
 
         /**
          * Умение без собственных флагов: развороты {@code scaling} и записи, у которых в
@@ -171,7 +190,8 @@ public class VttgClass {
          */
         public Feature(String key, String name, String description, Integer level,
                        String subclassKey, List<Choice> choices) {
-            this(key, name, description, level, subclassKey, choices, null, null, null);
+            this(key, name, description, level, subclassKey, choices,
+                    null, null, null, null, null, null, null);
         }
     }
 
@@ -190,8 +210,8 @@ public class VttgClass {
      * @param subclassKey ключ подкласса, если счётчик принадлежит ему; иначе {@code null}
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Counter(String key, String name, int startLevel, String recovery,
-                          Map<String, Integer> progression, String subclassKey) {
+    public record Counter(String key, String name, String shortName, int startLevel, String recovery,
+                          Map<String, Integer> progression, String formula, String subclassKey) {
     }
 
     /**
@@ -214,6 +234,8 @@ public class VttgClass {
         private List<Feature> features;
         private List<Map<String, Object>> levelTable;
         private List<TableColumn> tableColumns;
+        private List<ActiveEffect> activeEffects;
+        private VttgFeatData featData;
     }
 
     /** Владения мультикласса: доспехи, оружие, инструменты и число выбираемых навыков. */

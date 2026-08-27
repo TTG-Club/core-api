@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.Mockito.mock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,7 +41,9 @@ class VttgSpellMapperTest {
             new VttgSpellMechanicsExtractor(),
             new VttgSpellScalingExtractor()
     );
-    private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter, new VttgEquipmentMapper(markupConverter));
+    private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter,
+            new VttgEquipmentMapper(markupConverter),
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
 
     @Test
     void mapsStructuredSpellFieldsToVttgFormat() {

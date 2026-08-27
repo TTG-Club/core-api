@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -17,6 +18,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Существо из бестиария
@@ -214,6 +216,19 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private CreatureSection section;
+
+    /**
+     * Активные эффекты существа в вокабуляре VTTG — та же модель и та же колонка, что у
+     * черты ({@code Feat.activeEffects}) и предмета.
+     *
+     * <p>Статблок описывает существо числами, а эффект описывает, что существо НАКЛАДЫВАЕТ
+     * или чем постоянно отличается от своих чисел: аура паладина-нежити, врождённое
+     * состояние, сопротивление с условием. На виртуальном столе такой эффект уезжает на
+     * токен как есть.</p>
+     */
+    @Type(JsonType.class)
+    @Column(name = "active_effects", columnDefinition = "jsonb")
+    private List<ActiveEffect> activeEffects;
 
     @ManyToOne
     @JoinColumn(name = "source")

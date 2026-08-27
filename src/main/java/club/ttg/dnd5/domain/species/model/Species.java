@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.model;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -10,6 +11,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  Виды или разновидности (расы)
@@ -43,6 +45,14 @@ public class Species extends CreatureProperties {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private SpeciesMechanics mechanics;
+
+    /**
+     * Активные эффекты самого вида или происхождения в вокабуляре VTTG — та же модель и
+     * та же колонка, что у черты ({@code Feat.activeEffects}) и предмета.
+     */
+    @Type(JsonType.class)
+    @Column(name = "active_effects", columnDefinition = "jsonb")
+    private List<ActiveEffect> activeEffects;
 
     private String linkImageUrl; //для изоброжения бэкграунда
 

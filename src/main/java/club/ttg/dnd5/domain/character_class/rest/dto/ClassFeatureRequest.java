@@ -2,7 +2,9 @@ package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -61,4 +63,13 @@ public class ClassFeatureRequest {
 
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
+
+    @Schema(description = "Умение только информирует и не попадает в лист персонажа")
+    private boolean informationalOnly;
+
+    @Schema(description = "Механика влияния умения на лист персонажа")
+    private ClassMechanics mechanics;
+
+    @Schema(description = "Активные эффекты умения в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
 }

@@ -12,7 +12,7 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
-import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSpellListGroupResponse;
@@ -83,7 +83,7 @@ public class FeatServiceImpl implements FeatService {
      * @param response деталь черты с разобранной механикой.
      * @return выдаваемые заклинания с данными справочника; null — черта их не выдаёт.
      */
-    private Collection<FeatGrantedSpellResponse> resolveGrantedSpells(final FeatDetailResponse response) {
+    private Collection<GrantedSpellResponse> resolveGrantedSpells(final FeatDetailResponse response) {
         var granted = Optional.ofNullable(response.getMechanics())
                 .map(FeatMechanics::getSpells)
                 .map(SpellGrant::getSpells)
@@ -98,7 +98,7 @@ public class FeatServiceImpl implements FeatService {
         var result = granted.stream()
                 .filter(Objects::nonNull)
                 .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
-                .map(ref -> new FeatGrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
                         ref.getRequiredLevel()))
                 .toList();
 

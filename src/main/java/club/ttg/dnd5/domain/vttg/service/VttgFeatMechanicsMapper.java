@@ -16,6 +16,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseFromChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageDefenseKind;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantingMechanics;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
@@ -159,15 +160,16 @@ public class VttgFeatMechanicsMapper {
     /**
      * Те же дары, но от механики напрямую — их выдаёт не только черта.
      *
-     * <p>Предыстория хранит расширенные дары той же моделью ({@code Background.mechanics})
-     * и уезжает в компендиум тем же блоком {@code featData}: набор полей у них общий, и
-     * второй маппинг для того же самого разошёлся бы с этим при первой же правке.</p>
+     * <p>Предыстория, вид и умение класса хранят расширенные дары той же моделью и уезжают
+     * в компендиум тем же блоком {@code featData}: набор полей у них общий
+     * ({@link GrantingMechanics}), и второй маппинг для того же самого разошёлся бы с этим
+     * при первой же правке.</p>
      *
      * @param mechanics    дары записи; {@code null} — давать нечего
-     * @param prerequisite требования записи; {@code null} — их нет (у предыстории всегда)
+     * @param prerequisite требования записи; {@code null} — их нет (у всех, кроме черты)
      * @return блок даров или {@code null}, если применять нечего
      */
-    public VttgFeatData featData(FeatMechanics mechanics, VttgFeatPrerequisite prerequisite) {
+    public VttgFeatData featData(GrantingMechanics mechanics, VttgFeatPrerequisite prerequisite) {
         ProficiencyGrant grant = mechanics == null ? null : mechanics.getProficiencies();
         SheetModifiers sourceModifiers = mechanics == null ? null : mechanics.getModifiers();
 
@@ -520,7 +522,7 @@ public class VttgFeatMechanicsMapper {
      * ({@code choice}) листом НЕ применяется, пока он не знает выбранного, — она остаётся
      * подсказкой в сводке даров.</p>
      */
-    private VttgFeatData.AbilityScoreIncrease abilityScoreIncrease(FeatMechanics mechanics) {
+    private VttgFeatData.AbilityScoreIncrease abilityScoreIncrease(GrantingMechanics mechanics) {
         if (mechanics == null || mechanics.getAbilityBonuses() == null
                 || mechanics.getAbilityBonuses().size() != 1) {
             return null;
@@ -572,7 +574,7 @@ public class VttgFeatMechanicsMapper {
      *
      * @return ключ единственного выбора спасброска либо {@code null}
      */
-    private String savingThrowChoiceKey(FeatMechanics mechanics) {
+    private String savingThrowChoiceKey(GrantingMechanics mechanics) {
         if (CollectionUtils.isEmpty(mechanics.getChoices())) {
             return null;
         }
