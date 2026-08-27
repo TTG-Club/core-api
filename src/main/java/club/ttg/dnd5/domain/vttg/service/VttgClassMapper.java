@@ -154,7 +154,21 @@ public class VttgClassMapper {
      * @return блок даров либо {@code null}
      */
     private VttgFeatData featData(ClassMechanics mechanics) {
-        return mechanics == null ? null : mechanicsMapper.featData(mechanics, null);
+        if (mechanics == null) {
+            return null;
+        }
+
+        // Заклинания и ресурсы у класса уже выведены своими полями записи
+        // ({@code Feature.grantedSpells}, {@code counters}); повтори их блок даров — и
+        // потребитель выдал бы то же самое дважды
+        ClassMechanics withoutDuplicates = new ClassMechanics();
+
+        withoutDuplicates.setModifiers(mechanics.getModifiers());
+        withoutDuplicates.setProficiencies(mechanics.getProficiencies());
+        withoutDuplicates.setChoices(mechanics.getChoices());
+        withoutDuplicates.setSpellList(mechanics.getSpellList());
+
+        return mechanicsMapper.featData(withoutDuplicates, null);
     }
 
     // ── Счётчики ресурсов ────────────────────────────────────────
