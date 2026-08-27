@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
@@ -30,6 +31,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -456,8 +458,9 @@ public class VttgSpeciesMapper {
      * Умение источника. {@code level} отдаётся только если он задан: первый уровень —
      * значение по умолчанию у потребителя, и проставлять его каждому умению незачем.
      *
-     * <p>{@code grantedSpells} у умения нет: заклинания вида лежат в связующей таблице и
-     * уезжают отдельными умениями ({@link #innateSpellFeatures(Species)}).</p>
+     * <p>{@code grantedSpells} берутся у самого умения. Заклинания, сохранённые до того,
+     * как они переехали к умению, лежат в связующей таблице и по-прежнему уезжают
+     * отдельными умениями ({@link #innateSpellFeatures(Species)}).</p>
      */
     private VttgSpecies.Feature feature(SpeciesFeature feature, List<VttgSpecies.Choice> choices) {
         String key = StringUtils.hasText(feature.getUrl()) ? slug(feature.getUrl()) : slug(feature.getEnglish());
@@ -467,7 +470,39 @@ public class VttgSpeciesMapper {
                 ? null
                 : feature.getActiveEffects();
         return new VttgSpecies.Feature(key, feature.getName(),
-                markupConverter.toText(feature.getDescription()), attached, level, null, effects);
+                markupConverter.toText(feature.getDescription()), attached, level,
+                grantedSpells(feature), effects);
+    }
+
+    /**
+     * Заклинания умения. Имя берётся из справочника: у потребителя запись подписана им, а
+     * снимок в ссылке мог устареть — заклинание переименовали уже после сохранения вида.
+     */
+    private List<VttgSpecies.GrantedSpell> grantedSpells(SpeciesFeature feature) {
+        if (CollectionUtils.isEmpty(feature.getGrantedSpells())) {
+            return null;
+        }
+
+        Set<String> urls = feature.getGrantedSpells().stream()
+                .map(GrantedSpellRef::getUrl)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (urls.isEmpty()) {
+            return null;
+        }
+
+        Map<String, String> names = spellRepository.findAllShortByUrlIn(urls).stream()
+                .collect(Collectors.toMap(Spell::getUrl, Spell::getName, (first, second) -> first));
+
+        List<VttgSpecies.GrantedSpell> result = new ArrayList<>(urls.size());
+        for (String url : urls) {
+            String name = names.get(url);
+            if (StringUtils.hasText(name)) {
+                // Заклинания нет в справочнике — выдавать нечего, и подписать нечем
+                result.add(new VttgSpecies.GrantedSpell(name, url));
+            }
+        }
+        return result.isEmpty() ? null : result;
     }
 
     /** Индекс «происхожденческого» умения (lineage/legacy/ancestry/происхожд/наследие) или -1. */

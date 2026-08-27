@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
@@ -16,6 +17,7 @@ import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
+import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -279,6 +281,51 @@ class VttgSpeciesMapperTest {
         mechanics.setProficiencies(proficiencies);
         mechanics.setChoices(choices);
         return mechanics;
+    }
+
+    /** Заклинания умения уезжают у самого умения, а не отдельной записью. */
+    @Test
+    void mapsFeatureGrantedSpells() {
+        Species species = baseSpecies("high-elf", "Высший эльф", "High Elf");
+        SpeciesFeature feature = new SpeciesFeature(
+                "elven-lineage", "Эльфийское наследие", "Elven Lineage", "Заговор на выбор.", null);
+        feature.setGrantedSpells(List.of(new GrantedSpellRef("prestidigitation", null, null)));
+        species.setFeatures(List.of(feature));
+
+        when(spellRepository.findAllShortByUrlIn(Set.of("prestidigitation")))
+                .thenReturn(List.of(spell("prestidigitation", "Фокусы")));
+
+        JsonNode features = json(species).get("features");
+        assertEquals(1, features.size());
+        assertEquals("elven-lineage", features.get(0).get("key").asText());
+
+        JsonNode granted = features.get(0).get("grantedSpells");
+        assertEquals(1, granted.size());
+        assertEquals("Фокусы", granted.get(0).get("name").asText());
+        assertEquals("prestidigitation", granted.get(0).get("spellId").asText());
+    }
+
+    /** Ссылка на удалённое заклинание блок не роняет и не уезжает пустой записью. */
+    @Test
+    void skipsFeatureGrantedSpellsMissingFromCatalog() {
+        Species species = baseSpecies("tiefling", "Тифлинг", "Tiefling");
+        SpeciesFeature feature = new SpeciesFeature(
+                "fiendish-legacy", "Наследие преисподней", "Fiendish Legacy", "Магия.", null);
+        feature.setGrantedSpells(List.of(new GrantedSpellRef("removed-spell", null, null)));
+        species.setFeatures(List.of(feature));
+
+        when(spellRepository.findAllShortByUrlIn(Set.of("removed-spell"))).thenReturn(List.of());
+
+        JsonNode features = json(species).get("features");
+        assertEquals(1, features.size());
+        assertFalse(features.get(0).has("grantedSpells"));
+    }
+
+    private Spell spell(String url, String name) {
+        Spell spell = new Spell();
+        spell.setUrl(url);
+        spell.setName(name);
+        return spell;
     }
 
     private SheetModifiers modifiers(DamageType resistance) {
