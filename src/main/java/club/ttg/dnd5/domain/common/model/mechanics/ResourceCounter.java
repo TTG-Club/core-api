@@ -81,6 +81,17 @@ public class ResourceCounter {
             example = "1", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Integer min;
 
+    /**
+     * Показывать ресурс колонкой таблицы прогрессии.
+     *
+     * <p>Ряд по уровням у ресурса уже задан — ступенями либо формулой, — и колонка книги
+     * собирается из него ({@code CounterTableColumns}): второй раз те же числа автор не
+     * набирает. Колонка выводится, только если ряд считается от одного уровня; максимум
+     * по модификатору характеристики одинакового ряда для всех не имеет.</p>
+     */
+    @Schema(description = "Показывать ресурс колонкой таблицы прогрессии")
+    private boolean showInTable;
+
     @Schema(description = "Каким отдыхом восстанавливается",
             examples = {"SHORT_REST", "LONG_REST", "SHORT_REST_ONE"})
     private ResourceRecovery recovery;

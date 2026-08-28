@@ -15,6 +15,8 @@ import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
+import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
+import club.ttg.dnd5.domain.character_class.model.CounterTableColumns;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassDetailedResponse;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
@@ -39,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -115,6 +118,7 @@ public class ClassService {
         revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
                 findFormByUrl(saved.getUrl()));
         ClassDetailedResponse response = classMapper.toDetailedResponse(saved);
+        fillCounterTableColumns(response);
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         return response;
     }
@@ -193,6 +197,7 @@ public class ClassService {
         var response = classMapper.toDetailedResponse(charClass);
         fillResponseFieldsFromParentClass(charClass, response);
         resolveFeatureGrantedSpells(response);
+        fillCounterTableColumns(response);
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
                 .stream()
@@ -258,6 +263,32 @@ public class ClassService {
         }
     }
 
+    /**
+     * Дописывает в таблицу прогрессии колонки ресурсов, отмеченных «показывать в
+     * таблице».
+     *
+     * <p>Ряд по уровням у такого ресурса уже задан ступенями либо формулой, и второй раз
+     * колонкой его не набирают. Колонки выводятся при отдаче, а не хранятся: иначе они
+     * разошлись бы с ресурсом при первой же его правке.</p>
+     *
+     * @param response ответ записи класса.
+     */
+    private void fillCounterTableColumns(ClassDetailedResponse response) {
+        List<CounterTableColumns.Source> sources = new ArrayList<>();
+        if (response.getMechanics() != null) {
+            sources.add(new CounterTableColumns.Source(response.getMechanics().getCounters(), 1));
+        }
+        for (ClassFeatureDto feature : Optional.ofNullable(response.getFeatures()).orElse(List.of())) {
+            if (feature != null && feature.getMechanics() != null) {
+                sources.add(new CounterTableColumns.Source(feature.getMechanics().getCounters(),
+                        Math.max(1, feature.getLevel())));
+            }
+        }
+
+        List<ClassTableColumn> table = CounterTableColumns.extend(response.getTable(), sources);
+        response.setTable(table.isEmpty() ? response.getTable() : table);
+    }
+
     private void fillResponseFieldsFromParentClass(CharacterClass characterClass, ClassDetailedResponse response) {
         CharacterClass parent = characterClass.getParent();
         if (parent == null) {
@@ -321,6 +352,7 @@ public class ClassService {
         var entity = classMapper.toEntity(request, source);
         entity.setParent(parent);
         var response = classMapper.toDetailedResponse(entity);
+        fillCounterTableColumns(response);
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)
                 .stream()

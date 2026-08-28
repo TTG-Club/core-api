@@ -528,6 +528,114 @@ class VttgClassMapperTest {
     }
 
     /**
+     * Ресурс, отмеченный «показывать в таблице», едет и счётчиком, и колонкой: ряд по
+     * уровням у него уже задан ступенями, и второй раз колонкой его не набирают.
+     */
+    @Test
+    void exportsCounterAsTableColumn() {
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        ClassFeature rage = feature("rage", 1, "Ярость", "Впадите в ярость.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("rages");
+        counter.setName("Ярости");
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        counter.setShowInTable(true);
+        counter.setScaling(List.of(new CounterScaling(1, 2), new CounterScaling(3, 3)));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        rage.setMechanics(mechanics);
+
+        barbarian.setFeatures(List.of(rage));
+
+        JsonNode json = json(barbarian);
+        assertEquals("rages", json.get("tableColumns").get(0).get("key").asText());
+        assertEquals("Ярости", json.get("tableColumns").get(0).get("label").asText());
+
+        JsonNode levels = json.get("levelTable");
+        assertEquals(2, levels.get(0).get("rages").asInt());
+        assertEquals(3, levels.get(2).get("rages").asInt());
+    }
+
+    /**
+     * Ряд формулы считается от уровня: применений «Второго дыхания» столько же, сколько
+     * бонус мастерства, и колонка книги повторяет его ступени.
+     */
+    @Test
+    void exportsFormulaCounterAsTableColumn() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassFeature secondWind = feature("second-wind", 1, "Второе дыхание", "Восстановите хиты.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("second-wind");
+        counter.setName("Второе дыхание");
+        counter.setMax("@prof");
+        counter.setRecovery(ResourceRecovery.SHORT_REST_ONE);
+        counter.setShowInTable(true);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        secondWind.setMechanics(mechanics);
+
+        fighter.setFeatures(List.of(secondWind));
+
+        JsonNode levels = json(fighter).get("levelTable");
+        assertEquals(2, levels.get(0).get("second-wind").asInt());
+        assertEquals(3, levels.get(4).get("second-wind").asInt());
+        assertEquals(6, levels.get(19).get("second-wind").asInt());
+    }
+
+    /**
+     * Ресурс умения появляется в таблице с уровня самого умения: до него у персонажа
+     * ресурса нет, и «0 из 0» в книге только мешал бы.
+     */
+    @Test
+    void countersColumnStartsAtFeatureLevel() {
+        CharacterClass monk = baseClass("monk", "Монах", "Monk");
+        ClassFeature ki = feature("ki", 2, "Ки", "Очки ки.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("ki-points");
+        counter.setName("Очки ки");
+        counter.setMax("@level");
+        counter.setRecovery(ResourceRecovery.SHORT_REST);
+        counter.setShowInTable(true);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        ki.setMechanics(mechanics);
+
+        monk.setFeatures(List.of(ki));
+
+        JsonNode levels = json(monk).get("levelTable");
+        assertFalse(levels.get(0).has("ki-points"));
+        assertEquals(2, levels.get(1).get("ki-points").asInt());
+    }
+
+    /**
+     * Максимум по модификатору характеристики одинакового ряда для всех не имеет:
+     * колонкой такой ресурс не показывается, даже когда галочка стоит.
+     */
+    @Test
+    void skipsTableColumnForAbilityFormula() {
+        CharacterClass bard = baseClass("bard", "Бард", "Bard");
+        ClassFeature inspiration = feature("bardic-inspiration", 1, "Вдохновение барда", "Кость.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("bardic-inspiration");
+        counter.setName("Вдохновение барда");
+        counter.setMax("@mod.cha");
+        counter.setMin(1);
+        counter.setRecovery(ResourceRecovery.SHORT_REST_ONE);
+        counter.setShowInTable(true);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        inspiration.setMechanics(mechanics);
+
+        bard.setFeatures(List.of(inspiration));
+
+        assertFalse(json(bard).has("tableColumns"));
+    }
+
+    /**
      * Свой ключ колонки важнее выведенного из подписи: по нему лист хранит потраченный
      * остаток, и перевод подписи не должен обнулять счётчики.
      */

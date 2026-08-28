@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
+import club.ttg.dnd5.domain.character_class.model.CounterTableColumns;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
 import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
@@ -135,8 +136,8 @@ public class VttgClassMapper {
                 .subclassLabel(subclassLabel(key, characterClass))
                 .subclasses(subclasses)
                 .features(features)
-                .levelTable(levelTable(characterClass.getTable(), features))
-                .tableColumns(tableColumns(characterClass.getTable()))
+                .levelTable(levelTable(table(characterClass), features))
+                .tableColumns(tableColumns(table(characterClass)))
                 .counters(counters(characterClass, subclasses))
                 .multiclassProficiencies(multiclass(characterClass.getMulticlassProficiency()))
                 .activeEffects(effects(characterClass.getActiveEffects()))
@@ -415,8 +416,8 @@ public class VttgClassMapper {
                 .sourceKey(VttgSourceKeys.of(subclass.getSource()))
                 .spellcasting(spellcasting(null, subclass))
                 .features(features)
-                .levelTable(hasTable(subclass.getTable()) ? levelTable(subclass.getTable(), features) : null)
-                .tableColumns(tableColumns(subclass.getTable()))
+                .levelTable(hasTable(table(subclass)) ? levelTable(table(subclass), features) : null)
+                .tableColumns(tableColumns(table(subclass)))
                 .activeEffects(effects(subclass.getActiveEffects()))
                 .featData(featData(subclass.getMechanics()))
                 .build();
@@ -625,6 +626,28 @@ public class VttgClassMapper {
             result.add(new VttgClass.TableColumn(columnKey(column), column.getName(), null));
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Таблица прогрессии записи вместе с колонками её ресурсов: ресурс, отмеченный
+     * «показывать в таблице», едет к потребителю и счётчиком, и колонкой — счётчик тратят
+     * на листе, а колонка нужна книге.
+     *
+     * @param characterClass класс или подкласс.
+     * @return колонки таблицы.
+     */
+    private List<ClassTableColumn> table(CharacterClass characterClass) {
+        List<CounterTableColumns.Source> sources = new ArrayList<>();
+        if (characterClass.getMechanics() != null) {
+            sources.add(new CounterTableColumns.Source(characterClass.getMechanics().getCounters(), 1));
+        }
+        for (ClassFeature feature : Optional.ofNullable(characterClass.getFeatures()).orElse(List.of())) {
+            if (feature != null && feature.getMechanics() != null) {
+                sources.add(new CounterTableColumns.Source(feature.getMechanics().getCounters(),
+                        Math.max(1, feature.getLevel())));
+            }
+        }
+        return CounterTableColumns.extend(characterClass.getTable(), sources);
     }
 
     private boolean hasTable(List<ClassTableColumn> columns) {
@@ -916,11 +939,7 @@ public class VttgClassMapper {
      * подписи не должен обнулять счётчики на уже сохранённых листах.</p>
      */
     private String columnKey(ClassTableColumn column) {
-        if (StringUtils.hasText(column.getKey())) {
-            return column.getKey();
-        }
-        String slug = SlugifyUtil.getSlug(column.getName() == null ? "" : column.getName());
-        return StringUtils.hasText(slug) ? slug : "col";
+        return CounterTableColumns.columnKey(column);
     }
 
     /** SNAKE_CASE имя навыка ({@code ANIMAL_HANDLING}) → camelCase slug эталона ({@code animalHandling}). */
