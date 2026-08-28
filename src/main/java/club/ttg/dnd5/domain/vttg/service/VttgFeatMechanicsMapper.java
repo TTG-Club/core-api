@@ -23,6 +23,7 @@ import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
@@ -45,6 +46,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -294,6 +296,28 @@ public class VttgFeatMechanicsMapper {
             }
         }
         return result;
+    }
+
+    /**
+     * Ступени количества выбора прогрессией по уровням: ключ — уровень строкой, значение —
+     * сколько всего выбрано к этому уровню.
+     *
+     * <p>Той же формы записи, что прогрессия счётчика: потребителю всё равно, растёт ли по
+     * уровням запас зарядов или число выбираемых приёмов.</p>
+     *
+     * @param scaling ступени количества.
+     * @return прогрессия по уровням; {@code null} — ступеней нет.
+     */
+    private Map<String, Integer> choiceScaling(List<ChoiceScaling> scaling) {
+        if (CollectionUtils.isEmpty(scaling)) {
+            return null;
+        }
+        Map<String, Integer> result = new LinkedHashMap<>();
+        scaling.stream()
+                .filter(step -> step != null && step.getLevel() != null && step.getCount() != null)
+                .sorted(Comparator.comparingInt(ChoiceScaling::getLevel))
+                .forEach(step -> result.put(String.valueOf(step.getLevel()), step.getCount()));
+        return result.isEmpty() ? null : result;
     }
 
     /**
@@ -980,7 +1004,8 @@ public class VttgFeatMechanicsMapper {
                     grant(choice.resolveGrant()),
                     flag(choice.getRechooseOnLongRest()),
                     choice.getRequiredLevel(),
-                    types.contains(ChoiceType.FEAT) ? featCategories(choice.getFeatCategories()) : null));
+                    types.contains(ChoiceType.FEAT) ? featCategories(choice.getFeatCategories()) : null,
+                    choiceScaling(choice.getScaling())));
         }
         return emptyToNull(result);
     }

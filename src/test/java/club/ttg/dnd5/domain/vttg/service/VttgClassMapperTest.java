@@ -27,6 +27,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
@@ -633,6 +634,42 @@ class VttgClassMapperTest {
         bard.setFeatures(List.of(inspiration));
 
         assertFalse(json(bard).has("tableColumns"));
+    }
+
+    /**
+     * Выбор со ступенями количества показывается колонкой: оружейных приёмов у воина три
+     * с первого уровня, четыре с четвёртого. Ряд собирается из ступеней, колонкой его
+     * второй раз не набирают.
+     */
+    @Test
+    void exportsChoiceScalingAsTableColumn() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassFeature masteries = feature("weapon-masteries", 1, "Оружейные приёмы", "Приёмы.");
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("weapon-mastery");
+        choice.setType(ChoiceType.WEAPON_MASTERY);
+        choice.setLabel("Выберите оружейный приём");
+        choice.setShortName("Приёмы");
+        choice.setShowInTable(true);
+        choice.setScaling(List.of(new ChoiceScaling(1, 3), new ChoiceScaling(4, 4)));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setChoices(List.of(choice));
+        masteries.setMechanics(mechanics);
+
+        fighter.setFeatures(List.of(masteries));
+
+        JsonNode json = json(fighter);
+        assertEquals("weapon-mastery", json.get("tableColumns").get(0).get("key").asText());
+        assertEquals("Приёмы", json.get("tableColumns").get(0).get("label").asText());
+
+        JsonNode levels = json.get("levelTable");
+        assertEquals(3, levels.get(0).get("weapon-mastery").asInt());
+        assertEquals(4, levels.get(3).get("weapon-mastery").asInt());
+
+        JsonNode exported = json.get("features").get(0).get("featData").get("choices").get(0);
+        assertEquals(3, exported.get("scaling").get("1").asInt());
+        assertEquals(4, exported.get("scaling").get("4").asInt());
     }
 
     /**

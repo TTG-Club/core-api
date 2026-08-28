@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.character_class.model;
 
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
+import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.util.SlugifyUtil;
 import lombok.experimental.UtilityClass;
@@ -44,12 +46,16 @@ public class CounterTableColumns {
             "^(@prof|@level|\\d+)\\s*(?:\\*\\s*(\\d+)\\s*)?(?:([+-])\\s*(\\d+))?$");
 
     /**
-     * Ресурсы одного носителя механики и уровень, с которого они у персонажа есть.
+     * Механика одного носителя и уровень, с которого она у персонажа есть.
+     *
+     * <p>Колонку даёт и ресурс со ступенями, и выбор со ступенями количества: ряд в
+     * книге у них одинаковый — число по уровням, — и собирать его дважды незачем.</p>
      *
      * @param counters ресурсы механики.
+     * @param choices выборы механики.
      * @param startLevel уровень носителя: у умения — его собственный, у класса — первый.
      */
-    public record Source(List<ResourceCounter> counters, int startLevel) {
+    public record Source(List<ResourceCounter> counters, List<MechanicChoice> choices, int startLevel) {
     }
 
     /**
@@ -77,6 +83,7 @@ public class CounterTableColumns {
 
         for (Source source : sources) {
             result.addAll(from(source.counters(), source.startLevel(), takenKeys));
+            result.addAll(fromChoices(source.choices(), source.startLevel(), takenKeys));
         }
         return result;
     }
@@ -123,6 +130,86 @@ public class CounterTableColumns {
             }
         }
         return result;
+    }
+
+    /**
+     * Колонки таблицы, выведенные из выборов со ступенями количества.
+     *
+     * @param choices выборы механики записи либо её умения.
+     * @param startLevel уровень, с которого выбор есть у персонажа.
+     * @param takenKeys ключи уже занятых колонок; пополняется выведенными.
+     * @return колонки в порядке выборов; пустой список — показывать нечего.
+     */
+    public List<ClassTableColumn> fromChoices(List<MechanicChoice> choices, int startLevel,
+                                              Set<String> takenKeys) {
+        if (CollectionUtils.isEmpty(choices)) {
+            return List.of();
+        }
+
+        List<ClassTableColumn> result = new ArrayList<>();
+        for (MechanicChoice choice : choices) {
+            ClassTableColumn column = column(choice, startLevel);
+            if (column != null && takenKeys.add(column.getKey())) {
+                result.add(column);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Колонка одного выбора: ряд количества по его ступеням.
+     *
+     * @param choice выбор механики.
+     * @param startLevel уровень, с которого выбор есть у персонажа.
+     * @return колонка; {@code null} — выбор в таблице не показывается либо ступеней нет.
+     */
+    private ClassTableColumn column(MechanicChoice choice, int startLevel) {
+        if (choice == null || !Boolean.TRUE.equals(choice.getShowInTable())
+                || !StringUtils.hasText(choice.getKey())
+                || CollectionUtils.isEmpty(choice.getScaling())) {
+            return null;
+        }
+
+        List<ChoiceScaling> steps = choice.getScaling().stream()
+                .filter(step -> step != null && step.getLevel() != null && step.getCount() != null)
+                .sorted(Comparator.comparingInt(ChoiceScaling::getLevel))
+                .toList();
+        if (steps.isEmpty()) {
+            return null;
+        }
+
+        // Уровень открытия выбора старше уровня носителя: «ещё один приём» спрашивают с
+        // него, а не с уровня умения
+        int firstLevel = Math.max(startLevel,
+                choice.getRequiredLevel() == null ? 1 : choice.getRequiredLevel());
+
+        List<ClassTableItem> scaling = new ArrayList<>();
+        Integer current = null;
+        for (int level = 1; level <= MAX_LEVEL; level++) {
+            for (ChoiceScaling step : steps) {
+                if (step.getLevel() <= level) {
+                    current = step.getCount();
+                }
+            }
+            if (current != null && level >= firstLevel) {
+                scaling.add(new ClassTableItem(level, String.valueOf(current)));
+            }
+        }
+        if (scaling.isEmpty()) {
+            return null;
+        }
+
+        ClassTableColumn column = new ClassTableColumn(label(choice), scaling);
+        column.setKey(choice.getKey());
+        return column;
+    }
+
+    /** Подпись колонки выбора: краткая, а без неё подпись выбора либо ключ. */
+    private String label(MechanicChoice choice) {
+        if (StringUtils.hasText(choice.getShortName())) {
+            return choice.getShortName();
+        }
+        return StringUtils.hasText(choice.getLabel()) ? choice.getLabel() : choice.getKey();
     }
 
     /**

@@ -276,12 +276,13 @@ public class ClassService {
     private void fillCounterTableColumns(ClassDetailedResponse response) {
         List<CounterTableColumns.Source> sources = new ArrayList<>();
         if (response.getMechanics() != null) {
-            sources.add(new CounterTableColumns.Source(response.getMechanics().getCounters(), 1));
+            sources.add(new CounterTableColumns.Source(response.getMechanics().getCounters(),
+                    response.getMechanics().getChoices(), 1));
         }
         for (ClassFeatureDto feature : Optional.ofNullable(response.getFeatures()).orElse(List.of())) {
             if (feature != null && feature.getMechanics() != null) {
                 sources.add(new CounterTableColumns.Source(feature.getMechanics().getCounters(),
-                        Math.max(1, feature.getLevel())));
+                        feature.getMechanics().getChoices(), Math.max(1, feature.getLevel())));
             }
         }
 

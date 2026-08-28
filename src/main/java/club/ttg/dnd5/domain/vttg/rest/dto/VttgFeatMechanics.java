@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Механика черты, которую форма листа не выражает.
@@ -165,7 +166,7 @@ public class VttgFeatMechanics {
                          Boolean onlyIfNotProficient, Boolean onlyIfProficient,
                          Boolean expertiseIfProficient, String grants,
                          Boolean rechooseOnLongRest, Integer requiredLevel,
-                         List<String> featCategories) {
+                         List<String> featCategories, Map<String, Integer> scaling) {
     }
 
     /**

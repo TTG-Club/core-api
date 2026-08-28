@@ -639,12 +639,13 @@ public class VttgClassMapper {
     private List<ClassTableColumn> table(CharacterClass characterClass) {
         List<CounterTableColumns.Source> sources = new ArrayList<>();
         if (characterClass.getMechanics() != null) {
-            sources.add(new CounterTableColumns.Source(characterClass.getMechanics().getCounters(), 1));
+            sources.add(new CounterTableColumns.Source(characterClass.getMechanics().getCounters(),
+                    characterClass.getMechanics().getChoices(), 1));
         }
         for (ClassFeature feature : Optional.ofNullable(characterClass.getFeatures()).orElse(List.of())) {
             if (feature != null && feature.getMechanics() != null) {
                 sources.add(new CounterTableColumns.Source(feature.getMechanics().getCounters(),
-                        Math.max(1, feature.getLevel())));
+                        feature.getMechanics().getChoices(), Math.max(1, feature.getLevel())));
             }
         }
         return CounterTableColumns.extend(characterClass.getTable(), sources);
