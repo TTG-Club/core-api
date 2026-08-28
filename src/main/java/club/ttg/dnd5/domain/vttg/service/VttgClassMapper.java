@@ -24,7 +24,6 @@ import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
-import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgClass;
@@ -176,15 +175,18 @@ public class VttgClassMapper {
     // ── Счётчики ресурсов ────────────────────────────────────────
 
     /**
-     * Счётчики класса и его подклассов: по одному на колонку таблицы с заданным
-     * восстановлением ({@code resourceRecovery}). Колонка без восстановления — это
-     * обычная колонка прогрессии (ячейки заклинаний, известные заговоры), и счётчиком
-     * она не становится.
+     * Счётчики класса и его подклассов: ресурсы механики записи и её умений, а к ним —
+     * колонки таблицы с заданным восстановлением ({@code resourceRecovery}).
+     *
+     * <p>Колонка-ресурс — прежний способ записи, оставленный ради классов, которые ещё не
+     * переписаны на механику: редактор такие колонки больше не заводит. Колонка без
+     * восстановления — это обычная колонка прогрессии (ячейки заклинаний, известные
+     * заговоры), и счётчиком она не становится.</p>
      */
     private List<VttgClass.Counter> counters(CharacterClass characterClass,
                                              List<VttgClass.Subclass> subclasses) {
-        List<VttgClass.Counter> result = new ArrayList<>(counters(characterClass.getTable(), null));
-        result.addAll(mechanicsCounters(characterClass, null));
+        List<VttgClass.Counter> result = new ArrayList<>(
+                merged(mechanicsCounters(characterClass, null), counters(characterClass.getTable(), null)));
 
         Set<String> exported = subclasses.stream()
                 .map(VttgClass.Subclass::getKey)
@@ -195,20 +197,42 @@ public class VttgClassMapper {
             // Ресурсы берём только у подклассов, попавших в запись: иначе счётчик
             // ссылался бы на подкласс, которого в выгрузке нет
             if (exported.contains(subclassKey)) {
-                result.addAll(counters(child.getTable(), subclassKey));
-                result.addAll(mechanicsCounters(child, subclassKey));
+                result.addAll(merged(mechanicsCounters(child, subclassKey),
+                        counters(child.getTable(), subclassKey)));
             }
         }
         return result.isEmpty() ? null : result;
     }
 
     /**
-     * Счётчики из механики записи и её умений: ресурсы, у которых нет колонки таблицы,
-     * потому что максимум задан формулой («Второе дыхание» — по бонусу мастерства).
+     * Ресурсы механики и колонки-ресурсы одной записи вместе.
      *
-     * <p>Колонка таблицы и формула — два способа записать один и тот же ресурс, поэтому
-     * счётчик с уже занятым ключом пропускается: если у ресурса есть колонка, она и есть
-     * его прогрессия.</p>
+     * <p>Колонка и механика — два способа записать один и тот же ресурс, и у класса,
+     * который переписывают на механику, какое-то время есть оба. Побеждает механика: её
+     * автор и заполняет, а колонка осталась от прежней записи и знает о ресурсе меньше —
+     * ни нижней границы максимума, ни порции короткого отдыха у неё нет.</p>
+     *
+     * @param mechanics счётчики из механики записи и её умений.
+     * @param columns счётчики из колонок таблицы прогрессии.
+     * @return счётчики без повторов по ключу.
+     */
+    private List<VttgClass.Counter> merged(List<VttgClass.Counter> mechanics,
+                                           List<VttgClass.Counter> columns) {
+        Set<String> keys = mechanics.stream()
+                .map(VttgClass.Counter::key)
+                .collect(Collectors.toSet());
+
+        List<VttgClass.Counter> result = new ArrayList<>(mechanics);
+        columns.stream()
+                .filter(counter -> !keys.contains(counter.key()))
+                .forEach(result::add);
+        return result;
+    }
+
+    /**
+     * Счётчики из механики записи и её умений — основной способ записать ресурс класса:
+     * максимум формулой или ступенями, нижняя граница максимума и порция короткого
+     * отдыха есть только здесь.
      */
     private List<VttgClass.Counter> mechanicsCounters(CharacterClass characterClass, String subclassKey) {
         List<ResourceCounter> counters = new ArrayList<>();
@@ -228,8 +252,8 @@ public class VttgClassMapper {
             }
             result.add(new VttgClass.Counter(counter.getKey(), counterName(counter),
                     optional(counter.getShortName()), counterStartLevel(counter),
-                    recovery(counter.getRecovery()),
-                    progression, hasMax ? counter.getMax() : null, subclassKey));
+                    VttgDictionaries.recovery(counter.resolveRecovery()),
+                    progression, hasMax ? counter.getMax() : null, counter.resolveMin(), subclassKey));
         }
         return result;
     }
@@ -283,11 +307,6 @@ public class VttgClassMapper {
     /** Подпись счётчика: своя, иначе ключ — иначе плитка на листе осталась бы безымянной. */
     private String counterName(ResourceCounter counter) {
         return StringUtils.hasText(counter.getName()) ? counter.getName() : counter.getKey();
-    }
-
-    /** Способ восстановления ресурса механики в словаре потребителя. */
-    private String recovery(ResourceRecovery recovery) {
-        return recovery == ResourceRecovery.SHORT_REST ? "short" : "long";
     }
 
     /** Дочерние классы источника без скрытых — тот же отбор, что и у {@link #subclasses}. */
@@ -351,7 +370,7 @@ public class VttgClassMapper {
 
         return new VttgClass.Counter(columnKey(column), column.getName(),
                 optional(column.getShortName()), startLevel, recovery(column.getResourceRecovery()),
-                progression, null, subclassKey);
+                progression, null, null, subclassKey);
     }
 
     /** Способ восстановления в словаре потребителя. */

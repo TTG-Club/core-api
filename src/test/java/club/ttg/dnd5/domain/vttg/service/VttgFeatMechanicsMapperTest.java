@@ -1153,6 +1153,34 @@ class VttgFeatMechanicsMapperTest {
                 json(feat).get("featData").get("counters").get(0).get("recovery").asText());
     }
 
+    /**
+     * Один заряд коротким отдыхом, все — продолжительным: у такого отката своё значение
+     * словаря, иначе он читался бы как полный откат коротким.
+     */
+    @Test
+    void mapsShortRestOneCounter() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("uses", "2", ResourceRecovery.SHORT_REST_ONE)));
+        feat.setMechanics(mechanics);
+
+        assertEquals("short-one",
+                json(feat).get("featData").get("counters").get(0).get("recovery").asText());
+    }
+
+    /** Нижняя граница максимума едет вместе с формулой: с модификатором +0 ресурс не пропадёт. */
+    @Test
+    void mapsCounterMinimum() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("uses", "@mod.cha", ResourceRecovery.LONG_REST);
+        counter.setMin(1);
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        assertEquals(1, json(feat).get("featData").get("counters").get(0).get("min").asInt());
+    }
+
     /** Откат не задан — продолжительный отдых: короткий проставляют явно. */
     @Test
     void defaultsCounterRecoveryToLongRest() {

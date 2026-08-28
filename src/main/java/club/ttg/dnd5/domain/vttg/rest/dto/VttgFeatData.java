@@ -254,10 +254,12 @@ public class VttgFeatData {
      *                  полным
      * @param max       формула максимума: число либо выражение с {@code @prof},
      *                  {@code @level}, {@code @mod.<abbr>}
-     * @param recovery  каким отдыхом восстанавливается: {@code short} или {@code long}
+     * @param min       нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
+     * @param recovery  каким отдыхом восстанавливается: {@code short}, {@code long} либо
+     *                  {@code short-one} (один заряд коротким, все — продолжительным)
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Counter(String key, String name, String shortName, String max, String recovery) {
+    public record Counter(String key, String name, String shortName, String max, Integer min, String recovery) {
     }
 
     /**

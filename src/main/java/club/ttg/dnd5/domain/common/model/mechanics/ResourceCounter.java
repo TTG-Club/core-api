@@ -69,9 +69,31 @@ public class ResourceCounter {
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<CounterScaling> scaling;
 
+    /**
+     * Нижняя граница максимума: сколько зарядов у ресурса есть в любом случае.
+     *
+     * <p>Нужна ресурсам, чей максимум считается модификатором характеристики: вдохновение
+     * барда равно модификатору Харизмы, но не меньше одного, и с Харизмой +0 бард всё
+     * равно вдохновляет один раз. Минимум не складывается с формулой, а подпирает её
+     * снизу. Пусто — нижней границы нет.</p>
+     */
+    @Schema(description = "Нижняя граница максимума: ниже неё формула максимум не опускает",
+            example = "1", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Integer min;
+
     @Schema(description = "Каким отдыхом восстанавливается",
-            examples = {"SHORT_REST", "LONG_REST"})
+            examples = {"SHORT_REST", "LONG_REST", "SHORT_REST_ONE"})
     private ResourceRecovery recovery;
+
+    /**
+     * Нижняя граница максимума с поправкой на её отсутствие: ноль и отрицательное число
+     * границей не являются — ресурса меньше чем на ноль зарядов не бывает.
+     *
+     * @return нижняя граница максимума; {@code null} — её нет.
+     */
+    public Integer resolveMin() {
+        return min == null || min <= 0 ? null : min;
+    }
 
     /**
      * Откат с поправкой на записи, где поле не заполнено: продолжительный отдых — общий

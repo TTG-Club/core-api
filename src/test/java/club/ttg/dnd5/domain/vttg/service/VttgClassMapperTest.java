@@ -443,6 +443,91 @@ class VttgClassMapperTest {
     }
 
     /**
+     * «Второе дыхание» 2024 года: один заряд возвращает короткий отдых, все —
+     * продолжительный. Такой откат — своё значение словаря, а не короткий отдых: тот
+     * возвращает ресурс целиком.
+     */
+    @Test
+    void exportsShortRestOneRecovery() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassFeature secondWind = feature("second-wind", 1, "Второе дыхание", "Восстановите хиты.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("second-wind");
+        counter.setName("Второе дыхание");
+        counter.setMax("2");
+        counter.setRecovery(ResourceRecovery.SHORT_REST_ONE);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        secondWind.setMechanics(mechanics);
+
+        fighter.setFeatures(List.of(secondWind));
+
+        assertEquals("short-one", json(fighter).get("counters").get(0).get("recovery").asText());
+    }
+
+    /**
+     * Нижняя граница максимума уезжает вместе с формулой: вдохновение барда равно
+     * модификатору Харизмы, но с Харизмой +0 бард всё равно вдохновляет один раз.
+     */
+    @Test
+    void exportsCounterMinimum() {
+        CharacterClass bard = baseClass("bard", "Бард", "Bard");
+        ClassFeature inspiration = feature("bardic-inspiration", 1, "Вдохновение барда",
+                "Дайте кость вдохновения.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("bardic-inspiration");
+        counter.setName("Вдохновение барда");
+        counter.setMax("@mod.cha");
+        counter.setMin(1);
+        counter.setRecovery(ResourceRecovery.SHORT_REST_ONE);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        inspiration.setMechanics(mechanics);
+
+        bard.setFeatures(List.of(inspiration));
+
+        JsonNode exported = json(bard).get("counters").get(0);
+        assertEquals("@mod.cha", exported.get("formula").asText());
+        assertEquals(1, exported.get("min").asInt());
+    }
+
+    /**
+     * Ресурс, записанный и колонкой, и механикой, уезжает один раз — механикой: колонка
+     * осталась от прежней записи и не знает ни о нижней границе, ни о порции короткого
+     * отдыха.
+     */
+    @Test
+    void mechanicsCounterWinsOverColumnWithSameKey() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassTableColumn column = new ClassTableColumn("Второе дыхание",
+                List.of(new ClassTableItem(1, "2")));
+        column.setKey("second-wind");
+        column.setResourceRecovery(ClassResourceRecovery.LONG_REST);
+        fighter.setTable(List.of(column));
+
+        ClassFeature secondWind = feature("second-wind", 1, "Второе дыхание", "Восстановите хиты.");
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("second-wind");
+        counter.setName("Второе дыхание");
+        counter.setMax("@prof");
+        counter.setRecovery(ResourceRecovery.SHORT_REST_ONE);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        secondWind.setMechanics(mechanics);
+        fighter.setFeatures(List.of(secondWind));
+
+        JsonNode counters = json(fighter).get("counters");
+        assertEquals(1, counters.size());
+        assertEquals("short-one", counters.get(0).get("recovery").asText());
+        assertEquals("@prof", counters.get(0).get("formula").asText());
+        // Колонка остаётся колонкой таблицы: счётчиком она быть перестала, а прогрессию
+        // в книге показывает по-прежнему
+        assertEquals("second-wind", json(fighter).get("tableColumns").get(0).get("key").asText());
+    }
+
+    /**
      * Свой ключ колонки важнее выведенного из подписи: по нему лист хранит потраченный
      * остаток, и перевод подписи не должен обнулять счётчики.
      */

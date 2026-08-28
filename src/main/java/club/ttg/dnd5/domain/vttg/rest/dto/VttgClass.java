@@ -121,10 +121,13 @@ public class VttgClass {
     /**
      * Счётчики классовых ресурсов: ярость, очки чародейства, кости превосходства.
      *
-     * <p>Выводятся из колонок таблицы прогрессии, у которых задано восстановление
-     * ({@code ClassTableColumn.resourceRecovery}): такая колонка — это и есть ресурс,
-     * а её значения по уровням — его максимум. Колонки без восстановления остаются
-     * обычными колонками таблицы и в счётчики не идут.</p>
+     * <p>Основной источник — ресурсы механики записи и её умений
+     * ({@code mechanics.counters}): там у ресурса есть и формула максимума, и ступени по
+     * уровням, и нижняя граница максимума. К ним добавляются колонки таблицы прогрессии,
+     * у которых задано восстановление ({@code ClassTableColumn.resourceRecovery}), — так
+     * ресурсы записывали раньше, и классы, которые ещё не переписаны, ими и живут.
+     * Колонки без восстановления остаются обычными колонками таблицы и в счётчики не
+     * идут.</p>
      */
     private List<Counter> counters;
 
@@ -205,13 +208,15 @@ public class VttgClass {
      * @param key         стабильный ключ (он же ключ колонки таблицы)
      * @param name        подпись счётчика на листе
      * @param startLevel  уровень, с которого счётчик появляется
-     * @param recovery    когда восстанавливается: {@code short} или {@code long}
+     * @param recovery    когда восстанавливается: {@code short}, {@code long} либо
+     *                    {@code short-one} (один заряд коротким, все — продолжительным)
      * @param progression максимум по уровням: ключ — уровень строкой, значение — число
+     * @param min         нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
      * @param subclassKey ключ подкласса, если счётчик принадлежит ему; иначе {@code null}
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Counter(String key, String name, String shortName, int startLevel, String recovery,
-                          Map<String, Integer> progression, String formula, String subclassKey) {
+                          Map<String, Integer> progression, String formula, Integer min, String subclassKey) {
     }
 
     /**

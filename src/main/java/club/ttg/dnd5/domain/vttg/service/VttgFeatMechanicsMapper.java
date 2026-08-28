@@ -320,7 +320,7 @@ public class VttgFeatMechanicsMapper {
             }
             String name = trimmed(counter.getName());
             result.add(new VttgFeatData.Counter(key, name == null ? key : name,
-                    trimmed(counter.getShortName()), max,
+                    trimmed(counter.getShortName()), max, counter.resolveMin(),
                     VttgDictionaries.recovery(counter.resolveRecovery())));
         }
         return emptyToNull(result);
