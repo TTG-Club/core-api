@@ -176,6 +176,8 @@ public class ClassService {
 
         return characterClass.getSubclasses()
                 .stream()
+                // скрытые подклассы (мягкое удаление) в список не попадают — как и в общем списке
+                .filter(subclass -> !subclass.isHiddenEntity())
                 .filter(subclass -> sources.contains(subclass.getSource().getAcronym()))
                 .sorted(Comparator
                         .comparing((CharacterClass c) -> c.getSource().getType().ordinal())

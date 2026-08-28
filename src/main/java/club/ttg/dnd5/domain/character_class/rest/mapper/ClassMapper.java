@@ -286,10 +286,12 @@ public interface ClassMapper
                 .collect(Collectors.toList());
     }
 
+    /** Есть ли у класса видимые подклассы: скрытые (мягко удалённые) не считаются. */
     @Named("hasSubclasses")
     default boolean hasSubclasses(Collection<CharacterClass> subclasses)
     {
-        return !CollectionUtils.isEmpty(subclasses);
+        return !CollectionUtils.isEmpty(subclasses)
+                && subclasses.stream().anyMatch(subclass -> subclass != null && !subclass.isHiddenEntity());
     }
 
     @Named("toImageUrl")
