@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMe
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.item.model.ItemType;
+import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class ItemFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        List<FilterGroupMeta> groups = new ArrayList<>(4);
+        List<FilterGroupMeta> groups = new ArrayList<>(5);
 
         groups.add(FilterGroupMeta.builder()
                 .key(FilterKeys.keyOf(ItemQueryRequest.class, "itemType"))
@@ -76,6 +77,21 @@ public class ItemFilterService
                 .name("Тип урона")
                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                 .values(Arrays.stream(DamageType.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
+                        .toList())
+                .build());
+
+        // Приём у оружия ровно один, поэтому объединение (И) не предлагается.
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(ItemQueryRequest.class, "mastery"))
+                .name("Оружейный приём")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Arrays.stream(Mastery.values())
                         .map(v -> FilterValueMeta.builder()
                                 .id(v.name())
                                 .value(v.name())
