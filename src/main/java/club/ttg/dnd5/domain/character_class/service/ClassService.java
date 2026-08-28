@@ -118,7 +118,7 @@ public class ClassService {
         revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
                 findFormByUrl(saved.getUrl()));
         ClassDetailedResponse response = classMapper.toDetailedResponse(saved);
-        fillCounterTableColumns(response);
+        fillCounterTableColumns(response, parentMechanics(saved));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         return response;
     }
@@ -197,7 +197,7 @@ public class ClassService {
         var response = classMapper.toDetailedResponse(charClass);
         fillResponseFieldsFromParentClass(charClass, response);
         resolveFeatureGrantedSpells(response);
-        fillCounterTableColumns(response);
+        fillCounterTableColumns(response, parentMechanics(charClass));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
                 .stream()
@@ -273,11 +273,23 @@ public class ClassService {
      *
      * @param response ответ записи класса.
      */
-    private void fillCounterTableColumns(ClassDetailedResponse response) {
+    /** Дары родительского класса; {@code null} — запись не подкласс либо даров нет. */
+    private ClassMechanics parentMechanics(CharacterClass characterClass) {
+        CharacterClass parent = characterClass.getParent();
+        return parent == null ? null : parent.getMechanics();
+    }
+
+    private void fillCounterTableColumns(ClassDetailedResponse response, ClassMechanics parentMechanics) {
         List<CounterTableColumns.Source> sources = new ArrayList<>();
         if (response.getMechanics() != null) {
             sources.add(new CounterTableColumns.Source(response.getMechanics().getCounters(),
                     response.getMechanics().getChoices(), 1));
+        }
+        // Дары самого класса — тоже источник колонок подкласса: его страница показывает
+        // таблицу класса целиком, а «Второе дыхание» задано у класса, не у умения
+        if (parentMechanics != null) {
+            sources.add(new CounterTableColumns.Source(parentMechanics.getCounters(),
+                    parentMechanics.getChoices(), 1));
         }
         for (ClassFeatureDto feature : Optional.ofNullable(response.getFeatures()).orElse(List.of())) {
             if (feature != null && feature.getMechanics() != null) {
@@ -353,7 +365,7 @@ public class ClassService {
         var entity = classMapper.toEntity(request, source);
         entity.setParent(parent);
         var response = classMapper.toDetailedResponse(entity);
-        fillCounterTableColumns(response);
+        fillCounterTableColumns(response, parentMechanics(entity));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)
                 .stream()

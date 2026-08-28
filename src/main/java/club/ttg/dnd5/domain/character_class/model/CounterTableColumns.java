@@ -70,22 +70,31 @@ public class CounterTableColumns {
      */
     public List<ClassTableColumn> extend(List<ClassTableColumn> table, List<Source> sources) {
         List<ClassTableColumn> result = new ArrayList<>();
-        Set<String> takenKeys = new HashSet<>();
+        Set<String> taken = new HashSet<>();
 
         if (table != null) {
             for (ClassTableColumn column : table) {
                 if (column != null) {
-                    takenKeys.add(columnKey(column));
+                    taken.add(columnKey(column));
+                    // Подпись занимает место наравне с ключом: у подкласса лежит своя копия
+                    // родительской колонки, и ключа у неё чаще всего нет вовсе. Без сверки
+                    // по подписи «Ярость» встала бы в таблицу дважды — своя и выведенная
+                    taken.add(label(column.getName()));
                     result.add(column);
                 }
             }
         }
 
         for (Source source : sources) {
-            result.addAll(from(source.counters(), source.startLevel(), takenKeys));
-            result.addAll(fromChoices(source.choices(), source.startLevel(), takenKeys));
+            result.addAll(from(source.counters(), source.startLevel(), taken));
+            result.addAll(fromChoices(source.choices(), source.startLevel(), taken));
         }
         return result;
+    }
+
+    /** Подпись колонки для сверки: без краёв и регистра — «Ярость» и «ярость» это одно. */
+    private String label(String name) {
+        return name == null ? "" : name.trim().toLowerCase();
     }
 
     /**
@@ -125,11 +134,30 @@ public class CounterTableColumns {
         List<ClassTableColumn> result = new ArrayList<>();
         for (ResourceCounter counter : counters) {
             ClassTableColumn column = column(counter, startLevel);
-            if (column != null && takenKeys.add(column.getKey())) {
+            if (column != null && isFree(column, takenKeys)) {
                 result.add(column);
             }
         }
         return result;
+    }
+
+    /**
+     * Место в таблице свободно: ни ключа, ни подписи выведенной колонки там ещё нет.
+     * Занятое — помечается, чтобы вторая такая колонка не пролезла следом.
+     *
+     * @param column выведенная колонка.
+     * @param taken занятые ключи и подписи; пополняется на месте.
+     * @return true — колонку можно показывать.
+     */
+    private boolean isFree(ClassTableColumn column, Set<String> taken) {
+        String key = column.getKey();
+        String label = label(column.getName());
+        if (taken.contains(key) || taken.contains(label)) {
+            return false;
+        }
+        taken.add(key);
+        taken.add(label);
+        return true;
     }
 
     /**
@@ -149,7 +177,7 @@ public class CounterTableColumns {
         List<ClassTableColumn> result = new ArrayList<>();
         for (MechanicChoice choice : choices) {
             ClassTableColumn column = column(choice, startLevel);
-            if (column != null && takenKeys.add(column.getKey())) {
+            if (column != null && isFree(column, takenKeys)) {
                 result.add(column);
             }
         }

@@ -673,6 +673,35 @@ class VttgClassMapperTest {
     }
 
     /**
+     * Колонка с той же подписью не задваивается, даже когда ключа у неё нет: у подкласса
+     * лежит своя копия родительской таблицы, и «Ярость» рисовалась бы дважды — своя и
+     * выведенная из ресурса.
+     */
+    @Test
+    void skipsDerivedColumnWithTakenLabel() {
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        ClassTableColumn copied = new ClassTableColumn("Ярость",
+                List.of(new ClassTableItem(1, "2"), new ClassTableItem(3, "3")));
+        barbarian.setTable(List.of(copied));
+
+        ClassFeature rage = feature("rage", 1, "Ярость", "Впадите в ярость.");
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("rages");
+        counter.setName("Ярость");
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        counter.setShowInTable(true);
+        counter.setScaling(List.of(new CounterScaling(1, 2), new CounterScaling(3, 3)));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        rage.setMechanics(mechanics);
+        barbarian.setFeatures(List.of(rage));
+
+        JsonNode columns = json(barbarian).get("tableColumns");
+        assertEquals(1, columns.size());
+        assertEquals("Ярость", columns.get(0).get("label").asText());
+    }
+
+    /**
      * Свой ключ колонки важнее выведенного из подписи: по нему лист хранит потраченный
      * остаток, и перевод подписи не должен обнулять счётчики.
      */
