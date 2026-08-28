@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -74,6 +75,19 @@ public class ProficiencyGrant {
      */
     @Schema(description = "Оружейные приёмы — видами оружия из справочника")
     private List<EntityRef> weaponMasteries;
+
+    /**
+     * Оружейные приёмы сами по себе, без привязки к оружию: «Тактический мастер» воина
+     * владеет Толканием, Изнурением и Замедлением независимо от того, у какого оружия
+     * такой приём есть.
+     *
+     * <p>Отдельным полем от {@link #weaponMasteries}: там значение — вид оружия из
+     * справочника, здесь — приём из правил, и на листе это разные списки
+     * ({@code proficiencies.weaponMasteries} против
+     * {@code proficiencies.masteryProperties}).</p>
+     */
+    @Schema(description = "Оружейные приёмы без привязки к оружию", examples = {"PUSH", "SAP"})
+    private Set<Mastery> masteryProperties;
 
     @Schema(description = "Категории доспехов", examples = {"MEDIUM", "SHIELD"})
     private Set<ArmorCategory> armorCategories;

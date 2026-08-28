@@ -47,6 +47,14 @@ public class VttgFeatData {
      */
     private List<String> weaponMasteries;
     /**
+     * Оружейные приёмы без привязки к оружию — ключами приёмов ({@code push}, {@code sap}):
+     * «Тактический мастер» владеет самим приёмом, а не оружием, у которого он есть.
+     *
+     * <p>Потребитель держит их отдельным списком владений
+     * ({@code proficiencies.masteryProperties}), как и {@link #weaponMasteries}.</p>
+     */
+    private List<String> masteryProperties;
+    /**
      * Владение инструментами — ключами справочника листа ({@code thieves-tools}), а не
      * слагами страниц сайта: незнакомый ключ лист молча выбрасывает при первом же
      * открытии окна владений. Перевод — {@code VttgToolKeys}; инструменты, которых у
