@@ -120,15 +120,12 @@ public class VttgFeatMapper {
     }
 
     private String categoryName(FeatCategory category) {
-        return StringUtils.capitalize(defaultSeparator(category).name());
+        return VttgFeatKeys.categoryName(category);
     }
 
-    /** id черты в схеме эталона: {@code "Two-Weapon Fighting" → "srd_feat_two_weapon_fighting"}. */
+    /** id черты в схеме эталона — общим правилом со ссылками на черту из других записей. */
     private String featId(Feat feat) {
-        String base = StringUtils.hasText(feat.getEnglish()) ? feat.getEnglish() : feat.getUrl();
-        return "srd_feat_" + (base == null ? "" : base.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", ""));
+        return VttgFeatKeys.featId(feat);
     }
 
 

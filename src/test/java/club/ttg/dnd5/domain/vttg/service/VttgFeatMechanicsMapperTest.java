@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
@@ -67,7 +68,8 @@ class VttgFeatMechanicsMapperTest {
     private final SpellRepository spellRepository = mock(SpellRepository.class);
 
     private final VttgFeatMapper mapper = new VttgFeatMapper(
-            markupConverter, new VttgFeatMechanicsMapper(markupConverter, spellRepository));
+            markupConverter, new VttgFeatMechanicsMapper(markupConverter, spellRepository,
+                    mock(FeatRepository.class)));
 
     {
         // По умолчанию справочник пуст: заклинания подставляют только те тесты, которым

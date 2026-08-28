@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.model.mechanics;
 
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantingMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
@@ -27,9 +28,10 @@ import java.util.List;
  * то, что даёт конкретное умение на своём уровне: «Экспертиза» плута, «Метка охотника»
  * следопыта, очки чародейства.</p>
  *
- * <p>Повышений характеристик здесь нет, в отличие от черты: их шаг у класса отмечен
- * флагом {@code ClassFeature.abilityImprovement}, и второе место для того же самого
- * разошлось бы с первым.</p>
+ * <p>Повышений характеристик здесь нет, в отличие от черты: по правилам 2024 года это
+ * черта «Улучшение характеристик», и умение выдаёт её выбором черты
+ * ({@code ChoiceType.FEAT}). Флаг {@code ClassFeature.abilityImprovement} остаётся
+ * запасным признаком для записей и потребителей, которые про выбор черты не знают.</p>
  *
  * <p><b>Формат — контракт с сайтом.</b> Ответ детальника и тело запроса мастерской отдают
  * эту модель как есть ({@code ClassDetailedResponse.mechanics}, {@code ClassRequest.mechanics}),
@@ -64,8 +66,9 @@ public class ClassMechanics implements GrantingMechanics {
 
     /**
      * Выборы, которые игрок делает при получении: навык для «Экспертизы», тип урона,
-     * заклинательная характеристика. Выбор боевого стиля отмечен своим флагом умения
-     * ({@code fightingStyleChoice}) и сюда не дублируется.
+     * заклинательная характеристика, черта — боевой стиль или черта за повышение
+     * характеристик ({@code ChoiceType.FEAT}). Флаг умения {@code fightingStyleChoice}
+     * остаётся запасным признаком для записей, где выбор черты ещё не описан.
      */
     @Schema(description = "Выборы, которые игрок делает при получении",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
@@ -99,4 +102,15 @@ public class ClassMechanics implements GrantingMechanics {
     @Schema(description = "Ресурсы со своим счётчиком на листе",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<ResourceCounter> counters;
+
+    /**
+     * Черты, которые умение выдаёт без выбора — ссылками на записи справочника.
+     *
+     * <p>Отдельно от {@link #choices}: выбор из одной черты всё равно спрашивал бы игрока,
+     * а здесь спрашивать нечего — лист кладёт черту сам, как предыстория кладёт свою черту
+     * происхождения.</p>
+     */
+    @Schema(description = "Черты, которые выдаются без выбора",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<EntityRef> feats;
 }

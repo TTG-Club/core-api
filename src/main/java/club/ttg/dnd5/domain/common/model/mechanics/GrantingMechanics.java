@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.common.model.mechanics;
 
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 
 import java.util.List;
 
@@ -38,6 +39,16 @@ public interface GrantingMechanics {
 
     /** Ресурсы со счётчиком; {@code null} — запись их не даёт. */
     default List<ResourceCounter> getCounters() {
+        return null;
+    }
+
+    /**
+     * Черты, выданные без выбора; {@code null} — запись их не выдаёт.
+     *
+     * <p>Выдаёт их только умение класса: у черты и вида такого блока нет, а предыстория
+     * хранит свою черту происхождения отдельной колонкой записи.</p>
+     */
+    default List<EntityRef> getFeats() {
         return null;
     }
 

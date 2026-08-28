@@ -109,6 +109,21 @@ public class VttgFeatData {
     private SpellList spellList;
     /** Ресурсы черты со счётчиком: очки удачи «Удачливого», применения «Целителя». */
     private List<Counter> counters;
+    /**
+     * Черты, которые запись выдаёт без выбора, — ссылками на записи компендиума. Выдаёт
+     * их умение класса; лист кладёт черту сам, как предыстория кладёт черту происхождения.
+     */
+    private List<GrantedFeat> grantedFeats;
+
+    /**
+     * Черта, выданная без выбора.
+     *
+     * @param featId {@code id} записи черты в выгрузке ({@code srd_feat_…})
+     * @param name   название на момент выгрузки — показать, даже когда записи в паках нет
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record GrantedFeat(String featId, String name) {
+    }
 
     /**
      * Заклинание, которое черта даёт знать.

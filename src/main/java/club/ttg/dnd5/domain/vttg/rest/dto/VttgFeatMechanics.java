@@ -153,6 +153,10 @@ public class VttgFeatMechanics {
      *                                   сразу. По нему мастер повышения спрашивает
      *                                   компетентность плута и на первом уровне, и на
      *                                   шестом, где умение в книге одно
+     * @param featCategories             категории черт, из которых выбирают, — только у
+     *                                   {@code feat}, подписями как в {@code VttgFeat.category};
+     *                                   пусто — категория не ограничена. Складывается с
+     *                                   {@code options}: те сужают пул до перечисленных черт
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Choice(String key, String type, List<String> types, String label,
@@ -160,7 +164,8 @@ public class VttgFeatMechanics {
                          List<Option> options, SpellFilter spellFilter,
                          Boolean onlyIfNotProficient, Boolean onlyIfProficient,
                          Boolean expertiseIfProficient, String grants,
-                         Boolean rechooseOnLongRest, Integer requiredLevel) {
+                         Boolean rechooseOnLongRest, Integer requiredLevel,
+                         List<String> featCategories) {
     }
 
     /**
@@ -171,9 +176,9 @@ public class VttgFeatMechanics {
      * ключом ({@code charisma}, {@code fire}), язык — русским названием справочника листа,
      * инструмент — ключом владения ({@code thieves-tools}), список заклинаний — ключом
      * класса ({@code wizard}), оружие и оружейный приём — ключом вида оружия
-     * ({@code longsword}), доспехи — категорией ({@code medium}). Заклинание и «вариант»
-     * остаются как есть: у первого значение и так url записи, у второго общего словаря
-     * нет.</p>
+     * ({@code longsword}), доспехи — категорией ({@code medium}), черта — {@code id} записи
+     * компендиума ({@code srd_feat_archery}). Заклинание и «вариант» остаются как есть: у
+     * первого значение и так url записи, у второго общего словаря нет.</p>
      *
      * <p>У смешанного выбора вид значения решает не {@code type}, а сам справочник: перевод
      * пробуется по каждому виду набора, пока не найдётся тот, где значение есть.</p>

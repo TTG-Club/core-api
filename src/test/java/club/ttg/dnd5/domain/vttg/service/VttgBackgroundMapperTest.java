@@ -38,7 +38,8 @@ class VttgBackgroundMapperTest {
     private final FeatRepository featRepository = mock(FeatRepository.class);
     private final VttgBackgroundMapper mapper = new VttgBackgroundMapper(markupConverter,
             new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
-            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)),
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class),
+                    mock(FeatRepository.class)),
             featRepository);
 
     /** «Послушник» — характеристики в каноническом порядке, навыки, черта, снаряжение. */
