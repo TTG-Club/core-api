@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
@@ -21,7 +22,8 @@ class VttgFeatMapperTest {
     private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
 
     private final VttgFeatMapper mapper = new VttgFeatMapper(markupConverter,
-            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class),
+                    mock(FeatRepository.class)));
 
     /** «Оборона» — постоянные поля типа, ключ/имя источника, повторяемость false. */
     @Test

@@ -259,12 +259,9 @@ public class VttgBackgroundMapper {
         return builder.toString();
     }
 
-    /** id черты в схеме эталона: {@code "Magic Initiate" → "srd_feat_magic_initiate"}. */
+    /** id черты в схеме эталона — общим правилом с записью самой черты. */
     private String featId(Feat feat) {
-        String base = StringUtils.hasText(feat.getEnglish()) ? feat.getEnglish() : feat.getUrl();
-        return "srd_feat_" + (base == null ? "" : base.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", ""));
+        return VttgFeatKeys.featId(feat);
     }
 
     private String slug(String value) {

@@ -168,6 +168,7 @@ public class VttgClassMapper {
         withoutDuplicates.setProficiencies(mechanics.getProficiencies());
         withoutDuplicates.setChoices(mechanics.getChoices());
         withoutDuplicates.setSpellList(mechanics.getSpellList());
+        withoutDuplicates.setFeats(mechanics.getFeats());
 
         return mechanicsMapper.featData(withoutDuplicates, null);
     }

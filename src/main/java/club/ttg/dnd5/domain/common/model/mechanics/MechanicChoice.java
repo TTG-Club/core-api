@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.model.mechanics;
 
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -9,6 +10,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Выбор, который игрок делает <b>один раз, получая источник эффекта</b>: беря черту или
@@ -94,6 +96,18 @@ public class MechanicChoice {
 
     @Schema(description = "Ограничение выбора заклинания или заговора")
     private SpellFilter spellFilter;
+
+    /**
+     * Категории черт, из которых выбирают; только у {@link ChoiceType#FEAT}. Пусто —
+     * категория не ограничена.
+     *
+     * <p>Складывается с {@link #options}: перечисленные черты сужают пул внутри категорий,
+     * а без перечисления пул — все черты названных категорий. Так «Боевой стиль» воина
+     * описывается одной категорией и не требует перечислять стили, которые ещё допишут.</p>
+     */
+    @Schema(description = "Категории черт, из которых выбирают (только у FEAT); пусто — любая",
+            examples = {"FIGHTING_STYLE"})
+    private Set<FeatCategory> featCategories;
 
     /**
      * Выбирать можно только то, чем персонаж ещё не владеет: «выберите характеристику,

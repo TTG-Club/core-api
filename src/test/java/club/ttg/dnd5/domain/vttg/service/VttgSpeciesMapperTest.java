@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
@@ -43,7 +44,8 @@ class VttgSpeciesMapperTest {
 
     private final VttgSpeciesMapper mapper = new VttgSpeciesMapper(
             markupConverter, speciesRepository, spellRepository,
-            new VttgFeatMechanicsMapper(markupConverter, spellRepository));
+            new VttgFeatMechanicsMapper(markupConverter, spellRepository,
+                    mock(FeatRepository.class)));
 
     {
         // По умолчанию врождённых заклинаний нет — их проверяет отдельный тест

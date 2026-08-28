@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.character_class.model.ArmorProficiency;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
@@ -55,7 +56,8 @@ class VttgClassMapperTest {
     private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
     private final VttgClassMapper mapper = new VttgClassMapper(markupConverter,
             new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
-            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class),
+                    mock(FeatRepository.class)));
 
     /** «Воин» — базовая механика, владения, развёртка scaling в умения, таблица и вложенный подкласс. */
     @Test
@@ -244,7 +246,8 @@ class VttgClassMapperTest {
         when(itemRepository.findNamesByUrls(Set.of("chain-mail"))).thenReturn(List.of(chainMail));
         VttgClassMapper resolvingMapper = new VttgClassMapper(markupConverter,
                 new VttgEquipmentMapper(markupConverter, itemRepository),
-                new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
+                new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class),
+                    mock(FeatRepository.class)));
 
         CharacterClass characterClass = baseClass("fighter", "Воин", "Fighter");
         characterClass.setStartingEquipment(List.of(

@@ -9,6 +9,8 @@ import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.model.FeatCategory;
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
@@ -113,6 +115,13 @@ public class VttgFeatMechanicsMapper {
      */
     private final SpellRepository spellRepository;
 
+    /**
+     * Черты, на которые ссылаются выбор черты и выдача без выбора: в записи лежит url
+     * страницы, а компендиум ищет черту по {@code id}, собранному из английского названия
+     * ({@link VttgFeatKeys}). Запрос идёт только у записей, которые черты называют.
+     */
+    private final FeatRepository featRepository;
+
     /** Классовые умения-требования в словаре потребителя. */
     private static String classFeature(ClassFeatureRequirement requirement) {
         return switch (requirement) {
@@ -143,6 +152,7 @@ public class VttgFeatMechanicsMapper {
             case WEAPON_MASTERY -> "weaponMastery";
             case ARMOR -> "armor";
             case OPTION -> "option";
+            case FEAT -> "feat";
         };
     }
 
@@ -209,9 +219,61 @@ public class VttgFeatMechanicsMapper {
                         : flag(spellGrant.getAlwaysPrepared()))
                 .spellList(spellList(mechanics == null ? null : mechanics.getSpellList()))
                 .counters(mechanics == null ? null : counters(mechanics.getCounters()))
+                .grantedFeats(grantedFeats(mechanics == null ? null : mechanics.getFeats()))
                 .build();
 
         return isEmpty(result) ? null : result;
+    }
+
+    /**
+     * Черты, выданные без выбора, — ключами компендиума и с названием из справочника.
+     *
+     * <p>Ссылка на черту, которой в справочнике нет, пропускается: потребитель нашёл бы по
+     * ней пустоту, а записать на лист черту без описания и даров — хуже, чем не записать.</p>
+     */
+    private List<VttgFeatData.GrantedFeat> grantedFeats(List<EntityRef> feats) {
+        if (CollectionUtils.isEmpty(feats)) {
+            return null;
+        }
+        List<String> urls = feats.stream()
+                .filter(Objects::nonNull)
+                .map(ref -> trimmed(ref.getUrl()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<String, Feat> featsByUrl = featsByUrl(urls);
+        List<VttgFeatData.GrantedFeat> result = new ArrayList<>();
+        for (String url : urls) {
+            Feat feat = featsByUrl.get(url);
+            if (feat != null) {
+                result.add(new VttgFeatData.GrantedFeat(VttgFeatKeys.featId(feat), feat.getName()));
+            }
+        }
+        return emptyToNull(result);
+    }
+
+    /** Записи черт по url — одним запросом на все ссылки записи. */
+    private Map<String, Feat> featsByUrl(Collection<String> urls) {
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Feat> result = new LinkedHashMap<>();
+        featRepository.findAllById(urls).forEach(feat -> result.put(feat.getUrl(), feat));
+        return result;
+    }
+
+    /**
+     * Категории черт выбора — подписями записи компендиума ({@link VttgFeatKeys#categoryName}).
+     */
+    private List<String> featCategories(Collection<FeatCategory> categories) {
+        if (CollectionUtils.isEmpty(categories)) {
+            return null;
+        }
+        return emptyToNull(categories.stream()
+                .filter(Objects::nonNull)
+                .map(VttgFeatKeys::categoryName)
+                .distinct()
+                .toList());
     }
 
     /**
@@ -619,7 +681,8 @@ public class VttgFeatMechanicsMapper {
                 // Заклинательная характеристика и признак подготовки описывают ВЫДАННЫЕ
                 // заклинания: без них самих блок даров пуст, и создавать его незачем
                 && featData.getGrantedSpells() == null
-                && featData.getSpellList() == null;
+                && featData.getSpellList() == null
+                && featData.getGrantedFeats() == null;
     }
 
     /**
@@ -888,6 +951,9 @@ public class VttgFeatMechanicsMapper {
         if (CollectionUtils.isEmpty(choices)) {
             return null;
         }
+        // Черты из выборов черты резолвятся одним запросом на всю запись: у умения их
+        // может быть несколько, и запрос на каждый вариант превратил бы выгрузку в N+1
+        Map<String, Feat> featsByUrl = featsByUrl(featOptionUrls(choices));
         List<VttgFeatMechanics.Choice> result = new ArrayList<>();
         for (MechanicChoice choice : choices) {
             if (choice == null) {
@@ -906,16 +972,32 @@ public class VttgFeatMechanicsMapper {
                     trimmed(choice.getLabel()),
                     choice.resolveCount(),
                     flag(choice.getCountEqualsProficiencyBonus()),
-                    options(types, choice.getOptions()),
+                    options(types, choice.getOptions(), featsByUrl),
                     spellFilter(choice.getSpellFilter()),
                     flag(choice.getOnlyIfNotProficient()),
                     flag(choice.getOnlyIfProficient()),
                     flag(choice.getExpertiseIfProficient()),
                     grant(choice.resolveGrant()),
                     flag(choice.getRechooseOnLongRest()),
-                    choice.getRequiredLevel()));
+                    choice.getRequiredLevel(),
+                    types.contains(ChoiceType.FEAT) ? featCategories(choice.getFeatCategories()) : null));
         }
         return emptyToNull(result);
+    }
+
+    /** Url черт, перечисленных в выборах черты; у остальных выборов черт нет. */
+    private List<String> featOptionUrls(List<MechanicChoice> choices) {
+        return choices.stream()
+                .filter(Objects::nonNull)
+                .filter(choice -> choice.resolveTypes().contains(ChoiceType.FEAT))
+                .map(MechanicChoice::getOptions)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(Objects::nonNull)
+                .map(option -> trimmed(option.getValue()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 
     /**
@@ -955,7 +1037,8 @@ public class VttgFeatMechanicsMapper {
      * молча не проставится, а инструмент со слагом страницы так же молча исчезнет при
      * следующем открытии окна владений. Отсюда перевод по типу выбора.</p>
      */
-    private List<VttgFeatMechanics.Option> options(List<ChoiceType> types, List<ChoiceOption> options) {
+    private List<VttgFeatMechanics.Option> options(List<ChoiceType> types, List<ChoiceOption> options,
+                                                   Map<String, Feat> featsByUrl) {
         if (CollectionUtils.isEmpty(options)) {
             return null;
         }
@@ -965,7 +1048,7 @@ public class VttgFeatMechanicsMapper {
             if (option == null || !StringUtils.hasText(option.getValue())) {
                 continue;
             }
-            String value = optionValue(types, option.getValue().trim());
+            String value = optionValue(types, option.getValue().trim(), featsByUrl);
             if (value == null) {
                 // Значение не из словаря типа: у таких выборов у листа есть свой полный
                 // справочник, и пустой список вариантов он раскроет целиком — это лучше,
@@ -979,7 +1062,12 @@ public class VttgFeatMechanicsMapper {
                 continue;
             }
             seen.add(value);
-            result.add(new VttgFeatMechanics.Option(value, trimmed(option.getName())));
+            // Название черты берётся из справочника: редактор пишет снимок, но запись
+            // могли переименовать, и в выборе игрок должен видеть нынешнее имя
+            Feat feat = featsByUrl.get(option.getValue().trim());
+            String name = feat != null && StringUtils.hasText(feat.getName())
+                    ? feat.getName() : trimmed(option.getName());
+            result.add(new VttgFeatMechanics.Option(value, name));
         }
         return emptyToNull(result);
     }
@@ -997,11 +1085,13 @@ public class VttgFeatMechanicsMapper {
      * остался бы пустым.</p>
      *
      * <p>Заклинание и заговор не переводятся: их значение и так url записи справочника —
-     * ровно то, чем потребитель ищет заклинание в компендиуме.</p>
+     * ровно то, чем потребитель ищет заклинание в компендиуме. Черта переводится в
+     * {@code id} записи компендиума; черта, которой в справочнике уже нет, отбрасывается —
+     * выбрать её игрок всё равно не смог бы.</p>
      */
-    private String optionValue(List<ChoiceType> types, String raw) {
+    private String optionValue(List<ChoiceType> types, String raw, Map<String, Feat> featsByUrl) {
         for (ChoiceType type : types) {
-            String value = optionValue(type, raw);
+            String value = optionValue(type, raw, featsByUrl);
             if (value != null) {
                 return value;
             }
@@ -1009,7 +1099,7 @@ public class VttgFeatMechanicsMapper {
         return null;
     }
 
-    private String optionValue(ChoiceType type, String raw) {
+    private String optionValue(ChoiceType type, String raw, Map<String, Feat> featsByUrl) {
         return switch (type) {
             case SKILL -> VttgDictionaries.skill(VttgDictionaries.enumValue(Skill.class, raw));
             case ABILITY, SAVING_THROW, SPELLCASTING_ABILITY ->
@@ -1022,6 +1112,10 @@ public class VttgFeatMechanicsMapper {
                     VttgDictionaries.enumValue(ArmorCategory.class, raw));
             case WEAPON, WEAPON_MASTERY -> firstNonNull(weaponOption(raw), raw);
             case SPELL, CANTRIP, OPTION -> raw;
+            case FEAT -> {
+                Feat feat = featsByUrl.get(raw);
+                yield feat == null ? null : VttgFeatKeys.featId(feat);
+            }
         };
     }
 

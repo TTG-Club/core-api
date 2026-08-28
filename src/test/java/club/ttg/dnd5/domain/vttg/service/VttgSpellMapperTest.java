@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
@@ -44,7 +45,8 @@ class VttgSpellMapperTest {
     );
     private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter,
             new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
-            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class),
+                    mock(FeatRepository.class)));
 
     @Test
     void mapsStructuredSpellFieldsToVttgFormat() {
