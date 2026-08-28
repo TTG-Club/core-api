@@ -35,6 +35,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.model.prerequisite.AbilityRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
+import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgEntityRef;
@@ -152,6 +153,7 @@ public class VttgFeatMechanicsMapper {
             case SPELLCASTING_ABILITY -> "spellcastingAbility";
             case WEAPON -> "weapon";
             case WEAPON_MASTERY -> "weaponMastery";
+            case MASTERY_PROPERTY -> "masteryProperty";
             case ARMOR -> "armor";
             case OPTION -> "option";
             case FEAT -> "feat";
@@ -202,6 +204,8 @@ public class VttgFeatMechanicsMapper {
                 .weaponProficiencies(emptyToNull(weapons))
                 .weaponMasteries(grant == null ? null
                         : emptyToNull(weaponKeys(grant.getWeaponMasteries())))
+                .masteryProperties(grant == null ? null
+                        : emptyToNull(masteryKeys(grant.getMasteryProperties())))
                 .toolProficiencies(grant == null ? null : emptyToNull(toolKeys(grant.getTools())))
                 .languages(grant == null ? null
                         : emptyToNull(VttgDictionaries.languages(grant.getLanguages())))
@@ -510,6 +514,26 @@ public class VttgFeatMechanicsMapper {
     }
 
     /**
+     * Оружейные приёмы ключами потребителя. Названия совпадают со справочником с точностью
+     * до регистра, поэтому словаря им не заведено.
+     */
+    private List<String> masteryKeys(Collection<Mastery> masteries) {
+        if (CollectionUtils.isEmpty(masteries)) {
+            return List.of();
+        }
+        return masteries.stream()
+                .filter(Objects::nonNull)
+                .map(VttgFeatMechanicsMapper::masteryKey)
+                .distinct()
+                .toList();
+    }
+
+    /** Ключ приёма у потребителя; {@code null} — приёма нет. */
+    private static String masteryKey(Mastery mastery) {
+        return mastery == null ? null : mastery.name().toLowerCase(Locale.ROOT);
+    }
+
+    /**
      * Защиты от урона в форме листа: источник хранит их тремя наборами, потребитель —
      * плоским списком пар «тип урона + вид защиты». Защита по выбору игрока сюда не идёт:
      * тип урона ещё не выбран, и она едет своим полем — см.
@@ -691,6 +715,7 @@ public class VttgFeatMechanicsMapper {
                 && featData.getArmorProficiencies() == null
                 && featData.getWeaponProficiencies() == null
                 && featData.getWeaponMasteries() == null
+                && featData.getMasteryProperties() == null
                 && featData.getToolProficiencies() == null
                 && featData.getLanguages() == null
                 && featData.getDamageDefenses() == null
@@ -1136,6 +1161,9 @@ public class VttgFeatMechanicsMapper {
             case ARMOR -> VttgDictionaries.armorCategory(
                     VttgDictionaries.enumValue(ArmorCategory.class, raw));
             case WEAPON, WEAPON_MASTERY -> firstNonNull(weaponOption(raw), raw);
+            // Приёмы у потребителя названы теми же словами, что и в справочнике, только
+            // строчными: CLEAVE — cleave, SAP — sap. Своего словаря им не нужно
+            case MASTERY_PROPERTY -> masteryKey(VttgDictionaries.enumValue(Mastery.class, raw));
             case SPELL, CANTRIP, OPTION -> raw;
             case FEAT -> {
                 Feat feat = featsByUrl.get(raw);

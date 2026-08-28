@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -1073,10 +1074,46 @@ class VttgFeatMechanicsMapperTest {
         assertEquals(List.of("rapier"), names(featData.get("weaponMasteries")));
     }
 
-    /** Оружейный приём на выбор — тем же ключом вида оружия, что и владение. */
+    /** Оружие с приёмом на выбор — тем же ключом вида оружия, что и владение. */
     @Test
     void mapsWeaponMasteryChoiceValue() {
         assertEquals("longsword", optionValue(ChoiceType.WEAPON_MASTERY, "longsword-phb"));
+    }
+
+    /**
+     * «Тактический мастер»: приёмы без привязки к оружию. У потребителя это свой список
+     * владений, и ключи там — сами приёмы, а не виды оружия.
+     */
+    @Test
+    void mapsMasteryProperties() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        ProficiencyGrant grant = new ProficiencyGrant();
+        grant.setMasteryProperties(Set.of(Mastery.PUSH));
+        mechanics.setProficiencies(grant);
+        feat.setMechanics(mechanics);
+
+        JsonNode featData = json(feat).get("featData");
+        assertEquals(List.of("push"), names(featData.get("masteryProperties")));
+        // Оружия за приёмом нет: списком видов оружия он не записывается
+        assertFalse(featData.has("weaponMasteries"));
+    }
+
+    /** Оружейный приём на выбор — ключом самого приёма, а не вида оружия. */
+    @Test
+    void mapsMasteryPropertyChoiceValue() {
+        assertEquals("slow", optionValue(ChoiceType.MASTERY_PROPERTY, "SLOW"));
+        assertEquals("topple", optionValue(ChoiceType.MASTERY_PROPERTY, "TOPPLE"));
+    }
+
+    /**
+     * Приём, которого в справочнике нет, из вариантов выбрасывается: у листа свой полный
+     * справочник из восьми, и пустой список он раскроет целиком — это лучше, чем положить
+     * во владения строку, которой в справочнике нет.
+     */
+    @Test
+    void dropsUnknownMasteryPropertyChoiceValue() {
+        assertNull(optionValue(ChoiceType.MASTERY_PROPERTY, "WHIRLWIND"));
     }
 
     /** Доспехи как вид выбора — категориями справочника листа. */
