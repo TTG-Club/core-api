@@ -24,6 +24,7 @@ import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -42,7 +43,7 @@ class VttgSpellMapperTest {
             new VttgSpellScalingExtractor()
     );
     private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter,
-            new VttgEquipmentMapper(markupConverter),
+            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
             new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
 
     @Test

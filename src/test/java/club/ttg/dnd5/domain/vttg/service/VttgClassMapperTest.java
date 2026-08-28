@@ -37,12 +37,15 @@ import club.ttg.dnd5.domain.source.model.Source;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.item.repository.ItemNameRef;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,7 +54,7 @@ class VttgClassMapperTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
     private final VttgClassMapper mapper = new VttgClassMapper(markupConverter,
-            new VttgEquipmentMapper(markupConverter),
+            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
             new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
 
     /** «Воин» — базовая механика, владения, развёртка scaling в умения, таблица и вложенный подкласс. */
@@ -225,6 +228,42 @@ class VttgClassMapperTest {
         );
         assertEquals("Б", options.get(1).get("key").asText());
         assertEquals("155 зм", options.get(1).get("description").asText());
+    }
+
+    /**
+     * Форма сайта пишет в снаряжение только ссылку на предмет, без снимка названия:
+     * название подставляется из справочника, а позиция без карточки остаётся уточнением.
+     * Раньше такие позиции выпадали из выгрузки и от варианта оставались одни монеты.
+     */
+    @Test
+    void resolvesEquipmentNamesFromCatalogWhenSnapshotIsEmpty() {
+        ItemRepository itemRepository = mock(ItemRepository.class);
+        ItemNameRef chainMail = mock(ItemNameRef.class);
+        when(chainMail.getUrl()).thenReturn("chain-mail");
+        when(chainMail.getName()).thenReturn("Кольчуга");
+        when(itemRepository.findNamesByUrls(Set.of("chain-mail"))).thenReturn(List.of(chainMail));
+        VttgClassMapper resolvingMapper = new VttgClassMapper(markupConverter,
+                new VttgEquipmentMapper(markupConverter, itemRepository),
+                new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)));
+
+        CharacterClass characterClass = baseClass("fighter", "Воин", "Fighter");
+        characterClass.setStartingEquipment(List.of(
+                new EquipmentOption(List.of(
+                        new EquipmentItem("chain-mail", null, 1, null),
+                        new EquipmentItem(null, null, 1, "музыкальный инструмент")
+                ), 4, Coin.GC)
+        ));
+
+        JsonNode option = objectMapper.valueToTree(resolvingMapper.toVttg(characterClass))
+                .get("startingEquipment").get(0);
+        assertEquals(
+                "[Кольчуга](https://ttg.club/items/chain-mail), музыкальный инструмент, 4 зм",
+                option.get("description").asText()
+        );
+        JsonNode items = option.get("items");
+        assertEquals(1, items.size());
+        assertEquals("chain-mail", items.get(0).get("url").asText());
+        assertEquals("Кольчуга", items.get(0).get("name").asText());
     }
 
     /** Без структуры остаётся легаси-текст одним вариантом — с разобранной разметкой. */

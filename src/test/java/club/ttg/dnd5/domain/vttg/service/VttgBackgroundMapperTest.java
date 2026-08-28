@@ -18,6 +18,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashSet;
@@ -36,7 +37,7 @@ class VttgBackgroundMapperTest {
     private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(objectMapper);
     private final FeatRepository featRepository = mock(FeatRepository.class);
     private final VttgBackgroundMapper mapper = new VttgBackgroundMapper(markupConverter,
-            new VttgEquipmentMapper(markupConverter),
+            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
             new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class)),
             featRepository);
 
