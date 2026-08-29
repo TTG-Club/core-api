@@ -52,6 +52,9 @@ public class ClassFeature {
     @Schema(description = "Опции класса доступные для умения")
     private List<ClassFeatureOption> options;
 
+    @Schema(description = "Настройка выбора из списка вариантов; пусто — список только справочный")
+    private ClassFeatureOptionsChoice optionsChoice;
+
     @Schema(description = "Умение увеличивает характеристики")
     private boolean abilityImprovement;
 
@@ -89,6 +92,9 @@ public class ClassFeature {
                 .stream()
                 .map(ClassFeatureOption::new)
                 .toList();
+        this.optionsChoice = Optional.ofNullable(classFeatureRequest.getOptionsChoice())
+                .map(ClassFeatureOptionsChoice::new)
+                .orElse(null);
         this.key = SlugifyUtil.getSlug(this.name);
         this.hideInSubclasses = classFeatureRequest.isHideInSubclasses();
         this.abilityImprovement = classFeatureRequest.isAbilityImprovement();

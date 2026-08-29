@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionsChoice;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
@@ -50,6 +51,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VttgClassMapperTest {
@@ -161,6 +163,59 @@ class VttgClassMapperTest {
         assertEquals(1, choices.size());
         assertEquals("evocation", choices.get(0).get("key").asText());
         assertEquals("Воплощение", choices.get(0).get("name").asText());
+    }
+
+    /**
+     * Выбираемый список вариантов: настройка выбора уходит в {@code choiceConfig}, а
+     * уровень доступа варианта — в сам вариант. Справочный список настройки не получает.
+     */
+    @Test
+    void mapsSelectableFeatureOptions() {
+        CharacterClass warlock = baseClass("warlock", "Колдун", "Warlock");
+        warlock.setCasterType(CasterType.PACT);
+
+        ClassFeature invocations = feature("eldritch-invocations", 1,
+                "Таинственные воззвания", "Выберите воззвания.");
+        invocations.setOptionsName("Таинственные воззвания");
+
+        ClassFeatureOption blast = new ClassFeatureOption();
+        blast.setKey("agonizing_blast");
+        Name blastName = new Name();
+        blastName.setName("Мучительная кара");
+        blast.setName(blastName);
+        blast.setRequiredClassLevel(5);
+        invocations.setOptions(List.of(blast));
+
+        ClassFeatureOptionsChoice choice = new ClassFeatureOptionsChoice();
+        choice.setCount(1);
+        choice.setScaling(List.of(new ChoiceScaling(1, 1), new ChoiceScaling(2, 3)));
+        invocations.setOptionsChoice(choice);
+        warlock.setFeatures(List.of(invocations));
+
+        JsonNode feature = json(warlock).get("features").get(0);
+        assertEquals(5, feature.get("choices").get(0).get("requiredLevel").asInt());
+
+        JsonNode config = feature.get("choiceConfig");
+        assertEquals("Таинственные воззвания", config.get("label").asText());
+        assertEquals(1, config.get("count").asInt());
+        assertEquals(1, config.get("progression").get("1").asInt());
+        assertEquals(3, config.get("progression").get("2").asInt());
+    }
+
+    /** Справочный список вариантов остаётся справкой: настройки выбора у него нет. */
+    @Test
+    void skipsChoiceConfigForInformationalOptions() {
+        CharacterClass wizard = baseClass("wizard", "Волшебник", "Wizard");
+
+        ClassFeature tradition = feature("arcane-tradition", 3, "Магическая традиция", "Выберите традицию.");
+        ClassFeatureOption option = new ClassFeatureOption();
+        option.setKey("evocation");
+        tradition.setOptions(List.of(option));
+        wizard.setFeatures(List.of(tradition));
+
+        JsonNode feature = json(wizard).get("features").get(0);
+        assertNull(feature.get("choiceConfig"));
+        assertNull(feature.get("choices").get(0).get("requiredLevel"));
     }
 
     /** isSRD выводится из srdVersion: свой (homebrew) класс без версии SRD → isSRD=false (→ premium-пак). */

@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionsChoice;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
 import club.ttg.dnd5.domain.character_class.model.CounterTableColumns;
@@ -22,6 +23,7 @@ import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.mechanics.ChoiceScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
@@ -452,6 +454,7 @@ public class VttgClassMapper {
             result.add(new VttgClass.Feature(key, feature.getName(),
                     description(feature.getDescription()), feature.getLevel(),
                     subclassKey, choices(feature.getOptions()),
+                    choiceConfig(feature.getOptionsChoice(), feature.getOptionsName()),
                     flag(feature.isAbilityImprovement()), flag(feature.isFightingStyleChoice()),
                     featureSkillChoice(feature.getSkillChoice()), flag(feature.isInformationalOnly()),
                     grantedSpells(feature.getMechanics()), effects(feature.getActiveEffects()),
@@ -488,9 +491,38 @@ public class VttgClassMapper {
                 continue;
             }
             result.add(new VttgClass.Choice(optionKey(option), optionName(option.getName()),
-                    description(option.getDescription())));
+                    description(option.getDescription()), option.getRequiredClassLevel()));
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Настройка выбора из вариантов умения. Отдаётся, только когда список выбираемый:
+     * у справочного списка настройки нет, и потребитель показывает варианты текстом.
+     *
+     * @param choice      настройка выбора из источника
+     * @param optionsName название списка вариантов умения — подпись выбора по умолчанию
+     */
+    private VttgClass.ChoiceConfig choiceConfig(ClassFeatureOptionsChoice choice, String optionsName) {
+        if (choice == null) {
+            return null;
+        }
+        String label = StringUtils.hasText(choice.getLabel()) ? choice.getLabel() : optionsName;
+        return new VttgClass.ChoiceConfig(optional(label), choice.getCount(),
+                choiceProgression(choice.getScaling()));
+    }
+
+    /** Ступени количества по уровням: {@code уровень строкой → сколько выбрано всего}. */
+    private Map<String, Integer> choiceProgression(List<ChoiceScaling> scaling) {
+        if (CollectionUtils.isEmpty(scaling)) {
+            return null;
+        }
+        Map<String, Integer> progression = new LinkedHashMap<>();
+        scaling.stream()
+                .filter(step -> step != null && step.getLevel() != null && step.getCount() != null)
+                .sorted(Comparator.comparingInt(ChoiceScaling::getLevel))
+                .forEach(step -> progression.put(String.valueOf(step.getLevel()), step.getCount()));
+        return progression.isEmpty() ? null : progression;
     }
 
     // ── Таблица прогрессии ───────────────────────────────────────

@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionsChoice;
 import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
@@ -48,6 +49,9 @@ public class ClassFeatureDto {
 
     @Schema(description = "Options available for this feature")
     private List<ClassFeatureOptionDto> options;
+
+    @Schema(description = "Настройка выбора из списка вариантов; пусто — список только справочный")
+    private ClassFeatureOptionsChoice optionsChoice;
 
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
@@ -101,6 +105,9 @@ public class ClassFeatureDto {
         this.informationalOnly = classFeature.isInformationalOnly();
         this.mechanics = classFeature.getMechanics();
         this.activeEffects = classFeature.getActiveEffects();
+        this.optionsChoice = Optional.ofNullable(classFeature.getOptionsChoice())
+                .map(ClassFeatureOptionsChoice::new)
+                .orElse(null);
         if (filterForSubclassContext) {
             this.scaling = Optional.ofNullable(classFeature.getScaling())
                     .orElse(List.of())
