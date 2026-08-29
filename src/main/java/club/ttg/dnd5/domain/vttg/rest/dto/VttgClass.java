@@ -181,7 +181,7 @@ public class VttgClass {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Feature(String key, String name, String description, Integer level,
-                          String subclassKey, List<Choice> choices,
+                          String subclassKey, List<Choice> choices, ChoiceConfig choiceConfig,
                           Boolean abilityImprovement, Boolean fightingStyleChoice,
                           SkillChoices skillChoice, Boolean isInformationalOnly,
                           List<String> grantedSpells, List<ActiveEffect> activeEffects,
@@ -193,13 +193,35 @@ public class VttgClass {
          */
         public Feature(String key, String name, String description, Integer level,
                        String subclassKey, List<Choice> choices) {
-            this(key, name, description, level, subclassKey, choices,
+            this(key, name, description, level, subclassKey, choices, null,
                     null, null, null, null, null, null, null);
         }
     }
 
-    /** Вариант выбора в рамках умения (боевой стиль, манёвр): {@code key}, {@code name}, {@code description}. */
-    public record Choice(String key, String name, String description) {
+    /**
+     * Вариант выбора в рамках умения (боевой стиль, манёвр): {@code key}, {@code name},
+     * {@code description} и уровень класса {@code requiredLevel}, с которого вариант
+     * доступен ({@code null} — доступен сразу).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Choice(String key, String name, String description, Integer requiredLevel) {
+    }
+
+    /**
+     * Настройка выбора из {@link Feature#choices()}: сколько вариантов берут и как это
+     * число растёт по уровням класса.
+     *
+     * <p>Поле есть только у умения, список вариантов которого выбираемый. Без него
+     * {@code choices} остаются справкой — так выгружались все варианты до появления
+     * настройки, и потребитель, который её не читает, ведёт себя как прежде.</p>
+     *
+     * @param label       подпись выбора («Таинственные воззвания»)
+     * @param count       сколько вариантов выбирают на уровне получения умения
+     * @param progression сколько выбрано ВСЕГО к уровню: ключ — уровень класса строкой,
+     *                    значение — итог, а не прибавка (как у {@link Counter#progression()})
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ChoiceConfig(String label, Integer count, Map<String, Integer> progression) {
     }
 
     /**

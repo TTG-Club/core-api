@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionsChoice;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
 import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
@@ -48,6 +49,9 @@ public class ClassFeatureRequest {
 
     @Schema(description = "Options available for this feature")
     private List<ClassFeatureOptionRequest> options;
+
+    @Schema(description = "Настройка выбора из списка вариантов; пусто — список только справочный")
+    private ClassFeatureOptionsChoice optionsChoice;
 
     @Schema(description = "Умение увеличивает характеристики")
     private boolean abilityImprovement;
