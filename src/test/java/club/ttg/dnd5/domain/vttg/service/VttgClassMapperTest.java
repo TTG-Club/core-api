@@ -16,6 +16,7 @@ import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
+import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
@@ -70,6 +71,8 @@ class VttgClassMapperTest {
         fighter.setArmorProficiency(new ArmorProficiency(Set.of(ArmorCategory.LIGHT, ArmorCategory.HEAVY), null));
         fighter.setWeaponProficiency(
                 new WeaponProficiency(Set.of(WeaponCategory.SIMPLE_MELEE, WeaponCategory.MATERIAL_MELEE), null));
+        fighter.setPrimaryCharacteristics(Set.of(Ability.STRENGTH));
+        fighter.setDelimiterPrimary(Delimiter.OR);
         fighter.setSavingThrows(Set.of(Ability.STRENGTH, Ability.CONSTITUTION));
         fighter.setSkillProficiency(new SkillProficiency(2, List.of(Skill.ATHLETICS, Skill.ANIMAL_HANDLING)));
         fighter.setCasterType(CasterType.NONE);
@@ -97,6 +100,10 @@ class VttgClassMapperTest {
         assertTrue(json.has("isSRD"));
         assertTrue(json.get("isSRD").asBoolean());
         assertEquals(10, json.get("hitDie").asInt());
+
+        assertEquals("[\"strength\"]", json.get("primaryAbilities").toString());
+        // Характеристика одна — разделителю нечего разделять, и в записи его нет.
+        assertFalse(json.has("primaryAbilitiesDelimiter"));
 
         assertEquals("[\"constitution\",\"strength\"]", sortedInsensitive(json.get("savingThrowProficiencies")));
         assertEquals("[\"animalHandling\",\"athletics\"]", sortedInsensitive(json.get("skillChoices").get("from")));
@@ -816,6 +823,30 @@ class VttgClassMapperTest {
         effect.setId(id);
         effect.setName(name);
         return effect;
+    }
+
+    /** Основные характеристики: список из двух выводится вместе с разделителем. */
+    @Test
+    void mapsPrimaryAbilitiesWithDelimiter() {
+        CharacterClass monk = baseClass("monk", "Монах", "Monk");
+        monk.setPrimaryCharacteristics(Set.of(Ability.DEXTERITY, Ability.WISDOM));
+        monk.setDelimiterPrimary(Delimiter.AND);
+        monk.setCasterType(CasterType.NONE);
+
+        JsonNode json = json(monk);
+        assertEquals("[\"dexterity\",\"wisdom\"]", sortedInsensitive(json.get("primaryAbilities")));
+        assertEquals("and", json.get("primaryAbilitiesDelimiter").asText());
+    }
+
+    /** Характеристики не заполнены — поля в записи не появляются пустыми. */
+    @Test
+    void omitsPrimaryAbilitiesWhenEmpty() {
+        CharacterClass rogue = baseClass("rogue", "Плут", "Rogue");
+        rogue.setCasterType(CasterType.NONE);
+
+        JsonNode json = json(rogue);
+        assertFalse(json.has("primaryAbilities"));
+        assertFalse(json.has("primaryAbilitiesDelimiter"));
     }
 
     private CharacterClass baseClass(String url, String name, String english) {

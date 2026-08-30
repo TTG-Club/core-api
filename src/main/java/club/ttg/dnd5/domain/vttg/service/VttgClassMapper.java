@@ -19,6 +19,7 @@ import club.ttg.dnd5.domain.character_class.model.ClassTableColumnPurpose;
 import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
+import club.ttg.dnd5.domain.common.dictionary.Delimiter;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
@@ -127,6 +128,8 @@ public class VttgClassMapper {
                 .sourceKey(VttgSourceKeys.of(characterClass.getSource()))
                 .isSRD(characterClass.getSrdVersion() != null)
                 .hitDie(hitDie(characterClass.getHitDice()))
+                .primaryAbilities(primaryAbilities(characterClass))
+                .primaryAbilitiesDelimiter(primaryAbilitiesDelimiter(characterClass))
                 .armorProficiencies(armor(characterClass.getArmorProficiency()))
                 .weaponProficiencies(weapon(characterClass.getWeaponProficiency()))
                 .toolProficiencies(tools(characterClass.getToolProficiency()))
@@ -917,6 +920,30 @@ public class VttgClassMapper {
 
     private Integer hitDie(Dice hitDice) {
         return hitDice == null ? null : hitDice.getMaxValue();
+    }
+
+    /**
+     * Основные характеристики класса. Пустой список опускаем: у записи, где их не
+     * заполнили, поле не должно появляться пустым — потребитель отличает «не задано»
+     * от «задан пустой набор».
+     */
+    private List<String> primaryAbilities(CharacterClass characterClass) {
+        List<String> result = abilities(characterClass.getPrimaryCharacteristics());
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Разделитель основных характеристик — только у списка из двух и более: у одной
+     * характеристики он ничего не разделяет, и «и» в записи читалось бы как обрезанный
+     * список.
+     */
+    private String primaryAbilitiesDelimiter(CharacterClass characterClass) {
+        Delimiter delimiter = characterClass.getDelimiterPrimary();
+        Set<Ability> primary = characterClass.getPrimaryCharacteristics();
+        if (delimiter == null || primary == null || primary.size() < 2) {
+            return null;
+        }
+        return delimiter.name().toLowerCase(Locale.ROOT);
     }
 
     private String description(String markup) {
