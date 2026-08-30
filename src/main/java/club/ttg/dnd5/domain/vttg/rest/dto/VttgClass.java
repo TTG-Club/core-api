@@ -25,6 +25,11 @@ import java.util.Map;
  * ключу класса (см. {@code VttgClassMapper}): заклинательная характеристика и подпись
  * группы подклассов ({@link #subclassLabel}). Счётчики классовых ресурсов ({@code counters})
  * в источнике структурно не хранятся и не выгружаются.</p>
+ *
+ * <p>Родителя подкласса ({@code CharacterClass.parentUrl}) в записи нет: выгружаются только
+ * верхнеуровневые классы, а подклассы уезжают свёрнутыми в {@link #subclasses}. Ссылку на
+ * родителя ({@code parentClassKey}) потребитель заполняет сам у подклассов, заведённых в
+ * мире.</p>
  */
 @Builder
 @Getter
@@ -63,10 +68,30 @@ public class VttgClass {
 
     /** Кость хитов (6/8/10/12). */
     private Integer hitDie;
+    /**
+     * Основные характеристики класса (slug'и: "strength"/…): что он повышает в первую
+     * очередь и по чему считаются требования мультиклассирования. Опускается, когда в
+     * источнике не заполнено.
+     */
+    private List<String> primaryAbilities;
+    /**
+     * Как читать список {@link #primaryAbilities}: {@code "and"} («Сила И Телосложение»)
+     * либо {@code "or"} («Сила ИЛИ Ловкость»). Выводится только у списка из двух и более
+     * характеристик: у одной разделителю нечего разделять.
+     */
+    private String primaryAbilitiesDelimiter;
     /** Владения доспехами (slug'и: "light"/"medium"/"heavy"/"shield"); пустой список при отсутствии. */
     private List<String> armorProficiencies;
+    /**
+     * Уточнение владения доспехами свободным текстом («только щиты»): категориями
+     * выразимо не всё, и в источнике у владения есть такая приписка. Опускается, когда
+     * её не заполнили.
+     */
+    private String armorProficienciesCustom;
     /** Владения оружием ("simple"/"martial"/…); пустой список при отсутствии. */
     private List<String> weaponProficiencies;
+    /** Уточнение владения оружием свободным текстом; см. {@link #armorProficienciesCustom}. */
+    private String weaponProficienciesCustom;
     /** Владения инструментами (свободный текст источника одной строкой); пустой список при отсутствии. */
     private List<String> toolProficiencies;
     /** Спасброски (slug'и характеристик: "strength"/…); пустой список при отсутствии. */
@@ -265,8 +290,13 @@ public class VttgClass {
         private VttgFeatData featData;
     }
 
-    /** Владения мультикласса: доспехи, оружие, инструменты и число выбираемых навыков. */
-    public record MulticlassProficiencies(List<String> armor, List<String> weapons,
+    /**
+     * Владения мультикласса: доспехи, оружие, инструменты и число выбираемых навыков.
+     * У доспехов и оружия — та же приписка свободным текстом, что и у стартовых владений.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record MulticlassProficiencies(List<String> armor, String armorCustom,
+                                          List<String> weapons, String weaponsCustom,
                                           List<String> tools, int skillChoices) {
     }
 }
