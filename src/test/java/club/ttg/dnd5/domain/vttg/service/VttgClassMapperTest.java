@@ -12,6 +12,7 @@ import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumnPurpose;
 import club.ttg.dnd5.domain.character_class.model.ClassTableItem;
+import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
 import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
@@ -823,6 +824,33 @@ class VttgClassMapperTest {
         effect.setId(id);
         effect.setName(name);
         return effect;
+    }
+
+    /**
+     * Приписка к владению доспехами и оружием: выводится и у стартовых владений, и у
+     * мультикласса, а незаполненная опускается.
+     */
+    @Test
+    void mapsCustomProficiencyText() {
+        CharacterClass bard = baseClass("bard", "Бард", "Bard");
+        bard.setCasterType(CasterType.NONE);
+        bard.setArmorProficiency(new ArmorProficiency(Set.of(ArmorCategory.LIGHT), "только щиты"));
+        bard.setWeaponProficiency(new WeaponProficiency(Set.of(WeaponCategory.SIMPLE_MELEE), null));
+
+        MulticlassProficiency multiclass = new MulticlassProficiency();
+        multiclass.setArmor(new ArmorProficiency(Set.of(ArmorCategory.LIGHT), null));
+        multiclass.setWeapon(new WeaponProficiency(Set.of(WeaponCategory.SIMPLE_MELEE), "длинные мечи"));
+        multiclass.setSkills(1);
+        bard.setMulticlassProficiency(multiclass);
+
+        JsonNode json = json(bard);
+        assertEquals("только щиты", json.get("armorProficienciesCustom").asText());
+        // У оружия приписки нет — поля в записи тоже нет.
+        assertFalse(json.has("weaponProficienciesCustom"));
+
+        JsonNode multi = json.get("multiclassProficiencies");
+        assertEquals("длинные мечи", multi.get("weaponsCustom").asText());
+        assertFalse(multi.has("armorCustom"));
     }
 
     /** Основные характеристики: список из двух выводится вместе с разделителем. */

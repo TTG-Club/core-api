@@ -82,8 +82,16 @@ public class VttgClass {
     private String primaryAbilitiesDelimiter;
     /** Владения доспехами (slug'и: "light"/"medium"/"heavy"/"shield"); пустой список при отсутствии. */
     private List<String> armorProficiencies;
+    /**
+     * Уточнение владения доспехами свободным текстом («только щиты»): категориями
+     * выразимо не всё, и в источнике у владения есть такая приписка. Опускается, когда
+     * её не заполнили.
+     */
+    private String armorProficienciesCustom;
     /** Владения оружием ("simple"/"martial"/…); пустой список при отсутствии. */
     private List<String> weaponProficiencies;
+    /** Уточнение владения оружием свободным текстом; см. {@link #armorProficienciesCustom}. */
+    private String weaponProficienciesCustom;
     /** Владения инструментами (свободный текст источника одной строкой); пустой список при отсутствии. */
     private List<String> toolProficiencies;
     /** Спасброски (slug'и характеристик: "strength"/…); пустой список при отсутствии. */
@@ -282,8 +290,13 @@ public class VttgClass {
         private VttgFeatData featData;
     }
 
-    /** Владения мультикласса: доспехи, оружие, инструменты и число выбираемых навыков. */
-    public record MulticlassProficiencies(List<String> armor, List<String> weapons,
+    /**
+     * Владения мультикласса: доспехи, оружие, инструменты и число выбираемых навыков.
+     * У доспехов и оружия — та же приписка свободным текстом, что и у стартовых владений.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record MulticlassProficiencies(List<String> armor, String armorCustom,
+                                          List<String> weapons, String weaponsCustom,
                                           List<String> tools, int skillChoices) {
     }
 }

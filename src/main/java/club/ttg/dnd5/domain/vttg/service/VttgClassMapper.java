@@ -131,7 +131,9 @@ public class VttgClassMapper {
                 .primaryAbilities(primaryAbilities(characterClass))
                 .primaryAbilitiesDelimiter(primaryAbilitiesDelimiter(characterClass))
                 .armorProficiencies(armor(characterClass.getArmorProficiency()))
+                .armorProficienciesCustom(armorCustom(characterClass.getArmorProficiency()))
                 .weaponProficiencies(weapon(characterClass.getWeaponProficiency()))
+                .weaponProficienciesCustom(weaponCustom(characterClass.getWeaponProficiency()))
                 .toolProficiencies(tools(characterClass.getToolProficiency()))
                 .savingThrowProficiencies(abilities(characterClass.getSavingThrows()))
                 .skillChoices(skillChoices(characterClass.getSkillProficiency()))
@@ -714,6 +716,23 @@ public class VttgClassMapper {
                 .toList();
     }
 
+    /**
+     * Приписка к владению доспехами. Пустая строка опускается: поле в записи должно
+     * появляться, только когда автор его действительно заполнил.
+     */
+    private String armorCustom(ArmorProficiency proficiency) {
+        return proficiency == null ? null : custom(proficiency.getCustom());
+    }
+
+    /** Приписка к владению оружием; см. {@link #armorCustom(ArmorProficiency)}. */
+    private String weaponCustom(WeaponProficiency proficiency) {
+        return proficiency == null ? null : custom(proficiency.getCustom());
+    }
+
+    private String custom(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
     private List<String> weapon(WeaponProficiency proficiency) {
         if (proficiency == null || proficiency.getCategory() == null) {
             return List.of();
@@ -824,7 +843,9 @@ public class VttgClassMapper {
         }
         return new VttgClass.MulticlassProficiencies(
                 armor(multiclass.getArmor()),
+                armorCustom(multiclass.getArmor()),
                 weapon(multiclass.getWeapon()),
+                weaponCustom(multiclass.getWeapon()),
                 tools(multiclass.getToolProficiency()),
                 multiclass.getSkills());
     }
