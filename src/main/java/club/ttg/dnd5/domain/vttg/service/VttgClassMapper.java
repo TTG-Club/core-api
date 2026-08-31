@@ -77,6 +77,12 @@ public class VttgClassMapper {
     private static final int DEFAULT_SUBCLASS_LEVEL = 3;
     /** Стартовый уровень заклинательства базовых классов (PHB 2024). */
     private static final int SPELLCASTING_START_LEVEL = 1;
+    /** Канонический ключ эпического дара: по нему потребитель узнаёт умение 19 уровня. */
+    private static final String EPIC_BOON_KEY = "epic-boon";
+    /** Уровень, раньше которого эпического дара по правилам PHB 2024 не бывает. */
+    private static final int EPIC_BOON_LEVEL = 19;
+    /** Названия эпического дара в источнике — своего признака у умения в модели нет. */
+    private static final Set<String> EPIC_BOON_NAMES = Set.of("эпическая черта", "эпический дар");
 
     /** Заклинательная характеристика канонических классов (в модели не хранится). */
     private static final Map<String, String> CASTING_ABILITY = Map.of(
@@ -1018,10 +1024,30 @@ public class VttgClassMapper {
     }
 
     private String featureKey(ClassFeature feature) {
+        if (isEpicBoon(feature)) {
+            return EPIC_BOON_KEY;
+        }
         if (StringUtils.hasText(feature.getKey())) {
             return feature.getKey();
         }
         return StringUtils.hasText(feature.getName()) ? SlugifyUtil.getSlug(feature.getName()) : "feature";
+    }
+
+    /**
+     * Эпический дар ли это умение последних уровней.
+     *
+     * <p>Своего признака у него в модели нет, а ключ приходит слагом русского названия
+     * ({@code epiceskaa-certa}) — потребитель по такому ключу эпический дар не узнаёт и не
+     * предлагает игроку выбор на 19 уровне. Отсюда и отбор по названию: он ограничен
+     * уровнем, ниже которого эпического дара по правилам не бывает.</p>
+     *
+     * @param feature умение источника.
+     * @return {@code true} — умение выгружается каноническим ключом {@link #EPIC_BOON_KEY}.
+     */
+    private boolean isEpicBoon(ClassFeature feature) {
+        return feature.getLevel() >= EPIC_BOON_LEVEL
+                && StringUtils.hasText(feature.getName())
+                && EPIC_BOON_NAMES.contains(feature.getName().trim().toLowerCase(Locale.ROOT));
     }
 
     private String optionKey(ClassFeatureOption option) {

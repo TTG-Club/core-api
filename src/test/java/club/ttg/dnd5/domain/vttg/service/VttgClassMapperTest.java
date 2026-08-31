@@ -440,6 +440,36 @@ class VttgClassMapperTest {
     }
 
     /**
+     * Эпический дар выгружается каноническим ключом: слаг русского названия потребитель
+     * не узнаёт, и выбор на 19 уровне игроку не предлагался.
+     */
+    @Test
+    void exportsEpicBoonWithCanonicalKey() {
+        CharacterClass bard = baseClass("bard", "Бард", "Bard");
+        ClassFeature epicBoon = feature("epiceskaa-certa", 19, "Эпическая черта",
+                "Возьмите эпический дар.");
+        ClassFeature inspiration = feature("bardic-inspiration", 1, "Вдохновение барда",
+                "Дайте кость вдохновения.");
+
+        bard.setFeatures(List.of(inspiration, epicBoon));
+
+        JsonNode features = json(bard).get("features");
+
+        assertEquals("Эпическая черта", featureByKey(features, "epic-boon").get("name").asText());
+        assertEquals(19, featureByKey(features, "epic-boon").get("level").asInt());
+    }
+
+    /** Умение с тем же названием на раннем уровне эпическим даром не считается. */
+    @Test
+    void keepsOwnKeyForEarlyFeatureNamedLikeEpicBoon() {
+        CharacterClass bard = baseClass("bard", "Бард", "Bard");
+
+        bard.setFeatures(List.of(feature("epiceskaa-certa", 5, "Эпическая черта", "Самоделка.")));
+
+        assertEquals("epiceskaa-certa", json(bard).get("features").get(0).get("key").asText());
+    }
+
+    /**
      * Ресурс умения несёт ключ своего умения: без него потребитель не может вернуть
      * ресурс в умение — в мастерской «Вдохновение барда» становилось ресурсом класса, а
      * само умение выглядело пустым.
