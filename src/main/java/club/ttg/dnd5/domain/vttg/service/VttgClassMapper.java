@@ -502,8 +502,14 @@ public class VttgClassMapper {
                 continue;
             }
             String name = StringUtils.hasText(scaling.getName()) ? scaling.getName() : feature.getName();
+            // Флаги умения повторяются на каждой его ступени: без них уровень читается
+            // пустой строкой — бард на 8, 12 и 16 уровнях получал запись «Улучшение
+            // характеристик» и ни прибавки к характеристикам, ни черты, а ступени
+            // информационного умения уезжали на лист персонажа отдельными записями
             target.add(new VttgClass.Feature(baseKey + "-" + scaling.getLevel(), name,
-                    description(scaling.getDescription()), scaling.getLevel(), subclassKey, null));
+                    description(scaling.getDescription()), scaling.getLevel(), subclassKey, null, null,
+                    flag(feature.isAbilityImprovement()), null, null, flag(feature.isInformationalOnly()),
+                    null, null, null));
         }
     }
 

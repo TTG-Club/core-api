@@ -482,6 +482,37 @@ class VttgClassMapperTest {
         assertFalse(json(fighter).get("counters").get(0).has("featureKey"));
     }
 
+    /**
+     * Ступень роста повторяет флаги своего умения: без них уровень читается пустой
+     * строкой — «Улучшение характеристик» на 8 уровне не давало ни прибавки к
+     * характеристикам, ни черты, а ступень информационного умения уезжала на лист.
+     */
+    @Test
+    void exportsFlagsOnScalingFeatures() {
+        CharacterClass bard = baseClass("bard", "Бард", "Bard");
+        ClassFeature improvement = feature("ability-improvement", 4, "Улучшение характеристик",
+                "Повысьте характеристики.");
+
+        improvement.setAbilityImprovement(true);
+        improvement.setScaling(List.of(scaling(8, null, "Ещё раз.")));
+
+        ClassFeature subclass = feature("subclass", 3, "Подкласс барда", "Выберите коллегию.");
+
+        subclass.setInformationalOnly(true);
+        subclass.setScaling(List.of(scaling(6, "Умение коллегии", "Умение подкласса.")));
+
+        bard.setFeatures(List.of(improvement, subclass));
+
+        JsonNode features = json(bard).get("features");
+        JsonNode improvementStep = featureByKey(features, "ability-improvement-8");
+        JsonNode subclassStep = featureByKey(features, "subclass-6");
+
+        assertTrue(improvementStep.get("abilityImprovement").asBoolean());
+        assertFalse(improvementStep.has("isInformationalOnly"));
+        assertTrue(subclassStep.get("isInformationalOnly").asBoolean());
+        assertFalse(subclassStep.has("abilityImprovement"));
+    }
+
     /** Ресурс с формульным максимумом приходит из механики: колонки таблицы у него нет. */
     @Test
     void exportsFormulaCounterFromMechanics() {
@@ -941,6 +972,16 @@ class VttgClassMapperTest {
         feature.setName(name);
         feature.setDescription(description);
         return feature;
+    }
+
+    /** Умение выгрузки по ключу: порядок в списке задан уровнем и от теста не зависит. */
+    private JsonNode featureByKey(JsonNode features, String key) {
+        for (JsonNode feature : features) {
+            if (key.equals(feature.get("key").asText())) {
+                return feature;
+            }
+        }
+        throw new AssertionError("Умение не выгружено: " + key);
     }
 
     private ClassFeatureScaling scaling(int level, String name, String description) {
