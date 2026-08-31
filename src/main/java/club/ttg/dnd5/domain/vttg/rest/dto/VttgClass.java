@@ -260,10 +260,16 @@ public class VttgClass {
      * @param progression максимум по уровням: ключ — уровень строкой, значение — число
      * @param min         нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
      * @param subclassKey ключ подкласса, если счётчик принадлежит ему; иначе {@code null}
+     * @param featureKey  ключ умения, механикой которого заведён ресурс; {@code null} — ресурс
+     *                    самой записи или колонки таблицы. Ресурс умения лежит в счётчиках класса
+     *                    (только там известен уровень класса для ступеней), и без этого ключа
+     *                    потребитель не может вернуть его в умение: в мастерской «Бардовское
+     *                    вдохновение» оказывалось ресурсом класса, а само умение — пустым
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Counter(String key, String name, String shortName, int startLevel, String recovery,
-                          Map<String, Integer> progression, String formula, Integer min, String subclassKey) {
+                          Map<String, Integer> progression, String formula, Integer min, String subclassKey,
+                          String featureKey) {
     }
 
     /**

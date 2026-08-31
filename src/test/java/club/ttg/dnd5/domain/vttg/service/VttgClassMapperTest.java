@@ -439,6 +439,49 @@ class VttgClassMapperTest {
         assertEquals(1, levels.get(9).get("newCantrips").asInt());
     }
 
+    /**
+     * Ресурс умения несёт ключ своего умения: без него потребитель не может вернуть
+     * ресурс в умение — в мастерской «Вдохновение барда» становилось ресурсом класса, а
+     * само умение выглядело пустым.
+     */
+    @Test
+    void exportsFeatureKeyOnMechanicsCounter() {
+        CharacterClass bard = baseClass("bard", "Бард", "Bard");
+        ClassFeature inspiration = feature("bardic-inspiration", 1, "Вдохновение барда",
+                "Дайте кость вдохновения.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("bardic-inspiration-die");
+        counter.setName("Вдохновение барда");
+        counter.setMax("@mod.cha");
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        inspiration.setMechanics(mechanics);
+
+        bard.setFeatures(List.of(inspiration));
+
+        JsonNode exported = json(bard).get("counters").get(0);
+        assertEquals("bardic-inspiration", exported.get("featureKey").asText());
+    }
+
+    /** Ресурс самой записи умению не принадлежит — ключа умения у него нет. */
+    @Test
+    void omitsFeatureKeyOnClassCounter() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("resolve");
+        counter.setName("Решимость");
+        counter.setMax("@prof");
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        fighter.setMechanics(mechanics);
+
+        assertFalse(json(fighter).get("counters").get(0).has("featureKey"));
+    }
+
     /** Ресурс с формульным максимумом приходит из механики: колонки таблицы у него нет. */
     @Test
     void exportsFormulaCounterFromMechanics() {

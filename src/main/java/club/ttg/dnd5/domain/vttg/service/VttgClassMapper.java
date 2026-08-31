@@ -243,16 +243,17 @@ public class VttgClassMapper {
      * отдыха есть только здесь.
      */
     private List<VttgClass.Counter> mechanicsCounters(CharacterClass characterClass, String subclassKey) {
-        List<ResourceCounter> counters = new ArrayList<>();
-        collectCounters(characterClass.getMechanics(), counters);
+        List<OwnedCounter> counters = new ArrayList<>();
+        collectCounters(characterClass.getMechanics(), null, counters);
         for (ClassFeature feature : Optional.ofNullable(characterClass.getFeatures()).orElse(List.of())) {
             if (feature != null) {
-                collectCounters(feature.getMechanics(), counters);
+                collectCounters(feature.getMechanics(), featureKey(feature), counters);
             }
         }
 
         List<VttgClass.Counter> result = new ArrayList<>();
-        for (ResourceCounter counter : counters) {
+        for (OwnedCounter owned : counters) {
+            ResourceCounter counter = owned.counter();
             Map<String, Integer> progression = counterProgression(counter);
             boolean hasMax = StringUtils.hasText(counter.getMax());
             if (!StringUtils.hasText(counter.getKey()) || (!hasMax && progression == null)) {
@@ -261,9 +262,24 @@ public class VttgClassMapper {
             result.add(new VttgClass.Counter(counter.getKey(), counterName(counter),
                     optional(counter.getShortName()), counterStartLevel(counter),
                     VttgDictionaries.recovery(counter.resolveRecovery()),
-                    progression, hasMax ? counter.getMax() : null, counter.resolveMin(), subclassKey));
+                    progression, hasMax ? counter.getMax() : null, counter.resolveMin(), subclassKey,
+                    owned.featureKey()));
         }
         return result;
+    }
+
+    /**
+     * Ресурс вместе с умением, механикой которого он заведён.
+     *
+     * <p>Ресурс умения выгружается счётчиком класса — только там известен уровень класса,
+     * от которого идут ступени и уровень появления. Но без ключа умения потребитель не
+     * может вернуть ресурс в его умение: в мастерской «Бардовское вдохновение» становилось
+     * ресурсом класса, а само умение выглядело пустым.</p>
+     *
+     * @param counter    ресурс из механики.
+     * @param featureKey ключ умения; {@code null} — ресурс самой записи.
+     */
+    private record OwnedCounter(ResourceCounter counter, String featureKey) {
     }
 
     /**
@@ -306,9 +322,14 @@ public class VttgClassMapper {
                 .orElse(1);
     }
 
-    private void collectCounters(ClassMechanics mechanics, List<ResourceCounter> target) {
-        if (mechanics != null && !CollectionUtils.isEmpty(mechanics.getCounters())) {
-            target.addAll(mechanics.getCounters());
+    private void collectCounters(ClassMechanics mechanics, String featureKey, List<OwnedCounter> target) {
+        if (mechanics == null || CollectionUtils.isEmpty(mechanics.getCounters())) {
+            return;
+        }
+        for (ResourceCounter counter : mechanics.getCounters()) {
+            if (counter != null) {
+                target.add(new OwnedCounter(counter, featureKey));
+            }
         }
     }
 
@@ -378,7 +399,7 @@ public class VttgClassMapper {
 
         return new VttgClass.Counter(columnKey(column), column.getName(),
                 optional(column.getShortName()), startLevel, recovery(column.getResourceRecovery()),
-                progression, null, null, subclassKey);
+                progression, null, null, subclassKey, null);
     }
 
     /** Способ восстановления в словаре потребителя. */
