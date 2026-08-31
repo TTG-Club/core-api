@@ -46,6 +46,9 @@ public class ClassFeatureOption {
     @Schema(description = "Hide option in subclass and multiclass contexts")
     private boolean hideInSubclasses;
 
+    @Schema(description = "Вариант можно выбрать повторно на следующей ступени выбора")
+    private boolean repeatable;
+
     public ClassFeatureOption(ClassFeatureOptionRequest request) {
         this.key = StringUtils.hasText(request.getKey()) ? request.getKey() : buildKey(request.getName());
         this.name = request.getName();
@@ -55,6 +58,7 @@ public class ClassFeatureOption {
         this.prerequisite = request.getPrerequisite();
         this.requiredClassLevel = request.getRequiredClassLevel();
         this.hideInSubclasses = request.isHideInSubclasses();
+        this.repeatable = request.isRepeatable();
     }
 
     public ClassFeatureOption(ClassFeatureOption option) {
@@ -66,6 +70,7 @@ public class ClassFeatureOption {
         this.prerequisite = option.getPrerequisite();
         this.requiredClassLevel = option.getRequiredClassLevel();
         this.hideInSubclasses = option.isHideInSubclasses();
+        this.repeatable = option.isRepeatable();
     }
 
     private String buildKey(Name name) {

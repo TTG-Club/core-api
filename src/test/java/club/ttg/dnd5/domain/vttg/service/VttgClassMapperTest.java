@@ -175,7 +175,9 @@ class VttgClassMapperTest {
 
     /**
      * Выбираемый список вариантов: настройка выбора уходит в {@code choiceConfig}, а
-     * уровень доступа варианта — в сам вариант. Справочный список настройки не получает.
+     * описание самого варианта — английское название, подсказка, требования, уровень
+     * доступа, повторяемость и скрытие в подклассе — в сам вариант. Справочный список
+     * настройки не получает.
      */
     @Test
     void mapsSelectableFeatureOptions() {
@@ -190,8 +192,13 @@ class VttgClassMapperTest {
         blast.setKey("agonizing_blast");
         Name blastName = new Name();
         blastName.setName("Мучительная кара");
+        blastName.setEnglish("Agonizing Blast");
         blast.setName(blastName);
+        blast.setAdditional("Мистический взрыв");
+        blast.setPrerequisite("Заклинание «Мистический взрыв»");
         blast.setRequiredClassLevel(5);
+        blast.setHideInSubclasses(true);
+        blast.setRepeatable(true);
         invocations.setOptions(List.of(blast));
 
         ClassFeatureOptionsChoice choice = new ClassFeatureOptionsChoice();
@@ -201,7 +208,13 @@ class VttgClassMapperTest {
         warlock.setFeatures(List.of(invocations));
 
         JsonNode feature = json(warlock).get("features").get(0);
-        assertEquals(5, feature.get("choices").get(0).get("requiredLevel").asInt());
+        JsonNode option = feature.get("choices").get(0);
+        assertEquals("Agonizing Blast", option.get("nameEn").asText());
+        assertEquals("Мистический взрыв", option.get("additional").asText());
+        assertEquals("Заклинание «Мистический взрыв»", option.get("prerequisite").asText());
+        assertEquals(5, option.get("requiredLevel").asInt());
+        assertTrue(option.get("hideInSubclasses").asBoolean());
+        assertTrue(option.get("repeatable").asBoolean());
 
         JsonNode config = feature.get("choiceConfig");
         assertEquals("Таинственные воззвания", config.get("label").asText());
@@ -224,6 +237,13 @@ class VttgClassMapperTest {
         JsonNode feature = json(wizard).get("features").get(0);
         assertNull(feature.get("choiceConfig"));
         assertNull(feature.get("choices").get(0).get("requiredLevel"));
+        // Незаполненные поля варианта в выгрузке опускаются, а не приезжают пустыми
+        assertNull(feature.get("choices").get(0).get("nameEn"));
+        assertNull(feature.get("choices").get(0).get("additional"));
+        assertNull(feature.get("choices").get(0).get("prerequisite"));
+        // Обычный вариант берут один раз и показывают везде: флагов у него нет
+        assertNull(feature.get("choices").get(0).get("hideInSubclasses"));
+        assertNull(feature.get("choices").get(0).get("repeatable"));
     }
 
     /** isSRD выводится из srdVersion: свой (homebrew) класс без версии SRD → isSRD=false (→ premium-пак). */
