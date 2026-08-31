@@ -943,6 +943,68 @@ class VttgClassMapperTest {
         assertEquals(2, featData.get("choices").get(0).get("count").asInt());
     }
 
+    /**
+     * Дары варианта умения уезжают тем же блоком, что у самого умения, — но целиком,
+     * вместе с ресурсами и заклинаниями: у умения они выведены полями записи, а вариант
+     * даёт их, только пока выбран, и в общих полях класса им места нет.
+     */
+    @Test
+    void exportsOptionGrantsAsFeatData() {
+        CharacterClass warlock = baseClass("warlock", "Колдун", "Warlock");
+        ClassFeature invocations = feature("eldritch-invocations", 1,
+                "Таинственные воззвания", "Выберите воззвания.");
+
+        ClassFeatureOption option = new ClassFeatureOption();
+        option.setKey("agonizing_blast");
+        Name name = new Name();
+        name.setName("Мучительная кара");
+        option.setName(name);
+        option.setActiveEffects(List.of(effect("agonizing-blast", "Мучительная кара")));
+
+        GrantedSpellRef reference = new GrantedSpellRef();
+        reference.setUrl("hunters-mark");
+        reference.setName("Метка охотника");
+        SpellGrant grant = new SpellGrant();
+        grant.setSpells(List.of(reference));
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("invocation-uses");
+        counter.setName("Применения воззвания");
+        counter.setMax("1");
+
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setSpells(grant);
+        mechanics.setCounters(List.of(counter));
+        option.setMechanics(mechanics);
+
+        invocations.setOptions(List.of(option));
+        warlock.setFeatures(List.of(invocations));
+
+        JsonNode exported = json(warlock).get("features").get(0).get("choices").get(0);
+        assertEquals("Мучительная кара", exported.get("activeEffects").get(0).get("name").asText());
+
+        JsonNode featData = exported.get("featData");
+        assertEquals("feat", featData.get("type").asText());
+        assertEquals("hunters-mark", featData.get("grantedSpells").get(0).get("spellId").asText());
+        assertEquals("invocation-uses", featData.get("counters").get(0).get("key").asText());
+    }
+
+    /** У варианта без механики блока даров нет: справочная строка списка. */
+    @Test
+    void skipsFeatDataForPlainOption() {
+        CharacterClass wizard = baseClass("wizard", "Волшебник", "Wizard");
+        ClassFeature tradition = feature("arcane-tradition", 3, "Магическая традиция", "Выберите традицию.");
+
+        ClassFeatureOption option = new ClassFeatureOption();
+        option.setKey("evocation");
+        tradition.setOptions(List.of(option));
+        wizard.setFeatures(List.of(tradition));
+
+        JsonNode exported = json(wizard).get("features").get(0).get("choices").get(0);
+        assertNull(exported.get("featData"));
+        assertNull(exported.get("activeEffects"));
+    }
+
     private ActiveEffect effect(String id, String name) {
         ActiveEffect effect = new ActiveEffect();
         effect.setId(id);

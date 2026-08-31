@@ -240,11 +240,27 @@ public class VttgClass {
      * вариант не показывается на странице подкласса. Флаги выводятся, только когда
      * взведены: у обычного варианта полей нет, и потребитель, который их не читает,
      * ведёт себя как прежде — вариант выбирают один раз и показывают везде.</p>
+     *
+     * <p>{@code featData} и {@code activeEffects} — то, что вариант даёт листу, когда его
+     * выбрали: владения, модификаторы, ресурсы, заклинания, выборы игрока. Той же моделью,
+     * что у умения ({@link Feature#featData()}), но, в отличие от умения, ресурсы и
+     * заклинания лежат ВНУТРИ блока: у умения они выведены полями записи
+     * ({@link Feature#grantedSpells()}, {@link VttgClass#counters}), а дары варианта
+     * действуют, только пока он выбран, и в общих полях класса им места нет.</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Choice(String key, String name, String nameEn, String description,
                          String additional, String prerequisite, Integer requiredLevel,
-                         Boolean hideInSubclasses, Boolean repeatable) {
+                         Boolean hideInSubclasses, Boolean repeatable,
+                         List<ActiveEffect> activeEffects, VttgFeatData featData) {
+
+        /** Вариант без собственных даров: справочная строка списка. */
+        public Choice(String key, String name, String nameEn, String description,
+                      String additional, String prerequisite, Integer requiredLevel,
+                      Boolean hideInSubclasses, Boolean repeatable) {
+            this(key, name, nameEn, description, additional, prerequisite, requiredLevel,
+                    hideInSubclasses, repeatable, null, null);
+        }
     }
 
     /**
