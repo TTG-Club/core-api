@@ -529,7 +529,10 @@ public class VttgClassMapper {
                 continue;
             }
             result.add(new VttgClass.Choice(optionKey(option), optionName(option.getName()),
-                    description(option.getDescription()), option.getRequiredClassLevel()));
+                    optionNameEn(option.getName()), description(option.getDescription()),
+                    optional(option.getAdditional()), description(option.getPrerequisite()),
+                    option.getRequiredClassLevel(), flag(option.isHideInSubclasses()),
+                    flag(option.isRepeatable())));
         }
         return result.isEmpty() ? null : result;
     }
@@ -1063,6 +1066,18 @@ public class VttgClassMapper {
             return null;
         }
         return StringUtils.hasText(name.getName()) ? name.getName() : name.getEnglish();
+    }
+
+    /**
+     * Английское название варианта. Отдаётся только рядом с русским: когда русского нет,
+     * английское уже стоит в {@code name} ({@link #optionName(Name)}), и вторым полем оно
+     * было бы тем же текстом.
+     */
+    private String optionNameEn(Name name) {
+        if (name == null || !StringUtils.hasText(name.getName())) {
+            return null;
+        }
+        return optional(name.getEnglish());
     }
 
     /**

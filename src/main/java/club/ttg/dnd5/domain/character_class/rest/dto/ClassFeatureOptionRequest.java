@@ -44,4 +44,7 @@ public class ClassFeatureOptionRequest {
 
     @Schema(description = "Hide option in subclass and multiclass contexts")
     private boolean hideInSubclasses;
+
+    @Schema(description = "Вариант можно выбрать повторно на следующей ступени выбора")
+    private boolean repeatable;
 }

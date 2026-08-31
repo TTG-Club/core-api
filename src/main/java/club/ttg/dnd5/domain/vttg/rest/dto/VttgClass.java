@@ -225,11 +225,26 @@ public class VttgClass {
 
     /**
      * Вариант выбора в рамках умения (боевой стиль, манёвр): {@code key}, {@code name},
-     * {@code description} и уровень класса {@code requiredLevel}, с которого вариант
-     * доступен ({@code null} — доступен сразу).
+     * английское {@code nameEn}, {@code description} и уровень класса {@code requiredLevel},
+     * с которого вариант доступен ({@code null} — доступен сразу).
+     *
+     * <p>{@code additional} — короткая подпись рядом с названием («1 круг»), а
+     * {@code prerequisite} — требования к варианту живой фразой («7 уровень, заклинание
+     * „Вызов страха“»). Требования отдаются текстом, а не разбором: у воззваний колдуна
+     * они поминают заклинания, умения и уровень разом, и проверить их листом нечем —
+     * игрок читает их глазами.</p>
+     *
+     * <p>{@code repeatable} — вариант берут повторно: на следующей ступени выбора он
+     * снова в списке, хотя игрок его уже брал (у мастера боевых искусств так устроены
+     * не все манёвры, а у изобретателя — часть инфузий). {@code hideInSubclasses} —
+     * вариант не показывается на странице подкласса. Флаги выводятся, только когда
+     * взведены: у обычного варианта полей нет, и потребитель, который их не читает,
+     * ведёт себя как прежде — вариант выбирают один раз и показывают везде.</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Choice(String key, String name, String description, Integer requiredLevel) {
+    public record Choice(String key, String name, String nameEn, String description,
+                         String additional, String prerequisite, Integer requiredLevel,
+                         Boolean hideInSubclasses, Boolean repeatable) {
     }
 
     /**

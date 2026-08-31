@@ -39,6 +39,9 @@ public class ClassFeatureOptionDto {
     @Schema(description = "Hide option in subclass and multiclass contexts")
     private boolean hideInSubclasses;
 
+    @Schema(description = "Вариант можно выбрать повторно на следующей ступени выбора")
+    private boolean repeatable;
+
     public ClassFeatureOptionDto(ClassFeatureOption option) {
         this.key = option.getKey();
         this.name = option.getName();
@@ -47,5 +50,6 @@ public class ClassFeatureOptionDto {
         this.prerequisite = option.getPrerequisite();
         this.requiredClassLevel = option.getRequiredClassLevel();
         this.hideInSubclasses = option.isHideInSubclasses();
+        this.repeatable = option.isRepeatable();
     }
 }
