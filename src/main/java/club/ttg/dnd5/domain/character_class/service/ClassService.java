@@ -4,9 +4,9 @@ import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
-import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import java.util.Collection;
 import java.util.Objects;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
@@ -47,9 +47,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
