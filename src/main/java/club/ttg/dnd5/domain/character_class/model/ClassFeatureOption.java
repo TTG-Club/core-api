@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.character_class.model;
 
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureOptionRequest;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.util.SlugifyUtil;
@@ -12,6 +14,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -49,6 +53,22 @@ public class ClassFeatureOption {
     @Schema(description = "Вариант можно выбрать повторно на следующей ступени выбора")
     private boolean repeatable;
 
+    /**
+     * Механика влияния варианта на лист персонажа — той же моделью, что у самого умения.
+     *
+     * <p>Воззвание колдуна выдаёт заклинание, манёвр — владение приёмом, инфузия
+     * изобретателя заводит ресурс: вариант делает с листом то же, что умение, и своя
+     * модель для того же смысла означала бы второй разбор у каждого потребителя.</p>
+     *
+     * <p>Дары варианта действуют, только пока он выбран: невыбранный вариант — просто
+     * строка справочника.</p>
+     */
+    @Schema(description = "Механика влияния варианта на лист персонажа")
+    private ClassMechanics mechanics;
+
+    @Schema(description = "Активные эффекты варианта в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
+
     public ClassFeatureOption(ClassFeatureOptionRequest request) {
         this.key = StringUtils.hasText(request.getKey()) ? request.getKey() : buildKey(request.getName());
         this.name = request.getName();
@@ -59,6 +79,8 @@ public class ClassFeatureOption {
         this.requiredClassLevel = request.getRequiredClassLevel();
         this.hideInSubclasses = request.isHideInSubclasses();
         this.repeatable = request.isRepeatable();
+        this.mechanics = request.getMechanics();
+        this.activeEffects = request.getActiveEffects();
     }
 
     public ClassFeatureOption(ClassFeatureOption option) {
@@ -71,6 +93,8 @@ public class ClassFeatureOption {
         this.requiredClassLevel = option.getRequiredClassLevel();
         this.hideInSubclasses = option.isHideInSubclasses();
         this.repeatable = option.isRepeatable();
+        this.mechanics = option.getMechanics();
+        this.activeEffects = option.getActiveEffects();
     }
 
     private String buildKey(Name name) {

@@ -532,9 +532,30 @@ public class VttgClassMapper {
                     optionNameEn(option.getName()), description(option.getDescription()),
                     optional(option.getAdditional()), description(option.getPrerequisite()),
                     option.getRequiredClassLevel(), flag(option.isHideInSubclasses()),
-                    flag(option.isRepeatable())));
+                    flag(option.isRepeatable()), effects(option.getActiveEffects()),
+                    optionFeatData(option.getMechanics())));
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Дары варианта умения — блоком {@code featData} целиком, вместе с ресурсами и
+     * заклинаниями.
+     *
+     * <p>Тем и отличается от {@link #featData(ClassMechanics)}: у умения ресурсы и
+     * заклинания выведены полями записи ({@code Feature.grantedSpells}, счётчики класса),
+     * и повтор в блоке даров выдал бы то же самое дважды. У варианта таких полей нет и
+     * быть не может — его дары действуют, только пока он выбран, — поэтому здесь блок
+     * отдаётся как есть.</p>
+     *
+     * @param mechanics механика варианта; {@code null} — выдавать нечего
+     * @return блок даров либо {@code null}
+     */
+    private VttgFeatData optionFeatData(ClassMechanics mechanics) {
+        if (mechanics == null) {
+            return null;
+        }
+        return mechanicsMapper.featData(mechanics, null);
     }
 
     /**

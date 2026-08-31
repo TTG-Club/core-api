@@ -2,9 +2,11 @@ package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import java.util.Collection;
 import java.util.Objects;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassAbilityImprovementResponse;
@@ -45,9 +47,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 @Service
@@ -228,8 +232,16 @@ public class ClassService {
     private void resolveFeatureGrantedSpells(ClassDetailedResponse response) {
         var features = Optional.ofNullable(response.getFeatures()).orElse(List.of());
 
-        var refs = features.stream()
-                .map(ClassFeatureDto::getMechanics)
+        var options = features.stream()
+                .map(ClassFeatureDto::getOptions)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .toList();
+
+        var refs = Stream.concat(
+                        features.stream().map(ClassFeatureDto::getMechanics),
+                        options.stream().map(ClassFeatureOptionDto::getMechanics))
                 .filter(Objects::nonNull)
                 .map(ClassMechanics::getSpells)
                 .filter(Objects::nonNull)
@@ -246,21 +258,43 @@ public class ClassService {
         var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(refs);
 
         for (ClassFeatureDto feature : features) {
-            var granted = Optional.ofNullable(feature.getMechanics())
-                    .map(ClassMechanics::getSpells)
-                    .map(SpellGrant::getSpells)
-                    .orElse(List.of())
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
-                    .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
-                            ref.getRequiredLevel()))
-                    .toList();
+            var granted = grantedSpells(feature.getMechanics(), spellsByUrl);
 
             if (!granted.isEmpty()) {
                 feature.setGrantedSpells(granted);
             }
         }
+
+        // Вариант умения выдаёт заклинания так же, как умение: воззвание колдуна даёт
+        // «Огонь фей», и листу персонажа нужен круг заклинания, а не одна ссылка
+        for (ClassFeatureOptionDto option : options) {
+            var granted = grantedSpells(option.getMechanics(), spellsByUrl);
+
+            if (!granted.isEmpty()) {
+                option.setGrantedSpells(granted);
+            }
+        }
+    }
+
+    /**
+     * Заклинания механики записями справочника.
+     *
+     * @param mechanics   механика умения или его варианта; {@code null} — выдавать нечего
+     * @param spellsByUrl найденные записи справочника по ссылке
+     * @return выданные заклинания; пустой список — ссылок нет либо ни одна не найдена
+     */
+    private List<GrantedSpellResponse> grantedSpells(ClassMechanics mechanics,
+                                                     Map<String, SpellShortResponse> spellsByUrl) {
+        return Optional.ofNullable(mechanics)
+                .map(ClassMechanics::getSpells)
+                .map(SpellGrant::getSpells)
+                .orElse(List.of())
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
+                .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                        ref.getRequiredLevel()))
+                .toList();
     }
 
     /**
