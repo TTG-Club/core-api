@@ -124,6 +124,33 @@ class VttgSpellMechanicsExtractorTest {
     }
 
     @Test
+    void emptyDamageFormulasMeanNoDamageAndSuppressTextGuess() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        // Пустой список — это «урона у заклинания нет», а не «поле не заполнено».
+        effect.setDamageFormulas(List.of());
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell,
+                "Цель вычитает {@roll 1к8} из своих бросков урона.");
+
+        assertNull(result.damageFormula());
+        assertNull(result.damageParts());
+    }
+
+    @Test
+    void missingDamageFormulasStillAllowTextGuess() {
+        Spell spell = new Spell();
+        spell.setEffect(new SpellEffect());
+
+        var result = extractor.extract(spell,
+                "Цель получает {@roll 1к8} урона некротической энергией.");
+
+        assertEquals("1к8", result.damageFormula());
+        assertEquals("1к8@dmg.necrotic", result.damageParts().getFirst().getFormula());
+    }
+
+    @Test
     void mapsDamageFormulaTargetsByFormulaIndex() {
         Spell spell = new Spell();
         SpellEffect effect = new SpellEffect();
