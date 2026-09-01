@@ -196,17 +196,23 @@ public class VttgSpellMapper {
         };
     }
 
+    /**
+     * Область воздействия в единицах компендиума.
+     *
+     * <p>Первое значение области — всегда «радиус или длина», второе — «высота или
+     * ширина»: так поле подписано в форме справочника, и так заполнены данные. Размер
+     * фигуры на столе берётся из первого значения у любой фигуры, включая цилиндр
+     * (его высоту компендиум не возит вовсе); второе значение уходит шириной только у
+     * линии.</p>
+     */
     private VttgSpellAreaOfEffect areaOfEffect(AreaOfEffect area) {
         if (area == null || area.getType() == null) {
             return null;
         }
-        int size = area.getType() == AreaOfEffectType.CYLINDER && area.getValue2() != null
-                ? area.getValue2()
-                : area.getValue1();
         Integer width = area.getType() == AreaOfEffectType.LINE ? area.getValue2() : null;
         return VttgSpellAreaOfEffect.builder()
                 .shape(areaShape(area.getType()))
-                .size(size)
+                .size(area.getValue1())
                 .width(width)
                 .unit("ft")
                 .build();
