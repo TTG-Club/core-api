@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -229,6 +230,8 @@ public class SpellService
                 throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
             }
 
+            // Смена url пересоздаёт запись, а вместе с ней и связи: уровень врождённого
+            // заклинания у вида при переименовании заклинания вернётся к первому.
             spellRepository.deleteById(oldUrl);
             spellRepository.flush();
 
@@ -250,14 +253,18 @@ public class SpellService
 
         if (affiliations != null)
         {
+            // Виды и происхождения правятся на месте, а не заменой набора: их таблица
+            // связи общая с врождёнными заклинаниями вида и несёт чужой уровень.
             if (affiliations.getSpecies() != null)
             {
-                existingSpell.setSpeciesAffiliation(species);
+                existingSpell.setSpeciesAffiliation(
+                        syncAffiliation(existingSpell.getSpeciesAffiliation(), species));
             }
 
             if (affiliations.getLineages() != null)
             {
-                existingSpell.setLineagesAffiliation(lineages);
+                existingSpell.setLineagesAffiliation(
+                        syncAffiliation(existingSpell.getLineagesAffiliation(), lineages));
             }
 
             if (affiliations.getClasses() != null)
@@ -306,6 +313,38 @@ public class SpellService
         return spellMapper.toDetail(
                 spellMapper.toEntity(request, book, classes, subclasses, species, lineages, feats)
         );
+    }
+
+    /**
+     * Приводит набор связей к запрошенному, правя существующую коллекцию, а не
+     * подменяя её новой.
+     *
+     * <p>Разница не косметическая: подменённую коллекцию Hibernate считает выброшенной
+     * и переписывает все строки связи заново, а таблица связи с видами общая с их
+     * врождёнными заклинаниями и несёт чужую колонку {@code required_level} — уровень
+     * терялся бы у связей, которые никто не менял. Правка на месте трогает только
+     * разницу, и уцелевшая строка остаётся нетронутой вместе с уровнем.</p>
+     *
+     * @param current коллекция сущности; {@code null} — связей ещё нет.
+     * @param wanted  набор из запроса.
+     * @return коллекцию, которую следует записать в сущность.
+     */
+    private Set<Species> syncAffiliation(Set<Species> current, Set<Species> wanted)
+    {
+        if (current == null)
+        {
+            return new LinkedHashSet<>(wanted);
+        }
+
+        Set<String> wantedUrls = wanted.stream().map(Species::getUrl).collect(Collectors.toSet());
+        current.removeIf(item -> !wantedUrls.contains(item.getUrl()));
+
+        Set<String> currentUrls = current.stream().map(Species::getUrl).collect(Collectors.toSet());
+        wanted.stream()
+                .filter(item -> !currentUrls.contains(item.getUrl()))
+                .forEach(current::add);
+
+        return current;
     }
 
     private void filterAffiliationsBySavedSources(SpellDetailedResponse response)

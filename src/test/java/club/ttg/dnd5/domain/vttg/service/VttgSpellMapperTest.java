@@ -153,6 +153,51 @@ class VttgSpellMapperTest {
     }
 
     @Test
+    void cylinderKeepsRadiusFromFirstValue() {
+        Spell spell = new Spell();
+        spell.setUrl("moonbeam");
+        spell.setName("Лунный луч");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(AreaOfEffectType.CYLINDER);
+        area.setValue1(5);
+        area.setValue2(40);
+        SpellEffect effect = new SpellEffect();
+        effect.setAreaOfEffect(area);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Первое значение области — радиус, второе — высота; высоту компендиум не возит.
+        assertEquals("circle", result.getAreaOfEffect().getShape());
+        assertEquals(5, result.getAreaOfEffect().getSize());
+        assertNull(result.getAreaOfEffect().getWidth());
+    }
+
+    @Test
+    void lineKeepsLengthAsSizeAndSecondValueAsWidth() {
+        Spell spell = new Spell();
+        spell.setUrl("lightning-bolt");
+        spell.setName("Молния");
+        spell.setLevel(3L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(AreaOfEffectType.LINE);
+        area.setValue1(100);
+        area.setValue2(5);
+        SpellEffect effect = new SpellEffect();
+        effect.setAreaOfEffect(area);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals("ray", result.getAreaOfEffect().getShape());
+        assertEquals(100, result.getAreaOfEffect().getSize());
+        assertEquals(5, result.getAreaOfEffect().getWidth());
+    }
+
+    @Test
     void doesNotInferAttackDeliveryFromSpellRange() {
         Spell spell = new Spell();
         spell.setUrl("auto-hit-spell");

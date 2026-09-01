@@ -57,10 +57,31 @@ public class Spell extends NamedEntity {
     private Source source;
     private Long sourcePage;
 
+    /**
+     * Виды, которым заклинание принадлежит.
+     *
+     * <p>Таблица связи общая с врождёнными заклинаниями вида: там же лежит колонка
+     * {@code required_level}, которой эта связь не знает (см.
+     * {@code SpeciesRepository#findInnateSpells}). Поэтому коллекцию нельзя подменять
+     * новой — Hibernate счёл бы её выброшенной, удалил все строки вместе с уровнями и
+     * создал заново с единицей. Правится она на месте, в
+     * {@code SpellService#syncAffiliation}: тогда в базу уходит только разница.</p>
+     */
     @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_species_affiliation",
+            joinColumns = @JoinColumn(name = "spell_url"),
+            inverseJoinColumns = @JoinColumn(name = "species_affiliation_url")
+    )
     private Set<Species> speciesAffiliation;
 
+    /** Происхождения видов; таблица связи общая с их врождёнными заклинаниями — см. {@link #speciesAffiliation}. */
     @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "spell_lineages_affiliation",
+            joinColumns = @JoinColumn(name = "spell_url"),
+            inverseJoinColumns = @JoinColumn(name = "lineages_affiliation_url")
+    )
     private Set<Species> lineagesAffiliation;
 
     @ManyToMany(fetch = FetchType.LAZY)
