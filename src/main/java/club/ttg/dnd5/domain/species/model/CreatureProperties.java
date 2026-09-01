@@ -33,6 +33,10 @@ public abstract class CreatureProperties extends NamedEntity {
     private Integer climb;
     /** плавание */
     private Integer swim;
-    /** темное зрение */
-    private Integer darkVision;
+    /**
+     * Обычное зрение в футах; {@code null} — не задано. Свойство записи, как скорость:
+     * лист показывает его в шапке, а токен VTTG берёт как дальность зрения днём.
+     * Тёмное зрение, в отличие от него, живёт чувством в механике умения.
+     */
+    private Integer vision;
 }

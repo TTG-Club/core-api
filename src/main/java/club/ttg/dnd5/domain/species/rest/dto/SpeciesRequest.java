@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.species.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,6 +22,9 @@ public class SpeciesRequest extends BaseRequest {
 
     @Schema(description = "Механика влияния вида или происхождения на лист персонажа")
     private SpeciesMechanics mechanics;
+
+    @Schema(description = "Активные эффекты вида в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
 
     @Schema(description = "Врождённые заклинания и уровни их доступности")
     private Collection<SpeciesInnateSpellRequest> innateSpells;

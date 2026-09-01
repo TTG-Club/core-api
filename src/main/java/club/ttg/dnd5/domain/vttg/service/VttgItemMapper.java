@@ -9,13 +9,16 @@ import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.ItemType;
+import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
 import club.ttg.dnd5.domain.item.model.weapon.Damage;
+import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.Range;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -72,7 +75,7 @@ public class VttgItemMapper {
         } else if (isTool(item)) {
             putTool(data, item);
         } else {
-            putGear(data);
+            putGear(data, item);
         }
 
         data.put("quantity", 1);
@@ -81,6 +84,14 @@ public class VttgItemMapper {
         data.put("rarity", "none");
         data.put("equipped", false);
         data.put("isMagical", false);
+        if (isFocus(item)) {
+            data.put("isFocus", true);
+        }
+        if (!CollectionUtils.isEmpty(item.getActiveEffects())) {
+            // Без преобразования: мастерская заполняет эффект сразу в вокабуляре VTTG —
+            // так же, как у черты и магического предмета.
+            data.put("activeEffects", item.getActiveEffects());
+        }
         data.put("sourceKey", sourceKey);
         data.put("isSRD", item.getSrdVersion() != null);
         data.put("isReadOnly", true);
@@ -94,7 +105,7 @@ public class VttgItemMapper {
         data.put("type", "weapon");
         data.put("typeLabel", "Оружие");
         data.put("section", "weapons");
-        data.put("baseType", baseType(item));
+        data.put("baseType", weaponBaseType(item));
         if (weapon == null) {
             return;
         }
@@ -117,8 +128,9 @@ public class VttgItemMapper {
         if (weapon.getAmmo() != null) {
             data.put("ammunitionType", ammunitionType(weapon.getAmmo()));
         }
-        if ("melee".equals(rangeType)) {
-            data.put("reach", hasProperty(weapon.getProperties()) ? 10 : 5);
+        Integer reach = reach(weapon, rangeType);
+        if (reach != null) {
+            data.put("reach", reach);
         }
         if (special) {
             data.put("special", markupConverter.toText(weapon.getAdditional()));
@@ -126,7 +138,27 @@ public class VttgItemMapper {
         if (weapon.getMastery() != null) {
             data.put("mastery", weapon.getMastery().name().toLowerCase(Locale.ROOT));
         }
-        data.put("proficiencyMode", "auto");
+        putIfPresent(data, "attackAbility", weapon.getAttackAbility());
+        data.put("proficiencyMode", value(weapon.getProficiencyMode(), "auto"));
+        putIfPresent(data, "attackBonus", weapon.getAttackBonus());
+        putIfPresent(data, "damageAbility", weapon.getDamageAbility());
+        putIfPresent(data, "damageBonus", weapon.getDamageBonus());
+        putIfPresent(data, "saveType", weapon.getSaveType());
+        putIfPresent(data, "saveEffect", weapon.getSaveEffect());
+    }
+
+    /**
+     * Досягаемость: заданная в справочнике перебивает вывод по свойству. Дальнобойному
+     * оружию досягаемость не пишется — как и раньше, если её не задали явно.
+     */
+    private Integer reach(Weapon weapon, String rangeType) {
+        if (weapon.getReach() != null) {
+            return weapon.getReach();
+        }
+        if (!"melee".equals(rangeType)) {
+            return null;
+        }
+        return hasProperty(weapon.getProperties()) ? 10 : 5;
     }
 
     // ── Доспехи / щиты ──────────────────────────────────────────────────────────────────────────
@@ -154,19 +186,27 @@ public class VttgItemMapper {
 
     // ── Инструменты ─────────────────────────────────────────────────────────────────────────────
     private void putTool(Map<String, Object> data, Item item) {
+        Tool tool = item.getTool();
+
         data.put("type", "tool");
         data.put("typeLabel", "Инструмент");
         data.put("section", "tools");
         data.put("toolCategory", toolCategory(item));
-        data.put("baseToolType", baseType(item));
+        data.put("baseToolType", toolBaseType(item));
+        if (tool == null) {
+            return;
+        }
+        putIfPresent(data, "toolAbility", tool.getAbility());
+        putIfPresent(data, "toolBonus", tool.getBonus());
+        putIfPresent(data, "toolProficiencyMode", tool.getProficiencyMode());
     }
 
     // ── Прочее снаряжение ───────────────────────────────────────────────────────────────────────
-    private void putGear(Map<String, Object> data) {
+    private void putGear(Map<String, Object> data, Item item) {
         data.put("type", "equipment");
         data.put("typeLabel", "Снаряжение");
         data.put("section", "trinkets");
-        data.put("equipmentCategory", "trinket");
+        data.put("equipmentCategory", equipmentCategory(item));
     }
 
     /**
@@ -185,6 +225,58 @@ public class VttgItemMapper {
     private String baseType(Item item) {
         String base = StringUtils.hasText(item.getEnglish()) ? item.getEnglish() : item.getUrl();
         return slug(base);
+    }
+
+    /**
+     * Базовый вид оружия для листа персонажа. Заданный в справочнике перебивает вывод:
+     * у самодельного оружия («Клинок бури») английское название ни с одним видом не
+     * сойдётся, и владение им лист не засчитает.
+     *
+     * <p>Дальше — ключ по адресу страницы ({@link VttgWeaponKeys}) и лишь затем слаг
+     * английского названия: у канонного оружия они совпадают, а адрес ещё и переживает
+     * опечатку в названии.</p>
+     */
+    private String weaponBaseType(Item item) {
+        Weapon weapon = item.getWeapon();
+        if (weapon != null && StringUtils.hasText(weapon.getBaseType())) {
+            return weapon.getBaseType();
+        }
+        String byUrl = VttgWeaponKeys.ofUrl(item.getUrl());
+        return byUrl != null ? byUrl : baseType(item);
+    }
+
+    /**
+     * Базовый инструмент для листа персонажа. Слаг английского названия здесь не годится
+     * сам по себе: притяжательная форма даёт «calligrapher-s-supplies», а лист знает
+     * «calligraphers-supplies» и незнакомое владение молча выбрасывает — поэтому сначала
+     * ключ по адресу страницы ({@link VttgToolKeys}).
+     */
+    private String toolBaseType(Item item) {
+        Tool tool = item.getTool();
+        if (tool != null && StringUtils.hasText(tool.getBaseType())) {
+            return tool.getBaseType();
+        }
+        String byUrl = VttgToolKeys.ofUrl(item.getUrl());
+        return byUrl != null ? byUrl : baseType(item);
+    }
+
+    /**
+     * Кладёт значение, если оно задано: незаполненное поле справочника означает «считать
+     * как раньше», и ключ с {@code null} потребитель разбирал бы как явный отказ.
+     */
+    private void putIfPresent(Map<String, Object> data, String key, Object value) {
+        if (value == null) {
+            return;
+        }
+        if (value instanceof String text && !StringUtils.hasText(text)) {
+            return;
+        }
+        data.put(key, value);
+    }
+
+    /** Значение справочника либо значение по умолчанию, если оно не задано. */
+    private String value(String stored, String fallback) {
+        return StringUtils.hasText(stored) ? stored : fallback;
     }
 
     private String slug(String value) {
@@ -232,10 +324,43 @@ public class VttgItemMapper {
     }
 
     /**
-     * Части урона в формате VTTG (как у заклинаний): кость через «к», тип урона — slug SRD,
-     * {@code versatileFormula} — для универсального (versatile) оружия. Бонус для оружия не используется.
+     * Части урона в формате VTTG (как у заклинаний). Заданные в справочнике отдаются как
+     * есть: мастерская пишет их сразу формулами вокабуляра VTTG, переводить нечего.
+     * Пусто — собираем одну часть из прежней связки «кости + тип», как раньше: девять
+     * сотен записей справочника заполнены именно ею.
      */
     private List<Map<String, Object>> damageParts(Weapon weapon) {
+        if (!CollectionUtils.isEmpty(weapon.getDamageParts())) {
+            return weapon.getDamageParts().stream()
+                    .filter(part -> part != null && StringUtils.hasText(part.getFormula()))
+                    .map(this::damagePart)
+                    .toList();
+        }
+        return legacyDamageParts(weapon);
+    }
+
+    /**
+     * Часть урона справочника в формате VTTG; незаполненные поля не пишутся.
+     *
+     * <p>Доступна соседям по пакету: магический предмет дописывает к частям базового
+     * оружия свои ({@code VttgMagicItemMapper}) и переводит их той же функцией.</p>
+     */
+    Map<String, Object> damagePart(DamagePart part) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("formula", part.getFormula());
+        putIfPresent(result, "target", part.getTarget());
+        if (Boolean.TRUE.equals(part.getRequiresDamage())) {
+            result.put("requiresDamage", true);
+        }
+        putIfPresent(result, "versatileFormula", part.getVersatileFormula());
+        return result;
+    }
+
+    /**
+     * Часть урона из прежней связки «кости + тип»: кость через «к», тип урона — slug SRD,
+     * {@code versatileFormula} — для универсального (versatile) оружия. Бонус для оружия не используется.
+     */
+    private List<Map<String, Object>> legacyDamageParts(Weapon weapon) {
         Damage damage = weapon.getDamage();
         String formula = damage == null ? null : damageFormula(damage.getRoll());
         if (formula == null) {
@@ -360,8 +485,16 @@ public class VttgItemMapper {
         return item.getCategory() == ItemCategory.ARMOR || hasTypeCategory(item, ItemCategory.ARMOR);
     }
 
+    /**
+     * Инструмент ли предмет. Категории {@code TOOL} мало: игровой набор и инструменты
+     * ремесленника заведены типами категории {@code ITEM}, и «Набор игральных карт»
+     * уезжал на стол безделушкой — владение таким набором лист не засчитывал.
+     */
     private boolean isTool(Item item) {
-        return item.getCategory() == ItemCategory.TOOL || hasTypeCategory(item, ItemCategory.TOOL);
+        return item.getCategory() == ItemCategory.TOOL
+                || hasTypeCategory(item, ItemCategory.TOOL)
+                || hasType(item, ItemType.ARTISAN_S_TOOLS)
+                || hasType(item, ItemType.GAMING_SET);
     }
 
     private boolean hasTypeCategory(Item item, ItemCategory category) {
@@ -370,11 +503,64 @@ public class VttgItemMapper {
                 .anyMatch(type -> type.getCategory() == category);
     }
 
+    /**
+     * Категория инструмента. Заданная в справочнике перебивает вывод по типам предмета;
+     * иначе разбираем типы: у листа четыре категории, и «прочее» для набора ремесленника
+     * значит потерянную группу в окне владений.
+     */
     private String toolCategory(Item item) {
-        if (item.getTypes() != null && item.getTypes().contains(ItemType.INSTRUMENT)) {
+        Tool tool = item.getTool();
+        if (tool != null && StringUtils.hasText(tool.getCategory())) {
+            return tool.getCategory();
+        }
+        if (hasType(item, ItemType.INSTRUMENT)) {
             return "musical";
         }
+        if (hasType(item, ItemType.ARTISAN_S_TOOLS)) {
+            return "artisan";
+        }
+        if (hasType(item, ItemType.GAMING_SET)) {
+            return "gaming";
+        }
         return "other";
+    }
+
+    /**
+     * Категория снаряжения для листа и виртуального стола. Заданная в справочнике
+     * перебивает вывод по типам предмета; иначе разбираем типы, а безделушка остаётся
+     * последним вариантом, а не единственным, как было раньше.
+     */
+    private String equipmentCategory(Item item) {
+        if (StringUtils.hasText(item.getEquipmentCategory())) {
+            return item.getEquipmentCategory();
+        }
+        if (hasType(item, ItemType.FOOD_AND_DRINK)) {
+            return "food";
+        }
+        if (hasType(item, ItemType.VEHICLE) || hasType(item, ItemType.VEHICLE_AIR)
+                || hasType(item, ItemType.VEHICLE_LAND) || hasType(item, ItemType.VEHICLE_WATER)
+                || hasType(item, ItemType.TACK_AND_HARNESS)) {
+            return "vehicle-equipment";
+        }
+        if (hasType(item, ItemType.ADVENTURING_GEAR) || hasType(item, ItemType.AMMUNITION)
+                || hasType(item, ItemType.POISON) || hasType(item, ItemType.SIEGE_EQUIPMENT)
+                || hasType(item, ItemType.SPELLCASTING_FOCUS)) {
+            return "adventurer-equipment";
+        }
+        return "trinket";
+    }
+
+    /**
+     * Заклинательная фокусировка: у системы это свойство предмета, а у справочника —
+     * его тип. Раньше признак не выдавался вовсе, и посох друида на столе фокусировкой
+     * не считался.
+     */
+    private boolean isFocus(Item item) {
+        return hasType(item, ItemType.SPELLCASTING_FOCUS);
+    }
+
+    private boolean hasType(Item item, ItemType type) {
+        return item.getTypes() != null && item.getTypes().contains(type);
     }
 
     private double weight(String weight) {

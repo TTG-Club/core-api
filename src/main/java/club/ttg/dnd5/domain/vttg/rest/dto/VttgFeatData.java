@@ -47,6 +47,14 @@ public class VttgFeatData {
      */
     private List<String> weaponMasteries;
     /**
+     * Оружейные приёмы без привязки к оружию — ключами приёмов ({@code push}, {@code sap}):
+     * «Тактический мастер» владеет самим приёмом, а не оружием, у которого он есть.
+     *
+     * <p>Потребитель держит их отдельным списком владений
+     * ({@code proficiencies.masteryProperties}), как и {@link #weaponMasteries}.</p>
+     */
+    private List<String> masteryProperties;
+    /**
      * Владение инструментами — ключами справочника листа ({@code thieves-tools}), а не
      * слагами страниц сайта: незнакомый ключ лист молча выбрасывает при первом же
      * открытии окна владений. Перевод — {@code VttgToolKeys}; инструменты, которых у
@@ -109,6 +117,21 @@ public class VttgFeatData {
     private SpellList spellList;
     /** Ресурсы черты со счётчиком: очки удачи «Удачливого», применения «Целителя». */
     private List<Counter> counters;
+    /**
+     * Черты, которые запись выдаёт без выбора, — ссылками на записи компендиума. Выдаёт
+     * их умение класса; лист кладёт черту сам, как предыстория кладёт черту происхождения.
+     */
+    private List<GrantedFeat> grantedFeats;
+
+    /**
+     * Черта, выданная без выбора.
+     *
+     * @param featId {@code id} записи черты в выгрузке ({@code srd_feat_…})
+     * @param name   название на момент выгрузки — показать, даже когда записи в паках нет
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record GrantedFeat(String featId, String name) {
+    }
 
     /**
      * Заклинание, которое черта даёт знать.
@@ -239,10 +262,12 @@ public class VttgFeatData {
      *                  полным
      * @param max       формула максимума: число либо выражение с {@code @prof},
      *                  {@code @level}, {@code @mod.<abbr>}
-     * @param recovery  каким отдыхом восстанавливается: {@code short} или {@code long}
+     * @param min       нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
+     * @param recovery  каким отдыхом восстанавливается: {@code short}, {@code long} либо
+     *                  {@code short-one} (один заряд коротким, все — продолжительным)
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Counter(String key, String name, String shortName, String max, String recovery) {
+    public record Counter(String key, String name, String shortName, String max, Integer min, String recovery) {
     }
 
     /**

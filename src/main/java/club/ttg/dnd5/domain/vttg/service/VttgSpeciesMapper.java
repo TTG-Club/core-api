@@ -1,19 +1,12 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
-import club.ttg.dnd5.domain.common.dictionary.DamageType;
-import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
-import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
-import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
-import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
-import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
-import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
-import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
-import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.domain.species.repository.SpeciesInnateSpellView;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
@@ -27,38 +20,39 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Маппер вида TTG Club в формат компендиума VTTG ({@code type = "species"}).
  *
  * <p>{@code type}/{@code creatureType}/{@code size} берутся из enum'ов и приводятся к нижнему
  * регистру (slug эталона: {@code DRAGON → "dragon"}, {@code MEDIUM → "medium"}); порядок размеров
- * сохраняется как в источнике. {@code key} строится из {@code url} так же, как в
+ * сохраняется как в источнике. Рост, заданный размеру в мастерской, уезжает рядом картой
+ * {@code heights} с теми же ключами. {@code key} строится из {@code url} так же, как в
  * {@link VttgBackgroundMapper}.</p>
  *
- * <p>{@code grants} собираются из трёх мест: тёмное зрение — свойство вида
- * ({@code properties.darkVision}), сопротивления и владения навыками — механика самой
- * записи ({@code mechanics}) и механика её умений ({@code features[].mechanics}). Запись,
- * действие которой описано только текстом, даёт пустой {@code grants}.</p>
+ * <p>Дары уезжают блоками {@code featData} — тем же сборщиком, что у черты, предыстории и
+ * класса ({@link VttgFeatMechanicsMapper#featData}): {@code featData} записи — механика самой
+ * записи, {@code featData} умения — механика этого умения. Тёмное зрение — поле
+ * {@code featData.darkvision} своего источника. Запись, действие которой описано только
+ * текстом, даров не даёт.</p>
+ *
+ * <p>Происхождения (дочерние виды) экспортируются самостоятельными записями со ссылкой
+ * {@code parentKey} на родителя — комбинирование «вид + происхождение» делает потребитель.</p>
  */
 @Component
 @RequiredArgsConstructor
 public class VttgSpeciesMapper {
     private static final String TYPE = "species";
     private static final String SECTION = "species";
-    private static final String DARKVISION = "darkvision";
-    private static final String RESISTANCE = "resistance";
-    private static final String SKILL_PROFICIENCY = "skillProficiency";
     /** Ключ синтетического умения врождённых заклинаний; дальше идёт уровень. */
     private static final String INNATE_SPELLS_KEY = "innate-spells";
     private static final String INNATE_SPELLS_NAME = "Врождённые заклинания";
@@ -66,6 +60,7 @@ public class VttgSpeciesMapper {
     private final VttgMarkupConverter markupConverter;
     private final SpeciesRepository speciesRepository;
     private final SpellRepository spellRepository;
+    private final VttgFeatMechanicsMapper mechanicsMapper;
 
     public VttgSpecies toVttg(Species species) {
         String key = slug(species.getUrl());
@@ -77,6 +72,7 @@ public class VttgSpeciesMapper {
                 .srcSection(SectionType.SPECIES.getValue())
                 .srcUrl(species.getUrl())
                 .key(key)
+                .parentKey(parentKey(species))
                 .isSRD(species.getSrdVersion() != null)
                 .name(species.getName())
                 .nameEn(optional(species.getEnglish()))
@@ -84,10 +80,27 @@ public class VttgSpeciesMapper {
                 .sourceKey(VttgSourceKeys.of(species.getSource()))
                 .creatureType(creatureType(species.getType()))
                 .size(sizes(species.getSizes()))
+                .heights(heights(species.getSizes()))
                 .speed(speed(species))
-                .grants(grants(species))
+                .vision(vision(species))
+                .featData(mechanicsMapper.featData(species.getMechanics(), null))
                 .features(features(species))
+                .activeEffects(activeEffects(species))
                 .build();
+    }
+
+    /**
+     * Обычное зрение записи как есть. Ноль уезжает нулём: и у справочника, и у потребителя
+     * он значит «без ограничений» — дальность зрения токена без предела; «не задано» —
+     * только {@code null}.
+     */
+    private Integer vision(Species species) {
+        return species.getVision();
+    }
+
+    /** Ключ родительского вида; {@code null} — запись верхнеуровневая. */
+    private String parentKey(Species species) {
+        return species.getParent() == null ? null : slug(species.getParent().getUrl());
     }
 
     private String creatureType(CreatureType type) {
@@ -107,6 +120,47 @@ public class VttgSpeciesMapper {
                 .toList();
     }
 
+    /**
+     * Рост по размерам: ключ — тот же slug, что в {@code size}. Размер без границ в карту не
+     * попадает, а пустая карта не уезжает вовсе — поле в записи просто отсутствует.
+     *
+     * <p>Ноль в границу не идёт по той же причине, что и в {@code vision}: в форме сайта ноль
+     * означает «не задано», а у потребителя прочитался бы ростом в ноль футов.</p>
+     */
+    private Map<String, VttgSpecies.Height> heights(Collection<SpeciesSizeDto> sizes) {
+        if (sizes == null) {
+            return null;
+        }
+        Map<String, VttgSpecies.Height> heights = new LinkedHashMap<>();
+        for (SpeciesSizeDto size : sizes) {
+            Size type = size.getType();
+            if (type == null || type == Size.UNDEFINED) {
+                continue;
+            }
+            Integer from = bound(size.getFrom());
+            Integer to = bound(size.getTo());
+            if (from == null && to == null) {
+                continue;
+            }
+            heights.put(type.name().toLowerCase(Locale.ROOT), new VttgSpecies.Height(from, to));
+        }
+        return heights.isEmpty() ? null : heights;
+    }
+
+    /** Граница роста: пустая и неположительная одинаково значат «не задана». */
+    private Integer bound(Short value) {
+        return value != null && value > 0 ? value.intValue() : null;
+    }
+
+    /**
+     * Активные эффекты самой записи вида. Отдаются без преобразования — так же, как у
+     * черты: мастерская заполняет их сразу в вокабуляре VTTG. Эффекты умений уезжают у
+     * своих умений и сюда не сводятся: потребителю важно, какое умение дало эффект.
+     */
+    private List<ActiveEffect> activeEffects(Species species) {
+        return CollectionUtils.isEmpty(species.getActiveEffects()) ? null : species.getActiveEffects();
+    }
+
     /** Скорость пешком всегда присутствует; полёт/лазание/плавание — только при наличии. */
     private VttgSpecies.Speed speed(Species species) {
         return new VttgSpecies.Speed(species.getSpeed(),
@@ -114,133 +168,18 @@ public class VttgSpeciesMapper {
     }
 
     /**
-     * Структурные награды вида: тёмное зрение из свойств, сопротивления и владения
-     * навыками — из механики самой записи и её умений.
-     *
-     * <p>Сопротивления всех источников сводятся в одну награду: у потребителя это единый блок
-     * защит, а из какого источника пришёл тип урона, лист не показывает. Сопротивление по
-     * выбору игрока ({@code resistanceFromChoiceKey}) сюда не идёт — тип урона ещё не выбран,
-     * как и в {@link VttgFeatMechanicsMapper}.</p>
-     */
-    private List<VttgSpecies.Grant> grants(Species species) {
-        List<VttgSpecies.Grant> grants = new ArrayList<>();
-        if (species.getDarkVision() != null) {
-            grants.add(new VttgSpecies.Grant(DARKVISION, species.getDarkVision(), null, null, null));
-        }
-        List<String> resistances = VttgDictionaries.damageTypes(resistances(species));
-        if (!resistances.isEmpty()) {
-            grants.add(new VttgSpecies.Grant(RESISTANCE, null, resistances, null, null));
-        }
-        grants.addAll(skillGrants(species));
-        return grants;
-    }
-
-    /** Сопротивления записи и её умений в порядке словаря, без повторов. */
-    private Set<DamageType> resistances(Species species) {
-        Set<DamageType> result = new TreeSet<>();
-        for (SheetModifiers modifiers : mechanics(species).map(SpeciesMechanics::getModifiers)
-                .filter(Objects::nonNull).toList()) {
-            DamageAffinity damage = modifiers.getDamage();
-            if (damage != null && !CollectionUtils.isEmpty(damage.getResistances())) {
-                result.addAll(damage.getResistances());
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Владения навыками: выданные без выбора и выбираемые игроком.
-     *
-     * <p>Наградами по одной на источник, а не одной общей: у выбора есть своё количество и свой
-     * пул («один из Восприятия, Скрытности или Выживания»), и слить два таких выбора в одну
-     * запись — значит потерять оба.</p>
-     */
-    private List<VttgSpecies.Grant> skillGrants(Species species) {
-        List<VttgSpecies.Grant> result = new ArrayList<>();
-        mechanics(species).forEach(mechanics -> {
-            ProficiencyGrant granted = mechanics.getProficiencies();
-            if (granted != null && !CollectionUtils.isEmpty(granted.getSkills())) {
-                List<String> skills = VttgDictionaries.skills(granted.getSkills());
-                // Выбирать не из чего: количество равно списку
-                result.add(new VttgSpecies.Grant(SKILL_PROFICIENCY, null, null, skills.size(), skills));
-            }
-            if (CollectionUtils.isEmpty(mechanics.getChoices())) {
-                return;
-            }
-            for (MechanicChoice choice : mechanics.getChoices()) {
-                if (choice == null || choice.getType() != ChoiceType.SKILL) {
-                    continue;
-                }
-                result.add(new VttgSpecies.Grant(SKILL_PROFICIENCY, null, null,
-                        choice.resolveCount(), choiceSkills(choice)));
-            }
-        });
-        return result;
-    }
-
-    /**
-     * Пул выбора. {@code null} — подходит любой навык: у эталона это отсутствующий
-     * {@code from}. Значения, которых нет в словаре навыков, отбрасываются — выгрузка не
-     * место, чтобы падать на опечатке в одной записи справочника.
-     */
-    private List<String> choiceSkills(MechanicChoice choice) {
-        if (CollectionUtils.isEmpty(choice.getOptions())) {
-            return null;
-        }
-        List<String> result = new ArrayList<>();
-        for (ChoiceOption option : choice.getOptions()) {
-            if (option == null || !StringUtils.hasText(option.getValue())) {
-                continue;
-            }
-            Skill skill = skill(option.getValue().trim());
-            if (skill != null) {
-                result.add(VttgDictionaries.skill(skill));
-            }
-        }
-        return result.isEmpty() ? null : result;
-    }
-
-    private Skill skill(String value) {
-        try {
-            return Skill.valueOf(value);
-        } catch (IllegalArgumentException notASkill) {
-            return null;
-        }
-    }
-
-    /**
-     * Механика записи и всех её умений; пустая механика отбрасывается. Своя механика идёт
-     * первой: у происхождений умений нет вовсе, и награда приходит только оттуда.
-     */
-    private Stream<SpeciesMechanics> mechanics(Species species) {
-        Stream<SpeciesMechanics> own = Stream.ofNullable(species.getMechanics());
-        if (species.getFeatures() == null) {
-            return own;
-        }
-        Stream<SpeciesMechanics> features = species.getFeatures().stream()
-                .filter(Objects::nonNull)
-                .map(SpeciesFeature::getMechanics)
-                .filter(Objects::nonNull);
-        return Stream.concat(own, features);
-    }
-
-    /**
-     * Умения вида. Происхождения (дочерние виды) сворачиваются в {@code choices}
-     * «происхожденческого» умения родителя (по маркерам в key/english/name); если такого
-     * умения нет, добавляется синтетическое умение «Происхождения» с этими вариантами.
+     * Умения вида — как есть, без сворачивания происхождений: происхождения теперь
+     * уезжают самостоятельными записями с {@code parentKey}, и их умения лежат в их
+     * собственных записях.
      */
     private List<VttgSpecies.Feature> features(Species species) {
-        List<SpeciesFeature> source = species.getFeatures() == null
-                ? List.of() : new ArrayList<>(species.getFeatures());
-        List<VttgSpecies.Choice> choices = choices(species.getLineages());
-        int lineageIndex = choices.isEmpty() ? -1 : lineageFeatureIndex(source);
-
         List<VttgSpecies.Feature> result = new ArrayList<>();
-        for (int i = 0; i < source.size(); i++) {
-            result.add(feature(source.get(i), i == lineageIndex ? choices : null));
-        }
-        if (!choices.isEmpty() && lineageIndex < 0) {
-            result.add(new VttgSpecies.Feature("lineage", "Происхождения", null, choices));
+        if (species.getFeatures() != null) {
+            for (SpeciesFeature feature : species.getFeatures()) {
+                if (feature != null) {
+                    result.add(feature(feature));
+                }
+            }
         }
         result.addAll(innateSpellFeatures(species));
         return result;
@@ -283,7 +222,7 @@ public class VttgSpeciesMapper {
         List<VttgSpecies.Feature> result = new ArrayList<>(byLevel.size());
         for (Map.Entry<Integer, List<VttgSpecies.GrantedSpell>> entry : byLevel.entrySet()) {
             result.add(new VttgSpecies.Feature(INNATE_SPELLS_KEY + "-" + entry.getKey(),
-                    INNATE_SPELLS_NAME, null, null, entry.getKey(), entry.getValue()));
+                    INNATE_SPELLS_NAME, null, entry.getKey(), entry.getValue(), null, null));
         }
         return result;
     }
@@ -305,80 +244,53 @@ public class VttgSpeciesMapper {
      * Умение источника. {@code level} отдаётся только если он задан: первый уровень —
      * значение по умолчанию у потребителя, и проставлять его каждому умению незачем.
      *
-     * <p>{@code grantedSpells} у умения нет: заклинания вида лежат в связующей таблице и
-     * уезжают отдельными умениями ({@link #innateSpellFeatures(Species)}).</p>
+     * <p>{@code featData} — дары умения из его механики, тем же сборщиком, что у черты.
+     * {@code grantedSpells} берутся у самого умения. Заклинания, сохранённые до того,
+     * как они переехали к умению, лежат в связующей таблице и по-прежнему уезжают
+     * отдельными умениями ({@link #innateSpellFeatures(Species)}).</p>
      */
-    private VttgSpecies.Feature feature(SpeciesFeature feature, List<VttgSpecies.Choice> choices) {
+    private VttgSpecies.Feature feature(SpeciesFeature feature) {
         String key = StringUtils.hasText(feature.getUrl()) ? slug(feature.getUrl()) : slug(feature.getEnglish());
-        List<VttgSpecies.Choice> attached = (choices == null || choices.isEmpty()) ? null : choices;
         Integer level = feature.getLevel() != null && feature.getLevel() > 1 ? feature.getLevel() : null;
+        List<ActiveEffect> effects = CollectionUtils.isEmpty(feature.getActiveEffects())
+                ? null
+                : feature.getActiveEffects();
         return new VttgSpecies.Feature(key, feature.getName(),
-                markupConverter.toText(feature.getDescription()), attached, level, null);
+                markupConverter.toText(feature.getDescription()), level,
+                grantedSpells(feature), effects,
+                mechanicsMapper.featData(feature.getMechanics(), null));
     }
 
-    /** Индекс «происхожденческого» умения (lineage/legacy/ancestry/происхожд/наследие) или -1. */
-    private int lineageFeatureIndex(List<SpeciesFeature> features) {
-        for (int i = 0; i < features.size(); i++) {
-            if (isLineageFeature(features.get(i))) {
-                return i;
+    /**
+     * Заклинания умения. Имя берётся из справочника: у потребителя запись подписана им, а
+     * снимок в ссылке мог устареть — заклинание переименовали уже после сохранения вида.
+     */
+    private List<VttgSpecies.GrantedSpell> grantedSpells(SpeciesFeature feature) {
+        if (CollectionUtils.isEmpty(feature.getGrantedSpells())) {
+            return null;
+        }
+
+        Set<String> urls = feature.getGrantedSpells().stream()
+                .map(GrantedSpellRef::getUrl)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (urls.isEmpty()) {
+            return null;
+        }
+
+        Map<String, String> names = spellRepository.findAllShortByUrlIn(urls).stream()
+                .collect(Collectors.toMap(Spell::getUrl, Spell::getName, (first, second) -> first));
+
+        List<VttgSpecies.GrantedSpell> result = new ArrayList<>(urls.size());
+        for (String url : urls) {
+            String name = names.get(url);
+            if (StringUtils.hasText(name)) {
+                // Заклинания нет в справочнике — выдавать нечего, и подписать нечем
+                result.add(new VttgSpecies.GrantedSpell(name, url));
             }
         }
-        return -1;
+        return result.isEmpty() ? null : result;
     }
-
-    private boolean isLineageFeature(SpeciesFeature feature) {
-        String key = (nullToEmpty(feature.getUrl()) + " " + nullToEmpty(feature.getEnglish()))
-                .toLowerCase(Locale.ROOT);
-        if (key.contains("lineage") || key.contains("legacy") || key.contains("ancestry")) {
-            return true;
-        }
-        String name = nullToEmpty(feature.getName()).toLowerCase(Locale.ROOT);
-        return name.contains("происхожд") || name.contains("наследие");
-    }
-
-    /** Видимые происхождения (дочерние виды) как варианты выбора, отсортированные по имени. */
-    private List<VttgSpecies.Choice> choices(Collection<Species> lineages) {
-        if (lineages == null) {
-            return List.of();
-        }
-        return lineages.stream()
-                .filter(Objects::nonNull)
-                .filter(lineage -> !lineage.isHiddenEntity())
-                .sorted(Comparator.comparing(Species::getName,
-                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .map(this::choice)
-                .toList();
-    }
-
-    private VttgSpecies.Choice choice(Species lineage) {
-        return new VttgSpecies.Choice(slug(lineage.getUrl()), lineage.getName(), choiceDescription(lineage));
-    }
-
-    /** Текст варианта: описание происхождения и тексты его собственных умений. */
-    private String choiceDescription(Species lineage) {
-        StringBuilder builder = new StringBuilder();
-        String description = markupConverter.toText(lineage.getDescription());
-        if (StringUtils.hasText(description)) {
-            builder.append(description);
-        }
-        if (lineage.getFeatures() != null) {
-            for (SpeciesFeature feature : lineage.getFeatures()) {
-                String text = markupConverter.toText(feature.getDescription());
-                if (!StringUtils.hasText(text)) {
-                    continue;
-                }
-                if (builder.length() > 0) {
-                    builder.append("\n\n");
-                }
-                if (StringUtils.hasText(feature.getName())) {
-                    builder.append(feature.getName()).append(": ");
-                }
-                builder.append(text);
-            }
-        }
-        return builder.toString();
-    }
-
 
     /** kebab-case slug из url: {@code "draconic-flight" → "draconic-flight"}. */
     private String slug(String value) {
@@ -392,9 +304,5 @@ public class VttgSpeciesMapper {
 
     private String optional(String value) {
         return StringUtils.hasText(value) ? value : null;
-    }
-
-    private String nullToEmpty(String value) {
-        return value == null ? "" : value;
     }
 }

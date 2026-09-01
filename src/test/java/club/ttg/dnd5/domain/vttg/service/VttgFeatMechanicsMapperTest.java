@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
@@ -9,6 +10,7 @@ import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -67,7 +69,8 @@ class VttgFeatMechanicsMapperTest {
     private final SpellRepository spellRepository = mock(SpellRepository.class);
 
     private final VttgFeatMapper mapper = new VttgFeatMapper(
-            markupConverter, new VttgFeatMechanicsMapper(markupConverter, spellRepository));
+            markupConverter, new VttgFeatMechanicsMapper(markupConverter, spellRepository,
+                    mock(FeatRepository.class)));
 
     {
         // По умолчанию справочник пуст: заклинания подставляют только те тесты, которым
@@ -1071,10 +1074,46 @@ class VttgFeatMechanicsMapperTest {
         assertEquals(List.of("rapier"), names(featData.get("weaponMasteries")));
     }
 
-    /** Оружейный приём на выбор — тем же ключом вида оружия, что и владение. */
+    /** Оружие с приёмом на выбор — тем же ключом вида оружия, что и владение. */
     @Test
     void mapsWeaponMasteryChoiceValue() {
         assertEquals("longsword", optionValue(ChoiceType.WEAPON_MASTERY, "longsword-phb"));
+    }
+
+    /**
+     * «Тактический мастер»: приёмы без привязки к оружию. У потребителя это свой список
+     * владений, и ключи там — сами приёмы, а не виды оружия.
+     */
+    @Test
+    void mapsMasteryProperties() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        ProficiencyGrant grant = new ProficiencyGrant();
+        grant.setMasteryProperties(Set.of(Mastery.PUSH));
+        mechanics.setProficiencies(grant);
+        feat.setMechanics(mechanics);
+
+        JsonNode featData = json(feat).get("featData");
+        assertEquals(List.of("push"), names(featData.get("masteryProperties")));
+        // Оружия за приёмом нет: списком видов оружия он не записывается
+        assertFalse(featData.has("weaponMasteries"));
+    }
+
+    /** Оружейный приём на выбор — ключом самого приёма, а не вида оружия. */
+    @Test
+    void mapsMasteryPropertyChoiceValue() {
+        assertEquals("slow", optionValue(ChoiceType.MASTERY_PROPERTY, "SLOW"));
+        assertEquals("topple", optionValue(ChoiceType.MASTERY_PROPERTY, "TOPPLE"));
+    }
+
+    /**
+     * Приём, которого в справочнике нет, из вариантов выбрасывается: у листа свой полный
+     * справочник из восьми, и пустой список он раскроет целиком — это лучше, чем положить
+     * во владения строку, которой в справочнике нет.
+     */
+    @Test
+    void dropsUnknownMasteryPropertyChoiceValue() {
+        assertNull(optionValue(ChoiceType.MASTERY_PROPERTY, "WHIRLWIND"));
     }
 
     /** Доспехи как вид выбора — категориями справочника листа. */
@@ -1149,6 +1188,34 @@ class VttgFeatMechanicsMapperTest {
 
         assertEquals("short",
                 json(feat).get("featData").get("counters").get(0).get("recovery").asText());
+    }
+
+    /**
+     * Один заряд коротким отдыхом, все — продолжительным: у такого отката своё значение
+     * словаря, иначе он читался бы как полный откат коротким.
+     */
+    @Test
+    void mapsShortRestOneCounter() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("uses", "2", ResourceRecovery.SHORT_REST_ONE)));
+        feat.setMechanics(mechanics);
+
+        assertEquals("short-one",
+                json(feat).get("featData").get("counters").get(0).get("recovery").asText());
+    }
+
+    /** Нижняя граница максимума едет вместе с формулой: с модификатором +0 ресурс не пропадёт. */
+    @Test
+    void mapsCounterMinimum() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("uses", "@mod.cha", ResourceRecovery.LONG_REST);
+        counter.setMin(1);
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        assertEquals(1, json(feat).get("featData").get("counters").get(0).get("min").asInt());
     }
 
     /** Откат не задан — продолжительный отдых: короткий проставляют явно. */

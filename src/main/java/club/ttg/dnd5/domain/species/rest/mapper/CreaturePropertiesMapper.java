@@ -12,6 +12,6 @@ public interface CreaturePropertiesMapper {
     @Mapping(source = "fly", target = "movementAttributes.fly")
     @Mapping(source = "climb", target = "movementAttributes.climb")
     @Mapping(source = "swim", target = "movementAttributes.swim")
-    @Mapping(source = "darkVision", target = "darkVision")
+    @Mapping(source = "vision", target = "vision")
     SpeciesPropertiesRequest toSpeciesPropertiesRequest(CreatureProperties properties);
 }

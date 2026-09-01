@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-30-02-add-species-vision
+      author: Peterko
+      comment: >
+        Добавляет species.vision — дальность обычного зрения в футах. Тёмное зрение
+        живёт чувством в механике умения, а обычное — свойство записи рядом со
+        скоростью: лист персонажа показывает его в шапке (vision.normal), а токен в
+        VTTG использует как дальность зрения в дневном режиме (vision.range).
+        NULL — не задано: лист и токен оставляют своё значение по умолчанию.
+      changes:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: vision
+                  type: INT
+      rollback:
+        - dropColumn:
+            tableName: species
+            columnName: vision

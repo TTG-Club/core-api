@@ -10,8 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class VttgCompendiumSectionsTest {
     private final VttgCompendiumSections sections = new VttgCompendiumSections();
 
+    /**
+     * Черты — с фильтром по категории: их больше сотни, и без отбора «Боевой стиль» или
+     * «Черта происхождения» нужную в списке не найти. Группировка по той же категории
+     * остаётся разделителями списка.
+     */
     @Test
-    void groupsFeatsByExportedCategory() {
+    void groupsAndFiltersFeatsByExportedCategory() {
         Map<String, Object> feats = sections.changesTree().stream()
                 .filter(node -> "feats".equals(node.get("section")))
                 .findFirst()
@@ -21,9 +26,13 @@ class VttgCompendiumSectionsTest {
         Map<String, Object> view = (Map<String, Object>) feats.get("view");
         @SuppressWarnings("unchecked")
         Map<String, Object> groupBy = (Map<String, Object>) view.get("groupBy");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> filters = (List<Map<String, Object>>) view.get("filters");
 
-        assertEquals("list", view.get("layout"));
+        assertEquals("filtered", view.get("layout"));
         assertEquals(Map.of("path", "category", "format", "string"), groupBy);
+        assertEquals("category", filters.getFirst().get("path"));
+        assertEquals("Категория", filters.getFirst().get("label"));
     }
 
     /**

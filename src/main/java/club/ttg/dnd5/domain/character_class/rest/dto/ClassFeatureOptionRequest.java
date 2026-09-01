@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
@@ -10,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -44,4 +48,13 @@ public class ClassFeatureOptionRequest {
 
     @Schema(description = "Hide option in subclass and multiclass contexts")
     private boolean hideInSubclasses;
+
+    @Schema(description = "Вариант можно выбрать повторно на следующей ступени выбора")
+    private boolean repeatable;
+
+    @Schema(description = "Механика влияния варианта на лист персонажа")
+    private ClassMechanics mechanics;
+
+    @Schema(description = "Активные эффекты варианта в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
 }

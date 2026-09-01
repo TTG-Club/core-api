@@ -1,5 +1,10 @@
 package club.ttg.dnd5.domain.species.service;
 
+import club.ttg.dnd5.domain.common.dictionary.SenseType;
+import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
+import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
@@ -27,6 +32,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -34,9 +40,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -62,7 +70,7 @@ public class SpeciesService {
         var species = speciesRepository.findById(url)
                 .orElseThrow(() -> new EntityNotFoundException(url));
         var response = speciesMapper.toDetail(species);
-        response.setInnateSpells(loadInnateSpells(species.getUrl()));
+        response.setInnateSpells(innateSpellsOf(species));
 
         if (species.getParent() != null) {
             var features = new ArrayList<SpeciesFeature>();
@@ -70,11 +78,12 @@ public class SpeciesService {
             Optional.ofNullable(species.getParent().getFeatures()).ifPresent(features::addAll);
             response.setFeatures(speciesFeatureMapper.toResponses(features));
             response.setInnateSpells(mergeInnateSpells(
-                    loadInnateSpells(species.getParent().getUrl()),
+                    innateSpellsOf(species.getParent()),
                     response.getInnateSpells()
             ));
         }
 
+        applyComputedDarkVision(response, species);
         return response;
     }
 
@@ -154,7 +163,10 @@ public class SpeciesService {
                     })
                     .add(species);
 
-            return speciesMapper.toDetail(speciesRepository.save(species));
+            Species saved = speciesRepository.save(species);
+            SpeciesDetailResponse response = speciesMapper.toDetail(saved);
+            applyComputedDarkVision(response, saved);
+            return response;
         } else {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "This is not a parent Species");
@@ -207,7 +219,10 @@ public class SpeciesService {
                 .toList();
 
         species.setLineages(subSpeciesEntities);
-        return speciesMapper.toDetail(speciesRepository.save(species));
+        Species saved = speciesRepository.save(species);
+        SpeciesDetailResponse response = speciesMapper.toDetail(saved);
+        applyComputedDarkVision(response, saved);
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -243,16 +258,108 @@ public class SpeciesService {
         var source = sourceService.findByUrl(request.getSource().getUrl());
         var species = speciesMapper.toEntity(request);
         species.setSource(source);
+        // Родитель нужен предпросмотру происхождения: без него вычисленное
+        // тёмное зрение разошлось бы с тем, что покажет сохранённая запись
+        if (StringUtils.hasText(request.getParent())) {
+            species.setParent(findByUrl(request.getParent()));
+        }
         SpeciesDetailResponse response = speciesMapper.toDetail(species);
-        response.setInnateSpells(resolveInnateSpells(request.getInnateSpells()));
+        // Заклинания умений — оттуда же, откуда их берёт сохранённый вид: иначе
+        // предпросмотр показывал бы вид без них
+        response.setInnateSpells(mergeInnateSpells(
+                resolveInnateSpells(existingSpellsOnly(featureInnateSpellRequests(species))),
+                resolveInnateSpells(request.getInnateSpells())
+        ));
+        applyComputedDarkVision(response, species);
         return response;
     }
 
     private SpeciesDetailResponse toDetailWithInnateSpells(Species species)
     {
         SpeciesDetailResponse response = speciesMapper.toDetail(species);
-        response.setInnateSpells(loadInnateSpells(species.getUrl()));
+        response.setInnateSpells(innateSpellsOf(species));
+        applyComputedDarkVision(response, species);
         return response;
+    }
+
+    /**
+     * Врождённые заклинания вида: то, что дают его умения, плюс связанное с самим видом.
+     *
+     * <p>Два источника, потому что заклинания переехали к умениям, а записи, сохранённые
+     * до этого, остались в связующей таблице. Потребителю — листу персонажа и странице
+     * вида — разница не видна: он получает один список, как и раньше.</p>
+     */
+    private List<SpeciesInnateSpellResponse> innateSpellsOf(Species species)
+    {
+        return mergeInnateSpells(
+                resolveInnateSpells(existingSpellsOnly(featureInnateSpellRequests(species))),
+                loadInnateSpells(species.getUrl())
+        );
+    }
+
+    /**
+     * Заклинания умений вида. Уровень доступа берётся у самого умения — своего поля у
+     * ссылки нет, и второе место для одного и того же расходилось бы с первым.
+     */
+    private List<SpeciesInnateSpellRequest> featureInnateSpellRequests(Species species)
+    {
+        if (CollectionUtils.isEmpty(species.getFeatures()))
+        {
+            return List.of();
+        }
+
+        List<SpeciesInnateSpellRequest> requests = new ArrayList<>();
+
+        for (SpeciesFeature feature : species.getFeatures())
+        {
+            if (CollectionUtils.isEmpty(feature.getGrantedSpells()))
+            {
+                continue;
+            }
+
+            for (GrantedSpellRef ref : feature.getGrantedSpells())
+            {
+                if (!StringUtils.hasText(ref.getUrl()))
+                {
+                    continue;
+                }
+
+                SpeciesInnateSpellRequest request = new SpeciesInnateSpellRequest();
+
+                request.setSpell(ref.getUrl());
+                request.setRequiredLevel(Optional.ofNullable(ref.getRequiredLevel())
+                        .orElseGet(() -> Optional.ofNullable(feature.getLevel()).orElse(1)));
+                requests.add(request);
+            }
+        }
+
+        return requests;
+    }
+
+    /**
+     * Отбрасывает ссылки на заклинания, которых в справочнике уже нет.
+     *
+     * <p>У связующей таблицы такого не бывает — там внешний ключ. Ссылка умения лежит в
+     * jsonb, и удаление заклинания её не убирает: без проверки страница вида падала бы
+     * целиком из-за одной устаревшей ссылки.</p>
+     */
+    private List<SpeciesInnateSpellRequest> existingSpellsOnly(List<SpeciesInnateSpellRequest> requests)
+    {
+        if (requests.isEmpty())
+        {
+            return List.of();
+        }
+
+        Set<String> urls = requests.stream()
+                .map(SpeciesInnateSpellRequest::getSpell)
+                .collect(Collectors.toSet());
+        Set<String> known = spellRepository.findAllShortByUrlIn(urls).stream()
+                .map(Spell::getUrl)
+                .collect(Collectors.toSet());
+
+        return requests.stream()
+                .filter(request -> known.contains(request.getSpell()))
+                .toList();
     }
 
     private List<SpeciesInnateSpellResponse> loadInnateSpells(String speciesUrl)
@@ -360,5 +467,48 @@ public class SpeciesService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Уровень врождённого заклинания должен быть от 1 до 20");
         }
         return requiredLevel;
+    }
+
+    /**
+     * Проставляет детали вычисленное тёмное зрение — наибольшую дальность чувства
+     * {@code DARKVISION} в механике записи и её умений; у происхождения учитывается и
+     * родитель. Своего поля у записи больше нет: тёмное зрение дарит умение, а статблок
+     * и лист персонажа продолжают читать {@code properties.darkVision} как раньше.
+     */
+    private void applyComputedDarkVision(SpeciesDetailResponse response, Species species)
+    {
+        if (response.getProperties() == null)
+        {
+            return;
+        }
+        Integer own = darkVisionOf(species);
+        Integer inherited = species.getParent() == null ? null : darkVisionOf(species.getParent());
+        response.getProperties().setDarkVision(Stream.of(own, inherited)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(null));
+    }
+
+    /** Наибольшая дальность {@code DARKVISION} в механике записи и её умений; {@code null} — нет. */
+    private Integer darkVisionOf(Species species)
+    {
+        Stream<SpeciesMechanics> featureMechanics = CollectionUtils.isEmpty(species.getFeatures())
+                ? Stream.empty()
+                : species.getFeatures().stream()
+                        .filter(Objects::nonNull)
+                        .map(SpeciesFeature::getMechanics);
+        return Stream.concat(Stream.ofNullable(species.getMechanics()), featureMechanics)
+                .filter(Objects::nonNull)
+                .map(SpeciesMechanics::getModifiers)
+                .filter(Objects::nonNull)
+                .map(SheetModifiers::getSenses)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .filter(sense -> sense.getType() == SenseType.DARKVISION)
+                .map(SenseGrant::getRange)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(null);
     }
 }

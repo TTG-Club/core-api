@@ -85,6 +85,13 @@ public class VttgMagicItem {
     /** Бонус «+1/+2/+3» оружия/брони; опускается, если бонуса нет. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer magicBonus;
+    /**
+     * Надбавка только к урону сверх {@code magicBonus} (оружие, бьющее сильнее, чем
+     * попадающее). Обычному «+N» не нужна: тот бонус потребитель прибавляет и к атаке,
+     * и к урону. Опускается, если надбавки нет.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer damageBonus;
     /** Ключ источника из sources.json: "phb", "dmg", "srd"... */
     private String sourceKey;
 
@@ -129,6 +136,12 @@ public class VttgMagicItem {
 
     @Getter(AccessLevel.NONE)
     private boolean isMagical;
+    /** Предметом можно пользоваться как заклинательной фокусировкой (посохи, палочки, жезлы). */
+    @Getter(AccessLevel.NONE)
+    private boolean isFocus;
+    /** Адамантиновый предмет — отдельное свойство экипировки в системе. */
+    @Getter(AccessLevel.NONE)
+    private boolean isAdamantine;
     @Getter(AccessLevel.NONE)
     private boolean isSRD;
     @Getter(AccessLevel.NONE)
@@ -137,6 +150,16 @@ public class VttgMagicItem {
     @JsonProperty("isMagical")
     public boolean isMagical() {
         return isMagical;
+    }
+
+    @JsonProperty("isFocus")
+    public boolean isFocus() {
+        return isFocus;
+    }
+
+    @JsonProperty("isAdamantine")
+    public boolean isAdamantine() {
+        return isAdamantine;
     }
 
     @JsonProperty("isSRD")

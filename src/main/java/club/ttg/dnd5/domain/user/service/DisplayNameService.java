@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.domain.user.model.UserDisplayName;
 import club.ttg.dnd5.domain.user.repository.UserDisplayNameRepository;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByLoginResponse;
+import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByUserIdResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameResponse;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.security.SecurityUtils;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -121,6 +123,34 @@ public class DisplayNameService {
         }
         return repository.findAllByUsernameLowerIn(loweredLogins).stream()
                 .map(entity -> new DisplayNameByLoginResponse(entity.getUsername(), entity.getDisplayName()))
+                .toList();
+    }
+
+    /**
+     * Резолвит идентификаторы пользователей ({@code sub} токена) в отображаемые имена.
+     *
+     * Нужен сервисам, которые логинов не хранят вовсе: find-game-api знает только UUID
+     * мастера и игроков, и без этого метода вместо имени в списке участников и в чате
+     * остался бы сырой UUID.
+     *
+     * Отдаёт только те данные, что уже публичны в комментариях и рейтингах, —
+     * идентификатор и имя, без логина и почты. Пользователи без заданного имени в ответ
+     * не попадают: вызывающий сам решает, чем заменить пропуск. Размер входа ограничен
+     * {@link #MAX_LOOKUP}.
+     */
+    public List<DisplayNameByUserIdResponse> resolveByUserIds(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        Set<UUID> uniqueIds = userIds.stream()
+                .filter(Objects::nonNull)
+                .limit(MAX_LOOKUP)
+                .collect(Collectors.toSet());
+        if (uniqueIds.isEmpty()) {
+            return List.of();
+        }
+        return repository.findAllById(uniqueIds).stream()
+                .map(entity -> new DisplayNameByUserIdResponse(entity.getUserId(), entity.getDisplayName()))
                 .toList();
     }
 

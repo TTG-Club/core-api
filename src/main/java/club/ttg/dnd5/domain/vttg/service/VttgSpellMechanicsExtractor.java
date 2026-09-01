@@ -88,7 +88,8 @@ public class VttgSpellMechanicsExtractor {
                 damageParts(
                         formulas,
                         !formulaHealing && (structuredHealing || (!structuredFormulas && healing)),
-                        damagePartTargets),
+                        damagePartTargets,
+                        effect == null ? null : effect.getDamageFormulaRequiresDamage()),
                 healing ? true : null,
                 extractSaveEffect(effect, text)
         );
@@ -233,7 +234,10 @@ public class VttgSpellMechanicsExtractor {
      * по индексу формулы, поэтому список обходится по индексам, а пустые формулы
      * пропускаются без сдвига выравнивания.
      */
-    private List<VttgDamagePart> damageParts(List<String> formulas, boolean legacyHealing, List<String> targets) {
+    private List<VttgDamagePart> damageParts(List<String> formulas,
+                                             boolean legacyHealing,
+                                             List<String> targets,
+                                             List<Boolean> requiresDamage) {
         if (!hasValues(formulas)) {
             return null;
         }
@@ -247,6 +251,7 @@ public class VttgSpellMechanicsExtractor {
                     .formula(applyHealMarker(normalizeDamagePartFormula(formula),
                             isHealingFormula(formula), legacyHealing))
                     .target(damagePartTarget(targets, index))
+                    .requiresDamage(damagePartRequiresDamage(requiresDamage, index))
                     .build());
         }
         return parts;
@@ -256,6 +261,18 @@ public class VttgSpellMechanicsExtractor {
         return targets == null || index >= targets.size()
                 ? DEFAULT_DAMAGE_PART_TARGET
                 : targets.get(index);
+    }
+
+    /**
+     * Признак «только если нанесён урон» по индексу формулы. Ложь и пропуск
+     * равнозначны дефолту VTTG, поэтому наружу уходит {@code null}: поле
+     * с {@code NON_NULL} не попадёт в компендиум и не раздует его.
+     */
+    private Boolean damagePartRequiresDamage(List<Boolean> requiresDamage, int index) {
+        if (requiresDamage == null || index >= requiresDamage.size()) {
+            return null;
+        }
+        return Boolean.TRUE.equals(requiresDamage.get(index)) ? Boolean.TRUE : null;
     }
 
     /**

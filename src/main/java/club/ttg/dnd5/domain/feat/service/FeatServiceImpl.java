@@ -2,19 +2,17 @@ package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
-import club.ttg.dnd5.domain.spell.model.Spell;
-import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
-import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
-import club.ttg.dnd5.domain.feat.rest.dto.FeatGrantedSpellResponse;
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSpellListGroupResponse;
@@ -36,7 +34,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -52,8 +49,7 @@ public class FeatServiceImpl implements FeatService {
     private final FeatQueryDslSearchService featQueryDslSearchService;
     private final SourceService sourceService;
     private final FeatMapper featMapper;
-    private final SpellRepository spellRepository;
-    private final SpellMapper spellMapper;
+    private final GrantedSpellResolver grantedSpellResolver;
     private final EntityRevisionService revisionService;
 
     @Override
@@ -87,7 +83,7 @@ public class FeatServiceImpl implements FeatService {
      * @param response деталь черты с разобранной механикой.
      * @return выдаваемые заклинания с данными справочника; null — черта их не выдаёт.
      */
-    private Collection<FeatGrantedSpellResponse> resolveGrantedSpells(final FeatDetailResponse response) {
+    private Collection<GrantedSpellResponse> resolveGrantedSpells(final FeatDetailResponse response) {
         var granted = Optional.ofNullable(response.getMechanics())
                 .map(FeatMechanics::getSpells)
                 .map(SpellGrant::getSpells)
@@ -97,12 +93,12 @@ public class FeatServiceImpl implements FeatService {
             return null;
         }
 
-        var spellsByUrl = shortSpellsByUrl(granted);
+        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(granted);
 
         var result = granted.stream()
                 .filter(Objects::nonNull)
                 .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
-                .map(ref -> new FeatGrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
+                .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
                         ref.getRequiredLevel()))
                 .toList();
 
@@ -153,7 +149,7 @@ public class FeatServiceImpl implements FeatService {
             return null;
         }
 
-        var spellsByUrl = shortSpellsByUrl(groups.stream()
+        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(groups.stream()
                 .map(SpellListGroup::getSpells)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -182,30 +178,6 @@ public class FeatServiceImpl implements FeatService {
                 .map(FeatMechanics::getSpellList)
                 .map(SpellListExpansion::resolveGroups)
                 .orElse(List.of());
-    }
-
-    /**
-     * Достаёт записи справочника по ссылкам механики — одним запросом на список.
-     *
-     * <p>Ненайденное заклинание в карту просто не попадёт, и вызывающий его пропустит.
-     * Ронять страницу целиком из-за опечатки в url нельзя: это свободный JSONB, набранный
-     * руками в редакторе, а не запись связующей таблицы.</p>
-     */
-    private Map<String, SpellShortResponse> shortSpellsByUrl(final Collection<? extends EntityRef> refs) {
-        var urls = refs.stream()
-                .filter(Objects::nonNull)
-                .map(EntityRef::getUrl)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-
-        if (urls.isEmpty()) {
-            return Map.of();
-        }
-
-        return spellRepository.findAllShortByUrlIn(urls)
-                .stream()
-                .collect(Collectors.toMap(Spell::getUrl, spellMapper::toShort));
     }
 
     @Secured({"ADMIN", "MODERATOR"})

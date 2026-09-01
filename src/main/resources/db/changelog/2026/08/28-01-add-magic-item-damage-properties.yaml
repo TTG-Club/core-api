@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-28-01-add-magic-item-damage-properties
+      author: Peterko
+      comment: >
+        Паритет раздела «Магические предметы» с системой D&D приложения. В системе магия
+        предмета описывается теми же полями, что и сам предмет, поэтому недостающие
+        приезжают своими колонками.
+
+        damage_parts — дополнительный урон, который магия добавляет к броску немагической
+        основы («2к6 огнём» Огненного языка). До этого магия умела только плоские бонусы
+        к атаке, урону и КД, и такой урон описывался одним текстом.
+
+        focus — предметом можно пользоваться как заклинательной фокусировкой (посохи,
+        волшебные палочки, жезлы). Раньше в компендиум это не уезжало вовсе.
+
+        adamantine — адамантиновый предмет; в системе это отдельное свойство экипировки.
+
+        Все колонки nullable, boolean с default false: пустое значение означает «считать
+        как раньше», и шесть сотен существующих записей не трогаются.
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: damage_parts
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: focus
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: true
+              - column:
+                  name: adamantine
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: magic_item
+            columnName: damage_parts
+        - dropColumn:
+            tableName: magic_item
+            columnName: focus
+        - dropColumn:
+            tableName: magic_item
+            columnName: adamantine

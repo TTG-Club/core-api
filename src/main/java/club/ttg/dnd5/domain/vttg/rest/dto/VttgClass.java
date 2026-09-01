@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -23,6 +25,11 @@ import java.util.Map;
  * ключу класса (см. {@code VttgClassMapper}): заклинательная характеристика и подпись
  * группы подклассов ({@link #subclassLabel}). Счётчики классовых ресурсов ({@code counters})
  * в источнике структурно не хранятся и не выгружаются.</p>
+ *
+ * <p>Родителя подкласса ({@code CharacterClass.parentUrl}) в записи нет: выгружаются только
+ * верхнеуровневые классы, а подклассы уезжают свёрнутыми в {@link #subclasses}. Ссылку на
+ * родителя ({@code parentClassKey}) потребитель заполняет сам у подклассов, заведённых в
+ * мире.</p>
  */
 @Builder
 @Getter
@@ -61,10 +68,30 @@ public class VttgClass {
 
     /** Кость хитов (6/8/10/12). */
     private Integer hitDie;
+    /**
+     * Основные характеристики класса (slug'и: "strength"/…): что он повышает в первую
+     * очередь и по чему считаются требования мультиклассирования. Опускается, когда в
+     * источнике не заполнено.
+     */
+    private List<String> primaryAbilities;
+    /**
+     * Как читать список {@link #primaryAbilities}: {@code "and"} («Сила И Телосложение»)
+     * либо {@code "or"} («Сила ИЛИ Ловкость»). Выводится только у списка из двух и более
+     * характеристик: у одной разделителю нечего разделять.
+     */
+    private String primaryAbilitiesDelimiter;
     /** Владения доспехами (slug'и: "light"/"medium"/"heavy"/"shield"); пустой список при отсутствии. */
     private List<String> armorProficiencies;
+    /**
+     * Уточнение владения доспехами свободным текстом («только щиты»): категориями
+     * выразимо не всё, и в источнике у владения есть такая приписка. Опускается, когда
+     * её не заполнили.
+     */
+    private String armorProficienciesCustom;
     /** Владения оружием ("simple"/"martial"/…); пустой список при отсутствии. */
     private List<String> weaponProficiencies;
+    /** Уточнение владения оружием свободным текстом; см. {@link #armorProficienciesCustom}. */
+    private String weaponProficienciesCustom;
     /** Владения инструментами (свободный текст источника одной строкой); пустой список при отсутствии. */
     private List<String> toolProficiencies;
     /** Спасброски (slug'и характеристик: "strength"/…); пустой список при отсутствии. */
@@ -102,12 +129,30 @@ public class VttgClass {
     private MulticlassProficiencies multiclassProficiencies;
 
     /**
+     * Активные эффекты класса в вокабуляре VTTG. Отдаются без преобразования — так же, как
+     * у черты ({@code VttgFeat.activeEffects}). Опускаются, когда эффектов нет.
+     */
+    private List<ActiveEffect> activeEffects;
+
+    /**
+     * Дары самого класса тем же блоком, что у черты и предыстории.
+     *
+     * <p>Одна форма на всех, кто что-то выдаёт листу: у потребителя дары черты,
+     * предыстории и класса применяет один и тот же код, и вторая форма для того же смысла
+     * означала бы второй разбор. Опускается, когда выдавать нечего.</p>
+     */
+    private VttgFeatData featData;
+
+    /**
      * Счётчики классовых ресурсов: ярость, очки чародейства, кости превосходства.
      *
-     * <p>Выводятся из колонок таблицы прогрессии, у которых задано восстановление
-     * ({@code ClassTableColumn.resourceRecovery}): такая колонка — это и есть ресурс,
-     * а её значения по уровням — его максимум. Колонки без восстановления остаются
-     * обычными колонками таблицы и в счётчики не идут.</p>
+     * <p>Основной источник — ресурсы механики записи и её умений
+     * ({@code mechanics.counters}): там у ресурса есть и формула максимума, и ступени по
+     * уровням, и нижняя граница максимума. К ним добавляются колонки таблицы прогрессии,
+     * у которых задано восстановление ({@code ClassTableColumn.resourceRecovery}), — так
+     * ресурсы записывали раньше, и классы, которые ещё не переписаны, ими и живут.
+     * Колонки без восстановления остаются обычными колонками таблицы и в счётчики не
+     * идут.</p>
      */
     private List<Counter> counters;
 
@@ -161,9 +206,11 @@ public class VttgClass {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Feature(String key, String name, String description, Integer level,
-                          String subclassKey, List<Choice> choices,
+                          String subclassKey, List<Choice> choices, ChoiceConfig choiceConfig,
                           Boolean abilityImprovement, Boolean fightingStyleChoice,
-                          SkillChoices skillChoice) {
+                          SkillChoices skillChoice, Boolean isInformationalOnly,
+                          List<String> grantedSpells, List<ActiveEffect> activeEffects,
+                          VttgFeatData featData) {
 
         /**
          * Умение без собственных флагов: развороты {@code scaling} и записи, у которых в
@@ -171,12 +218,66 @@ public class VttgClass {
          */
         public Feature(String key, String name, String description, Integer level,
                        String subclassKey, List<Choice> choices) {
-            this(key, name, description, level, subclassKey, choices, null, null, null);
+            this(key, name, description, level, subclassKey, choices, null,
+                    null, null, null, null, null, null, null);
         }
     }
 
-    /** Вариант выбора в рамках умения (боевой стиль, манёвр): {@code key}, {@code name}, {@code description}. */
-    public record Choice(String key, String name, String description) {
+    /**
+     * Вариант выбора в рамках умения (боевой стиль, манёвр): {@code key}, {@code name},
+     * английское {@code nameEn}, {@code description} и уровень класса {@code requiredLevel},
+     * с которого вариант доступен ({@code null} — доступен сразу).
+     *
+     * <p>{@code additional} — короткая подпись рядом с названием («1 круг»), а
+     * {@code prerequisite} — требования к варианту живой фразой («7 уровень, заклинание
+     * „Вызов страха“»). Требования отдаются текстом, а не разбором: у воззваний колдуна
+     * они поминают заклинания, умения и уровень разом, и проверить их листом нечем —
+     * игрок читает их глазами.</p>
+     *
+     * <p>{@code repeatable} — вариант берут повторно: на следующей ступени выбора он
+     * снова в списке, хотя игрок его уже брал (у мастера боевых искусств так устроены
+     * не все манёвры, а у изобретателя — часть инфузий). {@code hideInSubclasses} —
+     * вариант не показывается на странице подкласса. Флаги выводятся, только когда
+     * взведены: у обычного варианта полей нет, и потребитель, который их не читает,
+     * ведёт себя как прежде — вариант выбирают один раз и показывают везде.</p>
+     *
+     * <p>{@code featData} и {@code activeEffects} — то, что вариант даёт листу, когда его
+     * выбрали: владения, модификаторы, ресурсы, заклинания, выборы игрока. Той же моделью,
+     * что у умения ({@link Feature#featData()}), но, в отличие от умения, ресурсы и
+     * заклинания лежат ВНУТРИ блока: у умения они выведены полями записи
+     * ({@link Feature#grantedSpells()}, {@link VttgClass#counters}), а дары варианта
+     * действуют, только пока он выбран, и в общих полях класса им места нет.</p>
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Choice(String key, String name, String nameEn, String description,
+                         String additional, String prerequisite, Integer requiredLevel,
+                         Boolean hideInSubclasses, Boolean repeatable,
+                         List<ActiveEffect> activeEffects, VttgFeatData featData) {
+
+        /** Вариант без собственных даров: справочная строка списка. */
+        public Choice(String key, String name, String nameEn, String description,
+                      String additional, String prerequisite, Integer requiredLevel,
+                      Boolean hideInSubclasses, Boolean repeatable) {
+            this(key, name, nameEn, description, additional, prerequisite, requiredLevel,
+                    hideInSubclasses, repeatable, null, null);
+        }
+    }
+
+    /**
+     * Настройка выбора из {@link Feature#choices()}: сколько вариантов берут и как это
+     * число растёт по уровням класса.
+     *
+     * <p>Поле есть только у умения, список вариантов которого выбираемый. Без него
+     * {@code choices} остаются справкой — так выгружались все варианты до появления
+     * настройки, и потребитель, который её не читает, ведёт себя как прежде.</p>
+     *
+     * @param label       подпись выбора («Таинственные воззвания»)
+     * @param count       сколько вариантов выбирают на уровне получения умения
+     * @param progression сколько выбрано ВСЕГО к уровню: ключ — уровень класса строкой,
+     *                    значение — итог, а не прибавка (как у {@link Counter#progression()})
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ChoiceConfig(String label, Integer count, Map<String, Integer> progression) {
     }
 
     /**
@@ -185,13 +286,21 @@ public class VttgClass {
      * @param key         стабильный ключ (он же ключ колонки таблицы)
      * @param name        подпись счётчика на листе
      * @param startLevel  уровень, с которого счётчик появляется
-     * @param recovery    когда восстанавливается: {@code short} или {@code long}
+     * @param recovery    когда восстанавливается: {@code short}, {@code long} либо
+     *                    {@code short-one} (один заряд коротким, все — продолжительным)
      * @param progression максимум по уровням: ключ — уровень строкой, значение — число
+     * @param min         нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
      * @param subclassKey ключ подкласса, если счётчик принадлежит ему; иначе {@code null}
+     * @param featureKey  ключ умения, механикой которого заведён ресурс; {@code null} — ресурс
+     *                    самой записи или колонки таблицы. Ресурс умения лежит в счётчиках класса
+     *                    (только там известен уровень класса для ступеней), и без этого ключа
+     *                    потребитель не может вернуть его в умение: в мастерской «Бардовское
+     *                    вдохновение» оказывалось ресурсом класса, а само умение — пустым
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Counter(String key, String name, int startLevel, String recovery,
-                          Map<String, Integer> progression, String subclassKey) {
+    public record Counter(String key, String name, String shortName, int startLevel, String recovery,
+                          Map<String, Integer> progression, String formula, Integer min, String subclassKey,
+                          String featureKey) {
     }
 
     /**
@@ -214,10 +323,17 @@ public class VttgClass {
         private List<Feature> features;
         private List<Map<String, Object>> levelTable;
         private List<TableColumn> tableColumns;
+        private List<ActiveEffect> activeEffects;
+        private VttgFeatData featData;
     }
 
-    /** Владения мультикласса: доспехи, оружие, инструменты и число выбираемых навыков. */
-    public record MulticlassProficiencies(List<String> armor, List<String> weapons,
+    /**
+     * Владения мультикласса: доспехи, оружие, инструменты и число выбираемых навыков.
+     * У доспехов и оружия — та же приписка свободным текстом, что и у стартовых владений.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record MulticlassProficiencies(List<String> armor, String armorCustom,
+                                          List<String> weapons, String weaponsCustom,
                                           List<String> tools, int skillChoices) {
     }
 }

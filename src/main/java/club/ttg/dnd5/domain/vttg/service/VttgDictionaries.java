@@ -182,11 +182,15 @@ final class VttgDictionaries {
     }
 
     /**
-     * Откат ресурса: {@code LONG_REST → "long"}. Правилом не выводится — у потребителя это
-     * {@code short}/{@code long} без суффикса, и тот же перевод делает выгрузка класса.
+     * Откат ресурса: {@code LONG_REST → "long"}, {@code SHORT_REST_ONE → "short-one"}.
+     * Правилом не выводится — у потребителя это строка словаря, и тот же перевод делает
+     * выгрузка класса.
      */
     static String recovery(ResourceRecovery recovery) {
-        return recovery == ResourceRecovery.SHORT_REST ? "short" : "long";
+        if (recovery == ResourceRecovery.SHORT_REST) {
+            return "short";
+        }
+        return recovery == ResourceRecovery.SHORT_REST_ONE ? "short-one" : "long";
     }
 
     /**

@@ -112,6 +112,12 @@ public interface ClassMapper
     @Mapping(target = "equipment", source = "request.equipment")
     @Mapping(target = "startingEquipment", source = "request.startingEquipment", qualifiedByName = "toEquipmentEntities")
     @Mapping(target = "casterType", source = "request.casterType")
+    @Mapping(target = "spellcastingAbility", source = "request.spellcastingAbility")
+    @Mapping(target = "spellcastingStartLevel", source = "request.spellcastingStartLevel")
+    @Mapping(target = "subclassLabel", source = "request.subclassLabel")
+    @Mapping(target = "subclassLevel", source = "request.subclassLevel")
+    @Mapping(target = "mechanics", source = "request.mechanics")
+    @Mapping(target = "activeEffects", source = "request.activeEffects")
     @Mapping(target = "primaryCharacteristics", source = "request.primaryCharacteristics.values")
     @Mapping(target = "delimiterPrimary", source = "request.primaryCharacteristics.delimiter")
     @Mapping(target = "multiclassProficiency", source = "request.multiclassProficiency")
@@ -280,10 +286,12 @@ public interface ClassMapper
                 .collect(Collectors.toList());
     }
 
+    /** Есть ли у класса видимые подклассы: скрытые (мягко удалённые) не считаются. */
     @Named("hasSubclasses")
     default boolean hasSubclasses(Collection<CharacterClass> subclasses)
     {
-        return !CollectionUtils.isEmpty(subclasses);
+        return !CollectionUtils.isEmpty(subclasses)
+                && subclasses.stream().anyMatch(subclass -> subclass != null && !subclass.isHiddenEntity());
     }
 
     @Named("toImageUrl")

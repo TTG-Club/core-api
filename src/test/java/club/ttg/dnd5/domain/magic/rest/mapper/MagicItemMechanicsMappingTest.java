@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.magic.rest.mapper;
 
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemActivation;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
@@ -19,7 +20,9 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class MagicItemMechanicsMappingTest {
@@ -79,6 +82,45 @@ class MagicItemMechanicsMappingTest {
         assertEquals(MagicItemRechargeEvent.DAWN, restored.getResource().getRechargeEvent());
         assertEquals("1к6+1", restored.getResource().getRecharge());
         assertEquals("Вы можете дышать под водой", restored.getPassive());
+    }
+
+    /**
+     * Дополнительный урон и свойства предмета уезжают в «сырую» форму: по ней работают и
+     * правка в мастерской, и снимки ревизий.
+     */
+    @Test
+    void rawFormReturnsDamagePartsAndProperties() {
+        MagicItem entity = new MagicItem();
+        entity.setDamageParts(List.of(damagePart("2к6@dmg.fire")));
+        entity.setFocus(true);
+        entity.setAdamantine(true);
+
+        MagicItemRequest request = mapper.toRequest(entity);
+
+        assertEquals("2к6@dmg.fire", request.getDamageParts().getFirst().getFormula());
+        assertTrue(request.isFocus());
+        assertTrue(request.isAdamantine());
+    }
+
+    /** Снимок ревизии переживает JSON в обе стороны вместе с уроном и свойствами. */
+    @Test
+    void revisionSnapshotKeepsDamagePartsAndProperties() throws Exception {
+        MagicItemRequest request = new MagicItemRequest();
+        request.setDamageParts(List.of(damagePart("1к6@dmg.cold")));
+        request.setFocus(true);
+
+        String snapshot = objectMapper.writeValueAsString(request);
+        MagicItemRequest restored = objectMapper.readValue(snapshot, MagicItemRequest.class);
+
+        assertEquals("1к6@dmg.cold", restored.getDamageParts().getFirst().getFormula());
+        assertTrue(restored.isFocus());
+        assertFalse(restored.isAdamantine());
+    }
+
+    private DamagePart damagePart(String formula) {
+        DamagePart part = new DamagePart();
+        part.setFormula(formula);
+        return part;
     }
 
     /** Плащ защиты: надет, +1 к КД и +1 ко всем спасброскам. */

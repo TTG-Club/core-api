@@ -40,6 +40,8 @@ public class VttgSpell {
      * потребитель у класса, как у заклинаний книги.
      */
     private String spellcastingAbility;
+    /** Фиксированный бонус к броску атаки заклинанием сверх характеристики. */
+    private Integer attackBonus;
     private String saveType;
     private String saveEffect;
     /**
@@ -47,6 +49,8 @@ public class VttgSpell {
      * «Злой насмешки». Передаются без преобразования (модель уже в вокабуляре VTTG).
      */
     private List<ActiveEffect> activeEffects;
+    /** Заряды использования: врождённая магия и заклинания существ. */
+    private VttgSpellUses uses;
     private String cantripScaling;
     private List<VttgCantripScalingTier> cantripScalingTiers;
     private VttgSpellScaling scaling;

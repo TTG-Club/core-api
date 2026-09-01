@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.service;
 
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
@@ -32,6 +33,7 @@ class ClassServiceTest {
     private final EntityRevisionService revisionService = mock(EntityRevisionService.class);
     private final EquipmentNameResolver equipmentNameResolver = mock(EquipmentNameResolver.class);
     private final EquipmentMapping equipmentMapping = mock(EquipmentMapping.class);
+    private final GrantedSpellResolver grantedSpellResolver = mock(GrantedSpellResolver.class);
     private final ClassService service = new ClassService(
             classRepository,
             classMapper,
@@ -41,7 +43,8 @@ class ClassServiceTest {
             sourceSavedFilterService,
             revisionService,
             equipmentNameResolver,
-            equipmentMapping
+            equipmentMapping,
+            grantedSpellResolver
     );
 
     @Test

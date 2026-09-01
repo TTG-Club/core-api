@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-29-02-add-species-active-effects
+      author: Peterko
+      comment: >
+        Активные эффекты самого вида или происхождения. Механика (species.mechanics)
+        описывает дары, которые лист проставляет сам, — владения, чувства, скорости;
+        эффект меняет числа готовой формулой и уезжает на виртуальный стол как есть,
+        поэтому лежит соседней колонкой, а не полем внутри механики. Эффекты умений
+        хранятся внутри features — колонка и так jsonb, миграции не требует.
+      changes:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: active_effects
+                  type: jsonb
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: species
+            columnName: active_effects

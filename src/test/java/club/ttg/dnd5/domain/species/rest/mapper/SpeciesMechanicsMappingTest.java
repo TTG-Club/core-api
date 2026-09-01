@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.species.model.Species;
@@ -31,7 +32,6 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Механика умения вида в форме редактора и в детальнике: маппер не должен терять её по
@@ -138,16 +138,50 @@ class SpeciesMechanicsMappingTest {
                 restored.getMechanics().getModifiers().getDamage().getResistances());
     }
 
-    /** Тёмное зрение вида — свойство, а не механика умения: пустая механика не создаётся. */
+    /**
+     * Счётчик ресурса умения ходит через маппер формы: «Дыхание дракона» на листе — тот же
+     * счётчик, что у черты и умения класса, и без поля в механике вида он бы пропадал.
+     */
     @Test
-    void darkVisionStaysSpeciesProperty() {
-        Species species = new Species();
-        species.setDarkVision(60);
-        species.setFeatures(List.of(new SpeciesFeature("darkvision", "Тёмное зрение", "Darkvision",
-                "Тёмное зрение 60 фт.", null)));
+    void featureCounterSurvivesFormMapping() {
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("breath-weapon");
+        counter.setName("Дыхание дракона");
+        counter.setMax("@prof");
+        SpeciesMechanics mechanics = new SpeciesMechanics();
+        mechanics.setCounters(List.of(counter));
+        SpeciesFeature feature = new SpeciesFeature("breath-weapon", "Дыхание дракона",
+                "Breath Weapon", "Выдох стихии.", null);
+        feature.setMechanics(mechanics);
 
-        assertEquals(60, species.getDarkVision());
-        assertTrue(species.getFeatures().stream().allMatch(feature -> feature.getMechanics() == null));
+        FeatureRequest request = featureMapper.toRequest(feature);
+        SpeciesFeature restored = featureMapper.toEntity(request);
+
+        ResourceCounter restoredCounter = restored.getMechanics().getCounters().getFirst();
+        assertEquals("breath-weapon", restoredCounter.getKey());
+        assertEquals("@prof", restoredCounter.getMax());
+    }
+
+    /**
+     * Тёмное зрение вида — чувство {@code DARKVISION} в механике умения, а не свойство
+     * записи: своего поля у вида нет, и форма получает дальность вместе с остальной
+     * механикой умения «Тёмное зрение».
+     */
+    @Test
+    void darkVisionLivesInFeatureSenses() {
+        SheetModifiers modifiers = new SheetModifiers();
+        modifiers.setSenses(List.of(new SenseGrant(SenseType.DARKVISION, 60)));
+        SpeciesMechanics mechanics = new SpeciesMechanics();
+        mechanics.setModifiers(modifiers);
+        SpeciesFeature feature = new SpeciesFeature("darkvision", "Тёмное зрение", "Darkvision",
+                "Тёмное зрение 60 фт.", null);
+        feature.setMechanics(mechanics);
+
+        FeatureRequest request = featureMapper.toRequest(feature);
+
+        SenseGrant sense = request.getMechanics().getModifiers().getSenses().getFirst();
+        assertEquals(SenseType.DARKVISION, sense.getType());
+        assertEquals(60, sense.getRange());
     }
 
     private SpeciesFeature dwarvenResilience() {

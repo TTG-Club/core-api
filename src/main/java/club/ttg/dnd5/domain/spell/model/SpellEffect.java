@@ -34,6 +34,13 @@ public class SpellEffect {
      * {@code @target.full}/{@code @target.notFull}.
      */
     private List<String> damageFormulaTargets;
+    /**
+     * Признак «применять часть, только если по цели фактически нанесён урон»
+     * по индексам {@link #damageFormulas} — словарь VTTG
+     * {@code DamagePart.requiresDamage}. Покрывает «лечусь, только если задел
+     * врага»: часть лечения гасится, когда урон не прошёл.
+     */
+    private List<Boolean> damageFormulaRequiresDamage;
     private List<HealingType> healingTypes;
     /**
      * Характеристика, от которой считаются Сл спасброска и бонус атаки этого
@@ -49,4 +56,81 @@ public class SpellEffect {
     private List<Ability> savingThrows;
     private SpellSaveEffect saveEffect;
     private List<Condition> conditions;
+    /**
+     * Способ применения заклинания в словаре VTTG: {@code ranged}, {@code melee},
+     * {@code self}, {@code touch}, {@code sight}, {@code none}.
+     *
+     * <p>Переопределяет вывод по типу атаки и единице дистанции: у заклинания
+     * вроде «Взгляд василиска» дальность в футах, а достаёт оно взглядом. Не
+     * задан — способ выводится как раньше.</p>
+     */
+    private String deliveryType;
+    /** Фиксированный бонус к броску атаки заклинанием сверх характеристики. */
+    private Integer attackBonus;
+    /**
+     * Заряды использования: врождённая магия и заклинания существ тратят их, а
+     * не ячейки заклинателя. Не заданы — заклинание идёт по ячейкам, как раньше.
+     */
+    private Uses uses;
+    /** Усиление при трате ячейки выше круга заклинания. */
+    private Scaling scaling;
+    /**
+     * Поуровневые тиры масштабирования заговора: с каждого порога уровня
+     * персонажа набор частей урона заменяется целиком.
+     */
+    private List<CantripScalingTier> cantripScalingTiers;
+
+    /**
+     * Заряды использования заклинания.
+     *
+     * <p>Текущее число зарядов здесь не хранится: оно принадлежит конкретному
+     * персонажу, а не записи справочника — потребитель получает полный запас.</p>
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Uses {
+        /** Максимум зарядов. */
+        private Integer max;
+        /** Способ восстановления: {@code atWill}, {@code shortRest}, {@code longRest}. */
+        private String recovery;
+    }
+
+    /** Усиление заклинания на высших кругах. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Scaling {
+        /** Формула дополнительного урона за круг усиления (напр. {@code 1к6}). */
+        private String additionalDice;
+        /** Дополнительных целей или снарядов за круг усиления. */
+        private Integer additionalTargets;
+        /** Текстовое описание усиления. */
+        private String description;
+    }
+
+    /** Тир масштабирования заговора по уровню заклинателя. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class CantripScalingTier {
+        /** Минимальный уровень персонажа, с которого действует набор. */
+        private Integer level;
+        /** Полный набор частей урона на этом уровне (заменяет базовые). */
+        private List<DamagePart> parts;
+    }
+
+    /** Часть урона тира: та же форма, что и у частей урона заклинания. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class DamagePart {
+        private String formula;
+        private String target;
+        private Boolean requiresDamage;
+    }
 }

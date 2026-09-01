@@ -19,6 +19,7 @@ public class ItemPredicateBuilder
         PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getItemType(), "item_types");
         PredicateUtils.applyJsonbNestedEnumArrayFilter(builder, request.getWeaponProperty(), "weapon", "properties");
         PredicateUtils.applyJsonbNestedObjectEnumFieldFilter(builder, request.getDamageType(), "weapon", "damage", "type");
+        PredicateUtils.applyJsonbObjectEnumFieldFilter(builder, request.getMastery(), "weapon", "mastery");
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "item", "source");
         PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
         return builder;

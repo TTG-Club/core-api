@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-29-07-backfill-class-informational-features
+      author: Peterko
+      comment: >
+        Помечает умения-указатели на подкласс как информационные. «Подкласс волшебника» на
+        третьем уровне — строка таблицы прогрессии: она говорит игроку, что пора выбрать
+        подкласс, и в книге нужна. Записью умения на листе персонажа она была бы шумом —
+        рядом с ней там уже стоят настоящие умения выбранного подкласса.
+
+        Отбор по ключу умения: ключ выводится из английской транслитерации названия
+        ({@code podklass-volsebnika}), и у всех семнадцати классов справочника он начинается
+        одинаково. Название сравнивать нельзя — оно у каждого класса своё.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET features = (
+                SELECT jsonb_agg(
+                  CASE
+                    WHEN feature_item->>'key' LIKE 'podklass%'
+                      THEN jsonb_set(feature_item, '{informationalOnly}', 'true')
+                    ELSE feature_item
+                  END
+                  ORDER BY element_order
+                )
+                FROM jsonb_array_elements(class.features)
+                  WITH ORDINALITY AS parsed(feature_item, element_order)
+              )
+              WHERE features IS NOT NULL
+                AND jsonb_typeof(features) = 'array'
+                AND jsonb_array_length(features) > 0
+                AND EXISTS (
+                  SELECT 1 FROM jsonb_array_elements(class.features) AS existing(feature_item)
+                  WHERE feature_item->>'key' LIKE 'podklass%'
+                    AND COALESCE(feature_item->>'informationalOnly', 'false') <> 'true'
+                );
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET features = (
+                SELECT jsonb_agg(feature_item - 'informationalOnly' ORDER BY element_order)
+                FROM jsonb_array_elements(class.features)
+                  WITH ORDINALITY AS parsed(feature_item, element_order)
+              )
+              WHERE features IS NOT NULL
+                AND jsonb_typeof(features) = 'array'
+                AND jsonb_array_length(features) > 0;

@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -23,11 +25,13 @@ import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.Mockito.mock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,7 +43,10 @@ class VttgSpellMapperTest {
             new VttgSpellMechanicsExtractor(),
             new VttgSpellScalingExtractor()
     );
-    private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter, new VttgEquipmentMapper(markupConverter));
+    private final VttgClassMapper classMapper = new VttgClassMapper(markupConverter,
+            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
+            new VttgFeatMechanicsMapper(markupConverter, mock(SpellRepository.class),
+                    mock(FeatRepository.class)));
 
     @Test
     void mapsStructuredSpellFieldsToVttgFormat() {
@@ -208,6 +215,156 @@ class VttgSpellMapperTest {
 
         // Лечение кодируется токеном @heal в формуле (легаси-флаг isHealing удалён).
         assertEquals("2Рє4@heal+@mod.spell", result.getDamageParts().getFirst().getFormula());
+    }
+
+    @Test
+    void carriesRequiresDamageFlagIntoVttgDamageParts() {
+        Spell spell = new Spell();
+        spell.setUrl("vampiric-touch");
+        spell.setName("Прикосновение вампира");
+        spell.setEnglish("Vampiric Touch");
+        spell.setLevel(3L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.NECROMANCY).build());
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("3к6@dmg.necrotic", "1к6@heal"));
+        effect.setDamageFormulaTargets(List.of("selected", "self"));
+        effect.setDamageFormulaRequiresDamage(List.of(false, true));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Часть лечения гасится, если урон не прошёл; у обычной части флага нет —
+        // ложь равнозначна дефолту и в компендиум не пишется.
+        assertNull(result.getDamageParts().getFirst().getRequiresDamage());
+        assertEquals(Boolean.TRUE, result.getDamageParts().get(1).getRequiresDamage());
+        assertEquals("self", result.getDamageParts().get(1).getTarget());
+    }
+
+    @Test
+    void explicitDeliveryTypeAndAttackBonusWinOverDerivedOnes() {
+        Spell spell = new Spell();
+        spell.setUrl("basilisk-gaze");
+        spell.setName("Взгляд василиска");
+        spell.setEnglish("Basilisk Gaze");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.TRANSMUTATION).build());
+        spell.setRange(List.of(SpellDistance.of(60L, DistanceUnit.FEET)));
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDeliveryType("sight");
+        effect.setAttackBonus(1);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Дальность в футах вывела бы «none»; автор сказал «взглядом» — его слово главнее.
+        assertEquals("sight", result.getDeliveryType());
+        assertEquals(1, result.getAttackBonus());
+    }
+
+    @Test
+    void explicitScalingFillsGapsFromParsedDescription() {
+        Spell spell = new Spell();
+        spell.setUrl("scorching-ray");
+        spell.setName("Огненный луч");
+        spell.setEnglish("Scorching Ray");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        spell.setUpcastable(true);
+        spell.setUpper("[\"Вы создаёте один дополнительный луч за каждый круг ячейки выше второго.\"]");
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Scaling scaling = new SpellEffect.Scaling();
+        scaling.setAdditionalTargets(1);
+        effect.setScaling(scaling);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals(1, result.getScaling().getAdditionalTargets());
+        // Незаполненное поле явного блока добирается из разбора текста.
+        assertTrue(result.getScaling().getDescription().contains("дополнительный луч"));
+    }
+
+    @Test
+    void explicitCantripTiersReplaceDiceMultiplication() {
+        Spell spell = new Spell();
+        spell.setUrl("toll-the-dead");
+        spell.setName("Похоронный звон");
+        spell.setEnglish("Toll the Dead");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.NECROMANCY).build());
+        spell.setUpper("[\"Урон возрастает на 5, 11 и 17 уровнях.\"]");
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("1к8@dmg.necrotic"));
+
+        SpellEffect.DamagePart part = new SpellEffect.DamagePart();
+        part.setFormula("2к12@dmg.necrotic");
+        part.setTarget("selected");
+
+        SpellEffect.CantripScalingTier tier = new SpellEffect.CantripScalingTier();
+        tier.setLevel(5);
+        tier.setParts(List.of(part));
+        effect.setCantripScalingTiers(List.of(tier));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Ручной тир может сменить кость целиком, а не только умножить её.
+        assertEquals(1, result.getCantripScalingTiers().size());
+        assertEquals(5, result.getCantripScalingTiers().getFirst().getLevel());
+        assertEquals("2к12@dmg.necrotic",
+                result.getCantripScalingTiers().getFirst().getParts().getFirst().getFormula());
+    }
+
+    @Test
+    void spellUsesGoToCompendiumWithFullCharge() {
+        Spell spell = new Spell();
+        spell.setUrl("misty-step-innate");
+        spell.setName("Туманный шаг");
+        spell.setEnglish("Misty Step");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.CONJURATION).build());
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Uses uses = new SpellEffect.Uses();
+        uses.setMax(2);
+        uses.setRecovery("longRest");
+        effect.setUses(uses);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Текущее число зарядов принадлежит персонажу — справочник отдаёт полный запас.
+        assertEquals(2, result.getUses().getMax());
+        assertEquals(2, result.getUses().getCurrent());
+        assertEquals("longRest", result.getUses().getRecovery());
+    }
+
+    @Test
+    void spellUsesWithoutMaxAreDroppedUnlessAtWill() {
+        Spell spell = new Spell();
+        spell.setUrl("prestidigitation");
+        spell.setName("Фокусы");
+        spell.setEnglish("Prestidigitation");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.TRANSMUTATION).build());
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Uses uses = new SpellEffect.Uses();
+        uses.setRecovery("longRest");
+        effect.setUses(uses);
+        spell.setEffect(effect);
+
+        // Ограничение без числа применений ничего не ограничивает.
+        assertNull(mapper.toVttg(spell).getUses());
+
+        uses.setRecovery("atWill");
+
+        // «По желанию» заряды не тратит, и максимум ему не нужен.
+        assertEquals("atWill", mapper.toVttg(spell).getUses().getRecovery());
     }
 
     /**

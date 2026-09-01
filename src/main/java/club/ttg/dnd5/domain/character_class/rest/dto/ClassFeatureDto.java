@@ -1,6 +1,10 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionsChoice;
+import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,6 +50,9 @@ public class ClassFeatureDto {
     @Schema(description = "Options available for this feature")
     private List<ClassFeatureOptionDto> options;
 
+    @Schema(description = "Настройка выбора из списка вариантов; пусто — список только справочный")
+    private ClassFeatureOptionsChoice optionsChoice;
+
     @Schema(description = "Скрывать умение в подклассе")
     private boolean hideInSubclasses;
 
@@ -57,6 +64,25 @@ public class ClassFeatureDto {
 
     @Schema(description = "Выбор владения навыками, который даёт умение")
     private ClassFeatureSkillChoiceDto skillChoice;
+
+    @Schema(description = "Умение только информирует и не попадает в лист персонажа")
+    private boolean informationalOnly;
+
+    @Schema(description = "Механика влияния умения на лист персонажа")
+    private ClassMechanics mechanics;
+
+    @Schema(description = "Активные эффекты умения в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
+
+    /**
+     * Заклинания, которые умение выдаёт без выбора, — записями справочника.
+     *
+     * <p>Механика хранит их ссылками, а листу персонажа нужен круг: без него заклинание
+     * некуда положить в книгу. Подставляет их сервис ({@code ClassService}), потому что
+     * маппер в справочник не ходит.</p>
+     */
+    @Schema(description = "Заклинания, выдаваемые умением, с данными справочника")
+    private List<GrantedSpellResponse> grantedSpells;
 
     public ClassFeatureDto(ClassFeature classFeature, boolean isSubclass) {
         this(classFeature, isSubclass, isSubclass);
@@ -75,6 +101,12 @@ public class ClassFeatureDto {
         this.fightingStyleChoice = classFeature.isFightingStyleChoice();
         this.skillChoice = Optional.ofNullable(classFeature.getSkillChoice())
                 .map(ClassFeatureSkillChoiceDto::new)
+                .orElse(null);
+        this.informationalOnly = classFeature.isInformationalOnly();
+        this.mechanics = classFeature.getMechanics();
+        this.activeEffects = classFeature.getActiveEffects();
+        this.optionsChoice = Optional.ofNullable(classFeature.getOptionsChoice())
+                .map(ClassFeatureOptionsChoice::new)
                 .orElse(null);
         if (filterForSubclassContext) {
             this.scaling = Optional.ofNullable(classFeature.getScaling())

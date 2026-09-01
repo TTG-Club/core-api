@@ -1,11 +1,13 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeat;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -58,7 +60,20 @@ public class VttgFeatMapper {
                 .typeLabel(TYPE_LABEL)
                 .featData(mechanicsMapper.featData(feat))
                 .mechanics(mechanicsMapper.mechanics(feat))
+                .activeEffects(activeEffects(feat))
                 .build();
+    }
+
+    /**
+     * Активные эффекты черты. Отдаются без преобразования: {@link ActiveEffect}
+     * заполняется в мастерской сразу в вокабуляре VTTG — так же, как у магического
+     * предмета (см. {@code VttgMagicItemMapper}).
+     */
+    private List<ActiveEffect> activeEffects(Feat feat) {
+        if (CollectionUtils.isEmpty(feat.getActiveEffects())) {
+            return null;
+        }
+        return feat.getActiveEffects();
     }
 
     /** Порядок категорий для разделителей: известные (как в эталоне) + остальные значения enum. */
@@ -105,15 +120,12 @@ public class VttgFeatMapper {
     }
 
     private String categoryName(FeatCategory category) {
-        return StringUtils.capitalize(defaultSeparator(category).name());
+        return VttgFeatKeys.categoryName(category);
     }
 
-    /** id черты в схеме эталона: {@code "Two-Weapon Fighting" → "srd_feat_two_weapon_fighting"}. */
+    /** id черты в схеме эталона — общим правилом со ссылками на черту из других записей. */
     private String featId(Feat feat) {
-        String base = StringUtils.hasText(feat.getEnglish()) ? feat.getEnglish() : feat.getUrl();
-        return "srd_feat_" + (base == null ? "" : base.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", ""));
+        return VttgFeatKeys.featId(feat);
     }
 
 

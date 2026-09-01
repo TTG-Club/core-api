@@ -10,12 +10,14 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -61,4 +63,7 @@ public class CreatureRequest extends BaseRequest {
     private CreatureLairRequest lair;
     @Schema(description = "Секция описательных характеристик существа")
     private CreatureSectionRequest section;
+
+    @Schema(description = "Активные эффекты существа в вокабуляре VTTG")
+    private List<ActiveEffect> activeEffects;
 }

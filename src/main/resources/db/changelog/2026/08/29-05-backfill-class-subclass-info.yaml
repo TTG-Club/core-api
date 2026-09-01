@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-08-29-05-backfill-class-subclass-info
+      author: Peterko
+      comment: >
+        Заполняет подпись группы подклассов и уровень их выбора. До сих пор потребитель брал
+        подпись из карты канонических классов, а уровень выводил из уровня первого умения
+        подкласса: у самописного класса подпись превращалась в нейтральное «Подкласс», а
+        уровень угадывался.
+
+        Подписи — как в PHB 2024. Классы вне карты (самописные, из UA) остаются без подписи:
+        придумывать её за автора незачем, потребитель покажет нейтральную.
+
+        Уровень выбора — третий: по правилам 2024 года его берут все классы, и у всех
+        семнадцати классов справочника умение-указатель на подкласс стоит именно на третьем.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET subclass_label = 'Первобытный путь'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'barbarian';
+
+              UPDATE class SET subclass_label = 'Бардовская коллегия'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'bard';
+
+              UPDATE class SET subclass_label = 'Божественный домен'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'cleric';
+
+              UPDATE class SET subclass_label = 'Друидический круг'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'druid';
+
+              UPDATE class SET subclass_label = 'Воинский архетип'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'fighter';
+
+              UPDATE class SET subclass_label = 'Монашеский орден'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'monk';
+
+              UPDATE class SET subclass_label = 'Священная клятва'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'paladin';
+
+              UPDATE class SET subclass_label = 'Архетип следопыта'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'ranger';
+
+              UPDATE class SET subclass_label = 'Архетип плута'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'rogue';
+
+              UPDATE class SET subclass_label = 'Чародейское происхождение'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'sorcerer';
+
+              UPDATE class SET subclass_label = 'Потусторонний покровитель'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'warlock';
+
+              UPDATE class SET subclass_label = 'Магическая традиция'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'wizard';
+
+              UPDATE class SET subclass_label = 'Специальность изобретателя'
+              WHERE subclass_label IS NULL AND parent_url IS NULL AND lower(english) = 'artificer';
+
+              UPDATE class SET subclass_level = 3
+              WHERE subclass_level IS NULL
+                AND parent_url IS NULL
+                AND EXISTS (SELECT 1 FROM class child WHERE child.parent_url = class.url);
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: >
+              SET search_path TO ttg, public;
+
+              UPDATE class SET subclass_label = NULL, subclass_level = NULL;

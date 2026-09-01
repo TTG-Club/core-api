@@ -1,18 +1,25 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.background.model.Background;
+import club.ttg.dnd5.domain.background.model.BackgroundToolChoice;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.feat.model.Feat;
+import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgBackground;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -21,16 +28,18 @@ import java.util.Set;
  *
  * <p>Награды раскладываются по блокам эталона: характеристики → {@code abilityGrant},
  * навыки → {@code skillGrant}, инструменты → {@code toolGrant}, черта → {@code featGrant},
- * снаряжение → {@code equipmentOptions}.</p>
+ * снаряжение → {@code equipmentOptions}. Расширенные дары, которых эти блоки не выражают
+ * (языки, защиты, чувства, выборы игрока, выдаваемые заклинания), уезжают блоком
+ * {@code featData} — тем же, что у черты; активные эффекты — соседним полем.</p>
  *
  * <p>Блоки-списки отдаются ВСЕГДА, пустыми при отсутствии данных (см. {@link VttgBackground}):
  * мастер настройки предыстории в VTTG читает их поля напрямую и падает на вырезанном блоке.</p>
  *
- * <p>{@code toolGrant.items} уезжает ЧЕЛОВЕКОЧИТАЕМЫМ текстом, а не идентификаторами —
- * в модели владение инструментами так и хранится ({@code Background.toolProficiency}).
- * Сопоставлять текст с идентификаторами здесь нечем: словарь инструментов живёт в системе
- * D&D на стороне VTTG, там же заводятся недостающие. Ровно так же владение отдаёт и класс
- * ({@code VttgClassMapper}) — обе сущности присылают текст, разбирает его потребитель.</p>
+ * <p>{@code toolGrant.items} уезжает КЛЮЧАМИ вокабуляра стола, когда владение задано
+ * ссылками на карточки инструментов, и человекочитаемым текстом у записей, которые на
+ * ссылки ещё не перевели ({@code Background.toolProficiency}). Разобрать текст в ключи
+ * здесь нечем — сопоставление живёт в справочнике листа на стороне VTTG; ровно так же
+ * владение отдаёт и класс ({@code VttgClassMapper}).</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -40,6 +49,8 @@ public class VttgBackgroundMapper {
 
     private final VttgMarkupConverter markupConverter;
     private final VttgEquipmentMapper equipmentMapper;
+    private final VttgFeatMechanicsMapper mechanicsMapper;
+    private final FeatRepository featRepository;
 
     public VttgBackground toVttg(Background background) {
         String id = slug(background.getUrl());
@@ -56,9 +67,12 @@ public class VttgBackgroundMapper {
                 .isSRD(background.getSrdVersion() != null)
                 .abilityGrant(abilityGrant(background.getAbilities()))
                 .skillGrant(skillGrant(background.getSkillProficiencies()))
-                .toolGrant(toolGrant(background.getToolProficiency()))
+                .toolGrant(toolGrant(background))
                 .featGrant(featGrant(background))
                 .equipmentOptions(equipmentOptions(background))
+                // Требований у предыстории нет: черта требует, предыстория даёт
+                .featData(mechanicsMapper.featData(background.getMechanics(), null))
+                .activeEffects(activeEffects(background))
                 .type("background")
                 .build();
     }
@@ -89,12 +103,53 @@ public class VttgBackgroundMapper {
     }
 
     /**
-     * Владение инструментами — текстом, как хранится в модели (см. javadoc класса).
-     * Разметка разбирается: в тексте встречаются ссылки на карточки инструментов.
+     * Владение инструментами: ключи вокабуляра стола по ссылкам мастерской, а у записей,
+     * которые на ссылки ещё не перевели, — свободный текст, как отдавалось раньше.
+     *
+     * <p>Ссылка, которой в справочнике листа нет, пропускается: владение, исчезающее при
+     * следующем открытии окна владений, хуже отсутствующего (см. {@link VttgToolKeys}).
+     * Разметка текста разбирается — в ней встречаются ссылки на карточки инструментов.</p>
      */
-    private VttgBackground.ToolGrant toolGrant(String toolProficiency) {
-        String text = markupConverter.toText(toolProficiency).trim();
-        return new VttgBackground.ToolGrant(text.isEmpty() ? List.of() : List.of(text));
+    private VttgBackground.ToolGrant toolGrant(Background background) {
+        List<String> items = toolKeys(background.getToolProficiencies());
+        VttgBackground.ToolChoice choices = toolChoice(background.getToolChoice());
+
+        if (items.isEmpty() && choices == null) {
+            String text = markupConverter.toText(background.getToolProficiency()).trim();
+            return new VttgBackground.ToolGrant(text.isEmpty() ? List.of() : List.of(text));
+        }
+
+        return new VttgBackground.ToolGrant(items, choices);
+    }
+
+    /** Владение на выбор игрока; {@code null} — выбора нет либо он ничего не даёт. */
+    private VttgBackground.ToolChoice toolChoice(BackgroundToolChoice choice) {
+        if (choice == null || choice.getCount() == null || choice.getCount() < 1) {
+            return null;
+        }
+        return new VttgBackground.ToolChoice(choice.getCount(), toolKeys(choice.getFrom()));
+    }
+
+    /** Ключи вокабуляра стола по ссылкам на карточки инструментов; неизвестные отброшены. */
+    private List<String> toolKeys(List<EntityRef> refs) {
+        if (CollectionUtils.isEmpty(refs)) {
+            return List.of();
+        }
+        return refs.stream()
+                .filter(Objects::nonNull)
+                .map(EntityRef::getUrl)
+                .map(VttgToolKeys::ofUrl)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * Активные эффекты предыстории. Отдаются без преобразования: {@link ActiveEffect}
+     * заполняется в мастерской сразу в вокабуляре VTTG — так же, как у черты и предмета.
+     */
+    private List<ActiveEffect> activeEffects(Background background) {
+        return CollectionUtils.isEmpty(background.getActiveEffects()) ? null : background.getActiveEffects();
     }
 
     /**
@@ -104,11 +159,52 @@ public class VttgBackgroundMapper {
      */
     private VttgBackground.FeatGrant featGrant(Background background) {
         Feat feat = background.getFeat();
+        List<String> choices = featChoiceIds(background.getFeatChoices());
+
         if (feat == null) {
-            return null;
+            // Предыстория без единственной черты, но со списком на выбор: название черты
+            // назовёт сам выбор, а блок отдать нужно — иначе выбирать будет не из чего
+            return choices.isEmpty() ? null
+                    : new VttgBackground.FeatGrant(null, null, null, null, choices);
         }
+
         return new VttgBackground.FeatGrant(featId(feat), feat.getName(), optional(feat.getEnglish()),
-                featSuffix(background.getFeatSuffix()));
+                featSuffix(background.getFeatSuffix()), choices.isEmpty() ? null : choices);
+    }
+
+    /**
+     * Черты на выбор — идентификаторами схемы эталона.
+     *
+     * <p>Строятся по записям справочника, а не по адресам ссылок: идентификатор собирается
+     * из английского названия ({@code srd_feat_magic_initiate}), а в ссылке лежит слаг
+     * страницы с суффиксом источника. Ссылка на удалённую черту пропускается — выбор из
+     * несуществующей записи потребитель всё равно не покажет.</p>
+     */
+    private List<String> featChoiceIds(List<EntityRef> refs) {
+        if (CollectionUtils.isEmpty(refs)) {
+            return List.of();
+        }
+
+        List<String> urls = refs.stream()
+                .filter(Objects::nonNull)
+                .map(EntityRef::getUrl)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+
+        if (urls.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, Feat> featsByUrl = new LinkedHashMap<>();
+        featRepository.findAllById(urls).forEach(found -> featsByUrl.put(found.getUrl(), found));
+
+        return urls.stream()
+                .map(featsByUrl::get)
+                .filter(Objects::nonNull)
+                .map(this::featId)
+                .distinct()
+                .toList();
     }
 
     /**
@@ -163,12 +259,9 @@ public class VttgBackgroundMapper {
         return builder.toString();
     }
 
-    /** id черты в схеме эталона: {@code "Magic Initiate" → "srd_feat_magic_initiate"}. */
+    /** id черты в схеме эталона — общим правилом с записью самой черты. */
     private String featId(Feat feat) {
-        String base = StringUtils.hasText(feat.getEnglish()) ? feat.getEnglish() : feat.getUrl();
-        return "srd_feat_" + (base == null ? "" : base.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", ""));
+        return VttgFeatKeys.featId(feat);
     }
 
     private String slug(String value) {

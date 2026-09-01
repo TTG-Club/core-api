@@ -143,10 +143,17 @@ public class VttgCompendiumSections {
         return view;
     }
 
+    /**
+     * Черты — с панелью фильтров по категории («Боевой стиль», «Черта происхождения»,
+     * «Эпическая черта»): их больше сотни, и без отбора по категории нужную не найти.
+     * Группировка по той же категории остаётся — она задаёт разделители списка.
+     */
     private Map<String, Object> featView() {
-        Map<String, Object> view = new LinkedHashMap<>();
-        view.put("layout", "list");
+        Map<String, Object> view = filtered();
         view.put("groupBy", groupBy("category", "string"));
+        view.put("filters", List.of(
+                enumFilter("category", "Категория", "category", "string", "list")
+        ));
         return view;
     }
 

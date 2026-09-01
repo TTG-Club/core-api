@@ -4,12 +4,15 @@ import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.Roll;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.ItemType;
+import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
 import club.ttg.dnd5.domain.item.model.weapon.Damage;
+import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
@@ -19,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -138,7 +142,7 @@ class VttgItemMapperTest {
         JsonNode json = json(item);
         assertEquals("equipment", json.get("type").asText());
         assertEquals("trinkets", json.get("section").asText());
-        assertEquals("trinket", json.get("equipmentCategory").asText());
+        assertEquals("adventurer-equipment", json.get("equipmentCategory").asText());
         assertFalse(json.has("baseArmorAC"));
         assertFalse(json.has("weaponCategory"));
     }
@@ -222,6 +226,203 @@ class VttgItemMapperTest {
         assertEquals("longsword-phb", json.get("id").asText());
     }
 
+    /**
+     * Урон, заданный частями-формулами, перебивает прежнюю связку «кости + тип»: форма
+     * пишет обе, и без приоритета оружие уехало бы с уроном, который автор уже поправил.
+     */
+    @Test
+    void prefersStoredDamagePartsOverLegacyDice() {
+        Item item = baseItem("flame-tongue", "Огненный язык", "Flame Tongue");
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
+        weapon.setDamage(damage(Dice.d8, DamageType.SLASHING));
+        weapon.setVersatile(roll(Dice.d10));
+        weapon.setProperties(Set.of(Property.VERSATILE));
+        weapon.setDamageParts(List.of(
+                damagePart("1к8@dmg.slashing", "1к10@dmg.slashing"),
+                damagePart("2к6@dmg.fire", null)));
+        item.setWeapon(weapon);
+        item.setTypes(Set.of(ItemType.MARTIAL_WEAPON, ItemType.MELEE_WEAPON));
+
+        JsonNode parts = json(item).get("damageParts");
+        assertEquals(2, parts.size());
+        assertEquals("1к8@dmg.slashing", parts.get(0).get("formula").asText());
+        assertEquals("1к10@dmg.slashing", parts.get(0).get("versatileFormula").asText());
+        assertEquals("2к6@dmg.fire", parts.get(1).get("formula").asText());
+        assertFalse(parts.get(1).has("versatileFormula"));
+        // Тип части живёт токеном формулы — отдельного поля у неё нет
+        assertFalse(parts.get(0).has("type"));
+    }
+
+    /** Боевые поля, которых у справочника раньше не было, уезжают как заданы. */
+    @Test
+    void exportsWeaponAttackAndSaveFields() {
+        Item item = baseItem("net", "Сеть", "Net");
+        Weapon weapon = new Weapon();
+        weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
+        weapon.setDamage(damage(Dice.d4, DamageType.BLUDGEONING));
+        weapon.setAttackAbility("dexterity");
+        weapon.setProficiencyMode("always");
+        weapon.setAttackBonus(1);
+        weapon.setDamageAbility("none");
+        weapon.setDamageBonus(2);
+        weapon.setSaveType("strength");
+        weapon.setSaveEffect("none");
+        weapon.setReach(10);
+        item.setWeapon(weapon);
+        item.setTypes(Set.of(ItemType.MARTIAL_WEAPON, ItemType.MELEE_WEAPON));
+
+        JsonNode json = json(item);
+        assertEquals("dexterity", json.get("attackAbility").asText());
+        assertEquals("always", json.get("proficiencyMode").asText());
+        assertEquals(1, json.get("attackBonus").asInt());
+        assertEquals("none", json.get("damageAbility").asText());
+        assertEquals(2, json.get("damageBonus").asInt());
+        assertEquals("strength", json.get("saveType").asText());
+        assertEquals("none", json.get("saveEffect").asText());
+        // Заданная досягаемость перебивает вывод по свойству «Досягаемость»
+        assertEquals(10, json.get("reach").asInt());
+    }
+
+    /**
+     * Базовый вид оружия выводится по адресу страницы, а не по английскому названию:
+     * в книгах оно бывает записано с уточнением («Sword, Long»), и слаг с ключом листа
+     * тогда не сходится.
+     */
+    @Test
+    void derivesWeaponBaseTypeFromUrl() {
+        Item item = baseItem("longsword", "Длинный меч", "Sword, Long");
+        item.setTypes(Set.of(ItemType.MARTIAL_WEAPON));
+        item.setWeapon(new Weapon());
+
+        assertEquals("longsword", json(item).get("baseType").asText());
+    }
+
+    /** Заданный в справочнике базовый вид перебивает любой вывод. */
+    @Test
+    void prefersStoredWeaponBaseType() {
+        Item item = baseItem("storm-blade", "Клинок бури", "Storm Blade");
+        item.setTypes(Set.of(ItemType.MARTIAL_WEAPON));
+        Weapon weapon = new Weapon();
+        weapon.setBaseType("longsword");
+        item.setWeapon(weapon);
+
+        assertEquals("longsword", json(item).get("baseType").asText());
+    }
+
+    /**
+     * Ключ инструмента — по адресу страницы: слаг английского названия даёт
+     * «calligrapher-s-supplies», а лист знает «calligraphers-supplies» и незнакомое
+     * владение молча выбрасывает.
+     */
+    @Test
+    void derivesToolBaseTypeFromUrl() {
+        Item item = baseItem("calligrapher-s-supplies", "Инструменты каллиграфа",
+                "Calligrapher's Supplies");
+        item.setTypes(Set.of(ItemType.TOOL, ItemType.ARTISAN_S_TOOLS));
+
+        JsonNode json = json(item);
+        assertEquals("calligraphers-supplies", json.get("baseToolType").asText());
+        assertEquals("artisan", json.get("toolCategory").asText());
+    }
+
+    /**
+     * Игровой набор и инструменты ремесленника — тоже инструменты, хотя их типы заведены
+     * категорией {@code ITEM}: без этого «Набор игральных карт» уезжал безделушкой, и
+     * владение им лист не засчитывал.
+     */
+    @Test
+    void mapsGamingSetAndArtisanToolsAsTools() {
+        Item cards = baseItem("playing-cards", "Набор игральных карт", "Playing Cards");
+        cards.setTypes(Set.of(ItemType.GAMING_SET));
+
+        JsonNode cardsJson = json(cards);
+        assertEquals("tool", cardsJson.get("type").asText());
+        assertEquals("gaming", cardsJson.get("toolCategory").asText());
+        assertEquals("playing-card-set", cardsJson.get("baseToolType").asText());
+
+        Item supplies = baseItem("artisan-s-tools", "Инструменты ремесленника", "Artisan's Tools");
+        supplies.setTypes(Set.of(ItemType.ARTISAN_S_TOOLS));
+
+        JsonNode suppliesJson = json(supplies);
+        assertEquals("tool", suppliesJson.get("type").asText());
+        assertEquals("artisan", suppliesJson.get("toolCategory").asText());
+    }
+
+    /** Параметры инструмента, заданные в справочнике, уезжают как есть. */
+    @Test
+    void exportsStoredToolFields() {
+        Item item = baseItem("dice-set", "Набор костей", "Dice Set");
+        item.setTypes(Set.of(ItemType.TOOL));
+        Tool tool = new Tool();
+        tool.setCategory("gaming");
+        tool.setBaseType("dice-set");
+        tool.setAbility("wisdom");
+        tool.setBonus(1);
+        tool.setProficiencyMode("expertise");
+        item.setTool(tool);
+
+        JsonNode json = json(item);
+        assertEquals("gaming", json.get("toolCategory").asText());
+        assertEquals("dice-set", json.get("baseToolType").asText());
+        assertEquals("wisdom", json.get("toolAbility").asText());
+        assertEquals(1, json.get("toolBonus").asInt());
+        assertEquals("expertise", json.get("toolProficiencyMode").asText());
+    }
+
+    /** Категория снаряжения выводится из типов предмета, а не всегда безделушкой. */
+    @Test
+    void derivesEquipmentCategoryFromTypes() {
+        Item ration = baseItem("rations", "Походный паёк", "Rations");
+        ration.setTypes(Set.of(ItemType.FOOD_AND_DRINK));
+        assertEquals("food", json(ration).get("equipmentCategory").asText());
+
+        Item saddle = baseItem("saddle", "Седло", "Saddle");
+        saddle.setTypes(Set.of(ItemType.TACK_AND_HARNESS));
+        assertEquals("vehicle-equipment", json(saddle).get("equipmentCategory").asText());
+
+        Item trinket = baseItem("lucky-charm", "Талисман", "Lucky Charm");
+        assertEquals("trinket", json(trinket).get("equipmentCategory").asText());
+    }
+
+    /** Заданная в справочнике категория снаряжения перебивает вывод по типам. */
+    @Test
+    void prefersStoredEquipmentCategory() {
+        Item item = baseItem("robe", "Мантия", "Robe");
+        item.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+        item.setEquipmentCategory("clothing");
+
+        assertEquals("clothing", json(item).get("equipmentCategory").asText());
+    }
+
+    /** Заклинательная фокусировка: у справочника это тип, у системы — свойство предмета. */
+    @Test
+    void marksSpellcastingFocus() {
+        Item focus = baseItem("component-pouch", "Мешочек с компонентами", "Component Pouch");
+        focus.setTypes(Set.of(ItemType.SPELLCASTING_FOCUS));
+        assertTrue(json(focus).get("isFocus").asBoolean());
+
+        Item backpack = baseItem("backpack", "Рюкзак", "Backpack");
+        assertFalse(json(backpack).has("isFocus"));
+    }
+
+    /** Активные эффекты уезжают без преобразования; пустой список в запись не пишется. */
+    @Test
+    void exportsActiveEffects() {
+        Item item = baseItem("boots", "Сапоги", "Boots");
+        ActiveEffect effect = new ActiveEffect();
+        effect.setId("speed");
+        effect.setName("Скорость");
+        item.setActiveEffects(List.of(effect));
+
+        JsonNode json = json(item);
+        assertEquals(1, json.get("activeEffects").size());
+        assertEquals("speed", json.get("activeEffects").get(0).get("id").asText());
+
+        item.setActiveEffects(List.of());
+        assertFalse(json(item).has("activeEffects"));
+    }
+
     private JsonNode json(Item item) {
         return objectMapper.valueToTree(mapper.toVttg(item));
     }
@@ -244,6 +445,13 @@ class VttgItemMapperTest {
         damage.setRoll(roll(dice));
         damage.setType(type);
         return damage;
+    }
+
+    private DamagePart damagePart(String formula, String versatileFormula) {
+        DamagePart part = new DamagePart();
+        part.setFormula(formula);
+        part.setVersatileFormula(versatileFormula);
+        return part;
     }
 
     private Roll roll(Dice dice) {

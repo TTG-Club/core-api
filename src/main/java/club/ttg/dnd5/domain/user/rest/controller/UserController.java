@@ -4,7 +4,9 @@ import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterRequest;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByLoginResponse;
+import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByUserIdResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameResponse;
+import club.ttg.dnd5.domain.user.rest.dto.DisplayNamesByIdsLookupRequest;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNamesLookupRequest;
 import club.ttg.dnd5.domain.user.rest.dto.UpdateDisplayNameRequest;
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
@@ -56,6 +58,13 @@ public class UserController {
     public List<DisplayNameByLoginResponse> resolveDisplayNames(
             @Valid @RequestBody DisplayNamesLookupRequest request) {
         return displayNameService.resolveByLogins(request.logins());
+    }
+
+    @Operation(summary = "Отображаемые имена по идентификаторам пользователей (публично)")
+    @PostMapping("/display-names/by-ids")
+    public List<DisplayNameByUserIdResponse> resolveDisplayNamesByIds(
+            @Valid @RequestBody DisplayNamesByIdsLookupRequest request) {
+        return displayNameService.resolveByUserIds(request.userIds());
     }
 
     @Secured("ADMIN")

@@ -309,3 +309,29 @@ databaseChangeLog:
       file: db/changelog/2026/08/18-06-backfill-species-mechanics.yaml
   - include:
       file: db/changelog/2026/08/23-01-add-telegram-summary-to-article.yaml
+  - include:
+      file: db/changelog/2026/08/25-01-add-feat-active-effects.yaml
+  - include:
+      file: db/changelog/2026/08/26-01-add-item-tool-effects.yaml
+  - include:
+      file: db/changelog/2026/08/27-01-add-background-mechanics-tools.yaml
+  - include:
+      file: db/changelog/2026/08/28-01-add-magic-item-damage-properties.yaml
+  - include:
+      file: db/changelog/2026/08/29-01-add-class-mechanics-and-effects.yaml
+  - include:
+      file: db/changelog/2026/08/29-02-add-species-active-effects.yaml
+  - include:
+      file: db/changelog/2026/08/29-03-add-creature-active-effects.yaml
+  - include:
+      file: db/changelog/2026/08/29-04-backfill-class-spellcasting.yaml
+  - include:
+      file: db/changelog/2026/08/29-05-backfill-class-subclass-info.yaml
+  - include:
+      file: db/changelog/2026/08/29-06-backfill-class-table-column-purpose.yaml
+  - include:
+      file: db/changelog/2026/08/29-07-backfill-class-informational-features.yaml
+  - include:
+      file: db/changelog/2026/08/30-01-move-species-darkvision-to-feature-senses.yaml
+  - include:
+      file: db/changelog/2026/08/30-02-add-species-vision.yaml
