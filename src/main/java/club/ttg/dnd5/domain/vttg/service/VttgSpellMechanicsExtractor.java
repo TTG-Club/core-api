@@ -66,7 +66,7 @@ public class VttgSpellMechanicsExtractor {
         boolean structuredHealing = effect != null && hasValues(effect.getHealingTypes());
         boolean healing = formulaHealing || structuredHealing || hasHealing(text);
         String formula = formulas == null
-                ? extractFormula(text, healing)
+                ? (damageCleared(effect) ? null : extractFormula(text, healing))
                 : firstFormulaOnly(formulas.getFirst());
         String damageType = structuredDamageType(formulas);
 
@@ -145,6 +145,19 @@ public class VttgSpellMechanicsExtractor {
 
     private List<String> structuredDamageFormulas(SpellEffect effect) {
         return effect == null || !hasValues(effect.getDamageFormulas()) ? null : effect.getDamageFormulas();
+    }
+
+    /**
+     * Автор явно сказал «урона у заклинания нет»: во вкладке «Бой» список формул
+     * сохранён пустым. Это не то же самое, что незаполненная запись ({@code null}):
+     * там формулу ещё можно угадать по описанию, а здесь угадывать нельзя — кости
+     * в тексте принадлежат не заклинанию (когти Смены обличья, вычет из чужого
+     * урона у Луча слабости, зачарование оружия у Вливания сущности Эммелины).
+     */
+    private boolean damageCleared(SpellEffect effect) {
+        return effect != null
+                && effect.getDamageFormulas() != null
+                && effect.getDamageFormulas().isEmpty();
     }
 
     private String structuredDamageType(List<String> formulas) {
