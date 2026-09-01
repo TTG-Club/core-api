@@ -11,7 +11,6 @@ import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.service.SpeciesService;
 import club.ttg.dnd5.domain.spell.model.Spell;
-import club.ttg.dnd5.domain.spell.repository.SpellAffiliationLevelView;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationDto;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellDetailedResponse;
@@ -32,9 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -46,13 +44,6 @@ public class SpellService
 {
     /** Тип сущности в единой таблице истории изменений. */
     public static final String REVISION_ENTITY_TYPE = "spell";
-
-    /**
-     * Уровень новой связи с видом. Со стороны заклинания уровень не задаётся —
-     * его правят в записи вида, — поэтому связь заводится с первого уровня, как
-     * и колонка по умолчанию в базе.
-     */
-    private static final int DEFAULT_REQUIRED_LEVEL = 1;
 
     private final ClassService classService;
     private final SpeciesService speciesService;
@@ -239,13 +230,8 @@ public class SpellService
                 throw new EntityExistException(String.format("Заклинание с url %s уже существует", request.getUrl()));
             }
 
-            // Запись пересоздаётся под новым url, и связи с видами заводятся заново —
-            // с уровнем по умолчанию. Уровни запоминаются, чтобы вернуть их на место.
-            Map<String, Integer> speciesLevels = affiliationLevels(
-                    spellRepository.findSpeciesAffiliationLevels(oldUrl));
-            Map<String, Integer> lineageLevels = affiliationLevels(
-                    spellRepository.findLineageAffiliationLevels(oldUrl));
-
+            // Смена url пересоздаёт запись, а вместе с ней и связи: уровень врождённого
+            // заклинания у вида при переименовании заклинания вернётся к первому.
             spellRepository.deleteById(oldUrl);
             spellRepository.flush();
 
@@ -257,8 +243,6 @@ public class SpellService
                     spellMapper.toRequest(renamed));
             revisionService.record(REVISION_ENTITY_TYPE, renamed.getUrl(), RevisionOperation.UPDATE,
                     spellMapper.toRequest(renamed));
-
-            restoreAffiliationLevels(renamed.getUrl(), speciesLevels, lineageLevels);
             return renamed.getUrl();
         }
 
@@ -269,17 +253,18 @@ public class SpellService
 
         if (affiliations != null)
         {
-            // Виды и происхождения правятся построчно: их таблица связи общая с
-            // врождёнными заклинаниями вида, и замена набора целиком стирала бы
-            // уровень (required_level) у связей, которые никто не менял.
+            // Виды и происхождения правятся на месте, а не заменой набора: их таблица
+            // связи общая с врождёнными заклинаниями вида и несёт чужой уровень.
             if (affiliations.getSpecies() != null)
             {
-                syncSpeciesAffiliation(existingSpell.getUrl(), species);
+                existingSpell.setSpeciesAffiliation(
+                        syncAffiliation(existingSpell.getSpeciesAffiliation(), species));
             }
 
             if (affiliations.getLineages() != null)
             {
-                syncLineageAffiliation(existingSpell.getUrl(), lineages);
+                existingSpell.setLineagesAffiliation(
+                        syncAffiliation(existingSpell.getLineagesAffiliation(), lineages));
             }
 
             if (affiliations.getClasses() != null)
@@ -331,71 +316,35 @@ public class SpellService
     }
 
     /**
-     * Приводит связь заклинания с видами к запрошенному набору, не трогая уцелевшие
-     * строки: их {@code required_level} принадлежит стороне вида и должен пережить
-     * сохранение заклинания.
+     * Приводит набор связей к запрошенному, правя существующую коллекцию, а не
+     * подменяя её новой.
+     *
+     * <p>Разница не косметическая: подменённую коллекцию Hibernate считает выброшенной
+     * и переписывает все строки связи заново, а таблица связи с видами общая с их
+     * врождёнными заклинаниями и несёт чужую колонку {@code required_level} — уровень
+     * терялся бы у связей, которые никто не менял. Правка на месте трогает только
+     * разницу, и уцелевшая строка остаётся нетронутой вместе с уровнем.</p>
+     *
+     * @param current коллекция сущности; {@code null} — связей ещё нет.
+     * @param wanted  набор из запроса.
+     * @return коллекцию, которую следует записать в сущность.
      */
-    private void syncSpeciesAffiliation(String spellUrl, Set<Species> species)
+    private Set<Species> syncAffiliation(Set<Species> current, Set<Species> wanted)
     {
-        Set<String> wanted = urlsOf(species);
-        Set<String> current = affiliationLevels(spellRepository.findSpeciesAffiliationLevels(spellUrl)).keySet();
-
-        Set<String> removed = notIn(current, wanted);
-        if (!removed.isEmpty())
+        if (current == null)
         {
-            spellRepository.deleteSpeciesAffiliations(spellUrl, removed);
+            return new LinkedHashSet<>(wanted);
         }
 
-        notIn(wanted, current).forEach(speciesUrl ->
-                spellRepository.addSpeciesAffiliation(spellUrl, speciesUrl, DEFAULT_REQUIRED_LEVEL));
-    }
+        Set<String> wantedUrls = wanted.stream().map(Species::getUrl).collect(Collectors.toSet());
+        current.removeIf(item -> !wantedUrls.contains(item.getUrl()));
 
-    /** То же для происхождений видов — у них своя таблица связи с той же особенностью. */
-    private void syncLineageAffiliation(String spellUrl, Set<Species> lineages)
-    {
-        Set<String> wanted = urlsOf(lineages);
-        Set<String> current = affiliationLevels(spellRepository.findLineageAffiliationLevels(spellUrl)).keySet();
+        Set<String> currentUrls = current.stream().map(Species::getUrl).collect(Collectors.toSet());
+        wanted.stream()
+                .filter(item -> !currentUrls.contains(item.getUrl()))
+                .forEach(current::add);
 
-        Set<String> removed = notIn(current, wanted);
-        if (!removed.isEmpty())
-        {
-            spellRepository.deleteLineageAffiliations(spellUrl, removed);
-        }
-
-        notIn(wanted, current).forEach(lineageUrl ->
-                spellRepository.addLineageAffiliation(spellUrl, lineageUrl, DEFAULT_REQUIRED_LEVEL));
-    }
-
-    /** Возвращает уровни связям, пересозданным при смене url. */
-    private void restoreAffiliationLevels(String spellUrl,
-                                          Map<String, Integer> speciesLevels,
-                                          Map<String, Integer> lineageLevels)
-    {
-        speciesLevels.forEach((speciesUrl, level) ->
-                spellRepository.updateSpeciesAffiliationLevel(spellUrl, speciesUrl, level));
-        lineageLevels.forEach((lineageUrl, level) ->
-                spellRepository.updateLineageAffiliationLevel(spellUrl, lineageUrl, level));
-    }
-
-    private Map<String, Integer> affiliationLevels(List<SpellAffiliationLevelView> rows)
-    {
-        return rows.stream()
-                .filter(row -> row.getUrl() != null)
-                .collect(Collectors.toMap(
-                        SpellAffiliationLevelView::getUrl,
-                        row -> row.getLevel() == null ? DEFAULT_REQUIRED_LEVEL : row.getLevel(),
-                        (first, second) -> first,
-                        LinkedHashMap::new));
-    }
-
-    private Set<String> urlsOf(Set<Species> species)
-    {
-        return species.stream().map(Species::getUrl).collect(Collectors.toSet());
-    }
-
-    private Set<String> notIn(Set<String> source, Set<String> other)
-    {
-        return source.stream().filter(url -> !other.contains(url)).collect(Collectors.toSet());
+        return current;
     }
 
     private void filterAffiliationsBySavedSources(SpellDetailedResponse response)

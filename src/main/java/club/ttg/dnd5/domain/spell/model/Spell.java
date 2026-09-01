@@ -62,10 +62,10 @@ public class Spell extends NamedEntity {
      *
      * <p>Таблица связи общая с врождёнными заклинаниями вида: там же лежит колонка
      * {@code required_level}, которой эта связь не знает (см.
-     * {@code SpeciesRepository#findInnateSpells}). Поэтому набор нельзя заменять
-     * целиком — Hibernate удалил бы строки вместе с уровнями и создал бы их заново с
-     * единицей. Сохранение заклинания правит связь построчно, через
-     * {@code SpellRepository}: только те виды, что реально добавили или убрали.</p>
+     * {@code SpeciesRepository#findInnateSpells}). Поэтому коллекцию нельзя подменять
+     * новой — Hibernate счёл бы её выброшенной, удалил все строки вместе с уровнями и
+     * создал заново с единицей. Правится она на месте, в
+     * {@code SpellService#syncAffiliation}: тогда в базу уходит только разница.</p>
      */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

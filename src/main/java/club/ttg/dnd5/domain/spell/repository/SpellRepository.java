@@ -5,7 +5,6 @@ import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
 
@@ -17,82 +16,6 @@ import java.util.Set;
 
 public interface SpellRepository extends JpaRepository<Spell, String> {
     long countByUrlIn(Collection<String> urls);
-
-    // ── связь с видами и происхождениями ───────────────────────────────────
-    // Таблицы общие с врождёнными заклинаниями вида: в них есть колонка
-    // required_level, которой связь со стороны заклинания не знает. Поэтому связь
-    // правится построчно, а не заменой набора: строки, оставшиеся на месте, не
-    // трогаются и сохраняют свой уровень.
-
-    @Query(value = """
-            select species_affiliation_url as url, required_level as level
-            from spell_species_affiliation
-            where spell_url = :spellUrl
-            """, nativeQuery = true)
-    List<SpellAffiliationLevelView> findSpeciesAffiliationLevels(@Param("spellUrl") String spellUrl);
-
-    @Query(value = """
-            select lineages_affiliation_url as url, required_level as level
-            from spell_lineages_affiliation
-            where spell_url = :spellUrl
-            """, nativeQuery = true)
-    List<SpellAffiliationLevelView> findLineageAffiliationLevels(@Param("spellUrl") String spellUrl);
-
-    @Modifying(flushAutomatically = true)
-    @Query(value = """
-            delete from spell_species_affiliation
-            where spell_url = :spellUrl and species_affiliation_url in (:speciesUrls)
-            """, nativeQuery = true)
-    void deleteSpeciesAffiliations(@Param("spellUrl") String spellUrl,
-                                   @Param("speciesUrls") Collection<String> speciesUrls);
-
-    @Modifying(flushAutomatically = true)
-    @Query(value = """
-            delete from spell_lineages_affiliation
-            where spell_url = :spellUrl and lineages_affiliation_url in (:lineageUrls)
-            """, nativeQuery = true)
-    void deleteLineageAffiliations(@Param("spellUrl") String spellUrl,
-                                   @Param("lineageUrls") Collection<String> lineageUrls);
-
-    /** Заводит связь с уровнем: новая — с единицей, восстановленная после переименования — со своим. */
-    @Modifying(flushAutomatically = true)
-    @Query(value = """
-            insert into spell_species_affiliation (spell_url, species_affiliation_url, required_level)
-            values (:spellUrl, :speciesUrl, :requiredLevel)
-            on conflict do nothing
-            """, nativeQuery = true)
-    void addSpeciesAffiliation(@Param("spellUrl") String spellUrl,
-                               @Param("speciesUrl") String speciesUrl,
-                               @Param("requiredLevel") int requiredLevel);
-
-    @Modifying(flushAutomatically = true)
-    @Query(value = """
-            insert into spell_lineages_affiliation (spell_url, lineages_affiliation_url, required_level)
-            values (:spellUrl, :lineageUrl, :requiredLevel)
-            on conflict do nothing
-            """, nativeQuery = true)
-    void addLineageAffiliation(@Param("spellUrl") String spellUrl,
-                               @Param("lineageUrl") String lineageUrl,
-                               @Param("requiredLevel") int requiredLevel);
-
-    /** Возврат уровня уцелевшей связи — нужен после переименования, когда строки пересоздаются заново. */
-    @Modifying(flushAutomatically = true)
-    @Query(value = """
-            update spell_species_affiliation set required_level = :requiredLevel
-            where spell_url = :spellUrl and species_affiliation_url = :speciesUrl
-            """, nativeQuery = true)
-    void updateSpeciesAffiliationLevel(@Param("spellUrl") String spellUrl,
-                                       @Param("speciesUrl") String speciesUrl,
-                                       @Param("requiredLevel") int requiredLevel);
-
-    @Modifying(flushAutomatically = true)
-    @Query(value = """
-            update spell_lineages_affiliation set required_level = :requiredLevel
-            where spell_url = :spellUrl and lineages_affiliation_url = :lineageUrl
-            """, nativeQuery = true)
-    void updateLineageAffiliationLevel(@Param("spellUrl") String spellUrl,
-                                       @Param("lineageUrl") String lineageUrl,
-                                       @Param("requiredLevel") int requiredLevel);
 
     @EntityGraph(attributePaths = {"source", "classAffiliation"})
     @Query("select distinct s from Spell s where s.url in :urls")
