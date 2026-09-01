@@ -330,6 +330,14 @@ public interface SpellMapper
         return spellSchool.getSchool().getName();
     }
 
+    /**
+     * Склейка альтернативных названий в одну колонку.
+     *
+     * <p>Разделитель обязан совпадать с тем, по которому строка разбирается обратно
+     * ({@code BaseMapping.altToCollection}). Пока здесь стоял {@code "; "}, а разбор
+     * резал по {@code ";"}, каждое сохранение добавляло всем названиям, кроме первого,
+     * по ведущему пробелу, и они накапливались от правки к правке.</p>
+     */
     @Named("joinAlternative")
     default String joinAlternative(Collection<String> values)
     {
@@ -340,6 +348,7 @@ public interface SpellMapper
 
         return values.stream()
                 .filter(StringUtils::hasText)
-                .collect(Collectors.joining("; "));
+                .map(String::trim)
+                .collect(Collectors.joining(";"));
     }
 }

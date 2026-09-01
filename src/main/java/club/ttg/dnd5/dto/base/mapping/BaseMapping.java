@@ -62,11 +62,22 @@ public interface BaseMapping {
         return Optional.ofNullable(names).map(name -> String.join(";", name)).orElse("");
     }
 
+    /**
+     * Разбор альтернативных названий из одной колонки.
+     *
+     * <p>Края обрезаются: в данных встречаются названия с ведущими пробелами,
+     * накопленными прежней несимметричной склейкой (см. {@code SpellMapper#joinAlternative}).
+     * Пробел ничего не значит ни для поиска, ни для показа, поэтому он снимается
+     * на чтении — и уходит из данных при следующем сохранении записи.</p>
+     */
     @Named("altToCollection")
     default Collection<String> altToCollection(String string) {
         if(StringUtils.isEmpty(string)) {
             return Collections.emptyList();
         }
-        return Arrays.asList(string.split(";"));
+        return Arrays.stream(string.split(";"))
+                .map(String::trim)
+                .filter(StringUtils::isNotEmpty)
+                .toList();
     }
 }
