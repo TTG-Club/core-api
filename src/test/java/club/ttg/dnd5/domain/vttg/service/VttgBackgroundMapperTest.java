@@ -264,6 +264,23 @@ class VttgBackgroundMapperTest {
         assertEquals("[\"lute\",\"drum\"]", choices.get("from").toString());
     }
 
+    /**
+     * Фаэрунские инструменты (FRHoF) — такие же ключи вокабуляра, как книжные: пул
+     * «музыкальный инструмент» состоит из 13 позиций, и три из них раньше выпадали.
+     */
+    @Test
+    void mapsFaerunianInstrumentsToVocabularyKeys() {
+        Background bg = baseBackground("harborfolk", "Портовый житель", "Harborfolk");
+        bg.setToolChoice(new BackgroundToolChoice(1, List.of(
+                ref("bandore-frhof", "Бандора"),
+                ref("cittern-frhof", "Цистра"),
+                ref("yarting-frhof", "Яртинг")
+        )));
+
+        JsonNode choices = json(bg).get("toolGrant").get("choices");
+        assertEquals("[\"bandore\",\"cittern\",\"yarting\"]", choices.get("from").toString());
+    }
+
     /** Выбор на ноль инструментов блоком не едет: выбирать в нём нечего. */
     @Test
     void omitsEmptyToolChoice() {
