@@ -260,6 +260,9 @@ public class MulticlassService {
                     .name(entryClass.getName())
                     .subclass(subclass.map(CharacterClass::getName).orElse(null))
                     .level(segmentLevels)
+                    .casterType(resolveSegmentCasterType(
+                            entryClass.getCasterType(),
+                            subclass.map(CharacterClass::getCasterType).orElse(null)))
                     .build());
 
             if (i > 0 || entries.size() == 1) {
@@ -537,6 +540,18 @@ public class MulticlassService {
 
     private boolean isNotCaster(CasterType casterType) {
         return casterType == null || casterType == CasterType.NONE;
+    }
+
+    /**
+     * Тип заклинателя сегмента мультикласса: свой у класса-заклинателя, иначе подкласса
+     * (мистический рыцарь, мистический ловкач). Уровни Магии договора (PACT) в общий
+     * уровень заклинателя не входят, поэтому фронту нужно знать, какие сегменты — колдунские.
+     */
+    private CasterType resolveSegmentCasterType(CasterType classCasterType, CasterType subclassCasterType) {
+        if (!isNotCaster(classCasterType)) {
+            return classCasterType;
+        }
+        return isNotCaster(subclassCasterType) ? CasterType.NONE : subclassCasterType;
     }
 
     private void addCasterType(List<CasterType> casterTypes, CasterType casterType) {
