@@ -26,7 +26,6 @@ import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesResponse;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChangesStatus;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSource;
-import com.fasterxml.jackson.databind.JsonNode;
 import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import club.ttg.dnd5.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
@@ -288,8 +287,9 @@ public class VttgChangesService {
      * Словарь источников, встречающихся у отданных записей.
      *
      * <p>Отдаём только задействованные: у записи в компендиуме есть лишь {@code sourceKey}, и
-     * потребителю нужны названия ровно для тех ключей, что к нему приехали. Ключ считается тем
-     * же {@link VttgSourceKeys}, что и у самих записей, иначе подпись не нашлась бы.</p>
+     * потребителю нужны названия ровно для тех ключей, что к нему приехали — включая ключи
+     * вложенных записей (подклассы внутри класса). Ключ считается тем же {@link VttgSourceKeys},
+     * что и у самих записей, иначе подпись не нашлась бы.</p>
      *
      * <p>Справочник источников маленький и читается целиком: обратного отображения
      * «ключ → строка таблицы» нет ({@code PHB24} сводится к {@code phb}), а сводить несколько
@@ -298,10 +298,7 @@ public class VttgChangesService {
     private List<VttgSource> sources(List<VttgChange> upserts) {
         Set<String> keys = new HashSet<>();
         for (VttgChange change : upserts) {
-            String key = sourceKeyOf(change.data());
-            if (key != null) {
-                keys.add(key);
-            }
+            VttgSourceKeys.collectSourceKeys(change.data(), keys);
         }
         if (keys.isEmpty()) {
             return List.of();
@@ -319,18 +316,6 @@ public class VttgChangesService {
                     }
                 });
         return List.copyOf(byKey.values());
-    }
-
-    /** Ключ источника записи: payload — либо дерево Jackson, либо карта (разделители черт). */
-    private String sourceKeyOf(Object data) {
-        if (data instanceof JsonNode node) {
-            JsonNode key = node.get("sourceKey");
-            return key != null && key.isTextual() ? key.asText() : null;
-        }
-        if (data instanceof Map<?, ?> map) {
-            return map.get("sourceKey") instanceof String key ? key : null;
-        }
-        return null;
     }
 
     /**

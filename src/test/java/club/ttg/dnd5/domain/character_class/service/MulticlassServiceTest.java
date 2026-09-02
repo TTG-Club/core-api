@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.character_class.model.MulticlassProficiency;
 import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
+import club.ttg.dnd5.domain.character_class.rest.dto.MulticlassInfo;
 import club.ttg.dnd5.domain.character_class.rest.dto.MulticlassResponse;
 import club.ttg.dnd5.domain.character_class.rest.mapper.ClassFeatureMapper;
 import club.ttg.dnd5.domain.character_class.rest.mapper.MulticlassMapper;
@@ -106,6 +107,40 @@ class MulticlassServiceTest {
         verify(multiclassMapper).toMulticlassResponse(captor.capture());
         assertEquals(CasterType.MULTICLASS, captor.getValue().getCasterType());
         assertEquals(2, response.getSpellcastingLevel());
+        assertEquals(
+                List.of(CasterType.THIRD, CasterType.THIRD),
+                response.getMulticlass().stream().map(MulticlassInfo::getCasterType).toList()
+        );
+    }
+
+    @Test
+    void getMulticlassKeepsPactMagicOutOfSpellcastingLevelAndMarksItsSegments() {
+        // Чародей 3, Колдун 1: уровень заклинателя 3 — ячейки договора считаются отдельно по сегменту PACT
+        CharacterClass sorcerer = characterClass("sorcerer");
+        sorcerer.setCasterType(CasterType.FULL);
+
+        CharacterClass warlock = characterClass("warlock");
+        warlock.setCasterType(CasterType.PACT);
+
+        MulticlassRequest request = new MulticlassRequest();
+        request.setLevels(List.of(
+                new MulticlassLevelEntry("sorcerer", null, 3),
+                new MulticlassLevelEntry("warlock", null, 1)
+        ));
+
+        MulticlassResponse response = new MulticlassResponse();
+        when(classRepository.findById("sorcerer")).thenReturn(Optional.of(sorcerer));
+        when(classRepository.findById("warlock")).thenReturn(Optional.of(warlock));
+        when(multiclassMapper.toMulticlassResponse(any(CharacterClass.class))).thenReturn(response);
+
+        service.getMulticlass(request);
+
+        assertEquals(4, response.getCharacterLevel());
+        assertEquals(3, response.getSpellcastingLevel());
+        assertEquals(
+                List.of(CasterType.FULL, CasterType.PACT),
+                response.getMulticlass().stream().map(MulticlassInfo::getCasterType).toList()
+        );
     }
 
     @Test
@@ -295,6 +330,10 @@ class MulticlassServiceTest {
 
         assertEquals(7, response.getCharacterLevel());
         assertEquals(5, response.getSpellcastingLevel());
+        assertEquals(
+                List.of(CasterType.FULL, CasterType.NONE, CasterType.FULL),
+                response.getMulticlass().stream().map(MulticlassInfo::getCasterType).toList()
+        );
     }
 
     @Test
