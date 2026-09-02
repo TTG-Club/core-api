@@ -41,6 +41,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -55,7 +56,10 @@ import java.util.stream.Collectors;
  * {@code ClassDefinition}).
  *
  * <p>Подклассы (дочерние классы) сворачиваются внутрь записи родителя как
- * {@link VttgClass.Subclass}. Поуровневые улучшения умений ({@code scaling}) разворачиваются
+ * {@link VttgClass.Subclass}. Ключ подкласса — его единственная идентичность на листе
+ * персонажа, поэтому внутри класса ключи уникальны ({@link #keyedSubclasses}): два выпуска
+ * одного подкласса (UA-версии «Арканного лучника») иначе приезжали бы с одним ключом.
+ * Поуровневые улучшения умений ({@code scaling}) разворачиваются
  * в отдельные умения на своих уровнях — так их можно адресовать из {@code levelTable.featureKeys}.
  * Таблица прогрессии источника (колонки со значениями по уровням) транспонируется в строки
  * по уровням 1–20; бонус мастерства и состав умений уровня вычисляются здесь.</p>
@@ -75,6 +79,8 @@ public class VttgClassMapper {
     private static final int MAX_LEVEL = 20;
     /** Уровень выбора подкласса по умолчанию (PHB 2024). */
     private static final int DEFAULT_SUBCLASS_LEVEL = 3;
+    /** Первый порядковый суффикс ключа подкласса, когда ключ не удалось развести источником. */
+    private static final int FIRST_SUBCLASS_KEY_ORDINAL = 2;
     /** Стартовый уровень заклинательства базовых классов (PHB 2024). */
     private static final int SPELLCASTING_START_LEVEL = 1;
     /** Канонический ключ эпического дара: по нему потребитель узнаёт умение 19 уровня. */
@@ -119,7 +125,8 @@ public class VttgClassMapper {
     public VttgClass toVttg(CharacterClass characterClass) {
         String key = classKey(characterClass);
         List<VttgClass.Feature> features = features(characterClass.getFeatures(), null);
-        List<VttgClass.Subclass> subclasses = subclasses(characterClass.getSubclasses());
+        List<KeyedSubclass> keyedSubclasses = keyedSubclasses(characterClass);
+        List<VttgClass.Subclass> subclasses = subclasses(keyedSubclasses);
 
         return VttgClass.builder()
                 .type(TYPE)
@@ -151,7 +158,7 @@ public class VttgClassMapper {
                 .features(features)
                 .levelTable(levelTable(table(characterClass), features))
                 .tableColumns(tableColumns(table(characterClass)))
-                .counters(counters(characterClass, subclasses))
+                .counters(counters(characterClass, keyedSubclasses))
                 .multiclassProficiencies(multiclass(characterClass.getMulticlassProficiency()))
                 .activeEffects(effects(characterClass.getActiveEffects()))
                 .featData(featData(characterClass.getMechanics()))
@@ -198,22 +205,15 @@ public class VttgClassMapper {
      * заговоры), и счётчиком она не становится.</p>
      */
     private List<VttgClass.Counter> counters(CharacterClass characterClass,
-                                             List<VttgClass.Subclass> subclasses) {
+                                             List<KeyedSubclass> subclasses) {
         List<VttgClass.Counter> result = new ArrayList<>(
                 merged(mechanicsCounters(characterClass, null), counters(characterClass.getTable(), null)));
 
-        Set<String> exported = subclasses.stream()
-                .map(VttgClass.Subclass::getKey)
-                .collect(Collectors.toSet());
-
-        for (CharacterClass child : subclassSource(characterClass)) {
-            String subclassKey = subclassKey(child);
-            // Ресурсы берём только у подклассов, попавших в запись: иначе счётчик
-            // ссылался бы на подкласс, которого в выгрузке нет
-            if (exported.contains(subclassKey)) {
-                result.addAll(merged(mechanicsCounters(child, subclassKey),
-                        counters(child.getTable(), subclassKey)));
-            }
+        // Ключ подкласса — тот же, под которым подкласс лёг в запись: по нему лист
+        // отличает ресурс своего подкласса от ресурсов остальных
+        for (KeyedSubclass subclass : subclasses) {
+            result.addAll(merged(mechanicsCounters(subclass.record(), subclass.key()),
+                    counters(subclass.record().getTable(), subclass.key())));
         }
         return result.isEmpty() ? null : result;
     }
@@ -424,22 +424,57 @@ public class VttgClassMapper {
 
     // ── Подклассы ────────────────────────────────────────────────
 
-    /** Видимые подклассы (дочерние классы) в порядке имени. */
-    private List<VttgClass.Subclass> subclasses(Collection<CharacterClass> subclasses) {
-        if (subclasses == null) {
-            return List.of();
-        }
-        return subclasses.stream()
-                .filter(Objects::nonNull)
-                .filter(subclass -> !subclass.isHiddenEntity())
+    /**
+     * Дочерний класс вместе с ключом, под которым он уходит в запись.
+     *
+     * @param record дочерний класс источника.
+     * @param key    уникальный внутри родителя ключ подкласса.
+     */
+    private record KeyedSubclass(CharacterClass record, String key) {
+    }
+
+    /**
+     * Видимые подклассы в порядке имени с уникальными ключами.
+     *
+     * <p>Ключ выводится из английского названия, и у двух выпусков одного подкласса он
+     * совпадает. Правило одно с листом ({@code uniqueSubclassKeys} в модуле dnd5e-2024),
+     * чтобы ключ у персонажа пережил переустановку пака: ключ, встречающийся у нескольких
+     * подклассов, у каждого из них дополняется ключом источника ({@code arcane-archer-uaau});
+     * остающийся повтор (тот же источник дважды) получает порядковый номер. Подкласс с
+     * уникальным ключом не переименовывается никогда.</p>
+     */
+    private List<KeyedSubclass> keyedSubclasses(CharacterClass characterClass) {
+        List<CharacterClass> children = subclassSource(characterClass).stream()
                 .sorted(Comparator.comparing(CharacterClass::getName,
                         Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .map(this::subclass)
+                .toList();
+
+        Map<String, Long> occurrences = children.stream()
+                .collect(Collectors.groupingBy(this::subclassKey, Collectors.counting()));
+
+        Set<String> used = new HashSet<>();
+        List<KeyedSubclass> result = new ArrayList<>();
+        for (CharacterClass child : children) {
+            String base = subclassKey(child);
+            String bySource = occurrences.get(base) > 1
+                    ? base + "-" + VttgSourceKeys.of(child.getSource())
+                    : base;
+            String candidate = bySource;
+            for (int ordinal = FIRST_SUBCLASS_KEY_ORDINAL; !used.add(candidate); ordinal++) {
+                candidate = bySource + "-" + ordinal;
+            }
+            result.add(new KeyedSubclass(child, candidate));
+        }
+        return result;
+    }
+
+    private List<VttgClass.Subclass> subclasses(List<KeyedSubclass> subclasses) {
+        return subclasses.stream()
+                .map(keyed -> subclass(keyed.record(), keyed.key()))
                 .toList();
     }
 
-    private VttgClass.Subclass subclass(CharacterClass subclass) {
-        String key = subclassKey(subclass);
+    private VttgClass.Subclass subclass(CharacterClass subclass, String key) {
         List<VttgClass.Feature> features = features(subclass.getFeatures(), key);
         return VttgClass.Subclass.builder()
                 .key(key)

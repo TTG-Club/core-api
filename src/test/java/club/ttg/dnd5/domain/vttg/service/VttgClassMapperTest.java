@@ -46,6 +46,7 @@ import club.ttg.dnd5.domain.item.repository.ItemNameRef;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -1061,6 +1062,75 @@ class VttgClassMapperTest {
         JsonNode json = json(rogue);
         assertFalse(json.has("primaryAbilities"));
         assertFalse(json.has("primaryAbilitiesDelimiter"));
+    }
+
+    /**
+     * Два выпуска одного подкласса (UA-версии «Арканного лучника») выводят один ключ из
+     * английского названия; в записи каждый получает ключ с книгой, а умения и ресурсы
+     * подкласса ссылаются на него же — иначе лист отмечал бы выбором обе строки сразу и
+     * не мог отличить ресурс одного выпуска от другого.
+     */
+    @Test
+    void disambiguatesSubclassesSharingKeyBySource() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+
+        CharacterClass earlyArcher = baseClass("arcane-archer-uaasu", "Арканный лучник", "Arcane Archer");
+        earlyArcher.setSource(source("UAASU"));
+        earlyArcher.setFeatures(List.of(feature("arcane-shot", 3, "Магический выстрел", "Ранняя версия.")));
+        ResourceCounter shots = new ResourceCounter();
+        shots.setKey("arcane-shot-uses");
+        shots.setName("Магические выстрелы");
+        shots.setMax("2");
+        shots.setRecovery(ResourceRecovery.SHORT_REST);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(shots));
+        earlyArcher.setMechanics(mechanics);
+
+        CharacterClass lateArcher = baseClass("arcane-archer-uaau", "Арканный лучник", "Arcane Archer");
+        lateArcher.setSource(source("UAAU"));
+        lateArcher.setFeatures(List.of(feature("arcane-shot", 3, "Магический выстрел", "Поздняя версия.")));
+
+        CharacterClass champion = baseClass("champion", "Чемпион", "Champion");
+        champion.setFeatures(List.of(feature("improved-critical", 3, "Улучшенный критический удар", "Крит на 19.")));
+
+        fighter.setSubclasses(List.of(earlyArcher, lateArcher, champion));
+
+        JsonNode json = json(fighter);
+        assertEquals(List.of("arcane-archer-uaasu", "arcane-archer-uaau", "champion"),
+                subclassKeys(json));
+        assertEquals("arcane-archer-uaasu",
+                json.get("subclasses").get(0).get("features").get(0).get("subclassKey").asText());
+        assertEquals("arcane-archer-uaau",
+                json.get("subclasses").get(1).get("features").get(0).get("subclassKey").asText());
+
+        JsonNode counter = json.get("counters").get(0);
+        assertEquals("arcane-shot-uses", counter.get("key").asText());
+        assertEquals("arcane-archer-uaasu", counter.get("subclassKey").asText());
+    }
+
+    /** Одна и та же книга дважды — ключ разводится порядковым номером, а не теряется. */
+    @Test
+    void numbersSubclassesSharingKeyAndSource() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        CharacterClass first = baseClass("gladiator-1", "Гладиатор", "Gladiator");
+        CharacterClass second = baseClass("gladiator-2", "Гладиатор", "Gladiator");
+        fighter.setSubclasses(List.of(first, second));
+
+        assertEquals(List.of("gladiator-phb", "gladiator-phb-2"), subclassKeys(json(fighter)));
+    }
+
+    /** Ключи подклассов записи в порядке выгрузки — без ключей вложенных умений. */
+    private List<String> subclassKeys(JsonNode json) {
+        List<String> keys = new ArrayList<>();
+        json.get("subclasses").forEach(subclass -> keys.add(subclass.get("key").asText()));
+        return keys;
+    }
+
+    private Source source(String acronym) {
+        Source source = new Source();
+        source.setAcronym(acronym);
+        source.setName(acronym);
+        return source;
     }
 
     private CharacterClass baseClass(String url, String name, String english) {
