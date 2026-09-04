@@ -7,6 +7,8 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.common.rest.dto.EquipmentOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
+import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -16,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.List;
 
 @AllArgsConstructor
@@ -66,6 +69,23 @@ public class ClassDetailedResponse extends BaseResponse {
 
     @Schema(description = "Механика влияния класса на лист персонажа")
     private ClassMechanics mechanics;
+
+    /**
+     * Заклинания, которые даёт сама запись класса, — записями справочника.
+     *
+     * <p>Той же формой, что у умения ({@code ClassFeatureDto.grantedSpells}): в механике
+     * лежат ссылки, а листу персонажа нужен круг заклинания. Заклинания умений сюда не
+     * попадают — они лежат у самих умений.</p>
+     */
+    @Schema(description = "Заклинания, выдаваемые самим классом, с данными справочника")
+    private List<GrantedSpellResponse> grantedSpells;
+
+    /**
+     * Расширение списка заклинаний самой записью класса — списками с данными справочника.
+     * Не выдача: персонаж эти заклинания лишь может выучить или подготовить.
+     */
+    @Schema(description = "Расширение списка заклинаний классом с данными справочника")
+    private Collection<FeatSpellListGroupResponse> spellListGroups;
 
     @Schema(description = "Активные эффекты класса в вокабуляре VTTG")
     private List<ActiveEffect> activeEffects;
