@@ -60,6 +60,10 @@ public interface ClassMapper
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
     @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
     @Mapping(target = "startingEquipment", source = "startingEquipment", qualifiedByName = "toEquipmentOptionDtos")
+    // Заклинания и списки расширения подставляет сервис: маппер в справочник не ходит,
+    // а листу они нужны с кругом и школой
+    @Mapping(target = "grantedSpells", ignore = true)
+    @Mapping(target = "spellListGroups", ignore = true)
     ClassDetailedResponse toDetailedResponse(CharacterClass characterClass);
 
     @BaseMapping.BaseEntityNameMapping

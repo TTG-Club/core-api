@@ -241,9 +241,13 @@ public class ClassService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        var refs = Stream.concat(
+        // Механика самой записи класса идёт наравне с умениями: заклинания, которые даёт
+        // взятие класса целиком, листу нужны с кругом так же, как заклинания умения
+        var refs = Stream.of(
+                        Stream.of(response.getMechanics()),
                         features.stream().map(ClassFeatureDto::getMechanics),
                         options.stream().map(ClassFeatureOptionDto::getMechanics))
+                .flatMap(stream -> stream)
                 .filter(Objects::nonNull)
                 .map(ClassMechanics::getSpells)
                 .filter(Objects::nonNull)
@@ -258,6 +262,12 @@ public class ClassService {
         }
 
         var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(refs);
+
+        var classGranted = grantedSpells(response.getMechanics(), spellsByUrl);
+
+        if (!classGranted.isEmpty()) {
+            response.setGrantedSpells(classGranted);
+        }
 
         for (ClassFeatureDto feature : features) {
             var granted = grantedSpells(feature.getMechanics(), spellsByUrl);
@@ -298,9 +308,11 @@ public class ClassService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        var refs = Stream.concat(
+        var refs = Stream.of(
+                        Stream.of(response.getMechanics()),
                         features.stream().map(ClassFeatureDto::getMechanics),
                         options.stream().map(ClassFeatureOptionDto::getMechanics))
+                .flatMap(stream -> stream)
                 .filter(Objects::nonNull)
                 .map(ClassMechanics::getSpellList)
                 .filter(Objects::nonNull)
@@ -312,6 +324,8 @@ public class ClassService {
         }
 
         var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(refs);
+
+        response.setSpellListGroups(spellListGroups(response.getMechanics(), spellsByUrl));
 
         for (ClassFeatureDto feature : features) {
             feature.setSpellListGroups(spellListGroups(feature.getMechanics(), spellsByUrl));
