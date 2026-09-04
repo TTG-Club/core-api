@@ -73,9 +73,10 @@ public class ClassService {
 
     public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
+        // Подклассы отсекает предикат, а не отбор над страницей: иначе они занимали бы
+        // места В странице, и запрос первых тридцати записей отдавал бы четыре класса
         return classQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
-                .filter(c -> (request.getSearch() != null && !request.getSearch().isEmpty()) || c.getParent() == null)
                 .map(classMapper::toShort)
                 .collect(Collectors.toList());
     }
