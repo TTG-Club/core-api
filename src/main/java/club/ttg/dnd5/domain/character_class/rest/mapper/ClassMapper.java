@@ -54,7 +54,13 @@ public interface ClassMapper
     @Mapping(target = "proficiency.weapon", source = "weaponProficiency", qualifiedByName = "weaponProficiencyToString")
     @Mapping(target = "proficiency.tool", source = "toolProficiency")
     @Mapping(target = "proficiency.skill", source = "skillProficiency", qualifiedByName = "skillProficiencyToString")
+    // Те же владения структурой рядом со строками: строки читает человек, структуру
+    // применяет лист персонажа
+    @Mapping(target = "proficiency.armorData", source = "armorProficiency")
+    @Mapping(target = "proficiency.weaponData", source = "weaponProficiency")
+    @Mapping(target = "proficiency.skillData", source = "skillProficiency")
     @Mapping(target = "savingThrows", source = "savingThrows", qualifiedByName = "toSavingThrowsString")
+    @Mapping(target = "savingThrowAbilities", source = "savingThrows")
     @Mapping(target = "primaryCharacteristics", source = ".", qualifiedByName = "toPrimaryCharacteristics")
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")

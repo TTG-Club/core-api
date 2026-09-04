@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @JsonRootName(value = "properties")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
@@ -16,6 +18,17 @@ public class SpeciesPropertiesResponse {
     private String speed;
     @Schema(description = "Размеры")
     private String size;
+
+    /**
+     * Те же размеры и скорость структурой, как их хранит запись. Строки выше — для
+     * показа человеку, эти поля — для потребителей, которые свойства ПРИМЕНЯЮТ (лист
+     * персонажа): им иначе пришлось бы разбирать русский текст обратно.
+     */
+    @Schema(description = "Размеры записи структурой")
+    private List<SpeciesSizeDto> sizes;
+
+    @Schema(description = "Скорости записи числами")
+    private MovementAttributes movement;
     @Schema(description = "Тип существа")
     private String type;
     /**

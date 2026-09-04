@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesDetailResponse;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesRequest;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesShortResponse;
+import club.ttg.dnd5.domain.species.rest.dto.MovementAttributes;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesSizeDto;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.mapstruct.Mapper;
@@ -28,6 +29,10 @@ public interface SpeciesMapper {
     @Mapping(source = "type.name", target = "properties.type")
     @Mapping(source = ".", target = "properties.speed", qualifiedByName = "toSpeed")
     @Mapping(source = "sizes", target = "properties.size", qualifiedByName = "collectSizes")
+    // Те же размеры и скорости структурой рядом со строками: строки читает человек,
+    // структуру применяет лист персонажа
+    @Mapping(source = "sizes", target = "properties.sizes")
+    @Mapping(source = ".", target = "properties.movement", qualifiedByName = "toMovement")
     @Mapping(source = "vision", target = "properties.vision")
 
     @BaseMapping.BaseSourceMapping
@@ -103,5 +108,21 @@ public interface SpeciesMapper {
     @Named("toSpeed")
     default String toSpeed(Species species) {
         return species.getSpeed() + " футов";
+    }
+
+    /**
+     * Скорости записи числами: те же значения, что уходят в строку {@link #toSpeed},
+     * плюс полёт, лазание и плавание — их строка не несёт вовсе.
+     */
+    @Named("toMovement")
+    default MovementAttributes toMovement(Species species) {
+        var movement = new MovementAttributes();
+
+        movement.setBase(species.getSpeed());
+        movement.setFly(species.getFly());
+        movement.setClimb(species.getClimb());
+        movement.setSwim(species.getSwim());
+
+        return movement;
     }
 }
