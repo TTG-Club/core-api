@@ -4,11 +4,13 @@ import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.species.model.SpeciesFeature;
 import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
+import club.ttg.dnd5.domain.species.rest.dto.SpeciesFeatureResponse;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
 import club.ttg.dnd5.domain.species.repository.SpeciesInnateSpellView;
@@ -60,6 +62,7 @@ public class SpeciesService {
     private final EntityRevisionService revisionService;
     private final SpellRepository spellRepository;
     private final SpellMapper spellMapper;
+    private final GrantedSpellResolver grantedSpellResolver;
 
     public boolean exists(String url) {
         return speciesRepository.existsById(url);
@@ -84,7 +87,49 @@ public class SpeciesService {
         }
 
         applyComputedDarkVision(response, species);
+        resolveSpellLists(response);
         return response;
+    }
+
+    /**
+     * Подставляет записи вида и её умениям списки расширения заклинаний с данными
+     * справочника — одним запросом на весь вид, как это делает деталь класса.
+     *
+     * <p>Расширение — не выдача: врождённые заклинания идут отдельно ({@code innateSpells}),
+     * а здесь то, что персонаж лишь может подготовить. Круг нужен и тут: без него лист не
+     * покажет заклинание в окне добавления.</p>
+     *
+     * @param response деталь вида с уже собранными умениями.
+     */
+    private void resolveSpellLists(SpeciesDetailResponse response) {
+        var features = Optional.ofNullable(response.getFeatures()).orElse(List.of());
+
+        var refs = Stream.concat(
+                        Stream.of(response.getMechanics()),
+                        features.stream().map(SpeciesFeatureResponse::getMechanics))
+                .filter(Objects::nonNull)
+                .map(SpeciesMechanics::getSpellList)
+                .filter(Objects::nonNull)
+                .flatMap(expansion -> grantedSpellResolver.spellListRefs(expansion).stream())
+                .toList();
+
+        if (refs.isEmpty()) {
+            return;
+        }
+
+        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(refs);
+
+        if (response.getMechanics() != null) {
+            response.setSpellListGroups(
+                    grantedSpellResolver.spellListGroups(response.getMechanics().getSpellList(), spellsByUrl));
+        }
+
+        for (SpeciesFeatureResponse feature : features) {
+            if (feature.getMechanics() != null) {
+                feature.setSpellListGroups(
+                        grantedSpellResolver.spellListGroups(feature.getMechanics().getSpellList(), spellsByUrl));
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -271,6 +316,7 @@ public class SpeciesService {
                 resolveInnateSpells(request.getInnateSpells())
         ));
         applyComputedDarkVision(response, species);
+        resolveSpellLists(response);
         return response;
     }
 
@@ -279,6 +325,7 @@ public class SpeciesService {
         SpeciesDetailResponse response = speciesMapper.toDetail(species);
         response.setInnateSpells(innateSpellsOf(species));
         applyComputedDarkVision(response, species);
+        resolveSpellLists(response);
         return response;
     }
 

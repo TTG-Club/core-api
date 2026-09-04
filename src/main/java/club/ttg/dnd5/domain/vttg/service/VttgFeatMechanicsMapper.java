@@ -1001,8 +1001,10 @@ public class VttgFeatMechanicsMapper {
             return null;
         }
         // Черты из выборов черты резолвятся одним запросом на всю запись: у умения их
-        // может быть несколько, и запрос на каждый вариант превратил бы выгрузку в N+1
+        // может быть несколько, и запрос на каждый вариант превратил бы выгрузку в N+1.
+        // Перечисленные заклинания выборов — тем же приёмом
         Map<String, Feat> featsByUrl = featsByUrl(featOptionUrls(choices));
+        Map<String, String> spellNamesByUrl = spellOptionNames(choices);
         List<VttgFeatMechanics.Choice> result = new ArrayList<>();
         for (MechanicChoice choice : choices) {
             if (choice == null) {
@@ -1021,7 +1023,7 @@ public class VttgFeatMechanicsMapper {
                     trimmed(choice.getLabel()),
                     choice.resolveCount(),
                     flag(choice.getCountEqualsProficiencyBonus()),
-                    options(types, choice.getOptions(), featsByUrl),
+                    options(types, choice.getOptions(), featsByUrl, spellNamesByUrl),
                     spellFilter(choice.getSpellFilter()),
                     flag(choice.getOnlyIfNotProficient()),
                     flag(choice.getOnlyIfProficient()),
@@ -1088,7 +1090,8 @@ public class VttgFeatMechanicsMapper {
      * следующем открытии окна владений. Отсюда перевод по типу выбора.</p>
      */
     private List<VttgFeatMechanics.Option> options(List<ChoiceType> types, List<ChoiceOption> options,
-                                                   Map<String, Feat> featsByUrl) {
+                                                   Map<String, Feat> featsByUrl,
+                                                   Map<String, String> spellNamesByUrl) {
         if (CollectionUtils.isEmpty(options)) {
             return null;
         }
@@ -1112,14 +1115,50 @@ public class VttgFeatMechanicsMapper {
                 continue;
             }
             seen.add(value);
-            // Название черты берётся из справочника: редактор пишет снимок, но запись
-            // могли переименовать, и в выборе игрок должен видеть нынешнее имя
-            Feat feat = featsByUrl.get(option.getValue().trim());
-            String name = feat != null && StringUtils.hasText(feat.getName())
-                    ? feat.getName() : trimmed(option.getName());
-            result.add(new VttgFeatMechanics.Option(value, name));
+            result.add(new VttgFeatMechanics.Option(value,
+                    optionName(types, option, featsByUrl, spellNamesByUrl)));
         }
         return emptyToNull(result);
+    }
+
+    /**
+     * Подпись варианта. У черты и заклинания она берётся из справочника: редактор пишет
+     * снимок, но запись могли переименовать, и в выборе игрок должен видеть нынешнее имя.
+     * У остальных видов подпись — снимок редактора.
+     */
+    private String optionName(List<ChoiceType> types, ChoiceOption option, Map<String, Feat> featsByUrl,
+                              Map<String, String> spellNamesByUrl) {
+        String raw = option.getValue().trim();
+        Feat feat = featsByUrl.get(raw);
+        if (feat != null && StringUtils.hasText(feat.getName())) {
+            return feat.getName();
+        }
+        boolean isSpell = types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
+        if (isSpell && StringUtils.hasText(spellNamesByUrl.get(raw))) {
+            return spellNamesByUrl.get(raw);
+        }
+        return trimmed(option.getName());
+    }
+
+    /**
+     * Названия заклинаний, перечисленных в выборах заклинаний записи, — одним запросом на
+     * всю запись. Пусто — перечисленных заклинаний нет, и в справочник ходить незачем.
+     */
+    private Map<String, String> spellOptionNames(List<MechanicChoice> choices) {
+        List<EntityRef> refs = choices.stream()
+                .filter(Objects::nonNull)
+                .filter(choice -> {
+                    List<ChoiceType> types = choice.resolveTypes();
+                    return types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
+                })
+                .map(MechanicChoice::getOptions)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(Objects::nonNull)
+                .filter(option -> StringUtils.hasText(option.getValue()))
+                .map(option -> new EntityRef(option.getValue().trim(), null))
+                .toList();
+        return refs.isEmpty() ? Map.of() : spellNames(refs);
     }
 
     /**

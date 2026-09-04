@@ -687,6 +687,34 @@ class VttgFeatMechanicsMapperTest {
         assertFalse(groups.get(0).has("requiredLevel"));
     }
 
+    /**
+     * Перечисленные заклинания выбора подписываются из справочника: снимок в записи мог
+     * устареть, а игрок должен видеть нынешнее название. Записи, которой в справочнике нет,
+     * остаётся снимок — само значение не теряется, это url записи компендиума.
+     */
+    @Test
+    void resolvesSpellOptionNamesFromCatalog() {
+        when(spellRepository.findAllShortByUrlIn(Set.of("fireball-phb", "lost-spell")))
+                .thenReturn(List.of(spell("fireball-phb", "Огненный шар")));
+
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("arcanum");
+        choice.setType(ChoiceType.SPELL);
+        choice.setOptions(List.of(new ChoiceOption("fireball-phb", "Старое имя"),
+                new ChoiceOption("lost-spell", "Снимок")));
+        mechanics.setChoices(List.of(choice));
+        feat.setMechanics(mechanics);
+
+        JsonNode options = json(feat).get("featData").get("choices").get(0).get("options");
+
+        assertEquals("fireball-phb", options.get(0).get("value").asText());
+        assertEquals("Огненный шар", options.get(0).get("name").asText());
+        assertEquals("lost-spell", options.get(1).get("value").asText());
+        assertEquals("Снимок", options.get(1).get("name").asText());
+    }
+
     private static SpellListGroup spellListGroup(Integer requiredLevel, String count, String... urls) {
         SpellListGroup group = new SpellListGroup();
         group.setRequiredLevel(requiredLevel);

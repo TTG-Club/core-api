@@ -1,13 +1,11 @@
 package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
-import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
-import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -15,7 +13,7 @@ import club.ttg.dnd5.domain.feat.rest.dto.FeatDetailResponse;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatRequest;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatShortResponse;
-import club.ttg.dnd5.domain.feat.rest.dto.FeatSpellListGroupResponse;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.feat.rest.mapper.FeatMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -133,51 +131,16 @@ public class FeatServiceImpl implements FeatService {
     }
 
     /**
-     * Раскладывает заклинания списка по спискам доступа, дополняя их справочником.
-     *
-     * <p>Список без единого найденного заклинания выбрасывается целиком: пустая ступень на
-     * странице выглядела бы как «на этом уровне ничего не открывается», хотя на деле там
-     * опечатка в url.</p>
+     * Списки расширения с данными справочника — общим резолвером: тем же, что у класса,
+     * вида и предыстории. Расширение у всех одной модели, и разбор один.
      *
      * @param response деталь черты с разобранной механикой.
      * @return списки с данными справочника; null — черта список не расширяет.
      */
     private Collection<FeatSpellListGroupResponse> resolveSpellListGroups(final FeatDetailResponse response) {
-        var groups = spellListGroups(response);
-
-        if (groups.isEmpty()) {
-            return null;
-        }
-
-        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(groups.stream()
-                .map(SpellListGroup::getSpells)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .filter(Objects::nonNull)
-                .toList());
-
-        var result = groups.stream()
-                .map(group -> {
-                    var spells = Optional.ofNullable(group.getSpells()).orElse(List.<EntityRef>of()).stream()
-                            .filter(Objects::nonNull)
-                            .map(ref -> spellsByUrl.get(ref.getUrl()))
-                            .filter(Objects::nonNull)
-                            .toList();
-                    return spells.isEmpty() ? null : new FeatSpellListGroupResponse(
-                            group.getRequiredLevel(), group.getCount(), spells);
-                })
-                .filter(Objects::nonNull)
-                .toList();
-
-        return result.isEmpty() ? null : result;
-    }
-
-    /** Списки блока с поправкой на прежнюю плоскую форму — см. {@link SpellListExpansion#resolveGroups()}. */
-    private List<SpellListGroup> spellListGroups(final FeatDetailResponse response) {
-        return Optional.ofNullable(response.getMechanics())
+        return grantedSpellResolver.spellListGroups(Optional.ofNullable(response.getMechanics())
                 .map(FeatMechanics::getSpellList)
-                .map(SpellListExpansion::resolveGroups)
-                .orElse(List.of());
+                .orElse(null));
     }
 
     @Secured({"ADMIN", "MODERATOR"})

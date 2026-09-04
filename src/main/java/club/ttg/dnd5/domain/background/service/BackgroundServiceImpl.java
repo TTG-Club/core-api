@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -54,7 +55,21 @@ public class BackgroundServiceImpl implements BackgroundService {
         BackgroundDetailResponse response = backgroundMapper.toDetail(findByUrl(backgroundUrl));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGrantedSpells(resolveGrantedSpells(response));
+        response.setSpellListGroups(resolveSpellListGroups(response));
         return response;
+    }
+
+    /**
+     * Списки расширения заклинаний с данными справочника — общим резолвером, как у черты
+     * и класса: расширение у всех одной модели.
+     *
+     * @param response деталь предыстории с разобранными дарами.
+     * @return списки с данными справочника; null — предыстория список не расширяет.
+     */
+    private Collection<FeatSpellListGroupResponse> resolveSpellListGroups(final BackgroundDetailResponse response) {
+        return grantedSpellResolver.spellListGroups(Optional.ofNullable(response.getMechanics())
+                .map(FeatMechanics::getSpellList)
+                .orElse(null));
     }
 
     /**
@@ -187,6 +202,7 @@ public class BackgroundServiceImpl implements BackgroundService {
         BackgroundDetailResponse response = backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGrantedSpells(resolveGrantedSpells(response));
+        response.setSpellListGroups(resolveSpellListGroups(response));
         return response;
     }
 

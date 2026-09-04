@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
@@ -13,6 +14,8 @@ import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.source.model.Source;
@@ -344,6 +347,37 @@ class VttgSpeciesMapperTest {
         mechanics.setProficiencies(proficiencies);
         mechanics.setChoices(choices);
         return mechanics;
+    }
+
+    /**
+     * Расширение списка заклинаний умением вида уезжает в его дары — как у черты и умения
+     * класса: у {@code SpeciesMechanics} блок появился ради этого.
+     */
+    @Test
+    void exportsFeatureSpellList() {
+        Species species = baseSpecies("high-elf", "Высший эльф", "High Elf");
+        SpeciesFeature feature = new SpeciesFeature(
+                "elven-lineage", "Эльфийское наследие", "Elven Lineage", "Список волшебника.", null);
+
+        SpellListGroup group = new SpellListGroup();
+        group.setRequiredLevel(3);
+        group.setSpells(List.of(new EntityRef("misty-step", null)));
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setGroups(List.of(group));
+        SpeciesMechanics mechanics = new SpeciesMechanics();
+        mechanics.setSpellList(expansion);
+        feature.setMechanics(mechanics);
+        species.setFeatures(List.of(feature));
+
+        when(spellRepository.findAllShortByUrlIn(Set.of("misty-step")))
+                .thenReturn(List.of(spell("misty-step", "Туманный шаг")));
+
+        JsonNode listGroup = json(species).get("features").get(0).get("featData")
+                .get("spellList").get("groups").get(0);
+
+        assertEquals(3, listGroup.get("requiredLevel").asInt());
+        assertEquals("misty-step", listGroup.get("spells").get(0).get("spellId").asText());
+        assertEquals("Туманный шаг", listGroup.get("spells").get(0).get("name").asText());
     }
 
     /** Заклинания умения уезжают у самого умения, а не отдельной записью. */

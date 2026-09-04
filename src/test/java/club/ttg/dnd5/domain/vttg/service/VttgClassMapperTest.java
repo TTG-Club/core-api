@@ -22,6 +22,7 @@ import club.ttg.dnd5.domain.common.dictionary.Dice;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.dictionary.Language;
@@ -35,6 +36,8 @@ import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListGroup;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.domain.character_class.model.SkillProficiency;
 import club.ttg.dnd5.domain.character_class.model.WeaponProficiency;
@@ -439,6 +442,35 @@ class VttgClassMapperTest {
 
         JsonNode feature = json(ranger).get("features").get(0);
         assertEquals("[\"hunters-mark\"]", feature.get("grantedSpells").toString());
+    }
+
+    /**
+     * Расширение списка заклинаний умением уезжает в его дары — как у черты. Это не выдача:
+     * {@code grantedSpells} у такого умения нет, а список лежит в {@code featData.spellList}.
+     */
+    @Test
+    void exportsFeatureSpellList() {
+        CharacterClass cleric = baseClass("cleric", "Жрец", "Cleric");
+        ClassFeature domain = feature("domain-spells", 1, "Заклинания домена", "Список пополняется.");
+
+        SpellListGroup group = new SpellListGroup();
+        group.setRequiredLevel(3);
+        group.setSpells(List.of(new EntityRef("bless", "Благословение")));
+        SpellListExpansion expansion = new SpellListExpansion();
+        expansion.setGroups(List.of(group));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setSpellList(expansion);
+        domain.setMechanics(mechanics);
+        cleric.setFeatures(List.of(domain));
+
+        JsonNode feature = json(cleric).get("features").get(0);
+        JsonNode listGroup = feature.get("featData").get("spellList").get("groups").get(0);
+
+        assertFalse(feature.has("grantedSpells"));
+        assertEquals(3, listGroup.get("requiredLevel").asInt());
+        assertEquals("bless", listGroup.get("spells").get(0).get("spellId").asText());
+        // Записи в справочнике нет — подпись из снимка редактора
+        assertEquals("Благословение", listGroup.get("spells").get(0).get("name").asText());
     }
 
     /**
