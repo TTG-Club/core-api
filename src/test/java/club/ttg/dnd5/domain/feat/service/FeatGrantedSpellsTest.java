@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.feat.service;
 
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.common.model.mechanics.ClassSpellListGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
@@ -27,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -260,6 +263,127 @@ class FeatGrantedSpellsTest {
     private static SpellShortResponse spellShort(String url) {
         SpellShortResponse response = new SpellShortResponse();
         response.setUrl(url);
+        return response;
+    }
+
+    /**
+     * Список класса выдаётся целиком и разворачивается при отдаче: заклинание, добавленное
+     * в справочник после сохранения записи, попадает в выдачу без правки механики.
+     */
+    @Test
+    void classSpellListIsExpandedFromCatalog() {
+        stubFeat(classListOf(classList(null, null, null, false, "druid-phb")));
+
+        Spell entangle = spellWithUrl("entangle-phb");
+        Spell heal = spellWithUrl("heal-phb");
+        stubClassSpells("druid-phb", entangle, heal);
+
+        var granted = service.getFeat("circle-of-the-land-phb").getGrantedSpells();
+
+        assertIterableEquals(List.of("entangle-phb", "heal-phb"),
+                granted.stream().map(entry -> entry.getSpell().getUrl()).toList());
+    }
+
+    /** Круг группы режет список: «все заговоры друида» не должны давать первый круг. */
+    @Test
+    void classSpellListKeepsOnlyRequestedLevel() {
+        stubFeat(classListOf(classList(null, 0, null, false, "druid-phb")));
+
+        Spell druidcraft = spellWithLevel("druidcraft-phb", 0);
+        Spell entangle = spellWithLevel("entangle-phb", 1);
+        stubClassSpells("druid-phb", druidcraft, entangle);
+
+        var granted = service.getFeat("circle-of-the-land-phb").getGrantedSpells();
+
+        assertIterableEquals(List.of("druidcraft-phb"),
+                granted.stream().map(entry -> entry.getSpell().getUrl()).toList());
+    }
+
+    /**
+     * «По ячейкам» сервер отфильтровать не может — персонажа он не знает, — поэтому список
+     * уезжает целиком с меткой, а круг режет лист.
+     */
+    @Test
+    void classSpellListFromSlotsIsMarkedInsteadOfFiltered() {
+        stubFeat(classListOf(classList(null, null, null, true, "druid-phb")));
+
+        Spell druidcraft = spellWithLevel("druidcraft-phb", 0);
+        Spell heal = spellWithLevel("heal-phb", 6);
+        stubClassSpells("druid-phb", druidcraft, heal);
+
+        var granted = List.copyOf(service.getFeat("circle-of-the-land-phb").getGrantedSpells());
+
+        assertEquals(2, granted.size());
+        assertEquals(Boolean.TRUE, granted.get(0).getLimitedBySlots());
+        assertEquals(Boolean.TRUE, granted.get(1).getLimitedBySlots());
+    }
+
+    /**
+     * Перечисленное заклинание, попавшее и в список класса, идёт один раз и с наименьшим
+     * уровнем открытия: иначе выдача оказалась бы слабее написанного в записи.
+     */
+    @Test
+    void listedSpellWinsOverLaterClassList() {
+        SpellGrant grant = new SpellGrant();
+        grant.setSpells(List.of(new GrantedSpellRef("entangle-phb", null, null)));
+        grant.setClassLists(List.of(classList(10, null, null, false, "druid-phb")));
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setSpells(grant);
+        stubFeat(mechanics);
+
+        Spell entangle = spellWithUrl("entangle-phb");
+        when(spellRepository.findAllShortByUrlIn(any())).thenReturn(List.of(entangle));
+        when(spellMapper.toShort(entangle)).thenReturn(spellShort("entangle-phb"));
+        stubClassSpells("druid-phb", entangle);
+
+        var granted = List.copyOf(service.getFeat("circle-of-the-land-phb").getGrantedSpells());
+
+        assertEquals(1, granted.size());
+        assertNull(granted.get(0).getRequiredLevel());
+    }
+
+    private static FeatMechanics classListOf(ClassSpellListGrant... classLists) {
+        SpellGrant spells = new SpellGrant();
+        spells.setClassLists(List.of(classLists));
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setSpells(spells);
+        return mechanics;
+    }
+
+    private static ClassSpellListGrant classList(Integer requiredLevel, Integer level, Integer maxLevel,
+                                                 boolean fromSlots, String... classUrls) {
+        ClassSpellListGrant classList = new ClassSpellListGrant();
+        classList.setRequiredLevel(requiredLevel);
+        classList.setLevel(level);
+        classList.setMaxLevel(maxLevel);
+        classList.setMaxLevelFromSlots(fromSlots ? Boolean.TRUE : null);
+        classList.setClasses(Arrays.stream(classUrls).map(url -> new EntityRef(url, null)).toList());
+        return classList;
+    }
+
+    /** Заклинания класса в справочнике: у каждого проставлена принадлежность классу. */
+    private void stubClassSpells(String classUrl, Spell... spells) {
+        CharacterClass affiliation = new CharacterClass();
+        affiliation.setUrl(classUrl);
+
+        for (Spell spell : spells) {
+            spell.setClassAffiliation(Set.of(affiliation));
+            when(spellMapper.toShort(spell)).thenReturn(spellShort(spell.getUrl(), spell.getLevel()));
+        }
+
+        when(spellRepository.findAllShortByClassUrlIn(any())).thenReturn(List.of(spells));
+    }
+
+    private static Spell spellWithLevel(String url, long level) {
+        Spell spell = spellWithUrl(url);
+        spell.setLevel(level);
+        return spell;
+    }
+
+    private static SpellShortResponse spellShort(String url, Long level) {
+        SpellShortResponse response = spellShort(url);
+        response.setLevel(level);
         return response;
     }
 }

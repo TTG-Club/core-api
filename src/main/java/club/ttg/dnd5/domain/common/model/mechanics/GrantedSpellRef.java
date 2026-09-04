@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.model.mechanics;
 
+import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,6 +40,29 @@ public class GrantedSpellRef extends EntityRef {
      */
     @Schema(description = "Уровень персонажа, с которого доступно заклинание", example = "3")
     private Integer requiredLevel;
+
+    /**
+     * Характеристика, от которой считаются ЭТИ заклинания. {@code null} — группа её не
+     * задаёт, и характеристику берут выше: сперва ответ игрока, затем
+     * {@link SpellGrant#getSpellcastingAbility()}, затем класс, чья это магия.
+     *
+     * <p>У группы, а не только у записи целиком: один набор заклинаний записи может
+     * считаться от одной характеристики, другой — от другой, и одно поле на всех
+     * заставило бы заводить ради этого вторую запись.</p>
+     */
+    @Schema(description = "Характеристика заклинаний группы", examples = {"WISDOM", "CHARISMA"})
+    private Ability spellcastingAbility;
+
+    /**
+     * ЭТИ заклинания не нужно готовить. {@code null} — группа отметку не задаёт, и её
+     * берут у записи ({@link SpellGrant#getAlwaysPrepared()}).
+     *
+     * <p>У группы по той же причине, что и характеристику: заклинания домена всегда
+     * подготовлены, а заклинание, выданное тем же умением сверх них, подготовку
+     * занимает.</p>
+     */
+    @Schema(description = "Заклинания группы всегда подготовлены")
+    private Boolean alwaysPrepared;
 
     public GrantedSpellRef(String url, String name, Integer requiredLevel) {
         super(url, name);

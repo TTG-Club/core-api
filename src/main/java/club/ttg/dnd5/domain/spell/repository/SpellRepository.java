@@ -20,6 +20,27 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
     @EntityGraph(attributePaths = {"source", "classAffiliation"})
     @Query("select distinct s from Spell s where s.url in :urls")
     List<Spell> findAllShortByUrlIn(@Param("urls") Collection<String> urls);
+
+    /**
+     * Список заклинаний класса целиком — для выдачи «знает все заклинания друида».
+     *
+     * <p>Только по связи класса, без подклассов: так же сужает раздел «Заклинания», когда в
+     * фильтре выбран один класс, и список выдачи обязан совпадать с тем, что автор видит в
+     * каталоге. Скрытые записи (мягкое удаление) не выдаются.</p>
+     *
+     * @param classUrls слаги классов, чьи списки выдаются.
+     * @return записи справочника; пусто — ни у одного класса заклинаний нет.
+     */
+    @EntityGraph(attributePaths = {"source", "classAffiliation"})
+    @Query("""
+            select distinct s from Spell s
+            join s.classAffiliation c
+            where c.url in :classUrls
+              and s.isHiddenEntity = false
+            order by s.level, s.name
+            """)
+    List<Spell> findAllShortByClassUrlIn(@Param("classUrls") Collection<String> classUrls);
+
     @EntityGraph(attributePaths = {
             "source",
             "classAffiliation", "classAffiliation.source",

@@ -5,7 +5,6 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureOptionDto;
 import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
-import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import java.util.Collection;
@@ -244,7 +243,7 @@ public class ClassService {
 
         // Механика самой записи класса идёт наравне с умениями: заклинания, которые даёт
         // взятие класса целиком, листу нужны с кругом так же, как заклинания умения
-        var refs = Stream.of(
+        var grants = Stream.of(
                         Stream.of(response.getMechanics()),
                         features.stream().map(ClassFeatureDto::getMechanics),
                         options.stream().map(ClassFeatureOptionDto::getMechanics))
@@ -252,26 +251,36 @@ public class ClassService {
                 .filter(Objects::nonNull)
                 .map(ClassMechanics::getSpells)
                 .filter(Objects::nonNull)
-                .map(SpellGrant::getSpells)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .filter(Objects::nonNull)
                 .toList();
 
-        if (refs.isEmpty()) {
+        var refs = grants.stream()
+                .map(grantedSpellResolver::grantedSpellRefs)
+                .flatMap(List::stream)
+                .toList();
+
+        // Списки классов, выдаваемые целиком, — тоже одним запросом на весь класс: у
+        // друида такой список у каждого умения круга был бы запросом на умение
+        var classUrls = grants.stream()
+                .map(grantedSpellResolver::classSpellListUrls)
+                .flatMap(List::stream)
+                .distinct()
+                .toList();
+
+        if (refs.isEmpty() && classUrls.isEmpty()) {
             return;
         }
 
         var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(refs);
+        var spellsByClassUrl = grantedSpellResolver.spellsByClassUrl(classUrls);
 
-        var classGranted = grantedSpells(response.getMechanics(), spellsByUrl);
+        var classGranted = grantedSpells(response.getMechanics(), spellsByUrl, spellsByClassUrl);
 
         if (!classGranted.isEmpty()) {
             response.setGrantedSpells(classGranted);
         }
 
         for (ClassFeatureDto feature : features) {
-            var granted = grantedSpells(feature.getMechanics(), spellsByUrl);
+            var granted = grantedSpells(feature.getMechanics(), spellsByUrl, spellsByClassUrl);
 
             if (!granted.isEmpty()) {
                 feature.setGrantedSpells(granted);
@@ -281,7 +290,7 @@ public class ClassService {
         // Вариант умения выдаёт заклинания так же, как умение: воззвание колдуна даёт
         // «Огонь фей», и листу персонажа нужен круг заклинания, а не одна ссылка
         for (ClassFeatureOptionDto option : options) {
-            var granted = grantedSpells(option.getMechanics(), spellsByUrl);
+            var granted = grantedSpells(option.getMechanics(), spellsByUrl, spellsByClassUrl);
 
             if (!granted.isEmpty()) {
                 option.setGrantedSpells(granted);
@@ -352,22 +361,17 @@ public class ClassService {
     /**
      * Заклинания механики записями справочника.
      *
-     * @param mechanics   механика умения или его варианта; {@code null} — выдавать нечего
-     * @param spellsByUrl найденные записи справочника по ссылке
-     * @return выданные заклинания; пустой список — ссылок нет либо ни одна не найдена
+     * @param mechanics        механика умения или его варианта; {@code null} — выдавать нечего
+     * @param spellsByUrl      найденные записи справочника по ссылке
+     * @param spellsByClassUrl списки заклинаний по слагу класса
+     * @return выданные заклинания; пустой список — выдавать нечего либо ничего не найдено
      */
     private List<GrantedSpellResponse> grantedSpells(ClassMechanics mechanics,
-                                                     Map<String, SpellShortResponse> spellsByUrl) {
-        return Optional.ofNullable(mechanics)
-                .map(ClassMechanics::getSpells)
-                .map(SpellGrant::getSpells)
-                .orElse(List.of())
-                .stream()
-                .filter(Objects::nonNull)
-                .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
-                .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
-                        ref.getRequiredLevel()))
-                .toList();
+                                                     Map<String, SpellShortResponse> spellsByUrl,
+                                                     Map<String, List<SpellShortResponse>> spellsByClassUrl) {
+        return grantedSpellResolver.grantedSpells(
+                Optional.ofNullable(mechanics).map(ClassMechanics::getSpells).orElse(null),
+                spellsByUrl, spellsByClassUrl);
     }
 
     /**
