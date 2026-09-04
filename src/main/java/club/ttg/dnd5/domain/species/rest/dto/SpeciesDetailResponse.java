@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.species.rest.dto;
 
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,6 +32,9 @@ public class SpeciesDetailResponse extends BaseResponse {
 
     @Schema(description = "Активные эффекты вида в вокабуляре VTTG")
     private List<ActiveEffect> activeEffects;
+
+    @Schema(description = "Расширение списка заклинаний самой записью с данными справочника")
+    private Collection<FeatSpellListGroupResponse> spellListGroups;
 
     @Schema(description = "Врождённые заклинания и уровни их доступности")
     private Collection<SpeciesInnateSpellResponse> innateSpells;

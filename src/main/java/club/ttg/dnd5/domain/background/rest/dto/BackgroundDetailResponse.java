@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import club.ttg.dnd5.domain.common.rest.dto.EquipmentOptionDto;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -80,6 +81,13 @@ public class BackgroundDetailResponse extends BaseResponse {
      */
     @Schema(description = "Выдаваемые предысторией заклинания с данными справочника")
     private Collection<GrantedSpellResponse> grantedSpells;
+
+    /**
+     * Расширение списка заклинаний из {@code mechanics.spellList} с данными справочника —
+     * той же формой, что у черты ({@code FeatDetailResponse.spellListGroups}).
+     */
+    @Schema(description = "Расширение списка заклинаний предысторией с данными справочника")
+    private Collection<FeatSpellListGroupResponse> spellListGroups;
 
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Снаряжение")

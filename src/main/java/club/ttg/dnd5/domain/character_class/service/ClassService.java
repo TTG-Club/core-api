@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.character_class.service;
 import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureDto;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureOptionDto;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
@@ -201,6 +202,7 @@ public class ClassService {
         var response = classMapper.toDetailedResponse(charClass);
         fillResponseFieldsFromParentClass(charClass, response);
         resolveFeatureGrantedSpells(response);
+        resolveFeatureSpellLists(response);
         fillCounterTableColumns(response, parentMechanics(charClass));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.CLASS)
@@ -274,6 +276,62 @@ public class ClassService {
                 option.setGrantedSpells(granted);
             }
         }
+    }
+
+    /**
+     * Подставляет умениям и их вариантам списки расширения заклинаний с данными
+     * справочника — одним запросом на весь класс, как и выданные заклинания.
+     *
+     * <p>Расширение — не выдача: персонаж эти заклинания лишь может подготовить, и лист
+     * показывает их в окне добавления. Но круг ему нужен так же — без круга заклинание
+     * некуда положить.</p>
+     *
+     * @param response деталь класса с уже собранными умениями.
+     */
+    private void resolveFeatureSpellLists(ClassDetailedResponse response) {
+        var features = Optional.ofNullable(response.getFeatures()).orElse(List.of());
+
+        var options = features.stream()
+                .map(ClassFeatureDto::getOptions)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .toList();
+
+        var refs = Stream.concat(
+                        features.stream().map(ClassFeatureDto::getMechanics),
+                        options.stream().map(ClassFeatureOptionDto::getMechanics))
+                .filter(Objects::nonNull)
+                .map(ClassMechanics::getSpellList)
+                .filter(Objects::nonNull)
+                .flatMap(expansion -> grantedSpellResolver.spellListRefs(expansion).stream())
+                .toList();
+
+        if (refs.isEmpty()) {
+            return;
+        }
+
+        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(refs);
+
+        for (ClassFeatureDto feature : features) {
+            feature.setSpellListGroups(spellListGroups(feature.getMechanics(), spellsByUrl));
+        }
+
+        for (ClassFeatureOptionDto option : options) {
+            option.setSpellListGroups(spellListGroups(option.getMechanics(), spellsByUrl));
+        }
+    }
+
+    /**
+     * Списки расширения механики записями справочника.
+     *
+     * @param mechanics   механика умения или его варианта; {@code null} — расширять нечем
+     * @param spellsByUrl найденные записи справочника по ссылке
+     * @return списки с данными справочника; {@code null} — ссылок нет либо ни одна не найдена
+     */
+    private Collection<FeatSpellListGroupResponse> spellListGroups(ClassMechanics mechanics,
+                                                                    Map<String, SpellShortResponse> spellsByUrl) {
+        return mechanics == null ? null : grantedSpellResolver.spellListGroups(mechanics.getSpellList(), spellsByUrl);
     }
 
     /**
@@ -399,6 +457,10 @@ public class ClassService {
         var entity = classMapper.toEntity(request, source);
         entity.setParent(parent);
         var response = classMapper.toDetailedResponse(entity);
+        // Предпросмотр показывает то же, что и сохранённая запись: заклинания умений с
+        // кругом и школой, а не одни ссылки
+        resolveFeatureGrantedSpells(response);
+        resolveFeatureSpellLists(response);
         fillCounterTableColumns(response, parentMechanics(entity));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
         response.setGallery(galleryRepository.findAllByUrlAndType(response.getUrl(), SectionType.CLASS)

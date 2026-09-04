@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.character_class.rest.dto;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
 import club.ttg.dnd5.domain.character_class.model.mechanics.ClassMechanics;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
@@ -13,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.List;
 
 @AllArgsConstructor
@@ -62,6 +64,14 @@ public class ClassFeatureOptionDto {
      */
     @Schema(description = "Заклинания, выдаваемые вариантом, с данными справочника")
     private List<GrantedSpellResponse> grantedSpells;
+
+    /**
+     * Расширение списка заклинаний — списками с данными справочника. В механике лежат
+     * одни ссылки, а листу персонажа нужен круг: без него заклинание некуда положить в
+     * окно добавления. Подставляет сервис, как и {@link #grantedSpells}.
+     */
+    @Schema(description = "Расширение списка заклинаний с данными справочника")
+    private Collection<FeatSpellListGroupResponse> spellListGroups;
 
     public ClassFeatureOptionDto(ClassFeatureOption option) {
         this.key = option.getKey();

@@ -1,6 +1,5 @@
-package club.ttg.dnd5.domain.feat.rest.dto;
+package club.ttg.dnd5.domain.common.rest.dto;
 
-import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,10 +33,13 @@ public class FeatSpellListGroupResponse {
     private Integer requiredLevel;
 
     /**
-     * Сколько заклинаний из списка игрок берёт: формула той же грамматики, что у максимума
-     * ресурса. {@code null} — весь список целиком.
+     * Прежняя настройка «сколько берут». Расширение списка количества не спрашивает —
+     * оно лишь делает заклинания доступными для подготовки, а «выбрать N из перечисленных»
+     * стало выбором заклинаний с перечисленным пулом. Поле отдаётся как есть ради записей,
+     * сохранённых до этого; потребители его не читают.
      */
-    @Schema(description = "Сколько заклинаний берут; пусто — весь список", example = "@prof")
+    @Deprecated
+    @Schema(description = "Устаревшее: прежнее «сколько берут»; потребители не читают", example = "@prof")
     private String count;
 
     @Schema(description = "Заклинания списка с данными справочника")

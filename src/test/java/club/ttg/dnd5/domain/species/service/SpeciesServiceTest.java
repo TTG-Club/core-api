@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.species.service;
 
+import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
+
 import club.ttg.dnd5.domain.common.rest.dto.SourceRequest;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
@@ -33,6 +35,7 @@ class SpeciesServiceTest
     private final EntityRevisionService revisionService = mock(EntityRevisionService.class);
     private final SpellRepository spellRepository = mock(SpellRepository.class);
     private final SpellMapper spellMapper = mock(SpellMapper.class);
+    private final GrantedSpellResolver grantedSpellResolver = mock(GrantedSpellResolver.class);
     private final SpeciesService service = new SpeciesService(
             speciesRepository,
             sourceService,
@@ -42,7 +45,8 @@ class SpeciesServiceTest
             sourceSavedFilterService,
             revisionService,
             spellRepository,
-            spellMapper
+            spellMapper,
+            grantedSpellResolver
     );
 
     @Test

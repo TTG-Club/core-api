@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
+import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -34,7 +35,8 @@ import java.util.List;
  *
  * <p>Выдачи заклинаний здесь тоже нет: заклинания вида живут в связующей таблице
  * ({@code innateSpells}) со своими требуемыми уровнями, и второе место для того же
- * самого только расходилось бы с первым.</p>
+ * самого только расходилось бы с первым. Расширение списка ({@link #spellList}) — другая
+ * механика: не знание, а доступность, и в таблице ему места нет.</p>
  *
  * <p>{@code null} — у записей, сохранённых до появления поля, и у тех, чьё действие
  * описано только текстом. Условные и разовые эффекты сюда не идут по тем же причинам,
@@ -80,4 +82,13 @@ public class SpeciesMechanics implements GrantingMechanics {
     @Schema(description = "Ресурсы со своим счётчиком на листе",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<ResourceCounter> counters;
+
+    /**
+     * Расширение списка заклинаний класса: заклинания, которые вид или его умение добавляет
+     * к списку персонажа, — он может их выучить или подготовить, но готовыми не знает. Той
+     * же моделью, что у черты и умения класса: лист и выгрузка VTTG читают её одним кодом.
+     */
+    @Schema(description = "Расширение списка заклинаний класса",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private SpellListExpansion spellList;
 }

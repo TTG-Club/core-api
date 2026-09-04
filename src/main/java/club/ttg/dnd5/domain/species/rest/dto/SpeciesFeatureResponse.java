@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.species.rest.dto;
 
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
+import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.common.rest.dto.NameResponse;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
 import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.List;
 
 @Getter
@@ -31,4 +33,6 @@ public class SpeciesFeatureResponse {
     private List<GrantedSpellRef> grantedSpells;
     @Schema(description = "Активные эффекты умения в вокабуляре VTTG")
     private List<ActiveEffect> activeEffects;
+    @Schema(description = "Расширение списка заклинаний умением с данными справочника")
+    private Collection<FeatSpellListGroupResponse> spellListGroups;
 }
