@@ -46,6 +46,13 @@ public class ClassDetailedResponse extends BaseResponse {
     @Schema(description = "Спасброски класса")
     private String savingThrows;
 
+    /**
+     * Те же спасброски характеристиками словаря: строка выше — для показа, эта
+     * коллекция — для потребителей, которые владение применяют.
+     */
+    @Schema(description = "Спасброски класса характеристиками словаря")
+    private Collection<Ability> savingThrowAbilities;
+
     @Schema(description = "Список особенностей класса")
     private List<ClassFeatureDto> features;
 
