@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.species.rest.dto.SpeciesQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 import org.springframework.util.StringUtils;
@@ -15,6 +16,12 @@ public class SpeciesPredicateBuilder
 {
     private static final QSpecies Q = QSpecies.species;
     private static final StringPath TYPE_PATH = Expressions.stringPath("type");
+
+    // Родительский вид — по КОЛОНКЕ, а не по связи Q.parent. Поиск идёт нативным
+    // запросом (JPASQLQuery), и имя пути там становится именем колонки как есть:
+    // связь parent дала бы «species.parent», а колонка называется parent_url.
+    private static final StringPath PARENT_URL_PATH =
+            new PathBuilder<>(Object.class, Q.getMetadata()).getString("parent_url");
 
     public BooleanBuilder build(final SpeciesQueryRequest request)
     {
@@ -30,7 +37,7 @@ public class SpeciesPredicateBuilder
         // возвращал бы горстку видов — остальные места занимали бы подвиды.
         if (!StringUtils.hasText(request.getSearch()))
         {
-            builder.and(Q.parent.isNull());
+            builder.and(PARENT_URL_PATH.isNull());
         }
         PredicateUtils.applyFilterEnum(builder, request.getCreatureType(), TYPE_PATH, CreatureType.class);
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "species", "source");

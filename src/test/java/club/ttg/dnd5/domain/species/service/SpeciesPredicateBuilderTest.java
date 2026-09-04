@@ -14,7 +14,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * заняли бы подвиды.
  */
 class SpeciesPredicateBuilderTest {
-    private static final String PARENT_IS_NULL = "species.parent is null";
+    /**
+     * Условие пишется по КОЛОНКЕ parent_url. Поиск идёт нативным запросом
+     * (JPASQLQuery), имя пути там становится именем колонки как есть, и связь
+     * {@code Q.parent} давала «species.parent» — такой колонки нет, весь список видов
+     * падал с 500.
+     */
+    private static final String PARENT_IS_NULL = "species.parent_url is null";
 
     /** Общий список: только виды — подвиды показывает карточка самого вида. */
     @Test
