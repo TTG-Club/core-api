@@ -99,6 +99,12 @@ public class VttgFeatData {
      */
     private List<GrantedSpell> grantedSpells;
     /**
+     * Списки заклинаний классов, которые запись выдаёт целиком: «знает все заклинания
+     * друида». Перечнем ({@link #grantedSpells}) такое не описывается — он устаревал бы при
+     * каждом пополнении компендиума.
+     */
+    private List<GrantedClassSpells> grantedClassSpells;
+    /**
      * Заклинательная характеристика заклинаний черты ({@code intelligence}/{@code wisdom}/
      * {@code charisma}). Пусто — черта её не задаёт: либо характеристику выбирает игрок
      * (выбор типа {@code spellcastingAbility}), либо она берётся от класса.
@@ -146,12 +152,54 @@ public class VttgFeatData {
      * третьем. Пусто — с момента взятия черты. Без уровня лист выдал бы весь список сразу,
      * и черта на первом уровне оказалась бы сильнее книжной.</p>
      *
-     * @param name          название заклинания на момент сохранения
-     * @param spellId       {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
-     * @param requiredLevel уровень персонажа, с которого заклинание доступно
+     * <p>{@code spellcastingAbility} и {@code alwaysPrepared} задаёт группа выдачи, в
+     * которой заклинание стоит: один набор заклинаний записи может считаться от одной
+     * характеристики, другой — от другой, а заклинания домена всегда подготовлены, тогда
+     * как выданное тем же умением сверх них подготовку занимает. Пусто — берётся у записи
+     * ({@code spellcastingAbility} и {@code grantedSpellsAlwaysPrepared} блока даров).</p>
+     *
+     * @param name                название заклинания на момент сохранения
+     * @param spellId             {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     * @param requiredLevel       уровень персонажа, с которого заклинание доступно
+     * @param spellcastingAbility характеристика заклинаний группы; пусто — как у записи
+     * @param alwaysPrepared      заклинания группы всегда подготовлены; пусто — как у записи
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record GrantedSpell(String name, String spellId, Integer requiredLevel) {
+    public record GrantedSpell(String name, String spellId, Integer requiredLevel,
+                               String spellcastingAbility, Boolean alwaysPrepared) {
+    }
+
+    /**
+     * Список заклинаний класса, выдаваемый целиком.
+     *
+     * <p>Правилом, а не перечнем: потребитель собирает заклинания сам, сверяя
+     * {@code spell.classKeys} со своим компендиумом, — поэтому заклинание, добавленное в
+     * компендиум мастером после выгрузки, попадает в список без правки записи. Перечень
+     * ({@link GrantedSpell}) на такое не годится: он снимок на момент выгрузки.</p>
+     *
+     * <p>Ключи, а не слаги страниц: {@code spell.classKeys} несёт канонические ключи без
+     * суффикса источника, и сверка по слагу не сошлась бы. Класс, для которого ключа нет
+     * (хоумбрю), в выгрузку не попадает — списка заклинаний у него в мире всё равно
+     * нет.</p>
+     *
+     * <p>Список в мире выходит чуть шире, чем на сайте: {@code spell.classKeys} выгрузка
+     * заполняет и по принадлежности ПОДКЛАССУ, добавляя ключ его родителя (см.
+     * {@code VttgSpellMapper#classKeys}), а сайт собирает список по прямой связи с классом
+     * — ровно как фильтр раздела «Заклинания». Разница видна только у классов, чьи
+     * подклассы приносят свои заклинания.</p>
+     *
+     * @param classKeys           ключи классов, чьи списки выдаются
+     * @param level               ровно этот круг; пусто — круг сверху не задан
+     * @param maxLevel            не выше этого круга; пусто — верхней границы нет
+     * @param fromSlots           круг ограничен доступными персонажу ячейками заклинаний
+     * @param requiredLevel       уровень персонажа, с которого список выдаётся; пусто — сразу
+     * @param spellcastingAbility характеристика заклинаний группы; пусто — как у записи
+     * @param alwaysPrepared      заклинания группы всегда подготовлены; пусто — как у записи
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record GrantedClassSpells(List<String> classKeys, Integer level, Integer maxLevel,
+                                     Boolean fromSlots, Integer requiredLevel,
+                                     String spellcastingAbility, Boolean alwaysPrepared) {
     }
 
     /**

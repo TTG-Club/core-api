@@ -15,6 +15,7 @@ import club.ttg.dnd5.domain.common.model.AbilityBonus;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.ClassSpellListGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
 import club.ttg.dnd5.domain.common.model.mechanics.DamageAffinity;
@@ -713,6 +714,73 @@ class VttgFeatMechanicsMapperTest {
         assertEquals("Огненный шар", options.get(0).get("name").asText());
         assertEquals("lost-spell", options.get(1).get("value").asText());
         assertEquals("Снимок", options.get(1).get("name").asText());
+    }
+
+
+    /**
+     * Список класса уезжает правилом, а не перечнем: заклинания собирает потребитель по
+     * своему компендиуму, поэтому добавленное мастером заклинание попадёт в выдачу без
+     * правки записи.
+     */
+    @Test
+    void mapsGrantedClassSpellsAsRule() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellGrant spells = new SpellGrant();
+        spells.setClassLists(List.of(classList(10, null, 3, null, "druid-phb")));
+        mechanics.setSpells(spells);
+        feat.setMechanics(mechanics);
+
+        JsonNode granted = json(feat).get("featData").get("grantedClassSpells").get(0);
+
+        assertEquals("druid", granted.get("classKeys").get(0).asText());
+        assertEquals(3, granted.get("maxLevel").asInt());
+        assertEquals(10, granted.get("requiredLevel").asInt());
+        assertFalse(granted.has("level"));
+        assertFalse(granted.has("fromSlots"));
+    }
+
+    /** Отметка «по ячейкам» едет флагом: круг режет лист, у которого ячейки посчитаны. */
+    @Test
+    void keepsFromSlotsFlagOnGrantedClassSpells() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellGrant spells = new SpellGrant();
+        spells.setClassLists(List.of(classList(null, null, null, Boolean.TRUE, "druid-phb")));
+        mechanics.setSpells(spells);
+        feat.setMechanics(mechanics);
+
+        JsonNode granted = json(feat).get("featData").get("grantedClassSpells").get(0);
+
+        assertTrue(granted.get("fromSlots").asBoolean());
+    }
+
+    /**
+     * Класс без канонического ключа (хоумбрю) в выгрузку не попадает: сверять
+     * {@code spell.classKeys} в мире будет не с чем, а пустой список читался бы как «весь
+     * компендиум».
+     */
+    @Test
+    void skipsGrantedClassSpellsWithoutCanonicalKey() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellGrant spells = new SpellGrant();
+        spells.setClassLists(List.of(classList(null, null, null, null, "homebrew-class")));
+        mechanics.setSpells(spells);
+        feat.setMechanics(mechanics);
+
+        assertFalse(json(feat).has("featData"));
+    }
+
+    private static ClassSpellListGrant classList(Integer requiredLevel, Integer level, Integer maxLevel,
+                                                 Boolean fromSlots, String... classUrls) {
+        ClassSpellListGrant classList = new ClassSpellListGrant();
+        classList.setRequiredLevel(requiredLevel);
+        classList.setLevel(level);
+        classList.setMaxLevel(maxLevel);
+        classList.setMaxLevelFromSlots(fromSlots);
+        classList.setClasses(Arrays.stream(classUrls).map(url -> new EntityRef(url, null)).toList());
+        return classList;
     }
 
     private static SpellListGroup spellListGroup(Integer requiredLevel, String count, String... urls) {

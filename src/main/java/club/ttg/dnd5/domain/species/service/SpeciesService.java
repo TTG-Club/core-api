@@ -146,9 +146,10 @@ public class SpeciesService {
 
     public List<SpeciesShortResponse> search(SpeciesQueryRequest request) {
         var predicate = SpeciesPredicateBuilder.build(request);
+        // Подвиды отсекает предикат, а не отбор над страницей: иначе они занимали бы
+        // места В странице, и запрос первых тридцати записей отдавал бы горстку видов
         return speciesQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
                 .stream()
-                .filter(s -> (request.getSearch() != null && !request.getSearch().isEmpty()) || s.getParent() == null)
                 .map(speciesMapper::toShort)
                 .collect(Collectors.toList());
     }

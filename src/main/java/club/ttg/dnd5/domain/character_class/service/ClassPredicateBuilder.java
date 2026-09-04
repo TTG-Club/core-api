@@ -9,6 +9,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.core.types.dsl.PathBuilder;
 import lombok.experimental.UtilityClass;
+import org.springframework.util.StringUtils;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,6 +30,19 @@ public class ClassPredicateBuilder
                 Q.english,
                 Q.alternative
         ));
+
+        // Подклассы в общий список не идут: их отдаёт своя ручка, а раздел «Классы»
+        // показывает только классы. Поиск по названию — исключение: игрок ищет
+        // «Мистического рыцаря», не помня, что это подкласс воина.
+        //
+        // Условие ЗДЕСЬ, а не отбором над готовой страницей: отбор после пагинации
+        // выбрасывает записи из уже нарезанной страницы, и запрос первых тридцати
+        // возвращал четыре класса из семнадцати — остальные двадцать шесть мест
+        // занимали подклассы.
+        if (!StringUtils.hasText(request.getSearch()))
+        {
+            builder.and(Q.parentUrl.isNull());
+        }
 
         PathBuilder<Object> characterClass = new PathBuilder<>(Object.class, Q.getMetadata());
 

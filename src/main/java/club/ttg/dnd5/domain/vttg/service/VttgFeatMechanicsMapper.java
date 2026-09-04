@@ -28,6 +28,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellFilter;
+import club.ttg.dnd5.domain.common.model.mechanics.ClassSpellListGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
@@ -219,6 +220,7 @@ public class VttgFeatMechanicsMapper {
                 .choices(choices(mechanics == null ? null : mechanics.getChoices()))
                 .prerequisite(prerequisite)
                 .grantedSpells(grantedSpells(spellGrant))
+                .grantedClassSpells(grantedClassSpells(spellGrant))
                 .spellcastingAbility(spellGrant == null ? null
                         : VttgDictionaries.ability(spellGrant.getSpellcastingAbility()))
                 .grantedSpellsAlwaysPrepared(spellGrant == null ? null
@@ -387,9 +389,43 @@ public class VttgFeatMechanicsMapper {
                 name = trimmed(ref.getName());
             }
             result.add(new VttgFeatData.GrantedSpell(name == null ? url : name, url,
-                    ref.getRequiredLevel()));
+                    ref.getRequiredLevel(), VttgDictionaries.ability(ref.getSpellcastingAbility()),
+                    ref.getAlwaysPrepared()));
         }
         return result;
+    }
+
+    /**
+     * Списки классов, которые запись выдаёт целиком, — правилом, а не перечнем.
+     *
+     * <p>Заклинания здесь не разворачиваются нарочно: в мире свой компендиум, и снимок
+     * справочника сайта закрыл бы мастеру его собственные заклинания. Потребитель соберёт
+     * список сам, сверив {@code spell.classKeys}.</p>
+     *
+     * <p>Группа без единого канонического класса опускается: сверять в мире будет нечего, а
+     * пустой список в записи читался бы как «выдаёт весь компендиум».</p>
+     */
+    private List<VttgFeatData.GrantedClassSpells> grantedClassSpells(SpellGrant grant) {
+        if (grant == null || CollectionUtils.isEmpty(grant.getClassLists())) {
+            return null;
+        }
+
+        List<VttgFeatData.GrantedClassSpells> result = new ArrayList<>();
+        for (ClassSpellListGrant classList : grant.getClassLists()) {
+            if (classList == null) {
+                continue;
+            }
+            List<String> classKeys = classKeys(classList.getClasses());
+            if (classKeys.isEmpty()) {
+                continue;
+            }
+            result.add(new VttgFeatData.GrantedClassSpells(classKeys, classList.getLevel(),
+                    classList.getMaxLevel(), flag(classList.getMaxLevelFromSlots()),
+                    classList.getRequiredLevel(),
+                    VttgDictionaries.ability(classList.getSpellcastingAbility()),
+                    classList.getAlwaysPrepared()));
+        }
+        return emptyToNull(result);
     }
 
     /**
@@ -730,6 +766,7 @@ public class VttgFeatMechanicsMapper {
                 // Заклинательная характеристика и признак подготовки описывают ВЫДАННЫЕ
                 // заклинания: без них самих блок даров пуст, и создавать его незачем
                 && featData.getGrantedSpells() == null
+                && featData.getGrantedClassSpells() == null
                 && featData.getSpellList() == null
                 && featData.getGrantedFeats() == null;
     }

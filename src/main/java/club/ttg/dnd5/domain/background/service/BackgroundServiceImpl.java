@@ -7,7 +7,6 @@ import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundSelectResponse;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundShortResponse;
 import club.ttg.dnd5.domain.background.rest.mapper.BackgroundMapper;
-import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
@@ -28,11 +27,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -84,23 +81,11 @@ public class BackgroundServiceImpl implements BackgroundService {
      * @return выдаваемые заклинания с данными справочника; null — предыстория их не выдаёт.
      */
     private Collection<GrantedSpellResponse> resolveGrantedSpells(final BackgroundDetailResponse response) {
-        var granted = Optional.ofNullable(response.getMechanics())
+        var grant = Optional.ofNullable(response.getMechanics())
                 .map(FeatMechanics::getSpells)
-                .map(SpellGrant::getSpells)
-                .orElse(List.of());
+                .orElse(null);
 
-        if (CollectionUtils.isEmpty(granted)) {
-            return null;
-        }
-
-        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(granted);
-
-        var result = granted.stream()
-                .filter(Objects::nonNull)
-                .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
-                .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
-                        ref.getRequiredLevel()))
-                .toList();
+        var result = grantedSpellResolver.grantedSpells(grant);
 
         return result.isEmpty() ? null : result;
     }

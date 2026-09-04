@@ -4,7 +4,6 @@ import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
-import club.ttg.dnd5.domain.common.model.mechanics.SpellGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpellListExpansion;
 import club.ttg.dnd5.domain.feat.rest.dto.FeatSelectResponse;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
@@ -32,7 +31,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -82,23 +80,11 @@ public class FeatServiceImpl implements FeatService {
      * @return выдаваемые заклинания с данными справочника; null — черта их не выдаёт.
      */
     private Collection<GrantedSpellResponse> resolveGrantedSpells(final FeatDetailResponse response) {
-        var granted = Optional.ofNullable(response.getMechanics())
+        var grant = Optional.ofNullable(response.getMechanics())
                 .map(FeatMechanics::getSpells)
-                .map(SpellGrant::getSpells)
-                .orElse(List.of());
+                .orElse(null);
 
-        if (CollectionUtils.isEmpty(granted)) {
-            return null;
-        }
-
-        var spellsByUrl = grantedSpellResolver.shortSpellsByUrl(granted);
-
-        var result = granted.stream()
-                .filter(Objects::nonNull)
-                .filter(ref -> spellsByUrl.containsKey(ref.getUrl()))
-                .map(ref -> new GrantedSpellResponse(spellsByUrl.get(ref.getUrl()),
-                        ref.getRequiredLevel()))
-                .toList();
+        var result = grantedSpellResolver.grantedSpells(grant);
 
         return result.isEmpty() ? null : result;
     }
