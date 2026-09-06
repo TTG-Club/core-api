@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
+import club.ttg.dnd5.domain.spell.model.Projectiles;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
 import club.ttg.dnd5.domain.spell.model.SpellComponents;
@@ -20,7 +21,9 @@ import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellAreaOfEffect;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCantripScalingTier;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgDamagePart;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgProjectileCountTier;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellComponents;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellProjectiles;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellScaling;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellUses;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +48,8 @@ public class VttgSpellMapper {
     private static final Set<String> DELIVERY_TYPES =
             Set.of("ranged", "melee", "self", "touch", "sight", "none");
     private static final Set<String> DAMAGE_PART_TARGETS = Set.of("selected", "self", "choose");
+    /** Режимы раздачи снарядов по целям VTTG; пусто — свободная раздача. */
+    private static final Set<String> PROJECTILE_DISTRIBUTIONS = Set.of("single", "distinct");
     /** Способы восстановления зарядов VTTG. */
     private static final Set<String> SPELL_USES_RECOVERIES =
             Set.of("atWill", "shortRest", "longRest");
@@ -90,6 +95,7 @@ public class VttgSpellMapper {
                 .deliveryType(deliveryType(effect, range))
                 .damageParts(mechanics.damageParts())
                 .autoHit(effect == null ? null : effect.getAutoHit())
+                .projectiles(projectiles(effect))
                 .spellcastingAbility(spellcastingAbility(effect))
                 .attackBonus(attackBonus(effect))
                 .uses(uses(effect))
@@ -284,6 +290,54 @@ public class VttgSpellMapper {
         }
         Ability ability = effect.getSavingThrows().getFirst();
         return ability.name().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Снарядный режим. Число снарядов — единственное, без чего блок бесполезен:
+     * потребитель включает раздачу по целям только при {@code count > 1}, поэтому
+     * блок без внятного числа не выгружается вовсе. Пороги уровня персонажа
+     * (заговоры) едут только заполненной парой «уровень + число».
+     */
+    private VttgSpellProjectiles projectiles(SpellEffect effect) {
+        Projectiles projectiles = effect == null ? null : effect.getProjectiles();
+        if (projectiles == null || projectiles.getCount() == null || projectiles.getCount() < 1) {
+            return null;
+        }
+
+        Integer perSlotLevel = projectiles.getPerSlotLevel() == null || projectiles.getPerSlotLevel() < 1
+                ? null
+                : projectiles.getPerSlotLevel();
+        String distribution = PROJECTILE_DISTRIBUTIONS.contains(projectiles.getTargetDistribution())
+                ? projectiles.getTargetDistribution()
+                : null;
+        List<VttgProjectileCountTier> tiers = projectileTiers(projectiles.getCountByCharacterLevel());
+
+        return VttgSpellProjectiles.builder()
+                .count(projectiles.getCount())
+                .perSlotLevel(perSlotLevel)
+                .countByCharacterLevel(tiers)
+                .targetDistribution(distribution)
+                .build();
+    }
+
+    /** Пороги числа снарядов по уровню персонажа: неполные пары отбрасываются. */
+    private List<VttgProjectileCountTier> projectileTiers(List<Projectiles.ProjectileCountTier> tiers) {
+        if (!hasValues(tiers)) {
+            return null;
+        }
+
+        List<VttgProjectileCountTier> mapped = tiers.stream()
+                .filter(Objects::nonNull)
+                .filter(tier -> tier.getLevel() != null && tier.getLevel() > 0)
+                .filter(tier -> tier.getCount() != null && tier.getCount() > 0)
+                .sorted(Comparator.comparing(Projectiles.ProjectileCountTier::getLevel))
+                .map(tier -> VttgProjectileCountTier.builder()
+                        .level(tier.getLevel())
+                        .count(tier.getCount())
+                        .build())
+                .toList();
+
+        return mapped.isEmpty() ? null : mapped;
     }
 
     /**
