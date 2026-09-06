@@ -36,6 +36,11 @@ public class VttgSpell {
     private List<VttgDamagePart> damageParts;
     private Boolean autoHit;
     /**
+     * Снарядный режим: каждый снаряд — отдельный бросок, снаряды раздаются по
+     * целям на касте. Без блока потребитель считает заклинание одноцелевым.
+     */
+    private VttgSpellProjectiles projectiles;
+    /**
      * Характеристика, от которой считается заклинание; {@code null} — её берёт
      * потребитель у класса, как у заклинаний книги.
      */
