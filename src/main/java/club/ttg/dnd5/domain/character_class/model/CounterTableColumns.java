@@ -26,9 +26,9 @@ import java.util.regex.Pattern;
  * собирается из него, когда автор отметил {@code showInTable}.</p>
  *
  * <p>Колонка выводится, только если ряд считается от одного уровня: ступени, число,
- * {@code @prof} и {@code @level} (с множителем и смещением). Максимум по модификатору
- * характеристики ({@code @mod.cha}) зависит от персонажа, а не от уровня, и одинакового
- * ряда для всех у него нет — такой ресурс колонкой не показывается.</p>
+ * {@code @prof}, {@code @level} и {@code @classLevel} (с множителем и смещением). Максимум
+ * по модификатору характеристики ({@code @mod.cha}) зависит от персонажа, а не от уровня,
+ * и одинакового ряда для всех у него нет — такой ресурс колонкой не показывается.</p>
  */
 @UtilityClass
 public class CounterTableColumns {
@@ -38,12 +38,23 @@ public class CounterTableColumns {
     /** Обозначение бонуса мастерства в формуле максимума. */
     private static final String PROFICIENCY_TOKEN = "@prof";
 
-    /** Обозначение уровня персонажа в формуле максимума. */
+    /** Обозначение суммарного уровня персонажа в формуле максимума. */
     private static final String LEVEL_TOKEN = "@level";
+
+    /**
+     * Обозначение уровня в своём классе. Сравнивается в нижнем регистре: формула
+     * приводится к нему перед разбором, а в записи токен пишется {@code @classLevel} — так
+     * его ждёт движок виртуального стола.
+     *
+     * <p>Колонке таблицы он значит ровно то же, что {@code @level}: таблица прогрессии и
+     * так строится по уровням своего класса, и разойтись эти два уровня могут только на
+     * листе мультиклассового персонажа.</p>
+     */
+    private static final String CLASS_LEVEL_TOKEN = "@classlevel";
 
     /** Формула максимума: источник с необязательными множителем и смещением. */
     private static final Pattern FORMULA_PATTERN = Pattern.compile(
-            "^(@prof|@level|\\d+)\\s*(?:\\*\\s*(\\d+)\\s*)?(?:([+-])\\s*(\\d+))?$");
+            "^(@prof|@classlevel|@level|\\d+)\\s*(?:\\*\\s*(\\d+)\\s*)?(?:([+-])\\s*(\\d+))?$");
 
     /**
      * Механика одного носителя и уровень, с которого она у персонажа есть.
@@ -365,7 +376,10 @@ public class CounterTableColumns {
         if (PROFICIENCY_TOKEN.equals(source)) {
             return proficiencyBonus(level);
         }
-        return LEVEL_TOKEN.equals(source) ? level : Integer.parseInt(source);
+        if (LEVEL_TOKEN.equals(source) || CLASS_LEVEL_TOKEN.equals(source)) {
+            return level;
+        }
+        return Integer.parseInt(source);
     }
 
     /** Максимум с оглядкой на нижнюю границу ресурса: она подпирает ряд снизу. */
