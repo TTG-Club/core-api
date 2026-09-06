@@ -226,7 +226,8 @@ public class VttgFeatData {
      *
      * @param requiredLevel уровень персонажа, с которого список открывается; пусто — сразу
      * @param count         сколько заклинаний берут: число либо выражение с {@code @prof},
-     *                      {@code @level}, {@code @mod.<abbr>}; пусто — весь список
+     *                      {@code @level}, {@code @classLevel}, {@code @mod.<abbr>};
+     *                      пусто — весь список
      * @param spells        заклинания списка
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -309,7 +310,8 @@ public class VttgFeatData {
      * @param shortName краткое название для компактной плитки; пусто — плитка подпишется
      *                  полным
      * @param max       формула максимума: число либо выражение с {@code @prof},
-     *                  {@code @level}, {@code @mod.<abbr>}
+     *                  {@code @level}, {@code @classLevel} (уровень в своём классе),
+     *                  {@code @mod.<abbr>}
      * @param min       нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
      * @param recovery  каким отдыхом восстанавливается: {@code short}, {@code long} либо
      *                  {@code short-one} (один заряд коротким, все — продолжительным)
