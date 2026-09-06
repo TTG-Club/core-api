@@ -129,15 +129,4 @@ public class ActiveEffect {
         private String timing;
     }
 
-    /** Часть урона/лечения эффекта. */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class DamagePart {
-        private String formula;
-        private String type;
-        private String target;
-        private Boolean requiresDamage;
-    }
 }

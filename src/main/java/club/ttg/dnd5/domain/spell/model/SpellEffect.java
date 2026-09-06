@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
+import club.ttg.dnd5.domain.common.model.DamagePart;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -123,14 +124,4 @@ public class SpellEffect {
         private List<DamagePart> parts;
     }
 
-    /** Часть урона тира: та же форма, что и у частей урона заклинания. */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class DamagePart {
-        private String formula;
-        private String target;
-        private Boolean requiresDamage;
-    }
 }

@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
+import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
@@ -20,4 +22,7 @@ public class TraitRequest {
     private String description;
     @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
     private String original;
+    private RechargeType recharge;
+    @Schema(description = "Боевая механика умения: урон, атака, спасбросок, область, эффекты")
+    private CreatureActionEffect effect;
 }

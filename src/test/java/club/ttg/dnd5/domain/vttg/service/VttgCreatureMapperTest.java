@@ -11,6 +11,8 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureLair;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
@@ -20,6 +22,10 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
+import club.ttg.dnd5.domain.common.model.DamagePart;
+import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
+import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
@@ -529,9 +535,132 @@ class VttgCreatureMapperTest {
         assertEquals("constitution", mappedTrait.get("saveType"));
         assertEquals(14, mappedTrait.get("saveDC"));
         assertEquals("none", mappedTrait.get("saveEffect"));
-        assertEquals("emanation", area.get("shape"));
+        // Эманация уезжает кругом: шаблона `emanation` в словаре VTTG нет, и раньше
+        // область по такой записи просто не строилась.
+        assertEquals("circle", area.get("shape"));
         assertEquals(5, area.get("size"));
         assertDamagePart(mappedTrait, "1к12", "acid");
+    }
+
+    /** Механику завели в мастерской — описание больше не разбирается. */
+    @Test
+    void prefersAuthoredMechanicsOverDescription() {
+        Creature creature = creature("goblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Укус");
+        action.setDescription("[\"*Рукопашная атака оружием:* +9 к попаданию. *Попадание:* 15 (2к10 + 4) урона.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackType(AttackType.MELEE);
+        effect.setAttackBonus(5);
+        effect.setReach(10);
+        effect.setDamageParts(List.of(damagePart("1к8+3@dmg.piercing")));
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(5, mapped.get("attackBonus"));
+        assertEquals(10, mapped.get("reach"));
+        assertEquals("melee", mapped.get("rangeType"));
+        assertEquals("ft", mapped.get("distanceUnit"));
+        assertDamagePart(mapped, "1к8+3@dmg.piercing", null);
+    }
+
+    /**
+     * Одни лишь поля старого импорта механикой не считаются: они попадают в неё переносом
+     * у каждой старой записи, а урон у таких записей по-прежнему живёт в описании.
+     */
+    @Test
+    void keepsDescriptionParsingWhenOnlyLegacyFieldsRaised() {
+        Creature creature = creature("goblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Укус");
+        action.setDescription("[\"*Рукопашная атака оружием:* +9 к попаданию. *Попадание:* 15 (2к10 + 4) урона.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackType(AttackType.MELEE);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(9, mapped.get("attackBonus"));
+        assertDamagePart(mapped, "2к10 + 4", null);
+    }
+
+    /** Спасбросок заменяет бросок попадания — как в форме системы. */
+    @Test
+    void authoredSaveReplacesAttackBonus() {
+        Creature creature = creature("dragon-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Огненное дыхание");
+        action.setDescription("[\"Существо выдыхает огонь.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackBonus(7);
+        effect.setSavingThrows(List.of(savingThrow(Ability.DEXTERITY, 17)));
+        effect.setSaveEffect(SpellSaveEffect.HALF);
+        effect.setDamageParts(List.of(damagePart("8к6@dmg.fire")));
+
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(AreaOfEffectType.CONE);
+        area.setValue1(30);
+        effect.setAreaOfEffect(area);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+        Map<?, ?> mappedArea = (Map<?, ?>) mapped.get("areaOfEffect");
+
+        assertNull(mapped.get("attackBonus"));
+        assertEquals("dexterity", mapped.get("saveType"));
+        assertEquals(17, mapped.get("saveDC"));
+        assertEquals("half", mapped.get("saveEffect"));
+        assertEquals("cone", mappedArea.get("shape"));
+        assertEquals(30, mappedArea.get("size"));
+    }
+
+    /** Словарь форм у существа и у заклинания один: сфера и линия — круг и луч. */
+    @Test
+    void translatesAuthoredAreaShapesToVttgTemplates() {
+        assertEquals("circle", authoredShape(AreaOfEffectType.SPHERE));
+        assertEquals("circle", authoredShape(AreaOfEffectType.EMANATION));
+        assertEquals("circle", authoredShape(AreaOfEffectType.CYLINDER));
+        assertEquals("ray", authoredShape(AreaOfEffectType.LINE));
+        assertEquals("rect", authoredShape(AreaOfEffectType.CUBE));
+    }
+
+    private String authoredShape(AreaOfEffectType type) {
+        Creature creature = creature("dragon-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Дыхание");
+        action.setDescription("[\"Существо выдыхает.\"]");
+
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(type);
+        area.setValue1(20);
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAreaOfEffect(area);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mappedArea = (Map<?, ?>) firstAction(mapper.toVttg(creature).getSystem()).get("areaOfEffect");
+        return (String) mappedArea.get("shape");
+    }
+
+    private DamagePart damagePart(String formula) {
+        DamagePart result = new DamagePart();
+        result.setFormula(formula);
+        return result;
+    }
+
+    private SawingThrow savingThrow(Ability ability, int dc) {
+        SawingThrow result = new SawingThrow();
+        result.setAbility(ability);
+        result.setDc((byte) dc);
+        return result;
     }
 
     private Creature creature(String url) {

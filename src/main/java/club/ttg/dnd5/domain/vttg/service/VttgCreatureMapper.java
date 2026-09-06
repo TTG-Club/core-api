@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguage;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
@@ -21,6 +22,9 @@ import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
+import club.ttg.dnd5.domain.common.model.DamagePart;
+import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -332,10 +336,9 @@ public class VttgCreatureMapper {
     private List<Map<String, Object>> traits(Collection<CreatureTrait> traits) {
         if (traits == null) return List.of();
         return traits.stream().filter(Objects::nonNull)
-                // Черта тоже бывает бросаемой («Облако слизи» — спасбросок с уроном), а
-                // структурированных полей у неё нет вовсе: всё берётся из описания.
+                // Черта тоже бывает бросаемой («Облако слизи» — спасбросок с уроном).
                 .map(trait -> entry(trait.getName(), trait.getEnglish(), text(trait.getDescription()),
-                        null, null, null))
+                        null, null, null, trait.getEffect()))
                 .toList();
     }
 
@@ -348,16 +351,25 @@ public class VttgCreatureMapper {
 
     private Map<String, Object> action(CreatureAction action) {
         return entry(action.getName(), action.getEnglish(), text(action.getDescription()),
-                action.getAttackType(), first(action.getSawingThrows()), action.getDamageTypes());
+                action.getAttackType(), first(action.getSawingThrows()), action.getDamageTypes(),
+                action.getEffect());
     }
 
     /**
      * Запись боевого блока существа: черта, действие, реакция, легендарное действие или эффект
      * логова. Всё, чем VTTG кидает бросок, лежит здесь плоскими полями рядом с описанием.
+     *
+     * <p>Механику, заведённую в мастерской, берём как есть. Иначе — разбираем описание
+     * регулярками, как делали до появления структурных полей.</p>
      */
     private Map<String, Object> entry(String name, String nameEn, String description,
                                       AttackType attackType, SawingThrow savingThrow,
-                                      Collection<DamageType> damageTypes) {
+                                      Collection<DamageType> damageTypes,
+                                      CreatureActionEffect effect) {
+        if (isAuthored(effect)) {
+            return authoredEntry(name, nameEn, description, effect);
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", value(name));
         putIfHasText(result, nameEn);
@@ -395,6 +407,155 @@ public class VttgCreatureMapper {
             result.put("activeEffects", activeEffects);
         }
         return result;
+    }
+
+    /**
+     * Механику записи завели руками: есть части урона, бонус атаки или область.
+     *
+     * <p>Проверять «механика вообще задана» нельзя: тип атаки, спасброски и типы урона
+     * попадают в неё переносом полей старого импорта у КАЖДОЙ старой записи
+     * ({@code ActionMapper#raiseLegacyMechanics}). Такие записи ушли бы на структурную ветку
+     * и потеряли урон, который разбор описания всё ещё вытаскивает.</p>
+     *
+     * @param effect механика записи; {@code null} — её не заводили.
+     * @return истина, если механикой можно кидать броски без разбора описания.
+     */
+    private boolean isAuthored(CreatureActionEffect effect) {
+        return effect != null
+                && (!CollectionUtils.isEmpty(effect.getDamageParts())
+                || effect.getAttackBonus() != null
+                || effect.getAreaOfEffect() != null);
+    }
+
+    /**
+     * Запись боевого блока из механики мастерской: описание уже не разбирается.
+     *
+     * @param name название записи.
+     * @param nameEn английское название записи.
+     * @param description описание записи текстом.
+     * @param effect заведённая механика.
+     * @return запись в формате компендиума VTTG.
+     */
+    private Map<String, Object> authoredEntry(String name, String nameEn, String description,
+                                              CreatureActionEffect effect) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("name", value(name));
+        putIfHasText(result, nameEn);
+        result.put("description", paragraphsFromText(description));
+
+        SawingThrow save = first(effect.getSavingThrows());
+        boolean hasSave = save != null && save.getAbility() != null;
+
+        // Спас заменяет бросок попадания — то же правило, что в форме системы.
+        if (!hasSave) {
+            putIfNotNull(result, "attackBonus", effect.getAttackBonus());
+        }
+
+        List<Map<String, Object>> parts = damageParts(effect.getDamageParts());
+        if (!parts.isEmpty()) {
+            result.put("damageParts", parts);
+        }
+
+        if (hasSave) {
+            result.put("saveType", save.getAbility().name().toLowerCase(Locale.ROOT));
+            int dc = Byte.toUnsignedInt(save.getDc());
+            if (dc > 0) {
+                result.put("saveDC", dc);
+            }
+            if (effect.getSaveEffect() != null) {
+                result.put("saveEffect", effect.getSaveEffect().name().toLowerCase(Locale.ROOT));
+            }
+        }
+
+        if (effect.getAreaOfEffect() != null) {
+            result.put("areaOfEffect", authoredArea(effect.getAreaOfEffect()));
+        }
+
+        String rangeType = rangeType(effect.getAttackType());
+        putIfNotNull(result, "reach", effect.getReach());
+        putIfNotNull(result, "rangeType", rangeType);
+        if (effect.getReach() != null || effect.getRangeNormal() != null || rangeType != null) {
+            result.put("distanceUnit", "ft");
+        }
+        if (effect.getRangeNormal() != null) {
+            Map<String, Object> range = new LinkedHashMap<>();
+            range.put("normal", effect.getRangeNormal());
+            putIfNotNull(range, "long", effect.getRangeLong());
+            result.put("range", range);
+        }
+
+        if (!CollectionUtils.isEmpty(effect.getActiveEffects())) {
+            result.put("activeEffects", effect.getActiveEffects());
+        }
+        return result;
+    }
+
+    /**
+     * Части урона механики в формате компендиума. Часть без формулы — обычное состояние
+     * формы, а не значение: в выгрузку она не идёт.
+     *
+     * @param parts части урона записи.
+     * @return части урона для компендиума.
+     */
+    private List<Map<String, Object>> damageParts(List<DamagePart> parts) {
+        if (CollectionUtils.isEmpty(parts)) return List.of();
+        return parts.stream()
+                .filter(Objects::nonNull)
+                .filter(part -> StringUtils.hasText(part.getFormula()))
+                .map(part -> {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("formula", part.getFormula().trim());
+                    if (StringUtils.hasText(part.getType())) {
+                        result.put("type", part.getType());
+                    }
+                    if (StringUtils.hasText(part.getTarget())) {
+                        result.put("target", part.getTarget());
+                    }
+                    putIfNotNull(result, "requiresDamage", part.getRequiresDamage());
+                    return result;
+                })
+                .toList();
+    }
+
+    /**
+     * Область воздействия механики. Формы переводятся той же картой, что у заклинания:
+     * словарь сайта шире словаря шаблонов VTTG, и своей карты у существа быть не должно.
+     *
+     * @param area область воздействия записи.
+     * @return область в формате компендиума.
+     */
+    private Map<String, Object> authoredArea(AreaOfEffect area) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("shape", authoredAreaShape(area.getType()));
+        result.put("size", area.getValue1());
+        result.put("unit", "ft");
+        if (area.getType() == AreaOfEffectType.LINE) {
+            putIfNotNull(result, "width", area.getValue2());
+        }
+        return result;
+    }
+
+    private String authoredAreaShape(AreaOfEffectType type) {
+        if (type == null) return "circle";
+        return switch (type) {
+            case CONE -> "cone";
+            case CUBE -> "rect";
+            case LINE -> "ray";
+            case CYLINDER, EMANATION, SPHERE -> "circle";
+        };
+    }
+
+    /**
+     * Тип дальности записи по типу атаки. «Рукопашная или дальнобойная» уезжает
+     * рукопашной: у неё заполнены и досягаемость, и дальность, а выбрать основную VTTG
+     * умеет только одну.
+     *
+     * @param attackType тип атаки записи.
+     * @return {@code melee}, {@code ranged} или {@code null}, если тип не задан.
+     */
+    private String rangeType(AttackType attackType) {
+        if (attackType == null) return null;
+        return attackType == AttackType.RANGE ? "ranged" : "melee";
     }
 
     private Map<String, Object> areaOfEffect(AreaValues area) {
@@ -575,12 +736,21 @@ public class VttgCreatureMapper {
         return result;
     }
 
+    /**
+     * Форма области из слова описания в словарь шаблонов VTTG
+     * ({@code cone | circle | ray | rect | cylinder}).
+     *
+     * <p>Раньше отсюда уезжали {@code sphere}, {@code emanation} и {@code line} — таких
+     * шаблонов VTTG не знает, и область просто не строилась.</p>
+     *
+     * @param word корень слова формы из описания.
+     * @return форма шаблона VTTG.
+     */
     private String areaShape(String word) {
         return switch (word.toLowerCase(Locale.ROOT)) {
-            case "сфер" -> "sphere";
+            case "сфер", "эманаци" -> "circle";
             case "цилиндр" -> "cylinder";
-            case "эманаци" -> "emanation";
-            case "лини" -> "line";
+            case "лини" -> "ray";
             default -> "cone";
         };
     }

@@ -836,4 +836,25 @@ public class DictionariesController {
     public Collection<SelectOptionDto> getAttackTypes() {
         return dictionariesService.getAttackTypes();
     }
+
+    @Operation(summary = "Перезарядка действия существа")
+    @GetMapping("/recharge")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "3-6", "value": "D3" },
+                              { "label": "4-6", "value": "D4" },
+                              { "label": "5-6", "value": "D5" },
+                              { "label": "6", "value": "D6" },
+                              { "label": "после короткого или продолжительного отдыха", "value": "SLR" },
+                              { "label": "после продолжительного отдыха", "value": "LR" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getRechargeTypes() {
+        return dictionariesService.getRechargeTypes();
+    }
 }

@@ -21,4 +21,15 @@ public class CreatureAction {
     private Collection<SawingThrow> sawingThrows;
     private Collection<DamageType> damageTypes;
     private RechargeType recharge;
+
+    /**
+     * Боевая механика записи числами: урон, бросок атаки, спасбросок, область,
+     * дистанция и накладываемые эффекты.
+     *
+     * <p>Не задана — выгрузка в VTTG разбирает описание регулярками, как делала
+     * до появления этого поля. Поля выше (тип атаки, спасброски, типы урона)
+     * остались от старого импорта и дублируются внутри механики: они кормят тот
+     * самый разбор у записей, которым механику ещё не завели.</p>
+     */
+    private CreatureActionEffect effect;
 }
