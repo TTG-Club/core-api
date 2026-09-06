@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
+import club.ttg.dnd5.domain.spell.model.Projectiles;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
 import club.ttg.dnd5.domain.spell.model.SpellCastingTime;
@@ -594,5 +595,110 @@ class VttgSpellMapperTest {
 
         assertEquals("bonus", result.getCastingTimeUnit());
         assertEquals("self", result.getRangeUnit());
+    }
+
+    @Test
+    void projectilesTravelToExportWithSortedTiersAndKnownDistribution() {
+        Spell spell = new Spell();
+        spell.setUrl("magic-missile");
+        spell.setName("Волшебная стрела");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        Projectiles projectiles = new Projectiles();
+        projectiles.setCount(3);
+        projectiles.setPerSlotLevel(1);
+        projectiles.setTargetDistribution("distinct");
+        projectiles.setCountByCharacterLevel(List.of(
+                projectileTier(11, 3),
+                projectileTier(5, 2),
+                projectileTier(null, 4)
+        ));
+        SpellEffect effect = new SpellEffect();
+        effect.setProjectiles(projectiles);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals(3, result.getProjectiles().getCount());
+        assertEquals(1, result.getProjectiles().getPerSlotLevel());
+        assertEquals("distinct", result.getProjectiles().getTargetDistribution());
+        // Пороги едут по возрастанию уровня, неполная пара отбрасывается.
+        assertEquals(2, result.getProjectiles().getCountByCharacterLevel().size());
+        assertEquals(5, result.getProjectiles().getCountByCharacterLevel().getFirst().getLevel());
+        assertEquals(2, result.getProjectiles().getCountByCharacterLevel().getFirst().getCount());
+        assertEquals(11, result.getProjectiles().getCountByCharacterLevel().getLast().getLevel());
+    }
+
+    @Test
+    void projectilesWithoutCountDoNotReachExport() {
+        Spell spell = new Spell();
+        spell.setUrl("no-count");
+        spell.setName("Без числа снарядов");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        Projectiles projectiles = new Projectiles();
+        projectiles.setTargetDistribution("single");
+        SpellEffect effect = new SpellEffect();
+        effect.setProjectiles(projectiles);
+        spell.setEffect(effect);
+
+        // Потребитель включает раздачу по целям от числа снарядов: обрывок блока
+        // без него только запутает, поэтому наружу не едет ничего.
+        assertNull(mapper.toVttg(spell).getProjectiles());
+    }
+
+    @Test
+    void projectilesDropUnknownDistributionAndEmptyPerSlotLevel() {
+        Spell spell = new Spell();
+        spell.setUrl("scorching-ray");
+        spell.setName("Палящий луч");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        Projectiles projectiles = new Projectiles();
+        projectiles.setCount(3);
+        projectiles.setPerSlotLevel(0);
+        projectiles.setTargetDistribution("whatever");
+        SpellEffect effect = new SpellEffect();
+        effect.setProjectiles(projectiles);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals(3, result.getProjectiles().getCount());
+        // Чужое значение словаря к потребителю не уезжает, нулевой рост — тоже.
+        assertNull(result.getProjectiles().getTargetDistribution());
+        assertNull(result.getProjectiles().getPerSlotLevel());
+        assertNull(result.getProjectiles().getCountByCharacterLevel());
+    }
+
+    @Test
+    void projectilesWithoutDistributionStillReachExport() {
+        Spell spell = new Spell();
+        spell.setUrl("magic-missile-free");
+        spell.setName("Волшебная стрела");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        Projectiles projectiles = new Projectiles();
+        projectiles.setCount(3);
+        projectiles.setPerSlotLevel(1);
+        SpellEffect effect = new SpellEffect();
+        effect.setProjectiles(projectiles);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Форма справочника у большинства снарядных заклинаний: режим раздачи не
+        // задан вовсе. Проверка словаря по сырому значению роняла маппинг NPE, и
+        // выгрузка молча теряла всю запись целиком, а не одно поле.
+        assertEquals(3, result.getProjectiles().getCount());
+        assertEquals(1, result.getProjectiles().getPerSlotLevel());
+        assertNull(result.getProjectiles().getTargetDistribution());
+    }
+
+    private Projectiles.ProjectileCountTier projectileTier(Integer level, Integer count) {
+        Projectiles.ProjectileCountTier tier = new Projectiles.ProjectileCountTier();
+        tier.setLevel(level);
+        tier.setCount(count);
+        return tier;
     }
 }

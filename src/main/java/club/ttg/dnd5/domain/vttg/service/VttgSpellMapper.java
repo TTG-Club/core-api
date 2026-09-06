@@ -307,8 +307,12 @@ public class VttgSpellMapper {
         Integer perSlotLevel = projectiles.getPerSlotLevel() == null || projectiles.getPerSlotLevel() < 1
                 ? null
                 : projectiles.getPerSlotLevel();
-        String distribution = PROJECTILE_DISTRIBUTIONS.contains(projectiles.getTargetDistribution())
-                ? projectiles.getTargetDistribution()
+        // Словарь нельзя спрашивать сырым значением: неизменяемый Set.of кидает NPE
+        // на contains(null), а режим раздачи не задан у большинства снарядных
+        // заклинаний — «в одну цель или в несколько» и есть свободный режим.
+        String rawDistribution = projectiles.getTargetDistribution();
+        String distribution = rawDistribution != null && PROJECTILE_DISTRIBUTIONS.contains(rawDistribution)
+                ? rawDistribution
                 : null;
         List<VttgProjectileCountTier> tiers = projectileTiers(projectiles.getCountByCharacterLevel());
 
