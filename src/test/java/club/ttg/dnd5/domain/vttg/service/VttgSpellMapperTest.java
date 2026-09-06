@@ -671,6 +671,30 @@ class VttgSpellMapperTest {
         assertNull(result.getProjectiles().getCountByCharacterLevel());
     }
 
+    @Test
+    void projectilesWithoutDistributionStillReachExport() {
+        Spell spell = new Spell();
+        spell.setUrl("magic-missile-free");
+        spell.setName("Волшебная стрела");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+        Projectiles projectiles = new Projectiles();
+        projectiles.setCount(3);
+        projectiles.setPerSlotLevel(1);
+        SpellEffect effect = new SpellEffect();
+        effect.setProjectiles(projectiles);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Форма справочника у большинства снарядных заклинаний: режим раздачи не
+        // задан вовсе. Проверка словаря по сырому значению роняла маппинг NPE, и
+        // выгрузка молча теряла всю запись целиком, а не одно поле.
+        assertEquals(3, result.getProjectiles().getCount());
+        assertEquals(1, result.getProjectiles().getPerSlotLevel());
+        assertNull(result.getProjectiles().getTargetDistribution());
+    }
+
     private Projectiles.ProjectileCountTier projectileTier(Integer level, Integer count) {
         Projectiles.ProjectileCountTier tier = new Projectiles.ProjectileCountTier();
         tier.setLevel(level);
