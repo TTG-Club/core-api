@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import club.ttg.dnd5.domain.common.rest.dto.EquipmentItemDto;
 import java.util.List;
 
 @Setter
@@ -35,8 +36,12 @@ public class CreatureDetailResponse extends BaseResponse {
     private String resistance;
     @Schema(description = "Иммунитет")
     private String immunity;
-    @Schema(description = "Снаряжение")
+    @Schema(description = "Снаряжение строкой (поле старого импорта)")
     private String equipments;
+    @Schema(description = "Инвентарь позициями")
+    private List<EquipmentItemDto> inventory;
+    @Schema(description = "Свободная строка инвентаря")
+    private String inventoryText;
     @Schema(description = "Чувства")
     private String sense;
     @Schema(description = "Языки", examples = "глубинный язык; телепатия 120 фт.")

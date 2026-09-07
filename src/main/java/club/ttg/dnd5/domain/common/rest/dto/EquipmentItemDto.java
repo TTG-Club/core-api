@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.common.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.SectionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,4 +23,12 @@ public class EquipmentItemDto {
 
     @Schema(description = "Уточнение к предмету", example = "по вашему выбору")
     private String description;
+
+    @Schema(description = "Раздел карточки предмета", example = "items")
+    private SectionType section;
+
+    /** Позиция без раздела — стартовое снаряжение предыстории и класса. */
+    public EquipmentItemDto(String url, String name, Integer quantity, String description) {
+        this(url, name, quantity, description, null);
+    }
 }

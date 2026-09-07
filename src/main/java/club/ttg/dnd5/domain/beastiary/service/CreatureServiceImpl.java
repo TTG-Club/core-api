@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
+import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureDetailResponse;
@@ -44,6 +45,7 @@ public class CreatureServiceImpl implements CreatureService {
     private final FilterHashMappingRepository filterHashMappingRepository;
     private final FilterHashService filterHashService;
     private final EntityRevisionService revisionService;
+    private final EquipmentNameResolver equipmentNameResolver;
 
     @Override
     public Boolean existOrThrow(final String url) {
@@ -90,7 +92,8 @@ public class CreatureServiceImpl implements CreatureService {
 
     @Override
     public CreatureDetailResponse findDetailedByUrl(final String url) {
-        var response =   creatureMapper.toDetail(findByUrl(url));
+        var response = creatureMapper.toDetail(findByUrl(url));
+        equipmentNameResolver.resolveItemNames(response.getInventory());
         response.setGallery(galleryRepository.findAllByUrlAndType(url, SectionType.BESTIARY)
                 .stream()
                 .map(Gallery::getImage)

@@ -29,6 +29,8 @@ import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.DamagePart;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
@@ -42,9 +44,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 class VttgCreatureMapperTest {
-    private final VttgCreatureMapper mapper = new VttgCreatureMapper(new VttgMarkupConverter(new ObjectMapper()));
+    private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(new ObjectMapper());
+    // Справочник предметов молчит: у позиций теста снимок названия заполнен, а
+    // дозапрос идёт только за теми, у кого его нет.
+    private final VttgCreatureMapper mapper = new VttgCreatureMapper(
+            markupConverter,
+            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)));
 
     @Test
     void mapsCreatureToVttgStructure() {
@@ -493,11 +501,23 @@ class VttgCreatureMapperTest {
     }
 
     /**
-     * Снаряжение статблока — строкой для чтения: количество в ней стоит словом, и в позицию
-     * такое не укладывается.
+     * Строка инвентаря — для чтения: количество в ней стоит словом, и в позицию такое
+     * не укладывается.
      */
     @Test
-    void exportsGear() {
+    void exportsInventoryText() {
+        Creature creature = creature("goblin-mm");
+        creature.setInventoryText("три кинжала и кожаный доспех");
+
+        assertEquals("три кинжала и кожаный доспех", mapper.toVttg(creature).getSystem().get("gear"));
+    }
+
+    /**
+     * Своей строки нет — едет снаряжение старого импорта: у существ, которым инвентарь
+     * ещё не завели, весь текст лежит только там.
+     */
+    @Test
+    void fallsBackToLegacyEquipmentsForGearLine() {
         Creature creature = creature("goblin-mm");
         creature.setEquipments("Кинжал, кожаный доспех");
 
@@ -505,30 +525,38 @@ class VttgCreatureMapperTest {
     }
 
     /**
-     * Рядом со строкой едут позиции: по ним VTTG кладёт предметы в инвентарь существа со
-     * своим весом и боевыми полями, а не заводит их по одному названию.
+     * Позиции инвентаря заводят руками карточками сайта. По ним VTTG кладёт предмет в
+     * сумку существа со своим весом и боевыми полями, а не заводит его по названию.
      */
     @Test
     @SuppressWarnings("unchecked")
-    void exportsGearItems() {
+    void exportsInventoryItems() {
         Creature creature = creature("goblin-mm");
-        creature.setEquipments("три {@item Кинжала|url:dagger-phb}, {@item Щит|url:shield-phb}");
+        creature.setInventory(List.of(
+                inventoryItem("dagger-phb", "Кинжал", 3),
+                inventoryItem("shield-phb", "Щит", null)
+        ));
 
         Map<String, Object> system = mapper.toVttg(creature).getSystem();
         List<VttgEquipmentItem> items = (List<VttgEquipmentItem>) system.get("gearItems");
 
         assertEquals(2, items.size());
         assertEquals("dagger-phb", items.get(0).url());
-        assertEquals("Кинжала", items.get(0).name());
+        assertEquals("Кинжал", items.get(0).name());
+        assertEquals(3, items.get(0).quantity());
         assertEquals("shield-phb", items.get(1).url());
-        assertTrue(((String) system.get("gear")).startsWith("три "));
+        // Одиночная позиция количества не несёт: в компендиуме единица подразумевается.
+        assertNull(items.get(1).quantity());
     }
 
-    /** Снаряжение без ссылок на карточки позиций не даёт: раскладывать в инвентарь нечего. */
+    /**
+     * Ссылки в строке снаряжения позициями не становятся: инвентарь заводят руками, а
+     * разбор текста давал предмет без веса, стоимости и боевых полей.
+     */
     @Test
-    void skipsGearItemsWithoutLinks() {
+    void doesNotDeriveInventoryFromText() {
         Creature creature = creature("goblin-mm");
-        creature.setEquipments("Кинжал, кожаный доспех");
+        creature.setEquipments("три {@item Кинжала|url:dagger-phb}");
 
         assertNull(mapper.toVttg(creature).getSystem().get("gearItems"));
     }
@@ -596,6 +624,14 @@ class VttgCreatureMapperTest {
         creature.setActions(List.of(action));
 
         return (Map<?, ?>) firstAction(mapper.toVttg(creature).getSystem()).get("areaOfEffect");
+    }
+
+    private EquipmentItem inventoryItem(String url, String name, Integer quantity) {
+        EquipmentItem result = new EquipmentItem();
+        result.setUrl(url);
+        result.setName(name);
+        result.setQuantity(quantity);
+        return result;
     }
 
     private DamagePart damagePart(String formula) {

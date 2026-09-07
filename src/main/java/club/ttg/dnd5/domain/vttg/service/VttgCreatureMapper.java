@@ -30,7 +30,6 @@ import club.ttg.dnd5.domain.common.model.DamagePart;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
-import club.ttg.dnd5.domain.vttg.rest.dto.VttgEquipmentItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -52,6 +51,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class VttgCreatureMapper {
     private final VttgMarkupConverter markupConverter;
+    private final VttgEquipmentMapper equipmentMapper;
     @Value("${app.url:https://new.ttg.club}")
     private String appUrl = "https://new.ttg.club";
 
@@ -172,8 +172,8 @@ public class VttgCreatureMapper {
         result.put("defenses", defenses(creature));
         result.put("senses", senses(creature));
         result.put("languages", languages(creature));
-        putIfHasText(result, "gear", text(creature.getEquipments()));
-        putIfNotEmpty(result, "gearItems", gearItems(creature.getEquipments()));
+        putIfHasText(result, "gear", gear(creature));
+        putIfNotEmpty(result, "gearItems", equipmentMapper.exportItems(creature.getInventory()));
         result.put("environments", environments(creature));
         result.put("customEnvironments", customEnvironments(creature));
         result.put("traits", traits(creature.getTraits()));
@@ -665,17 +665,19 @@ public class VttgCreatureMapper {
     }
 
     /**
-     * Снаряжение статблока позициями — по ним VTTG кладёт предметы в инвентарь существа.
-     * Идут рядом со строкой {@code gear}, а не вместо неё: строка нужна для чтения (в ней
-     * количество словом — «три Кинжала»), позиции — чтобы предмет приехал со своим весом,
-     * стоимостью и боевыми полями, а не одним названием.
+     * Строка инвентаря. Идёт рядом с позициями, а не вместо них: в ней количества
+     * словами («три кинжала») и то, чему карточки на сайте нет, — весом и уроном такая
+     * строка не обладает, а позиции обладают.
      *
-     * @param equipments разметка поля «Снаряжение» записи существа
+     * <p>Своей строки нет — берём снаряжение старого импорта: у записей, которым
+     * инвентарь ещё не завели, весь текст лежит только там.</p>
+     *
+     * @param creature существо.
+     * @return строка инвентаря или {@code null}, если её нет.
      */
-    private List<VttgEquipmentItem> gearItems(String equipments) {
-        return markupConverter.itemLinks(equipments).stream()
-                .map(link -> new VttgEquipmentItem(link.url(), link.name(), null, null))
-                .toList();
+    private String gear(Creature creature) {
+        String own = text(creature.getInventoryText());
+        return StringUtils.hasText(own) ? own : text(creature.getEquipments());
     }
 
     private void putIfNotEmpty(Map<String, Object> map, String key, Collection<?> value) {

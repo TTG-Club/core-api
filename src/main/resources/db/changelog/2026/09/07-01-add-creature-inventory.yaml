@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-07-01-add-creature-inventory
+      author: Peterko
+      comment: >
+        Инвентарь существа позициями и своей строкой. Снаряжение до сих пор жило одной
+        строкой текста, а предметы для виртуального стола выуживались из неё разбором
+        ссылок — та же догадка по тексту, от которой мы ушли в боевой механике. Теперь
+        позиции заводят руками теми же карточками сайта, что и стартовое снаряжение
+        предыстории и класса, а строка остаётся рядом: в ней количества словами и то,
+        чему карточки нет. Старая колонка equipments не трогается — она запасной вид
+        для записей, которым инвентарь ещё не завели.
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: inventory
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: inventory_text
+                  type: text
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: bestiary
+            columnName: inventory
+        - dropColumn:
+            tableName: bestiary
+            columnName: inventory_text

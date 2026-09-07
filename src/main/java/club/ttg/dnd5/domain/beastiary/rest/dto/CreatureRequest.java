@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import java.util.List;
 
 @Getter
@@ -42,8 +43,14 @@ public class CreatureRequest extends BaseRequest {
     private Collection<CreatureSkill> skills;
     @Schema(description = "Уязвимости, Сопротивления, Иммунитеты")
     private CreatureDefenses defenses;
-    @Schema(description = "Снаряжение", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(description = "Снаряжение строкой (поле старого импорта)",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String equipments;
+    @Schema(description = "Инвентарь позициями", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<EquipmentItem> inventory;
+    @Schema(description = "Свободная строка инвентаря",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String inventoryText;
     @Schema(description = "Чувства")
     private Senses senses;
     @Schema(description = "Языки")
