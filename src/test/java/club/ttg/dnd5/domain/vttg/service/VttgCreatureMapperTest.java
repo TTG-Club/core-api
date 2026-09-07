@@ -589,6 +589,56 @@ class VttgCreatureMapperTest {
         assertDamagePart(mapped, "2к10 + 4", null);
     }
 
+    /**
+     * Пустая область от формы механикой не считается. Форма мастерской шлёт объект области
+     * у КАЖДОЙ записи, и без выбранной фигуры он приезжает пустым: если считать такую запись
+     * заведённой, круг «открыл — сохранил» отключил бы разбор описания и стёр у неё урон.
+     */
+    @Test
+    void keepsDescriptionParsingWhenAreaCameEmptyFromForm() {
+        Creature creature = creature("goblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Укус");
+        action.setDescription("[\"*Рукопашная атака оружием:* +9 к попаданию. *Попадание:* 15 (2к10 + 4) урона.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAreaOfEffect(new AreaOfEffect());
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(9, mapped.get("attackBonus"));
+        assertDamagePart(mapped, "2к10 + 4", null);
+        assertNull(mapped.get("areaOfEffect"));
+    }
+
+    /**
+     * Фигура без размера — тоже не механика: размер на форме необязателен, а шаблон нулевого
+     * размера на столе бесполезен и стоил бы записи разбора описания.
+     */
+    @Test
+    void keepsDescriptionParsingWhenAreaHasNoSize() {
+        Creature creature = creature("goblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Укус");
+        action.setDescription("[\"*Рукопашная атака оружием:* +9 к попаданию. *Попадание:* 15 (2к10 + 4) урона.\"]");
+
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(AreaOfEffectType.CONE);
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAreaOfEffect(area);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(9, mapped.get("attackBonus"));
+        assertDamagePart(mapped, "2к10 + 4", null);
+        assertNull(mapped.get("areaOfEffect"));
+    }
+
     /** Спасбросок заменяет бросок попадания — как в форме системы. */
     @Test
     void authoredSaveReplacesAttackBonus() {

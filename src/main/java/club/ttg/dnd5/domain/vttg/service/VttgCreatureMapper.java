@@ -424,7 +424,21 @@ public class VttgCreatureMapper {
         return effect != null
                 && (!CollectionUtils.isEmpty(effect.getDamageParts())
                 || effect.getAttackBonus() != null
-                || effect.getAreaOfEffect() != null);
+                || hasArea(effect));
+    }
+
+    /**
+     * Область заведена: у неё выбраны и форма, и размер. Пустой объект области форма шлёт
+     * у КАЖДОЙ записи, поэтому по одному его наличию механику заведённой считать нельзя.
+     * Формы без размера тоже мало: шаблон на столе получился бы нулевым, а разбор описания
+     * ради него уже не выполнялся бы.
+     *
+     * @param effect механика записи.
+     * @return истина, если область можно строить.
+     */
+    private boolean hasArea(CreatureActionEffect effect) {
+        AreaOfEffect area = effect.getAreaOfEffect();
+        return area != null && area.getType() != null && area.getValue1() > 0;
     }
 
     /**
@@ -467,7 +481,7 @@ public class VttgCreatureMapper {
             }
         }
 
-        if (effect.getAreaOfEffect() != null) {
+        if (hasArea(effect)) {
             result.put("areaOfEffect", authoredArea(effect.getAreaOfEffect()));
         }
 
@@ -536,7 +550,6 @@ public class VttgCreatureMapper {
     }
 
     private String authoredAreaShape(AreaOfEffectType type) {
-        if (type == null) return "circle";
         return switch (type) {
             case CONE -> "cone";
             case CUBE -> "rect";

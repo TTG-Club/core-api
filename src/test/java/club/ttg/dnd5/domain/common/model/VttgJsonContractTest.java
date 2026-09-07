@@ -1,6 +1,14 @@
 package club.ttg.dnd5.domain.common.model;
 
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
+import club.ttg.dnd5.domain.beastiary.rest.dto.ActionRequest;
+import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
+import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
+import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -12,8 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Контракт JSONB с мастерской сайта: поля, которые шлёт редактор заклинания,
- * обязаны пережить сериализацию в обе стороны.
+ * Контракт JSONB с мастерской сайта: поля, которые шлёт редактор заклинания и
+ * редактор существа, обязаны пережить сериализацию в обе стороны.
  *
  * <p>Неизвестные поля Jackson молча выбрасывает, поэтому пропущенное поле в
  * модели выглядит как «сайт ничего не прислал» — такой тест ловит это раньше
@@ -195,5 +203,84 @@ class VttgJsonContractTest {
         String serialized = mapper.writeValueAsString(effect);
 
         assertTrue(serialized.contains("\"key\":\"damage.ranged\""));
+    }
+
+    /**
+     * Механика действия существа: ровно то, что шлёт форма мастерской. Неизвестное поле
+     * Jackson молча выбросит, и пропущенный геттер выглядел бы как «сайт ничего не прислал».
+     */
+    @Test
+    void creatureActionKeepsAuthoredMechanics() throws Exception {
+        String json = """
+                {
+                  "name": { "rus": "Укус", "eng": "Bite" },
+                  "description": "Кусает",
+                  "recharge": "D5",
+                  "effect": {
+                    "attackType": "MELEE",
+                    "attackBonus": 9,
+                    "reach": 10,
+                    "rangeNormal": 30,
+                    "rangeLong": 120,
+                    "damageParts": [
+                      { "formula": "2к10 + 4@dmg.piercing", "target": "selected", "requiresDamage": false }
+                    ],
+                    "savingThrows": [ { "ability": "DEXTERITY", "dc": 17 } ],
+                    "saveEffect": "HALF",
+                    "areaOfEffect": { "type": "CONE", "value1": 30 },
+                    "damageTypes": ["PIERCING"],
+                    "activeEffects": [
+                      { "id": "e1", "name": "Отравление", "origin": "feature", "effectTarget": "target" }
+                    ]
+                  }
+                }
+                """;
+
+        ActionRequest request = mapper.readValue(json, ActionRequest.class);
+        CreatureActionEffect effect = request.getEffect();
+
+        assertEquals(RechargeType.D5, request.getRecharge());
+        assertEquals(AttackType.MELEE, effect.getAttackType());
+        assertEquals(9, effect.getAttackBonus());
+        assertEquals(10, effect.getReach());
+        assertEquals(30, effect.getRangeNormal());
+        assertEquals(120, effect.getRangeLong());
+        assertEquals("2к10 + 4@dmg.piercing", effect.getDamageParts().getFirst().getFormula());
+        assertEquals("selected", effect.getDamageParts().getFirst().getTarget());
+        assertEquals(Ability.DEXTERITY, effect.getSavingThrows().iterator().next().getAbility());
+        assertEquals(17, effect.getSavingThrows().iterator().next().getDc());
+        assertEquals(SpellSaveEffect.HALF, effect.getSaveEffect());
+        assertEquals(AreaOfEffectType.CONE, effect.getAreaOfEffect().getType());
+        assertEquals(30, effect.getAreaOfEffect().getValue1());
+        assertEquals(List.of(DamageType.PIERCING), List.copyOf(effect.getDamageTypes()));
+        assertEquals("target", effect.getActiveEffects().getFirst().getEffectTarget());
+    }
+
+    /**
+     * Незаполненная механика: форма шлёт её у каждой записи, и она НЕ должна выглядеть
+     * заведённой — иначе выгрузка бросила бы разбор описания у записи, где ничего не завели.
+     */
+    @Test
+    void creatureActionWithoutMechanicsKeepsAreaShapeless() throws Exception {
+        String json = """
+                {
+                  "name": { "rus": "Умение", "eng": "" },
+                  "description": "Просто текст",
+                  "effect": {
+                    "damageParts": [],
+                    "savingThrows": [],
+                    "areaOfEffect": {},
+                    "damageTypes": [],
+                    "activeEffects": []
+                  }
+                }
+                """;
+
+        ActionRequest request = mapper.readValue(json, ActionRequest.class);
+        CreatureActionEffect effect = request.getEffect();
+
+        assertNull(effect.getAttackBonus());
+        assertTrue(effect.getDamageParts().isEmpty());
+        assertNull(effect.getAreaOfEffect().getType());
     }
 }
