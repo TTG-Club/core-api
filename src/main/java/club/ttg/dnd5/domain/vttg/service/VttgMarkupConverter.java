@@ -47,6 +47,10 @@ public class VttgMarkupConverter {
     private static final Pattern MARKER = Pattern.compile("\\{@([\\w-]+)(?:\\s+([^{}]*))?}");
     /** Предел проходов раскрытия вложенных маркеров (как в форматтерах статей). */
     private static final int MAX_MARKER_NESTING = 8;
+    /** Разделы {@link #SITE_LINK_SECTIONS}, чьи карточки — предметы инвентаря. */
+    private static final Set<String> ITEM_LINK_SECTIONS = Set.of(
+            SectionType.ITEM.getValue(), SectionType.MAGIC_ITEM.getValue()
+    );
     /**
      * Маркеры, у которых нет своего вида ни в одной целевой разметке — остаётся только
      * метка. Броски: интерактивными их оставляет лишь {@link #toTextKeepingRolls}.
@@ -110,6 +114,48 @@ public class VttgMarkupConverter {
         return StringUtils.hasText(url)
                 ? "[" + label + "](" + siteUrl() + "/" + section + "/" + url + ")"
                 : label;
+    }
+
+    /**
+     * Ссылка на карточку предмета, вынутая из разметки.
+     *
+     * @param name метка маркера — как предмет назван в тексте («Кинжала»)
+     * @param url  слаг карточки предмета ({@code dagger-phb})
+     */
+    public record ItemLink(String name, String url) {
+    }
+
+    /**
+     * Вынимает из разметки ссылки на карточки предметов — по ним потребитель кладёт
+     * предметы в инвентарь, а не пересказывает строку прозой. Снаряжение существа
+     * набрано ровно такими маркерами: {@code три {@item Кинжала|url:dagger-phb}}.
+     *
+     * <p>Остальной текст ({@code три}) сюда не попадает: количество словом в позицию
+     * не укладывается, и строка целиком остаётся отдельным полем выгрузки.</p>
+     *
+     * <p>Магические предметы идут наравне с обычными: раздел карточки у них свой, но
+     * в инвентарь они ложатся так же.</p>
+     *
+     * @param markup разметка поля (свободный текст со ссылками сайта)
+     */
+    public List<ItemLink> itemLinks(String markup) {
+        if (!StringUtils.hasText(markup)) {
+            return List.of();
+        }
+        List<ItemLink> result = new ArrayList<>();
+        Matcher matcher = SITE_LINK.matcher(markup);
+        while (matcher.find()) {
+            String section = SITE_LINK_SECTIONS.get(matcher.group(1));
+            if (!ITEM_LINK_SECTIONS.contains(section)) {
+                continue;
+            }
+            String name = matcher.group(2).trim();
+            String url = matcher.group(3).trim();
+            if (StringUtils.hasText(name) && StringUtils.hasText(url)) {
+                result.add(new ItemLink(name, url));
+            }
+        }
+        return result;
     }
 
     private String convert(String markup, boolean keepRolls, Target target) {
