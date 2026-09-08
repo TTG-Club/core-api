@@ -30,13 +30,26 @@ import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.DamagePart;
 import club.ttg.dnd5.domain.common.model.EquipmentItem;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellComponents;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellGroup;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellRef;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellRestKind;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellUsageMode;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellcastingBlock;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
+import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.SpellSchool;
+import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellUses;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -44,15 +57,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class VttgCreatureMapperTest {
     private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(new ObjectMapper());
+    // Справочник заклинаний отвечает только там, где тест завёл блоки: существо без
+    // них в него не ходит.
+    private final SpellRepository spellRepository = mock(SpellRepository.class);
     // Справочник предметов молчит: у позиций теста снимок названия заполнен, а
     // дозапрос идёт только за теми, у кого его нет.
     private final VttgCreatureMapper mapper = new VttgCreatureMapper(
             markupConverter,
-            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)));
+            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
+            new VttgCreatureSpellcastingMapper(spellRepository, new VttgSpellMapper(
+                    markupConverter,
+                    new VttgSpellMechanicsExtractor(),
+                    new VttgSpellScalingExtractor())));
 
     @Test
     void mapsCreatureToVttgStructure() {
@@ -602,6 +624,239 @@ class VttgCreatureMapperTest {
 
         assertFalse(mapped.containsKey("experience"));
         assertFalse(mapped.containsKey("legendaryActionCount"));
+    }
+
+    /**
+     * Порции блока задают заряды заклинания: «по желанию» — неограниченный счётчик,
+     * «1/день каждое» — свой заряд каждому заклинанию порции, а общий пул порции
+     * заклинанию невыразим, и зарядов у него нет вовсе.
+     */
+    @Test
+    void exportsCreatureSpellsWithGroupUses() {
+        catalog("dancing-lights-phb", "hold-person-phb", "augury-phb");
+        Creature creature = creature("green-hag-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        block.setAbility(Ability.WISDOM);
+        block.setGroups(List.of(
+                group(CreatureSpellUsageMode.AT_WILL, spellRef("dancing-lights-phb")),
+                counted(CreatureSpellUsageMode.PER_DAY_EACH, 1, spellRef("hold-person-phb")),
+                counted(CreatureSpellUsageMode.PER_DAY_POOL, 1, spellRef("augury-phb"))));
+        creature.setSpellcasting(List.of(block));
+
+        List<VttgSpell> spells = mapper.toVttg(creature).getSpells();
+
+        assertEquals(List.of("dancing-lights-phb", "hold-person-phb", "augury-phb"),
+                spells.stream().map(VttgSpell::getId).toList());
+        assertUses(spells.getFirst().getUses(), 0, "atWill");
+        assertUses(spells.get(1).getUses(), 1, "longRest");
+        assertNull(spells.getLast().getUses());
+        assertTrue(spells.stream().allMatch(spell -> "wisdom".equals(spell.getSpellcastingAbility())));
+    }
+
+    /** «N за короткий отдых каждое» отдаёт заряды, восстанавливаемые коротким отдыхом. */
+    @Test
+    void exportsShortRestUsesForRestGroup() {
+        catalog("shield-phb");
+        Creature creature = creature("cambion-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        CreatureSpellGroup group = counted(CreatureSpellUsageMode.PER_REST_EACH, 2, spellRef("shield-phb"));
+        group.setRest(CreatureSpellRestKind.SHORT);
+        block.setGroups(List.of(group));
+        creature.setSpellcasting(List.of(block));
+
+        assertUses(mapper.toVttg(creature).getSpells().getFirst().getUses(), 2, "shortRest");
+    }
+
+    /**
+     * Одно и то же заклинание в двух порциях уезжает одной записью: на листе существа
+     * заклинание одно, и дубль показал бы у него два счётчика.
+     */
+    @Test
+    void exportsRepeatedSpellOnceByFirstGroup() {
+        catalog("invisibility-phb");
+        Creature creature = creature("green-hag-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        block.setGroups(List.of(
+                group(CreatureSpellUsageMode.AT_WILL, spellRef("invisibility-phb")),
+                counted(CreatureSpellUsageMode.PER_DAY_EACH, 3, spellRef("invisibility-phb"))));
+        creature.setSpellcasting(List.of(block));
+
+        List<VttgSpell> spells = mapper.toVttg(creature).getSpells();
+
+        assertEquals(1, spells.size());
+        assertUses(spells.getFirst().getUses(), 0, "atWill");
+    }
+
+    /**
+     * Раскладка уезжает в {@code system.spellcastingBlocks} — тем же ключом, каким её
+     * пишет мир, — а запасные числа существа в {@code system.spellcasting}. Запасные
+     * берутся у первого блока, где они заданы: блоков бывает несколько с разными
+     * характеристикой и Сл, а запасное число на существо одно.
+     */
+    @Test
+    void exportsSpellcastingBlocksIntoSystem() {
+        catalog("ray-of-sickness-phb", "hold-person-phb");
+        Creature creature = creature("green-hag-mm");
+
+        CreatureSpellcastingBlock coven = block("spellcasting-coven", "Магия шабаша");
+        coven.setNote("находясь в пределах 30 футов от двух союзных карг");
+        coven.setAbility(Ability.INTELLIGENCE);
+        coven.setSaveDc(11);
+        CreatureSpellRef ray = spellRef("ray-of-sickness-phb");
+        ray.setCastLevel(3);
+        ray.setNote("только на себя");
+        coven.setGroups(List.of(group(CreatureSpellUsageMode.AT_WILL, ray)));
+
+        CreatureSpellcastingBlock own = block("spellcasting-own", "Использование заклинаний");
+        own.setAbility(Ability.WISDOM);
+        own.setSaveDc(12);
+        own.setAttackBonus(4);
+        own.setIgnoredComponents(ignoredMaterial());
+        CreatureSpellGroup pool = counted(CreatureSpellUsageMode.PER_REST_POOL, 1, spellRef("hold-person-phb"));
+        pool.setRest(CreatureSpellRestKind.LONG);
+        pool.setRecharge(RechargeType.D5);
+        pool.setLabel("1/день");
+        own.setGroups(List.of(pool));
+
+        creature.setSpellcasting(List.of(coven, own));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> spellcasting = (Map<?, ?>) system.get("spellcasting");
+
+        assertEquals("intelligence", spellcasting.get("ability"));
+        assertEquals(11, spellcasting.get("saveDC"));
+        assertEquals(4, spellcasting.get("attackBonus"));
+
+        List<?> blocks = (List<?>) system.get("spellcastingBlocks");
+        Map<?, ?> mappedCoven = (Map<?, ?>) blocks.getFirst();
+        assertEquals("spellcasting-coven", mappedCoven.get("id"));
+        assertEquals("Магия шабаша", mappedCoven.get("name"));
+        assertEquals("находясь в пределах 30 футов от двух союзных карг", mappedCoven.get("note"));
+        assertEquals("intelligence", mappedCoven.get("ability"));
+        assertFalse(mappedCoven.containsKey("attackBonus"));
+        Map<?, ?> covenGroup = (Map<?, ?>) ((List<?>) mappedCoven.get("groups")).getFirst();
+        assertEquals("atWill", covenGroup.get("mode"));
+        assertEquals(List.of(Map.of("id", "ray-of-sickness-phb", "castLevel", 3, "note", "только на себя")),
+                covenGroup.get("spells"));
+
+        Map<?, ?> mappedOwn = (Map<?, ?>) blocks.getLast();
+        assertEquals(Map.of("verbal", false, "somatic", false, "material", true),
+                mappedOwn.get("ignoredComponents"));
+        assertFalse(mappedCoven.containsKey("ignoredComponents"));
+        Map<?, ?> ownGroup = (Map<?, ?>) ((List<?>) mappedOwn.get("groups")).getFirst();
+        assertEquals("perRestPool", ownGroup.get("mode"));
+        assertEquals(1, ownGroup.get("count"));
+        assertEquals("long", ownGroup.get("rest"));
+        assertEquals("d5", ownGroup.get("recharge"));
+        assertEquals("1/день", ownGroup.get("label"));
+    }
+
+    /** Существо без блоков выгружается как раньше: ни заклинаний, ни ключа заклинательства. */
+    @Test
+    void skipsSpellcastingWithoutBlocks() {
+        Creature creature = creature("goblin-mm");
+
+        VttgCreature mapped = mapper.toVttg(creature);
+
+        assertNull(mapped.getSpells());
+        assertFalse(mapped.getSystem().containsKey("spellcasting"));
+        assertFalse(mapped.getSystem().containsKey("spellcastingBlocks"));
+    }
+
+    /**
+     * Недозаполненный блок выгрузку не роняет: автор оставляет блоки и порции пустыми
+     * между заходами, и отбрасывать их на бэке нельзя.
+     */
+    @Test
+    void exportsBlockWithoutFilledFields() {
+        Creature creature = creature("goblin-mm");
+        CreatureSpellcastingBlock block = new CreatureSpellcastingBlock();
+        block.setGroups(List.of(new CreatureSpellGroup()));
+        creature.setSpellcasting(List.of(block));
+
+        VttgCreature mapped = mapper.toVttg(creature);
+        List<?> blocks = (List<?>) mapped.getSystem().get("spellcastingBlocks");
+        Map<?, ?> mappedBlock = (Map<?, ?>) blocks.getFirst();
+
+        assertNull(mapped.getSpells());
+        // Запасных чисел у блока нет — и ключа нет: пустая настройка выглядела бы заданной
+        assertFalse(mapped.getSystem().containsKey("spellcasting"));
+        assertEquals(List.of(), ((Map<?, ?>) ((List<?>) mappedBlock.get("groups")).getFirst()).get("spells"));
+    }
+
+    /** Заклинание, чью карточку удалили, в список не попадает — собирать запись не из чего. */
+    @Test
+    void skipsSpellMissingFromCatalog() {
+        catalog("hold-person-phb");
+        Creature creature = creature("green-hag-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        block.setGroups(List.of(group(CreatureSpellUsageMode.AT_WILL,
+                spellRef("hold-person-phb"), spellRef("removed-spell"))));
+        creature.setSpellcasting(List.of(block));
+
+        VttgCreature mapped = mapper.toVttg(creature);
+
+        assertEquals(List.of("hold-person-phb"),
+                mapped.getSpells().stream().map(VttgSpell::getId).toList());
+        List<?> blocks = (List<?>) mapped.getSystem().get("spellcastingBlocks");
+        Map<?, ?> mappedBlock = (Map<?, ?>) blocks.getFirst();
+        Map<?, ?> mappedGroup = (Map<?, ?>) ((List<?>) mappedBlock.get("groups")).getFirst();
+        assertEquals(List.of(Map.of("id", "hold-person-phb"), Map.of("id", "removed-spell")),
+                mappedGroup.get("spells"));
+    }
+
+    private void catalog(String... urls) {
+        when(spellRepository.findAllForVttgExportByUrls(any()))
+                .thenReturn(Arrays.stream(urls).map(this::spell).toList());
+    }
+
+    private Spell spell(String url) {
+        Spell result = new Spell();
+        result.setUrl(url);
+        result.setName(url);
+        result.setLevel(2L);
+        result.setSchool(SpellSchool.builder().school(MagicSchool.ENCHANTMENT).build());
+        result.setDescription("[\"Описание заклинания\"]");
+        return result;
+    }
+
+    private CreatureSpellcastingBlock block(String id, String name) {
+        CreatureSpellcastingBlock result = new CreatureSpellcastingBlock();
+        result.setId(id);
+        result.setName(name);
+        return result;
+    }
+
+    private CreatureSpellGroup group(CreatureSpellUsageMode mode, CreatureSpellRef... spells) {
+        CreatureSpellGroup result = new CreatureSpellGroup();
+        result.setMode(mode);
+        result.setSpells(List.of(spells));
+        return result;
+    }
+
+    private CreatureSpellGroup counted(CreatureSpellUsageMode mode, int count, CreatureSpellRef... spells) {
+        CreatureSpellGroup result = group(mode, spells);
+        result.setCount(count);
+        return result;
+    }
+
+    private CreatureSpellRef spellRef(String url) {
+        CreatureSpellRef result = new CreatureSpellRef();
+        result.setUrl(url);
+        result.setName(url);
+        return result;
+    }
+
+    private CreatureSpellComponents ignoredMaterial() {
+        CreatureSpellComponents result = new CreatureSpellComponents();
+        result.setMaterial(true);
+        return result;
+    }
+
+    private void assertUses(VttgSpellUses uses, int expectedMax, String expectedRecovery) {
+        assertEquals(expectedMax, uses.getMax());
+        assertEquals(expectedMax, uses.getCurrent());
+        assertEquals(expectedRecovery, uses.getRecovery());
     }
 
     private String authoredShape(AreaOfEffectType type) {

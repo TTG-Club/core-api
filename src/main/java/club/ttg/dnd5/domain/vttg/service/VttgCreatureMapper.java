@@ -52,10 +52,15 @@ import java.util.stream.Stream;
 public class VttgCreatureMapper {
     private final VttgMarkupConverter markupConverter;
     private final VttgEquipmentMapper equipmentMapper;
+    private final VttgCreatureSpellcastingMapper spellcastingMapper;
     @Value("${app.url:https://new.ttg.club}")
     private String appUrl = "https://new.ttg.club";
 
     public VttgCreature toVttg(Creature creature) {
+        // Собирается один раз: заклинания уезжают соседом system, а раскладка и запасные
+        // числа — в него, и второй проход по блокам стоил бы второго запроса в справочник.
+        VttgCreatureSpellcastingMapper.Exported spellcasting =
+                spellcastingMapper.export(creature.getSpellcasting());
         return VttgCreature.builder()
                 .id(creature.getUrl())
                 .entityType("creature")
@@ -70,12 +75,13 @@ public class VttgCreatureMapper {
                 .description(text(creature.getDescription()))
                 .header(header(creature))
                 .token(token(creature))
-                .system(system(creature))
+                .system(system(creature, spellcasting))
                 .sourceKey(VttgSourceKeys.of(creature.getSource()))
                 .isSRD(creature.getSrdVersion() != null)
                 .isReadOnly(true)
                 .activeEffects(CollectionUtils.isEmpty(creature.getActiveEffects())
                         ? null : creature.getActiveEffects())
+                .spells(spellcasting.spells().isEmpty() ? null : spellcasting.spells())
                 .build();
     }
 
@@ -147,7 +153,8 @@ public class VttgCreatureMapper {
         return value.startsWith("/") ? value.substring(1) : value;
     }
 
-    private Map<String, Object> system(Creature creature) {
+    private Map<String, Object> system(Creature creature,
+                                       VttgCreatureSpellcastingMapper.Exported spellcasting) {
         Map<String, Object> result = new LinkedHashMap<>();
         Size size = first(creature.getSizes() == null ? null : creature.getSizes().getValues());
         CreatureType type = first(creature.getTypes() == null ? null : creature.getTypes().getValues());
@@ -184,6 +191,10 @@ public class VttgCreatureMapper {
         if (creature.getLair() != null) {
             result.put("lair", lair(creature));
         }
+        // Существу без блоков ключей нет вовсе: пустое заклинательство система показала бы
+        // существу, которое заклинаний не знает.
+        putIfNotNull(result, "spellcasting", spellcasting.spellcasting());
+        putIfNotNull(result, "spellcastingBlocks", spellcasting.blocks());
         putIfNotNull(result, "section", section(creature.getSection()));
         return result;
     }

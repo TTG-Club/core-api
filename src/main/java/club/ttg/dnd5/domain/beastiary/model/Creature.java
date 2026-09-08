@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellcastingBlock;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
@@ -251,6 +252,18 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(name = "active_effects", columnDefinition = "jsonb")
     private List<ActiveEffect> activeEffects;
+
+    /**
+     * Заклинания существа блоками: у каждого своя заклинательная характеристика, своя Сл и
+     * свои порции по ограничению применений.
+     *
+     * <p>Машинные данные для виртуального стола, а не для карточки сайта: статблок описывает
+     * заклинания текстом записи действия и продолжает это делать. Заводятся блоки руками в
+     * мастерской — разбора описаний у них нет.</p>
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<CreatureSpellcastingBlock> spellcasting;
 
     @ManyToOne
     @JoinColumn(name = "source")

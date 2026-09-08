@@ -9,7 +9,14 @@ import lombok.Getter;
 
 import java.util.List;
 
-@Builder
+/**
+ * Заклинание в формате компендиума VTTG.
+ *
+ * <p>{@code toBuilder} нужен заклинаниям существа: справочная запись собирается один
+ * раз, а поверх неё блок существа ставит свои заряды и заклинательную характеристику
+ * (см. {@code VttgCreatureSpellcastingMapper}).</p>
+ */
+@Builder(toBuilder = true)
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class VttgSpell {
