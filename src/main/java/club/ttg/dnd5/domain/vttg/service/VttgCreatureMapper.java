@@ -4,23 +4,31 @@ import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
 import club.ttg.dnd5.domain.beastiary.model.CreatureLair;
+import club.ttg.dnd5.domain.beastiary.model.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguage;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
+import club.ttg.dnd5.domain.beastiary.service.CreatureInitiativeCalculator;
 import club.ttg.dnd5.domain.beastiary.model.speed.FlySpeed;
 import club.ttg.dnd5.domain.beastiary.model.speed.Speed;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
+import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
+import club.ttg.dnd5.domain.common.model.DamagePart;
+import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,93 +43,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
 public class VttgCreatureMapper {
-    private static final Pattern DICE = Pattern.compile(
-            "(?iu)(\\d+)\\s*[\\u043akd]\\s*(\\d+)(?:\\s*([+-])\\s*(\\d+))?"
-    );
-    private static final Pattern TO_HIT = Pattern.compile(
-            "(?iu)([+-]?\\d+)\\s*(?:\\u043a\\s+\\u043f\\u043e\\u043f\\u0430\\u0434\\u0430\\u043d\\u0438\\u044e|to\\s+hit)"
-    );
-    private static final Pattern REACH = Pattern.compile(
-            "(?iu)(?:\\u0434\\u043e\\u0441\\u044f\\u0433\\u0430\\u0435\\u043c\\u043e\\u0441\\u0442\\u044c|reach)\\s*(\\d+)\\s*(?:\\u0444\\u0442|ft)"
-    );
-    private static final Pattern RANGE = Pattern.compile(
-            "(?iu)(?:\\u0434\\u0438\\u0441\\u0442\\u0430\\u043d\\u0446\\u0438\\u044f|\\u0434\\u0430\\u043b\\u044c\\u043d\\u043e\\u0431\\u043e\\u0439\\u043d\\u043e\\u0441\\u0442\\u044c|range)\\s*(\\d+)(?:\\s*/\\s*(\\d+))?\\s*(?:\\u0444\\u0442|ft)"
-    );
-    /**
-     * Начало блока с исходом: «*Попадание:*» у атаки и «*Провал:*» у спасброска. Урон разбирается
-     * начиная отсюда, иначе в формулу уезжает бросок из соседнего предложения. Закрывающая
-     * звёздочка съедается вместе с зачином — иначе плоский урон («*Попадание:* 1 рубящего урона»)
-     * не встаёт в начало блока и теряется.
-     */
-    private static final Pattern HIT_START = Pattern.compile(
-            "(?iu)(?:\\u043f\\u043e\\u043f\\u0430\\u0434\\u0430\\u043d\\u0438\\u0435|hit"
-                    + "|\\u043f\\u0440\\u043e\\u0432\\u0430\\u043b|failure)\\s*:\\s*\\*?"
-    );
-    /**
-     * Зачин атаки: «*Бросок рукопашной атаки:* +9» (редакция 2024), «Рукопашная атака: +4»
-     * и англоязычное «Melee Weapon Attack: +5». Бонус стоит сразу после двоеточия — между
-     * ними успевает закрыться звёздочка жирного начертания.
-     */
-    private static final Pattern ATTACK_ROLL = Pattern.compile(
-            "(?iu)(?:бросок\\s+)?"
-                    + "(рукопашн\\p{L}*\\s+или\\s+дальнобойн\\p{L}*|рукопашн\\p{L}*|дальнобойн\\p{L}*"
-                    + "|melee(?:\\s+or\\s+ranged)?|ranged)"
-                    + "\\s+(?:атак\\p{L}*|(?:weapon\\s+)?attack(?:\\s+roll)?)"
-                    + "\\s*:\\s*\\*?\\s*\\+?(\\d+)"
-    );
-    /**
-     * Зачин спасброска: «*Спасбросок Ловкости:*», «*Ответ — Спасбросок Мудрости:*» у реакции
-     * и «*Спасбросок Мудрости*:», где звёздочка закрывается до двоеточия.
-     */
-    private static final Pattern SAVE_THROW = Pattern.compile(
-            "(?iu)(?:спасбросок\\s+"
-                    + "(сил\\p{L}*|ловкост\\p{L}*|телосложени\\p{L}*|интеллект\\p{L}*|мудрост\\p{L}*|харизм\\p{L}*)"
-                    + "|(strength|dexterity|constitution|intelligence|wisdom|charisma)\\s+saving\\s+throw)"
-                    + "\\s*\\*?\\s*:"
-    );
-    /** Сложность: в тексте «Сл.» приходит ссылкой на глоссарий, поэтому голого слова мало. */
-    private static final Pattern SAVE_DC = Pattern.compile(
-            "(?iu)(?:\\[\\s*Сл\\.\\s*\\]\\([^)]*\\)|Сл\\.|DC)\\s*(\\d+)"
-    );
-    /** Блок «*Успех:*» — по нему различаются {@code half} и {@code special}; без блока это {@code none}. */
-    private static final Pattern SUCCESS_BLOCK = Pattern.compile(
-            "(?iu)\\*\\s*успех\\s*:\\s*\\*\\s*([^*\\n]{0,60})"
-    );
-    /** «в [линии](…) длиной 60 фт. и шириной 5 фт.»: длина едет в size, ширина — в width. */
-    private static final Pattern AREA_LINE = Pattern.compile(
-            "(?iu)лини\\p{L}*(?:\\]\\([^)]*\\))?\\s*длиной\\s*(\\d+)\\s*фт\\.?\\s*и\\s*шириной\\s*(\\d+)\\s*фт"
-    );
-    /** «в 60-футовом [конусе](…)»: размер стоит перед видом области. */
-    private static final Pattern AREA_PREFIXED = Pattern.compile(
-            "(?iu)(\\d+)-футов\\p{L}*\\s*\\[?(конус|сфер|цилиндр|эманаци|лини)"
-    );
-    /** «в [эманации](…) с радиусом 5 фт.», «[цилиндр](…) радиусом 20 фт. и высотой 60 фт.» */
-    private static final Pattern AREA_RADIUS = Pattern.compile(
-            "(?iu)(конус|сфер|цилиндр|эманаци|лини)\\p{L}*(?:\\]\\([^)]*\\))?\\s*(?:с\\s+)?радиусом\\s*(\\d+)\\s*фт\\.?"
-                    + "(?:\\s*и\\s*высотой\\s*(\\d+)\\s*фт)?"
-    );
-    private static final Pattern FLAT_DAMAGE = Pattern.compile(
-            "(?iu)^\\s*(\\d+)\\s+.{0,40}?"
-                    + "(?:\\u0443\\u0440\\u043e\\u043d|damage)"
-    );
-    private static final Pattern DAMAGE_WORD = Pattern.compile("(?iu)(?:\\u0443\\u0440\\u043e\\u043d|damage)");
-    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-    private static final Map<String, Pattern> TEXT_DAMAGE_TYPES = textDamageTypes();
-    private static final List<ConditionEffectTemplate> CONDITION_EFFECTS = conditionEffects();
-
     private final VttgMarkupConverter markupConverter;
+    private final VttgEquipmentMapper equipmentMapper;
+    private final VttgCreatureSpellcastingMapper spellcastingMapper;
     @Value("${app.url:https://new.ttg.club}")
     private String appUrl = "https://new.ttg.club";
 
     public VttgCreature toVttg(Creature creature) {
+        // Собирается один раз: заклинания уезжают соседом system, а раскладка и запасные
+        // числа — в него, и второй проход по блокам стоил бы второго запроса в справочник.
+        VttgCreatureSpellcastingMapper.Exported spellcasting =
+                spellcastingMapper.export(creature.getSpellcasting());
         return VttgCreature.builder()
                 .id(creature.getUrl())
                 .entityType("creature")
@@ -136,12 +75,13 @@ public class VttgCreatureMapper {
                 .description(text(creature.getDescription()))
                 .header(header(creature))
                 .token(token(creature))
-                .system(system(creature))
+                .system(system(creature, spellcasting))
                 .sourceKey(VttgSourceKeys.of(creature.getSource()))
                 .isSRD(creature.getSrdVersion() != null)
                 .isReadOnly(true)
                 .activeEffects(CollectionUtils.isEmpty(creature.getActiveEffects())
                         ? null : creature.getActiveEffects())
+                .spells(spellcasting.spells().isEmpty() ? null : spellcasting.spells())
                 .build();
     }
 
@@ -213,12 +153,14 @@ public class VttgCreatureMapper {
         return value.startsWith("/") ? value.substring(1) : value;
     }
 
-    private Map<String, Object> system(Creature creature) {
+    private Map<String, Object> system(Creature creature,
+                                       VttgCreatureSpellcastingMapper.Exported spellcasting) {
         Map<String, Object> result = new LinkedHashMap<>();
         Size size = first(creature.getSizes() == null ? null : creature.getSizes().getValues());
         CreatureType type = first(creature.getTypes() == null ? null : creature.getTypes().getValues());
         long experience = Objects.requireNonNullElse(creature.getExperience(), 0L);
         String challengeRating = ChallengeRating.getCr(experience);
+        int initiativeBonus = CreatureInitiativeCalculator.initiativeBonus(creature);
 
         result.put("size", size == null || size == Size.UNDEFINED ? "medium" : size.name().toLowerCase(Locale.ROOT));
         result.put("type", creatureType(type));
@@ -230,25 +172,101 @@ public class VttgCreatureMapper {
         result.put("abilities", abilities(creature));
         result.put("challengeRating", challengeRating);
         result.put("proficiencyBonus", ChallengeRating.getPb(experience));
+        result.put("initiative", initiative(initiativeBonus));
+        result.put("initiativeBonus", initiativeBonus);
         result.put("savingThrows", savingThrows(creature));
         result.put("skills", skills(creature.getSkills()));
         result.put("defenses", defenses(creature));
         result.put("senses", senses(creature));
         result.put("languages", languages(creature));
+        putIfHasText(result, "gear", gear(creature));
+        putIfNotEmpty(result, "gearItems", equipmentMapper.exportItems(creature.getInventory()));
         result.put("environments", environments(creature));
-        result.put("customEnvironments", "");
+        result.put("customEnvironments", customEnvironments(creature));
         result.put("traits", traits(creature.getTraits()));
         result.put("actions", actions(creature.getActions()));
         result.put("bonusActions", actions(creature.getBonusActions()));
         result.put("reactions", actions(creature.getReactions()));
-        result.put("legendary", Map.of(
-                "count", creature.getLegendaryAction(),
-                "actions", actions(creature.getLegendaryActions())
-        ));
+        result.put("legendary", legendary(creature));
         if (creature.getLair() != null) {
-            result.put("lair", lair(creature.getLair()));
+            result.put("lair", lair(creature));
         }
+        // Существу без блоков ключей нет вовсе: пустое заклинательство система показала бы
+        // существу, которое заклинаний не знает.
+        putIfNotNull(result, "spellcasting", spellcasting.spellcasting());
+        putIfNotNull(result, "spellcastingBlocks", spellcasting.blocks());
+        putIfNotNull(result, "section", section(creature.getSection()));
         return result;
+    }
+
+    /**
+     * Инициатива существа в формате редакции 2024: модификатор и пассивное значение.
+     * Считается тем же калькулятором, что и карточка сайта, — расходиться этим двум показам нельзя.
+     *
+     * @param bonus бонус инициативы существа.
+     * @return пара «пассивное значение — модификатор» в формате компендиума.
+     */
+    private Map<String, Object> initiative(int bonus) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("label", String.valueOf(10 + bonus));
+        result.put("value", (bonus < 0 ? "" : "+") + bonus);
+        return result;
+    }
+
+    /**
+     * Блок легендарных действий: число за раунд, сами действия и описание блока.
+     *
+     * @param creature существо.
+     * @return блок легендарных действий в формате компендиума.
+     */
+    private Map<String, Object> legendary(Creature creature) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("count", creature.getLegendaryAction());
+        result.put("actions", actions(creature.getLegendaryActions()));
+        putIfHasText(result, "description", text(creature.getLegendaryDescription()));
+        return result;
+    }
+
+    /**
+     * Секция описания существа: подзаголовок, места обитания, сокровища и текст.
+     * Пустую секцию не отдаём вовсе — на листе она обернулась бы пустым блоком.
+     *
+     * @param section секция описания существа.
+     * @return секция в формате компендиума или {@code null}, если заполнять нечего.
+     */
+    private Map<String, Object> section(CreatureSection section) {
+        if (section == null) {
+            return null;
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        putIfHasText(result, "name", section.getSectionName());
+        putIfHasText(result, "subtitle", section.getSubtitle());
+        putIfHasText(result, "habitats", names(section.getHabitats(), Habitat::getName, ", "));
+        putIfHasText(result, "treasures", names(section.getTreasures(), CreatureTreasure::getName, ", "));
+        putIfHasText(result, "description", text(section.getSectionDescription()));
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Особые среды обитания — названия планов. Словарь сред у VTTG короче нашего:
+     * все планарные места обитания уезжают туда одним ключом {@code planar}, и конкретный
+     * план сохраняется только здесь.
+     *
+     * @param creature существо.
+     * @return названия планов через «; » или пустая строка.
+     */
+    private String customEnvironments(Creature creature) {
+        if (creature.getSection() == null || creature.getSection().getHabitats() == null) {
+            return "";
+        }
+        return value(names(
+                creature.getSection().getHabitats().stream()
+                        .filter(Objects::nonNull)
+                        .filter(habitat -> habitat.name().startsWith("PLANAR_"))
+                        .toList(),
+                Habitat::getName,
+                "; "
+        ));
     }
 
     private Map<String, Object> armorClass(Creature creature) {
@@ -321,21 +339,25 @@ public class VttgCreatureMapper {
     }
 
     private Map<String, Object> defenses(Creature creature) {
-        return Map.of(
-                "vulnerabilities", enumNames(creature.getVulnerabilities()),
-                "resistances", enumNames(creature.getResistance()),
-                "immunities", enumNames(creature.getImmunityToDamage()),
-                "conditionImmunities", conditionNames(creature.getImmunityToCondition())
-        );
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("vulnerabilities", enumNames(creature.getVulnerabilities()));
+        result.put("resistances", enumNames(creature.getResistance()));
+        result.put("immunities", enumNames(creature.getImmunityToDamage()));
+        result.put("conditionImmunities", conditionNames(creature.getImmunityToCondition()));
+        // Оговорка статблока («колющий от немагических атак») в ключ защиты не укладывается:
+        // на листе она идёт отдельной строкой под значками.
+        putIfHasText(result, "vulnerabilitiesText", text(creature.getVulnerabilitiesText()));
+        putIfHasText(result, "resistancesText", text(creature.getResistanceText()));
+        putIfHasText(result, "immunitiesText", text(creature.getImmunityText()));
+        return result;
     }
 
     private List<Map<String, Object>> traits(Collection<CreatureTrait> traits) {
         if (traits == null) return List.of();
         return traits.stream().filter(Objects::nonNull)
-                // Черта тоже бывает бросаемой («Облако слизи» — спасбросок с уроном), а
-                // структурированных полей у неё нет вовсе: всё берётся из описания.
+                // Черта тоже бывает бросаемой («Облако слизи» — спасбросок с уроном).
                 .map(trait -> entry(trait.getName(), trait.getEnglish(), text(trait.getDescription()),
-                        null, null, null))
+                        trait.getRecharge(), trait.getEffect(), null, null))
                 .toList();
     }
 
@@ -348,422 +370,197 @@ public class VttgCreatureMapper {
 
     private Map<String, Object> action(CreatureAction action) {
         return entry(action.getName(), action.getEnglish(), text(action.getDescription()),
-                action.getAttackType(), first(action.getSawingThrows()), action.getDamageTypes());
+                action.getRecharge(), action.getEffect(),
+                action.getAttackType(), action.getSawingThrows());
     }
 
     /**
      * Запись боевого блока существа: черта, действие, реакция, легендарное действие или эффект
      * логова. Всё, чем VTTG кидает бросок, лежит здесь плоскими полями рядом с описанием.
+     *
+     * <p>В выгрузку идёт ровно то, что заведено в записи. Догадок по тексту описания здесь
+     * больше нет: механика существ заполняется в мастерской руками, и разобранное регулярками
+     * расходилось с тем, что видит редактор.</p>
+     *
+     * @param name название записи.
+     * @param nameEn английское название записи.
+     * @param description описание записи текстом.
+     * @param recharge перезарядка записи.
+     * @param effect механика записи; {@code null} — её не заводили.
+     * @param legacyAttackType тип атаки старого импорта. Лежит рядом с записью, а не внутри
+     *                         механики: у записи, которую ни разу не открывали в мастерской,
+     *                         механики нет вовсе, а это поле заполнено.
+     * @param legacySaves спасброски старого импорта, оттуда же.
+     * @return запись в формате компендиума VTTG.
      */
     private Map<String, Object> entry(String name, String nameEn, String description,
-                                      AttackType attackType, SawingThrow savingThrow,
-                                      Collection<DamageType> damageTypes) {
+                                      RechargeType recharge,
+                                      CreatureActionEffect effect,
+                                      AttackType legacyAttackType,
+                                      Collection<SawingThrow> legacySaves) {
+        CreatureActionEffect mechanics = effect == null ? new CreatureActionEffect() : effect;
+        AttackType attackType = mechanics.getAttackType() == null
+                ? legacyAttackType : mechanics.getAttackType();
+        SawingThrow save = first(CollectionUtils.isEmpty(mechanics.getSavingThrows())
+                ? legacySaves : mechanics.getSavingThrows());
+        boolean hasSave = save != null && save.getAbility() != null;
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", value(name));
-        putIfHasText(result, nameEn);
+        putIfHasText(result, "nameEn", nameEn);
         result.put("description", paragraphsFromText(description));
+        putIfHasText(result, "recharge", recharge(recharge));
 
-        CreatureActionMechanics mechanics = extractActionMechanics(attackType, savingThrow, damageTypes, description);
-        putIfNotNull(result, "attackBonus", mechanics.attackBonus());
-        if (mechanics.damageFormula() != null) {
-            Map<String, Object> damagePart = new LinkedHashMap<>();
-            damagePart.put("formula", mechanics.damageFormula());
-            putIfNotNull(damagePart, "type", mechanics.damageType());
-            result.put("damageParts", List.of(damagePart));
+        // Спас заменяет бросок попадания — то же правило, что в форме системы.
+        if (!hasSave) {
+            putIfNotNull(result, "attackBonus", mechanics.getAttackBonus());
         }
-        putIfNotNull(result, "saveType", mechanics.saveType());
-        putIfNotNull(result, "saveDC", mechanics.saveDC());
-        putIfNotNull(result, "saveEffect", mechanics.saveEffect());
-        if (mechanics.area() != null) {
-            result.put("areaOfEffect", areaOfEffect(mechanics.area()));
+
+        List<Map<String, Object>> parts = damageParts(mechanics.getDamageParts());
+        if (!parts.isEmpty()) {
+            result.put("damageParts", parts);
         }
-        putIfNotNull(result, "reach", mechanics.reach());
-        putIfNotNull(result, "rangeType", mechanics.rangeType());
-        if (mechanics.reach() != null || mechanics.range() != null || mechanics.rangeType() != null) {
+
+        if (hasSave) {
+            result.put("saveType", save.getAbility().name().toLowerCase(Locale.ROOT));
+            int dc = Byte.toUnsignedInt(save.getDc());
+            if (dc > 0) {
+                result.put("saveDC", dc);
+            }
+            if (mechanics.getSaveEffect() != null) {
+                result.put("saveEffect", mechanics.getSaveEffect().name().toLowerCase(Locale.ROOT));
+            }
+        }
+
+        if (hasArea(mechanics)) {
+            result.put("areaOfEffect", areaOfEffect(mechanics.getAreaOfEffect()));
+        }
+
+        String rangeType = rangeType(attackType);
+        putIfNotNull(result, "reach", mechanics.getReach());
+        putIfNotNull(result, "rangeType", rangeType);
+        if (mechanics.getReach() != null || mechanics.getRangeNormal() != null || rangeType != null) {
             result.put("distanceUnit", "ft");
         }
-        if (mechanics.range() != null) {
+        if (mechanics.getRangeNormal() != null) {
             Map<String, Object> range = new LinkedHashMap<>();
-            range.put("normal", mechanics.range());
-            if (mechanics.longRange() != null) {
-                range.put("long", mechanics.longRange());
-            }
+            range.put("normal", mechanics.getRangeNormal());
+            putIfNotNull(range, "long", mechanics.getRangeLong());
             result.put("range", range);
         }
-        List<Map<String, Object>> activeEffects = activeEffects(description, mechanics.riderSave());
-        if (!activeEffects.isEmpty()) {
-            result.put("activeEffects", activeEffects);
+
+        if (!CollectionUtils.isEmpty(mechanics.getActiveEffects())) {
+            result.put("activeEffects", mechanics.getActiveEffects());
         }
         return result;
     }
 
-    private Map<String, Object> areaOfEffect(AreaValues area) {
+    /**
+     * Область заведена: у неё выбраны и форма, и размер. Пустой объект области форма шлёт
+     * у КАЖДОЙ записи, а размер на ней необязателен — шаблон нулевого размера на столе
+     * бесполезен.
+     *
+     * @param effect механика записи.
+     * @return истина, если область можно строить.
+     */
+    private boolean hasArea(CreatureActionEffect effect) {
+        AreaOfEffect area = effect.getAreaOfEffect();
+        return area != null && area.getType() != null && area.getValue1() > 0;
+    }
+
+    /**
+     * Части урона механики в формате компендиума. Часть без формулы — обычное состояние
+     * формы, а не значение: в выгрузку она не идёт.
+     *
+     * @param parts части урона записи.
+     * @return части урона для компендиума.
+     */
+    private List<Map<String, Object>> damageParts(List<DamagePart> parts) {
+        if (CollectionUtils.isEmpty(parts)) return List.of();
+        return parts.stream()
+                .filter(Objects::nonNull)
+                .filter(part -> StringUtils.hasText(part.getFormula()))
+                .map(part -> {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("formula", part.getFormula().trim());
+                    if (StringUtils.hasText(part.getType())) {
+                        result.put("type", part.getType());
+                    }
+                    if (StringUtils.hasText(part.getTarget())) {
+                        result.put("target", part.getTarget());
+                    }
+                    putIfNotNull(result, "requiresDamage", part.getRequiresDamage());
+                    return result;
+                })
+                .toList();
+    }
+
+    /**
+     * Область воздействия механики. Формы переводятся той же картой, что у заклинания:
+     * словарь сайта шире словаря шаблонов VTTG, и своей карты у существа быть не должно.
+     *
+     * @param area область воздействия записи.
+     * @return область в формате компендиума.
+     */
+    private Map<String, Object> areaOfEffect(AreaOfEffect area) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("shape", area.shape());
-        result.put("size", area.size());
+        result.put("shape", areaShape(area.getType()));
+        result.put("size", area.getValue1());
         result.put("unit", "ft");
-        putIfNotNull(result, "width", area.width());
-        putIfNotNull(result, "height", area.height());
+        if (area.getType() == AreaOfEffectType.LINE) {
+            putIfNotNull(result, "width", area.getValue2());
+        }
         return result;
     }
 
-    private Map<String, Object> lair(CreatureLair lair) {
+    private String areaShape(AreaOfEffectType type) {
+        return switch (type) {
+            case CONE -> "cone";
+            case CUBE -> "rect";
+            case LINE -> "ray";
+            case CYLINDER, EMANATION, SPHERE -> "circle";
+        };
+    }
+
+    /**
+     * Тип дальности записи по типу атаки. «Рукопашная или дальнобойная» уезжает
+     * рукопашной: у неё заполнены и досягаемость, и дальность, а выбрать основную VTTG
+     * умеет только одну.
+     *
+     * @param attackType тип атаки записи.
+     * @return {@code melee}, {@code ranged} или {@code null}, если тип не задан.
+     */
+    private String rangeType(AttackType attackType) {
+        if (attackType == null) return null;
+        return attackType == AttackType.RANGE ? "ranged" : "melee";
+    }
+
+    /**
+     * Логово существа. Опыт и число легендарных действий в логове лежат на самом
+     * существе, а не в логове: в статблоке это поправки к его собственным числам.
+     *
+     * @param creature существо с заполненным логовом.
+     * @return логово в формате компендиума.
+     */
+    private Map<String, Object> lair(Creature creature) {
+        CreatureLair lair = creature.getLair();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", value(lair.getName()));
         result.put("description", text(lair.getDescription()));
         result.put("effects", actions(lair.getEffects()));
         result.put("ending", text(lair.getEnding()));
+        if (creature.getLegendaryActionInLair() > 0) {
+            result.put("legendaryActionCount", (int) creature.getLegendaryActionInLair());
+        }
+        if (creature.getExperienceInLair() != null && creature.getExperienceInLair() > 0) {
+            result.put("experience", creature.getExperienceInLair());
+        }
         return result;
     }
 
     private List<String> paragraphsFromText(String text) {
         if (!StringUtils.hasText(text)) return List.of();
         return List.of(text.split("\\R\\s*\\R"));
-    }
-
-    private CreatureActionMechanics extractActionMechanics(AttackType attackTypeSource, SawingThrow savingThrow,
-                                                           Collection<DamageType> damageTypes, String description) {
-        String text = value(description);
-        Matcher attackRoll = ATTACK_ROLL.matcher(text);
-        String attackKind = attackRoll.find() ? attackRoll.group(1) : null;
-        boolean hasHitText = HIT_START.matcher(text).find();
-        Integer attackBonus = attackKind == null
-                // Старая запись «+5 к попаданию»: бонус стоит перед оборотом, а не после зачина.
-                // Блок исхода обязателен — без него тот же оборот встречается в «Использовании
-                // заклинаний», где это бонус заклинательства, а не атака оружием.
-                ? (hasHitText ? firstInt(TO_HIT.matcher(text)) : null)
-                : Integer.valueOf(attackRoll.group(2));
-        String attackType = attackType(attackKind, attackTypeSource, attackBonus, text);
-        Integer reach = firstInt(REACH.matcher(text));
-        RangeValues range = range(text);
-        SaveValues detected = save(savingThrow, text);
-        // Спас заменяет бросок попадания: и saveType, и areaOfEffect переключают запись на
-        // бросок урона без шанса промаха (usesSaveOrArea в CreatureActionsBlock). Поэтому у
-        // записи с бонусом атаки спас едет не в saveType, а довеском на сами эффекты.
-        SaveValues save = attackBonus == null ? detected : null;
-        SaveValues riderSave = attackBonus == null ? null : detected;
-        AreaValues area = attackBonus == null ? area(text) : null;
-        boolean attackLike = attackType != null || attackBonus != null || hasHitText || detected != null;
-        String hitText = hitText(text);
-        List<DamageSegment> damageSegments = attackLike ? damageSegments(hitText) : List.of();
-        String damageFormula;
-        String damageType;
-        if (damageSegments.stream().filter(segment -> segment.type() != null).count() >= 2) {
-            // Несколько типов урона: тип кодируется токенами @dmg.<type> прямо в формуле.
-            damageFormula = combinedDamageFormula(damageSegments);
-            damageType = null;
-        } else {
-            damageFormula = attackLike ? damageDice(hitText) : null;
-            damageType = damageType(damageTypes, hitText, damageFormula);
-        }
-
-        return new CreatureActionMechanics(
-                attackType,
-                attackBonus,
-                damageFormula,
-                damageType,
-                save == null ? null : save.ability(),
-                save == null ? null : save.dc(),
-                save == null ? null : save.effect(),
-                riderSave,
-                area,
-                reach,
-                range == null ? null : range.normal(),
-                range == null ? null : range.longRange()
-        );
-    }
-
-    /**
-     * Вид броска. Зачин из описания точнее всего: он же несёт бонус. Без зачина остаётся
-     * структурированное поле, а совсем без него — ключевые слова, но только у записи с бонусом
-     * атаки: иначе «дальнобойн» из любой черты навесило бы ей дистанционный бросок.
-     */
-    private String attackType(String attackKind, AttackType source, Integer attackBonus, String text) {
-        if (attackKind != null) {
-            String kind = attackKind.toLowerCase(Locale.ROOT);
-            // «Рукопашная или дальнобойная» — бросок совершается как рукопашный.
-            return kind.startsWith("рукопашн") || kind.startsWith("melee") ? "melee" : "ranged";
-        }
-        if (source == AttackType.MELEE || source == AttackType.MELEE_OR_RANGE) {
-            return "melee";
-        }
-        if (source == AttackType.RANGE) {
-            return "ranged";
-        }
-        if (attackBonus == null) {
-            return null;
-        }
-        String lower = value(text).toLowerCase(Locale.ROOT);
-        if (lower.contains("melee") || lower.contains("рукопашн")) {
-            return "melee";
-        }
-        if (lower.contains("ranged") || lower.contains("дальнобойн")) {
-            return "ranged";
-        }
-        return null;
-    }
-
-    /**
-     * Спасбросок записи. Структурированное поле в приоритете, но у существ редакции 2024 оно
-     * пустое: характеристика и Сл. остаются только в описании, причём «Сл.» приезжает ссылкой
-     * на глоссарий.
-     */
-    private SaveValues save(SawingThrow structured, String text) {
-        if (structured != null && structured.getAbility() != null) {
-            return new SaveValues(
-                    structured.getAbility().name().toLowerCase(Locale.ROOT),
-                    Byte.toUnsignedInt(structured.getDc()),
-                    saveEffect(text),
-                    -1
-            );
-        }
-        Matcher matcher = SAVE_THROW.matcher(text);
-        if (!matcher.find()) {
-            return null;
-        }
-        String ability = ability(matcher.group(1) == null ? matcher.group(2) : matcher.group(1));
-        if (ability == null) {
-            return null;
-        }
-        Matcher dc = SAVE_DC.matcher(text);
-        return new SaveValues(
-                ability,
-                dc.find(matcher.end()) ? Integer.valueOf(dc.group(1)) : null,
-                saveEffect(text),
-                matcher.start()
-        );
-    }
-
-    private String ability(String word) {
-        String lower = value(word).toLowerCase(Locale.ROOT);
-        if (lower.startsWith("сил") || lower.startsWith("strength")) return "strength";
-        if (lower.startsWith("лов") || lower.startsWith("dexterity")) return "dexterity";
-        if (lower.startsWith("тел") || lower.startsWith("constitution")) return "constitution";
-        if (lower.startsWith("инт") || lower.startsWith("intelligence")) return "intelligence";
-        if (lower.startsWith("муд") || lower.startsWith("wisdom")) return "wisdom";
-        if (lower.startsWith("хар") || lower.startsWith("charisma")) return "charisma";
-        return null;
-    }
-
-    /**
-     * Область эффекта. Три записи размера: «в линии длиной N и шириной M», «в N-футовом конусе»
-     * и «в эманации с радиусом N». Берётся самая ранняя — она относится к самому эффекту, а не
-     * к дистанции до цели в продолжении фразы.
-     */
-    private AreaValues area(String text) {
-        AreaValues result = null;
-        int start = Integer.MAX_VALUE;
-        Matcher line = AREA_LINE.matcher(text);
-        if (line.find()) {
-            result = new AreaValues("line", Integer.parseInt(line.group(1)), Integer.parseInt(line.group(2)), null);
-            start = line.start();
-        }
-        Matcher prefixed = AREA_PREFIXED.matcher(text);
-        if (prefixed.find() && prefixed.start() < start) {
-            result = new AreaValues(areaShape(prefixed.group(2)), Integer.parseInt(prefixed.group(1)), null, null);
-            start = prefixed.start();
-        }
-        Matcher radius = AREA_RADIUS.matcher(text);
-        if (radius.find() && radius.start() < start) {
-            result = new AreaValues(
-                    areaShape(radius.group(1)),
-                    Integer.parseInt(radius.group(2)),
-                    null,
-                    radius.group(3) == null ? null : Integer.valueOf(radius.group(3))
-            );
-        }
-        return result;
-    }
-
-    private String areaShape(String word) {
-        return switch (word.toLowerCase(Locale.ROOT)) {
-            case "сфер" -> "sphere";
-            case "цилиндр" -> "cylinder";
-            case "эманаци" -> "emanation";
-            case "лини" -> "line";
-            default -> "cone";
-        };
-    }
-
-    private RangeValues range(String text) {
-        Matcher matcher = RANGE.matcher(text);
-        if (!matcher.find()) {
-            return null;
-        }
-        return new RangeValues(
-                Integer.parseInt(matcher.group(1)),
-                StringUtils.hasText(matcher.group(2)) ? Integer.parseInt(matcher.group(2)) : null
-        );
-    }
-
-    private String hitText(String text) {
-        Matcher matcher = HIT_START.matcher(text);
-        return matcher.find() ? text.substring(matcher.end()) : text;
-    }
-
-    private String damageDice(String text) {
-        String damageContext = firstDamageContext(text);
-        Matcher matcher = DICE.matcher(damageContext);
-        if (!matcher.find()) {
-            return firstString(FLAT_DAMAGE.matcher(text));
-        }
-        String formula = matcher.group(1) + "к" + matcher.group(2);
-        if (StringUtils.hasText(matcher.group(3))) {
-            formula += " " + matcher.group(3) + " " + matcher.group(4);
-        }
-        return formula;
-    }
-
-    /**
-     * Разбивает текст попадания на отдельные сегменты урона. Каждый сегмент привязан
-     * к своей формуле костей; область поиска типа урона ограничена следующим броском,
-     * поэтому типы из соседних сегментов не смешиваются.
-     */
-    private List<DamageSegment> damageSegments(String hitText) {
-        Matcher matcher = DICE.matcher(hitText);
-        List<Integer> starts = new ArrayList<>();
-        List<String> formulas = new ArrayList<>();
-        while (matcher.find()) {
-            starts.add(matcher.start());
-            String formula = matcher.group(1) + "к" + matcher.group(2);
-            if (StringUtils.hasText(matcher.group(3))) {
-                formula += matcher.group(3) + matcher.group(4);
-            }
-            formulas.add(formula);
-        }
-        List<DamageSegment> result = new ArrayList<>();
-        for (int i = 0; i < starts.size(); i++) {
-            int start = starts.get(i);
-            int end = i + 1 < starts.size() ? starts.get(i + 1) : hitText.length();
-            String region = hitText.substring(start, end);
-            if (!DAMAGE_WORD.matcher(region).find()) {
-                continue;
-            }
-            result.add(new DamageSegment(formulas.get(i), damageTypeIn(region)));
-        }
-        return result;
-    }
-
-    private String damageTypeIn(String region) {
-        String lower = region.toLowerCase(Locale.ROOT);
-        for (Map.Entry<String, Pattern> entry : TEXT_DAMAGE_TYPES.entrySet()) {
-            if (entry.getValue().matcher(lower).find()) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
-
-    private String combinedDamageFormula(List<DamageSegment> segments) {
-        return segments.stream()
-                .map(segment -> segment.type() == null
-                        ? segment.formula()
-                        : segment.formula() + "@dmg." + segment.type())
-                .collect(Collectors.joining("+"));
-    }
-
-    /**
-     * Окрестность слова «урон». Берётся первая, где рядом стоит бросок: слово встречается и в
-     * оговорках вроде «пока не получит урон», а кости с типом урона — уже в следующем предложении.
-     */
-    private String firstDamageContext(String text) {
-        Matcher matcher = DAMAGE_WORD.matcher(text);
-        String first = null;
-        while (matcher.find()) {
-            String context = window(text, matcher.start() - 80, matcher.end() + 40);
-            if (DICE.matcher(context).find()) {
-                return context;
-            }
-            if (first == null) {
-                first = context;
-            }
-        }
-        return first == null ? text : first;
-    }
-
-    private String damageType(Collection<DamageType> damageTypes, String text, String damageFormula) {
-        if (!StringUtils.hasText(damageFormula)) {
-            return null;
-        }
-        String lower = firstDamageContext(text).toLowerCase(Locale.ROOT);
-        for (Map.Entry<String, Pattern> entry : TEXT_DAMAGE_TYPES.entrySet()) {
-            if (entry.getValue().matcher(lower).find()) {
-                return entry.getKey();
-            }
-        }
-        DamageType structuredType = first(damageTypes);
-        return structuredType == null ? null : damageType(structuredType);
-    }
-
-    /**
-     * Исход при успехе. У записи редакции 2024 он вынесен в блок «*Успех:*»: «половина урона»
-     * даёт {@code half}, любая другая формулировка — {@code special}. Блока нет — при успехе
-     * не происходит ничего, то есть {@code none}.
-     */
-    private String saveEffect(String text) {
-        Matcher success = SUCCESS_BLOCK.matcher(text);
-        if (success.find()) {
-            return success.group(1).trim().toLowerCase(Locale.ROOT).startsWith("половина урона")
-                    ? "half" : "special";
-        }
-        String lower = value(text).toLowerCase(Locale.ROOT);
-        if (lower.contains("half as much") || lower.contains("half damage")
-                || lower.contains("половин")) {
-            return "half";
-        }
-        return "none";
-    }
-
-    /**
-     * Состояния, которые запись накладывает на цель. Спас-довесок атаки гейтит только те из
-     * них, что описаны ПОСЛЕ его зачина: «*Попадание:* и цель отравлена» вешается без броска,
-     * а «*Провал:* цель парализована» — лишь при провале. Без {@code applySave} такое состояние
-     * ложилось бы на цель безусловно, ведь на уровне записи спасброска у атаки нет.
-     */
-    private List<Map<String, Object>> activeEffects(String description, SaveValues riderSave) {
-        String text = value(description);
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (ConditionEffectTemplate template : CONDITION_EFFECTS) {
-            Matcher matcher = template.pattern().matcher(text);
-            if (!matcher.find()) {
-                continue;
-            }
-            boolean gated = riderSave != null && riderSave.dc() != null && matcher.start() > riderSave.start();
-            result.add(activeEffect(template, gated ? riderSave : null));
-        }
-        return result;
-    }
-
-    private Map<String, Object> activeEffect(ConditionEffectTemplate template, SaveValues applySave) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("id", template.id());
-        result.put("name", template.name());
-        result.put("description", template.description());
-        result.put("icon", template.icon());
-        result.put("disabled", false);
-        result.put("origin", "feature");
-        result.put("transfer", false);
-        result.put("effectTarget", "target");
-        if (applySave != null) {
-            Map<String, Object> save = new LinkedHashMap<>();
-            save.put("ability", applySave.ability());
-            save.put("dc", applySave.dc());
-            // Состояние либо ложится, либо нет: половинить у него нечего — урон несёт сама атака.
-            save.put("onSuccess", "negate");
-            result.put("applySave", save);
-        }
-        result.put("duration", Map.of("type", "special"));
-        result.put("changes", List.of());
-        result.put("flags", template.flags());
-        return result;
-    }
-
-    private Integer firstInt(Matcher matcher) {
-        return matcher.find() ? Integer.parseInt(matcher.group(1)) : null;
-    }
-
-    private String firstString(Matcher matcher) {
-        return matcher.find() ? matcher.group(1) : null;
     }
 
     private Map<String, Object> movement(CreatureSpeeds speeds) {
@@ -878,8 +675,26 @@ public class VttgCreatureMapper {
         return value > 0 ? " + " + value : " - " + Math.abs(value);
     }
 
-    private String window(String text, int start, int end) {
-        return text.substring(Math.max(0, start), Math.min(text.length(), end));
+    /**
+     * Строка инвентаря. Идёт рядом с позициями, а не вместо них: в ней количества
+     * словами («три кинжала») и то, чему карточки на сайте нет, — весом и уроном такая
+     * строка не обладает, а позиции обладают.
+     *
+     * <p>Своей строки нет — берём снаряжение старого импорта: у записей, которым
+     * инвентарь ещё не завели, весь текст лежит только там.</p>
+     *
+     * @param creature существо.
+     * @return строка инвентаря или {@code null}, если её нет.
+     */
+    private String gear(Creature creature) {
+        String own = text(creature.getInventoryText());
+        return StringUtils.hasText(own) ? own : text(creature.getEquipments());
+    }
+
+    private void putIfNotEmpty(Map<String, Object> map, String key, Collection<?> value) {
+        if (!CollectionUtils.isEmpty(value)) {
+            map.put(key, value);
+        }
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value) {
@@ -888,198 +703,47 @@ public class VttgCreatureMapper {
         }
     }
 
-    private void putIfHasText(Map<String, Object> map, String value) {
+    private void putIfHasText(Map<String, Object> map, String key, String value) {
         if (StringUtils.hasText(value)) {
-            map.put("nameEn", value);
+            map.put(key, value);
         }
+    }
+
+    /**
+     * Перезарядка записи ключом словаря VTTG: {@code d5} у «Перезарядка 5–6»,
+     * {@code lr} — у «после продолжительного отдыха». Подпись рисует система: словарь
+     * показа у неё свой.
+     *
+     * @param recharge перезарядка записи.
+     * @return ключ перезарядки или {@code null}, если её нет.
+     */
+    private String recharge(RechargeType recharge) {
+        return recharge == null ? null : recharge.name().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Склейка названий справочника в одну строку — статблок системы ждёт здесь текст,
+     * а не массив ключей.
+     *
+     * @param values значения справочника.
+     * @param name как взять название у значения.
+     * @param separator разделитель.
+     * @param <T> тип значения справочника.
+     * @return склеенные названия или {@code null}, если значений нет.
+     */
+    private <T> String names(Collection<T> values, Function<T, String> name, String separator) {
+        if (CollectionUtils.isEmpty(values)) {
+            return null;
+        }
+        return values.stream()
+                .filter(Objects::nonNull)
+                .map(name)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .collect(Collectors.joining(separator));
     }
 
     private <T> T first(Collection<T> values) {
         return values == null || values.isEmpty() ? null : values.iterator().next();
-    }
-
-    private static Map<String, Pattern> textDamageTypes() {
-        Map<String, Pattern> result = new LinkedHashMap<>();
-        result.put("acid", Pattern.compile("(?iu)\\u043a\\u0438\\u0441\\u043b\\u043e\\u0442|acid"));
-        result.put("bludgeoning", Pattern.compile("(?iu)\\u0434\\u0440\\u043e\\u0431\\u044f\\u0449|bludgeoning"));
-        result.put("cold", Pattern.compile("(?iu)\\u0445\\u043e\\u043b\\u043e\\u0434|cold"));
-        result.put("fire", Pattern.compile("(?iu)\\u043e\\u0433\\u043d|\\u043f\\u043b\\u0430\\u043c\\u0435\\u043d|fire"));
-        result.put("force", Pattern.compile("(?iu)\\u0441\\u0438\\u043b\\u043e\\u0432|force"));
-        result.put("lightning", Pattern.compile("(?iu)\\u044d\\u043b\\u0435\\u043a\\u0442\\u0440|\\u043c\\u043e\\u043b\\u043d\\u0438|lightning"));
-        result.put("necrotic", Pattern.compile("(?iu)\\u043d\\u0435\\u043a\\u0440\\u043e\\u0442|necrotic"));
-        result.put("piercing", Pattern.compile("(?iu)\\u043a\\u043e\\u043b\\u044e\\u0449|piercing"));
-        result.put("poison", Pattern.compile("(?iu)\\u044f\\u0434|poison"));
-        result.put("psychic", Pattern.compile("(?iu)\\u043f\\u0441\\u0438\\u0445\\u0438\\u0447|psychic"));
-        result.put("radiant", Pattern.compile("(?iu)\\u0438\\u0437\\u043b\\u0443\\u0447\\u0435\\u043d|\\u0441\\u0438\\u044f\\u044e\\u0449|radiant"));
-        result.put("slashing", Pattern.compile("(?iu)\\u0440\\u0443\\u0431\\u044f\\u0449|slashing"));
-        result.put("thunder", Pattern.compile("(?iu)\\u0437\\u0432\\u0443\\u043a|\\u0433\\u0440\\u043e\\u043c|thunder"));
-        return result;
-    }
-
-    private static List<ConditionEffectTemplate> conditionEffects() {
-        return List.of(
-                conditionEffect(
-                        "poisoned",
-                        "\\u041e\\u0442\\u0440\\u0430\\u0432\\u043b\\u0435\\u043d\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u0442\\u0440\\u0430\\u0432\\u043b\\u0435\\u043d\\u0430.",
-                        "tabler:biohazard",
-                        "(?:poisoned|\\u043e\\u0442\\u0440\\u0430\\u0432\\u043b\\u0435\\u043d\\p{L}*)",
-                        List.of("attack.disadvantage", "abilityCheck.disadvantage")
-                ),
-                conditionEffect(
-                        "paralyzed",
-                        "\\u041f\\u0430\\u0440\\u0430\\u043b\\u0438\\u0437\\u043e\\u0432\\u0430\\u043d\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u043f\\u0430\\u0440\\u0430\\u043b\\u0438\\u0437\\u043e\\u0432\\u0430\\u043d\\u0430.",
-                        "tabler:user-off",
-                        "(?:paralyzed|\\u043f\\u0430\\u0440\\u0430\\u043b\\u0438\\u0437\\u043e\\u0432\\u0430\\u043d\\p{L}*)",
-                        List.of(
-                                "incapacitated",
-                                "speed.zero",
-                                "save.autoFail.strength",
-                                "save.autoFail.dexterity",
-                                "attacksAgainst.advantage"
-                        )
-                ),
-                conditionEffect(
-                        "restrained",
-                        "\\u041e\\u043f\\u0443\\u0442\\u0430\\u043d\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u043f\\u0443\\u0442\\u0430\\u043d\\u0430.",
-                        "tabler:link",
-                        "(?:restrained|\\u043e\\u043f\\u0443\\u0442\\u0430\\u043d\\p{L}*)",
-                        List.of("speed.zero", "attack.disadvantage", "attacksAgainst.advantage")
-                ),
-                conditionEffect(
-                        "grappled",
-                        "\\u0421\\u0445\\u0432\\u0430\\u0447\\u0435\\u043d\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u0441\\u0445\\u0432\\u0430\\u0447\\u0435\\u043d\\u0430.",
-                        "tabler:hand-grab",
-                        "(?:grappled|\\u0441\\u0445\\u0432\\u0430\\u0447\\u0435\\u043d\\p{L}*)",
-                        List.of("speed.zero")
-                ),
-                conditionEffect(
-                        "prone",
-                        "\\u0421\\u0431\\u0438\\u0442\\u044b\\u0439 \\u0441 \\u043d\\u043e\\u0433",
-                        "\\u0426\\u0435\\u043b\\u044c \\u0441\\u0431\\u0438\\u0442\\u0430 \\u0441 \\u043d\\u043e\\u0433.",
-                        "tabler:walk",
-                        "(?:prone|\\u0441\\u0431\\u0438\\u0442\\p{L}*\\s+\\u0441\\s+\\u043d\\u043e\\u0433|\\u043f\\u0430\\u0434\\u0430\\u0435\\u0442\\s+\\u043d\\u0438\\u0447\\u043a\\u043e\\u043c)",
-                        List.of("attack.disadvantage")
-                ),
-                conditionEffect(
-                        "frightened",
-                        "\\u0418\\u0441\\u043f\\u0443\\u0433\\u0430\\u043d\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u0438\\u0441\\u043f\\u0443\\u0433\\u0430\\u043d\\u0430.",
-                        "tabler:ghost",
-                        "(?:frightened|\\u0438\\u0441\\u043f\\u0443\\u0433\\u0430\\u043d\\p{L}*)",
-                        List.of("attack.disadvantage", "abilityCheck.disadvantage")
-                ),
-                conditionEffect(
-                        "blinded",
-                        "\\u041e\\u0441\\u043b\\u0435\\u043f\\u043b\\u0435\\u043d\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u0441\\u043b\\u0435\\u043f\\u043b\\u0435\\u043d\\u0430.",
-                        "tabler:eye-off",
-                        "(?:blinded|\\u043e\\u0441\\u043b\\u0435\\u043f\\u043b\\u0435\\u043d\\p{L}*)",
-                        List.of("vision.blinded", "attack.disadvantage", "attacksAgainst.advantage")
-                ),
-                conditionEffect(
-                        "unconscious",
-                        "\\u0411\\u0435\\u0441\\u0441\\u043e\\u0437\\u043d\\u0430\\u0442\\u0435\\u043b\\u044c\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u0431\\u0435\\u0437 \\u0441\\u043e\\u0437\\u043d\\u0430\\u043d\\u0438\\u044f.",
-                        "tabler:zzz",
-                        "(?:unconscious|\\u0431\\u0435\\u0437\\s+\\u0441\\u043e\\u0437\\u043d\\u0430\\u043d\\u0438\\u044f|\\u0431\\u0435\\u0441\\u0441\\u043e\\u0437\\u043d\\u0430\\u0442\\u0435\\u043b\\p{L}*)",
-                        List.of(
-                                "incapacitated",
-                                "speed.zero",
-                                "save.autoFail.strength",
-                                "save.autoFail.dexterity",
-                                "attacksAgainst.advantage"
-                        )
-                ),
-                conditionEffect(
-                        "stunned",
-                        "\\u041e\\u0448\\u0435\\u043b\\u043e\\u043c\\u043b\\u0435\\u043d\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u043e\\u0448\\u0435\\u043b\\u043e\\u043c\\u043b\\u0435\\u043d\\u0430.",
-                        "tabler:stars",
-                        "(?:stunned|\\u043e\\u0448\\u0435\\u043b\\u043e\\u043c\\u043b\\u0435\\u043d\\p{L}*)",
-                        List.of(
-                                "incapacitated",
-                                "speed.zero",
-                                "save.autoFail.strength",
-                                "save.autoFail.dexterity",
-                                "attacksAgainst.advantage"
-                        )
-                ),
-                conditionEffect(
-                        "incapacitated",
-                        "\\u041d\\u0435\\u0434\\u0435\\u0435\\u0441\\u043f\\u043e\\u0441\\u043e\\u0431\\u043d\\u044b\\u0439",
-                        "\\u0426\\u0435\\u043b\\u044c \\u043d\\u0435\\u0434\\u0435\\u0435\\u0441\\u043f\\u043e\\u0441\\u043e\\u0431\\u043d\\u0430.",
-                        "tabler:ban",
-                        "(?:incapacitated|\\u043d\\u0435\\u0434\\u0435\\u0435\\u0441\\u043f\\u043e\\u0441\\u043e\\u0431\\p{L}*)",
-                        List.of("incapacitated")
-                )
-        );
-    }
-
-    private static ConditionEffectTemplate conditionEffect(
-            String id, String name, String description, String icon, String pattern, List<String> flags) {
-        return new ConditionEffectTemplate(
-                id,
-                decodeUnicodeEscapes(name),
-                decodeUnicodeEscapes(description),
-                icon,
-                Pattern.compile("(?iu)" + pattern),
-                flags
-        );
-    }
-
-    private static String decodeUnicodeEscapes(String value) {
-        Matcher matcher = UNICODE_ESCAPE.matcher(value);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            matcher.appendReplacement(result, Matcher.quoteReplacement(
-                    Character.toString((char) Integer.parseInt(matcher.group(1), 16))
-            ));
-        }
-        matcher.appendTail(result);
-        return result.toString();
-    }
-
-    private record RangeValues(Integer normal, Integer longRange) {
-    }
-
-    private record DamageSegment(String formula, String type) {
-    }
-
-    /**
-     * @param start позиция зачина спасброска в описании; {@code -1} у структурированного поля,
-     *              где текстовой привязки нет
-     */
-    private record SaveValues(String ability, Integer dc, String effect, int start) {
-    }
-
-    private record AreaValues(String shape, int size, Integer width, Integer height) {
-    }
-
-    private record CreatureActionMechanics(
-            String rangeType,
-            Integer attackBonus,
-            String damageFormula,
-            String damageType,
-            String saveType,
-            Integer saveDC,
-            String saveEffect,
-            SaveValues riderSave,
-            AreaValues area,
-            Integer reach,
-            Integer range,
-            Integer longRange) {
-    }
-
-    private record ConditionEffectTemplate(
-            String id,
-            String name,
-            String description,
-            String icon,
-            Pattern pattern,
-            List<String> flags) {
     }
 }

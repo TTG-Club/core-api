@@ -69,7 +69,7 @@ public class VttgEquipmentMapper {
         if (CollectionUtils.isEmpty(options)) {
             return List.of();
         }
-        Map<String, String> catalogNames = catalogNames(options);
+        Map<String, String> catalogNames = optionCatalogNames(options);
         return options.stream()
                 .filter(Objects::nonNull)
                 .map(option -> renderOption(option, catalogNames))
@@ -81,12 +81,21 @@ public class VttgEquipmentMapper {
      * Названия из справочника для позиций со ссылкой, но без снимка названия — одним
      * запросом на все варианты. Позиции со снимком и свободные уточнения не запрашиваются.
      */
-    private Map<String, String> catalogNames(List<EquipmentOption> options) {
-        Set<String> urls = options.stream()
+    private Map<String, String> optionCatalogNames(List<EquipmentOption> options) {
+        return catalogNames(options.stream()
                 .filter(Objects::nonNull)
                 .map(EquipmentOption::getItems)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)
+                .toList());
+    }
+
+    /**
+     * Названия справочника для позиций без снимка названия. Спрашиваем только про них:
+     * снимок пишется формой при выборе карточки, и у заполненной позиции он уже есть.
+     */
+    private Map<String, String> catalogNames(List<EquipmentItem> items) {
+        Set<String> urls = items.stream()
                 .filter(Objects::nonNull)
                 .filter(item -> StringUtils.hasText(item.getUrl()) && !StringUtils.hasText(item.getName()))
                 .map(EquipmentItem::getUrl)
@@ -160,6 +169,25 @@ public class VttgEquipmentMapper {
                 exported.isEmpty() ? null : exported,
                 hasCoins ? coins : null,
                 hasCoins ? coin.name() : null);
+    }
+
+    /**
+     * Позиции снаряжения плоским списком — стартовое снаряжение приходит вариантами,
+     * а инвентарь существа одним списком, и собираются они одинаково.
+     *
+     * @param items позиции снаряжения.
+     * @return позиции в формате компендиума; пустой список, если собирать нечего.
+     */
+    public List<VttgEquipmentItem> exportItems(List<EquipmentItem> items) {
+        if (CollectionUtils.isEmpty(items)) {
+            return List.of();
+        }
+        Map<String, String> names = catalogNames(items);
+        return items.stream()
+                .filter(Objects::nonNull)
+                .map(item -> exportItem(item, itemName(item, names)))
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     /**

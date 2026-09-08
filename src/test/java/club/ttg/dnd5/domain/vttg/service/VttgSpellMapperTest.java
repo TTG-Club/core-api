@@ -16,6 +16,7 @@ import club.ttg.dnd5.domain.spell.model.SpellComponents;
 import club.ttg.dnd5.domain.spell.model.SpellDistance;
 import club.ttg.dnd5.domain.spell.model.SpellDuration;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.DamagePart;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
@@ -346,7 +347,7 @@ class VttgSpellMapperTest {
         SpellEffect effect = new SpellEffect();
         effect.setDamageFormulas(List.of("1к8@dmg.necrotic"));
 
-        SpellEffect.DamagePart part = new SpellEffect.DamagePart();
+        DamagePart part = new DamagePart();
         part.setFormula("2к12@dmg.necrotic");
         part.setTarget("selected");
 

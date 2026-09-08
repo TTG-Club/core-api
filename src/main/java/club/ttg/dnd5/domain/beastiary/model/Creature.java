@@ -2,12 +2,14 @@ package club.ttg.dnd5.domain.beastiary.model;
 
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguages;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellcastingBlock;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -91,7 +93,28 @@ public class Creature extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private CreatureAbilities abilities;
 
+    /**
+     * Снаряжение строкой — поле старого импорта. Инвентарь ведётся позициями
+     * ({@link #inventory}) и своей строкой ({@link #inventoryText}); это остаётся
+     * запасным видом для записей, которым инвентарь ещё не завели.
+     */
     private String equipments;
+
+    /**
+     * Инвентарь существа позициями — те же карточки сайта, что и в стартовом
+     * снаряжении предыстории и класса. По ним ВТТГ раскладывает предметы в сумку
+     * существа: строка книги ни веса, ни урона не несёт, а мастеру нужно именно это.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<EquipmentItem> inventory;
+
+    /**
+     * Свободная строка инвентаря: количества словами («три кинжала») и позиции,
+     * которым карточки на сайте нет. Идёт рядом с позициями, а не вместо них.
+     */
+    @Column(name = "inventory_text")
+    private String inventoryText;
 
     /**
      * Навыки
@@ -229,6 +252,18 @@ public class Creature extends NamedEntity {
     @Type(JsonType.class)
     @Column(name = "active_effects", columnDefinition = "jsonb")
     private List<ActiveEffect> activeEffects;
+
+    /**
+     * Заклинания существа блоками: у каждого своя заклинательная характеристика, своя Сл и
+     * свои порции по ограничению применений.
+     *
+     * <p>Машинные данные для виртуального стола, а не для карточки сайта: статблок описывает
+     * заклинания текстом записи действия и продолжает это делать. Заводятся блоки руками в
+     * мастерской — разбора описаний у них нет.</p>
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<CreatureSpellcastingBlock> spellcasting;
 
     @ManyToOne
     @JoinColumn(name = "source")

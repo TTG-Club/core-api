@@ -335,3 +335,9 @@ databaseChangeLog:
       file: db/changelog/2026/08/30-01-move-species-darkvision-to-feature-senses.yaml
   - include:
       file: db/changelog/2026/08/30-02-add-species-vision.yaml
+  - include:
+      file: db/changelog/2026/09/07-01-add-creature-inventory.yaml
+  - include:
+      file: db/changelog/2026/09/08-01-backfill-creature-inventory-from-equipments.yaml
+  - include:
+      file: db/changelog/2026/09/08-02-add-creature-spellcasting.yaml

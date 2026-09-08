@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellcastingBlock;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
@@ -17,6 +18,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collection;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
 import java.util.List;
 
 @Getter
@@ -42,8 +44,14 @@ public class CreatureRequest extends BaseRequest {
     private Collection<CreatureSkill> skills;
     @Schema(description = "Уязвимости, Сопротивления, Иммунитеты")
     private CreatureDefenses defenses;
-    @Schema(description = "Снаряжение", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(description = "Снаряжение строкой (поле старого импорта)",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String equipments;
+    @Schema(description = "Инвентарь позициями", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<EquipmentItem> inventory;
+    @Schema(description = "Свободная строка инвентаря",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String inventoryText;
     @Schema(description = "Чувства")
     private Senses senses;
     @Schema(description = "Языки")
@@ -66,4 +74,13 @@ public class CreatureRequest extends BaseRequest {
 
     @Schema(description = "Активные эффекты существа в вокабуляре VTTG")
     private List<ActiveEffect> activeEffects;
+
+    /**
+     * Блоки заклинаний существа. Возвращаются формой из {@code GET /api/v2/bestiary/{url}/raw}
+     * тем же полем — отдельного места в карточке сайта у них нет: статблок описывает
+     * заклинания текстом записи действия, а блоки уезжают на виртуальный стол.
+     */
+    @Schema(description = "Заклинания существа блоками",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<CreatureSpellcastingBlock> spellcasting;
 }

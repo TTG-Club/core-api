@@ -2,27 +2,54 @@ package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgCreature;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgEquipmentItem;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
 import club.ttg.dnd5.domain.beastiary.model.CreatureArmor;
 import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
 import club.ttg.dnd5.domain.beastiary.model.CreatureHit;
+import club.ttg.dnd5.domain.beastiary.model.CreatureInitiative;
 import club.ttg.dnd5.domain.beastiary.model.CreatureLair;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSize;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
+import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.common.dictionary.CreatureTreasure;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
+import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.common.dictionary.Size;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.DamagePart;
+import club.ttg.dnd5.domain.common.model.EquipmentItem;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellComponents;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellGroup;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellRef;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellRestKind;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellUsageMode;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellcastingBlock;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
+import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.SpellSchool;
+import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
+import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpell;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgSpellUses;
+import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
+import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
+import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -30,9 +57,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class VttgCreatureMapperTest {
-    private final VttgCreatureMapper mapper = new VttgCreatureMapper(new VttgMarkupConverter(new ObjectMapper()));
+    private final VttgMarkupConverter markupConverter = new VttgMarkupConverter(new ObjectMapper());
+    // Справочник заклинаний отвечает только там, где тест завёл блоки: существо без
+    // них в него не ходит.
+    private final SpellRepository spellRepository = mock(SpellRepository.class);
+    // Справочник предметов молчит: у позиций теста снимок названия заполнен, а
+    // дозапрос идёт только за теми, у кого его нет.
+    private final VttgCreatureMapper mapper = new VttgCreatureMapper(
+            markupConverter,
+            new VttgEquipmentMapper(markupConverter, mock(ItemRepository.class)),
+            new VttgCreatureSpellcastingMapper(spellRepository, new VttgSpellMapper(
+                    markupConverter,
+                    new VttgSpellMechanicsExtractor(),
+                    new VttgSpellScalingExtractor())));
 
     @Test
     void mapsCreatureToVttgStructure() {
@@ -139,137 +181,6 @@ class VttgCreatureMapperTest {
     }
 
     @Test
-    void extractsMeleeActionMechanicsFromDescription() {
-        Creature creature = new Creature();
-        creature.setUrl("melee-creature");
-        creature.setName("Melee Creature");
-        creature.setDescription("");
-        creature.setActions(List.of(action(
-                "Bite",
-                "[\"Melee Weapon Attack: +5 to hit, reach 10 ft., one target. Hit: 7 (1d8 + 3) piercing damage.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertEquals(5, action.get("attackBonus"));
-        assertDamagePart(action, "1к8 + 3", "piercing");
-        assertFalse(action.containsKey("damageDice"));
-        assertFalse(action.containsKey("damageType"));
-        assertEquals(10, action.get("reach"));
-        assertEquals("melee", action.get("rangeType"));
-        assertEquals("ft", action.get("distanceUnit"));
-    }
-
-    @Test
-    void extractsRangedActionMechanicsFromDescription() {
-        Creature creature = new Creature();
-        creature.setUrl("ranged-creature");
-        creature.setName("Ranged Creature");
-        creature.setDescription("");
-        creature.setActions(List.of(action(
-                "Web",
-                "[\"Ranged Weapon Attack: +5 to hit, range 30/60 ft., one target. Hit: the target is restrained.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-        Map<?, ?> range = (Map<?, ?>) action.get("range");
-
-        assertEquals(5, action.get("attackBonus"));
-        assertEquals("ranged", action.get("rangeType"));
-        assertEquals("ft", action.get("distanceUnit"));
-        assertEquals(30, range.get("normal"));
-        assertEquals(60, range.get("long"));
-        assertActiveEffect(action, "restrained");
-    }
-
-    @Test
-    void extractsFlatDamageFromDescription() {
-        Creature creature = new Creature();
-        creature.setUrl("flat-damage-creature");
-        creature.setName("Flat Damage Creature");
-        creature.setDescription("");
-        creature.setActions(List.of(action(
-                "Bite",
-                "[\"Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 1 piercing damage, and the target must save.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertDamagePart(action, "1", "piercing");
-    }
-
-    @Test
-    void combinesTwoDamageTypesIntoSingleFormula() {
-        Creature creature = new Creature();
-        creature.setUrl("two-damage-creature");
-        creature.setName("Two Damage Creature");
-        creature.setDescription("");
-        creature.setActions(List.of(action(
-                "Укус",
-                "[\"Бросок рукопашной атаки: +4 к попаданию, досягаемость 5 фт. "
-                        + "Попадание: 5 (1к6 + 2) рубящего урона + 5 (2к4) урона некротической энергией.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertDamageFormula(action);
-    }
-
-    @Test
-    void combinesTwoDamageTypesFromEnglishDescription() {
-        Creature creature = new Creature();
-        creature.setUrl("two-damage-creature-en");
-        creature.setName("Two Damage Creature En");
-        creature.setDescription("");
-        creature.setActions(List.of(action(
-                "Bite",
-                "[\"Melee Weapon Attack: +4 to hit, reach 5 ft., one target. "
-                        + "Hit: 5 (1d6 + 2) slashing damage plus 5 (2d4) necrotic damage.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertDamageFormula(action);
-    }
-
-    @Test
-    void doesNotExtractOngoingDamageAsAttackDamage() {
-        Creature creature = new Creature();
-        creature.setUrl("ongoing-damage-creature");
-        creature.setName("Ongoing Damage Creature");
-        creature.setDescription("");
-        creature.setActions(List.of(action(
-                "Swallow",
-                "[\"The swallowed target takes 16d6 acid damage at the start of each of the creature's turns.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertNull(action.get("damageParts"));
-    }
-
-    @Test
-    void extractsConditionEffectsFromDescription() {
-        Creature creature = new Creature();
-        creature.setUrl("condition-creature");
-        creature.setName("Condition Creature");
-        creature.setDescription("");
-        creature.setActions(List.of(action(
-                "Slam",
-                "[\"Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) bludgeoning damage, "
-                        + "and the target is knocked prone.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertActiveEffect(action, "prone");
-    }
-
-    /**
-     * Идентичность страницы-источника существа: раздел сайта — {@code bestiary}, тогда как лист
-     * компендиума — {@code creatures}. Разрешать ссылку по {@code section} нельзя.
-     */
-    @Test
     void exportsSourcePageIdentity() {
         Creature creature = new Creature();
         creature.setUrl("goblin-mm");
@@ -283,255 +194,718 @@ class VttgCreatureMapperTest {
         assertEquals("creatures", result.getSection());
     }
 
-    @Test
-    void exportsEnglishNameStructuredDamageTypeAndSavingThrow() {
-        Creature creature = new Creature();
-        creature.setUrl("save-creature");
-        creature.setName("Save Creature");
-        creature.setDescription("");
-
-        CreatureAction action = action(
-                "Ледяное дыхание",
-                "[\"Each creature must make a DC 15 Constitution saving throw, taking 18 (4d8) damage, or half damage on success.\"]"
-        );
-        action.setEnglish("Cold Breath");
-        action.setDamageTypes(List.of(DamageType.COLD));
-        SawingThrow savingThrow = new SawingThrow();
-        savingThrow.setAbility(Ability.CONSTITUTION);
-        savingThrow.setDc((byte) 15);
-        action.setSawingThrows(List.of(savingThrow));
-        creature.setActions(List.of(action));
-
-        Map<?, ?> mappedAction = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertEquals("Cold Breath", mappedAction.get("nameEn"));
-        assertDamagePart(mappedAction, "4к8", "cold");
-        assertEquals("constitution", mappedAction.get("saveType"));
-        assertEquals(15, mappedAction.get("saveDC"));
-        assertEquals("half", mappedAction.get("saveEffect"));
-    }
-
     /**
-     * Записи редакции 2024: бонус атаки стоит после зачина, а не перед оборотом «к попаданию».
-     * Без него VTTG не показывает бросок попадания и сразу катит урон.
+     * Механику записи не заводили — в выгрузку едет одно описание. Раньше отсюда вынималось
+     * всё, до чего дотягивались регулярки: бонус атаки, кости урона, спасбросок, область и
+     * состояния. Догадка расходилась с тем, что видит редактор, и запись молча получала
+     * механику, которой ей никто не задавал.
      */
     @Test
-    void extractsAttackBonusFromAttackOpening() {
-        Creature creature = creature("aboleth-mm");
-        creature.setActions(List.of(action(
-                "Щупальце",
-                "[\"*Бросок рукопашной атаки:* +9, досягаемость 15 фт., одна цель. "
-                        + "*Попадание:* 12 (2к6 + 5) дробящего урона.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertEquals(9, action.get("attackBonus"));
-        assertEquals("melee", action.get("rangeType"));
-        assertEquals(15, action.get("reach"));
-        assertDamagePart(action, "2к6 + 5", "bludgeoning");
-        assertNull(action.get("saveType"));
-    }
-
-    /** «Рукопашная или дальнобойная» — бросок совершается как рукопашный, дистанция едет рядом. */
-    @Test
-    void mapsMeleeOrRangedAttackAsMelee() {
-        Creature creature = creature("bugbear-warrior-mm");
-        creature.setActions(List.of(action(
-                "Лёгкий молот",
-                "[\"*Бросок рукопашной или дальнобойной атаки:* +4, досягаемость 10 фт. "
-                        + "или дистанция 20/60 фт. *Попадание:* 9 (3к4 + 2) дробящего урона.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-        Map<?, ?> range = (Map<?, ?>) action.get("range");
-
-        assertEquals(4, action.get("attackBonus"));
-        assertEquals("melee", action.get("rangeType"));
-        assertEquals(10, action.get("reach"));
-        assertEquals(20, range.get("normal"));
-        assertEquals(60, range.get("long"));
-    }
-
-    /** Плоский урон стоит сразу за зачином: закрывающая звёздочка не должна его прятать. */
-    @Test
-    void extractsFlatDamageAfterBoldHitOpening() {
-        Creature creature = creature("cat-mm");
-        creature.setActions(List.of(action(
-                "Царапать",
-                "[\"*Бросок рукопашной атаки:* +4, досягаемость 5 фт. *Попадание:* 1 рубящего урона.\"]"
-        )));
-
-        assertDamagePart(firstAction(mapper.toVttg(creature).getSystem()), "1", "slashing");
-    }
-
-    /** «Сл.» приезжает ссылкой на глоссарий — разбор по сырому тексту обязан это пережить. */
-    @Test
-    void extractsSaveFromDescriptionWithGlossaryLink() {
-        Creature creature = creature("aboleth-mm");
-        creature.setActions(List.of(action(
-                "Поглощение воспоминаний",
-                "[\"*Спасбросок Интеллекта:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 16, "
-                        + "одно существо в пределах 30 фт. *Провал:* 10 (3к6) урона психической энергией. "
-                        + "*Успех:* половина урона.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertEquals("intelligence", action.get("saveType"));
-        assertEquals(16, action.get("saveDC"));
-        assertEquals("half", action.get("saveEffect"));
-        assertDamagePart(action, "3к6", "psychic");
-        assertNull(action.get("attackBonus"));
-    }
-
-    /** Без блока «*Успех:*» при успешном спасброске не происходит ничего. */
-    @Test
-    void marksSaveWithoutSuccessBlockAsNone() {
-        Creature creature = creature("aboleth-mm");
-        creature.setActions(List.of(action(
-                "Господство над разумом (2/день)",
-                "[\"*Спасбросок Мудрости:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 16, "
-                        + "одно видимое существо в пределах 30 фт. *Провал:* цель получает состояние очарованный. "
-                        + "Цель повторяет спасбросок, когда получает урон. При успехе эффект оканчивается.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-
-        assertEquals("wisdom", action.get("saveType"));
-        assertEquals("none", action.get("saveEffect"));
-    }
-
-    @Test
-    void extractsLineAreaOfEffect() {
-        Creature creature = creature("adult-black-dragon-mm");
-        creature.setActions(List.of(action(
-                "Кислотное дыхание (перезарядка 5-6)",
-                "[\"*Спасбросок Ловкости:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 18, "
-                        + "каждое существо в [линии](https://new.ttg.club/glossary/line-phb) длиной 60 фт. "
-                        + "и шириной 5 фт. *Провал:* 54 (12к8) урона кислотой. *Успех:* половина урона.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-        Map<?, ?> area = (Map<?, ?>) action.get("areaOfEffect");
-
-        assertEquals("line", area.get("shape"));
-        assertEquals(60, area.get("size"));
-        assertEquals(5, area.get("width"));
-        assertEquals("ft", area.get("unit"));
-        assertEquals("dexterity", action.get("saveType"));
-        assertEquals(18, action.get("saveDC"));
-        assertEquals("half", action.get("saveEffect"));
-        assertDamagePart(action, "12к8", "acid");
-    }
-
-    @Test
-    void extractsConeAreaOfEffect() {
-        Creature creature = creature("adult-gold-dragon-mm");
-        creature.setActions(List.of(action(
-                "Огненное дыхание (перезарядка 5-6)",
-                "[\"*Спасбросок Ловкости:* [Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 21, "
-                        + "каждое существо в 60-футовом [конусе](https://new.ttg.club/glossary/cone-phb). "
-                        + "*Провал:* 66 (12к10) урона огнём. *Успех:* половина урона.\"]"
-        )));
-
-        Map<?, ?> area = (Map<?, ?>) firstAction(mapper.toVttg(creature).getSystem()).get("areaOfEffect");
-
-        assertEquals("cone", area.get("shape"));
-        assertEquals(60, area.get("size"));
-        assertNull(area.get("width"));
-    }
-
-    /**
-     * Спас заменяет бросок попадания, поэтому у атаки с довеском-спасом он не пишется в
-     * saveType, а гейтит наложение состояния: иначе паралич лёг бы на цель безусловно.
-     */
-    @Test
-    void movesRiderSaveOntoEffectOfAttack() {
-        Creature creature = creature("ghoul-mm");
-        creature.setActions(List.of(action(
-                "Когти",
-                "[\"*Бросок рукопашной атаки:* +4, досягаемость 5 фт. *Попадание:* 4 (1к4 + 2) рубящего урона. "
-                        + "Если цель — существо, которое не является нежитью или эльфом, то она подвергается "
-                        + "следующему эффекту. *Спасбросок Телосложения:* "
-                        + "[Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 10. "
-                        + "*Провал:* цель [парализована](https://new.ttg.club/glossary/paralyzed-phb) "
-                        + "до конца своего следующего хода.\"]"
-        )));
-
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-        Map<?, ?> effect = (Map<?, ?>) ((List<?>) action.get("activeEffects")).getFirst();
-        Map<?, ?> applySave = (Map<?, ?>) effect.get("applySave");
-
-        assertEquals(4, action.get("attackBonus"));
-        assertDamagePart(action, "1к4 + 2", "slashing");
-        assertNull(action.get("saveType"));
-        assertNull(action.get("saveDC"));
-        assertNull(action.get("areaOfEffect"));
-        assertEquals("paralyzed", effect.get("id"));
-        assertEquals("constitution", applySave.get("ability"));
-        assertEquals(10, applySave.get("dc"));
-        assertEquals("negate", applySave.get("onSuccess"));
-    }
-
-    /** Состояние из блока попадания спасом не гейтится: спас ниже по тексту — про другое. */
-    @Test
-    void keepsEffectFromHitBlockUngated() {
-        Creature creature = creature("otyugh-mm");
+    void keepsDescriptionOnlyWhenMechanicsNotAuthored() {
+        Creature creature = creature("goblin-mm");
         creature.setActions(List.of(action(
                 "Укус",
-                "[\"*Бросок рукопашной атаки:* +6, досягаемость 5 фт. *Попадание:* 12 (2к8 + 3) колющего урона "
-                        + "и цель [отравлена](https://new.ttg.club/glossary/poisoned-phb). Каждый раз, когда "
-                        + "отравленная цель завершает продолжительный отдых, то она подвергается следующему "
-                        + "эффекту: *Спасбросок Телосложения:* "
-                        + "[Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 15. "
-                        + "*Провал:* максимальное количество хитов цели опускается на 5 (1к10).\"]"
+                "[\"*Бросок рукопашной атаки:* +9, досягаемость 15 фт., одна цель. "
+                        + "*Попадание:* 12 (2к6 + 5) дробящего урона, и цель отравлена.\"]"
         )));
 
-        Map<?, ?> action = firstAction(mapper.toVttg(creature).getSystem());
-        Map<?, ?> effect = (Map<?, ?>) ((List<?>) action.get("activeEffects")).getFirst();
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
 
-        assertEquals(6, action.get("attackBonus"));
-        assertEquals("poisoned", effect.get("id"));
-        assertNull(effect.get("applySave"));
+        assertEquals(
+                List.of("*Бросок рукопашной атаки:* +9, досягаемость 15 фт., одна цель. "
+                        + "*Попадание:* 12 (2к6 + 5) дробящего урона, и цель отравлена."),
+                mapped.get("description")
+        );
+        assertNull(mapped.get("attackBonus"));
+        assertNull(mapped.get("damageParts"));
+        assertNull(mapped.get("saveType"));
+        assertNull(mapped.get("areaOfEffect"));
+        assertNull(mapped.get("reach"));
+        assertNull(mapped.get("rangeType"));
+        assertNull(mapped.get("activeEffects"));
     }
 
-    /** «+9 к попаданию атаками» в «Использовании заклинаний» — бонус заклинательства, не атака. */
+    /** То же у черты: без заведённой механики она остаётся текстом. */
     @Test
-    void doesNotTreatSpellcastingBonusAsAttack() {
-        Creature creature = creature("adult-black-dragon-mm");
-        creature.setActions(List.of(action(
-                "Использование заклинаний",
-                "[\"Дракон накладывает одно из следующих заклинаний, используя Харизму как "
-                        + "заклинательную характеристику (Сл. 17, +9 к попаданию атаками):\"]"
-        )));
-
-        assertNull(firstAction(mapper.toVttg(creature).getSystem()).get("attackBonus"));
-    }
-
-    /** Черта тоже бывает бросаемой, а структурированных полей у неё нет вовсе. */
-    @Test
-    void extractsMechanicsFromTrait() {
+    void keepsTraitDescriptionOnlyWhenMechanicsNotAuthored() {
         Creature creature = creature("aboleth-mm");
         CreatureTrait trait = new CreatureTrait();
         trait.setName("Облако слизи");
-        trait.setDescription(
-                "[\"Находясь под водой, аболет окружён слизью. *Спасбросок Телосложения:* "
-                        + "[Сл.](https://new.ttg.club/glossary/difficulty-class-phb) 14, каждое существо в пределах "
-                        + "5-футовой [эманации](https://new.ttg.club/glossary/emanation-phb) с центром на аболете. "
-                        + "*Провал:* цель проклята и получает 6 (1к12) урона кислотой в конце каждых 10 минут.\"]"
-        );
+        trait.setDescription("[\"*Спасбросок Телосложения:* Сл. 14. *Провал:* цель получает 6 (1к12) урона кислотой.\"]");
         creature.setTraits(List.of(trait));
 
-        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) mapper.toVttg(creature).getSystem().get("traits")).getFirst();
-        Map<?, ?> area = (Map<?, ?>) mappedTrait.get("areaOfEffect");
+        Map<?, ?> mapped = (Map<?, ?>) ((List<?>) mapper.toVttg(creature).getSystem().get("traits")).getFirst();
 
-        assertEquals("constitution", mappedTrait.get("saveType"));
-        assertEquals(14, mappedTrait.get("saveDC"));
-        assertEquals("none", mappedTrait.get("saveEffect"));
-        assertEquals("emanation", area.get("shape"));
-        assertEquals(5, area.get("size"));
-        assertDamagePart(mappedTrait, "1к12", "acid");
+        assertNull(mapped.get("saveType"));
+        assertNull(mapped.get("saveDC"));
+        assertNull(mapped.get("damageParts"));
+        assertNull(mapped.get("areaOfEffect"));
+    }
+
+    /** Механику завели в мастерской — она и уезжает в компендиум. */
+    @Test
+    void exportsAuthoredMechanics() {
+        Creature creature = creature("goblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Укус");
+        action.setDescription("[\"*Рукопашная атака оружием:* +9 к попаданию. *Попадание:* 15 (2к10 + 4) урона.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackType(AttackType.MELEE);
+        effect.setAttackBonus(5);
+        effect.setReach(10);
+        effect.setDamageParts(List.of(damagePart("1к8+3@dmg.piercing")));
+        effect.setActiveEffects(List.of(activeEffect("poisoned")));
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(5, mapped.get("attackBonus"));
+        assertEquals(10, mapped.get("reach"));
+        assertEquals("melee", mapped.get("rangeType"));
+        assertEquals("ft", mapped.get("distanceUnit"));
+        assertDamagePart(mapped, "1к8+3@dmg.piercing", null);
+        assertActiveEffect(mapped, "poisoned");
+    }
+
+    /** Черта тоже бывает бросаемой — её механика уезжает так же, как у действия. */
+    @Test
+    void exportsAuthoredTraitMechanics() {
+        Creature creature = creature("aboleth-mm");
+        CreatureTrait trait = new CreatureTrait();
+        trait.setName("Облако слизи");
+        trait.setDescription("[\"Находясь под водой, аболет окружён слизью.\"]");
+
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(AreaOfEffectType.EMANATION);
+        area.setValue1(5);
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setSavingThrows(List.of(savingThrow(Ability.CONSTITUTION, 14)));
+        effect.setSaveEffect(SpellSaveEffect.NONE);
+        effect.setDamageParts(List.of(damagePart("1к12@dmg.acid")));
+        effect.setAreaOfEffect(area);
+        trait.setEffect(effect);
+        creature.setTraits(List.of(trait));
+
+        Map<?, ?> mapped = (Map<?, ?>) ((List<?>) mapper.toVttg(creature).getSystem().get("traits")).getFirst();
+        Map<?, ?> mappedArea = (Map<?, ?>) mapped.get("areaOfEffect");
+
+        assertEquals("constitution", mapped.get("saveType"));
+        assertEquals(14, mapped.get("saveDC"));
+        assertEquals("none", mapped.get("saveEffect"));
+        // Эманация уезжает кругом: шаблона `emanation` в словаре VTTG нет.
+        assertEquals("circle", mappedArea.get("shape"));
+        assertEquals(5, mappedArea.get("size"));
+        assertDamagePart(mapped, "1к12@dmg.acid", null);
+    }
+
+    /**
+     * Поля старого импорта лежат рядом с записью, а не внутри механики: у записи, которую ни
+     * разу не открывали в мастерской, механики нет вовсе. Заполнены они честно, поэтому едут
+     * в выгрузку — в отличие от урона, который так и остался текстом описания.
+     */
+    @Test
+    void exportsLegacyAttackTypeAndSaveWithoutMechanics() {
+        Creature creature = creature("dragon-mm");
+        CreatureAction action = action(
+                "Ледяное дыхание",
+                "[\"*Попадание:* 18 (4к8) урона холодом.\"]"
+        );
+        action.setEnglish("Cold Breath");
+        action.setAttackType(AttackType.RANGE);
+        action.setSawingThrows(List.of(savingThrow(Ability.CONSTITUTION, 15)));
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals("Cold Breath", mapped.get("nameEn"));
+        assertEquals("constitution", mapped.get("saveType"));
+        assertEquals(15, mapped.get("saveDC"));
+        assertEquals("ranged", mapped.get("rangeType"));
+        assertNull(mapped.get("damageParts"));
+    }
+
+    /** Спасбросок заменяет бросок попадания — как в форме системы. */
+    @Test
+    void authoredSaveReplacesAttackBonus() {
+        Creature creature = creature("dragon-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Огненное дыхание");
+        action.setDescription("[\"Существо выдыхает огонь.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackBonus(7);
+        effect.setSavingThrows(List.of(savingThrow(Ability.DEXTERITY, 17)));
+        effect.setSaveEffect(SpellSaveEffect.HALF);
+        effect.setDamageParts(List.of(damagePart("8к6@dmg.fire")));
+
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(AreaOfEffectType.CONE);
+        area.setValue1(30);
+        effect.setAreaOfEffect(area);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+        Map<?, ?> mappedArea = (Map<?, ?>) mapped.get("areaOfEffect");
+
+        assertNull(mapped.get("attackBonus"));
+        assertEquals("dexterity", mapped.get("saveType"));
+        assertEquals(17, mapped.get("saveDC"));
+        assertEquals("half", mapped.get("saveEffect"));
+        assertEquals("cone", mappedArea.get("shape"));
+        assertEquals(30, mappedArea.get("size"));
+    }
+
+    /**
+     * Пустой объект области форма мастерской шлёт у КАЖДОЙ записи, а размер на ней
+     * необязателен: шаблон нулевого размера на столе бесполезен.
+     */
+    @Test
+    void skipsAreaWithoutShapeOrSize() {
+        assertNull(mappedArea(new AreaOfEffect()));
+
+        AreaOfEffect shapeOnly = new AreaOfEffect();
+        shapeOnly.setType(AreaOfEffectType.CONE);
+        assertNull(mappedArea(shapeOnly));
+    }
+
+    /** Словарь форм у существа и у заклинания один: сфера и линия — круг и луч. */
+    @Test
+    void translatesAuthoredAreaShapesToVttgTemplates() {
+        assertEquals("circle", authoredShape(AreaOfEffectType.SPHERE));
+        assertEquals("circle", authoredShape(AreaOfEffectType.EMANATION));
+        assertEquals("circle", authoredShape(AreaOfEffectType.CYLINDER));
+        assertEquals("ray", authoredShape(AreaOfEffectType.LINE));
+        assertEquals("rect", authoredShape(AreaOfEffectType.CUBE));
+    }
+
+    /**
+     * Инициатива уезжает тем же расчётом, что и на карточке сайта: модификатор ЛОВ плюс бонус
+     * мастерства за множитель. Пара «13 / +3» — это пассивное значение и сам модификатор.
+     */
+    @Test
+    void exportsInitiative() {
+        Creature creature = creature("goblin-mm");
+        creature.setAbilities(abilitiesWithDexterity(16));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> initiative = (Map<?, ?>) system.get("initiative");
+
+        assertEquals("13", initiative.get("label"));
+        assertEquals("+3", initiative.get("value"));
+        assertEquals(3, system.get("initiativeBonus"));
+    }
+
+    /** Владение инициативой из статблока добавляет бонус мастерства по опасности. */
+    @Test
+    void addsProficiencyBonusToInitiativeWhenCreatureIsProficient() {
+        Creature creature = creature("goblin-mm");
+        creature.setAbilities(abilitiesWithDexterity(16));
+        creature.setExperience(450L);
+        CreatureInitiative initiative = new CreatureInitiative();
+        initiative.setMultiplier((byte) 1);
+        creature.setInitiative(initiative);
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+
+        assertEquals(5, system.get("initiativeBonus"));
+        assertEquals("15", ((Map<?, ?>) system.get("initiative")).get("label"));
+    }
+
+    /** Секция описания: подзаголовок, места обитания, сокровища и текст — всё в одном блоке. */
+    @Test
+    void exportsDescriptionSection() {
+        Creature creature = creature("aboleth-mm");
+        CreatureSection section = new CreatureSection();
+        section.setSectionName("Аболеты");
+        section.setSubtitle("Владыки глубин");
+        section.setSectionDescription("[\"Текст секции\"]");
+        section.setHabitats(List.of(Habitat.UNDERWATER, Habitat.UNDERDARK));
+        section.setTreasures(List.of(CreatureTreasure.ARCANA, CreatureTreasure.RELICS));
+        creature.setSection(section);
+
+        Map<?, ?> mapped = (Map<?, ?>) mapper.toVttg(creature).getSystem().get("section");
+
+        assertEquals("Аболеты", mapped.get("name"));
+        assertEquals("Владыки глубин", mapped.get("subtitle"));
+        assertEquals("Текст секции", mapped.get("description"));
+        assertEquals("Магия, Реликвии", mapped.get("treasures"));
+    }
+
+    /** Секции нет — ключа тоже нет: пустой блок на листе не нужен. */
+    @Test
+    void skipsSectionWhenEmpty() {
+        Map<String, Object> system = mapper.toVttg(creature("goblin-mm")).getSystem();
+
+        assertFalse(system.containsKey("section"));
+    }
+
+    /**
+     * Словарь сред у VTTG короче нашего: все планы схлопываются в один ключ «planar». Название
+     * конкретного плана сохраняется в особых средах, иначе оно терялось бы совсем.
+     */
+    @Test
+    void keepsPlaneNamesInCustomEnvironments() {
+        Creature creature = creature("demon-mm");
+        CreatureSection section = new CreatureSection();
+        section.setHabitats(List.of(Habitat.FOREST, Habitat.PLANAR_ABYSS, Habitat.PLANAR_FEYWILD));
+        creature.setSection(section);
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+
+        assertEquals(List.of("forest", "planar"), system.get("environments"));
+        assertEquals("План (Бездна); План (Страна фей)", system.get("customEnvironments"));
+    }
+
+    /** Перезарядка едет ключом словаря: подпись «Перезарядка 5–6» рисует уже система. */
+    @Test
+    void exportsRecharge() {
+        Creature creature = creature("dragon-mm");
+        CreatureAction action = action("Огненное дыхание", "[\"Существо выдыхает огонь.\"]");
+        action.setRecharge(RechargeType.D5);
+        creature.setActions(List.of(action));
+
+        CreatureTrait trait = new CreatureTrait();
+        trait.setName("Легендарное сопротивление");
+        trait.setDescription("[\"Существо преуспевает в спасброске.\"]");
+        trait.setRecharge(RechargeType.LR);
+        creature.setTraits(List.of(trait));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) system.get("traits")).getFirst();
+
+        assertEquals("d5", firstAction(system).get("recharge"));
+        assertEquals("lr", mappedTrait.get("recharge"));
+    }
+
+    /** Перезарядки нет — ключа нет. */
+    @Test
+    void skipsRechargeWhenNotSet() {
+        Creature creature = creature("goblin-mm");
+        creature.setActions(List.of(action("Укус", "[\"Существо кусает.\"]")));
+
+        assertNull(firstAction(mapper.toVttg(creature).getSystem()).get("recharge"));
+    }
+
+    /**
+     * Оговорки защит («колющий от немагических атак») в ключи не укладываются: на листе они
+     * идут отдельной строкой под значками, поэтому едут своими текстовыми полями.
+     */
+    @Test
+    void exportsDefenseTexts() {
+        Creature creature = creature("werewolf-mm");
+        creature.setVulnerabilities(List.of(DamageType.FIRE));
+        creature.setResistance(List.of(DamageType.PIERCING));
+        creature.setResistanceText("колющий от немагических атак");
+        creature.setImmunityToCondition(List.of(Condition.CHARMED));
+        creature.setImmunityText("яд, пока бодрствует");
+        creature.setVulnerabilitiesText("огонь при свете дня");
+
+        Map<?, ?> defenses = (Map<?, ?>) mapper.toVttg(creature).getSystem().get("defenses");
+
+        assertEquals(List.of("fire"), defenses.get("vulnerabilities"));
+        assertEquals("огонь при свете дня", defenses.get("vulnerabilitiesText"));
+        assertEquals("колющий от немагических атак", defenses.get("resistancesText"));
+        assertEquals("яд, пока бодрствует", defenses.get("immunitiesText"));
+    }
+
+    /** Текстов защит нет — ключей нет: пустая строка на листе нарисовала бы пустую строку. */
+    @Test
+    void skipsDefenseTextsWhenEmpty() {
+        Map<?, ?> defenses = (Map<?, ?>) mapper.toVttg(creature("goblin-mm")).getSystem().get("defenses");
+
+        assertFalse(defenses.containsKey("vulnerabilitiesText"));
+        assertFalse(defenses.containsKey("resistancesText"));
+        assertFalse(defenses.containsKey("immunitiesText"));
+    }
+
+    /**
+     * Строка инвентаря — для чтения: количество в ней стоит словом, и в позицию такое
+     * не укладывается.
+     */
+    @Test
+    void exportsInventoryText() {
+        Creature creature = creature("goblin-mm");
+        creature.setInventoryText("три кинжала и кожаный доспех");
+
+        assertEquals("три кинжала и кожаный доспех", mapper.toVttg(creature).getSystem().get("gear"));
+    }
+
+    /**
+     * Своей строки нет — едет снаряжение старого импорта: у существ, которым инвентарь
+     * ещё не завели, весь текст лежит только там.
+     */
+    @Test
+    void fallsBackToLegacyEquipmentsForGearLine() {
+        Creature creature = creature("goblin-mm");
+        creature.setEquipments("Кинжал, кожаный доспех");
+
+        assertEquals("Кинжал, кожаный доспех", mapper.toVttg(creature).getSystem().get("gear"));
+    }
+
+    /**
+     * Позиции инвентаря заводят руками карточками сайта. По ним VTTG кладёт предмет в
+     * сумку существа со своим весом и боевыми полями, а не заводит его по названию.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void exportsInventoryItems() {
+        Creature creature = creature("goblin-mm");
+        creature.setInventory(List.of(
+                inventoryItem("dagger-phb", "Кинжал", 3),
+                inventoryItem("shield-phb", "Щит", null)
+        ));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        List<VttgEquipmentItem> items = (List<VttgEquipmentItem>) system.get("gearItems");
+
+        assertEquals(2, items.size());
+        assertEquals("dagger-phb", items.get(0).url());
+        assertEquals("Кинжал", items.get(0).name());
+        assertEquals(3, items.get(0).quantity());
+        assertEquals("shield-phb", items.get(1).url());
+        // Одиночная позиция количества не несёт: в компендиуме единица подразумевается.
+        assertNull(items.get(1).quantity());
+    }
+
+    /**
+     * Ссылки в строке снаряжения позициями не становятся: инвентарь заводят руками, а
+     * разбор текста давал предмет без веса, стоимости и боевых полей.
+     */
+    @Test
+    void doesNotDeriveInventoryFromText() {
+        Creature creature = creature("goblin-mm");
+        creature.setEquipments("три {@item Кинжала|url:dagger-phb}");
+
+        assertNull(mapper.toVttg(creature).getSystem().get("gearItems"));
+    }
+
+    /** Описание блока легендарных действий уезжает рядом с их числом. */
+    @Test
+    void exportsLegendaryDescription() {
+        Creature creature = creature("dragon-mm");
+        creature.setLegendaryAction((byte) 3);
+        creature.setLegendaryDescription("Существо совершает три легендарных действия.");
+
+        Map<?, ?> legendary = (Map<?, ?>) mapper.toVttg(creature).getSystem().get("legendary");
+
+        assertEquals((byte) 3, legendary.get("count"));
+        assertEquals("Существо совершает три легендарных действия.", legendary.get("description"));
+    }
+
+    /** Опыт и число легендарных действий в логове лежат на существе, а уезжают в блок логова. */
+    @Test
+    void exportsLairExperienceAndLegendaryCount() {
+        Creature creature = creature("dragon-mm");
+        creature.setExperienceInLair(18000L);
+        creature.setLegendaryActionInLair((byte) 4);
+        CreatureLair lair = new CreatureLair();
+        lair.setName("Логово дракона");
+        creature.setLair(lair);
+
+        Map<?, ?> mapped = (Map<?, ?>) mapper.toVttg(creature).getSystem().get("lair");
+
+        assertEquals(18000L, mapped.get("experience"));
+        assertEquals(4, mapped.get("legendaryActionCount"));
+    }
+
+    /** Нулевые поправки логова не кладём: ноль легендарных действий — это их отсутствие. */
+    @Test
+    void skipsEmptyLairCorrections() {
+        Creature creature = creature("goblin-mm");
+        CreatureLair lair = new CreatureLair();
+        lair.setName("Логово");
+        creature.setLair(lair);
+
+        Map<?, ?> mapped = (Map<?, ?>) mapper.toVttg(creature).getSystem().get("lair");
+
+        assertFalse(mapped.containsKey("experience"));
+        assertFalse(mapped.containsKey("legendaryActionCount"));
+    }
+
+    /**
+     * Порции блока задают заряды заклинания: «по желанию» — неограниченный счётчик,
+     * «1/день каждое» — свой заряд каждому заклинанию порции, а общий пул порции
+     * заклинанию невыразим, и зарядов у него нет вовсе.
+     */
+    @Test
+    void exportsCreatureSpellsWithGroupUses() {
+        catalog("dancing-lights-phb", "hold-person-phb", "augury-phb");
+        Creature creature = creature("green-hag-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        block.setAbility(Ability.WISDOM);
+        block.setGroups(List.of(
+                group(CreatureSpellUsageMode.AT_WILL, spellRef("dancing-lights-phb")),
+                counted(CreatureSpellUsageMode.PER_DAY_EACH, 1, spellRef("hold-person-phb")),
+                counted(CreatureSpellUsageMode.PER_DAY_POOL, 1, spellRef("augury-phb"))));
+        creature.setSpellcasting(List.of(block));
+
+        List<VttgSpell> spells = mapper.toVttg(creature).getSpells();
+
+        assertEquals(List.of("dancing-lights-phb", "hold-person-phb", "augury-phb"),
+                spells.stream().map(VttgSpell::getId).toList());
+        assertUses(spells.getFirst().getUses(), 0, "atWill");
+        assertUses(spells.get(1).getUses(), 1, "longRest");
+        assertNull(spells.getLast().getUses());
+        assertTrue(spells.stream().allMatch(spell -> "wisdom".equals(spell.getSpellcastingAbility())));
+    }
+
+    /** «N за короткий отдых каждое» отдаёт заряды, восстанавливаемые коротким отдыхом. */
+    @Test
+    void exportsShortRestUsesForRestGroup() {
+        catalog("shield-phb");
+        Creature creature = creature("cambion-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        CreatureSpellGroup group = counted(CreatureSpellUsageMode.PER_REST_EACH, 2, spellRef("shield-phb"));
+        group.setRest(CreatureSpellRestKind.SHORT);
+        block.setGroups(List.of(group));
+        creature.setSpellcasting(List.of(block));
+
+        assertUses(mapper.toVttg(creature).getSpells().getFirst().getUses(), 2, "shortRest");
+    }
+
+    /**
+     * Одно и то же заклинание в двух порциях уезжает одной записью: на листе существа
+     * заклинание одно, и дубль показал бы у него два счётчика.
+     */
+    @Test
+    void exportsRepeatedSpellOnceByFirstGroup() {
+        catalog("invisibility-phb");
+        Creature creature = creature("green-hag-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        block.setGroups(List.of(
+                group(CreatureSpellUsageMode.AT_WILL, spellRef("invisibility-phb")),
+                counted(CreatureSpellUsageMode.PER_DAY_EACH, 3, spellRef("invisibility-phb"))));
+        creature.setSpellcasting(List.of(block));
+
+        List<VttgSpell> spells = mapper.toVttg(creature).getSpells();
+
+        assertEquals(1, spells.size());
+        assertUses(spells.getFirst().getUses(), 0, "atWill");
+    }
+
+    /**
+     * Раскладка уезжает в {@code system.spellcastingBlocks} — тем же ключом, каким её
+     * пишет мир, — а запасные числа существа в {@code system.spellcasting}. Запасные
+     * берутся у первого блока, где они заданы: блоков бывает несколько с разными
+     * характеристикой и Сл, а запасное число на существо одно.
+     */
+    @Test
+    void exportsSpellcastingBlocksIntoSystem() {
+        catalog("ray-of-sickness-phb", "hold-person-phb");
+        Creature creature = creature("green-hag-mm");
+
+        CreatureSpellcastingBlock coven = block("spellcasting-coven", "Магия шабаша");
+        coven.setNote("находясь в пределах 30 футов от двух союзных карг");
+        coven.setAbility(Ability.INTELLIGENCE);
+        coven.setSaveDc(11);
+        CreatureSpellRef ray = spellRef("ray-of-sickness-phb");
+        ray.setCastLevel(3);
+        ray.setNote("только на себя");
+        coven.setGroups(List.of(group(CreatureSpellUsageMode.AT_WILL, ray)));
+
+        CreatureSpellcastingBlock own = block("spellcasting-own", "Использование заклинаний");
+        own.setAbility(Ability.WISDOM);
+        own.setSaveDc(12);
+        own.setAttackBonus(4);
+        own.setIgnoredComponents(ignoredMaterial());
+        CreatureSpellGroup pool = counted(CreatureSpellUsageMode.PER_REST_POOL, 1, spellRef("hold-person-phb"));
+        pool.setRest(CreatureSpellRestKind.LONG);
+        pool.setRecharge(RechargeType.D5);
+        pool.setLabel("1/день");
+        own.setGroups(List.of(pool));
+
+        creature.setSpellcasting(List.of(coven, own));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> spellcasting = (Map<?, ?>) system.get("spellcasting");
+
+        assertEquals("intelligence", spellcasting.get("ability"));
+        assertEquals(11, spellcasting.get("saveDC"));
+        assertEquals(4, spellcasting.get("attackBonus"));
+
+        List<?> blocks = (List<?>) system.get("spellcastingBlocks");
+        Map<?, ?> mappedCoven = (Map<?, ?>) blocks.getFirst();
+        assertEquals("spellcasting-coven", mappedCoven.get("id"));
+        assertEquals("Магия шабаша", mappedCoven.get("name"));
+        assertEquals("находясь в пределах 30 футов от двух союзных карг", mappedCoven.get("note"));
+        assertEquals("intelligence", mappedCoven.get("ability"));
+        assertFalse(mappedCoven.containsKey("attackBonus"));
+        Map<?, ?> covenGroup = (Map<?, ?>) ((List<?>) mappedCoven.get("groups")).getFirst();
+        assertEquals("atWill", covenGroup.get("mode"));
+        assertEquals(List.of(Map.of("id", "ray-of-sickness-phb", "castLevel", 3, "note", "только на себя")),
+                covenGroup.get("spells"));
+
+        Map<?, ?> mappedOwn = (Map<?, ?>) blocks.getLast();
+        assertEquals(Map.of("verbal", false, "somatic", false, "material", true),
+                mappedOwn.get("ignoredComponents"));
+        assertFalse(mappedCoven.containsKey("ignoredComponents"));
+        Map<?, ?> ownGroup = (Map<?, ?>) ((List<?>) mappedOwn.get("groups")).getFirst();
+        assertEquals("perRestPool", ownGroup.get("mode"));
+        assertEquals(1, ownGroup.get("count"));
+        assertEquals("long", ownGroup.get("rest"));
+        assertEquals("d5", ownGroup.get("recharge"));
+        assertEquals("1/день", ownGroup.get("label"));
+    }
+
+    /** Существо без блоков выгружается как раньше: ни заклинаний, ни ключа заклинательства. */
+    @Test
+    void skipsSpellcastingWithoutBlocks() {
+        Creature creature = creature("goblin-mm");
+
+        VttgCreature mapped = mapper.toVttg(creature);
+
+        assertNull(mapped.getSpells());
+        assertFalse(mapped.getSystem().containsKey("spellcasting"));
+        assertFalse(mapped.getSystem().containsKey("spellcastingBlocks"));
+    }
+
+    /**
+     * Недозаполненный блок выгрузку не роняет: автор оставляет блоки и порции пустыми
+     * между заходами, и отбрасывать их на бэке нельзя.
+     */
+    @Test
+    void exportsBlockWithoutFilledFields() {
+        Creature creature = creature("goblin-mm");
+        CreatureSpellcastingBlock block = new CreatureSpellcastingBlock();
+        block.setGroups(List.of(new CreatureSpellGroup()));
+        creature.setSpellcasting(List.of(block));
+
+        VttgCreature mapped = mapper.toVttg(creature);
+        List<?> blocks = (List<?>) mapped.getSystem().get("spellcastingBlocks");
+        Map<?, ?> mappedBlock = (Map<?, ?>) blocks.getFirst();
+
+        assertNull(mapped.getSpells());
+        // Запасных чисел у блока нет — и ключа нет: пустая настройка выглядела бы заданной
+        assertFalse(mapped.getSystem().containsKey("spellcasting"));
+        assertEquals(List.of(), ((Map<?, ?>) ((List<?>) mappedBlock.get("groups")).getFirst()).get("spells"));
+    }
+
+    /** Заклинание, чью карточку удалили, в список не попадает — собирать запись не из чего. */
+    @Test
+    void skipsSpellMissingFromCatalog() {
+        catalog("hold-person-phb");
+        Creature creature = creature("green-hag-mm");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        block.setGroups(List.of(group(CreatureSpellUsageMode.AT_WILL,
+                spellRef("hold-person-phb"), spellRef("removed-spell"))));
+        creature.setSpellcasting(List.of(block));
+
+        VttgCreature mapped = mapper.toVttg(creature);
+
+        assertEquals(List.of("hold-person-phb"),
+                mapped.getSpells().stream().map(VttgSpell::getId).toList());
+        List<?> blocks = (List<?>) mapped.getSystem().get("spellcastingBlocks");
+        Map<?, ?> mappedBlock = (Map<?, ?>) blocks.getFirst();
+        Map<?, ?> mappedGroup = (Map<?, ?>) ((List<?>) mappedBlock.get("groups")).getFirst();
+        assertEquals(List.of(Map.of("id", "hold-person-phb"), Map.of("id", "removed-spell")),
+                mappedGroup.get("spells"));
+    }
+
+    private void catalog(String... urls) {
+        when(spellRepository.findAllForVttgExportByUrls(any()))
+                .thenReturn(Arrays.stream(urls).map(this::spell).toList());
+    }
+
+    private Spell spell(String url) {
+        Spell result = new Spell();
+        result.setUrl(url);
+        result.setName(url);
+        result.setLevel(2L);
+        result.setSchool(SpellSchool.builder().school(MagicSchool.ENCHANTMENT).build());
+        result.setDescription("[\"Описание заклинания\"]");
+        return result;
+    }
+
+    private CreatureSpellcastingBlock block(String id, String name) {
+        CreatureSpellcastingBlock result = new CreatureSpellcastingBlock();
+        result.setId(id);
+        result.setName(name);
+        return result;
+    }
+
+    private CreatureSpellGroup group(CreatureSpellUsageMode mode, CreatureSpellRef... spells) {
+        CreatureSpellGroup result = new CreatureSpellGroup();
+        result.setMode(mode);
+        result.setSpells(List.of(spells));
+        return result;
+    }
+
+    private CreatureSpellGroup counted(CreatureSpellUsageMode mode, int count, CreatureSpellRef... spells) {
+        CreatureSpellGroup result = group(mode, spells);
+        result.setCount(count);
+        return result;
+    }
+
+    private CreatureSpellRef spellRef(String url) {
+        CreatureSpellRef result = new CreatureSpellRef();
+        result.setUrl(url);
+        result.setName(url);
+        return result;
+    }
+
+    private CreatureSpellComponents ignoredMaterial() {
+        CreatureSpellComponents result = new CreatureSpellComponents();
+        result.setMaterial(true);
+        return result;
+    }
+
+    private void assertUses(VttgSpellUses uses, int expectedMax, String expectedRecovery) {
+        assertEquals(expectedMax, uses.getMax());
+        assertEquals(expectedMax, uses.getCurrent());
+        assertEquals(expectedRecovery, uses.getRecovery());
+    }
+
+    private String authoredShape(AreaOfEffectType type) {
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(type);
+        area.setValue1(20);
+
+        return (String) mappedArea(area).get("shape");
+    }
+
+    private Map<?, ?> mappedArea(AreaOfEffect area) {
+        Creature creature = creature("dragon-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Дыхание");
+        action.setDescription("[\"Существо выдыхает.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAreaOfEffect(area);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        return (Map<?, ?>) firstAction(mapper.toVttg(creature).getSystem()).get("areaOfEffect");
+    }
+
+    private EquipmentItem inventoryItem(String url, String name, Integer quantity) {
+        EquipmentItem result = new EquipmentItem();
+        result.setUrl(url);
+        result.setName(name);
+        result.setQuantity(quantity);
+        return result;
+    }
+
+    private DamagePart damagePart(String formula) {
+        DamagePart result = new DamagePart();
+        result.setFormula(formula);
+        return result;
+    }
+
+    private ActiveEffect activeEffect(String id) {
+        ActiveEffect result = new ActiveEffect();
+        result.setId(id);
+        return result;
+    }
+
+    private SawingThrow savingThrow(Ability ability, int dc) {
+        SawingThrow result = new SawingThrow();
+        result.setAbility(ability);
+        result.setDc((byte) dc);
+        return result;
     }
 
     private Creature creature(String url) {
@@ -539,6 +913,12 @@ class VttgCreatureMapperTest {
         result.setUrl(url);
         result.setName(url);
         result.setDescription("");
+        return result;
+    }
+
+    private CreatureAbilities abilitiesWithDexterity(int value) {
+        CreatureAbilities result = new CreatureAbilities();
+        result.setDexterity(ability(Ability.DEXTERITY, value, 0));
         return result;
     }
 
@@ -576,8 +956,8 @@ class VttgCreatureMapperTest {
     private void assertActiveEffect(Map<?, ?> action, String expectedId) {
         List<?> activeEffects = (List<?>) action.get("activeEffects");
         assertTrue(activeEffects.stream()
-                .map(Map.class::cast)
-                .anyMatch(effect -> expectedId.equals(effect.get("id"))));
+                .map(ActiveEffect.class::cast)
+                .anyMatch(effect -> expectedId.equals(effect.getId())));
     }
 
     private void assertDamagePart(Map<?, ?> action, String expectedFormula, String expectedType) {
@@ -585,14 +965,6 @@ class VttgCreatureMapperTest {
         Map<?, ?> damagePart = (Map<?, ?>) damageParts.getFirst();
         assertEquals(expectedFormula, damagePart.get("formula"));
         assertEquals(expectedType, damagePart.get("type"));
-    }
-
-    private void assertDamageFormula(Map<?, ?> action) {
-        List<?> damageParts = (List<?>) action.get("damageParts");
-        assertEquals(1, damageParts.size());
-        Map<?, ?> damagePart = (Map<?, ?>) damageParts.getFirst();
-        assertEquals("1к6+2@dmg.slashing+2к4@dmg.necrotic", damagePart.get("formula"));
-        assertNull(damagePart.get("type"));
     }
 
     private void assertToken(Map<?, ?> token) {

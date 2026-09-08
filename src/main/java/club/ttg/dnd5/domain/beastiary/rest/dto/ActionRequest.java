@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.dto;
 
-import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.common.rest.dto.Name;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
@@ -22,6 +22,7 @@ public class ActionRequest {
     private String description;
     @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
     private String original;
-    private AttackType attack;
     private RechargeType recharge;
+    @Schema(description = "Боевая механика записи: урон, атака, спасбросок, область, эффекты")
+    private CreatureActionEffect effect;
 }

@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import club.ttg.dnd5.domain.item.repository.ItemNameRef;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -123,4 +124,8 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, String> {
                                    @Param("srdOnly") boolean srdOnly,
                                    @Param("since") Instant since,
                                    @Param("until") Instant until);
+
+    /** Названия магических предметов по набору url — для подстановки в инвентарь. */
+    @Query("select m.url as url, m.name as name from MagicItem m where m.url in :urls")
+    List<ItemNameRef> findNamesByUrls(@Param("urls") Collection<String> urls);
 }

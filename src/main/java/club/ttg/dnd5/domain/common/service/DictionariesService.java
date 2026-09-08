@@ -373,4 +373,13 @@ public class DictionariesService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    public Collection<SelectOptionDto> getRechargeTypes() {
+        return Arrays.stream(RechargeType.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
