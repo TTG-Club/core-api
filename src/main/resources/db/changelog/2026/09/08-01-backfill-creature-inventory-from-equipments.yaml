@@ -1,0 +1,137 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-08-01-backfill-creature-inventory-from-equipments
+      author: Peterko
+      comment: >
+        Заводит инвентарь позициями существам, у которых снаряжение до сих пор лежит
+        одной строкой старого импорта. Гадать по тексту не приходится: строка набрана
+        маркерами карточек ({@item Скимитар|url:scimitar-phb}), и слаг предмета стоит
+        прямо в ссылке — ровно по ним раньше и работал разбор в выгрузке, пока его не
+        сменили ручные позиции. Заново руками это переписывать пришлось бы для всего
+        бестиария, а перенос однозначен.
+
+        Название берётся из справочника, а не из метки: в тексте она в косвенном падеже
+        («три Кинжала»), и в снимок позиции такое класть нельзя — выгрузка отдаёт снимок
+        как есть. Метка остаётся запасным вариантом для карточек, которых в справочнике
+        уже нет. Раздел определяется тем же справочником, в котором нашёлся слаг, и лишь
+        для ненайденного — типом маркера: {@magicItem} лежит в магических предметах.
+
+        Количество переносится, когда стоит в строке числом или числительным («три
+        {@item Кинжала}», «2 {@item Ручных топора}», «{@item Стрелы} (20)»); во всех
+        остальных случаях — единица, как и у позиции, заведённой формой.
+
+        Остаток строки — то, что позицией не становится: монеты, предметы без карточки,
+        пояснения — переезжает в строку инвентаря. Разделители от вынутых ссылок
+        подчищаются, и если не осталось ничего, кроме них, строка не заводится.
+
+        Время изменения существа сдвигается. Выгрузка отдаёт клиенту окно изменений по
+        updated_at и по нему же считает предрассчитанный payload свежим — правка в обход
+        приложения этих часов не двигает, и заведённый инвентарь доехал бы до
+        установленных компендиумов только полной пересборкой. На сайте время изменения
+        существа ничего не сортирует, им пользуется только выгрузка.
+
+        Старая колонка equipments не трогается: она остаётся как есть, пометкой
+        «устаревшее» в форме и запасным видом строки в выгрузке. Откат же снимает
+        инвентарь у всех записей со ссылками в старой строке: отличить перенесённое от
+        заведённого руками после переноса нечем.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              WITH pattern AS (
+                  SELECT '(?:(\d+|один|одна|одно|два|две|двое|три|трое|четыре|четверо|пять|шесть|семь|восемь|девять|десять|двенадцать|пятнадцать|двадцать)\s+)?\{@(item|magicItem|magic-item)\s+([^|{}]+)\|\s*url:\s*([^}|]+)\}(?:\s*\((\d+)\))?' AS link
+              ),
+              links AS (
+                  SELECT b.url AS creature_url,
+                         m.link_index,
+                         lower(m.parts[1]) AS quantity_word,
+                         lower(m.parts[2]) AS marker,
+                         btrim(m.parts[3]) AS label,
+                         btrim(m.parts[4]) AS slug,
+                         m.parts[5] AS quantity_tail
+                  FROM bestiary b
+                  CROSS JOIN pattern p
+                  CROSS JOIN LATERAL regexp_matches(b.equipments, p.link, 'gi')
+                      WITH ORDINALITY AS m(parts, link_index)
+                  WHERE b.equipments IS NOT NULL
+                    AND (b.inventory IS NULL
+                         OR (jsonb_typeof(b.inventory) = 'array' AND jsonb_array_length(b.inventory) = 0))
+              ),
+              positions AS (
+                  SELECT l.creature_url,
+                         jsonb_agg(
+                             jsonb_build_object(
+                                 'url', l.slug,
+                                 'name', COALESCE(i.name, mi.name, l.label),
+                                 'quantity', COALESCE(
+                                     NULLIF(l.quantity_tail, '')::int,
+                                     CASE
+                                         WHEN l.quantity_word ~ '^\d+$' THEN l.quantity_word::int
+                                         WHEN l.quantity_word IN ('один', 'одна', 'одно') THEN 1
+                                         WHEN l.quantity_word IN ('два', 'две', 'двое') THEN 2
+                                         WHEN l.quantity_word IN ('три', 'трое') THEN 3
+                                         WHEN l.quantity_word IN ('четыре', 'четверо') THEN 4
+                                         WHEN l.quantity_word = 'пять' THEN 5
+                                         WHEN l.quantity_word = 'шесть' THEN 6
+                                         WHEN l.quantity_word = 'семь' THEN 7
+                                         WHEN l.quantity_word = 'восемь' THEN 8
+                                         WHEN l.quantity_word = 'девять' THEN 9
+                                         WHEN l.quantity_word = 'десять' THEN 10
+                                         WHEN l.quantity_word = 'двенадцать' THEN 12
+                                         WHEN l.quantity_word = 'пятнадцать' THEN 15
+                                         WHEN l.quantity_word = 'двадцать' THEN 20
+                                     END,
+                                     1),
+                                 'section', CASE
+                                     WHEN i.url IS NOT NULL THEN 'items'
+                                     WHEN mi.url IS NOT NULL THEN 'magic-items'
+                                     WHEN l.marker = 'item' THEN 'items'
+                                     ELSE 'magic-items'
+                                 END
+                             ) ORDER BY l.link_index
+                         ) AS inventory
+                  FROM links l
+                  LEFT JOIN item i ON i.url = l.slug
+                  LEFT JOIN magic_item mi ON mi.url = l.slug
+                  GROUP BY l.creature_url
+              ),
+              migrated AS (
+                  SELECT s.creature_url,
+                         s.inventory,
+                         btrim(
+                             regexp_replace(
+                                 regexp_replace(
+                                     regexp_replace(b.equipments, p.link, '', 'gi'),
+                                     '\s+', ' ', 'g'),
+                                 '(,\s*)+', ', ', 'g'),
+                             ' ,;.:-—–') AS rest
+                  FROM positions s
+                  JOIN bestiary b ON b.url = s.creature_url
+                  CROSS JOIN pattern p
+              )
+              UPDATE bestiary b
+              SET inventory = m.inventory,
+                  inventory_text = COALESCE(
+                      NULLIF(btrim(b.inventory_text), ''),
+                      NULLIF(regexp_replace(m.rest, '^и\s+', '', 'i'), '')),
+                  updated_at = now()
+              FROM migrated m
+              WHERE b.url = m.creature_url;
+      rollback:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              UPDATE bestiary
+              SET inventory = NULL,
+                  inventory_text = NULL,
+                  updated_at = now()
+              WHERE inventory IS NOT NULL
+                AND equipments ~* '\{@(item|magicItem|magic-item)\s+[^|{}]+\|\s*url:';
