@@ -73,8 +73,10 @@ public class CreaturePredicateBuilder
         {
             if (request.getLair().isExclude())
             {
+                // Шаблон с or обязан быть в скобках: QueryDSL вставляет его в цепочку and как есть,
+                // и or без скобок разорвал бы весь where — поиск и тип перестали бы действовать.
                 builder.and(Expressions.booleanTemplate(
-                        "lair is null or lair ->> 'name' is null or btrim(lair ->> 'name') = ''"));
+                        "(lair is null or lair ->> 'name' is null or btrim(lair ->> 'name') = '')"));
             }
             else
             {
@@ -89,7 +91,7 @@ public class CreaturePredicateBuilder
             if (request.getLegendaryAction().isExclude())
             {
                 builder.and(Expressions.booleanTemplate(
-                        "legendary_action < 1 or legendary_action is null"));
+                        "(legendary_action < 1 or legendary_action is null)"));
             }
             else
             {

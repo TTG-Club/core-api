@@ -28,8 +28,10 @@ public class MagicItemPredicateBuilder
         {
             if (request.getAttunement().isExclude())
             {
+                // Шаблон с or обязан быть в скобках: QueryDSL вставляет его в цепочку and как есть,
+                // и or без скобок разорвал бы весь where — поиск, категория и редкость перестали бы действовать.
                 builder.and(Expressions.booleanTemplate(
-                        "attunement is null or (attunement->>'requires') != 'true'"));
+                        "(attunement is null or (attunement->>'requires') != 'true')"));
             }
             else
             {
@@ -43,7 +45,7 @@ public class MagicItemPredicateBuilder
             if (request.getCharges().isExclude())
             {
                 builder.and(Expressions.booleanTemplate(
-                        "charges is null or charges <= 0"));
+                        "(charges is null or charges <= 0)"));
             }
             else
             {
@@ -57,7 +59,7 @@ public class MagicItemPredicateBuilder
             if (request.getCurse().isExclude())
             {
                 builder.and(Expressions.booleanTemplate(
-                        "curse = false or curse is null"));
+                        "(curse = false or curse is null)"));
             }
             else
             {
