@@ -171,6 +171,16 @@ public class CharacterSheetService {
     }
 
     /**
+     * Любой активный лист — для администратора: так он открывает лист из баг-репорта, даже если
+     * владелец не делился ссылкой. Владение не проверяется, роль проверяет контроллер. Ответ тот же,
+     * что по ссылке, — без токена ссылки владельца. Ручек записи в чужой лист нет: просмотр
+     * «только чтение» обеспечен их отсутствием, а не поведением клиента.
+     */
+    public CharacterSheetPublicResponse findForAdmin(UUID sheetId) {
+        return sheetMapper.toPublicResponse(getActive(sheetId));
+    }
+
+    /**
      * Токен разбирается вручную, а не конвертером {@code @PathVariable UUID}: ссылку правят руками
      * и обрезают мессенджеры, а мусор в пути должен давать 404, а не 500 от конвертера.
      * <p>
@@ -212,12 +222,16 @@ public class CharacterSheetService {
 
     private CharacterSheet getOwnedActive(UUID sheetId) {
         User user = SecurityUtils.getUser();
-        CharacterSheet sheet = sheetRepository.findById(sheetId)
+        CharacterSheet sheet = getActive(sheetId);
+        requireOwner(sheet, user);
+        return sheet;
+    }
+
+    private CharacterSheet getActive(UUID sheetId) {
+        return sheetRepository.findById(sheetId)
                 .filter(found -> !found.isDeleted())
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Лист персонажа с id %s не существует", sheetId)));
-        requireOwner(sheet, user);
-        return sheet;
     }
 
     private void requireOwner(CharacterSheet sheet, User user) {

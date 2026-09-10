@@ -36,8 +36,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Доступ к листу по ссылке (выпуск и отзыв токена владельцем, анонимный просмотр) и лимиты,
- * зависящие от подписки.
+ * Доступ к листу по ссылке (выпуск и отзыв токена владельцем, анонимный просмотр), просмотр
+ * любого листа администратором и лимиты, зависящие от подписки.
  */
 class CharacterSheetServiceTest {
 
@@ -204,6 +204,44 @@ class CharacterSheetServiceTest {
         assertThrows(EntityNotFoundException.class, () -> service.findShared("  "));
 
         verify(sheetRepository, never()).findByShareTokenAndDeletedFalse(any());
+    }
+
+    @Test
+    void findForAdminReturnsForeignSheetWithoutShareToken() {
+        // Смотрит не владелец: роль проверяет контроллер, владение сервис не требует
+        authenticate();
+        CharacterSheet foreign = sheet(UUID.randomUUID());
+        foreign.setShareToken(UUID.randomUUID());
+        CharacterSheetPublicResponse expected = new CharacterSheetPublicResponse();
+        when(sheetRepository.findById(foreign.getId())).thenReturn(Optional.of(foreign));
+        when(sheetMapper.toPublicResponse(foreign)).thenReturn(expected);
+
+        CharacterSheetPublicResponse actual = service.findForAdmin(foreign.getId());
+
+        assertSame(expected, actual);
+        // Полный ответ владельца отдал бы и токен его ссылки
+        verify(sheetMapper, never()).toResponse(any());
+    }
+
+    @Test
+    void findForAdminWithDeletedSheetIsNotFound() {
+        authenticate();
+        CharacterSheet deleted = sheet(UUID.randomUUID());
+        deleted.setDeleted(true);
+        when(sheetRepository.findById(deleted.getId())).thenReturn(Optional.of(deleted));
+
+        assertThrows(EntityNotFoundException.class, () -> service.findForAdmin(deleted.getId()));
+
+        verify(sheetMapper, never()).toPublicResponse(any());
+    }
+
+    @Test
+    void findForAdminWithUnknownIdIsNotFound() {
+        authenticate();
+        UUID unknown = UUID.randomUUID();
+        when(sheetRepository.findById(unknown)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.findForAdmin(unknown));
     }
 
     private static CharacterSheetRequest request() {
