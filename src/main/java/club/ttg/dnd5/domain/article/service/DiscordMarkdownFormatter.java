@@ -250,6 +250,11 @@ public class DiscordMarkdownFormatter {
         return null;
     }
 
+    /** Абсолютный адрес статьи / новости на сайте — для ссылки «Подробнее читайте на сайте» в посте. */
+    public String articleUrl(String slug) {
+        return site() + "/articles/" + slug;
+    }
+
     /**
      * База для абсолютных ссылок на разделы сайта. Ссылки идут в публичный канал, поэтому нужен
      * полноценный публичный URL: если {@code app.url} без схемы или localhost (локальная разработка) —

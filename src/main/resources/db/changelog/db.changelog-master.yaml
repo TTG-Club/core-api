@@ -341,3 +341,5 @@ databaseChangeLog:
       file: db/changelog/2026/09/08-01-backfill-creature-inventory-from-equipments.yaml
   - include:
       file: db/changelog/2026/09/08-02-add-creature-spellcasting.yaml
+  - include:
+      file: db/changelog/2026/09/10-01-add-discord-compact-to-article.yaml
