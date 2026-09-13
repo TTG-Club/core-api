@@ -1,0 +1,114 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-13-01-backfill-spell-damage-types-from-formulas
+      author: Peterko
+      comment: >
+        Заполняет у заклинаний поле effect.damageTypes типами урона из формул. Фильтр
+        «Тип урона» теперь смотрит только в это поле, а у записей, заведённых до его
+        появления, оно пустое — без переноса они выпали бы из фильтра все разом.
+
+        Типы берутся из тегов @dmg.<тип> тех же формул, что читает сохранение
+        (SpellDamageTypes): базовых частей effect.damageFormulas и частей тиров
+        масштабирования заговора effect.cantripScalingTiers[].parts[].formula. Незнакомый
+        тег пропускается. Уже отмеченные типы остаются первыми и в прежнем порядке, типы
+        формул дописываются следом без повторов — ровно так же поле дополняет сохранение,
+        поэтому повторное сохранение перенесённой записи его не меняет.
+
+        Время изменения заклинания не сдвигается: его показывает карточка на сайте, и у
+        сотен записей появилась бы дата сегодняшнего переноса. Предрассчитанный payload
+        выгрузки VTTG пересчитывается подъёмом SCHEMA_VERSION в том же выпуске.
+
+        Отката нет: после переноса тип, пришедший из формулы, не отличить от отмеченного
+        вручную.
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              WITH formulas AS (
+                  SELECT s.url,
+                         1 AS source_order,
+                         base.formula_index AS formula_index,
+                         0::bigint AS part_index,
+                         base.formula
+                  FROM spell s
+                  CROSS JOIN LATERAL jsonb_array_elements_text(
+                      CASE
+                          WHEN jsonb_typeof(s.effect->'damageFormulas') = 'array'
+                              THEN s.effect->'damageFormulas'
+                          ELSE '[]'::jsonb
+                      END
+                  ) WITH ORDINALITY AS base(formula, formula_index)
+                  UNION ALL
+                  SELECT s.url,
+                         2 AS source_order,
+                         tier.tier_index AS formula_index,
+                         part.part_index,
+                         part.part->>'formula' AS formula
+                  FROM spell s
+                  CROSS JOIN LATERAL jsonb_array_elements(
+                      CASE
+                          WHEN jsonb_typeof(s.effect->'cantripScalingTiers') = 'array'
+                              THEN s.effect->'cantripScalingTiers'
+                          ELSE '[]'::jsonb
+                      END
+                  ) WITH ORDINALITY AS tier(tier, tier_index)
+                  CROSS JOIN LATERAL jsonb_array_elements(
+                      CASE
+                          WHEN jsonb_typeof(tier.tier->'parts') = 'array'
+                              THEN tier.tier->'parts'
+                          ELSE '[]'::jsonb
+                      END
+                  ) WITH ORDINALITY AS part(part, part_index)
+              ),
+              candidates AS (
+                  SELECT s.url,
+                         existing.damage_type,
+                         0 AS source_order,
+                         existing.type_index AS formula_index,
+                         0::bigint AS part_index,
+                         0::bigint AS match_index
+                  FROM spell s
+                  CROSS JOIN LATERAL jsonb_array_elements_text(
+                      CASE
+                          WHEN jsonb_typeof(s.effect->'damageTypes') = 'array'
+                              THEN s.effect->'damageTypes'
+                          ELSE '[]'::jsonb
+                      END
+                  ) WITH ORDINALITY AS existing(damage_type, type_index)
+                  UNION ALL
+                  SELECT f.url,
+                         upper(tag.parts[1]) AS damage_type,
+                         f.source_order,
+                         f.formula_index,
+                         f.part_index,
+                         tag.match_index
+                  FROM formulas f
+                  CROSS JOIN LATERAL regexp_matches(f.formula, '@dmg\.([a-z]+)', 'gi')
+                      WITH ORDINALITY AS tag(parts, match_index)
+                  WHERE upper(tag.parts[1]) IN (
+                      'ACID', 'BLUDGEONING', 'COLD', 'FIRE', 'FORCE', 'LIGHTNING', 'NECROTIC',
+                      'PIERCING', 'POISON', 'PSYCHIC', 'RADIANT', 'SLASHING', 'THUNDER')
+              ),
+              first_occurrence AS (
+                  SELECT DISTINCT ON (url, damage_type)
+                         url, damage_type, source_order, formula_index, part_index, match_index
+                  FROM candidates
+                  ORDER BY url, damage_type, source_order, formula_index, part_index, match_index
+              ),
+              merged AS (
+                  SELECT url,
+                         jsonb_agg(damage_type
+                             ORDER BY source_order, formula_index, part_index, match_index)
+                             AS damage_types
+                  FROM first_occurrence
+                  GROUP BY url
+              )
+              UPDATE spell s
+              SET effect = jsonb_set(s.effect, '{damageTypes}', m.damage_types)
+              FROM merged m
+              WHERE s.url = m.url
+                AND m.damage_types IS DISTINCT FROM s.effect->'damageTypes';

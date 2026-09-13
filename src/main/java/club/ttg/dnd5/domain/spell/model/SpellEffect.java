@@ -48,8 +48,9 @@ public class SpellEffect {
      *
      * <p>Формулы {@link #damageFormulas} считают урон и не всегда говорят, каким он
      * бывает: тип выбирается на касте, части урона идут поочерёдно. Это поле в расчётах
-     * не участвует — только в фильтре «Тип урона», наравне с тегами {@code @dmg.*}
-     * формул.</p>
+     * не участвует, фильтр «Тип урона» смотрит только в него. Типы из тегов
+     * {@code @dmg.*} формул дописываются сюда при сохранении — см.
+     * {@code SpellDamageTypes}.</p>
      */
     private List<DamageType> damageTypes;
     private List<HealingType> healingTypes;

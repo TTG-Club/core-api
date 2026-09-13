@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SpellPredicateBuilderTest {
@@ -68,27 +69,27 @@ class SpellPredicateBuilderTest {
     }
 
     @Test
-    void damageTypeFilterChecksFilterFieldAndDamageFormulaMarkers() {
+    void damageTypeFilterChecksOnlyFilterField() {
         SpellQueryRequest request = new SpellQueryRequest();
         request.setSearch("шарик");
         QueryFilter<DamageType> filter = new QueryFilter<>();
-        filter.setValues(Set.of(DamageType.FIRE));
+        filter.setValues(Set.of(DamageType.FIRE, DamageType.COLD));
         request.setDamageType(filter);
 
         BooleanBuilder predicate = SpellPredicateBuilder.build(request, Set.of(), Set.of());
         String description = predicate.toString();
 
         assertTrue(description.contains("effect->'damageTypes'"));
-        assertTrue(description.contains("effect->'damageFormulas'"));
-        assertTrue(description.contains("FIRE"));
-        assertTrue(description.contains("%@dmg.fire%"));
-        // Совпадение «по полю или по формуле» не должно разрывать where: иначе поиск,
-        // добавленный раньше, перестанет действовать.
+        assertTrue(description.contains("[\"FIRE\"]"));
+        // Формулы фильтр больше не читает: их типы дописываются в поле при сохранении.
+        assertFalse(description.contains("damageFormulas"));
+        // «Огонь или холод» не должно разрывать where: иначе поиск, добавленный раньше,
+        // перестанет действовать.
         PredicateSql.assertOrStaysInsideParentheses(PredicateSql.render(predicate.getValue()));
     }
 
     @Test
-    void excludedDamageTypeFilterRequiresNeitherFilterFieldNorDamageFormulaMarker() {
+    void excludedDamageTypeFilterChecksOnlyFilterField() {
         SpellQueryRequest request = new SpellQueryRequest();
         QueryFilter<DamageType> filter = new QueryFilter<>();
         filter.setValues(Set.of(DamageType.COLD));
@@ -98,9 +99,8 @@ class SpellPredicateBuilderTest {
         BooleanBuilder predicate = SpellPredicateBuilder.build(request, Set.of(), Set.of());
         String description = predicate.toString();
 
-        assertTrue(description.contains("not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageTypes'"));
-        assertTrue(description.contains("and not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas'"));
-        assertTrue(description.contains("%@dmg.cold%"));
+        assertTrue(description.contains("(effect->'damageTypes') @> '[\"COLD\"]'::jsonb) IS NOT TRUE"));
+        assertFalse(description.contains("damageFormulas"));
         PredicateSql.assertOrStaysInsideParentheses(PredicateSql.render(predicate.getValue()));
     }
 }
