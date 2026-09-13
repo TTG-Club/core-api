@@ -26,6 +26,7 @@ import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
@@ -45,6 +46,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -1312,6 +1314,55 @@ class VttgFeatMechanicsMapperTest {
         feat.setMechanics(mechanics);
 
         assertEquals(1, json(feat).get("featData").get("counters").get(0).get("min").asInt());
+    }
+
+    /**
+     * «Скороход» лесного эльфа: ресурс открывается с третьего уровня. Ступени едут
+     * прогрессией — без них потребитель завёл бы счётчик сразу, на первом уровне.
+     */
+    @Test
+    void mapsCounterProgression() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("longstrider", "1", ResourceRecovery.LONG_REST);
+        counter.setScaling(List.of(new CounterScaling(5, 2), new CounterScaling(3, 1)));
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        JsonNode mapped = json(feat).get("featData").get("counters").get(0);
+        assertEquals("1", mapped.get("max").asText());
+        JsonNode progression = mapped.get("progression");
+        List<String> levels = new ArrayList<>();
+        progression.fieldNames().forEachRemaining(levels::add);
+        assertEquals(List.of("3", "5"), levels);
+        assertEquals(1, progression.get("3").asInt());
+        assertEquals(2, progression.get("5").asInt());
+    }
+
+    /** Максимум задан одними ступенями, без формулы: такой ресурс едет, формулы в нём нет. */
+    @Test
+    void mapsCounterWithProgressionOnly() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("uses", null, ResourceRecovery.LONG_REST);
+        counter.setScaling(List.of(new CounterScaling(3, 1)));
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        JsonNode mapped = json(feat).get("featData").get("counters").get(0);
+        assertFalse(mapped.has("max"));
+        assertEquals(1, mapped.get("progression").get("3").asInt());
+    }
+
+    /** Ресурс без ступеней прогрессии не несёт: максимум у него только формулой. */
+    @Test
+    void omitsProgressionWithoutScaling() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("luck-points", "@prof", ResourceRecovery.LONG_REST)));
+        feat.setMechanics(mechanics);
+
+        assertFalse(json(feat).get("featData").get("counters").get(0).has("progression"));
     }
 
     /** Откат не задан — продолжительный отдых: короткий проставляют явно. */
