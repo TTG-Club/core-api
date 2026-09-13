@@ -112,8 +112,8 @@ public class SpellPredicateBuilder {
             builder.and(combined);
         }
 
-        // Тип урона внутри формул вида "2к6@dmg.fire".
-        applyDamageFormulaTypeFilter(builder, request.getDamageType());
+        // Тип урона: теги формул вида "2к6@dmg.fire" или отдельное поле типов для фильтра.
+        applyDamageTypeFilter(builder, request.getDamageType());
 
         // Тип лечения (JSONB-массив)
         applyHealingTypeFilter(builder, request.getHealingType());
@@ -182,38 +182,55 @@ public class SpellPredicateBuilder {
         return builder;
     }
 
-    private void applyDamageFormulaTypeFilter(BooleanBuilder builder, QueryFilter<DamageType> filter) {
+    /**
+     * Фильтр «Тип урона». Заклинание наносит тип, если он есть в теге {@code @dmg.*} любой
+     * формулы урона или в поле {@code effect.damageTypes}: формулы описывают расчёт и не
+     * покрывают урон на выбор, поле заполняется ради фильтра.
+     */
+    private void applyDamageTypeFilter(BooleanBuilder builder, QueryFilter<DamageType> filter) {
         if (filter == null || !filter.isActive()) {
             return;
         }
 
         if (filter.isExclude()) {
             for (var value : filter.getValues()) {
-                builder.and(damageFormulaTypeNotExists(value));
+                builder.and(damageTypeNotExists(value));
             }
         } else if (filter.isUnion()) {
             for (var value : filter.getValues()) {
-                builder.and(damageFormulaTypeExists(value));
+                builder.and(damageTypeExists(value));
             }
         } else {
             BooleanBuilder orBuilder = new BooleanBuilder();
             for (var value : filter.getValues()) {
-                orBuilder.or(damageFormulaTypeExists(value));
+                orBuilder.or(damageTypeExists(value));
             }
             builder.and(orBuilder);
         }
     }
 
-    private Predicate damageFormulaTypeExists(DamageType value) {
+    private Predicate damageTypeExists(DamageType value) {
         return Expressions.booleanTemplate(
-                "exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {0})",
-                "%@dmg." + damageTypeKey(value) + "%");
+                "("
+                        + "exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageTypes', '[]'::jsonb)) as damage_type where damage_type = {0})"
+                        + " or exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {1})"
+                        + ")",
+                value.name(),
+                damageFormulaMarker(value));
     }
 
-    private Predicate damageFormulaTypeNotExists(DamageType value) {
+    private Predicate damageTypeNotExists(DamageType value) {
         return Expressions.booleanTemplate(
-                "not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {0})",
-                "%@dmg." + damageTypeKey(value) + "%");
+                "("
+                        + "not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageTypes', '[]'::jsonb)) as damage_type where damage_type = {0})"
+                        + " and not exists (select 1 from jsonb_array_elements_text(coalesce(effect->'damageFormulas', '[]'::jsonb)) as formula where formula like {1})"
+                        + ")",
+                value.name(),
+                damageFormulaMarker(value));
+    }
+
+    private String damageFormulaMarker(DamageType value) {
+        return "%@dmg." + damageTypeKey(value) + "%";
     }
 
     private void applyHealingTypeFilter(BooleanBuilder builder, QueryFilter<HealingType> filter) {
