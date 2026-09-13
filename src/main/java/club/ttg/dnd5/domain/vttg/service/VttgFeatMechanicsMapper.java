@@ -1096,7 +1096,10 @@ public class VttgFeatMechanicsMapper {
                     flag(choice.getRechooseOnLongRest()),
                     choice.getRequiredLevel(),
                     types.contains(ChoiceType.FEAT) ? featCategories(choice.getFeatCategories()) : null,
-                    choiceScaling(choice.getScaling())));
+                    choiceScaling(choice.getScaling()),
+                    // Отметка «не готовить» есть только у заклинаний: у навыка или черты она
+                    // ничего бы не значила, даже если осталась в записи после смены вида
+                    isSpellChoice(types) ? flag(choice.getAlwaysPrepared()) : null));
         }
         return emptyToNull(result);
     }
@@ -1197,11 +1200,20 @@ public class VttgFeatMechanicsMapper {
         if (feat != null && StringUtils.hasText(feat.getName())) {
             return feat.getName();
         }
-        boolean isSpell = types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
-        if (isSpell && StringUtils.hasText(spellNamesByUrl.get(raw))) {
+        if (isSpellChoice(types) && StringUtils.hasText(spellNamesByUrl.get(raw))) {
             return spellNamesByUrl.get(raw);
         }
         return trimmed(option.getName());
+    }
+
+    /**
+     * Выбирают ли заклинание: заклинание или заговор среди видов выбора.
+     *
+     * @param types виды выбора
+     * @return {@code true} — выбор заклинания
+     */
+    private static boolean isSpellChoice(List<ChoiceType> types) {
+        return types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
     }
 
     /**
@@ -1211,10 +1223,7 @@ public class VttgFeatMechanicsMapper {
     private Map<String, String> spellOptionNames(List<MechanicChoice> choices) {
         List<EntityRef> refs = choices.stream()
                 .filter(Objects::nonNull)
-                .filter(choice -> {
-                    List<ChoiceType> types = choice.resolveTypes();
-                    return types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
-                })
+                .filter(choice -> isSpellChoice(choice.resolveTypes()))
                 .map(MechanicChoice::getOptions)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)

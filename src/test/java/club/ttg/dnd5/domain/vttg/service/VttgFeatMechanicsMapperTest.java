@@ -377,6 +377,35 @@ class VttgFeatMechanicsMapperTest {
         // Снятый флаг не выводится: ложь ничего не сообщает и висела бы у каждого выбора
         assertFalse(json.has("rechooseOnLongRest"));
         assertFalse(json.has("onlyIfNotProficient"));
+        assertFalse(json.has("alwaysPrepared"));
+    }
+
+    /**
+     * Заговор «сверх таблицы класса» («Чудотворец» жреца) несёт отметку до стола: без неё
+     * лист считал бы его в колонку «Заговоры» и показывал бы перебор. У выбора не про
+     * заклинания отметка не выводится, даже оставшись в записи.
+     */
+    @Test
+    void exportsAlwaysPreparedOnlyForSpellChoices() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        MechanicChoice cantrip = new MechanicChoice();
+        cantrip.setKey("thaumaturge-cantrip");
+        cantrip.setType(ChoiceType.CANTRIP);
+        cantrip.setAlwaysPrepared(Boolean.TRUE);
+
+        MechanicChoice skill = new MechanicChoice();
+        skill.setKey("skill");
+        skill.setType(ChoiceType.SKILL);
+        skill.setAlwaysPrepared(Boolean.TRUE);
+
+        mechanics.setChoices(List.of(cantrip, skill));
+        feat.setMechanics(mechanics);
+
+        JsonNode choices = json(feat).get("featData").get("choices");
+        assertTrue(choices.get(0).get("alwaysPrepared").asBoolean());
+        assertFalse(choices.get(1).has("alwaysPrepared"));
     }
 
     /** Обычный выбор даёт владение — исход по умолчанию у потребителя, поле опускается. */

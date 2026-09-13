@@ -217,6 +217,27 @@ class FeatMechanicsMappingTest {
         assertFalse(json.has("rechooseOnLongRest"));
         assertFalse(json.has("spellFilter"));
         assertFalse(json.has("count"));
+        assertFalse(json.has("alwaysPrepared"));
+    }
+
+    /**
+     * «Чудотворец» жреца: заговор выбирает игрок, но в колонку «Заговоры» он не входит.
+     * Отметка переживает маппинг в запрос редактора — иначе форма `/raw` теряла бы её при
+     * первом же сохранении.
+     */
+    @Test
+    void spellChoiceKeepsAlwaysPrepared() throws Exception {
+        FeatMechanics mechanics = magicInitiate();
+        mechanics.getChoices().getLast().setAlwaysPrepared(true);
+
+        Feat feat = new Feat();
+        feat.setMechanics(mechanics);
+
+        MechanicChoice cantrip = mapper.toRequest(feat).getMechanics().getChoices().getLast();
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(cantrip));
+
+        assertTrue(cantrip.getAlwaysPrepared());
+        assertTrue(json.get("alwaysPrepared").asBoolean());
     }
 
     /**
