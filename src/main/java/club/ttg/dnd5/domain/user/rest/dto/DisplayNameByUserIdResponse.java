@@ -7,7 +7,8 @@ import java.util.UUID;
  *
  * Нужна сервисам, которые хранят только {@code sub} токена и не знают логинов:
  * например, find-game-api подписывает участников чата игры. Без такого резолва
- * на экране остался бы сырой UUID.
+ * на экране остался бы сырой UUID. Аватарка ({@code null}, если её нет) такая же
+ * публичная, как имя.
  */
-public record DisplayNameByUserIdResponse(UUID userId, String displayName) {
+public record DisplayNameByUserIdResponse(UUID userId, String displayName, String avatarUrl) {
 }

@@ -3,11 +3,13 @@ package club.ttg.dnd5.domain.user.rest.controller;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterRequest;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
+import club.ttg.dnd5.domain.user.rest.dto.AvatarResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByLoginResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByUserIdResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNamesByIdsLookupRequest;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNamesLookupRequest;
+import club.ttg.dnd5.domain.user.rest.dto.UpdateAvatarRequest;
 import club.ttg.dnd5.domain.user.rest.dto.UpdateDisplayNameRequest;
 import club.ttg.dnd5.domain.user.rest.dto.UserDto;
 import club.ttg.dnd5.domain.user.rest.dto.UserProfileShortResponse;
@@ -51,6 +53,20 @@ public class UserController {
     @PatchMapping("/profile/display-name")
     public DisplayNameResponse updateDisplayName(@Valid @RequestBody UpdateDisplayNameRequest request) {
         return displayNameService.updateForCurrentUser(request.displayName());
+    }
+
+    @Secured("USER")
+    @Operation(summary = "Смена аватарки (ссылка на файл в своей папке S3)")
+    @PutMapping("/profile/avatar")
+    public AvatarResponse updateAvatar(@Valid @RequestBody UpdateAvatarRequest request) {
+        return displayNameService.updateAvatarForCurrentUser(request.avatarUrl());
+    }
+
+    @Secured("USER")
+    @Operation(summary = "Удаление аватарки")
+    @DeleteMapping("/profile/avatar")
+    public AvatarResponse deleteAvatar() {
+        return displayNameService.deleteAvatarForCurrentUser();
     }
 
     @Operation(summary = "Отображаемые имена по логинам (публично, для рейтингов)")

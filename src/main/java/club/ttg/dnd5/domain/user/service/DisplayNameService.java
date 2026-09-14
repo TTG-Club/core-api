@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.user.service;
 import club.ttg.dnd5.domain.user.model.User;
 import club.ttg.dnd5.domain.user.model.UserDisplayName;
 import club.ttg.dnd5.domain.user.repository.UserDisplayNameRepository;
+import club.ttg.dnd5.domain.user.rest.dto.AvatarResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByLoginResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameByUserIdResponse;
 import club.ttg.dnd5.domain.user.rest.dto.DisplayNameResponse;
@@ -25,8 +26,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Отображаемое имя пользователя. core-api — владелец данных (сайтовый бэкенд);
- * auth-service и JWT не участвуют.
+ * Отображаемое имя и аватарка пользователя. core-api — владелец данных (сайтовый
+ * бэкенд); auth-service и JWT не участвуют.
  *
  * Методы намеренно НЕ помечены {@code @Transactional}: каждый вызов репозитория
  * идёт своей транзакцией, поэтому нарушение уникального индекса не переводит
@@ -43,6 +44,8 @@ public class DisplayNameService {
     private static final int GENERATION_ATTEMPTS = 10;
     private static final int MAX_LOOKUP = 200;
     private static final int SEARCH_LIMIT = 20;
+    private static final String AVATAR_ROOT = "/s3/avatars/";
+    private static final Pattern AVATAR_FILE_PATTERN = Pattern.compile("^[a-z0-9-]+\\.webp$");
 
     /**
      * Подстроки, запрещённые в имени (регистронезависимо, без учёта пробелов) —
@@ -65,10 +68,9 @@ public class DisplayNameService {
         User user = SecurityUtils.getUser();
         UUID userId = user.getUuid();
 
-        return new DisplayNameResponse(
-                repository.findById(userId)
-                        .map(UserDisplayName::getDisplayName)
-                        .orElseGet(() -> createDefault(userId, user.getUsername())));
+        UserDisplayName entity = repository.findById(userId)
+                .orElseGet(() -> createDefault(userId, user.getUsername()));
+        return new DisplayNameResponse(entity.getDisplayName(), entity.getAvatarUrl());
     }
 
     /**
@@ -100,7 +102,48 @@ public class DisplayNameService {
             throw new ApiException(HttpStatus.CONFLICT, "Это имя уже занято");
         }
 
-        return new DisplayNameResponse(name);
+        return new DisplayNameResponse(name, entity.getAvatarUrl());
+    }
+
+    /**
+     * Ставит текущему пользователю аватарку. Файл уже лежит в S3 (его кладёт core-app),
+     * сюда приходит только ссылка — и она обязана вести в папку этого пользователя.
+     * Иначе прямым запросом можно поставить себе чужую картинку или картинку с внешнего
+     * сайта. Записи ещё нет — создаётся со случайным именем, как при первом чтении.
+     */
+    public AvatarResponse updateAvatarForCurrentUser(String avatarUrl) {
+        User user = SecurityUtils.getUser();
+        UUID userId = user.getUuid();
+
+        if (!isOwnAvatarUrl(avatarUrl, userId)) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Недопустимая ссылка на аватарку");
+        }
+
+        UserDisplayName entity = repository.findById(userId)
+                .orElseGet(() -> createDefault(userId, user.getUsername()));
+        entity.setAvatarUrl(avatarUrl);
+        entity.setUpdatedAt(Instant.now());
+        repository.saveAndFlush(entity);
+
+        return new AvatarResponse(avatarUrl);
+    }
+
+    /**
+     * Убирает аватарку текущего пользователя. Идемпотентно: если записи или аватарки
+     * нет, ничего не пишет — ради удаления запись не создаётся.
+     */
+    public AvatarResponse deleteAvatarForCurrentUser() {
+        UUID userId = SecurityUtils.getUser().getUuid();
+
+        repository.findById(userId)
+                .filter(entity -> entity.getAvatarUrl() != null)
+                .ifPresent(entity -> {
+                    entity.setAvatarUrl(null);
+                    entity.setUpdatedAt(Instant.now());
+                    repository.saveAndFlush(entity);
+                });
+
+        return new AvatarResponse(null);
     }
 
     /**
@@ -122,7 +165,7 @@ public class DisplayNameService {
             return List.of();
         }
         return repository.findAllByUsernameLowerIn(loweredLogins).stream()
-                .map(entity -> new DisplayNameByLoginResponse(entity.getUsername(), entity.getDisplayName()))
+                .map(this::toLoginResponse)
                 .toList();
     }
 
@@ -134,7 +177,7 @@ public class DisplayNameService {
      * остался бы сырой UUID.
      *
      * Отдаёт только те данные, что уже публичны в комментариях и рейтингах, —
-     * идентификатор и имя, без логина и почты. Пользователи без заданного имени в ответ
+     * идентификатор, имя и аватарку, без логина и почты. Пользователи без заданного имени в ответ
      * не попадают: вызывающий сам решает, чем заменить пропуск. Размер входа ограничен
      * {@link #MAX_LOOKUP}.
      */
@@ -150,7 +193,8 @@ public class DisplayNameService {
             return List.of();
         }
         return repository.findAllById(uniqueIds).stream()
-                .map(entity -> new DisplayNameByUserIdResponse(entity.getUserId(), entity.getDisplayName()))
+                .map(entity -> new DisplayNameByUserIdResponse(
+                        entity.getUserId(), entity.getDisplayName(), entity.getAvatarUrl()))
                 .toList();
     }
 
@@ -165,15 +209,34 @@ public class DisplayNameService {
             return List.of();
         }
         return repository.searchByDisplayName(normalized, PageRequest.of(0, SEARCH_LIMIT)).stream()
-                .map(entity -> new DisplayNameByLoginResponse(entity.getUsername(), entity.getDisplayName()))
+                .map(this::toLoginResponse)
                 .toList();
+    }
+
+    private DisplayNameByLoginResponse toLoginResponse(UserDisplayName entity) {
+        return new DisplayNameByLoginResponse(entity.getUsername(), entity.getDisplayName(), entity.getAvatarUrl());
+    }
+
+    /**
+     * Ссылка на аватарку своя, если строго {@code /s3/avatars/<sub>/<файл>.webp}: {@code sub} —
+     * UUID текущего пользователя, имя файла из строчных латинских букв, цифр и дефисов.
+     * Так отсекаются чужой {@code sub}, внешние адреса, {@code ..}, лишние сегменты,
+     * query-строка и не-webp.
+     */
+    private boolean isOwnAvatarUrl(String avatarUrl, UUID userId) {
+        if (avatarUrl == null) {
+            return false;
+        }
+        String ownFolder = AVATAR_ROOT + userId.toString().toLowerCase(Locale.ROOT) + "/";
+        return avatarUrl.startsWith(ownFolder)
+                && AVATAR_FILE_PATTERN.matcher(avatarUrl.substring(ownFolder.length())).matches();
     }
 
     /**
      * Создаёт запись со случайным уникальным именем. Гонку по первичному ключу
      * (два первых запроса одного пользователя) гасит повторным чтением.
      */
-    private String createDefault(UUID userId, String username) {
+    private UserDisplayName createDefault(UUID userId, String username) {
         String name = generateUniqueDefault();
 
         UserDisplayName entity = new UserDisplayName();
@@ -186,10 +249,9 @@ public class DisplayNameService {
 
         try {
             repository.saveAndFlush(entity);
-            return name;
+            return entity;
         } catch (DataIntegrityViolationException ex) {
             return repository.findById(userId)
-                    .map(UserDisplayName::getDisplayName)
                     .orElseGet(() -> createDefault(userId, username));
         }
     }

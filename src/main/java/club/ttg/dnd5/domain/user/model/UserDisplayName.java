@@ -19,8 +19,11 @@ import java.util.UUID;
  * имени можно синхронно пробросить в другие сервисы. {@code username} хранится,
  * чтобы резолвить «логин → имя» там, где известен только логин (таблица охотников).
  *
+ * Запись хранит и аватарку: у каждого сайта своя, как и имя. Сам файл лежит в S3
+ * (его кладёт core-app), здесь — только ссылка на него.
+ *
  * Строка создаётся лениво при первом обращении: core-api сам пользователей не
- * заводит, поэтому запись появляется при первом чтении/смене имени.
+ * заводит, поэтому запись появляется при первом чтении/смене имени или аватарки.
  */
 @Getter
 @Setter
@@ -37,6 +40,10 @@ public class UserDisplayName {
 
     @Column(name = "display_name", nullable = false, length = 50)
     private String displayName;
+
+    /** Ссылка на аватарку вида {@code /s3/avatars/<sub>/<файл>.webp}; {@code null} — аватарки нет. */
+    @Column(name = "avatar_url")
+    private String avatarUrl;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
