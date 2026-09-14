@@ -157,6 +157,7 @@ public class SpellService
 
         Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
         spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
+        SpellDamageTypes.addFromFormulas(spell.getEffect());
 
         Spell saved = spellRepository.save(spell);
         revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
@@ -237,6 +238,7 @@ public class SpellService
 
             Spell spell = spellMapper.toEntity(request, source, classes, subclasses, species, lineages, feats);
             spell.setUpcastable(spell.getLevel() > 0 && StringUtils.hasText(spell.getUpper()));
+            SpellDamageTypes.addFromFormulas(spell.getEffect());
             Spell renamed = spellRepository.save(spell);
             // Переименование (смена url): фиксируем удаление старой записи и новую версию под новым url.
             revisionService.record(REVISION_ENTITY_TYPE, oldUrl, RevisionOperation.DELETE,
@@ -284,6 +286,7 @@ public class SpellService
         }
 
         existingSpell.setUpcastable(existingSpell.getLevel() > 0 && StringUtils.hasText(existingSpell.getUpper()));
+        SpellDamageTypes.addFromFormulas(existingSpell.getEffect());
 
         revisionService.record(REVISION_ENTITY_TYPE, existingSpell.getUrl(), RevisionOperation.UPDATE,
                 spellMapper.toRequest(existingSpell));

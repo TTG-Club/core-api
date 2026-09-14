@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-14-01-add-avatar-url-to-user-display-name
+      author: Peterko
+      changes:
+        # Ссылка на аватарку пользователя этого сайта (файл в S3 кладёт core-app, здесь только путь
+        # вида /s3/avatars/<sub>/<файл>.webp). NULL = аватарки нет, на сайте показываются инициалы.
+        - addColumn:
+            tableName: user_display_name
+            columns:
+              - column:
+                  name: avatar_url
+                  type: VARCHAR(255)

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.spell.model;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.Condition;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.common.model.DamagePart;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
@@ -42,6 +43,16 @@ public class SpellEffect {
      * врага»: часть лечения гасится, когда урон не прошёл.
      */
     private List<Boolean> damageFormulaRequiresDamage;
+    /**
+     * Типы урона заклинания для фильтра каталога.
+     *
+     * <p>Формулы {@link #damageFormulas} считают урон и не всегда говорят, каким он
+     * бывает: тип выбирается на касте, части урона идут поочерёдно. Это поле в расчётах
+     * не участвует, фильтр «Тип урона» смотрит только в него. Типы из тегов
+     * {@code @dmg.*} формул дописываются сюда при сохранении — см.
+     * {@code SpellDamageTypes}.</p>
+     */
+    private List<DamageType> damageTypes;
     private List<HealingType> healingTypes;
     /**
      * Характеристика, от которой считаются Сл спасброска и бонус атаки этого

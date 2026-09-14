@@ -94,6 +94,7 @@ public class VttgSpellMapper {
                 .targetCount(effect == null ? null : effect.getTargetCount())
                 .deliveryType(deliveryType(effect, range))
                 .damageParts(mechanics.damageParts())
+                .damageTypes(damageTypes(effect))
                 .autoHit(effect == null ? null : effect.getAutoHit())
                 .projectiles(projectiles(effect))
                 .spellcastingAbility(spellcastingAbility(effect))
@@ -271,6 +272,17 @@ public class VttgSpellMapper {
             case SIGHT -> "sight";
             default -> "none";
         };
+    }
+
+    /**
+     * Типы урона для фильтра в словаре потребителя, без повторов; пустой список →
+     * {@code null} (поле опускается в выгрузке).
+     */
+    private List<String> damageTypes(SpellEffect effect) {
+        List<String> types = effect == null
+                ? List.of()
+                : VttgDictionaries.damageTypes(effect.getDamageTypes()).stream().distinct().toList();
+        return types.isEmpty() ? null : types;
     }
 
     /**

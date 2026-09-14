@@ -260,7 +260,7 @@ public class VttgClassMapper {
         List<VttgClass.Counter> result = new ArrayList<>();
         for (OwnedCounter owned : counters) {
             ResourceCounter counter = owned.counter();
-            Map<String, Integer> progression = counterProgression(counter);
+            Map<String, Integer> progression = mechanicsMapper.counterProgression(counter);
             boolean hasMax = StringUtils.hasText(counter.getMax());
             if (!StringUtils.hasText(counter.getKey()) || (!hasMax && progression == null)) {
                 continue;
@@ -286,25 +286,6 @@ public class VttgClassMapper {
      * @param featureKey ключ умения; {@code null} — ресурс самой записи.
      */
     private record OwnedCounter(ResourceCounter counter, String featureKey) {
-    }
-
-    /**
-     * Ступени максимума счётчика прогрессией по уровням: у потребителя это тот же вид
-     * записи, что и у колонки таблицы, и ему всё равно, откуда ряд пришёл.
-     *
-     * @param counter ресурс из механики.
-     * @return прогрессия по уровням; {@code null} — ступеней нет.
-     */
-    private Map<String, Integer> counterProgression(ResourceCounter counter) {
-        if (CollectionUtils.isEmpty(counter.getScaling())) {
-            return null;
-        }
-        Map<String, Integer> progression = new LinkedHashMap<>();
-        counter.getScaling().stream()
-                .filter(step -> step != null && step.getLevel() != null && step.getMax() != null)
-                .sorted(Comparator.comparingInt(CounterScaling::getLevel))
-                .forEach(step -> progression.put(String.valueOf(step.getLevel()), step.getMax()));
-        return progression.isEmpty() ? null : progression;
     }
 
     /**

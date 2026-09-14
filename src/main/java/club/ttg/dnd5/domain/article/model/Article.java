@@ -183,6 +183,22 @@ public class Article extends Timestamped {
     private DiscordMention discordMention;
 
     /**
+     * Компактный пост в Discord: вместо анонса / текста новости уходит {@code discordCompactText}, а в конце
+     * поста — ссылка «Подробнее читайте на сайте». Управляется переключателем в админке. При {@code false}
+     * пост уходит как прежде — полным текстом.
+     */
+    @Column(nullable = false)
+    private boolean discordCompact;
+
+    /**
+     * Текст компактного поста в Discord. Обычный текст (в админке — текстовое поле): переносы строк
+     * сохраняются, работают markdown-выделение и маркеры {@code {@...}}. Учитывается только при
+     * {@code discordCompact=true}; пустой — в посте останутся заголовок и ссылка на сайт.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String discordCompactText;
+
+    /**
      * Пожелание автора отправить запись на стену сообщества ВКонтакте. Управляется галочкой в админке.
      * Постится только при publishToVk=true И включённой глобально интеграции (заданы токен и id сообщества),
      * один раз при попадании записи в общий доступ (см. {@code vkPostedAt}). Независима от Telegram и Discord.

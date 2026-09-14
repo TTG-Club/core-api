@@ -26,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * Доступ: лист виден и редактируем только владельцу (uuid из JWT). Инструмент открыт всем
+ * Доступ: лист виден и редактируем только владельцу (uuid из JWT); чужой лист администратор
+ * читает отдельной ручкой {@link CharacterSheetAdminController}. Инструмент открыт всем
  * авторизованным — {@code @Secured("USER")} на классе (роль USER есть у каждого
  * зарегистрированного): {@code /api/v2/**} на уровне фильтров — permitAll, авторизацию
  * обеспечивают только аннотации методов.

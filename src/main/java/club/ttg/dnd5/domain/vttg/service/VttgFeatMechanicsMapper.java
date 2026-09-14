@@ -24,6 +24,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceScaling;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.SpeedModifier;
@@ -329,10 +330,13 @@ public class VttgFeatMechanicsMapper {
     /**
      * Ресурсы черты со счётчиком.
      *
-     * <p>Ресурс без ключа или без формулы максимума пропускается: по ключу потребитель
-     * хранит потраченный остаток, а формула без значения считается нулём — счётчик,
-     * который всегда пуст, на листе только мешает. Название, если его не задали,
+     * <p>Ресурс без ключа или без максимума — ни формулой, ни ступенями — пропускается: по
+     * ключу потребитель хранит потраченный остаток, а формула без значения считается нулём —
+     * счётчик, который всегда пуст, на листе только мешает. Название, если его не задали,
      * подставляется ключом: безымянная плитка ни о чём не говорит.</p>
+     *
+     * <p>Ступени едут прогрессией: без них ресурс, который открывается с третьего уровня
+     * («Скороход» лесного эльфа), приходил бы на лист сразу, с первого.</p>
      */
     private List<VttgFeatData.Counter> counters(List<ResourceCounter> counters) {
         if (CollectionUtils.isEmpty(counters)) {
@@ -345,15 +349,38 @@ public class VttgFeatMechanicsMapper {
             }
             String key = trimmed(counter.getKey());
             String max = trimmed(counter.getMax());
-            if (key == null || max == null) {
+            Map<String, Integer> progression = counterProgression(counter);
+            if (key == null || (max == null && progression == null)) {
                 continue;
             }
             String name = trimmed(counter.getName());
             result.add(new VttgFeatData.Counter(key, name == null ? key : name,
-                    trimmed(counter.getShortName()), max, counter.resolveMin(),
+                    trimmed(counter.getShortName()), max, progression, counter.resolveMin(),
                     VttgDictionaries.recovery(counter.resolveRecovery())));
         }
         return emptyToNull(result);
+    }
+
+    /**
+     * Ступени максимума счётчика прогрессией по уровням: ключ — уровень строкой, значение —
+     * максимум целиком на этом уровне.
+     *
+     * <p>Одна запись на ресурс черты и ресурс класса: потребителю всё равно, откуда пришёл
+     * ряд, и два разбора одних и тех же ступеней разошлись бы при первой правке.</p>
+     *
+     * @param counter ресурс из механики.
+     * @return прогрессия по уровням; {@code null} — ступеней нет.
+     */
+    Map<String, Integer> counterProgression(ResourceCounter counter) {
+        if (CollectionUtils.isEmpty(counter.getScaling())) {
+            return null;
+        }
+        Map<String, Integer> progression = new LinkedHashMap<>();
+        counter.getScaling().stream()
+                .filter(step -> step != null && step.getLevel() != null && step.getMax() != null)
+                .sorted(Comparator.comparingInt(CounterScaling::getLevel))
+                .forEach(step -> progression.put(String.valueOf(step.getLevel()), step.getMax()));
+        return progression.isEmpty() ? null : progression;
     }
 
     /**
@@ -1069,7 +1096,10 @@ public class VttgFeatMechanicsMapper {
                     flag(choice.getRechooseOnLongRest()),
                     choice.getRequiredLevel(),
                     types.contains(ChoiceType.FEAT) ? featCategories(choice.getFeatCategories()) : null,
-                    choiceScaling(choice.getScaling())));
+                    choiceScaling(choice.getScaling()),
+                    // Отметка «не готовить» есть только у заклинаний: у навыка или черты она
+                    // ничего бы не значила, даже если осталась в записи после смены вида
+                    isSpellChoice(types) ? flag(choice.getAlwaysPrepared()) : null));
         }
         return emptyToNull(result);
     }
@@ -1170,11 +1200,20 @@ public class VttgFeatMechanicsMapper {
         if (feat != null && StringUtils.hasText(feat.getName())) {
             return feat.getName();
         }
-        boolean isSpell = types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
-        if (isSpell && StringUtils.hasText(spellNamesByUrl.get(raw))) {
+        if (isSpellChoice(types) && StringUtils.hasText(spellNamesByUrl.get(raw))) {
             return spellNamesByUrl.get(raw);
         }
         return trimmed(option.getName());
+    }
+
+    /**
+     * Выбирают ли заклинание: заклинание или заговор среди видов выбора.
+     *
+     * @param types виды выбора
+     * @return {@code true} — выбор заклинания
+     */
+    private static boolean isSpellChoice(List<ChoiceType> types) {
+        return types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
     }
 
     /**
@@ -1184,10 +1223,7 @@ public class VttgFeatMechanicsMapper {
     private Map<String, String> spellOptionNames(List<MechanicChoice> choices) {
         List<EntityRef> refs = choices.stream()
                 .filter(Objects::nonNull)
-                .filter(choice -> {
-                    List<ChoiceType> types = choice.resolveTypes();
-                    return types.contains(ChoiceType.SPELL) || types.contains(ChoiceType.CANTRIP);
-                })
+                .filter(choice -> isSpellChoice(choice.resolveTypes()))
                 .map(MechanicChoice::getOptions)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)

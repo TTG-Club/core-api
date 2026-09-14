@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +41,10 @@ import java.util.stream.Stream;
  * в каждом), и ровно она разрешается в {@code allowed_mentions}. Всё остальное
  * ({@code @everyone}, роли и юзеры, случайно попавшие в текст новости) не звенит никогда.
  * <p>
+ * Компактный пост ({@code discordCompact}) — выбор автора в админке: вместо анонса / текста новости уходит
+ * отдельный короткий текст ({@code discordCompactText}), а последней строкой поста — ссылка на новость на
+ * сайте. Пинг, заголовок и обложка — как у обычного поста.
+ * <p>
  * Отправляем с {@code ?wait=true}, чтобы получить id сообщения (снежинку) — он нужен для правки
  * ({@code PATCH /messages/{id}}) и удаления ({@code DELETE /messages/{id}}). Итог отправки — явный статус,
  * чтобы планировщик отличал «повторить» (временный сбой) от «сдаться» (перманентный отказ Discord).
@@ -51,6 +56,12 @@ public class DiscordPublisher {
 
     /** Лимит длины сообщения Discord (символы; считается по сырому тексту, включая markdown). */
     private static final int MESSAGE_LIMIT = 2000;
+
+    /** Подпись ссылки на новость на сайте, которой заканчивается компактный пост. */
+    private static final String READ_MORE_LABEL = "Подробнее читайте на сайте";
+
+    /** Пустая строка между абзацами текста компактного поста. */
+    private static final Pattern BLANK_LINE = Pattern.compile("\\R\\s*\\R");
 
     /** Итог одного вызова вебхука. */
     private enum SendResult {
@@ -92,7 +103,9 @@ public class DiscordPublisher {
      * Отправляет новый пост в канал (при необходимости — несколькими сообщениями).
      */
     public PublishResult publish(Article article) {
-        if (!StringUtils.hasText(article.getTitle()) && !StringUtils.hasText(formatter.toPlain(description(article)))) {
+        // Компактному посту есть что отправить всегда — его закрывает ссылка на сайт.
+        if (!article.isDiscordCompact() && !StringUtils.hasText(article.getTitle())
+                && !StringUtils.hasText(formatter.toPlain(description(article)))) {
             log.warn("Пустой заголовок и текст — пропускаю отправку {} в Discord", article.getUrl());
             return PublishResult.giveUp();
         }
@@ -199,7 +212,8 @@ public class DiscordPublisher {
 
     /**
      * Собирает список сообщений: первое включает пинг (если выбран), жирный заголовок и первый кусок
-     * описания (≤ MESSAGE_LIMIT), остальные — пинг и продолжение описания (≤ MESSAGE_LIMIT).
+     * описания (≤ MESSAGE_LIMIT), остальные — пинг и продолжение описания (≤ MESSAGE_LIMIT). У компактного
+     * поста последнее сообщение закрывает ссылка на новость на сайте.
      */
     private List<String> buildMessages(Article article, DiscordMention mention) {
         String title = nullToEmpty(article.getTitle());
@@ -212,9 +226,12 @@ public class DiscordPublisher {
         String head = Stream.of(mentionLine, titleLine)
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining("\n\n"));
-        int firstBodyLimit = Math.max(0, MESSAGE_LIMIT - headLength(head));
+        // Ссылка на сайт у компактного поста дописывается к последнему сообщению. Какой кусок окажется
+        // последним, заранее не известно, поэтому место под неё оставляем в лимите каждого.
+        String readMore = article.isDiscordCompact() ? readMoreLine(article) : "";
+        int firstBodyLimit = Math.max(0, MESSAGE_LIMIT - headLength(head) - headLength(readMore));
         // «Шапка» хвостовых сообщений — один пинг, и под него тоже нужно оставить место в лимите.
-        int restBodyLimit = Math.max(0, MESSAGE_LIMIT - headLength(mentionLine));
+        int restBodyLimit = Math.max(0, MESSAGE_LIMIT - headLength(mentionLine) - headLength(readMore));
         List<String> bodyChunks = formatter.toMarkdownChunks(description(article), firstBodyLimit, restBodyLimit);
 
         List<String> messages = new ArrayList<>();
@@ -230,7 +247,23 @@ public class DiscordPublisher {
                 messages.add(withHead(mentionLine, bodyChunks.get(i)));
             }
         }
+        if (StringUtils.hasText(readMore)) {
+            int last = messages.size() - 1;
+            if (last < 0) {
+                messages.add(readMore);
+            } else {
+                messages.set(last, messages.get(last) + "\n\n" + readMore);
+            }
+        }
         return messages;
+    }
+
+    /**
+     * Строка, которой заканчивается компактный пост: подпись и адрес новости на сайте. Адрес — в {@code <>}:
+     * Discord не разворачивает под постом карточку-превью страницы (обложка у поста и так прикреплена).
+     */
+    private String readMoreLine(Article article) {
+        return READ_MORE_LABEL + ": <" + formatter.articleUrl(article.getUrl()) + ">";
     }
 
     /** «Шапка» и текст сообщения через пустую строку; пустая часть просто выпадает. */
@@ -362,11 +395,34 @@ public class DiscordPublisher {
         }
     }
 
-    /** Разметка описания: превью, если оно даёт непустой текст; иначе основной текст. */
+    /**
+     * Разметка описания: у компактного поста — его отдельный текст; иначе превью, если оно даёт непустой
+     * текст, либо основной текст.
+     */
     private String description(Article article) {
+        if (article.isDiscordCompact()) {
+            return compactMarkup(article.getDiscordCompactText());
+        }
         return StringUtils.hasText(formatter.toPlain(article.getPreview()))
                 ? article.getPreview()
                 : article.getContent();
+    }
+
+    /**
+     * Текст компактного поста (обычный текст из поля в админке) → хранимая форма разметки: JSON-массив
+     * абзацев, разделённых пустой строкой. Строкой как есть форматтеру его не отдаём: текст, который
+     * начинается с фразы в кавычках ({@code "Бестиарий" обновлён…}), разбирается как JSON-строка и
+     * урезается до этой фразы. {@code null} — текста нет.
+     */
+    private String compactMarkup(String text) {
+        if (!StringUtils.hasText(text)) {
+            return null;
+        }
+        List<String> paragraphs = BLANK_LINE.splitAsStream(text.strip())
+                .map(String::strip)
+                .filter(StringUtils::hasText)
+                .toList();
+        return toJson(paragraphs);
     }
 
     private static String nullToEmpty(String s) {

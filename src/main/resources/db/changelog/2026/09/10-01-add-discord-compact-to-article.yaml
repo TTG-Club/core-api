@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-10-01-add-discord-compact-to-article
+      author: Peterko
+      changes:
+        # Переключатель «компактный вариант» поста в Discord: вместо анонса / текста новости уходит
+        # отдельный короткий текст и ссылка на сайт. По умолчанию false — существующие записи постятся
+        # как прежде, полным текстом.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_compact
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - update:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_compact
+                  valueBoolean: false
+            where: discord_compact IS NULL
+        - addNotNullConstraint:
+            tableName: article
+            columnName: discord_compact
+            columnDataType: BOOLEAN
+            defaultNullValue: false
+        # Текст компактного поста — обычный текст (те же {@...}-маркеры), в пост уходит Discord-markdown.
+        # NULL/пусто при включённом переключателе = в посте только заголовок и ссылка на сайт.
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: discord_compact_text
+                  type: TEXT

@@ -302,22 +302,28 @@ public class VttgFeatData {
     /**
      * Ресурс черты со счётчиком.
      *
-     * <p>Уже классового счётчика ({@code VttgClass.Counter}): у черты нет ни уровня
-     * начала, ни прогрессии по уровням — она либо взята, либо нет.</p>
+     * <p>Уже классового счётчика ({@code VttgClass.Counter}): уровня начала отдельным полем
+     * нет — черта либо взята, либо нет. Ресурс, который открывается не сразу («Скороход»
+     * лесного эльфа — с третьего уровня), задан ступенями: первая из них и есть уровень
+     * появления, до неё зарядов у ресурса нет.</p>
      *
-     * @param key       стабильный ключ ресурса в пределах черты
-     * @param name      название на листе («Очки удачи»)
-     * @param shortName краткое название для компактной плитки; пусто — плитка подпишется
-     *                  полным
-     * @param max       формула максимума: число либо выражение с {@code @prof},
-     *                  {@code @level}, {@code @classLevel} (уровень в своём классе),
-     *                  {@code @mod.<abbr>}
-     * @param min       нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
-     * @param recovery  каким отдыхом восстанавливается: {@code short}, {@code long} либо
-     *                  {@code short-one} (один заряд коротким, все — продолжительным)
+     * @param key         стабильный ключ ресурса в пределах черты
+     * @param name        название на листе («Очки удачи»)
+     * @param shortName   краткое название для компактной плитки; пусто — плитка подпишется
+     *                    полным
+     * @param max         формула максимума: число либо выражение с {@code @prof},
+     *                    {@code @level}, {@code @classLevel} (уровень в своём классе),
+     *                    {@code @mod.<abbr>}; {@code null} — максимум задан только ступенями
+     * @param progression максимум по уровням персонажа: ключ — уровень строкой, значение —
+     *                    максимум целиком, а не прибавка (как у {@code VttgClass.Counter});
+     *                    заданы — старше формулы; {@code null} — ступеней нет
+     * @param min         нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
+     * @param recovery    каким отдыхом восстанавливается: {@code short}, {@code long} либо
+     *                    {@code short-one} (один заряд коротким, все — продолжительным)
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Counter(String key, String name, String shortName, String max, Integer min, String recovery) {
+    public record Counter(String key, String name, String shortName, String max,
+                          Map<String, Integer> progression, Integer min, String recovery) {
     }
 
     /**

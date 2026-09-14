@@ -41,6 +41,11 @@ public class VttgSpell {
     private Integer targetCount;
     private String deliveryType;
     private List<VttgDamagePart> damageParts;
+    /**
+     * Типы урона заклинания для фильтра ({@code fire}, {@code cold}…): в расчёте не
+     * участвуют — урон считают {@link #damageParts}. Не заданы — поле опускается.
+     */
+    private List<String> damageTypes;
     private Boolean autoHit;
     /**
      * Снарядный режим: каждый снаряд — отдельный бросок, снаряды раздаются по

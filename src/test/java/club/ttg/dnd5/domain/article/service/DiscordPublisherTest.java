@@ -47,6 +47,8 @@ class DiscordPublisherTest {
     private static final String ALLOWED_ROLES = "\"roles\":[\"" + ROLE_ID + "\"]";
     private static final String COVER_PATH = "/s3/articles/cover.png";
     private static final String SITE_URL = "https://ttg.club";
+    /** Последняя строка компактного поста — ссылка на новость {@link #article()} на сайте. */
+    private static final String READ_MORE = "Подробнее читайте на сайте: <" + SITE_URL + "/articles/bestiary-update>";
 
     /** Ответ вебхука на {@code ?wait=true} — публикатору из него нужен только id сообщения. */
     private static final String OK_RESPONSE = "{\"id\":\"777\"}";
@@ -167,6 +169,80 @@ class DiscordPublisherTest {
             assertTrue(content.length() <= MESSAGE_LIMIT,
                     "сообщение длиннее лимита Discord (" + MESSAGE_LIMIT + "): " + content.length());
         }
+    }
+
+    /**
+     * Компактный пост: вместо длинного анонса уходит отдельный короткий текст одним сообщением, а в конце —
+     * ссылка на новость на сайте. Текст, начатый фразой в кавычках, не урезается до неё.
+     */
+    @Test
+    void compactPostReplacesTextAndEndsWithSiteLink() {
+        Article article = article();
+        article.setPreviewImageUrl(null);
+        article.setDiscordCompact(true);
+        article.setDiscordCompactText("\"Бестиарий\" пополнился: **полсотни существ**.\n\nФильтры стали точнее.");
+
+        server.expect(requestTo(SEND_URL))
+                .andExpect(method(POST))
+                .andExpect(jsonPath("$.content").value(ROLE_PING
+                        + "\n\n**Бестиарий пополнился**"
+                        + "\n\n\"Бестиарий\" пополнился: **полсотни существ**."
+                        + "\n\nФильтры стали точнее."
+                        + "\n\n" + READ_MORE))
+                .andRespond(withSuccess(OK_RESPONSE, MediaType.APPLICATION_JSON));
+
+        assertEquals(DiscordPublisher.PublishResult.Status.POSTED, publisher.publish(article).status());
+        server.verify();
+    }
+
+    /** Компактный пост без текста: заголовок и ссылка на сайт, полный текст новости в канал не уходит. */
+    @Test
+    void compactPostWithoutTextKeepsTitleAndSiteLink() {
+        Article article = article();
+        article.setPreviewImageUrl(null);
+        article.setDiscordMention(DiscordMention.NONE);
+        article.setDiscordCompact(true);
+
+        server.expect(requestTo(SEND_URL))
+                .andExpect(method(POST))
+                .andExpect(jsonPath("$.content").value("**Бестиарий пополнился**\n\n" + READ_MORE))
+                .andRespond(withSuccess(OK_RESPONSE, MediaType.APPLICATION_JSON));
+
+        assertEquals(DiscordPublisher.PublishResult.Status.POSTED, publisher.publish(article).status());
+        server.verify();
+    }
+
+    /**
+     * Длинный компактный текст режется на сообщения, а ссылка на сайт — одна, в последнем. Место под неё
+     * оставлено в лимите: абзац ровно под лимит «пинг + текст» со ссылкой уже не влез бы.
+     */
+    @Test
+    void longCompactPostPutsSiteLinkIntoLastMessageWithinLimit() {
+        Article article = article();
+        article.setPreviewImageUrl(null);
+        article.setDiscordCompact(true);
+        article.setDiscordCompactText(paragraph("Полсотни новых существ. ")
+                + "\n\n" + paragraph("Фильтры стали точнее. ", MESSAGE_LIMIT - ROLE_PING.length() - 2));
+
+        List<String> sent = new ArrayList<>();
+        server.expect(ExpectedCount.manyTimes(), requestTo(SEND_URL))
+                .andExpect(method(POST))
+                .andExpect(collectingContent(sent))
+                .andRespond(withSuccess(OK_RESPONSE, MediaType.APPLICATION_JSON));
+
+        assertEquals(DiscordPublisher.PublishResult.Status.POSTED, publisher.publish(article).status());
+        server.verify();
+
+        assertTrue(sent.size() > 1, "текст должен был уехать несколькими сообщениями, а ушло: " + sent.size());
+        int last = sent.size() - 1;
+        for (int i = 0; i <= last; i++) {
+            String content = sent.get(i);
+            assertEquals(i == last ? 1 : 0, countOccurrences(content, READ_MORE),
+                    "ссылка на сайт не там, сообщение " + i + " из " + sent.size());
+            assertTrue(content.length() <= MESSAGE_LIMIT,
+                    "сообщение длиннее лимита Discord (" + MESSAGE_LIMIT + "): " + content.length());
+        }
+        assertTrue(sent.get(last).endsWith(READ_MORE), "ссылка на сайт должна закрывать пост");
     }
 
     /**

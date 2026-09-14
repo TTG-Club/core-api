@@ -40,8 +40,8 @@ class DisplayNameServiceResolveByUserIdsTest {
         List<DisplayNameByUserIdResponse> resolved = service.resolveByUserIds(List.of(first, second));
 
         assertEquals(2, resolved.size());
-        assertTrue(resolved.contains(new DisplayNameByUserIdResponse(first, "Ворчливый Гоблин")));
-        assertTrue(resolved.contains(new DisplayNameByUserIdResponse(second, "Тихий Друид")));
+        assertTrue(resolved.contains(new DisplayNameByUserIdResponse(first, "Ворчливый Гоблин", null)));
+        assertTrue(resolved.contains(new DisplayNameByUserIdResponse(second, "Тихий Друид", null)));
     }
 
     @Test
@@ -54,7 +54,7 @@ class DisplayNameServiceResolveByUserIdsTest {
 
         // Пропуск не подтверждает существование пользователя — вызывающий сам решает,
         // чем заменить отсутствующее имя.
-        assertEquals(List.of(new DisplayNameByUserIdResponse(known, "Ворчливый Гоблин")), resolved);
+        assertEquals(List.of(new DisplayNameByUserIdResponse(known, "Ворчливый Гоблин", null)), resolved);
     }
 
     @Test

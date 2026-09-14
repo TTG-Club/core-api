@@ -319,14 +319,25 @@ public interface SpellMapper
 
     @Named("toSchool")
     default String toSchool(SpellSchool spellSchool) {
-        if (spellSchool.getAdditionalType() == null) {
-            return spellSchool.getSchool().getName();
+        String name = toSchoolName(spellSchool);
+        if (name == null || spellSchool.getAdditionalType() == null) {
+            return name;
         }
-        return String.format("%s (%s)", spellSchool.getSchool().getName(), spellSchool.getAdditionalType());
+        return String.format("%s (%s)", name, spellSchool.getAdditionalType());
     }
 
+    /**
+     * Название школы или {@code null}, если школы нет.
+     *
+     * <p>{@code POST} создания не валидирует тело, поэтому в базе бывают записи без школы
+     * (Hibernate отдаёт вместо встроенного объекта {@code null}). Падение здесь роняло
+     * всю страницу поиска, где такая запись оказывалась.</p>
+     */
     @Named("toSchoolName")
     default String toSchoolName(SpellSchool spellSchool) {
+        if (spellSchool == null || spellSchool.getSchool() == null) {
+            return null;
+        }
         return spellSchool.getSchool().getName();
     }
 

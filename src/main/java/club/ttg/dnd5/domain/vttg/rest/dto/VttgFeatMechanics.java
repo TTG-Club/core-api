@@ -158,6 +158,11 @@ public class VttgFeatMechanics {
      *                                   {@code feat}, подписями как в {@code VttgFeat.category};
      *                                   пусто — категория не ограничена. Складывается с
      *                                   {@code options}: те сужают пул до перечисленных черт
+     * @param scaling                    ступени количества: уровень — сколько выбрано всего
+     * @param alwaysPrepared             выбранные заклинания всегда подготовлены и места в
+     *                                   числе класса не занимают (заговор «Чудотворца» сверх
+     *                                   колонки «Заговоры»); только у {@code spell} и
+     *                                   {@code cantrip}, выводится лишь взведённым
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Choice(String key, String type, List<String> types, String label,
@@ -166,7 +171,8 @@ public class VttgFeatMechanics {
                          Boolean onlyIfNotProficient, Boolean onlyIfProficient,
                          Boolean expertiseIfProficient, String grants,
                          Boolean rechooseOnLongRest, Integer requiredLevel,
-                         List<String> featCategories, Map<String, Integer> scaling) {
+                         List<String> featCategories, Map<String, Integer> scaling,
+                         Boolean alwaysPrepared) {
     }
 
     /**

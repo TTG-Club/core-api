@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.AreaOfEffect;
 import club.ttg.dnd5.domain.spell.model.MaterialComponent;
@@ -286,6 +287,44 @@ class VttgSpellMapperTest {
         assertNull(result.getDamageParts().getFirst().getRequiresDamage());
         assertEquals(Boolean.TRUE, result.getDamageParts().get(1).getRequiresDamage());
         assertEquals("self", result.getDamageParts().get(1).getTarget());
+    }
+
+    @Test
+    void exportsFilterDamageTypesSeparatelyFromDamageParts() {
+        Spell spell = new Spell();
+        spell.setUrl("chromatic-orb");
+        spell.setName("Цветной шарик");
+        spell.setEnglish("Chromatic Orb");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("3к8@dmg.acid"));
+        effect.setDamageTypes(List.of(DamageType.ACID, DamageType.FIRE, DamageType.ACID));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        // Типы для фильтра едут своим списком и формулу не трогают.
+        assertEquals(List.of("acid", "fire"), result.getDamageTypes());
+        assertEquals("3к8@dmg.acid", result.getDamageParts().getFirst().getFormula());
+    }
+
+    @Test
+    void omitsFilterDamageTypesWhenNotSet() {
+        Spell spell = new Spell();
+        spell.setUrl("fire-bolt");
+        spell.setName("Огненный снаряд");
+        spell.setEnglish("Fire Bolt");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("1к10@dmg.fire"));
+        effect.setDamageTypes(List.of());
+        spell.setEffect(effect);
+
+        assertNull(mapper.toVttg(spell).getDamageTypes());
     }
 
     @Test

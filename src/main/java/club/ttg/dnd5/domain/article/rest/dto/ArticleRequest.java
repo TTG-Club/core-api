@@ -92,6 +92,19 @@ public class ArticleRequest {
     @Nullable
     private DiscordMention discordMention;
 
+    @Schema(description = "Компактный пост в Discord. true — вместо анонса / текста новости в канал уходит "
+            + "discordCompactText, а в конце поста автоматически добавляется ссылка на новость на сайте "
+            + "(«Подробнее читайте на сайте»). false — пост полным текстом, как прежде. Учитывается только "
+            + "при publishToDiscord=true.")
+    private boolean discordCompact;
+
+    @Schema(description = "Текст компактного поста в Discord. Учитывается только при discordCompact=true; "
+            + "пустой — в посте останутся заголовок и ссылка на сайт. Обычный текст (в админке — текстовое "
+            + "поле): переносы строк сохраняются, поддержаны markdown-выделение (**жирный**, *курсив*) и "
+            + "маркеры {@…}.")
+    @Nullable
+    private String discordCompactText;
+
     @Schema(description = "Опубликовать на стену сообщества ВКонтакте. true — при публикации (сейчас или по "
             + "наступлении даты) запись один раз уйдёт на стену, если интеграция включена глобально. false — "
             + "на стену не отправлять. Независима от Telegram и Discord.")
