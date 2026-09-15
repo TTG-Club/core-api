@@ -206,6 +206,163 @@ class VttgJsonContractTest {
     }
 
     /**
+     * Спасбросок урона каждый ход: {@code dc = 0} — это «Сл наложившего», а не
+     * «не задано», поэтому ноль обязан пережить круг, а не выпасть как пустое.
+     */
+    @Test
+    void activeEffectKeepsRecurringDamageSaveWithSourceDc() throws Exception {
+        String json = """
+                {
+                  "id": "effect-4",
+                  "name": "Кислота",
+                  "effectTarget": "target",
+                  "recurringDamage": {
+                    "damageParts": [{ "formula": "2к4@dmg.acid" }],
+                    "timing": "endOfTurn",
+                    "save": { "ability": "constitution", "dc": 0, "onSuccess": "half" }
+                  }
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+        ActiveEffect.Save save = effect.getRecurringDamage().getSave();
+
+        assertEquals("constitution", save.getAbility());
+        assertEquals(0, save.getDc());
+        assertEquals("half", save.getOnSuccess());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains(
+                "\"save\":{\"ability\":\"constitution\",\"dc\":0,\"onSuccess\":\"half\"}"));
+    }
+
+    @Test
+    void activeEffectKeepsExhaustionLevel() throws Exception {
+        String json = """
+                {
+                  "id": "effect-5",
+                  "name": "Истощение",
+                  "conditionKey": "exhaustion",
+                  "exhaustionLevel": 2
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals(2, effect.getExhaustionLevel());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains("\"exhaustionLevel\":2"));
+    }
+
+    /**
+     * Срабатывания бэкенд не разбирает: элемент обязан вернуться ровно таким, каким
+     * его прислала мастерская, — с нулевой Сл, строками условий в кавычках и
+     * событиями, которых текущий движок ещё не знает ({@code rest}).
+     */
+    @Test
+    void activeEffectKeepsTriggersAsAuthored() throws Exception {
+        String json = """
+                {
+                  "id": "effect-6",
+                  "name": "Срабатывания",
+                  "triggers": [
+                    {
+                      "id": "trigger_moonbeam_enter",
+                      "event": "enter",
+                      "save": { "ability": "constitution", "dc": 0 },
+                      "actions": [
+                        { "type": "damage", "parts": [{ "formula": "2d10@dmg.radiant" }], "on": "always", "halfOnSave": true }
+                      ],
+                      "limit": { "max": 1, "per": "turn", "key": "moonbeam" }
+                    },
+                    {
+                      "id": "trigger_stench",
+                      "event": "turnStart",
+                      "save": { "ability": "constitution", "dc": 12 },
+                      "actions": [
+                        { "type": "applyCondition", "conditionKey": "poisoned", "duration": { "type": "rounds", "value": 1 } }
+                      ]
+                    },
+                    {
+                      "id": "trigger_fire",
+                      "event": "damageTaken",
+                      "condition": "damage.type === \\"fire\\"",
+                      "actions": [{ "type": "applyTag", "tag": "noRegen", "label": "Без регенерации" }]
+                    },
+                    {
+                      "id": "trigger_fortitude",
+                      "event": "hpZero",
+                      "condition": "damage.type !== \\"radiant\\" && damage.isCritical === false",
+                      "save": { "ability": "constitution", "dc": 5, "dcFormula": "5 + @damage" },
+                      "actions": [{ "type": "setHp", "value": 1, "on": "saved" }]
+                    },
+                    {
+                      "id": "trigger_fire_aura",
+                      "event": "turnEnd",
+                      "turnOf": "source",
+                      "actions": [{ "type": "damage", "parts": [{ "formula": "1d10@dmg.fire" }] }]
+                    },
+                    {
+                      "id": "trigger_rest",
+                      "event": "rest",
+                      "actions": [{ "type": "removeSelf" }]
+                    }
+                  ]
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals(6, effect.getTriggers().size());
+        assertEquals("damage.type === \"fire\"", effect.getTriggers().get(2).get("condition").asText());
+        assertEquals("rest", effect.getTriggers().getLast().get("event").asText());
+
+        String serialized = mapper.writeValueAsString(effect);
+        String authoredTriggers = mapper.writeValueAsString(mapper.readTree(json).get("triggers"));
+
+        // Байт-в-байт с присланным: порядок ключей, типы значений, экранирование.
+        assertTrue(serialized.contains("\"triggers\":" + authoredTriggers));
+        assertTrue(serialized.contains("\"save\":{\"ability\":\"constitution\",\"dc\":0}"));
+        assertTrue(serialized.contains("\"condition\":\"damage.type === \\\"fire\\\"\""));
+        assertTrue(serialized.contains("\"event\":\"rest\""));
+    }
+
+    /**
+     * Зона заклинания — ещё одно значение строки {@code effectTarget}, а лечение
+     * каждый ход — токен {@code @heal} в формуле части: модели правки не нужны,
+     * но оба обязаны доходить как есть.
+     */
+    @Test
+    void activeEffectKeepsSpellZoneDeliveryAndRecurringHealing() throws Exception {
+        String json = """
+                {
+                  "id": "effect-7",
+                  "name": "Зона лечения",
+                  "effectTarget": "zone",
+                  "areaTrigger": "stay",
+                  "recurringDamage": {
+                    "damageParts": [{ "formula": "10@heal" }],
+                    "timing": "startOfTurn"
+                  }
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals("zone", effect.getEffectTarget());
+        assertEquals("10@heal", effect.getRecurringDamage().getDamageParts().getFirst().getFormula());
+        assertNull(effect.getRecurringDamage().getSave());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains("\"effectTarget\":\"zone\""));
+        assertTrue(serialized.contains("\"formula\":\"10@heal\""));
+    }
+
+    /**
      * Механика действия существа: ровно то, что шлёт форма мастерской. Неизвестное поле
      * Jackson молча выбросит, и пропущенный геттер выглядел бы как «сайт ничего не прислал».
      */

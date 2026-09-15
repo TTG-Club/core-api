@@ -599,6 +599,59 @@ class VttgSpellMapperTest {
         assertEquals("attack.disadvantage", tree.get("activeEffects").get(0).get("flags").get(0).asText());
     }
 
+    /**
+     * Спасбросок урона каждый ход и срабатывания доезжают до выгрузки без разбора:
+     * нулевая Сл остаётся нулём, элемент срабатывания — тем же JSON.
+     */
+    @Test
+    void exportsRecurringDamageSaveAndTriggersAsAuthored() throws Exception {
+        Spell spell = new Spell();
+        spell.setUrl("lingering-spell");
+        spell.setName("Lingering Spell");
+        spell.setEnglish("Lingering Spell");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.EVOCATION).build());
+
+        ObjectMapper json = new ObjectMapper();
+
+        ActiveEffect.Save save = new ActiveEffect.Save();
+        save.setAbility("constitution");
+        save.setDc(0);
+        save.setOnSuccess("half");
+
+        DamagePart part = new DamagePart();
+        part.setFormula("2к4@dmg.acid");
+
+        ActiveEffect.RecurringDamage recurringDamage = new ActiveEffect.RecurringDamage();
+        recurringDamage.setDamageParts(List.of(part));
+        recurringDamage.setTiming("endOfTurn");
+        recurringDamage.setSave(save);
+
+        ActiveEffect effect = new ActiveEffect();
+        effect.setId("lingering-spell-effect");
+        effect.setName("Длящийся урон");
+        effect.setEffectTarget("zone");
+        effect.setRecurringDamage(recurringDamage);
+        effect.setTriggers(List.of(json.readTree("""
+                {
+                  "id": "trigger_enter",
+                  "event": "enter",
+                  "save": { "ability": "constitution", "dc": 0 },
+                  "actions": [{ "type": "damage", "parts": [{ "formula": "2d10@dmg.radiant" }], "halfOnSave": true }],
+                  "limit": { "max": 1, "per": "turn" }
+                }
+                """)));
+        spell.setActiveEffects(List.of(effect));
+
+        var tree = json.valueToTree(mapper.toVttg(spell));
+        var exported = tree.get("activeEffects").get(0);
+
+        assertEquals("zone", exported.get("effectTarget").asText());
+        assertEquals(0, exported.get("recurringDamage").get("save").get("dc").intValue());
+        assertEquals("half", exported.get("recurringDamage").get("save").get("onSuccess").asText());
+        assertEquals(effect.getTriggers().getFirst(), exported.get("triggers").get(0));
+    }
+
     /** Заклинание без активных эффектов не несёт поле activeEffects (омитится). */
     @Test
     void omitsActiveEffectsWhenAbsent() {

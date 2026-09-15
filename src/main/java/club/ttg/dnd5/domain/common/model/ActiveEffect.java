@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.common.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -41,6 +42,8 @@ public class ActiveEffect {
     private String areaTrigger;
     private String effectTarget;
     private String conditionKey;
+    /** Степень Истощения 1–6; имеет смысл только при {@code conditionKey = exhaustion}. */
+    private Integer exhaustionLevel;
     private Save applySave;
     private Boolean applyOnSuccess;
     private Boolean applyOnSuccessOnly;
@@ -50,6 +53,13 @@ public class ActiveEffect {
     private RecurringSave recurringSave;
     private RecurringDamage recurringDamage;
     private List<String> conditionImmunities;
+    /**
+     * Срабатывания VTTG: «событие → условие → спасбросок → действия → лимит».
+     * Хранятся как есть, без разбора: модель срабатывания развивается на стороне
+     * системы (события следующих фаз уже зарезервированы), и бэкенд её не
+     * проверяет и не обрезает.
+     */
+    private List<JsonNode> triggers;
 
     /** Длительность эффекта. */
     @Getter
@@ -127,6 +137,13 @@ public class ActiveEffect {
     public static class RecurringDamage {
         private List<DamagePart> damageParts;
         private String timing;
+        /**
+         * Спасбросок против урона на каждом тике: провал — полный урон, успех — без
+         * урона ({@code negate}) или половина ({@code half}). Эффект при этом
+         * остаётся — снимает его только {@link RecurringSave}. {@code dc = 0} — Сл
+         * наложившего, её проставляет VTTG при наложении.
+         */
+        private Save save;
     }
 
 }
