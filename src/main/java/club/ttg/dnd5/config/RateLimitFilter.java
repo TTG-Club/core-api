@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -96,12 +97,19 @@ public class RateLimitFilter extends OncePerRequestFilter
      * Ключ лимита:
      * - если пользователь авторизован: user:<username>
      * - иначе: ip:<ip> (с учётом X-Forwarded-For)
+     * <p>
+     * Анонимный токен Spring Security тоже отвечает {@code isAuthenticated() == true}
+     * с именем {@code anonymousUser} — без его исключения все незалогиненные
+     * клиенты делили бы один бакет.
      */
     private String resolveClientKey(HttpServletRequest request)
     {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null && authentication.isAuthenticated() && authentication.getName() != null)
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)
+                && authentication.getName() != null)
         {
             return "user:" + authentication.getName();
         }
