@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-19-01-add-item-ammunition-type
+      author: Peterko
+      comment: >
+        Тип боеприпаса у самого предмета («Боеприпас для»). У оружия «чем стреляет» лежит
+        в weapon.ammo, а у стрел, болтов и пуль такого поля не было: выгрузка в VTTG не
+        могла сказать, каким оружием стреляют этим боеприпасом, и выстрел на листе не
+        находил патроны своего типа — лук приходилось заряжать руками.
+
+        Существующие боеприпасы заполняются по названию: стрелы → ARROW, болты → BOLT,
+        снаряды и пули для пращи → SLING_BULLET, иглы для духовой трубки → NEEDLE,
+        остальные пули → BULLET. Порядок правил важен: «пули для пращи» должны разобраться
+        раньше просто «пуль», а «иглы» — раньше любых пуль.
+
+        Заполняются только предметы с типом AMMUNITION (item_types — jsonb-массив строк) и
+        только те, у которых поле пусто: заданный руками тип перенос не трогает. Что не
+        разобралось по названию, остаётся пустым — такие записи видно запросом из отчёта.
+
+        Время изменения предмета не сдвигается: его показывает карточка на сайте.
+        Предрассчитанный payload выгрузки пересчитывается подъёмом SCHEMA_VERSION.
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: ammunition_type
+                  type: VARCHAR(255)
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              UPDATE item
+              SET ammunition_type = CASE
+                      WHEN lower(name) LIKE '%игл%' THEN 'NEEDLE'
+                      WHEN lower(name) LIKE '%стрел%' THEN 'ARROW'
+                      WHEN lower(name) LIKE '%болт%' THEN 'BOLT'
+                      WHEN lower(name) LIKE '%пращ%' THEN 'SLING_BULLET'
+                      WHEN lower(name) LIKE '%снаряд%' THEN 'SLING_BULLET'
+                      WHEN lower(name) LIKE '%пул%' THEN 'BULLET'
+                  END
+              WHERE ammunition_type IS NULL
+                AND jsonb_typeof(item_types) = 'array'
+                AND item_types ? 'AMMUNITION'
+                AND CASE
+                        WHEN lower(name) LIKE '%игл%' THEN 'NEEDLE'
+                        WHEN lower(name) LIKE '%стрел%' THEN 'ARROW'
+                        WHEN lower(name) LIKE '%болт%' THEN 'BOLT'
+                        WHEN lower(name) LIKE '%пращ%' THEN 'SLING_BULLET'
+                        WHEN lower(name) LIKE '%снаряд%' THEN 'SLING_BULLET'
+                        WHEN lower(name) LIKE '%пул%' THEN 'BULLET'
+                    END IS NOT NULL;

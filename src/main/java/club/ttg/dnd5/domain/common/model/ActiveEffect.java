@@ -44,6 +44,22 @@ public class ActiveEffect {
     private String conditionKey;
     /** Степень Истощения 1–6; имеет смысл только при {@code conditionKey = exhaustion}. */
     private Integer exhaustionLevel;
+    /**
+     * Условие наложения: эффект ложится, только если оно выполнено. Строка словаря
+     * срабатываний на событии «при наложении» —
+     * {@code source.weaponMastery === true} у приёма оружия «Опрокидывание».
+     */
+    private String landingCondition;
+    /**
+     * Условие броска: эффект не входит в числа листа и работает только в бросках,
+     * где условие выполнено. Строка словаря модификаторов —
+     * {@code target.allyAdjacent} у «Тактики стаи».
+     */
+    private String rollCondition;
+    /** Вариант: из эффектов одной группы ложится один («Глухота/слепота»). */
+    private Variant variant;
+    /** Применение или включение: без него эффект действует постоянно. */
+    private Activation activation;
     private Save applySave;
     private Boolean applyOnSuccess;
     private Boolean applyOnSuccessOnly;
@@ -105,6 +121,48 @@ public class ActiveEffect {
         private String target;
         private Boolean applyToSelf;
         private Boolean visible;
+        /**
+         * Радиус формулой от носителя ({@code 10 + 20 * floor(@classLevel / 18)}).
+         * VTTG считает её при сборе аур и кладёт результат в {@link #radius}.
+         */
+        private String radiusFormula;
+        /** Аура гаснет, пока носитель недееспособен («Аура защиты»). */
+        private Boolean whileCapable;
+    }
+
+    /**
+     * Вариант эффекта в группе альтернатив: эффекты с одним {@link #group}
+     * взаимоисключающие, ложится один — выбранный бросающим либо случайный.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Variant {
+        private String group;
+        private String label;
+        /** {@code choose} (по умолчанию) либо {@code random}. */
+        private String pick;
+    }
+
+    /**
+     * Применение или включение эффекта: {@code use} — копия ложится, когда
+     * источник применяют (зелье, боеприпас, кнопка «Применить»); {@code toggle} —
+     * эффект лежит выключенным и включается переключателем («Ярость»).
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Activation {
+        private String mode;
+        /**
+         * Ключ счётчика листа, который тратит применение или включение — как
+         * {@code VttgClass.Counter.key} ({@code rages}); нет — ничего не тратит.
+         */
+        private String counter;
+        /** Сколько тратится со счётчика; нет — одна единица. */
+        private Integer amount;
     }
 
     /** Спасбросок при наложении эффекта. */

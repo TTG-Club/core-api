@@ -87,6 +87,12 @@ public class VttgItemMapper {
         if (isFocus(item)) {
             data.put("isFocus", true);
         }
+        if (isConsumable(item)) {
+            data.put("consumable", true);
+        }
+        if (item.getAmmunitionType() != null) {
+            data.put("ammunitionType", ammunitionType(item.getAmmunitionType()));
+        }
         if (!CollectionUtils.isEmpty(item.getActiveEffects())) {
             // Без преобразования: мастерская заполняет эффект сразу в вокабуляре VTTG —
             // так же, как у черты и магического предмета.
@@ -557,6 +563,18 @@ public class VttgItemMapper {
      */
     private boolean isFocus(Item item) {
         return hasType(item, ItemType.SPELLCASTING_FOCUS);
+    }
+
+    /**
+     * Расходуемый предмет: применение тратит единицу количества, последний уходит из
+     * инвентаря. Боеприпас и яд расходуются всегда, еда и напитки — только когда в них
+     * есть эффект: без эффекта «применить» у них нечего, и признак лишь мешал бы.
+     */
+    private boolean isConsumable(Item item) {
+        return hasType(item, ItemType.AMMUNITION)
+                || hasType(item, ItemType.POISON)
+                || (hasType(item, ItemType.FOOD_AND_DRINK)
+                        && !CollectionUtils.isEmpty(item.getActiveEffects()));
     }
 
     private boolean hasType(Item item, ItemType type) {

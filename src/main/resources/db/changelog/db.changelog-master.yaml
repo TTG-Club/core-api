@@ -347,3 +347,5 @@ databaseChangeLog:
       file: db/changelog/2026/09/13-01-backfill-spell-damage-types-from-formulas.yaml
   - include:
       file: db/changelog/2026/09/14-01-add-avatar-url-to-user-display-name.yaml
+  - include:
+      file: db/changelog/2026/09/19-01-add-item-ammunition-type.yaml

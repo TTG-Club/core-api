@@ -147,6 +147,42 @@ class VttgItemMapperTest {
         assertFalse(json.has("weaponCategory"));
     }
 
+    /**
+     * Боеприпас: расходуется применением и знает, каким оружием им стреляют. Без
+     * этой пары выстрел на листе не находил патроны своего типа.
+     */
+    @Test
+    void mapsAmmunitionAsConsumableWithType() {
+        Item item = baseItem("arrows", "Стрелы", "Arrows");
+        item.setTypes(Set.of(ItemType.AMMUNITION));
+        item.setAmmunitionType(AmmunitionType.ARROW);
+
+        JsonNode json = json(item);
+        assertEquals("equipment", json.get("type").asText());
+        assertTrue(json.get("consumable").asBoolean());
+        assertEquals("arrows", json.get("ammunitionType").asText());
+    }
+
+    /** Яд тратится применением, но ничем не стреляют: типа боеприпаса у него нет. */
+    @Test
+    void mapsPoisonAsConsumableWithoutAmmunitionType() {
+        Item item = baseItem("basic-poison", "Основной яд", "Basic Poison");
+        item.setTypes(Set.of(ItemType.POISON));
+
+        JsonNode json = json(item);
+        assertTrue(json.get("consumable").asBoolean());
+        assertFalse(json.has("ammunitionType"));
+    }
+
+    /** Обычное снаряжение не расходуется: признак в выгрузку не идёт вовсе. */
+    @Test
+    void keepsPlainGearNotConsumable() {
+        Item item = baseItem("rope", "Верёвка", "Rope");
+        item.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+
+        assertFalse(json(item).has("consumable"));
+    }
+
     /** Инструмент (категория TOOL) → раздел tools, type tool. */
     @Test
     void mapsTool() {

@@ -142,6 +142,14 @@ public class VttgMagicItem {
     /** Адамантиновый предмет — отдельное свойство экипировки в системе. */
     @Getter(AccessLevel.NONE)
     private boolean isAdamantine;
+
+    /**
+     * Применение тратит единицу количества, последний предмет уходит из инвентаря
+     * ({@code DnDGameItem.consumable}). Опускается у предметов, которые не расходуются:
+     * поле-признак читается только когда оно есть.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean consumable;
     @Getter(AccessLevel.NONE)
     private boolean isSRD;
     @Getter(AccessLevel.NONE)

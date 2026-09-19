@@ -20,6 +20,7 @@ import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemActivation;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
@@ -105,6 +106,56 @@ class VttgMagicItemMapperTest {
         assertEquals("Оружие", result.getTypeLabel());
         assertEquals("weapons", result.getSection());
         assertNull(result.getEquipmentCategory());
+    }
+
+    /**
+     * Зелье: условие «при использовании» само делает запись расходуемой — применение
+     * тратит единицу, последнее зелье уходит из инвентаря. Без признака VTTG считал
+     * зелье надетым предметом и не тратил его.
+     */
+    @Test
+    void marksConsumableByActivation() {
+        MagicItem item = new MagicItem();
+        item.setUrl("potion-of-healing");
+        item.setName("Зелье лечения");
+        item.setCategory(MagicItemCategory.POTION);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActivation(MagicItemActivation.CONSUMED);
+        item.setMechanics(mechanics);
+
+        assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
+    }
+
+    /** Галочка «Расходуемый» работает и без условия применения. */
+    @Test
+    void marksConsumableByFlag() {
+        MagicItem item = new MagicItem();
+        item.setUrl("dust-of-disappearance");
+        item.setName("Пыль исчезновения");
+        item.setCategory(MagicItemCategory.SUBJECT);
+        item.setConsumable(true);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
+    }
+
+    /** Надетый предмет не расходуется: признака в выгрузке нет вовсе. */
+    @Test
+    void keepsWornItemNotConsumable() {
+        MagicItem item = wandOfFear();
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActivation(MagicItemActivation.WORN);
+        item.setMechanics(mechanics);
+
+        VttgMagicItem result = mapper.toVttg(item);
+
+        assertNull(result.getConsumable());
+        assertFalse(objectMapper.valueToTree(result).has("consumable"));
     }
 
     /** Доспешные поля опускаются для не-брони — как в эталоне (жезл). */

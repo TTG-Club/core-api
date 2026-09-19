@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemActivation;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemRechargeEvent;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemResource;
@@ -263,6 +264,9 @@ public class VttgMagicItemMapper {
                 // Фокусировка — либо свойство самой записи, либо унаследованное от базы:
                 // магический посох на основе боевого посоха фокусировкой быть не перестаёт.
                 .isFocus(item.isFocus() || mechanics.focus())
+                // Расход: признак самой записи, применение «при использовании» либо
+                // расходуемая основа (магический боеприпас на обычных стрелах)
+                .consumable(consumable(item, mechanics))
                 .isAdamantine(item.isAdamantine())
                 .magicAttunement(requiresAttunement ? "required" : "none")
                 .magicBonus(bonus)
@@ -436,7 +440,7 @@ public class VttgMagicItemMapper {
             // чем отдать запись без основного броска — уточнение всё равно не разрешилось.
             return ownParts.isEmpty()
                     ? BaseMechanics.EMPTY
-                    : new BaseMechanics(0, null, false, Map.of("damageParts", ownParts));
+                    : new BaseMechanics(0, null, false, false, Map.of("damageParts", ownParts));
         }
         MagicItemCategory category = item.getCategory();
         Map<String, Object> baseMap = itemMapper.toVttg(base);
@@ -461,7 +465,28 @@ public class VttgMagicItemMapper {
         }
         double weight = baseMap.get("weight") instanceof Number number ? number.doubleValue() : 0;
         return new BaseMechanics(weight, goldCost(base), Boolean.TRUE.equals(baseMap.get("isFocus")),
-                fields.isEmpty() ? null : fields);
+                Boolean.TRUE.equals(baseMap.get("consumable")), fields.isEmpty() ? null : fields);
+    }
+
+    /**
+     * Тратит ли применение единицу предмета ({@code DnDGameItem.consumable}).
+     *
+     * <p>Три источника: галочка «Расходуемый» в мастерской, условие применения «при
+     * использовании» (зелья и свитки заводят именно так) и расходуемая основа —
+     * «Стрелы +1» остаются боеприпасом, который тратится выстрелом.</p>
+     *
+     * <p>Признак нужен вместе с {@code activation} эффекта: копия эффекта ложится при
+     * применении, а сам предмет должен при этом уйти в расход.</p>
+     *
+     * @param item магический предмет.
+     * @param mechanics поля, выведенные из базового предмета.
+     * @return {@code true}, когда применение тратит единицу; иначе {@code null} — поле
+     *         в выгрузку не идёт.
+     */
+    private Boolean consumable(MagicItem item, BaseMechanics mechanics) {
+        MagicItemMechanics itemMechanics = item.getMechanics();
+        boolean usedUp = itemMechanics != null && itemMechanics.getActivation() == MagicItemActivation.CONSUMED;
+        return item.isConsumable() || usedUp || mechanics.consumable() ? Boolean.TRUE : null;
     }
 
     /**
@@ -831,7 +856,8 @@ public class VttgMagicItemMapper {
      * Выведенные из базового предмета поля: вес, стоимость в золоте, признак заклинательной
      * фокусировки и боевые/доспешные поля ({@code null} — нет).
      */
-    private record BaseMechanics(double weight, Double costGold, boolean focus, Map<String, Object> fields) {
-        private static final BaseMechanics EMPTY = new BaseMechanics(0, null, false, null);
+    private record BaseMechanics(double weight, Double costGold, boolean focus, boolean consumable,
+                                Map<String, Object> fields) {
+        private static final BaseMechanics EMPTY = new BaseMechanics(0, null, false, false, null);
     }
 }

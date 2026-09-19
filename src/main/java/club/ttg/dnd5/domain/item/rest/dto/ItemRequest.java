@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
+import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
@@ -49,6 +50,14 @@ public class ItemRequest extends BaseRequest {
      */
     @Schema(description = "Инструмент")
     private Tool tool;
+
+    /**
+     * Для какого оружия этот боеприпас. Имеет смысл у предметов типа
+     * {@code AMMUNITION}: по нему выстрел на листе находит патроны своего типа.
+     */
+    @Schema(description = "Боеприпас для оружия (тип боеприпаса)",
+            examples = {"ARROW", "BOLT", "SLING_BULLET"})
+    private AmmunitionType ammunitionType;
 
     /**
      * Категория снаряжения в вокабуляре VTTG. Пусто — выводится из типов предмета.

@@ -331,6 +331,105 @@ class VttgJsonContractTest {
     }
 
     /**
+     * Поля системы 0.8.62: применение и включение, вариант, условие наложения,
+     * условие броска и аура с радиусом формулой. Без них редактор сохранял
+     * настроенный эффект, а компендиум получал предмет, который просто надет.
+     */
+    @Test
+    void activeEffectKeepsActivationVariantAndConditions() throws Exception {
+        String json = """
+                {
+                  "id": "effect-activation",
+                  "name": "Ярость",
+                  "activation": { "mode": "toggle", "counter": "rages", "amount": 2 },
+                  "variant": { "group": "вариант", "label": "Оглушение", "pick": "random" },
+                  "landingCondition": "source.weaponMastery === true",
+                  "rollCondition": "target.allyAdjacent",
+                  "aura": {
+                    "radius": 10,
+                    "target": "allies",
+                    "applyToSelf": true,
+                    "radiusFormula": "10 + 20 * floor(@classLevel / 18)",
+                    "whileCapable": true
+                  }
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals("toggle", effect.getActivation().getMode());
+        assertEquals("rages", effect.getActivation().getCounter());
+        assertEquals(2, effect.getActivation().getAmount());
+        assertEquals("вариант", effect.getVariant().getGroup());
+        assertEquals("random", effect.getVariant().getPick());
+        assertEquals("source.weaponMastery === true", effect.getLandingCondition());
+        assertEquals("target.allyAdjacent", effect.getRollCondition());
+        assertEquals("10 + 20 * floor(@classLevel / 18)", effect.getAura().getRadiusFormula());
+        assertEquals(Boolean.TRUE, effect.getAura().getWhileCapable());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains("\"activation\":{\"mode\":\"toggle\",\"counter\":\"rages\",\"amount\":2}"));
+        assertTrue(serialized.contains("\"landingCondition\":\"source.weaponMastery === true\""));
+        assertTrue(serialized.contains("\"rollCondition\":\"target.allyAdjacent\""));
+        assertTrue(serialized.contains("\"radiusFormula\":\"10 + 20 * floor(@classLevel / 18)\""));
+        assertTrue(serialized.contains("\"whileCapable\":true"));
+    }
+
+    /**
+     * Срабатывания 0.8.62 идут как есть: получатель «всем в радиусе» с радиусом,
+     * отдых, режим спасброска, уменьшение максимума хитов, повторный спасбросок
+     * наложенного состояния и счётчик отметки.
+     */
+    @Test
+    void activeEffectKeepsAreaRecipientRestAndMaxHpTriggers() throws Exception {
+        String json = """
+                {
+                  "id": "effect-triggers-v3",
+                  "name": "Споры и отдых",
+                  "triggers": [
+                    {
+                      "id": "trigger_spores",
+                      "event": "hpZero",
+                      "recipient": "area",
+                      "area": { "radius": 10, "target": "enemies" },
+                      "save": { "ability": "constitution", "dc": 12, "mode": "advantage" },
+                      "actions": [
+                        {
+                          "type": "applyCondition",
+                          "conditionKey": "poisoned",
+                          "recurringSave": { "ability": "constitution", "dc": 12, "timing": "endOfTurn" }
+                        },
+                        { "type": "applyTag", "tag": "spores", "stack": true }
+                      ]
+                    },
+                    {
+                      "id": "trigger_drain",
+                      "event": "applied",
+                      "actions": [{ "type": "reduceMaxHp", "amount": "@damage", "endsOnRest": "long" }]
+                    },
+                    {
+                      "id": "trigger_rest",
+                      "event": "rest",
+                      "restType": "short",
+                      "actions": [{ "type": "removeSelf" }]
+                    }
+                  ]
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+        String serialized = mapper.writeValueAsString(effect);
+        String authoredTriggers = mapper.writeValueAsString(mapper.readTree(json).get("triggers"));
+
+        // Байт-в-байт: срабатывания лежат JsonNode и не разбираются по полям
+        assertTrue(serialized.contains("\"triggers\":" + authoredTriggers));
+        assertEquals("area", effect.getTriggers().getFirst().get("recipient").asText());
+        assertEquals(10, effect.getTriggers().getFirst().get("area").get("radius").asInt());
+        assertEquals("short", effect.getTriggers().getLast().get("restType").asText());
+    }
+
+    /**
      * Зона заклинания — ещё одно значение строки {@code effectTarget}, а лечение
      * каждый ход — токен {@code @heal} в формуле части: модели правки не нужны,
      * но оба обязаны доходить как есть.
