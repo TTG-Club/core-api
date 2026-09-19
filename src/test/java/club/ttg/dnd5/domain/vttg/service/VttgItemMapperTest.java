@@ -148,30 +148,28 @@ class VttgItemMapperTest {
     }
 
     /**
-     * Боеприпас: расходуется применением и знает, каким оружием им стреляют. Без
-     * этой пары выстрел на листе не находил патроны своего типа.
+     * Боеприпас расходуется применением: с 0.8.62 стрелковое оружие заряжают любым
+     * расходуемым предметом, поэтому стрелам нужен только этот признак, а «каким
+     * оружием стреляют» система больше не спрашивает.
      */
     @Test
-    void mapsAmmunitionAsConsumableWithType() {
+    void mapsAmmunitionAsConsumable() {
         Item item = baseItem("arrows", "Стрелы", "Arrows");
         item.setTypes(Set.of(ItemType.AMMUNITION));
-        item.setAmmunitionType(AmmunitionType.ARROW);
 
         JsonNode json = json(item);
         assertEquals("equipment", json.get("type").asText());
         assertTrue(json.get("consumable").asBoolean());
-        assertEquals("arrows", json.get("ammunitionType").asText());
+        assertFalse(json.has("ammunitionType"));
     }
 
-    /** Яд тратится применением, но ничем не стреляют: типа боеприпаса у него нет. */
+    /** Яд тоже тратится применением. */
     @Test
-    void mapsPoisonAsConsumableWithoutAmmunitionType() {
+    void mapsPoisonAsConsumable() {
         Item item = baseItem("basic-poison", "Основной яд", "Basic Poison");
         item.setTypes(Set.of(ItemType.POISON));
 
-        JsonNode json = json(item);
-        assertTrue(json.get("consumable").asBoolean());
-        assertFalse(json.has("ammunitionType"));
+        assertTrue(json(item).get("consumable").asBoolean());
     }
 
     /** Обычное снаряжение не расходуется: признак в выгрузку не идёт вовсе. */

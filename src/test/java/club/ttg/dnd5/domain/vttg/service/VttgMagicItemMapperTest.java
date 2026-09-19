@@ -634,6 +634,65 @@ class VttgMagicItemMapperTest {
         assertEquals("elven-chain-chain-shirt-dmg", shirt.getId());
     }
 
+    /**
+     * Адамантиновый шаблон — правило «любой доспех из адамантина», а не предмет. В
+     * компендиум идут конкретные предметы по связанным базам: их характеристики,
+     * название приставкой и эффект шаблона (иммунитет к критам).
+     */
+    @Test
+    void expandsAdamantineTemplateByLinkedBases() {
+        MagicItem item = new MagicItem();
+        item.setUrl("adamantine-armor");
+        item.setName("Адамантиновый доспех");
+        item.setEnglish("Adamantine Armor");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setRarity(Rarity.UNCOMMON);
+        item.setAdamantine(true);
+        item.setItems(Set.of(plate(), halfPlate()));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        assertEquals(2, variants.size());
+
+        VttgMagicItem fromPlate = byName(variants, "Латы из адамантина");
+        assertEquals("adamantine-armor-plate-dmg", fromPlate.getId());
+        assertEquals("Plate (adamantine)", fromPlate.getNameEn());
+        assertTrue(fromPlate.isAdamantine());
+        assertEquals("uncommon", fromPlate.getRarity());
+
+        // Характеристики — базы: у шаблона своих нет
+        JsonNode json = objectMapper.valueToTree(fromPlate);
+        assertEquals("plate", json.get("baseType").asText());
+        // Стоимость — базы (1500) плюс цена по редкости необычного предмета (400)
+        assertEquals("1900 зм", json.get("cost").asText());
+
+        assertEquals(
+                "adamantine-armor-half-plate-dmg",
+                byName(variants, "Полулаты из адамантина").getId());
+    }
+
+    /**
+     * Шаблон без связанных предметов раскрывать не во что: запись без класса брони в
+     * компендиуме бесполезна, поэтому не экспортируется вовсе.
+     */
+    @Test
+    void skipsTemplateWithoutLinkedBases() {
+        MagicItem item = new MagicItem();
+        item.setUrl("adamantine-weapon");
+        item.setName("Адамантиновое оружие");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.UNCOMMON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertTrue(mapper.toVttgVariants(item, new HashMap<>()).isEmpty());
+        assertEquals(List.of(), mapper.toVttgPayload(item, new HashMap<>()));
+    }
+
     /** Предмет с варьирующейся редкостью и искусственные варианты «+1/+2/+3» не экспортируются. */
     @Test
     void excludesVariesItemAndDerivedBonusVariantsFromExport() {

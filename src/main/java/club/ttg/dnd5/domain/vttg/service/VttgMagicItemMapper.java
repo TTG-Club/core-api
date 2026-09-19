@@ -66,6 +66,21 @@ public class VttgMagicItemMapper {
             "baseType", "equipmentCategory", "baseArmorAC", "maxDexBonus",
             "stealthDisadvantage", "strengthRequirement");
 
+    /**
+     * Названия адамантиновых шаблонов: это не конкретные предметы, а правило «любой
+     * доспех (или оружие) из адамантина». В компендиум идут не они, а конкретные
+     * предметы по связанным немагическим предметам — иначе эффект адамантина
+     * (иммунитет к критам) до VTTG не доходит вовсе.
+     */
+    private static final Set<String> ADAMANTINE_TEMPLATES = Set.of(
+            "Адамантиновое оружие", "Адамантиновый доспех");
+
+    /** Приставка названия конкретного адамантинового предмета: «Кольчуга из адамантина». */
+    private static final String ADAMANTINE_NAME_SUFFIX = " из адамантина";
+
+    /** Английская приставка того же: «Chain Mail (adamantine)». */
+    private static final String ADAMANTINE_NAME_SUFFIX_EN = " (adamantine)";
+
     /** Ключ изменения класса доспеха в вокабуляре VTTG ({@code EffectTargetKey}). */
     private static final String ARMOR_CLASS_KEY = "armorClass";
 
@@ -119,6 +134,11 @@ public class VttgMagicItemMapper {
         List<Item> linked = linkedItems(item);
         if (!linked.isEmpty()) {
             return variantsFromLinked(item, linked);
+        }
+        if (isTemplateWithoutBases(item)) {
+            // Шаблон без связанных предметов раскрывать не во что: запись без доспешных
+            // и оружейных полей в компендиуме бесполезна
+            return List.of();
         }
         MagicItemCategory category = item.getCategory();
         List<String> bases = splitBaseItems(item.getClarification());
@@ -550,6 +570,9 @@ public class VttgMagicItemMapper {
         if (isBonusTemplate(item)) {
             return bonusVariants(item, linked);
         }
+        if (isAdamantineTemplate(item)) {
+            return adamantineVariants(item, linked);
+        }
         if (linked.size() == 1) {
             return List.of(build(item, item.getName(), linked.get(0), item.getUrl(), item.getEnglish()));
         }
@@ -575,6 +598,42 @@ public class VttgMagicItemMapper {
      */
     private boolean isBonusTemplate(MagicItem item) {
         return item.getName() != null && item.getName().contains("+1, +2 или +3");
+    }
+
+    /** Адамантиновый шаблон: раскрывается по связанным базам, как «+1, +2 или +3». */
+    private boolean isAdamantineTemplate(MagicItem item) {
+        return item.getName() != null && ADAMANTINE_TEMPLATES.contains(item.getName());
+    }
+
+    /**
+     * Шаблон, которому нечего раскрывать: связанных предметов нет. Такой шаблон в
+     * компендиум не идёт — иначе там появится «Адамантиновый доспех» без класса
+     * брони и «Доспех +1, +2 или +3» без базы.
+     */
+    private boolean isTemplateWithoutBases(MagicItem item) {
+        return isBonusTemplate(item) || isAdamantineTemplate(item);
+    }
+
+    /**
+     * Раскрытие адамантинового шаблона: на каждый связанный немагический предмет —
+     * одна запись с его характеристиками, названием «<база> из адамантина» и
+     * признаком {@code isAdamantine}. Название строится приставкой, а не согласованием
+     * прилагательного: «Кольчуга из адамантина» и «Латы из адамантина» верны без
+     * разбора рода, а «Адамантиновая латы» — нет.
+     *
+     * <p>Редкость, стоимость и эффекты берутся у самого шаблона: у адамантиновых
+     * предметов они одни на все базы, а иммунитет к критам лежит эффектом в записи.</p>
+     */
+    private List<VttgMagicItem> adamantineVariants(MagicItem item, List<Item> linked) {
+        List<VttgMagicItem> result = new ArrayList<>(linked.size());
+        for (Item base : linked) {
+            String name = base.getName() + ADAMANTINE_NAME_SUFFIX;
+            String english = StringUtils.hasText(base.getEnglish())
+                    ? base.getEnglish() + ADAMANTINE_NAME_SUFFIX_EN
+                    : null;
+            result.add(build(item, name, base, variantUrlForLinked(item, base), english));
+        }
+        return result;
     }
 
     /**

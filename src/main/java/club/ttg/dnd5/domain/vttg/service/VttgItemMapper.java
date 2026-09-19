@@ -90,9 +90,6 @@ public class VttgItemMapper {
         if (isConsumable(item)) {
             data.put("consumable", true);
         }
-        if (item.getAmmunitionType() != null) {
-            data.put("ammunitionType", ammunitionType(item.getAmmunitionType()));
-        }
         if (!CollectionUtils.isEmpty(item.getActiveEffects())) {
             // Без преобразования: мастерская заполняет эффект сразу в вокабуляре VTTG —
             // так же, как у черты и магического предмета.
