@@ -5,13 +5,16 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.hypersistence.utils.hibernate.type.util.ObjectMapperSupplier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class HypersistenceFilterObjectMapperSupplier implements ObjectMapperSupplier
 {
@@ -25,6 +28,7 @@ public class HypersistenceFilterObjectMapperSupplier implements ObjectMapperSupp
         // эволюционирует независимо от кода; веб-слой их тоже игнорирует). Неизвестное поле
         // не должно валить гидрацию сущности — иначе одна запись ломает целые выборки.
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(orderedSets());
 
         ClassPathScanningCandidateComponentProvider scanner =
                 new ClassPathScanningCandidateComponentProvider(false);
@@ -49,6 +53,27 @@ public class HypersistenceFilterObjectMapperSupplier implements ObjectMapperSupp
         }
 
         return mapper;
+    }
+
+    /**
+     * Любое поле {@code Set<...>} из jsonb читается в {@link LinkedHashSet},
+     * то есть в том порядке, в каком лежит в базе.
+     *
+     * <p>По умолчанию Jackson отдаёт {@link java.util.HashSet}, а у перечислений
+     * {@code hashCode} берётся от адреса объекта — после каждого перезапуска
+     * приложения списки приходят в новом порядке. Из-за этого спасброски и
+     * владение оружием у классов показывались вразнобой, а побайтовая сверка
+     * тела карточки срывалась на полях, которых правка не касалась.
+     *
+     * @return модуль, закрепляющий порядок множеств
+     */
+    private static SimpleModule orderedSets()
+    {
+        SimpleModule module = new SimpleModule("ordered-sets");
+
+        module.addAbstractTypeMapping(Set.class, LinkedHashSet.class);
+
+        return module;
     }
 
     private static void registerIfHasTypeName(
