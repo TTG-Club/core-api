@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
@@ -427,6 +428,84 @@ class VttgJsonContractTest {
         assertEquals("area", effect.getTriggers().getFirst().get("recipient").asText());
         assertEquals(10, effect.getTriggers().getFirst().get("area").get("radius").asInt());
         assertEquals("short", effect.getTriggers().getLast().get("restType").asText());
+    }
+
+    /**
+     * Срабатывания 0.9: получатель «по выбору» со своим блоком и собственные
+     * срабатывания наложенного состояния. Оба поля лежат ВНУТРИ
+     * {@code triggers} — модель их не знает и знать не должна, но круг обязан
+     * быть байт-в-байт: иначе автор заполнит их на сайте, а в компендиум
+     * доедет пустое наложение.
+     */
+    @Test
+    void activeEffectKeepsChoiceRecipientAndNestedTriggers() throws Exception {
+        String json = """
+                {
+                  "id": "effect-triggers-choice",
+                  "name": "Аура живучести и Сон",
+                  "triggers": [
+                    {
+                      "id": "trigger_heal",
+                      "event": "turnStart",
+                      "recipient": "choice",
+                      "choice": {
+                        "radius": 30,
+                        "target": "allies",
+                        "count": 2,
+                        "condition": "self.creatureType === \\"undead\\"",
+                        "optional": true,
+                        "chooser": "source"
+                      },
+                      "actions": [
+                        { "type": "damage", "parts": [{ "formula": "5@heal" }] }
+                      ]
+                    },
+                    {
+                      "id": "trigger_sleep",
+                      "event": "applied",
+                      "actions": [
+                        {
+                          "type": "applyCondition",
+                          "conditionKey": "unconscious",
+                          "triggers": [
+                            {
+                              "id": "trigger_wake",
+                              "event": "damageTaken",
+                              "actions": [{ "type": "removeSelf" }]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+        String serialized = mapper.writeValueAsString(effect);
+        String authoredTriggers = mapper.writeValueAsString(mapper.readTree(json).get("triggers"));
+
+        assertTrue(serialized.contains("\"triggers\":" + authoredTriggers));
+
+        JsonNode choice = effect.getTriggers().getFirst().get("choice");
+
+        assertEquals("choice", effect.getTriggers().getFirst().get("recipient").asText());
+        assertEquals(30, choice.get("radius").asInt());
+        assertEquals(2, choice.get("count").asInt());
+        assertEquals("source", choice.get("chooser").asText());
+        assertTrue(choice.get("optional").asBoolean());
+        assertEquals("self.creatureType === \"undead\"", choice.get("condition").asText());
+
+        JsonNode nested = effect
+                .getTriggers()
+                .getLast()
+                .get("actions")
+                .get(0)
+                .get("triggers")
+                .get(0);
+
+        assertEquals("damageTaken", nested.get("event").asText());
+        assertEquals("removeSelf", nested.get("actions").get(0).get("type").asText());
     }
 
     /**
