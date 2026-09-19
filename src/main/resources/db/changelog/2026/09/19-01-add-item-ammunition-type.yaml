@@ -8,14 +8,16 @@ databaseChangeLog:
         могла сказать, каким оружием стреляют этим боеприпасом, и выстрел на листе не
         находил патроны своего типа — лук приходилось заряжать руками.
 
-        Существующие боеприпасы заполняются по названию: стрелы → ARROW, болты → BOLT,
-        снаряды и пули для пращи → SLING_BULLET, иглы для духовой трубки → NEEDLE,
-        остальные пули → BULLET. Порядок правил важен: «пули для пращи» должны разобраться
-        раньше просто «пуль», а «иглы» — раньше любых пуль.
+        Существующие боеприпасы заполняются по названию: иглы → NEEDLE, стрелы → ARROW,
+        болты → BOLT, снаряды и пули для пращи → SLING_BULLET, остальные пули → BULLET.
+        Порядок правил важен: «иглы для духовой трубки» разбираются раньше любых пуль, а
+        «пули для пращи» — раньше просто «пуль».
 
         Заполняются только предметы с типом AMMUNITION (item_types — jsonb-массив строк) и
         только те, у которых поле пусто: заданный руками тип перенос не трогает. Что не
-        разобралось по названию, остаётся пустым — такие записи видно запросом из отчёта.
+        разобралось по названию, остаётся пустым — такие записи видно запросом:
+        SELECT url, name FROM item
+        WHERE jsonb_exists(item_types, 'AMMUNITION') AND ammunition_type IS NULL;
 
         Время изменения предмета не сдвигается: его показывает карточка на сайте.
         Предрассчитанный payload выгрузки пересчитывается подъёмом SCHEMA_VERSION.
@@ -33,23 +35,23 @@ databaseChangeLog:
             sql: |
               SET search_path TO ttg, public;
 
-              UPDATE item
-              SET ammunition_type = CASE
-                      WHEN lower(name) LIKE '%игл%' THEN 'NEEDLE'
-                      WHEN lower(name) LIKE '%стрел%' THEN 'ARROW'
-                      WHEN lower(name) LIKE '%болт%' THEN 'BOLT'
-                      WHEN lower(name) LIKE '%пращ%' THEN 'SLING_BULLET'
-                      WHEN lower(name) LIKE '%снаряд%' THEN 'SLING_BULLET'
-                      WHEN lower(name) LIKE '%пул%' THEN 'BULLET'
-                  END
-              WHERE ammunition_type IS NULL
-                AND jsonb_typeof(item_types) = 'array'
-                AND item_types ? 'AMMUNITION'
-                AND CASE
-                        WHEN lower(name) LIKE '%игл%' THEN 'NEEDLE'
-                        WHEN lower(name) LIKE '%стрел%' THEN 'ARROW'
-                        WHEN lower(name) LIKE '%болт%' THEN 'BOLT'
-                        WHEN lower(name) LIKE '%пращ%' THEN 'SLING_BULLET'
-                        WHEN lower(name) LIKE '%снаряд%' THEN 'SLING_BULLET'
-                        WHEN lower(name) LIKE '%пул%' THEN 'BULLET'
-                    END IS NOT NULL;
+              WITH resolved AS (
+                  SELECT i.url,
+                         CASE
+                             WHEN lower(i.name) LIKE '%игл%' THEN 'NEEDLE'
+                             WHEN lower(i.name) LIKE '%стрел%' THEN 'ARROW'
+                             WHEN lower(i.name) LIKE '%болт%' THEN 'BOLT'
+                             WHEN lower(i.name) LIKE '%пращ%' THEN 'SLING_BULLET'
+                             WHEN lower(i.name) LIKE '%снаряд%' THEN 'SLING_BULLET'
+                             WHEN lower(i.name) LIKE '%пул%' THEN 'BULLET'
+                         END AS ammunition_type
+                  FROM item i
+                  WHERE i.ammunition_type IS NULL
+                    AND jsonb_typeof(i.item_types) = 'array'
+                    AND jsonb_exists(i.item_types, 'AMMUNITION')
+              )
+              UPDATE item target
+              SET ammunition_type = resolved.ammunition_type
+              FROM resolved
+              WHERE target.url = resolved.url
+                AND resolved.ammunition_type IS NOT NULL;
