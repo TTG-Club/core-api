@@ -564,11 +564,16 @@ public class VttgItemMapper {
 
     /**
      * Расходуемый предмет: применение тратит единицу количества, последний уходит из
-     * инвентаря. Боеприпас и яд расходуются всегда, еда и напитки — только когда в них
-     * есть эффект: без эффекта «применить» у них нечего, и признак лишь мешал бы.
+     * инвентаря. Ведущий источник — галочка мастерской ({@link Item#getConsumable()}).
+     *
+     * <p>Вывод по типам остаётся страховкой, как {@code usedUp} у магического предмета:
+     * боеприпас и яд расходуются всегда, еда и напитки — когда в них есть эффект (без
+     * эффекта «применить» у них нечего). Поэтому снятая галочка у яда ничего не меняет,
+     * а поставленная делает расходуемым предмет любого типа.</p>
      */
     private boolean isConsumable(Item item) {
-        return hasType(item, ItemType.AMMUNITION)
+        return Boolean.TRUE.equals(item.getConsumable())
+                || hasType(item, ItemType.AMMUNITION)
                 || hasType(item, ItemType.POISON)
                 || (hasType(item, ItemType.FOOD_AND_DRINK)
                         && !CollectionUtils.isEmpty(item.getActiveEffects()));

@@ -181,6 +181,19 @@ class VttgItemMapperTest {
         assertFalse(json(item).has("consumable"));
     }
 
+    /**
+     * Галочка мастерской делает расходуемым предмет любого типа: по типам ни масло, ни
+     * мыло, ни зелье из снаряжения расходуемыми не считаются, а применение их тратит.
+     */
+    @Test
+    void mapsConsumableFromItemField() {
+        Item item = baseItem("oil-flask", "Масло", "Oil");
+        item.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+        item.setConsumable(true);
+
+        assertTrue(json(item).get("consumable").asBoolean());
+    }
+
     /** Инструмент (категория TOOL) → раздел tools, type tool. */
     @Test
     void mapsTool() {
