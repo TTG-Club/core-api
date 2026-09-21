@@ -25,6 +25,7 @@ public class HypersistenceFilterObjectMapperSupplier implements ObjectMapperSupp
         // эволюционирует независимо от кода; веб-слой их тоже игнорирует). Неизвестное поле
         // не должно валить гидрацию сущности — иначе одна запись ломает целые выборки.
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(new OrderedSetsModule());
 
         ClassPathScanningCandidateComponentProvider scanner =
                 new ClassPathScanningCandidateComponentProvider(false);

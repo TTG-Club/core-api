@@ -58,6 +58,14 @@ public class ItemRequest extends BaseRequest {
     private String equipmentCategory;
 
     /**
+     * Расходуемый предмет: применение тратит единицу количества. Пусто — не
+     * расходуется; боеприпас, яд и еда с эффектом расходуются и без галочки.
+     */
+    @Schema(description = "Расходуемый: применение тратит единицу предмета",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Boolean consumable;
+
+    /**
      * Активные эффекты предмета для экспорта в VTTG.
      *
      * <p>Перезаписываются ЦЕЛИКОМ: пустой список стирает прежние эффекты записи —

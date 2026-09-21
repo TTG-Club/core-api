@@ -147,6 +147,53 @@ class VttgItemMapperTest {
         assertFalse(json.has("weaponCategory"));
     }
 
+    /**
+     * Боеприпас расходуется применением: с 0.8.62 стрелковое оружие заряжают любым
+     * расходуемым предметом, поэтому стрелам нужен только этот признак, а «каким
+     * оружием стреляют» система больше не спрашивает.
+     */
+    @Test
+    void mapsAmmunitionAsConsumable() {
+        Item item = baseItem("arrows", "Стрелы", "Arrows");
+        item.setTypes(Set.of(ItemType.AMMUNITION));
+
+        JsonNode json = json(item);
+        assertEquals("equipment", json.get("type").asText());
+        assertTrue(json.get("consumable").asBoolean());
+        assertFalse(json.has("ammunitionType"));
+    }
+
+    /** Яд тоже тратится применением. */
+    @Test
+    void mapsPoisonAsConsumable() {
+        Item item = baseItem("basic-poison", "Основной яд", "Basic Poison");
+        item.setTypes(Set.of(ItemType.POISON));
+
+        assertTrue(json(item).get("consumable").asBoolean());
+    }
+
+    /** Обычное снаряжение не расходуется: признак в выгрузку не идёт вовсе. */
+    @Test
+    void keepsPlainGearNotConsumable() {
+        Item item = baseItem("rope", "Верёвка", "Rope");
+        item.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+
+        assertFalse(json(item).has("consumable"));
+    }
+
+    /**
+     * Галочка мастерской делает расходуемым предмет любого типа: по типам ни масло, ни
+     * мыло, ни зелье из снаряжения расходуемыми не считаются, а применение их тратит.
+     */
+    @Test
+    void mapsConsumableFromItemField() {
+        Item item = baseItem("oil-flask", "Масло", "Oil");
+        item.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+        item.setConsumable(true);
+
+        assertTrue(json(item).get("consumable").asBoolean());
+    }
+
     /** Инструмент (категория TOOL) → раздел tools, type tool. */
     @Test
     void mapsTool() {

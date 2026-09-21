@@ -32,7 +32,6 @@ import org.springframework.util.StringUtils;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -254,6 +253,13 @@ public interface SpellMapper
                 .build();
     }
 
+    /**
+     * Ссылки принадлежности для редактирования. Порядок задаётся явно: связи
+     * хранятся множеством без порядка, а {@link java.util.HashSet} отдавал бы их в
+     * порядке хеш-таблицы — при совпадении корзин он менялся от чтения к
+     * чтению, и побайтовая сверка тела карточки срывалась на поле, которого
+     * правка не касалась.
+     */
     default Set<String> extractUrls(Set<? extends NamedEntity> entities)
     {
         if (entities == null || entities.isEmpty())
@@ -261,7 +267,7 @@ public interface SpellMapper
             return Set.of();
         }
 
-        Set<String> result = new HashSet<>(entities.size());
+        Set<String> result = new TreeSet<>();
 
         for (NamedEntity entity : entities)
         {

@@ -1,0 +1,49 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-19-03-add-item-consumable
+      author: Peterko
+      comment: >
+        Признак «Расходуемый» у обычного предмета (DnDGameItem.consumable в вокабуляре VTTG).
+        Раньше выгрузка выводила его только по типам предмета, и в мастерской такого поля не
+        было: расходуемым нельзя было сделать ни масло, ни мыло, ни зелье из снаряжения, а с
+        dnd5e-2024 0.8.62 именно этот признак решает, чем игрок заряжает стрелковое оружие и
+        что уходит из инвентаря после применения.
+
+        Существующие записи заполняются по тому же правилу, каким до сих пор пользовалась
+        выгрузка, — чтобы форма показывала правду, а не пустую галочку: тип AMMUNITION или
+        POISON, либо FOOD_AND_DRINK с активными эффектами (без эффекта применять у еды
+        нечего). Остальные остаются пустыми: пусто — не расходуется.
+
+        Вывод по типам в выгрузке остаётся страховкой, поэтому формат payload не меняется и
+        SCHEMA_VERSION поднимать не нужно. Время изменения предмета не сдвигается: его
+        показывает карточка на сайте.
+
+        Проверка переноса:
+        SELECT url, name FROM item WHERE consumable;
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: consumable
+                  type: BOOLEAN
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              UPDATE item
+              SET consumable = true
+              WHERE consumable IS NULL
+                AND jsonb_typeof(item_types) = 'array'
+                AND (
+                    jsonb_exists(item_types, 'AMMUNITION')
+                    OR jsonb_exists(item_types, 'POISON')
+                    OR (
+                        jsonb_exists(item_types, 'FOOD_AND_DRINK')
+                        AND jsonb_typeof(active_effects) = 'array'
+                        AND jsonb_array_length(active_effects) > 0
+                    )
+                );

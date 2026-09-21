@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.spell.rest.mapper;
 
+import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
@@ -10,7 +11,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -79,6 +82,39 @@ class SpellMapperTest
         assertEquals("empty-spell", response.getUrl());
         assertNull(response.getSchool());
         assertNull(response.getAdditionalType());
+    }
+
+    /**
+     * Порядок ссылок принадлежности не зависит от того, как связи легли в
+     * множество. «Ученик-рыцарь» и «круг земли» попадают в одну корзину
+     * хеш-таблицы, поэтому прежний HashSet отдавал их то так, то этак, и
+     * побайтовая сверка тела карточки срывалась на нетронутом поле.
+     */
+    @Test
+    void affiliationUrlsKeepStableOrderRegardlessOfSetOrder()
+    {
+        List<String> expected = List.of("arcane-trickster-phb", "druid-circle-of-the-land-phb", "eldritch-knight-phb");
+
+        Set<CharacterClass> oneOrder = subclasses("eldritch-knight-phb", "druid-circle-of-the-land-phb", "arcane-trickster-phb");
+        Set<CharacterClass> otherOrder = subclasses("druid-circle-of-the-land-phb", "arcane-trickster-phb", "eldritch-knight-phb");
+
+        assertEquals(expected, List.copyOf(mapper.extractUrls(oneOrder)));
+        assertEquals(expected, List.copyOf(mapper.extractUrls(otherOrder)));
+    }
+
+    /** Подклассы в заданном порядке обхода: он и повторяет разнобой Hibernate. */
+    private Set<CharacterClass> subclasses(String... urls)
+    {
+        Set<CharacterClass> result = new LinkedHashSet<>();
+
+        for (String url : urls)
+        {
+            CharacterClass subclass = new CharacterClass();
+            subclass.setUrl(url);
+            result.add(subclass);
+        }
+
+        return result;
     }
 
     @Test

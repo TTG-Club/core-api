@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemActivation;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemRechargeEvent;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemResource;
@@ -65,6 +66,21 @@ public class VttgMagicItemMapper {
             "baseType", "equipmentCategory", "baseArmorAC", "maxDexBonus",
             "stealthDisadvantage", "strengthRequirement");
 
+    /**
+     * Названия адамантиновых шаблонов: это не конкретные предметы, а правило «любой
+     * доспех (или оружие) из адамантина». В компендиум идут не они, а конкретные
+     * предметы по связанным немагическим предметам — иначе эффект адамантина
+     * (иммунитет к критам) до VTTG не доходит вовсе.
+     */
+    private static final Set<String> ADAMANTINE_TEMPLATES = Set.of(
+            "Адамантиновое оружие", "Адамантиновый доспех");
+
+    /** Приставка названия конкретного адамантинового предмета: «Кольчуга из адамантина». */
+    private static final String ADAMANTINE_NAME_SUFFIX = " из адамантина";
+
+    /** Английская приставка того же: «Chain Mail (adamantine)». */
+    private static final String ADAMANTINE_NAME_SUFFIX_EN = " (adamantine)";
+
     /** Ключ изменения класса доспеха в вокабуляре VTTG ({@code EffectTargetKey}). */
     private static final String ARMOR_CLASS_KEY = "armorClass";
 
@@ -118,6 +134,11 @@ public class VttgMagicItemMapper {
         List<Item> linked = linkedItems(item);
         if (!linked.isEmpty()) {
             return variantsFromLinked(item, linked);
+        }
+        if (isTemplateWithoutBases(item)) {
+            // Шаблон без связанных предметов раскрывать не во что: запись без доспешных
+            // и оружейных полей в компендиуме бесполезна
+            return List.of();
         }
         MagicItemCategory category = item.getCategory();
         List<String> bases = splitBaseItems(item.getClarification());
@@ -263,6 +284,9 @@ public class VttgMagicItemMapper {
                 // Фокусировка — либо свойство самой записи, либо унаследованное от базы:
                 // магический посох на основе боевого посоха фокусировкой быть не перестаёт.
                 .isFocus(item.isFocus() || mechanics.focus())
+                // Расход: признак самой записи, применение «при использовании» либо
+                // расходуемая основа (магический боеприпас на обычных стрелах)
+                .consumable(consumable(item, mechanics))
                 .isAdamantine(item.isAdamantine())
                 .magicAttunement(requiresAttunement ? "required" : "none")
                 .magicBonus(bonus)
@@ -436,7 +460,7 @@ public class VttgMagicItemMapper {
             // чем отдать запись без основного броска — уточнение всё равно не разрешилось.
             return ownParts.isEmpty()
                     ? BaseMechanics.EMPTY
-                    : new BaseMechanics(0, null, false, Map.of("damageParts", ownParts));
+                    : new BaseMechanics(0, null, false, false, Map.of("damageParts", ownParts));
         }
         MagicItemCategory category = item.getCategory();
         Map<String, Object> baseMap = itemMapper.toVttg(base);
@@ -461,7 +485,28 @@ public class VttgMagicItemMapper {
         }
         double weight = baseMap.get("weight") instanceof Number number ? number.doubleValue() : 0;
         return new BaseMechanics(weight, goldCost(base), Boolean.TRUE.equals(baseMap.get("isFocus")),
-                fields.isEmpty() ? null : fields);
+                Boolean.TRUE.equals(baseMap.get("consumable")), fields.isEmpty() ? null : fields);
+    }
+
+    /**
+     * Тратит ли применение единицу предмета ({@code DnDGameItem.consumable}).
+     *
+     * <p>Три источника: галочка «Расходуемый» в мастерской, условие применения «при
+     * использовании» (зелья и свитки заводят именно так) и расходуемая основа —
+     * «Стрелы +1» остаются боеприпасом, который тратится выстрелом.</p>
+     *
+     * <p>Признак нужен вместе с {@code activation} эффекта: копия эффекта ложится при
+     * применении, а сам предмет должен при этом уйти в расход.</p>
+     *
+     * @param item магический предмет.
+     * @param mechanics поля, выведенные из базового предмета.
+     * @return {@code true}, когда применение тратит единицу; иначе {@code null} — поле
+     *         в выгрузку не идёт.
+     */
+    private Boolean consumable(MagicItem item, BaseMechanics mechanics) {
+        MagicItemMechanics itemMechanics = item.getMechanics();
+        boolean usedUp = itemMechanics != null && itemMechanics.getActivation() == MagicItemActivation.CONSUMED;
+        return item.isConsumable() || usedUp || mechanics.consumable() ? Boolean.TRUE : null;
     }
 
     /**
@@ -525,6 +570,9 @@ public class VttgMagicItemMapper {
         if (isBonusTemplate(item)) {
             return bonusVariants(item, linked);
         }
+        if (isAdamantineTemplate(item)) {
+            return adamantineVariants(item, linked);
+        }
         if (linked.size() == 1) {
             return List.of(build(item, item.getName(), linked.get(0), item.getUrl(), item.getEnglish()));
         }
@@ -550,6 +598,42 @@ public class VttgMagicItemMapper {
      */
     private boolean isBonusTemplate(MagicItem item) {
         return item.getName() != null && item.getName().contains("+1, +2 или +3");
+    }
+
+    /** Адамантиновый шаблон: раскрывается по связанным базам, как «+1, +2 или +3». */
+    private boolean isAdamantineTemplate(MagicItem item) {
+        return item.getName() != null && ADAMANTINE_TEMPLATES.contains(item.getName());
+    }
+
+    /**
+     * Шаблон, которому нечего раскрывать: связанных предметов нет. Такой шаблон в
+     * компендиум не идёт — иначе там появится «Адамантиновый доспех» без класса
+     * брони и «Доспех +1, +2 или +3» без базы.
+     */
+    private boolean isTemplateWithoutBases(MagicItem item) {
+        return isBonusTemplate(item) || isAdamantineTemplate(item);
+    }
+
+    /**
+     * Раскрытие адамантинового шаблона: на каждый связанный немагический предмет —
+     * одна запись с его характеристиками, названием «<база> из адамантина» и
+     * признаком {@code isAdamantine}. Название строится приставкой, а не согласованием
+     * прилагательного: «Кольчуга из адамантина» и «Латы из адамантина» верны без
+     * разбора рода, а «Адамантиновая латы» — нет.
+     *
+     * <p>Редкость, стоимость и эффекты берутся у самого шаблона: у адамантиновых
+     * предметов они одни на все базы, а иммунитет к критам лежит эффектом в записи.</p>
+     */
+    private List<VttgMagicItem> adamantineVariants(MagicItem item, List<Item> linked) {
+        List<VttgMagicItem> result = new ArrayList<>(linked.size());
+        for (Item base : linked) {
+            String name = base.getName() + ADAMANTINE_NAME_SUFFIX;
+            String english = StringUtils.hasText(base.getEnglish())
+                    ? base.getEnglish() + ADAMANTINE_NAME_SUFFIX_EN
+                    : null;
+            result.add(build(item, name, base, variantUrlForLinked(item, base), english));
+        }
+        return result;
     }
 
     /**
@@ -831,7 +915,8 @@ public class VttgMagicItemMapper {
      * Выведенные из базового предмета поля: вес, стоимость в золоте, признак заклинательной
      * фокусировки и боевые/доспешные поля ({@code null} — нет).
      */
-    private record BaseMechanics(double weight, Double costGold, boolean focus, Map<String, Object> fields) {
-        private static final BaseMechanics EMPTY = new BaseMechanics(0, null, false, null);
+    private record BaseMechanics(double weight, Double costGold, boolean focus, boolean consumable,
+                                Map<String, Object> fields) {
+        private static final BaseMechanics EMPTY = new BaseMechanics(0, null, false, false, null);
     }
 }

@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-19-02-drop-item-ammunition-type
+      author: Peterko
+      comment: >
+        Убирает колонку item.ammunition_type. Её добавлял changeSet
+        2026-09-19-01-add-item-ammunition-type того же выпуска: он отменён (файл удалён), потому
+        что системе он больше не нужен.
+
+        С dnd5e-2024 0.8.62 стрелковое оружие на листе заряжают любым расходуемым предметом, а
+        «каким оружием стреляют этим боеприпасом» система не спрашивает: боеприпасу достаточно
+        признака consumable, который выгрузка отдаёт по типу предмета. Поле осталось бы лишним
+        вопросом в мастерской и лишними данными в базе.
+
+        Условие columnExists: если 19-01 на этой базе не успел примениться, changeSet просто
+        помечается выполненным и ничего не делает.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: item
+            columnName: ammunition_type
+      changes:
+        - dropColumn:
+            tableName: item
+            columnName: ammunition_type

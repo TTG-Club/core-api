@@ -28,6 +28,20 @@ public class FilterSubtypeAutoConfig
         return builder -> builder.postConfigurer(this::registerAllFilterSubtypes);
     }
 
+    /**
+     * Порядок множеств в теле запроса. Без него PUT сохраняет
+     * {@code Set}-поля в порядке хеш-таблицы, а не в том, в каком их прислали.
+     *
+     * @return настройка веб-маппера
+     */
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer keepSetOrder()
+    {
+        // Именно postConfigurer: modulesToInstall не складывается, и последний
+        // вызов затёр бы модули, установленные другими настройками.
+        return builder -> builder.postConfigurer(mapper -> mapper.registerModule(new OrderedSetsModule()));
+    }
+
     private void registerAllFilterSubtypes(ObjectMapper objectMapper)
     {
         ClassPathScanningCandidateComponentProvider scanner =

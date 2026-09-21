@@ -87,6 +87,9 @@ public class VttgItemMapper {
         if (isFocus(item)) {
             data.put("isFocus", true);
         }
+        if (isConsumable(item)) {
+            data.put("consumable", true);
+        }
         if (!CollectionUtils.isEmpty(item.getActiveEffects())) {
             // Без преобразования: мастерская заполняет эффект сразу в вокабуляре VTTG —
             // так же, как у черты и магического предмета.
@@ -557,6 +560,23 @@ public class VttgItemMapper {
      */
     private boolean isFocus(Item item) {
         return hasType(item, ItemType.SPELLCASTING_FOCUS);
+    }
+
+    /**
+     * Расходуемый предмет: применение тратит единицу количества, последний уходит из
+     * инвентаря. Ведущий источник — галочка мастерской ({@link Item#getConsumable()}).
+     *
+     * <p>Вывод по типам остаётся страховкой, как {@code usedUp} у магического предмета:
+     * боеприпас и яд расходуются всегда, еда и напитки — когда в них есть эффект (без
+     * эффекта «применить» у них нечего). Поэтому снятая галочка у яда ничего не меняет,
+     * а поставленная делает расходуемым предмет любого типа.</p>
+     */
+    private boolean isConsumable(Item item) {
+        return Boolean.TRUE.equals(item.getConsumable())
+                || hasType(item, ItemType.AMMUNITION)
+                || hasType(item, ItemType.POISON)
+                || (hasType(item, ItemType.FOOD_AND_DRINK)
+                        && !CollectionUtils.isEmpty(item.getActiveEffects()));
     }
 
     private boolean hasType(Item item, ItemType type) {

@@ -20,6 +20,7 @@ import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemActivation;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgMagicItem;
@@ -105,6 +106,56 @@ class VttgMagicItemMapperTest {
         assertEquals("Оружие", result.getTypeLabel());
         assertEquals("weapons", result.getSection());
         assertNull(result.getEquipmentCategory());
+    }
+
+    /**
+     * Зелье: условие «при использовании» само делает запись расходуемой — применение
+     * тратит единицу, последнее зелье уходит из инвентаря. Без признака VTTG считал
+     * зелье надетым предметом и не тратил его.
+     */
+    @Test
+    void marksConsumableByActivation() {
+        MagicItem item = new MagicItem();
+        item.setUrl("potion-of-healing");
+        item.setName("Зелье лечения");
+        item.setCategory(MagicItemCategory.POTION);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActivation(MagicItemActivation.CONSUMED);
+        item.setMechanics(mechanics);
+
+        assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
+    }
+
+    /** Галочка «Расходуемый» работает и без условия применения. */
+    @Test
+    void marksConsumableByFlag() {
+        MagicItem item = new MagicItem();
+        item.setUrl("dust-of-disappearance");
+        item.setName("Пыль исчезновения");
+        item.setCategory(MagicItemCategory.SUBJECT);
+        item.setConsumable(true);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
+    }
+
+    /** Надетый предмет не расходуется: признака в выгрузке нет вовсе. */
+    @Test
+    void keepsWornItemNotConsumable() {
+        MagicItem item = wandOfFear();
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActivation(MagicItemActivation.WORN);
+        item.setMechanics(mechanics);
+
+        VttgMagicItem result = mapper.toVttg(item);
+
+        assertNull(result.getConsumable());
+        assertFalse(objectMapper.valueToTree(result).has("consumable"));
     }
 
     /** Доспешные поля опускаются для не-брони — как в эталоне (жезл). */
@@ -581,6 +632,65 @@ class VttgMagicItemMapperTest {
         // Слово «кольчуга» строчное в названии — замена тоже строчная.
         VttgMagicItem shirt = byName(variants, "Эльфийская кольчужная рубаха");
         assertEquals("elven-chain-chain-shirt-dmg", shirt.getId());
+    }
+
+    /**
+     * Адамантиновый шаблон — правило «любой доспех из адамантина», а не предмет. В
+     * компендиум идут конкретные предметы по связанным базам: их характеристики,
+     * название приставкой и эффект шаблона (иммунитет к критам).
+     */
+    @Test
+    void expandsAdamantineTemplateByLinkedBases() {
+        MagicItem item = new MagicItem();
+        item.setUrl("adamantine-armor");
+        item.setName("Адамантиновый доспех");
+        item.setEnglish("Adamantine Armor");
+        item.setCategory(MagicItemCategory.ARMOR);
+        item.setRarity(Rarity.UNCOMMON);
+        item.setAdamantine(true);
+        item.setItems(Set.of(plate(), halfPlate()));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        assertEquals(2, variants.size());
+
+        VttgMagicItem fromPlate = byName(variants, "Латы из адамантина");
+        assertEquals("adamantine-armor-plate-dmg", fromPlate.getId());
+        assertEquals("Plate (adamantine)", fromPlate.getNameEn());
+        assertTrue(fromPlate.isAdamantine());
+        assertEquals("uncommon", fromPlate.getRarity());
+
+        // Характеристики — базы: у шаблона своих нет
+        JsonNode json = objectMapper.valueToTree(fromPlate);
+        assertEquals("plate", json.get("baseType").asText());
+        // Стоимость — базы (1500) плюс цена по редкости необычного предмета (400)
+        assertEquals("1900 зм", json.get("cost").asText());
+
+        assertEquals(
+                "adamantine-armor-half-plate-dmg",
+                byName(variants, "Полулаты из адамантина").getId());
+    }
+
+    /**
+     * Шаблон без связанных предметов раскрывать не во что: запись без класса брони в
+     * компендиуме бесполезна, поэтому не экспортируется вовсе.
+     */
+    @Test
+    void skipsTemplateWithoutLinkedBases() {
+        MagicItem item = new MagicItem();
+        item.setUrl("adamantine-weapon");
+        item.setName("Адамантиновое оружие");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.UNCOMMON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        assertTrue(mapper.toVttgVariants(item, new HashMap<>()).isEmpty());
+        assertEquals(List.of(), mapper.toVttgPayload(item, new HashMap<>()));
     }
 
     /** Предмет с варьирующейся редкостью и искусственные варианты «+1/+2/+3» не экспортируются. */

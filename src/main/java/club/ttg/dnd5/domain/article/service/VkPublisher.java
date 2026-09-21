@@ -32,7 +32,9 @@ import java.util.Set;
  * лента, дробить новость на несколько записей неуместно): очень длинный текст усекаем до лимита VK.
  * <p>
  * Пост уходит от имени сообщества ({@code wall.post}, {@code owner_id=-<groupId>}, {@code from_group=1});
- * возвращённый {@code post_id} нужен для правки ({@code wall.edit}) и удаления ({@code wall.delete}).
+ * возвращённый {@code post_id} нужен для правки ({@code wall.edit}) и удаления ({@code wall.delete}). Оба метода
+ * VK разрешает только пользовательскому токену админа: ключу сообщества он отвечает ошибкой 27, и планировщик
+ * просто перестаёт пытаться (править/удалять пост тогда приходится руками в ВК).
  * <p>
  * Особенность VK: сервер отвечает HTTP 200 даже на ошибку — она лежит в теле в {@code error.error_code}.
  * Часть кодов временные (повторить), часть — перманентные (сдаться), чтобы планировщик не долбил стену.
@@ -105,8 +107,7 @@ public class VkPublisher {
 
     /**
      * Отправляет новый пост на стену сообщества (одной записью). Обложка — best-effort: если её не удалось
-     * залить по перманентной причине (напр. групповой токен не имеет доступа к загрузке фото — ошибка 27),
-     * пост уходит текстом.
+     * залить по перманентной причине (напр. VK не принял картинку), пост уходит текстом.
      */
     public PublishResult publish(Article article) {
         String message = buildMessage(article);
@@ -171,7 +172,7 @@ public class VkPublisher {
                 // Временный сбой загрузки обложки — правку отложим, повторим весь проход на следующем тике.
                 return EditOutcome.of(EditResult.RETRY);
             }
-            // null — обложки нет либо VK отказал (напр. ошибка 27 для группового токена): правим текст без фото.
+            // null — обложки нет либо VK её не принял: правим текст без фото.
             attachment = cover.attachment();
             uploadedAttachment = cover.attachment();
         }
@@ -221,10 +222,11 @@ public class VkPublisher {
     }
 
     /**
-     * Заливает обложку на стену сообщества (3 шага VK: {@code photos.getWallUploadServer} → загрузка файла →
-     * {@code photos.saveWallPhoto}) и возвращает строку вложения {@code photo<owner_id>_<id>}. Best-effort:
-     * нет картинки или перманентный отказ VK (напр. ошибка 27 для группового токена) → {@link Cover#none()}
-     * (пост уйдёт текстом); временный сбой → {@link Cover#retry()} (повторить весь пост).
+     * Заливает обложку в альбом сообщества и возвращает строку вложения для поста. Сначала штатным путём —
+     * на стену ({@link CoverRoute#WALL}); если VK не выдал upload-сервер стены (ключу сообщества он отвечает
+     * ошибкой 27), — через альбом сообщений ({@link CoverRoute#MESSAGES}). Best-effort: нет картинки или
+     * перманентный отказ VK → {@link Cover#none()} (пост уйдёт текстом); временный сбой →
+     * {@link Cover#retry()} (повторить весь пост).
      */
     private Cover uploadCover(Article article) {
         if (!StringUtils.hasText(article.getPreviewImageUrl())) {
@@ -242,26 +244,41 @@ public class VkPublisher {
             return Cover.none();
         }
 
-        MultiValueMap<String, String> serverParams = new LinkedMultiValueMap<>();
-        serverParams.add("group_id", properties.getGroupId());
-        ApiOutcome server = callMethod("photos.getWallUploadServer", serverParams);
+        // Обложки лежат в S3 в WebP (см. ImageService#upload), а upload-сервер ВК принимает только JPG/PNG/GIF
+        // и на WebP молча отвечает photo="[]" — поэтому перекодируем перед загрузкой.
+        ImageConverter.EncodedImage encoded = toVkFormat(bytes, article);
+        String filename = coverFilename(imageSource.filename(article.getPreviewImageUrl()), encoded.extension());
+        Cover cover = uploadCover(article, encoded, filename, CoverRoute.WALL);
+        if (cover == null) {
+            log.info("VK не дал загрузить обложку на стену для {} — пробую через альбом сообщений", article.getUrl());
+            cover = uploadCover(article, encoded, filename, CoverRoute.MESSAGES);
+        }
+        if (cover == null) {
+            log.info("VK отказал в загрузке обложки для {} — отправляю текстом", article.getUrl());
+            return Cover.none();
+        }
+        return cover;
+    }
+
+    /**
+     * Заливает обложку одним путём VK (3 шага: выдать upload-сервер → загрузить файл → сохранить фото).
+     * {@code null} — VK не выдал upload-сервер (у ключа нет доступа к этому пути), можно пробовать другой.
+     */
+    private Cover uploadCover(Article article, ImageConverter.EncodedImage encoded, String filename,
+                              CoverRoute route) {
+        ApiOutcome server = callMethod(route.serverMethod, route.groupParams(properties.getGroupId()));
         if (server.result() == SendResult.TRANSIENT) {
             return Cover.retry();
         }
         if (server.result() == SendResult.REJECTED) {
-            log.info("VK отказал в загрузке обложки для {} — отправляю текстом", article.getUrl());
-            return Cover.none();
+            return null;
         }
         String uploadUrl = server.response() != null ? server.response().path("upload_url").asText(null) : null;
         if (!StringUtils.hasText(uploadUrl)) {
             return Cover.none();
         }
 
-        // Обложки лежат в S3 в WebP (см. ImageService#upload), а upload-сервер ВК принимает только JPG/PNG/GIF
-        // и на WebP молча отвечает photo="[]" — поэтому перекодируем перед загрузкой.
-        ImageConverter.EncodedImage encoded = toVkFormat(bytes, article);
-        ApiOutcome uploaded = uploadFile(uploadUrl, encoded,
-                coverFilename(imageSource.filename(article.getPreviewImageUrl()), encoded.extension()));
+        ApiOutcome uploaded = uploadFile(uploadUrl, encoded, filename);
         if (uploaded.result() == SendResult.TRANSIENT) {
             return Cover.retry();
         }
@@ -278,25 +295,30 @@ public class VkPublisher {
             return Cover.none();
         }
 
-        MultiValueMap<String, String> saveParams = new LinkedMultiValueMap<>();
-        saveParams.add("group_id", properties.getGroupId());
+        MultiValueMap<String, String> saveParams = route.groupParams(properties.getGroupId());
         saveParams.add("server", String.valueOf(uploaded.response().path("server").asInt()));
         saveParams.add("photo", photo);
         saveParams.add("hash", uploaded.response().path("hash").asText(""));
-        ApiOutcome saved = callMethod("photos.saveWallPhoto", saveParams);
+        ApiOutcome saved = callMethod(route.saveMethod, saveParams);
         if (saved.result() == SendResult.TRANSIENT) {
             return Cover.retry();
         }
         JsonNode arr = saved.response();
         if (saved.result() == SendResult.REJECTED || arr == null || !arr.isArray() || arr.isEmpty()) {
-            log.info("VK не сохранил обложку (saveWallPhoto) для {} — отправляю текстом", article.getUrl());
+            log.info("VK не сохранил обложку ({}) для {} — отправляю текстом", route.saveMethod, article.getUrl());
             return Cover.none();
         }
-        JsonNode photoObj = arr.get(0);
-        // owner_id для группы уже отрицательный → вложение вида photo-<groupId>_<id>.
-        long ownerId = photoObj.path("owner_id").asLong();
-        long id = photoObj.path("id").asLong();
-        return Cover.of("photo" + ownerId + "_" + id);
+        return Cover.of(photoAttachment(arr.get(0)));
+    }
+
+    /**
+     * Строка вложения {@code photo<owner_id>_<id>[_<access_key>]}. owner_id группы уже отрицательный; ключ
+     * доступа VK отдаёт для фото из закрытых альбомов (альбом сообщений) — передаём его, если он есть.
+     */
+    private static String photoAttachment(JsonNode photo) {
+        String attachment = "photo" + photo.path("owner_id").asLong() + "_" + photo.path("id").asLong();
+        String accessKey = photo.path("access_key").asText("");
+        return StringUtils.hasText(accessKey) ? attachment + "_" + accessKey : attachment;
     }
 
     /** Вызов метода VK API: POST form-urlencoded, добавляет {@code access_token} и {@code v}, разбирает ошибку. */
@@ -432,6 +454,36 @@ public class VkPublisher {
 
         static Cover of(String attachment) {
             return new Cover(false, attachment);
+        }
+    }
+
+    /** Путь заливки обложки: метод «выдать upload-сервер» и метод «сохранить загруженное фото». */
+    private enum CoverRoute {
+        /** Альбом стены сообщества — штатный путь; ключ сообщества VK сюда не пускает (ошибка 27). */
+        WALL("photos.getWallUploadServer", "photos.saveWallPhoto", true),
+        /**
+         * Альбом сообщений сообщества — обход для ключа сообщества: фото всё равно принадлежит сообществу
+         * ({@code owner_id=-<groupId>}) и прикрепляется к посту на стене.
+         */
+        MESSAGES("photos.getMessagesUploadServer", "photos.saveMessagesPhoto", false);
+
+        private final String serverMethod;
+        private final String saveMethod;
+        /** Нужно ли передавать {@code group_id} (методам стены — да; методы сообщений берут сообщество из ключа). */
+        private final boolean withGroupId;
+
+        CoverRoute(String serverMethod, String saveMethod, boolean withGroupId) {
+            this.serverMethod = serverMethod;
+            this.saveMethod = saveMethod;
+            this.withGroupId = withGroupId;
+        }
+
+        MultiValueMap<String, String> groupParams(String groupId) {
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            if (withGroupId) {
+                params.add("group_id", groupId);
+            }
+            return params;
         }
     }
 
