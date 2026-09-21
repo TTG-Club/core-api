@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -734,6 +735,71 @@ class VttgJsonContractTest {
         assertEquals("recipient", powerWord.get(3).get("whose").asText());
         assertTrue(powerWord.get(4).get("locked").asBoolean());
         assertTrue(powerWord.get(4).get("endsOnExit").asBoolean());
+    }
+
+    /**
+     * Поля системы, которых модель ещё не знает, у эффекта, спасброска при
+     * наложении, строки изменения и ауры переживают круг: иначе следующее
+     * обновление системы снова молча стирало бы заполненное. Значения — любого
+     * вида JSON, {@code null} тоже остаётся.
+     */
+    @Test
+    void activeEffectKeepsUnknownKeys() throws Exception {
+        String json = """
+                {
+                  "id": "effect-future",
+                  "name": "Из новой версии системы",
+                  "changes": [
+                    { "key": "armorClass", "mode": "add", "value": "1", "priority": 20, "futureScale": { "per": "level" } }
+                  ],
+                  "aura": { "radius": 10, "target": "allies", "futurePulse": true },
+                  "applySave": { "ability": "wisdom", "dc": 0, "onSuccess": "negate", "futureRetry": [1, 2] },
+                  "futureField": "как есть",
+                  "futureCount": 3,
+                  "futureNull": null
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals("как есть", effect.unknownFields().get("futureField").asText());
+        assertEquals(3, effect.unknownFields().get("futureCount").asInt());
+        assertTrue(effect.unknownFields().get("futureNull").isNull());
+        assertEquals("level",
+                effect.getChanges().getFirst().unknownFields().get("futureScale").get("per").asText());
+        assertTrue(effect.getAura().unknownFields().get("futurePulse").asBoolean());
+        assertEquals(2, effect.getApplySave().unknownFields().get("futureRetry").size());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertEquals(mapper.writeValueAsString(mapper.readTree(json)), serialized);
+        // Карта — не поле модели: отдельным свойством она не пишется
+        assertFalse(serialized.contains("unknownFields"));
+    }
+
+    /**
+     * Порядок на выходе: известные поля в порядке объявления в модели, за ними
+     * незнакомые — в том порядке, в каком пришли, где бы ни стояли во входе.
+     */
+    @Test
+    void activeEffectWritesUnknownKeysAfterKnownFields() throws Exception {
+        String json = """
+                {
+                  "futureFirst": 1,
+                  "id": "effect-order",
+                  "applySave": { "futureRetry": true, "ability": "wisdom" },
+                  "futureSecond": 2,
+                  "name": "Порядок"
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals(
+                "{\"id\":\"effect-order\",\"name\":\"Порядок\","
+                        + "\"applySave\":{\"ability\":\"wisdom\",\"futureRetry\":true},"
+                        + "\"futureFirst\":1,\"futureSecond\":2}",
+                mapper.writeValueAsString(effect));
     }
 
     /**

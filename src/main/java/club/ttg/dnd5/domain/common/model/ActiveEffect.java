@@ -19,6 +19,10 @@ import java.util.List;
  * ({@link Change#key}) — это {@code EffectTargetKey} VTTG: {@code armorClass},
  * {@code save.constitution}, {@code skill.stealth}, {@code movement.swim},
  * {@code ability.strength}, {@code attack.melee} и прочие.
+ * <p>
+ * Ключи, которых модель ещё не знает, у эффекта и у {@link Save}, {@link Change},
+ * {@link Aura} не выбрасываются, а хранятся и выгружаются как есть — см.
+ * {@link UnknownFieldsHolder}.
  *
  * @see club.ttg.dnd5.domain.vttg
  */
@@ -26,7 +30,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ActiveEffect {
+public class ActiveEffect extends UnknownFieldsHolder {
     private String id;
     private String name;
     private String description;
@@ -123,7 +127,7 @@ public class ActiveEffect {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Change {
+    public static class Change extends UnknownFieldsHolder {
         private String key;
         private String mode;
         private String value;
@@ -152,7 +156,7 @@ public class ActiveEffect {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Aura {
+    public static class Aura extends UnknownFieldsHolder {
         private Integer radius;
         private String target;
         private Boolean applyToSelf;
@@ -219,7 +223,7 @@ public class ActiveEffect {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Save {
+    public static class Save extends UnknownFieldsHolder {
         private String ability;
         private Integer dc;
         private String onSuccess;

@@ -4,15 +4,21 @@ import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.dto.PrimaryAbilitiesDto;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.spell.model.Spell;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.hypersistence.utils.hibernate.type.util.JsonConfiguration;
+import io.hypersistence.utils.hibernate.type.util.ObjectMapperWrapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Порядок множеств из jsonb. По умолчанию Jackson отдаёт {@code HashSet}, а у
@@ -78,6 +84,34 @@ class HypersistenceObjectMapperTest
         new FilterSubtypeAutoConfig().keepSetOrder().customize(builder);
 
         return builder.build();
+    }
+
+    /**
+     * Незнакомые ключи эффекта переживают колонку jsonb, а не только круг через
+     * ObjectMapper: тот же путь, что у {@code @Type(JsonType.class)} — обёртка из
+     * {@code hypersistence-utils.properties}, тип поля сущности со всеми
+     * параметрами. Копия — это снимок, с которым Hibernate сверяет сущность при
+     * сбросе: потеряй она ключ, правка без него выглядела бы как «ничего не
+     * изменилось».
+     */
+    @Test
+    void activeEffectUnknownKeysSurviveJsonbColumn() throws Exception
+    {
+        ObjectMapperWrapper jsonb = JsonConfiguration.INSTANCE.getObjectMapperWrapper();
+        Type column = Spell.class.getDeclaredField("activeEffects").getGenericType();
+        String stored = "[{\"id\":\"effect-future\","
+                + "\"changes\":[{\"key\":\"armorClass\",\"futureScale\":{\"per\":\"level\"}}],"
+                + "\"aura\":{\"radius\":10,\"futurePulse\":true},"
+                + "\"applySave\":{\"ability\":\"wisdom\",\"futureRetry\":[1,2]},"
+                + "\"futureField\":\"как есть\"}]";
+
+        // Обёртка собрана нашим поставщиком, а не маппером Hypersistence по умолчанию
+        assertTrue(jsonb.getObjectMapper().getRegisteredModuleIds().contains("ordered-sets"));
+
+        List<ActiveEffect> read = jsonb.fromString(stored, column);
+
+        assertEquals(stored, jsonb.toString(read));
+        assertEquals(stored, jsonb.toString(jsonb.clone(read)));
     }
 
     /** Поле сущности, на котором расхождение и поймали. */
