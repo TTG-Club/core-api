@@ -509,6 +509,234 @@ class VttgJsonContractTest {
     }
 
     /**
+     * Поля эффекта системы 0.8.66: «вырваться», ступени, заряды, растущие
+     * модификаторы, сохранённый бросок, срок формулой, подавление состояний и
+     * согласная цель. Без полей в модели API молча выбрасывал их при сохранении.
+     *
+     * <p>Круг байт-в-байт: ключи в JSON ниже идут в порядке объявления полей
+     * модели — в этом порядке их и пишет Jackson. Нули ({@code dc},
+     * {@code stageIndex}) — значения, а не «не задано», и обязаны пережить круг.</p>
+     */
+    @Test
+    void activeEffectKeepsEscapeStagesChargesAndSteps() throws Exception {
+        String json = """
+                {
+                  "id": "effect-v4",
+                  "name": "Путы и нарастающее проклятие",
+                  "origin": "spell",
+                  "duration": { "type": "rounds" },
+                  "changes": [
+                    { "key": "attack.melee", "mode": "add", "value": "-1", "step": { "by": -1, "per": "turn", "until": -5 }, "priority": 20 },
+                    { "key": "armorClass", "mode": "add", "value": "1", "step": { "by": 1, "per": "round" }, "priority": 20 }
+                  ],
+                  "flags": ["attack.disadvantage"],
+                  "charges": { "max": 3, "current": 3, "endsWhenEmpty": true },
+                  "savedRoll": "1к6",
+                  "durationFormula": "1к4",
+                  "applySave": { "ability": "constitution", "dc": 0, "onSuccess": "negate", "allowWilling": true },
+                  "suppressConditions": ["paralyzed", "restrained"],
+                  "escape": {
+                    "by": "adjacent",
+                    "cost": "move",
+                    "moveCostFeet": 10,
+                    "check": { "skill": "athletics", "dc": 0 },
+                    "onSuccess": "removeCondition",
+                    "label": "Вырвать из пут"
+                  },
+                  "stages": [
+                    {
+                      "label": "Ступень 1 — слабеющие удары",
+                      "changes": [
+                        { "key": "attack.melee", "mode": "add", "value": "-1", "step": { "by": -1, "per": "turn", "until": -5 }, "priority": 20 },
+                        { "key": "armorClass", "mode": "add", "value": "1", "step": { "by": 1, "per": "round" }, "priority": 20 }
+                      ],
+                      "flags": ["attack.disadvantage"]
+                    },
+                    {
+                      "label": "Ступень 2 — без отдыха",
+                      "changes": [{ "key": "armorClass", "mode": "add", "value": "-2", "priority": 20 }],
+                      "flags": ["attack.disadvantage", "rest.noBenefit.long"]
+                    }
+                  ],
+                  "stageIndex": 0
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        ActiveEffect.Escape escape = effect.getEscape();
+
+        assertEquals("adjacent", escape.getBy());
+        assertEquals("move", escape.getCost());
+        assertEquals(10, escape.getMoveCostFeet());
+        assertEquals("athletics", escape.getCheck().getSkill());
+        assertEquals(0, escape.getCheck().getDc());
+        assertEquals("removeCondition", escape.getOnSuccess());
+        assertEquals("Вырвать из пут", escape.getLabel());
+
+        assertEquals(2, effect.getStages().size());
+        assertEquals("Ступень 2 — без отдыха", effect.getStages().getLast().getLabel());
+        assertEquals("-2", effect.getStages().getLast().getChanges().getFirst().getValue());
+        assertEquals(
+                List.of("attack.disadvantage", "rest.noBenefit.long"),
+                effect.getStages().getLast().getFlags());
+        assertEquals(0, effect.getStageIndex());
+
+        assertEquals(3, effect.getCharges().getMax());
+        assertEquals(3, effect.getCharges().getCurrent());
+        assertEquals(Boolean.TRUE, effect.getCharges().getEndsWhenEmpty());
+        assertEquals("1к6", effect.getSavedRoll());
+        assertEquals("1к4", effect.getDurationFormula());
+        assertEquals(List.of("paralyzed", "restrained"), effect.getSuppressConditions());
+        assertEquals(Boolean.TRUE, effect.getApplySave().getAllowWilling());
+
+        ActiveEffect.ChangeStep bounded = effect.getChanges().getFirst().getStep();
+        ActiveEffect.ChangeStep unbounded = effect.getChanges().getLast().getStep();
+
+        assertEquals(-1, bounded.getBy());
+        assertEquals("turn", bounded.getPer());
+        assertEquals(-5, bounded.getUntil());
+        assertEquals(1, unbounded.getBy());
+        assertEquals("round", unbounded.getPer());
+        assertNull(unbounded.getUntil());
+
+        assertEquals(
+                mapper.writeValueAsString(mapper.readTree(json)),
+                mapper.writeValueAsString(effect));
+    }
+
+    /**
+     * «Вырваться» без проверки навыка: действие снимает эффект без броска.
+     * Пустая проверка не должна появиться в выгрузке {@code null}-ом.
+     */
+    @Test
+    void activeEffectKeepsEscapeWithoutCheck() throws Exception {
+        String json = """
+                {
+                  "id": "effect-escape",
+                  "name": "Схватывание",
+                  "conditionKey": "grappled",
+                  "escape": { "cost": "action", "onSuccess": "removeSelf" }
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals("action", effect.getEscape().getCost());
+        assertEquals("removeSelf", effect.getEscape().getOnSuccess());
+        assertNull(effect.getEscape().getBy());
+        assertNull(effect.getEscape().getCheck());
+
+        assertEquals(
+                mapper.writeValueAsString(mapper.readTree(json)),
+                mapper.writeValueAsString(effect));
+    }
+
+    /**
+     * Срабатывания системы 0.8.66: цена, вопрос человеку, шанс, путь, снятое
+     * состояние, получатель «наложивший», режим спасброска по условию и новые
+     * действия. Всё это лежит ВНУТРИ {@code triggers}: модель их не знает, и круг
+     * байт-в-байт страхует от того, что {@link JsonNode} заменят типом.
+     */
+    @Test
+    void activeEffectKeepsTriggersOfSystem0866() throws Exception {
+        String json = """
+                {
+                  "id": "effect-triggers-v4",
+                  "name": "Срабатывания 0.8.66",
+                  "triggers": [
+                    {
+                      "id": "trigger_drain",
+                      "event": "damageTaken",
+                      "recipient": "source",
+                      "actions": [
+                        { "type": "tempHp", "amount": "5", "mode": "add" },
+                        { "type": "restore", "what": "spellSlot", "level": 2, "amount": 1 }
+                      ]
+                    },
+                    {
+                      "id": "trigger_release",
+                      "event": "conditionLost",
+                      "conditionKey": "restrained",
+                      "actions": [{ "type": "restore", "what": "counter", "counter": "rages" }]
+                    },
+                    {
+                      "id": "trigger_booming_blade",
+                      "event": "moved",
+                      "condition": "move.forced === false",
+                      "everyFeet": 10,
+                      "actions": [
+                        { "type": "damage", "parts": [{ "formula": "1к8@dmg.thunder" }] },
+                        { "type": "moveArea", "kind": "follow" }
+                      ]
+                    },
+                    {
+                      "id": "trigger_compulsion",
+                      "event": "turnStart",
+                      "cost": "move",
+                      "moveCostFeet": 10,
+                      "ask": true,
+                      "asker": "source",
+                      "chancePercent": 25,
+                      "save": {
+                        "ability": "wisdom",
+                        "dc": 0,
+                        "modeIf": [
+                          { "condition": "self.hp.temp === 0", "mode": "advantage" },
+                          { "condition": "target.isSource === true", "mode": "disadvantage" }
+                        ],
+                        "autoSuccessIf": "self.grounded === true",
+                        "autoFailIf": "self.ability[\\"strength\\"] <= 10"
+                      },
+                      "actions": [
+                        { "type": "notify", "text": "Двигайся в указанную сторону", "to": "source", "roll": "1d8", "on": "failed" },
+                        { "type": "move", "kind": "push", "distance": 10, "from": "subject", "on": "failed" },
+                        { "type": "moveArea", "kind": "away", "distance": 10 },
+                        { "type": "dispel", "maxLevel": 3, "withoutLevel": true, "on": "saved" }
+                      ]
+                    },
+                    {
+                      "id": "trigger_power_word_heal",
+                      "event": "applied",
+                      "actions": [
+                        { "type": "setHp", "value": 0, "toMax": true },
+                        { "type": "revive", "full": true },
+                        { "type": "revive", "hp": 1 },
+                        { "type": "endCast", "whose": "recipient" },
+                        { "type": "applyCondition", "conditionKey": "restrained", "locked": true, "endsOnExit": true }
+                      ]
+                    }
+                  ]
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals(
+                mapper.writeValueAsString(mapper.readTree(json)),
+                mapper.writeValueAsString(effect));
+
+        List<JsonNode> triggers = effect.getTriggers();
+        JsonNode compulsion = triggers.get(3);
+        JsonNode powerWord = triggers.getLast().get("actions");
+
+        assertEquals("source", triggers.getFirst().get("recipient").asText());
+        assertEquals("restrained", triggers.get(1).get("conditionKey").asText());
+        assertEquals(10, triggers.get(2).get("everyFeet").asInt());
+        assertEquals("move", compulsion.get("cost").asText());
+        assertEquals(10, compulsion.get("moveCostFeet").asInt());
+        assertTrue(compulsion.get("ask").asBoolean());
+        assertEquals("source", compulsion.get("asker").asText());
+        assertEquals(25, compulsion.get("chancePercent").asInt());
+        assertEquals(2, compulsion.get("save").get("modeIf").size());
+        assertEquals("self.ability[\"strength\"] <= 10", compulsion.get("save").get("autoFailIf").asText());
+        assertTrue(powerWord.get(0).get("toMax").asBoolean());
+        assertEquals("recipient", powerWord.get(3).get("whose").asText());
+        assertTrue(powerWord.get(4).get("locked").asBoolean());
+        assertTrue(powerWord.get(4).get("endsOnExit").asBoolean());
+    }
+
+    /**
      * Зона заклинания — ещё одно значение строки {@code effectTarget}, а лечение
      * каждый ход — токен {@code @heal} в формуле части: модели правки не нужны,
      * но оба обязаны доходить как есть.

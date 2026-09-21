@@ -60,6 +60,15 @@ public class ActiveEffect {
     private Variant variant;
     /** Применение или включение: без него эффект действует постоянно. */
     private Activation activation;
+    /** Заряды срабатываний: каждое сработавшее тратит один («Огненный щит»). */
+    private Charges charges;
+    /**
+     * Формула, которая бросается один раз при наложении и подставляется вместо
+     * {@code @roll} во все формулы эффекта («Вибрирующие жидкости»).
+     */
+    private String savedRoll;
+    /** Срок формулой («1к4» раунда) вместо числа {@link Duration#value}. */
+    private String durationFormula;
     private Save applySave;
     private Boolean applyOnSuccess;
     private Boolean applyOnSuccessOnly;
@@ -68,6 +77,8 @@ public class ActiveEffect {
     private List<DamagePart> damageParts;
     private RecurringSave recurringSave;
     private RecurringDamage recurringDamage;
+    /** Ключи состояний, которые эффект подавляет, не снимая («Свобода перемещения»). */
+    private List<String> suppressConditions;
     private List<String> conditionImmunities;
     /**
      * Срабатывания VTTG: «событие → условие → спасбросок → действия → лимит».
@@ -76,6 +87,15 @@ public class ActiveEffect {
      * проверяет и не обрезает.
      */
     private List<JsonNode> triggers;
+    /** Действие «вырваться» — кнопка на листе («Опутывание»: проверка Атлетики). */
+    private Escape escape;
+    /** Ступени эффекта («Проклятие гибельного старения»), до 10. */
+    private List<Stage> stages;
+    /**
+     * Действующая ступень, 0–9; форма пишет её сама, а {@link #changes} и
+     * {@link #flags} эффекта копирует из этой ступени.
+     */
+    private Integer stageIndex;
 
     /** Длительность эффекта. */
     @Getter
@@ -108,7 +128,23 @@ public class ActiveEffect {
         private String mode;
         private String value;
         private String condition;
+        /** Модификатор растёт или убывает со временем; только у плоского числа. */
+        private ChangeStep step;
         private Integer priority;
+    }
+
+    /** Шаг изменения: на сколько и как часто двигается значение строки. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class ChangeStep {
+        /** На сколько за период; отрицательное — значение убывает. */
+        private Integer by;
+        /** {@code turn} либо {@code round}. */
+        private String per;
+        /** Предел, дальше которого значение не уходит; нет — без предела. */
+        private Integer until;
     }
 
     /** Настройки ауры эффекта. */
@@ -165,6 +201,19 @@ public class ActiveEffect {
         private Integer amount;
     }
 
+    /** Заряды эффекта: сколько раз ещё сработают его срабатывания. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Charges {
+        private Integer max;
+        /** Сколько осталось; автор ставит равным {@link #max}. */
+        private Integer current;
+        /** Последний заряд снимает эффект; нет — эффект остаётся пустым. */
+        private Boolean endsWhenEmpty;
+    }
+
     /** Спасбросок при наложении эффекта. */
     @Getter
     @Setter
@@ -174,6 +223,8 @@ public class ActiveEffect {
         private String ability;
         private Integer dc;
         private String onSuccess;
+        /** Согласная цель не бросает спасбросок. */
+        private Boolean allowWilling;
     }
 
     /** Периодический спасбросок для снятия эффекта. */
@@ -202,6 +253,49 @@ public class ActiveEffect {
          * наложившего, её проставляет VTTG при наложении.
          */
         private Save save;
+    }
+
+    /** Действие, снимающее эффект: «проверка Силы (Атлетика) Сл 14 — и вырваться». */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Escape {
+        /** {@code self} либо {@code adjacent}; нет — сам носитель. */
+        private String by;
+        /** {@code action}, {@code bonus}, {@code reaction}, {@code move} либо {@code free}. */
+        private String cost;
+        /** Футы перемещения при {@code cost = move}. */
+        private Integer moveCostFeet;
+        /** Проверка навыка; нет — снимает без броска. */
+        private EscapeCheck check;
+        /** {@code removeSelf} либо {@code removeCondition}; нет — снимается сам эффект. */
+        private String onSuccess;
+        /** Подпись кнопки; нет — «Вырваться». */
+        private String label;
+    }
+
+    /** Проверка навыка, снимающая эффект. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class EscapeCheck {
+        /** Ключ навыка системы ({@code athletics}). */
+        private String skill;
+        /** Сложность; 0 — Сл источника. */
+        private Integer dc;
+    }
+
+    /** Ступень эффекта: свой набор модификаторов и флагов. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Stage {
+        private String label;
+        private List<Change> changes;
+        private List<String> flags;
     }
 
 }
