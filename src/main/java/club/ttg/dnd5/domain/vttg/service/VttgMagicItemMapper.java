@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItem;
@@ -40,7 +41,8 @@ import java.util.regex.Pattern;
  *
  * <p>Тип отдаётся родной: оружие → {@code weapon}, всё остальное → {@code equipment} с флагом
  * {@code isMagical=true} (отдельного типа «magic-item» нет). {@code section} раскладывает запись
- * по листу дерева разделов (weapons/armor/rings/wands/wondrous).</p>
+ * по листу дерева разделов (weapons/armor/rings/wands/wondrous). Магический боеприпас, хоть
+ * и заведён оружием, уходит снаряжением к обычным стрелам (gear) — см. {@link #isAmmunition}.</p>
  *
  * <p>Сопоставление справочников выполнено под перечисления VTTG ({@code EquipmentCategory},
  * {@code ItemRarity}). Категории без точного соответствия отображаются на близкий аналог
@@ -93,6 +95,12 @@ public class VttgMagicItemMapper {
     /** Приоритет изменения по умолчанию — тот же, что проставляет редактор эффектов. */
     private static final int DEFAULT_EFFECT_PRIORITY = 20;
 
+    /** Уточнение боеприпаса без связанной базы: «Оружие (любой боеприпас)». */
+    private static final String ANY_AMMUNITION = "любой боеприпас";
+
+    /** Категория снаряжения магического боеприпаса — та же, что у обычных стрел. */
+    private static final String AMMUNITION_CATEGORY = "adventurer-equipment";
+
     private final VttgMarkupConverter markupConverter;
     private final ItemRepository itemRepository;
     private final VttgItemMapper itemMapper;
@@ -133,7 +141,10 @@ public class VttgMagicItemMapper {
         }
         List<Item> linked = linkedItems(item);
         if (!linked.isEmpty()) {
-            return variantsFromLinked(item, linked);
+            // Связан только с тем, что в компендиум не идёт: «Стрелы +1» на пачке нужны
+            // сайту, а в компендиуме их место занимает штучная «Стрела +1» на «Стреле»
+            List<Item> exported = exportedBases(linked);
+            return exported.isEmpty() ? List.of() : variantsFromLinked(item, exported);
         }
         if (isTemplateWithoutBases(item)) {
             // Шаблон без связанных предметов раскрывать не во что: запись без доспешных
@@ -250,8 +261,9 @@ public class VttgMagicItemMapper {
         boolean requiresAttunement = attunement != null && attunement.isRequires();
         String sourceKey = VttgSourceKeys.of(item.getSource());
         MagicItemCategory category = item.getCategory();
-        boolean weapon = category == MagicItemCategory.WEAPON;
-        BaseMechanics mechanics = mechanics(item, base);
+        boolean ammunition = isAmmunition(item, base);
+        boolean weapon = category == MagicItemCategory.WEAPON && !ammunition;
+        BaseMechanics mechanics = mechanics(item, base, ammunition);
 
         return VttgMagicItem.builder()
                 .id(id(url, sourceKey))
@@ -262,7 +274,7 @@ public class VttgMagicItemMapper {
                 // Оружие отдаём родным типом "weapon", всё остальное — "equipment" (п.3 контракта).
                 .type(weapon ? "weapon" : "equipment")
                 .typeLabel(weapon ? "Оружие" : "Снаряжение")
-                .section(section(category))
+                .section(ammunition ? VttgItemMapper.GEAR_SECTION : section(category))
                 // Страница-источник у всех записей раскрытия одна — родительская: варианты
                 // («полулаты или латы», «+1/+2/+3») своих страниц на сайте не имеют.
                 .srcSection(SectionType.MAGIC_ITEM.getValue())
@@ -276,7 +288,7 @@ public class VttgMagicItemMapper {
                 .rarity(rarityCode(rarity))
                 .equipped(false)
                 // У оружия своя категория (weaponCategory); для брони — из mechanics; иначе реальная.
-                .equipmentCategory(weapon ? null : equipmentCategory(category))
+                .equipmentCategory(ammunition ? AMMUNITION_CATEGORY : weapon ? null : equipmentCategory(category))
                 // Боевые/доспешные поля выводятся из базового предмета (см. mechanics);
                 // для «общих» зачарований и нерешённых уточнений их нет — это допустимо.
                 .mechanics(mechanics.fields())
@@ -284,9 +296,9 @@ public class VttgMagicItemMapper {
                 // Фокусировка — либо свойство самой записи, либо унаследованное от базы:
                 // магический посох на основе боевого посоха фокусировкой быть не перестаёт.
                 .isFocus(item.isFocus() || mechanics.focus())
-                // Расход: признак самой записи, применение «при использовании» либо
-                // расходуемая основа (магический боеприпас на обычных стрелах)
-                .consumable(consumable(item, mechanics))
+                // Расход: признак самой записи, применение «при использовании»,
+                // расходуемая основа либо сам боеприпас
+                .consumable(consumable(item, mechanics, ammunition))
                 .isAdamantine(item.isAdamantine())
                 .magicAttunement(requiresAttunement ? "required" : "none")
                 .magicBonus(bonus)
@@ -450,11 +462,35 @@ public class VttgMagicItemMapper {
     }
 
     /**
+     * Боеприпас ли запись. Магические стрелы, болты и пули заведены оружием, но сами не
+     * стреляют: урона, дальности и категории оружия в справочнике у них нет, а оружие без
+     * урона система VTTG дорисовывает сама — «1к6 рубящего в ближнем бою».
+     *
+     * <p>Решают данные, а не слова: связанный немагический предмет с типом «Боеприпас»,
+     * а у записи без базы — уточнение ровно «любой боеприпас». Слово в уточнении само по
+     * себе ничего не значит: у «Повторяющегося выстрела» там «оружие со свойством
+     * боеприпасы», и это оружие.</p>
+     */
+    private boolean isAmmunition(MagicItem item, Item base) {
+        if (item.getCategory() != MagicItemCategory.WEAPON) {
+            return false;
+        }
+        if (base != null) {
+            return base.getTypes() != null && base.getTypes().contains(ItemType.AMMUNITION);
+        }
+        return item.getClarification() != null
+                && ANY_AMMUNITION.equalsIgnoreCase(item.getClarification().trim());
+    }
+
+    /**
      * Боевые/доспешные поля и вес/стоимость базового предмета плюс собственный урон магии;
      * {@code EMPTY} — базы нет и добавлять магии нечего.
+     *
+     * <p>Боеприпасу боевые поля не пишутся вовсе, собственный урон тоже: при выстреле
+     * система берёт у боеприпаса только магический бонус и эффекты.</p>
      */
-    private BaseMechanics mechanics(MagicItem item, Item base) {
-        List<Map<String, Object>> ownParts = ownDamageParts(item);
+    private BaseMechanics mechanics(MagicItem item, Item base, boolean ammunition) {
+        List<Map<String, Object>> ownParts = ammunition ? List.of() : ownDamageParts(item);
         if (base == null) {
             // Без базы остаются только собственные части магии: потерять их молча хуже,
             // чем отдать запись без основного броска — уточнение всё равно не разрешилось.
@@ -466,7 +502,7 @@ public class VttgMagicItemMapper {
         Map<String, Object> baseMap = itemMapper.toVttg(base);
         Map<String, Object> fields = new LinkedHashMap<>();
         // Боевые/доспешные поля имеют смысл только для оружия/брони; для прочих категорий берём лишь вес/стоимость.
-        List<String> keys = switch (category == null ? MagicItemCategory.SUBJECT : category) {
+        List<String> keys = ammunition ? List.of() : switch (category == null ? MagicItemCategory.SUBJECT : category) {
             case WEAPON -> WEAPON_KEYS;
             case ARMOR -> ARMOR_KEYS;
             default -> List.of();
@@ -491,22 +527,24 @@ public class VttgMagicItemMapper {
     /**
      * Тратит ли применение единицу предмета ({@code DnDGameItem.consumable}).
      *
-     * <p>Три источника: галочка «Расходуемый» в мастерской, условие применения «при
-     * использовании» (зелья и свитки заводят именно так) и расходуемая основа —
-     * «Стрелы +1» остаются боеприпасом, который тратится выстрелом.</p>
+     * <p>Четыре источника: галочка «Расходуемый» в мастерской, условие применения «при
+     * использовании» (зелья и свитки заводят именно так), расходуемая основа и сам
+     * боеприпас. Последний расходуется всегда, как и обычный: зарядить в оружие система
+     * даёт только расходуемый предмет, а галочка у «Опрокидывающего боеприпаса» не стоит.</p>
      *
      * <p>Признак нужен вместе с {@code activation} эффекта: копия эффекта ложится при
      * применении, а сам предмет должен при этом уйти в расход.</p>
      *
      * @param item магический предмет.
      * @param mechanics поля, выведенные из базового предмета.
+     * @param ammunition запись — боеприпас (см. {@link #isAmmunition}).
      * @return {@code true}, когда применение тратит единицу; иначе {@code null} — поле
      *         в выгрузку не идёт.
      */
-    private Boolean consumable(MagicItem item, BaseMechanics mechanics) {
+    private Boolean consumable(MagicItem item, BaseMechanics mechanics, boolean ammunition) {
         MagicItemMechanics itemMechanics = item.getMechanics();
         boolean usedUp = itemMechanics != null && itemMechanics.getActivation() == MagicItemActivation.CONSUMED;
-        return item.isConsumable() || usedUp || mechanics.consumable() ? Boolean.TRUE : null;
+        return item.isConsumable() || usedUp || mechanics.consumable() || ammunition ? Boolean.TRUE : null;
     }
 
     /**
@@ -590,6 +628,15 @@ public class VttgMagicItemMapper {
             }
         }
         return result;
+    }
+
+    /**
+     * Связанные предметы, по которым запись раскрывается в компендиуме. Не идущий туда
+     * предмет (пачка «Стрелы») своего варианта не даёт — иначе «Стрелы из адамантина»
+     * повторили бы «Стрелу из адамантина», а «Стрелы +1» — «Стрелу +1».
+     */
+    private List<Item> exportedBases(List<Item> linked) {
+        return linked.stream().filter(VttgItemMapper::isExported).toList();
     }
 
     /**

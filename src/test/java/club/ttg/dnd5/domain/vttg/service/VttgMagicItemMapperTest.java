@@ -693,6 +693,153 @@ class VttgMagicItemMapperTest {
         assertEquals(List.of(), mapper.toVttgPayload(item, new HashMap<>()));
     }
 
+    /**
+     * Магические стрелы заведены оружием, но уходят боеприпасом: снаряжением к обычным
+     * стрелам, без урона и прочих боевых полей. Оружие без урона система дорисовывала
+     * «1к6 рубящего в ближнем бою», а в справочнике урона у стрел нет.
+     */
+    @Test
+    void mapsMagicArrowsAsAmmunition() {
+        MagicItem item = magicArrow("arrow-1", "Стрела +1",
+                ammunition("arrow-phb", "Стрела", "0,05 фнт.", "5", Coin.CC));
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+        assertEquals(1, variants.size());
+
+        VttgMagicItem result = variants.get(0);
+        assertEquals("equipment", result.getType());
+        assertEquals("Снаряжение", result.getTypeLabel());
+        assertEquals("gear", result.getSection());
+        assertEquals("adventurer-equipment", result.getEquipmentCategory());
+        assertEquals(1, result.getMagicBonus());
+        assertEquals(Boolean.TRUE, result.getConsumable());
+        assertTrue(result.isMagical());
+
+        JsonNode json = objectMapper.valueToTree(result);
+        assertFalse(json.has("damageParts"));
+        assertFalse(json.has("weaponCategory"));
+        assertFalse(json.has("rangeType"));
+        assertFalse(json.has("weaponProperties"));
+        assertFalse(json.has("damageBonus"));
+        assertEquals(0.05, json.get("weight").asDouble());
+        assertEquals("400.05 зм", json.get("cost").asText()); // 400 (необычный) + 5 мм (стрела)
+    }
+
+    /**
+     * «Стрелы +1» на пачке нужны сайту, но не компендиуму: пачка туда не идёт, и её
+     * магическая версия тоже — её место занимает штучная «Стрела +1».
+     */
+    @Test
+    void skipsMagicItemLinkedOnlyToSkippedBundle() {
+        MagicItem item = magicArrow("arrows-1", "Стрелы +1",
+                ammunition("arrows-phb", "Стрелы", "1 фнт.", "1", Coin.GC));
+
+        assertTrue(mapper.toVttgVariants(item, new HashMap<>()).isEmpty());
+        assertEquals(List.of(), mapper.toVttgPayload(item, new HashMap<>()));
+    }
+
+    private MagicItem magicArrow(String url, String name, Item base) {
+        MagicItem item = new MagicItem();
+        item.setUrl(url);
+        item.setName(name);
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.UNCOMMON);
+        item.setBonuses(bonuses(1, 1, 0));
+        item.setItems(Set.of(base));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        return item;
+    }
+
+    /**
+     * Боеприпас без связанной базы узнаётся по уточнению «любой боеприпас» и расходуется,
+     * даже если галочка не стоит: зарядить в оружие можно только расходуемый предмет.
+     */
+    @Test
+    void mapsAnyAmmunitionClarificationAsAmmunition() {
+        MagicItem item = new MagicItem();
+        item.setUrl("walloping-ammunition");
+        item.setName("Опрокидывающий боеприпас");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setClarification("любой боеприпас");
+        item.setRarity(Rarity.COMMON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        VttgMagicItem result = mapper.toVttg(item);
+
+        assertEquals("equipment", result.getType());
+        assertEquals("gear", result.getSection());
+        assertEquals(Boolean.TRUE, result.getConsumable());
+    }
+
+    /** Слово «боеприпасы» в уточнении не делает оружие боеприпасом. */
+    @Test
+    void keepsWeaponWithAmmunitionPropertyInClarification() {
+        MagicItem item = new MagicItem();
+        item.setUrl("repeating-shot");
+        item.setName("Повторяющийся выстрел");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setClarification("любое простое или воинское со свойством боеприпасы");
+        item.setRarity(Rarity.UNCOMMON);
+        Source source = new Source();
+        source.setAcronym("EFA");
+        item.setSource(source);
+
+        VttgMagicItem result = mapper.toVttg(item);
+
+        assertEquals("weapon", result.getType());
+        assertEquals("weapons", result.getSection());
+        assertNull(result.getConsumable());
+    }
+
+    /**
+     * Шаблон не раскрывается по пачке: «Стрелы из адамантина» повторили бы «Стрелу из
+     * адамантина», как и сама пачка — штучную стрелу.
+     */
+    @Test
+    void doesNotExpandTemplateByAmmunitionBundle() {
+        MagicItem item = new MagicItem();
+        item.setUrl("adamantine-weapon");
+        item.setName("Адамантиновое оружие");
+        item.setCategory(MagicItemCategory.WEAPON);
+        item.setRarity(Rarity.UNCOMMON);
+        item.setAdamantine(true);
+        item.setItems(Set.of(
+                ammunition("arrow-phb", "Стрела", "0,05 фнт.", "5", Coin.CC),
+                ammunition("arrows-phb", "Стрелы", "1 фнт.", "1", Coin.GC)));
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+
+        List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
+
+        assertEquals(1, variants.size());
+        assertEquals("Стрела из адамантина", variants.get(0).getName());
+        assertEquals("gear", variants.get(0).getSection());
+    }
+
+    private Item ammunition(String url, String name, String weight, String cost, Coin coin) {
+        Item base = new Item();
+        base.setUrl(url);
+        base.setName(name);
+        base.setDescription("");
+        base.setWeight(weight);
+        base.setCost(cost);
+        base.setCoin(coin);
+        base.setCategory(ItemCategory.ITEM);
+        base.setTypes(Set.of(ItemType.AMMUNITION));
+        base.setConsumable(true);
+        // Как в справочнике: объект оружия у стрел есть, но пустой
+        base.setWeapon(new Weapon());
+        Source source = new Source();
+        source.setAcronym("PHB");
+        base.setSource(source);
+        return base;
+    }
+
     /** Предмет с варьирующейся редкостью и искусственные варианты «+1/+2/+3» не экспортируются. */
     @Test
     void excludesVariesItemAndDerivedBonusVariantsFromExport() {

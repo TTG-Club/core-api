@@ -218,7 +218,7 @@ public class VttgChangesService {
         submitStore(futures, ITEMS, selected,
                 () -> itemRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 () -> null,
-                itemRepository::findAllForVttgExportByUrls, Item::getUrl, itemMapper::toVttg);
+                itemRepository::findAllForVttgExportByUrls, Item::getUrl, itemMapper::toVttgPayload);
         submitStore(futures, MAGIC_ITEMS, selected,
                 () -> magicItemRepository.findChangedRefsForVttgExport(srdVersion, srdOnly, window.since(), window.until()),
                 itemRepository::maxChangedAtForVttgExport,

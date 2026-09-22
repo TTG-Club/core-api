@@ -37,7 +37,8 @@ import java.util.regex.Pattern;
  *
  * <p>Тип и раздел выбираются по «начинке» предмета: наличие {@code weapon} → {@code weapon}
  * (раздел {@code weapons}); {@code armor} → {@code equipment} (раздел {@code armor}); тип-инструмент →
- * {@code tool} (раздел {@code tools}); остальное снаряжение → {@code equipment} (раздел {@code gear}).
+ * {@code tool} (раздел {@code tools}); остальное снаряжение → {@code equipment} (раздел {@code gear},
+ * а безделушки — {@code trinkets}).
  * Боевые/доспешные поля повторяют целевой формат SRD-бэкапа VTTG 1:1
  * (см. {@code weapons.json}/{@code armor.json}).</p>
  *
@@ -50,7 +51,35 @@ import java.util.regex.Pattern;
 public class VttgItemMapper {
     private static final Pattern LEADING_NUMBER = Pattern.compile("(\\d+(?:[.,]\\d+)?)");
 
+    /**
+     * Предметы, которые в компендиум не идут. Пачки боеприпасов («Стрелы», «Болты» по
+     * 20 штук) дублируют штучные «Стрелу» и «Болт»: на листе число штук задаёт количество,
+     * а пачка, будучи расходуемой, целиком уходила бы с первым выстрелом. Общие
+     * «Боеприпасы» — описание правила, а не предмет, которым стреляют.
+     */
+    private static final Set<String> SKIPPED_URLS = Set.of("arrows-phb", "bolts-phb", "ammunition-phb");
+
+    /** Раздел прочего снаряжения; безделушки из него выделены в {@link #TRINKETS_SECTION}. */
+    static final String GEAR_SECTION = "gear";
+
+    private static final String TRINKETS_SECTION = "trinkets";
+
+    private static final String TRINKET_CATEGORY = "trinket";
+
     private final VttgMarkupConverter markupConverter;
+
+    /**
+     * Payload для дельты {@code /changes}: запись предмета либо пустой список, если предмет в
+     * компендиум не идёт (см. {@link #isExported}) — пустой массив не даёт ни одного изменения.
+     */
+    public Object toVttgPayload(Item item) {
+        return isExported(item) ? toVttg(item) : List.of();
+    }
+
+    /** Идёт ли предмет в компендиум отдельной записью. */
+    static boolean isExported(Item item) {
+        return !SKIPPED_URLS.contains(item.getUrl());
+    }
 
     public Map<String, Object> toVttg(Item item) {
         String sourceKey = VttgSourceKeys.of(item.getSource());
@@ -205,11 +234,17 @@ public class VttgItemMapper {
     }
 
     // ── Прочее снаряжение ───────────────────────────────────────────────────────────────────────
+    /**
+     * Прочее снаряжение: раздел «Снаряжение приключенца», а «Безделушки» — только для
+     * предметов этой категории. Раньше всё снаряжение уезжало в «Безделушки», и там
+     * лежали верёвки, стрелы и повозки.
+     */
     private void putGear(Map<String, Object> data, Item item) {
+        String category = equipmentCategory(item);
         data.put("type", "equipment");
         data.put("typeLabel", "Снаряжение");
-        data.put("section", "trinkets");
-        data.put("equipmentCategory", equipmentCategory(item));
+        data.put("section", TRINKET_CATEGORY.equals(category) ? TRINKETS_SECTION : GEAR_SECTION);
+        data.put("equipmentCategory", category);
     }
 
     /**
@@ -550,7 +585,7 @@ public class VttgItemMapper {
                 || hasType(item, ItemType.SPELLCASTING_FOCUS)) {
             return "adventurer-equipment";
         }
-        return "trinket";
+        return TRINKET_CATEGORY;
     }
 
     /**

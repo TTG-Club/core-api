@@ -132,7 +132,7 @@ class VttgItemMapperTest {
         assertEquals(13, json.get("strengthRequirement").asInt());
     }
 
-    /** Прочее снаряжение без weapon/armor → раздел trinkets (бывш. gear), type equipment. */
+    /** Прочее снаряжение без weapon/armor → раздел gear («Снаряжение приключенца»), type equipment. */
     @Test
     void mapsPlainGear() {
         Item item = baseItem("backpack", "Рюкзак", "Backpack");
@@ -141,10 +141,48 @@ class VttgItemMapperTest {
 
         JsonNode json = json(item);
         assertEquals("equipment", json.get("type").asText());
-        assertEquals("trinkets", json.get("section").asText());
+        assertEquals("gear", json.get("section").asText());
         assertEquals("adventurer-equipment", json.get("equipmentCategory").asText());
         assertFalse(json.has("baseArmorAC"));
         assertFalse(json.has("weaponCategory"));
+    }
+
+    /**
+     * В «Безделушки» попадают только безделушки: прежде туда уезжало всё снаряжение
+     * подряд, от верёвки до повозки. Транспорт и еда остаются в «Снаряжении приключенца».
+     */
+    @Test
+    void putsOnlyTrinketsIntoTrinketsSection() {
+        Item trinket = baseItem("lucky-charm", "Талисман", "Lucky Charm");
+        assertEquals("trinkets", json(trinket).get("section").asText());
+
+        Item stored = baseItem("tiny-box", "Крошечная шкатулка", "Tiny Box");
+        stored.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+        stored.setEquipmentCategory("trinket");
+        assertEquals("trinkets", json(stored).get("section").asText());
+
+        Item saddle = baseItem("saddle", "Седло", "Saddle");
+        saddle.setTypes(Set.of(ItemType.TACK_AND_HARNESS));
+        assertEquals("gear", json(saddle).get("section").asText());
+    }
+
+    /**
+     * Пачки боеприпасов и общие «Боеприпасы» в компендиум не идут: payload — пустой
+     * список, изменений он не даёт. Штучная «Стрела» выгружается как обычно.
+     */
+    @Test
+    void skipsAmmunitionBundles() {
+        for (String url : List.of("arrows-phb", "bolts-phb", "ammunition-phb")) {
+            Item bundle = baseItem(url, "Стрелы", "Arrows");
+            bundle.setTypes(Set.of(ItemType.AMMUNITION));
+            assertEquals(List.of(), mapper.toVttgPayload(bundle), url);
+        }
+
+        Item arrow = baseItem("arrow-phb", "Стрела", "Arrow");
+        arrow.setTypes(Set.of(ItemType.AMMUNITION));
+        JsonNode json = objectMapper.valueToTree(mapper.toVttgPayload(arrow));
+        assertEquals("arrow-phb", json.get("id").asText());
+        assertEquals("gear", json.get("section").asText());
     }
 
     /**
