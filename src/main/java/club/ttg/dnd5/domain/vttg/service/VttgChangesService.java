@@ -175,7 +175,8 @@ public class VttgChangesService {
         }
 
         long total = byType.values().stream().mapToLong(Long::longValue).sum();
-        return new VttgChangesStatus(window.since(), window.until(), total > 0, total, byType);
+        return new VttgChangesStatus(window.since(), window.until(), total > 0, total, byType,
+                VttgPayloadStore.SCHEMA_VERSION);
     }
 
     /**
@@ -278,7 +279,8 @@ public class VttgChangesService {
                 : new VttgChange(change.type(), change.url(), fallbackStamp, change.data()));
 
         VttgChangesResponse response = new VttgChangesResponse(
-                window.until(), upserts, compendiumSections.changesTree(), sources(upserts));
+                window.until(), upserts, compendiumSections.changesTree(), sources(upserts),
+                VttgPayloadStore.SCHEMA_VERSION);
         logTimings(timings, upserts.size(), millisSince(startedAt, System.nanoTime()));
         return response;
     }
