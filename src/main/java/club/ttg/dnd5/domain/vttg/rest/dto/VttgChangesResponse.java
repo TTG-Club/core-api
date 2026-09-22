@@ -18,9 +18,14 @@ import java.util.Map;
  *                 только {@code sourceKey}, а название и аббревиатуру берут отсюда. Клиент
  *                 накапливает словарь по ключу, а не заменяет — в инкрементальном окне приезжают
  *                 только источники изменившихся записей
+ * @param schemaVersion версия формата записей ({@code VttgPayloadStore.SCHEMA_VERSION}). Смена
+ *                 версии меняет записи целиком, но их {@code updatedAt} не сдвигает, и
+ *                 инкрементальное окно их не отдаст: клиент, у которого сохранена другая
+ *                 версия, пересобирает паки полной выгрузкой
  */
 public record VttgChangesResponse(Instant until,
                                   List<VttgChange> upserts,
                                   List<Map<String, Object>> sections,
-                                  List<VttgSource> sources) {
+                                  List<VttgSource> sources,
+                                  int schemaVersion) {
 }

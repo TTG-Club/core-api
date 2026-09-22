@@ -71,7 +71,8 @@ public class VttgCompendiumSections {
                         leaf("weapons", "Оружие", "tabler:sword", "weapon", listView()),
                         leaf("armor", "Доспехи", "tabler:shield", "equipment", listView()),
                         leaf("tools", "Инструменты", "tabler:tools", "tool", listView()),
-                        leaf("trinkets", "Безделушки", "tabler:backpack", "equipment", listView()),
+                        leaf("gear", "Снаряжение приключенца", "tabler:backpack", "equipment", listView()),
+                        leaf("trinkets", "Безделушки", "tabler:crystal-ball", "equipment", listView()),
                         leaf("rings", "Кольца", "tabler:circle", "equipment", listView()),
                         leaf("wands", "Жезлы", "tabler:wand", "equipment", listView()),
                         leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", listView())
@@ -102,7 +103,7 @@ public class VttgCompendiumSections {
 
     /**
      * Простой список без левой панели и фильтров — для предметных листов
-     * (оружие/доспехи/безделушки/кольца/жезлы/чудесные/инструменты).
+     * (оружие/доспехи/снаряжение/безделушки/кольца/жезлы/чудесные/инструменты).
      */
     private Map<String, Object> listView() {
         Map<String, Object> view = new LinkedHashMap<>();

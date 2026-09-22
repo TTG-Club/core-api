@@ -58,6 +58,33 @@ class VttgCompendiumSectionsTest {
         assertEquals("tool", tools.get("dataKind"));
     }
 
+    /**
+     * Снаряжение приключенца — свой лист рядом с «Безделушками»: слаги совпадают с
+     * {@code section}, который {@link VttgItemMapper} пишет прочему снаряжению.
+     */
+    @Test
+    void exposesGearLeafNextToTrinkets() {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> equipment = (List<Map<String, Object>>) sections.changesTree().stream()
+                .filter(node -> "equipment".equals(node.get("group")))
+                .findFirst()
+                .orElseThrow()
+                .get("children");
+
+        Map<String, Object> gear = equipment.stream()
+                .filter(node -> VttgItemMapper.GEAR_SECTION.equals(node.get("section")))
+                .findFirst()
+                .orElseThrow();
+        Map<String, Object> trinkets = equipment.stream()
+                .filter(node -> "trinkets".equals(node.get("section")))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("Снаряжение приключенца", gear.get("name"));
+        assertEquals("equipment", gear.get("dataKind"));
+        assertEquals("Безделушки", trinkets.get("name"));
+    }
+
     /** Глоссарий — отдельный лист дерева: слаг совпадает с {@code section} записей, есть фильтр категорий. */
     @Test
     void exposesGlossaryLeaf() {
