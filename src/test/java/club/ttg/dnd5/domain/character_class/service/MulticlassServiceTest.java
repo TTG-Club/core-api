@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -411,6 +412,73 @@ class MulticlassServiceTest {
                 .orElseThrow();
         assertEquals(3, merged.getScaling().size());
         assertEquals(ClassResourceRecovery.SHORT_REST, merged.getResourceRecovery());
+    }
+
+    @Test
+    void getMulticlassDoesNotStackExtraAttackFromDifferentClasses() {
+        // Варвар 5 / Воин 5: «Дополнительные атаки» разных классов не складываются — всё ещё 2 атаки
+        CharacterClass barbarian = characterClass("barbarian-phb");
+        barbarian.setFeatures(List.of(extraAttack("Дополнительная атака", 5, "Вы можете атаковать 2 раза.")));
+        CharacterClass fighter = characterClass("fighter-phb");
+        fighter.setFeatures(List.of(
+                extraAttack("Дополнительная атака", 5, "Вы можете атаковать 2 раза."),
+                extraAttack("Две дополнительные атаки", 11, "Вы можете атаковать 3 раза.")
+        ));
+
+        MulticlassResponse response = multiclass(barbarian, 5, fighter, 5);
+
+        List<ClassFeatureDto> features = response.getFeatures();
+        assertEquals(List.of("Дополнительная атака", "Дополнительная атака"),
+                features.stream().map(ClassFeatureDto::getName).toList());
+        assertEquals("[\"Вы можете атаковать 2 раза.\"]", features.get(0).getDescription());
+        String repeated = features.get(1).getDescription();
+        assertTrue(repeated.startsWith("[\"Вы можете атаковать 2 раза.\",\"{@b Мультикласс.}"), repeated);
+        assertFalse(repeated.contains("3 раза"), repeated);
+    }
+
+    @Test
+    void getMulticlassKeepsFighterOwnExtraAttackProgression() {
+        // Воин 11 / Паладин 5: у Воина свои «Две дополнительные атаки» (3 атаки), паладинская не добавляет ещё одну
+        CharacterClass fighter = characterClass("fighter-phb");
+        fighter.setFeatures(List.of(
+                extraAttack("Дополнительная атака", 5, "Вы можете атаковать 2 раза."),
+                extraAttack("Две дополнительные атаки", 11, "Вы можете атаковать 3 раза.")
+        ));
+        CharacterClass paladin = characterClass("paladin-phb");
+        paladin.setFeatures(List.of(extraAttack("Дополнительная атака", 5, "Вы можете атаковать 2 раза.")));
+
+        MulticlassResponse response = multiclass(fighter, 11, paladin, 5);
+
+        List<ClassFeatureDto> features = response.getFeatures();
+        assertEquals(List.of("Дополнительная атака", "Две дополнительные атаки", "Дополнительная атака"),
+                features.stream().map(ClassFeatureDto::getName).toList());
+        assertEquals("[\"Вы можете атаковать 2 раза.\"]", features.get(0).getDescription());
+        assertEquals("[\"Вы можете атаковать 3 раза.\"]", features.get(1).getDescription());
+        assertTrue(features.get(2).getDescription().contains("{@b Мультикласс.}"));
+    }
+
+    private MulticlassResponse multiclass(CharacterClass main, int mainLevel, CharacterClass added, int addedLevel) {
+        MulticlassRequest request = new MulticlassRequest();
+        request.setLevels(List.of(
+                new MulticlassLevelEntry(main.getUrl(), null, mainLevel),
+                new MulticlassLevelEntry(added.getUrl(), null, addedLevel)
+        ));
+
+        MulticlassResponse response = new MulticlassResponse();
+        when(classRepository.findById(main.getUrl())).thenReturn(Optional.of(main));
+        when(classRepository.findById(added.getUrl())).thenReturn(Optional.of(added));
+        when(classFeatureMapper.toDto(any(ClassFeature.class), anyBoolean()))
+                .thenAnswer(invocation -> new ClassFeatureDto(invocation.getArgument(0), invocation.getArgument(1)));
+        when(multiclassMapper.toMulticlassResponse(any(CharacterClass.class))).thenReturn(response);
+
+        service.getMulticlass(request);
+        return response;
+    }
+
+    private ClassFeature extraAttack(String name, int level, String text) {
+        ClassFeature classFeature = classFeature(name, level);
+        classFeature.setDescription("[\"" + text + "\"]");
+        return classFeature;
     }
 
     private CharacterClass characterClass(String url) {
