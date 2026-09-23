@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.source.rest.mapper.SourceMapper;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
+import club.ttg.dnd5.util.YoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -34,8 +35,9 @@ public class SourceService {
     @Transactional(readOnly = true)
     public List<SourceShortResponse> search(String searchLine) {
         if (StringUtils.hasText(searchLine)) {
-            var invertedSearchLine = SwitchLayoutUtils.switchLayout(searchLine);
-            return sourceRepository.findBySearchLine(searchLine, invertedSearchLine, Sort.by("name"))
+            var line = YoUtils.replaceYo(searchLine.trim());
+            var invertedSearchLine = SwitchLayoutUtils.switchLayout(line);
+            return sourceRepository.findBySearchLine(line, invertedSearchLine, Sort.by("name"))
                     .stream()
                     .map(sourceMapper::toShort)
                     .toList();

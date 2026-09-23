@@ -10,11 +10,15 @@ import java.util.Optional;
 
 public interface SourceRepository extends JpaRepository<Source, String> {
     @Query(value = """
-            select f from Feat f
-            where f.name ilike concat('%', :searchLine, '%')
-               or f.english ilike concat('%', :searchLine, '%')
-               or f.name ilike concat('%', :invertedSearchLine, '%')
-               or f.english ilike concat('%', :invertedSearchLine, '%')
+            select s from Source s
+            where replace(replace(s.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
+               or s.english ilike concat('%', :searchLine, '%')
+               or replace(replace(s.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
+               or s.acronym ilike concat('%', :searchLine, '%')
+               or replace(replace(s.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
+               or s.english ilike concat('%', :invertedSearchLine, '%')
+               or replace(replace(s.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
+               or s.acronym ilike concat('%', :invertedSearchLine, '%')
             """
     )
     Collection<Source> findBySearchLine(String searchLine, String invertedSearchLine, Sort defaultSort);
