@@ -95,7 +95,7 @@ public class VttgItemMapper {
         if (nameEn != null) {
             data.put("nameEn", nameEn);
         }
-        data.put("description", markupConverter.toText(item.getDescription()));
+        data.put("description", markupConverter.toTextKeepingRolls(item.getDescription()));
 
         if (isWeapon(item)) {
             putWeapon(data, item);

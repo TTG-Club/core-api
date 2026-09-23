@@ -53,6 +53,12 @@ public class VttgMarkupConverter {
      * {@code {@link}}: ведёт на произвольный роут сайта, а не на карточку сущности.
      */
     private static final Set<String> LABEL_ONLY_MARKERS = Set.of("roll", "link");
+    /**
+     * Маркеры броска: {@code dice} — синоним {@code roll} на сайте (редактор вставляет
+     * именно его). Тело — {@code метка|notation:формула|text:подпись}, атрибуты
+     * необязательны.
+     */
+    private static final Set<String> ROLL_MARKERS = Set.of("roll", "dice");
 
     private final ObjectMapper objectMapper;
     @Value("${app.url:https://ttg.club}")
@@ -70,20 +76,47 @@ public class VttgMarkupConverter {
      * целевую разметку (форматтеры статей для Discord/Telegram/VK). Раскрываются только
      * жирный и курсив — на них эти форматтеры и рассчитывают; остальные маркеры доезжают
      * целыми, иначе {@code {@u ...}} или {@code {@spoiler ...}} потеряли бы вид.</p>
+     *
+     * <p>{@code VTTG_WITH_ROLLS} — как {@code VTTG}, но броски остаются кнопками: в том
+     * единственном виде {@code {@roll формула}}, который понимает рендерер описаний VTTG.</p>
      */
-    private enum Target { VTTG, INTERMEDIATE }
+    private enum Target {
+        VTTG(true, false),
+        VTTG_WITH_ROLLS(true, true),
+        INTERMEDIATE(false, false);
 
-    public String toText(String markup) {
-        return convert(markup, false, Target.VTTG);
+        /** Результат едет прямо в компендиум VTTG. */
+        private final boolean vttg;
+        /** Броски остаются маркерами {@code {@roll формула}}, а не сворачиваются в метку. */
+        private final boolean keepRolls;
+
+        Target(boolean vttg, boolean keepRolls) {
+            this.vttg = vttg;
+            this.keepRolls = keepRolls;
+        }
     }
 
     /**
-     * Как {@link #toText(String)}, но сохраняет inline-теги бросков {@code {@roll ...}}.
-     * Нужно для форматов VTTG, где клиент сам отрисовывает интерактивные броски в описании
-     * (например магические предметы — см. wands.json).
+     * Текст без маркеров: броски сворачиваются в свою метку. Для полей, которые разбирают
+     * дальше (урон, усиление) или показывают не как описание (названия, заметки).
+     */
+    public String toText(String markup) {
+        return convert(markup, Target.VTTG);
+    }
+
+    /**
+     * Как {@link #toText(String)}, но броски остаются кнопками {@code {@roll формула}} —
+     * для описаний, которые VTTG показывает своим рендерером: по нажатию на кубы в тексте
+     * делается бросок, как на сайте.
+     *
+     * <p>Все формы броска с сайта сводятся к одной: {@code {@dice ...}}, атрибут
+     * {@code notation} (формула отдельно от видимой метки) и узел {@code roll} в JSON.
+     * Рендерер VTTG знает только {@code {@roll формула}} и всё тело считает формулой:
+     * хвост {@code |notation:...} уехал бы в бросок, а {@code {@dice}} остался бы голым
+     * текстом.</p>
      */
     public String toTextKeepingRolls(String markup) {
-        return convert(markup, true, Target.VTTG);
+        return convert(markup, Target.VTTG_WITH_ROLLS);
     }
 
     /**
@@ -93,7 +126,7 @@ public class VttgMarkupConverter {
      * такой режим не подходит: там нераскрытый маркер уедет в компендиум как есть.
      */
     public String toTextKeepingMarkers(String markup) {
-        return convert(markup, false, Target.INTERMEDIATE);
+        return convert(markup, Target.INTERMEDIATE);
     }
 
     /**
@@ -112,7 +145,7 @@ public class VttgMarkupConverter {
                 : label;
     }
 
-    private String convert(String markup, boolean keepRolls, Target target) {
+    private String convert(String markup, Target target) {
         if (!StringUtils.hasText(markup)) {
             return "";
         }
@@ -120,9 +153,9 @@ public class VttgMarkupConverter {
         try {
             String extracted = extract(objectMapper.readTree(markup), target).trim();
             String source = StringUtils.hasText(extracted) ? extracted : markup;
-            return replaceMarkup(source, keepRolls, target);
+            return replaceMarkup(source, target);
         } catch (Exception ignored) {
-            return replaceMarkup(markup, keepRolls, target);
+            return replaceMarkup(markup, target);
         }
     }
 
@@ -336,6 +369,13 @@ public class VttgMarkupConverter {
         if ("link".equals(type)) {
             return extractContent(node, target);
         }
+        // Бросок: у ProseMirror формула в text, у фронтового узла — в content.
+        if (target.vttg && ROLL_MARKERS.contains(type)) {
+            String content = node.hasNonNull("text") ? node.get("text").asText() : extractContent(node, target);
+            JsonNode attrs = node.path("attrs");
+            return new Roll(content, attrs.path("notation").asText(""), attrs.path("text").asText(""))
+                    .render(target);
+        }
         Wrap wrap = formatting(type, target);
         return wrap == null ? null : wrap.around(extractContent(node, target));
     }
@@ -395,12 +435,14 @@ public class VttgMarkupConverter {
      * разбирает. По той же причине здесь раскрывается {@code {@br}}: в общем проходе
      * он развернулся бы в настоящий перевод строки и разорвал строку таблицы.</p>
      *
-     * <p>Броски оставляем целыми ({@code keepRolls = true}) — их раскроет общий проход
-     * в нужном режиме; знать про него ячейке не нужно. Всё остальное после раскрытия
-     * уже не содержит маркеров, поэтому повторный проход для ячейки холостой.</p>
+     * <p>Броски раскрываются здесь же, в режиме всей выгрузки: целый маркер
+     * {@code {@roll метка|notation:формула}} получил бы экранированный разделитель, и
+     * кнопка в VTTG катила бы формулу с хвостом {@code \|notation:...}. Сведённый к
+     * {@code {@roll формула}} бросок разделителей уже не содержит, а общий проход по
+     * готовой ячейке холостой.</p>
      */
     private String formatTableCell(String cell, Target target) {
-        return replaceMarkup(cell.trim(), true, target)
+        return replaceMarkup(cell.trim(), target)
                 .replace("|", "\\|")
                 .replace("\r\n", "\n")
                 .replace('\r', '\n')
@@ -448,12 +490,12 @@ public class VttgMarkupConverter {
                 || (trimmed.startsWith("{") && trimmed.endsWith("}"));
     }
 
-    private String replaceMarkup(String text, boolean keepRolls, Target target) {
+    private String replaceMarkup(String text, Target target) {
         String formatted = replaceInline(text, BR, "\n");
         // Ссылки — до общего разбора: иначе от {@item ...|url:...} осталась бы метка.
         formatted = replaceSiteLinks(formatted);
 
-        return expandMarkers(formatted, keepRolls, target);
+        return expandMarkers(formatted, target);
     }
 
     /**
@@ -461,11 +503,10 @@ public class VttgMarkupConverter {
      * так вложенное оформление раскрывается целиком, а не рвётся по первой закрывающей
      * скобке. Проходы прекращаются, как только очередной ничего не заменил.
      *
-     * @param text      текст с уже разобранными ссылками на разделы сайта
-     * @param keepRolls сохранять ли inline-теги {@code {@roll ...}}
-     * @param target    куда поедет результат (см. {@link Target})
+     * @param text   текст с уже разобранными ссылками на разделы сайта
+     * @param target куда поедет результат (см. {@link Target})
      */
-    private String expandMarkers(String text, boolean keepRolls, Target target) {
+    private String expandMarkers(String text, Target target) {
         String current = text;
         for (int pass = 0; pass < MAX_MARKER_NESTING && current.contains("{@"); pass++) {
             Matcher matcher = MARKER.matcher(current);
@@ -473,8 +514,10 @@ public class VttgMarkupConverter {
             boolean replaced = false;
             while (matcher.find()) {
                 String tag = matcher.group(1).toLowerCase(Locale.ROOT);
-                String expanded = expandMarker(tag, matcher.group(2), keepRolls, target);
-                if (expanded == null) {
+                String expanded = expandMarker(tag, matcher.group(2), target);
+                // Маркер, раскрывшийся сам в себя (уже сведённый бросок), заменой не
+                // считается: иначе проходы крутились бы до предела впустую.
+                if (expanded == null || expanded.equals(matcher.group())) {
                     continue;
                 }
                 matcher.appendReplacement(result, Matcher.quoteReplacement(expanded));
@@ -496,14 +539,14 @@ public class VttgMarkupConverter {
      * символ. У остальных тело устроено как {@code метка|атрибут:значение}, поэтому
      * остаётся только метка.</p>
      *
-     * @param tag       тип маркера в нижнем регистре
-     * @param body      тело маркера ({@code null}, если его нет)
-     * @param keepRolls сохранять ли inline-теги {@code {@roll ...}}
-     * @param target    куда поедет результат (см. {@link Target})
+     * @param tag    тип маркера в нижнем регистре
+     * @param body   тело маркера ({@code null}, если его нет)
+     * @param target куда поедет результат (см. {@link Target})
      */
-    private static String expandMarker(String tag, String body, boolean keepRolls, Target target) {
-        if (keepRolls && "roll".equals(tag)) {
-            return null;
+    private static String expandMarker(String tag, String body, Target target) {
+        // Форматтеры статей разбирают броски сами — им маркер уходит по-старому.
+        if (target.vttg && ROLL_MARKERS.contains(tag)) {
+            return Roll.parse(body).render(target);
         }
         Wrap wrap = formatting(tag, target);
         if (wrap != null) {
@@ -512,7 +555,52 @@ public class VttgMarkupConverter {
         // Незнакомый маркер сворачивается в метку только для VTTG: промежуточному
         // потребителю он нужен целым, чтобы развернуть под свою разметку самому.
         String label = markerLabel(body);
-        return target == Target.VTTG || LABEL_ONLY_MARKERS.contains(tag) ? label : null;
+        return target.vttg || LABEL_ONLY_MARKERS.contains(tag) ? label : null;
+    }
+
+    /**
+     * Бросок в любой из форм сайта. Поля повторяют роллер сайта ({@code MarkupRoller}):
+     * катится {@code notation}, если он задан, иначе содержимое; показывается {@code text},
+     * если задан, иначе содержимое.
+     *
+     * @param content  содержимое маркера — метка до первого {@code |}
+     * @param notation формула из атрибута ({@code ""}, если его нет)
+     * @param text     подпись из атрибута ({@code ""}, если её нет)
+     */
+    private record Roll(String content, String notation, String text) {
+        /** Разбирает тело {@code метка|атрибут:значение|...}; неизвестные атрибуты пропускаются. */
+        private static Roll parse(String body) {
+            String[] parts = (body == null ? "" : body).split("\\|");
+            String notation = "";
+            String text = "";
+            for (int index = 1; index < parts.length; index++) {
+                int colon = parts[index].indexOf(':');
+                if (colon < 0) {
+                    continue;
+                }
+                String key = parts[index].substring(0, colon).trim().toLowerCase(Locale.ROOT);
+                String value = parts[index].substring(colon + 1).trim();
+                if ("notation".equals(key)) {
+                    notation = value;
+                } else if ("text".equals(key)) {
+                    text = value;
+                }
+            }
+            return new Roll(parts.length == 0 ? "" : parts[0], notation, text);
+        }
+
+        /**
+         * Кнопка {@code {@roll формула}} либо видимая метка. Отдельной подписи у кнопки VTTG
+         * нет — она показывает саму формулу, поэтому «+5» с формулой «1к20+5» выходит
+         * кнопкой «1к20+5»: катится верное, а подпись без формулы бросок бы потеряла.
+         */
+        private String render(Target target) {
+            String formula = StringUtils.hasText(notation) ? notation.trim() : content.trim();
+            if (target.keepRolls && StringUtils.hasText(formula)) {
+                return "{@roll " + formula + "}";
+            }
+            return StringUtils.hasText(text) ? text.trim() : content.trim();
+        }
     }
 
     /** Обёртка оформления в целевой разметке. */
@@ -543,7 +631,7 @@ public class VttgMarkupConverter {
             case "i", "italic" -> new Wrap("*", "*");
             default -> null;
         };
-        if (core != null || target != Target.VTTG) {
+        if (core != null || !target.vttg) {
             return core;
         }
         return switch (tag) {
