@@ -22,6 +22,10 @@ import club.ttg.dnd5.domain.common.rest.dto.MulticlassDto;
 import club.ttg.dnd5.domain.common.rest.dto.MulticlassLevelEntry;
 import club.ttg.dnd5.domain.common.rest.dto.MulticlassRequest;
 import club.ttg.dnd5.exception.EntityNotFoundException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -38,6 +42,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class MulticlassService {
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final String EXTRA_ATTACK_NAME = "Дополнительная атака";
+    /**
+     * Абзац к повторной «Дополнительной атаке» от другого класса: по правилам мультикласса такие
+     * умения не складываются (больше атак дают только собственные умения Воина 11 и 20 уровней).
+     */
+    private static final String EXTRA_ATTACK_NOT_STACKING = "{@b Мультикласс.} Вы уже получили умение "
+            + "{@i Дополнительная атака} от другого класса. Такие умения разных классов не складываются, "
+            + "поэтому число ваших атак не увеличивается.";
+
     private final ClassRepository classRepository;
     private final MulticlassMapper multiclassMapper;
     private final ClassFeatureMapper classFeatureMapper;
@@ -86,7 +100,7 @@ public class MulticlassService {
 
         var multiclass = new CharacterClass();
         List<ClassFeatureDto> features = new ArrayList<>();
-        int extraAttack = 0;
+        boolean extraAttack = false;
         boolean spellcasting = false;
         int characterLevel = 0;
         int spellcastLevel = 0;
@@ -183,13 +197,11 @@ public class MulticlassService {
                         filteredFeature.setDescription(getSpellcastingMulticlass());
                         spellcasting = true;
                     } else if (isExtraAttackFeature(classFeature)) {
-                        if (extraAttack >= 1) {
-                            filteredFeature.setName(getExtraAttackName(extraAttack));
+                        if (extraAttack) {
                             filteredFeature.setDescription(
-                                    "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
-                                            .formatted(extraAttack + 2));
+                                    appendParagraph(filteredFeature.getDescription(), EXTRA_ATTACK_NOT_STACKING));
                         }
-                        extraAttack++;
+                        extraAttack = true;
                     }
                     // Устанавливаем уровень персонажа, на котором получено умение
                     filteredFeature.setLevel(characterLevel + (classFeature.getLevel() - previousClassLevel));
@@ -230,13 +242,11 @@ public class MulticlassService {
                             filteredFeature.setDescription(getSpellcastingMulticlass());
                             spellcasting = true;
                         } else if (isExtraAttackFeature(subFeature)) {
-                            if (extraAttack >= 1) {
-                                filteredFeature.setName(getExtraAttackName(extraAttack));
+                            if (extraAttack) {
                                 filteredFeature.setDescription(
-                                        "[\"Вы можете атаковать %s раза вместо одного, когда совершаете действие атака в свой ход.\"]"
-                                                .formatted(extraAttack + 2));
+                                        appendParagraph(filteredFeature.getDescription(), EXTRA_ATTACK_NOT_STACKING));
                             }
-                            extraAttack++;
+                            extraAttack = true;
                         }
                         filteredFeature.setLevel(characterLevel + (subFeature.getLevel() - previousClassLevel));
                         var feature = classFeatureMapper.toDto(filteredFeature, true);
@@ -297,10 +307,33 @@ public class MulticlassService {
         return multiclassResponse;
     }
 
+    /**
+     * Базовая «Дополнительная атака» класса или подкласса. Умения Воина «Две/Три дополнительные атаки»
+     * сюда не относятся: они сами задают число атак и приходят из данных класса как есть.
+     */
     private boolean isExtraAttackFeature(ClassFeature feature) {
-        return feature.getName().equals("Дополнительная атака")
-                || feature.getName().contains("дополнительные атаки")
-                || feature.getName().contains("дополнительных атак");
+        return EXTRA_ATTACK_NAME.equals(feature.getName());
+    }
+
+    /**
+     * Добавляет абзац в конец хранимого описания (JSON-массив абзацев и блочных узлов).
+     */
+    private String appendParagraph(String description, String paragraph) {
+        ArrayNode paragraphs = JSON.createArrayNode();
+        if (StringUtils.hasText(description)) {
+            try {
+                JsonNode stored = JSON.readTree(description);
+                if (stored instanceof ArrayNode array) {
+                    paragraphs.addAll(array);
+                } else {
+                    paragraphs.add(stored);
+                }
+            } catch (JsonProcessingException e) {
+                paragraphs.add(description);
+            }
+        }
+        paragraphs.add(paragraph);
+        return paragraphs.toString();
     }
 
     private void mergeMulticlassProficiency(CharacterClass multiclass, MulticlassProficiency proficiency) {
@@ -401,17 +434,6 @@ public class MulticlassService {
 
     private boolean isSpellcastingFeature(ClassFeature classFeature) {
         return classFeature.getName().equals("Использование заклинаний");
-    }
-
-    private String getExtraAttackName(final int extraAttack) {
-        return switch (extraAttack) {
-            case 1 -> "Две дополнительные атаки";
-            case 2 -> "Три дополнительные атаки";
-            case 3 -> "Четыре дополнительные атаки";
-            default -> throw new IllegalArgumentException(
-                    "Неподдерживаемое значение extraAttack: " + extraAttack
-            );
-        };
     }
 
     private ClassFeature filterMulticlassFeature(final ClassFeature classFeature,

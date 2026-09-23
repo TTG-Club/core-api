@@ -20,12 +20,12 @@ public interface BackgroundRepository extends JpaRepository<Background, String>,
         JpaSpecificationExecutor<Background> {
     @Query(value = """
             select b from Background b
-            where b.name ilike concat('%', :searchLine, '%')
+            where replace(replace(b.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
                or b.english ilike concat('%', :searchLine, '%')
-               or b.alternative ilike concat('%', :searchLine, '%')
-               or b.name ilike concat('%', :invertedSearchLine, '%')
+               or replace(replace(b.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
+               or replace(replace(b.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
                or b.english ilike concat('%', :invertedSearchLine, '%')
-               or b.alternative ilike concat('%', :invertedSearchLine, '%')
+               or replace(replace(b.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
             """
     )
     List<Background> findBySearchLine(String searchLine, String invertedSearchLine, Sort sort);

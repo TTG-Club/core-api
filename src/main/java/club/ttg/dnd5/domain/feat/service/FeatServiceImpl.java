@@ -21,6 +21,7 @@ import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
+import club.ttg.dnd5.util.YoUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -222,8 +223,9 @@ public class FeatServiceImpl implements FeatService {
     public Collection<FeatSelectResponse> getFeatsSelect(
             final String searchLine,
             final Set<FeatCategory> categories) {
-        return featRepository.findBySearchLine(searchLine,
-                        SwitchLayoutUtils.switchLayout(searchLine == null ? "" : searchLine),
+        String line = YoUtils.replaceYo(searchLine);
+        return featRepository.findBySearchLine(line,
+                        SwitchLayoutUtils.switchLayout(line == null ? "" : line),
                         Sort.by("name"))
                 .stream()
                 .filter(f -> CollectionUtils.isEmpty(categories) || categories.contains(f.getCategory()))

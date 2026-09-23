@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewDto;
 import club.ttg.dnd5.domain.full_text_search.rest.dto.FullTextSearchViewResponse;
 import club.ttg.dnd5.dto.base.SourceResponse;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
+import club.ttg.dnd5.util.YoUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class FullTextSearchViewService {
     public FullTextSearchViewResponse findBySearchLine(String searchLine) {
         return Optional.ofNullable(searchLine)
                 .map(String::trim)
+                .map(YoUtils::replaceYo)
                 .filter(Predicate.not(String::isBlank))
                 .map(line -> fullTextSearchViewRepository.findBySearchLine(line, SwitchLayoutUtils.switchLayout(line)))
                 .map(this::getFullTextSearchViewResponse)

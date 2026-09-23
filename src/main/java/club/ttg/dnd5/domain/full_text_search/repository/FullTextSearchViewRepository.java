@@ -11,19 +11,19 @@ public interface FullTextSearchViewRepository extends JpaRepository<FullTextSear
 
     @Query(value = """
         select ftsv from FullTextSearchView ftsv
-        where ftsv.name ilike concat('%', :searchLine, '%')
+        where replace(replace(ftsv.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
            or ftsv.english ilike concat('%', :searchLine, '%')
-           or ftsv.alternative ilike concat('%', :searchLine, '%')
-           or ftsv.name ilike concat('%', :invertedSearchLine, '%')
+           or replace(replace(ftsv.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
+           or replace(replace(ftsv.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
            or ftsv.english ilike concat('%', :invertedSearchLine, '%')
-           or ftsv.alternative ilike concat('%', :invertedSearchLine, '%')
+           or replace(replace(ftsv.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
         order by
-            case when ftsv.name ilike concat('%', :searchLine, '%') then 1 else 0 end +
+            case when replace(replace(ftsv.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%') then 1 else 0 end +
             case when ftsv.english ilike concat('%', :searchLine, '%') then 1 else 0 end +
-            case when ftsv.alternative ilike concat('%', :searchLine, '%') then 1 else 0 end +
-            case when ftsv.name ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end +
+            case when replace(replace(ftsv.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%') then 1 else 0 end +
+            case when replace(replace(ftsv.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end +
             case when ftsv.english ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end +
-            case when ftsv.alternative ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end desc
+            case when replace(replace(ftsv.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%') then 1 else 0 end desc
         """)
     Collection<FullTextSearchView> findBySearchLine(String searchLine, String invertedSearchLine);
 
