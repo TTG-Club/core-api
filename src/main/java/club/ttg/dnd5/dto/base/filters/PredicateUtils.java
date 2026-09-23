@@ -1,10 +1,12 @@
 package club.ttg.dnd5.dto.base.filters;
 
 import club.ttg.dnd5.util.SwitchLayoutUtils;
+import club.ttg.dnd5.util.YoUtils;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.SimpleExpression;
+import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 import org.springframework.util.StringUtils;
@@ -29,6 +31,7 @@ public class PredicateUtils
 {
     /**
      * Текстовый поиск (ILIKE с экранированием спецсимволов и переключением раскладки).
+     * «Ё» и «е» считаются одной буквой — см. {@link YoUtils}.
      */
     public com.querydsl.core.types.Predicate buildTextSearch(final String text,
                                               final StringPath... paths)
@@ -38,15 +41,16 @@ public class PredicateUtils
             return null;
         }
 
-        String safe = escapeLike(text.trim());
+        String safe = escapeLike(YoUtils.replaceYo(text.trim()));
         String switched = SwitchLayoutUtils.switchLayout(safe);
 
         BooleanBuilder textBuilder = new BooleanBuilder();
 
         for (StringPath path : paths)
         {
-            textBuilder.or(path.likeIgnoreCase("%" + safe + "%"));
-            textBuilder.or(path.likeIgnoreCase("%" + switched + "%"));
+            StringExpression column = Expressions.stringTemplate(YoUtils.SQL_TEMPLATE, path);
+            textBuilder.or(column.likeIgnoreCase("%" + safe + "%"));
+            textBuilder.or(column.likeIgnoreCase("%" + switched + "%"));
         }
 
         return textBuilder.getValue();

@@ -20,6 +20,7 @@ import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.util.SwitchLayoutUtils;
+import club.ttg.dnd5.util.YoUtils;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -193,8 +194,9 @@ public class BackgroundServiceImpl implements BackgroundService {
 
     @Override
     public Collection<BackgroundSelectResponse> getBackgroundsSelect(final @Valid @Size String searchLine) {
-        return backgroundRepository.findBySearchLine(searchLine,
-                        SwitchLayoutUtils.switchLayout(searchLine == null ? "" : searchLine),
+        String line = YoUtils.replaceYo(searchLine);
+        return backgroundRepository.findBySearchLine(line,
+                        SwitchLayoutUtils.switchLayout(line == null ? "" : line),
                         Sort.by("name"))
                 .stream()
                 .peek(b -> b.setDescription(null))

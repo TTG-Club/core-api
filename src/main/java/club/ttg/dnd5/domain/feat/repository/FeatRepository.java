@@ -16,12 +16,12 @@ import java.util.List;
 public interface FeatRepository extends JpaRepository<Feat, String> {
     @Query(value = """
             select f from Feat f
-            where f.name ilike concat('%', :searchLine, '%')
+            where replace(replace(f.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
                or f.english ilike concat('%', :searchLine, '%')
-               or f.alternative ilike concat('%', :searchLine, '%')
-               or f.name ilike concat('%', :invertedSearchLine, '%')
+               or replace(replace(f.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
+               or replace(replace(f.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
                or f.english ilike concat('%', :invertedSearchLine, '%')
-               or f.alternative ilike concat('%', :invertedSearchLine, '%')
+               or replace(replace(f.alternative, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :invertedSearchLine, '%')
             """
     )
     Collection<Feat> findBySearchLine(String searchLine, String invertedSearchLine, Sort defaultSort);
