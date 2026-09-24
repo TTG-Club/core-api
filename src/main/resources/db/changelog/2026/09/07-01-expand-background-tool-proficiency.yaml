@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-07-01-expand-background-tool-proficiency
+      author: Magistrus
+      comment: >
+        Владение инструментами редактируется как текст с разметкой и может превышать
+        прежнее ограничение VARCHAR(255).
+      changes:
+        - modifyDataType:
+            tableName: background
+            columnName: tool_proficiency
+            newDataType: text

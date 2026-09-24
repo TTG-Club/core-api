@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-24-02-update-full-name-search-view-add-bastion
+      author: Magistrus
+      changes:
+        - sqlFile:
+            path: sql/24-02-update-full-name-search-view-add-bastion.sql
+            relativeToChangelogFile: true

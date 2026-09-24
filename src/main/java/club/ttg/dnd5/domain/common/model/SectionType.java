@@ -16,6 +16,7 @@ public enum SectionType {
     MAGIC_ITEM("magic-items"),
     ITEM("items"),
     GLOSSARY("glossary"),
+    BASTION("bastions"),
     CLASS("classes"),
     SOURCE("sources"),
     ARTICLE("articles"),

@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.statistics.service;
 
 import club.ttg.dnd5.domain.background.model.Background;
+import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.feat.model.Feat;
@@ -34,6 +35,7 @@ public class StatisticsService {
             MagicItem.class,
             Item.class,
             Glossary.class,
+            BastionFacility.class,
             Creature.class,
             CharacterClass.class
     );
