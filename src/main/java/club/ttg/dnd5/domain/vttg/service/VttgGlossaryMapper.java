@@ -43,7 +43,7 @@ public class VttgGlossaryMapper {
                 .sourceKey(VttgSourceKeys.of(glossary.getSource()))
                 .isSRD(glossary.getSrdVersion() != null)
                 .category(category(glossary.getTagCategory()))
-                .description(markupConverter.toText(glossary.getDescription()))
+                .description(markupConverter.toTextKeepingRolls(glossary.getDescription()))
                 .typeLabel(TYPE_LABEL)
                 .build();
     }

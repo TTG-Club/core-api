@@ -72,7 +72,7 @@ public class VttgCreatureMapper {
                 .autoSaves(true)
                 .name(creature.getName())
                 .nameEn(creature.getEnglish())
-                .description(text(creature.getDescription()))
+                .description(description(creature.getDescription()))
                 .header(header(creature))
                 .token(token(creature))
                 .system(system(creature, spellcasting))
@@ -223,7 +223,7 @@ public class VttgCreatureMapper {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("count", creature.getLegendaryAction());
         result.put("actions", actions(creature.getLegendaryActions()));
-        putIfHasText(result, "description", text(creature.getLegendaryDescription()));
+        putIfHasText(result, "description", description(creature.getLegendaryDescription()));
         return result;
     }
 
@@ -243,7 +243,7 @@ public class VttgCreatureMapper {
         putIfHasText(result, "subtitle", section.getSubtitle());
         putIfHasText(result, "habitats", names(section.getHabitats(), Habitat::getName, ", "));
         putIfHasText(result, "treasures", names(section.getTreasures(), CreatureTreasure::getName, ", "));
-        putIfHasText(result, "description", text(section.getSectionDescription()));
+        putIfHasText(result, "description", description(section.getSectionDescription()));
         return result.isEmpty() ? null : result;
     }
 
@@ -356,7 +356,7 @@ public class VttgCreatureMapper {
         if (traits == null) return List.of();
         return traits.stream().filter(Objects::nonNull)
                 // Черта тоже бывает бросаемой («Облако слизи» — спасбросок с уроном).
-                .map(trait -> entry(trait.getName(), trait.getEnglish(), text(trait.getDescription()),
+                .map(trait -> entry(trait.getName(), trait.getEnglish(), description(trait.getDescription()),
                         trait.getRecharge(), trait.getEffect(), null, null))
                 .toList();
     }
@@ -369,7 +369,7 @@ public class VttgCreatureMapper {
     }
 
     private Map<String, Object> action(CreatureAction action) {
-        return entry(action.getName(), action.getEnglish(), text(action.getDescription()),
+        return entry(action.getName(), action.getEnglish(), description(action.getDescription()),
                 action.getRecharge(), action.getEffect(),
                 action.getAttackType(), action.getSawingThrows());
     }
@@ -546,9 +546,9 @@ public class VttgCreatureMapper {
         CreatureLair lair = creature.getLair();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", value(lair.getName()));
-        result.put("description", text(lair.getDescription()));
+        result.put("description", description(lair.getDescription()));
         result.put("effects", actions(lair.getEffects()));
-        result.put("ending", text(lair.getEnding()));
+        result.put("ending", description(lair.getEnding()));
         if (creature.getLegendaryActionInLair() > 0) {
             result.put("legendaryActionCount", (int) creature.getLegendaryActionInLair());
         }
@@ -663,6 +663,16 @@ public class VttgCreatureMapper {
 
     private String text(String markup) {
         String result = markupConverter.toText(markup);
+        return StringUtils.hasText(result) ? result : null;
+    }
+
+    /**
+     * Описание для показа игроку: броски остаются кнопками {@code {@roll ...}}. Короткие
+     * строки (сопротивления, снаряжение) идут через {@link #text(String)} — кнопка броска
+     * им не нужна.
+     */
+    private String description(String markup) {
+        String result = markupConverter.toTextKeepingRolls(markup);
         return StringUtils.hasText(result) ? result : null;
     }
 

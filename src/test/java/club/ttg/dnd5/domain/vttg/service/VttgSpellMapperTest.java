@@ -117,10 +117,12 @@ class VttgSpellMapperTest {
         assertEquals("dexterity", result.getSaveType());
         assertEquals("half", result.getSaveEffect());
         assertEquals("Первый абзац\n\nВторой абзац", result.getDescription());
-        assertEquals("Урон увеличивается на 1к6 за каждый уровень ячейки выше 3.",
+        // Игроку — кнопка броска; усиление разобрано и подписано по чистому тексту.
+        assertEquals("Урон увеличивается на {@roll 1к6} за каждый уровень ячейки выше 3.",
                 result.getHigherLevelDescription());
         assertEquals("1к6", result.getScaling().getAdditionalDice());
-        assertEquals(result.getHigherLevelDescription(), result.getScaling().getDescription());
+        assertEquals("Урон увеличивается на 1к6 за каждый уровень ячейки выше 3.",
+                result.getScaling().getDescription());
         assertEquals("phb", result.getSourceKey());
         assertEquals("spell", result.getType());
     }

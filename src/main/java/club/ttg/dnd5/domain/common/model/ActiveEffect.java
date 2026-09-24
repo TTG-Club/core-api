@@ -20,8 +20,8 @@ import java.util.List;
  * {@code save.constitution}, {@code skill.stealth}, {@code movement.swim},
  * {@code ability.strength}, {@code attack.melee} и прочие.
  * <p>
- * Ключи, которых модель ещё не знает, у эффекта и у {@link Save}, {@link Change},
- * {@link Aura} не выбрасываются, а хранятся и выгружаются как есть — см.
+ * Ключи, которых модель ещё не знает, у эффекта и у всех его вложенных объектов
+ * не выбрасываются, а хранятся и выгружаются как есть — см.
  * {@link UnknownFieldsHolder}.
  *
  * @see club.ttg.dnd5.domain.vttg
@@ -106,7 +106,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Duration {
+    public static class Duration extends UnknownFieldsHolder {
         private String type;
         private Integer value;
         private Integer remaining;
@@ -142,7 +142,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class ChangeStep {
+    public static class ChangeStep extends UnknownFieldsHolder {
         /** На сколько за период; отрицательное — значение убывает. */
         private Integer by;
         /** {@code turn} либо {@code round}. */
@@ -178,7 +178,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Variant {
+    public static class Variant extends UnknownFieldsHolder {
         private String group;
         private String label;
         /** {@code choose} (по умолчанию) либо {@code random}. */
@@ -194,7 +194,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Activation {
+    public static class Activation extends UnknownFieldsHolder {
         private String mode;
         /**
          * Ключ счётчика листа, который тратит применение или включение — как
@@ -203,6 +203,8 @@ public class ActiveEffect extends UnknownFieldsHolder {
         private String counter;
         /** Сколько тратится со счётчика; нет — одна единица. */
         private Integer amount;
+        /** Дальность применения, фт, от 1; нет — касание (5 фт). */
+        private Integer range;
     }
 
     /** Заряды эффекта: сколько раз ещё сработают его срабатывания. */
@@ -210,7 +212,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Charges {
+    public static class Charges extends UnknownFieldsHolder {
         private Integer max;
         /** Сколько осталось; автор ставит равным {@link #max}. */
         private Integer current;
@@ -236,7 +238,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class RecurringSave {
+    public static class RecurringSave extends UnknownFieldsHolder {
         private String ability;
         private Integer dc;
         private String timing;
@@ -247,7 +249,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class RecurringDamage {
+    public static class RecurringDamage extends UnknownFieldsHolder {
         private List<DamagePart> damageParts;
         private String timing;
         /**
@@ -264,7 +266,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Escape {
+    public static class Escape extends UnknownFieldsHolder {
         /** {@code self} либо {@code adjacent}; нет — сам носитель. */
         private String by;
         /** {@code action}, {@code bonus}, {@code reaction}, {@code move} либо {@code free}. */
@@ -284,7 +286,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class EscapeCheck {
+    public static class EscapeCheck extends UnknownFieldsHolder {
         /** Ключ навыка системы ({@code athletics}). */
         private String skill;
         /** Сложность; 0 — Сл источника. */
@@ -296,7 +298,7 @@ public class ActiveEffect extends UnknownFieldsHolder {
     @Setter
     @NoArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Stage {
+    public static class Stage extends UnknownFieldsHolder {
         private String label;
         private List<Change> changes;
         private List<String> flags;

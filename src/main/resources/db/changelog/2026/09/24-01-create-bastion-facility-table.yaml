@@ -1,0 +1,115 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-24-01-create-bastion-facility-table
+      author: Magistrus
+      changes:
+        # Сооружения бастиона (справочник раздела «Бастионы»). Кроме текста хранит разобранные
+        # правила в JSONB — на них будет опираться мини-игра «Бастион».
+        - createTable:
+            tableName: bastion_facility
+            columns:
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_bastion_facility
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: english
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: alternative
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: original
+                  type: TEXT
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_hidden_entity
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: srd_version
+                  type: VARCHAR(255)
+              - column:
+                  name: category
+                  type: VARCHAR(32)
+              - column:
+                  name: level
+                  type: INTEGER
+              - column:
+                  name: prerequisite
+                  type: VARCHAR(64)
+              - column:
+                  name: space
+                  type: VARCHAR(32)
+              - column:
+                  name: hirelings
+                  type: INTEGER
+              - column:
+                  name: repeatable
+                  type: BOOLEAN
+              - column:
+                  name: orders
+                  type: JSONB
+              - column:
+                  name: order_options
+                  type: JSONB
+              - column:
+                  name: enlargement
+                  type: JSONB
+              - column:
+                  name: features
+                  type: JSONB
+              - column:
+                  name: choices
+                  type: JSONB
+              - column:
+                  name: source
+                  type: VARCHAR(255)
+              - column:
+                  name: source_page
+                  type: SMALLINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - createIndex:
+            tableName: bastion_facility
+            indexName: bastion_facility_name_index
+            columns:
+              - column:
+                  name: name
+              - column:
+                  name: english
+              - column:
+                  name: alternative
+        - createIndex:
+            tableName: bastion_facility
+            indexName: bastion_facility_source_index
+            columns:
+              - column:
+                  name: source

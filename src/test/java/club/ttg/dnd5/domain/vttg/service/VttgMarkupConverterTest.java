@@ -337,6 +337,70 @@ class VttgMarkupConverterTest {
     void replacesInlineRollMarkupWithDisplayedFormula() {
         assertEquals("+1", converter.toText("{@roll +1|notation:1d20+1}"));
         assertEquals("2к6", converter.toText("{@roll 2к6}"));
+        assertEquals("к6", converter.toText("{@dice к6}"));
+        // Подпись из атрибута — как показывает роллер сайта.
+        assertEquals("+5", converter.toText("{@roll 1к20+5|text:+5}"));
+    }
+
+    /**
+     * Рендерер VTTG знает только {@code {@roll формула}} и всё тело считает формулой:
+     * синоним {@code dice} и формулу из {@code notation} выгрузка сводит к этой форме.
+     * «×» парсер бросков молча пропускает, поэтому катить надо именно notation.
+     */
+    @Test
+    void normalizesRollFormsToVttgRollMarker() {
+        assertEquals("Урон {@roll 2к6}", converter.toTextKeepingRolls("Урон {@dice 2к6}"));
+        assertEquals("{@roll 1к10*100}", converter.toTextKeepingRolls("{@roll 1к10 ×100|notation:1к10*100}"));
+        assertEquals("{@roll 1d20+1}", converter.toTextKeepingRolls("{@dice +1 | notation:1d20+1}"));
+        assertEquals("{@roll 1к20+5}", converter.toTextKeepingRolls("{@roll 1к20+5|text:+5}"));
+    }
+
+    /** Бросок узлом JSON (ProseMirror и фронтовый диалект) тоже остаётся кнопкой. */
+    @Test
+    void keepsRollNodesAsVttgRollMarkers() {
+        String proseMirror = """
+                {"type": "paragraph", "content": [
+                  {"type": "text", "text": "Цель получает "},
+                  {"type": "roll", "text": "1к8"},
+                  {"type": "text", "text": " урона."}
+                ]}
+                """;
+        String frontend = """
+                {"type": "paragraph", "content": [
+                  {"type": "text", "text": "Бонус "},
+                  {"type": "dice", "attrs": {"notation": "1к20+3"}, "content": [{"type": "text", "text": "+3"}]}
+                ]}
+                """;
+
+        assertEquals("Цель получает {@roll 1к8} урона.", converter.toTextKeepingRolls(proseMirror));
+        assertEquals("Бонус {@roll 1к20+3}", converter.toTextKeepingRolls(frontend));
+        assertEquals("Бонус +3", converter.toText(frontend));
+    }
+
+    /**
+     * В ячейке таблицы «|» экранируется. Бросок с атрибутом раньше доезжал целым и
+     * получал хвост {@code \|notation:...} прямо в формулу кнопки.
+     */
+    @Test
+    void keepsRollWithNotationInsideTableCell() {
+        String markup = """
+                {"type": "table", "colLabels": ["Бросок"], "rows": [["{@roll 1к4 × 10|notation:1d4*10}"]]}
+                """;
+
+        assertEquals(
+                "| Бросок |\n| --- |\n| {@roll 1d4*10} |",
+                converter.toTextKeepingRolls(markup)
+        );
+        assertEquals("| Бросок |\n| --- |\n| 1к4 × 10 |", converter.toText(markup));
+    }
+
+    /** Форматтеры статей разбирают броски сами — промежуточный режим их не трогает. */
+    @Test
+    void leavesDiceMarkerIntactInMarkerPreservingMode() {
+        assertEquals(
+                "Урон {@dice 1к6|notation:1к6*10}",
+                converter.toTextKeepingMarkers("Урон {@dice 1к6|notation:1к6*10}")
+        );
     }
 
     @Test

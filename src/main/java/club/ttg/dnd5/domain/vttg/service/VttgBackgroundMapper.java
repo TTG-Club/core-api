@@ -59,7 +59,7 @@ public class VttgBackgroundMapper {
                 .key(id)
                 .name(background.getName())
                 .nameEn(optional(background.getEnglish()))
-                .description(markupConverter.toText(background.getDescription()))
+                .description(markupConverter.toTextKeepingRolls(background.getDescription()))
                 .section(SECTION)
                 .srcSection(SectionType.BACKGROUND.getValue())
                 .srcUrl(background.getUrl())

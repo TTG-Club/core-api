@@ -66,6 +66,7 @@ public class Background extends NamedEntity {
     private String featSuffix;
 
     /** Владение инструментами */
+    @Column(columnDefinition = "TEXT")
     private String toolProficiency;
 
     /**

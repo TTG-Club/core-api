@@ -336,6 +336,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/2026/08/30-02-add-species-vision.yaml
   - include:
+      file: db/changelog/2026/09/07-01-expand-background-tool-proficiency.yaml
+  - include:
       file: db/changelog/2026/09/07-01-add-creature-inventory.yaml
   - include:
       file: db/changelog/2026/09/08-01-backfill-creature-inventory-from-equipments.yaml
@@ -351,3 +353,7 @@ databaseChangeLog:
       file: db/changelog/2026/09/19-02-drop-item-ammunition-type.yaml
   - include:
       file: db/changelog/2026/09/19-03-add-item-consumable.yaml
+  - include:
+      file: db/changelog/2026/09/24-01-create-bastion-facility-table.yaml
+  - include:
+      file: db/changelog/2026/09/24-02-update-full-name-search-view-add-bastion.yaml

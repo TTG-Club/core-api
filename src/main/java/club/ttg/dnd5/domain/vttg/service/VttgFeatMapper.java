@@ -56,7 +56,7 @@ public class VttgFeatMapper {
                 .featureType(TYPE)
                 .category(categoryName(feat.getCategory()))
                 .repeatable(Boolean.TRUE.equals(feat.getRepeatability()))
-                .description(markupConverter.toText(feat.getDescription()))
+                .description(markupConverter.toTextKeepingRolls(feat.getDescription()))
                 .typeLabel(TYPE_LABEL)
                 .featData(mechanicsMapper.featData(feat))
                 .mechanics(mechanicsMapper.mechanics(feat))

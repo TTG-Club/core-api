@@ -63,6 +63,8 @@ public class VttgSpellMapper {
         SpellCastingTime castingTime = primaryCastingTime(spell);
         SpellDistance range = first(spell.getRange());
         SpellDuration duration = first(spell.getDuration());
+        // Механика разбирается по чистому тексту, а игроку уходит текст с кнопками бросков:
+        // разборщики урона и усиления написаны под голую формулу, без маркера вокруг неё.
         String description = markupConverter.toText(spell.getDescription());
         VttgSpellMechanics mechanics = mechanicsExtractor.extract(spell, description);
         SpellEffect effect = spell.getEffect();
@@ -105,8 +107,8 @@ public class VttgSpellMapper {
                 .cantripScaling(cantripScalingTiers == null ? null : "level")
                 .cantripScalingTiers(cantripScalingTiers)
                 .scaling(scaling)
-                .description(description)
-                .higherLevelDescription(higherLevelDescription)
+                .description(markupConverter.toTextKeepingRolls(spell.getDescription()))
+                .higherLevelDescription(optionalTextKeepingRolls(spell.getUpper()))
                 .activeEffects(activeEffects(spell))
                 .sourceKey(VttgSourceKeys.of(spell.getSource()))
                 .isSRD(spell.getSrdVersion() != null)
@@ -589,6 +591,15 @@ public class VttgSpellMapper {
             return null;
         }
         String text = markupConverter.toText(value);
+        return StringUtils.hasText(text) ? text : null;
+    }
+
+    /** Как {@link #optionalText(String)}, но броски остаются кнопками — для показа игроку. */
+    private String optionalTextKeepingRolls(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String text = markupConverter.toTextKeepingRolls(value);
         return StringUtils.hasText(text) ? text : null;
     }
 

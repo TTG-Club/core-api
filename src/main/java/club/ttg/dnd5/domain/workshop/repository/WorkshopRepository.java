@@ -30,6 +30,11 @@ public interface WorkshopRepository extends JpaRepository<Spell, String> {
                   FROM Glossary
                   WHERE username = :username
                   UNION ALL
+                  SELECT 'BASTION' as section_type,
+                         username  as username
+                  FROM BastionFacility
+                  WHERE username = :username
+                  UNION ALL
                   SELECT 'MAGIC_ITEM' as section_type,
                          username     as username
                   FROM MagicItem

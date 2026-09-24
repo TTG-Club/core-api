@@ -76,7 +76,7 @@ public class VttgSpeciesMapper {
                 .isSRD(species.getSrdVersion() != null)
                 .name(species.getName())
                 .nameEn(optional(species.getEnglish()))
-                .description(markupConverter.toText(species.getDescription()))
+                .description(markupConverter.toTextKeepingRolls(species.getDescription()))
                 .sourceKey(VttgSourceKeys.of(species.getSource()))
                 .creatureType(creatureType(species.getType()))
                 .size(sizes(species.getSizes()))
@@ -256,7 +256,7 @@ public class VttgSpeciesMapper {
                 ? null
                 : feature.getActiveEffects();
         return new VttgSpecies.Feature(key, feature.getName(),
-                markupConverter.toText(feature.getDescription()), level,
+                markupConverter.toTextKeepingRolls(feature.getDescription()), level,
                 grantedSpells(feature), effects,
                 mechanicsMapper.featData(feature.getMechanics(), null));
     }

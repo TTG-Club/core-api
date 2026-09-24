@@ -137,7 +137,7 @@ public class VttgClassMapper {
                 .key(key)
                 .name(characterClass.getName())
                 .nameEn(optional(characterClass.getEnglish()))
-                .description(description(characterClass.getDescription()))
+                .description(displayDescription(characterClass.getDescription()))
                 .sourceKey(VttgSourceKeys.of(characterClass.getSource()))
                 .isSRD(characterClass.getSrdVersion() != null)
                 .hitDie(hitDie(characterClass.getHitDice()))
@@ -461,7 +461,7 @@ public class VttgClassMapper {
                 .key(key)
                 .name(subclass.getName())
                 .nameEn(optional(subclass.getEnglish()))
-                .description(description(subclass.getDescription()))
+                .description(displayDescription(subclass.getDescription()))
                 .unlockLevel(unlockLevel(features))
                 .sourceKey(VttgSourceKeys.of(subclass.getSource()))
                 .spellcasting(spellcasting(null, subclass))
@@ -500,7 +500,7 @@ public class VttgClassMapper {
             }
             String key = featureKey(feature);
             result.add(new VttgClass.Feature(key, feature.getName(),
-                    description(feature.getDescription()), feature.getLevel(),
+                    displayDescription(feature.getDescription()), feature.getLevel(),
                     subclassKey, choices(feature.getOptions()),
                     choiceConfig(feature.getOptionsChoice(), feature.getOptionsName()),
                     flag(feature.isAbilityImprovement()), flag(feature.isFightingStyleChoice()),
@@ -529,7 +529,7 @@ public class VttgClassMapper {
             // характеристик» и ни прибавки к характеристикам, ни черты, а ступени
             // информационного умения уезжали на лист персонажа отдельными записями
             target.add(new VttgClass.Feature(baseKey + "-" + scaling.getLevel(), name,
-                    description(scaling.getDescription()), scaling.getLevel(), subclassKey, null, null,
+                    displayDescription(scaling.getDescription()), scaling.getLevel(), subclassKey, null, null,
                     flag(feature.isAbilityImprovement()), null, null, flag(feature.isInformationalOnly()),
                     null, null, null));
         }
@@ -545,7 +545,7 @@ public class VttgClassMapper {
                 continue;
             }
             result.add(new VttgClass.Choice(optionKey(option), optionName(option.getName()),
-                    optionNameEn(option.getName()), description(option.getDescription()),
+                    optionNameEn(option.getName()), displayDescription(option.getDescription()),
                     optional(option.getAdditional()), description(option.getPrerequisite()),
                     option.getRequiredClassLevel(), flag(option.isHideInSubclasses()),
                     flag(option.isRepeatable()), effects(option.getActiveEffects()),
@@ -1042,6 +1042,15 @@ public class VttgClassMapper {
 
     private String description(String markup) {
         String text = markupConverter.toText(markup);
+        return StringUtils.hasText(text) ? text : null;
+    }
+
+    /**
+     * Описание для показа игроку: броски остаются кнопками {@code {@roll ...}}. Требования и
+     * стартовое снаряжение идут через {@link #description(String)} — там кнопка не нужна.
+     */
+    private String displayDescription(String markup) {
+        String text = markupConverter.toTextKeepingRolls(markup);
         return StringUtils.hasText(text) ? text : null;
     }
 

@@ -378,6 +378,69 @@ class VttgJsonContractTest {
         assertTrue(serialized.contains("\"whileCapable\":true"));
     }
 
+    /** Дальность применения системы 0.8.87 («Божественная искра» — 30 фт). */
+    @Test
+    void activeEffectKeepsActivationRange() throws Exception {
+        String json = """
+                {
+                  "id": "effect-divine-spark",
+                  "name": "Божественная искра",
+                  "activation": { "mode": "use", "counter": "channel-divinity", "range": 30 }
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals(30, effect.getActivation().getRange());
+        assertTrue(effect.getActivation().unknownFields().isEmpty());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertTrue(serialized.contains(
+                "\"activation\":{\"mode\":\"use\",\"counter\":\"channel-divinity\",\"range\":30}"));
+    }
+
+    /**
+     * Незнакомые ключи переживают круг у каждого вложенного объекта эффекта, а
+     * не только у спасброска, строки изменения и ауры.
+     */
+    @Test
+    void activeEffectNestedObjectsKeepUnknownKeys() throws Exception {
+        String json = """
+                {
+                  "id": "effect-nested-future",
+                  "duration": { "type": "round", "value": 1, "futureDuration": 1 },
+                  "changes": [
+                    { "key": "armorClass", "mode": "add", "value": "1",
+                      "step": { "by": 1, "per": "turn", "futureStep": 2 } }
+                  ],
+                  "variant": { "group": "g", "futureVariant": 3 },
+                  "activation": { "mode": "use", "futureActivation": 4 },
+                  "charges": { "max": 3, "current": 3, "futureCharges": 5 },
+                  "recurringSave": { "ability": "wisdom", "dc": 0, "futureRecurringSave": 6 },
+                  "recurringDamage": { "timing": "turnStart", "futureRecurringDamage": 7 },
+                  "escape": { "by": "self", "check": { "skill": "athletics", "dc": 14, "futureCheck": 8 },
+                    "futureEscape": 9 },
+                  "stages": [ { "label": "I", "futureStage": 10 } ]
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+
+        assertEquals(1, effect.getDuration().unknownFields().get("futureDuration").asInt());
+        assertEquals(2, effect.getChanges().getFirst().getStep().unknownFields().get("futureStep").asInt());
+        assertEquals(3, effect.getVariant().unknownFields().get("futureVariant").asInt());
+        assertEquals(4, effect.getActivation().unknownFields().get("futureActivation").asInt());
+        assertEquals(5, effect.getCharges().unknownFields().get("futureCharges").asInt());
+        assertEquals(6, effect.getRecurringSave().unknownFields().get("futureRecurringSave").asInt());
+        assertEquals(7, effect.getRecurringDamage().unknownFields().get("futureRecurringDamage").asInt());
+        assertEquals(8, effect.getEscape().getCheck().unknownFields().get("futureCheck").asInt());
+        assertEquals(9, effect.getEscape().unknownFields().get("futureEscape").asInt());
+        assertEquals(10, effect.getStages().getFirst().unknownFields().get("futureStage").asInt());
+
+        assertEquals(mapper.writeValueAsString(mapper.readTree(json)), mapper.writeValueAsString(effect));
+    }
+
     /**
      * Срабатывания 0.8.62 идут как есть: получатель «всем в радиусе» с радиусом,
      * отдых, режим спасброска, уменьшение максимума хитов, повторный спасбросок
