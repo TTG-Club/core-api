@@ -108,6 +108,34 @@ public class PlayerBastionFacilityService {
     }
 
     /**
+     * Проверяет, что бастион можно запустить: в нём есть персонажи, и у каждого выбраны
+     * оба стартовых базовых сооружения — тесное и вместительное.
+     *
+     * @throws ApiException 409 с именем персонажа, которому ещё нужно выбрать
+     */
+    public void requireSetupComplete(PlayerBastion bastion) {
+        if (bastion.getMembers().isEmpty()) {
+            throw new ApiException(HttpStatus.CONFLICT, "Дайте доступ к бастиону хотя бы одному игроку");
+        }
+        Map<String, BastionFacility> reference = loadReference(bastion.getMembers().stream()
+                .flatMap(member -> member.getFacilities().stream())
+                .map(PlayerBastionFacility::getFacilityUrl));
+        for (PlayerBastionMember member : bastion.getMembers()) {
+            Set<FacilitySpace> basicSpaces = member.getFacilities().stream()
+                    .filter(facility -> Optional.ofNullable(reference.get(facility.getFacilityUrl()))
+                            .map(BastionFacility::getCategory)
+                            .orElse(null) == FacilityCategory.BASIC)
+                    .map(PlayerBastionFacility::getSpace)
+                    .collect(Collectors.toSet());
+            if (!basicSpaces.containsAll(PlayerBastionSetupRules.STARTING_BASIC_SPACES)) {
+                throw new ApiException(HttpStatus.CONFLICT,
+                        "У персонажа «%s» ещё не выбраны стартовые базовые сооружения"
+                                .formatted(member.getCharacterName()));
+            }
+        }
+    }
+
+    /**
      * Проверяет, что новый уровень персонажа не меньше уже выбранного: число
      * специализированных сооружений влезает в лимит, и каждое доступно на этом уровне.
      * Иначе мастер, понизив уровень, оставил бы персонажа с выбором не по правилам.

@@ -107,6 +107,24 @@ public class PlayerBastionService {
         return mapper.toResponse(bastionRepository.saveAndFlush(bastion), membership, userId);
     }
 
+    /**
+     * Запускает бастион: закладка закончена, начинаются ходы. Стартовый выбор сооружений
+     * после этого закрыт. Нужны персонажи, и у каждого — оба стартовых базовых сооружения.
+     */
+    @Transactional
+    public PlayerBastionResponse activate(UUID id) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(id);
+        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        if (bastion.getStatus() != PlayerBastionStatus.SETUP) {
+            throw new ApiException(HttpStatus.CONFLICT, "Запустить можно только бастион в закладке");
+        }
+        facilityService.requireSetupComplete(bastion);
+
+        bastion.setStatus(PlayerBastionStatus.ACTIVE);
+        return mapper.toResponse(bastionRepository.saveAndFlush(bastion), membership, userId);
+    }
+
     /** Архивирует бастион: игра закончилась, бастион остаётся только для просмотра. */
     @Transactional
     public PlayerBastionResponse archive(UUID id) {

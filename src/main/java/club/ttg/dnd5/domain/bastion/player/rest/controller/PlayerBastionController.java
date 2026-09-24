@@ -1,5 +1,8 @@
 package club.ttg.dnd5.domain.bastion.player.rest.controller;
 
+import club.ttg.dnd5.domain.bastion.player.plan.PlanRequest;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanResponse;
+import club.ttg.dnd5.domain.bastion.player.plan.PlayerBastionPlanService;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.CreatePlayerBastionRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionGameResponse;
@@ -38,6 +41,7 @@ import java.util.UUID;
 public class PlayerBastionController {
     private final PlayerBastionService service;
     private final PlayerBastionFacilityService facilityService;
+    private final PlayerBastionPlanService planService;
 
     @Operation(summary = "Бастионы игры", description = "Все бастионы игры и, для мастера, игроки, которым можно дать доступ")
     @GetMapping("/games/{gameId}")
@@ -85,5 +89,24 @@ public class PlayerBastionController {
                                                      @PathVariable UUID facilityId,
                                                      @Valid @RequestBody PrerequisiteConfirmationRequest request) {
         return facilityService.confirmPrerequisite(id, facilityId, request.confirmed());
+    }
+
+    @Operation(summary = "Запустить бастион", description = "Только мастер игры: закладка закончена, начинаются ходы")
+    @PostMapping("/{id}/activate")
+    public PlayerBastionResponse activate(@PathVariable UUID id) {
+        return service.activate(id);
+    }
+
+    @Operation(summary = "План бастиона", description = "Смотреть может любой участник игры")
+    @GetMapping("/{id}/plan")
+    public PlanResponse findPlan(@PathVariable UUID id) {
+        return planService.find(id);
+    }
+
+    @Operation(summary = "Сохранить план бастиона",
+            description = "Мастер и игроки с доступом; версия устарела — 409")
+    @PutMapping("/{id}/plan")
+    public PlanResponse savePlan(@PathVariable UUID id, @Valid @RequestBody PlanRequest request) {
+        return planService.save(id, request);
     }
 }
