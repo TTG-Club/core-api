@@ -353,3 +353,7 @@ databaseChangeLog:
       file: db/changelog/2026/09/19-02-drop-item-ammunition-type.yaml
   - include:
       file: db/changelog/2026/09/19-03-add-item-consumable.yaml
+  - include:
+      file: db/changelog/2026/09/24-01-create-bastion-facility-table.yaml
+  - include:
+      file: db/changelog/2026/09/24-02-update-full-name-search-view-add-bastion.yaml
