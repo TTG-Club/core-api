@@ -148,11 +148,18 @@ public class SourceSavedFilterService
         return buildDefaultFilterInfoFromSources(sourceService.findAll());
     }
 
+    /**
+     * Фильтр источников по книгам, которые встречаются в разделе.
+     *
+     * <p>Раздел без записей (новый, ещё не наполненный) получает пустой фильтр, а не
+     * запрос без фильтра: вызывающие сразу читают {@code getFilter().getGroups()}, и
+     * {@code null} ронял метаданные фильтров всего раздела.</p>
+     */
     protected SourceSavedFilterRequest buildDefaultFilterInfo(List<String> sourceCodes)
     {
         if (sourceCodes == null || sourceCodes.isEmpty())
         {
-            return new SourceSavedFilterRequest();
+            return buildDefaultFilterInfoFromSources(List.of());
         }
 
         Set<String> allowedCodes = sourceCodes.stream()
@@ -161,7 +168,7 @@ public class SourceSavedFilterService
 
         if (allowedCodes.isEmpty())
         {
-            return new SourceSavedFilterRequest();
+            return buildDefaultFilterInfoFromSources(List.of());
         }
 
         List<Source> filteredSources = sourceService.findAll().stream()

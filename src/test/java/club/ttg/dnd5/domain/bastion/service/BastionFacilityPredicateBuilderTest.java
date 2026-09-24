@@ -19,7 +19,7 @@ class BastionFacilityPredicateBuilderTest {
 
         String predicate = BastionFacilityPredicateBuilder.build(request).toString();
 
-        assertTrue(predicate.contains("bastion_facility.source"));
+        assertTrue(predicate.contains("bastionFacility.source"));
         assertTrue(predicate.contains("DMG24"));
     }
 
@@ -60,6 +60,6 @@ class BastionFacilityPredicateBuilderTest {
         String predicate = BastionFacilityPredicateBuilder.build(new BastionFacilityQueryRequest()).toString();
 
         assertTrue(predicate.contains("isHiddenEntity = false"));
-        assertFalse(predicate.contains("bastion_facility.source"));
+        assertFalse(predicate.contains("bastionFacility.source"));
     }
 }

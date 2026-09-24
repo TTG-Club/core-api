@@ -14,6 +14,12 @@ import lombok.experimental.UtilityClass;
 public class BastionFacilityPredicateBuilder
 {
     private static final QBastionFacility Q = QBastionFacility.bastionFacility;
+    /**
+     * Алиас сущности в SQL, который строит QueryDSL, — имя переменной {@link #Q}, а не
+     * имя таблицы. Фильтр источников пишет путь строкой, и с {@code bastion_facility}
+     * Postgres отвечал «invalid reference to FROM-clause entry».
+     */
+    static final String ALIAS = Q.getMetadata().getName();
     private static final StringPath CATEGORY_PATH = Expressions.stringPath("category");
     private static final StringPath SPACE_PATH = Expressions.stringPath("space");
 
@@ -32,7 +38,7 @@ public class BastionFacilityPredicateBuilder
                     ? Q.prerequisite.isNull()
                     : Q.prerequisite.isNotNull());
         }
-        PredicateUtils.applySourcesFilter(builder, request.getSource(), "bastion_facility", "source");
+        PredicateUtils.applySourcesFilter(builder, request.getSource(), ALIAS, "source");
         PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
         return builder;
     }

@@ -25,7 +25,7 @@ public class BastionFacilityQueryDslSearchService
 
     @Override
     protected BooleanExpression buildSourcePredicate(final List<String> values) {
-        PathBuilder<Object> facility = new PathBuilder<>(Object.class, "bastion_facility");
+        PathBuilder<Object> facility = new PathBuilder<>(Object.class, BastionFacilityPredicateBuilder.ALIAS);
         return facility.getString("source").in(values);
     }
 
