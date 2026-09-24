@@ -357,3 +357,7 @@ databaseChangeLog:
       file: db/changelog/2026/09/24-01-create-bastion-facility-table.yaml
   - include:
       file: db/changelog/2026/09/24-02-update-full-name-search-view-add-bastion.yaml
+  - include:
+      file: db/changelog/2026/09/24-03-create-player-bastion-tables.yaml
+  - include:
+      file: db/changelog/2026/09/24-04-create-player-bastion-facility-table.yaml
