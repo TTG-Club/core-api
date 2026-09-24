@@ -29,6 +29,20 @@ public class BastionRules {
     /** На сколько меньше кубиков потерь защитников при атаке на полностью окружённый стенами бастион. */
     public static final int DEFENSIVE_WALL_DEFENDER_DICE_REDUCTION = 2;
 
+    /**
+     * Сколько специализированных сооружений положено персонажу этого уровня. До 5 уровня
+     * бастиона нет — ноль.
+     */
+    public static int specialFacilityLimit(int characterLevel) {
+        int limit = 0;
+        for (Progression progression : SPECIAL_FACILITY_PROGRESSION) {
+            if (characterLevel >= progression.level()) {
+                limit = progression.count();
+            }
+        }
+        return limit;
+    }
+
     public record Progression(int level, int count) {
     }
 }
