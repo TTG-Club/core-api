@@ -71,7 +71,12 @@ public class PlayerBastionSetupRules {
         }
     }
 
-    private static void validateSpecial(int characterLevel,
+    /**
+     * Проверяет специализированные сооружения персонажа: лимит по уровню, уровень
+     * сооружения, повторы и выборы. Нужна и стартовому выбору, и новому сооружению,
+     * полученному с уровнем, когда бастион уже запущен.
+     */
+    public static void validateSpecial(int characterLevel,
                                         List<FacilitySetupRequest.Special> special,
                                         Map<String, BastionFacility> reference) {
         int limit = BastionRules.specialFacilityLimit(characterLevel);

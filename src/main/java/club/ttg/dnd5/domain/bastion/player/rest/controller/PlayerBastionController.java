@@ -1,5 +1,8 @@
 package club.ttg.dnd5.domain.bastion.player.rest.controller;
 
+import club.ttg.dnd5.domain.bastion.player.activity.ActivityRequests;
+import club.ttg.dnd5.domain.bastion.player.activity.ActivityResponse;
+import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionActivityService;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanRequest;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanResponse;
 import club.ttg.dnd5.domain.bastion.player.plan.PlayerBastionPlanService;
@@ -17,6 +20,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +46,7 @@ public class PlayerBastionController {
     private final PlayerBastionService service;
     private final PlayerBastionFacilityService facilityService;
     private final PlayerBastionPlanService planService;
+    private final PlayerBastionActivityService activityService;
 
     @Operation(summary = "Бастионы игры", description = "Все бастионы игры и, для мастера, игроки, которым можно дать доступ")
     @GetMapping("/games/{gameId}")
@@ -108,5 +113,67 @@ public class PlayerBastionController {
     @PutMapping("/{id}/plan")
     public PlanResponse savePlan(@PathVariable UUID id, @Valid @RequestBody PlanRequest request) {
         return planService.save(id, request);
+    }
+
+    @Operation(summary = "Журналы бастиона", description = "Приказы, ходы и казна — свежие первыми")
+    @GetMapping("/{id}/activity")
+    public ActivityResponse findActivity(@PathVariable UUID id) {
+        return activityService.findActivity(id);
+    }
+
+    @Operation(summary = "Отдать приказ",
+            description = "Сооружению — игрок этого персонажа или мастер; «Обслуживать» — всему бастиону")
+    @PostMapping("/{id}/orders")
+    public PlayerBastionResponse giveOrder(@PathVariable UUID id,
+                                           @Valid @RequestBody ActivityRequests.GiveOrder request) {
+        return activityService.giveOrder(id, request);
+    }
+
+    @Operation(summary = "Отменить приказ", description = "Только в тот же ход; цена возвращается в казну")
+    @DeleteMapping("/{id}/orders/{orderId}")
+    public PlayerBastionResponse cancelOrder(@PathVariable UUID id, @PathVariable UUID orderId) {
+        return activityService.cancelOrder(id, orderId);
+    }
+
+    @Operation(summary = "Сделать ход бастиона", description = "Только мастер игры: проходят 7 дней")
+    @PostMapping("/{id}/turns")
+    public PlayerBastionResponse performTurn(@PathVariable UUID id,
+                                             @Valid @RequestBody ActivityRequests.Turn request) {
+        return activityService.performTurn(id, request);
+    }
+
+    @Operation(summary = "Пополнить или списать казну", description = "Только мастер игры")
+    @PostMapping("/{id}/treasury")
+    public PlayerBastionResponse adjustTreasury(@PathVariable UUID id,
+                                                @Valid @RequestBody ActivityRequests.Treasury request) {
+        return activityService.adjustTreasury(id, request);
+    }
+
+    @Operation(summary = "Построить базовое сооружение", description = "Цена и срок — из правил бастиона")
+    @PostMapping("/{id}/members/{memberId}/facilities/basic")
+    public PlayerBastionResponse buildBasic(@PathVariable UUID id,
+                                            @PathVariable UUID memberId,
+                                            @Valid @RequestBody ActivityRequests.BuildBasic request) {
+        return activityService.buildBasic(id, memberId, request);
+    }
+
+    @Operation(summary = "Новое специализированное сооружение", description = "Персонаж дорос до следующего лимита")
+    @PostMapping("/{id}/members/{memberId}/facilities/special")
+    public PlayerBastionResponse addSpecial(@PathVariable UUID id,
+                                            @PathVariable UUID memberId,
+                                            @Valid @RequestBody ActivityRequests.AddSpecial request) {
+        return activityService.addSpecial(id, memberId, request);
+    }
+
+    @Operation(summary = "Расширить сооружение")
+    @PostMapping("/{id}/facilities/{facilityId}/enlarge")
+    public PlayerBastionResponse enlarge(@PathVariable UUID id, @PathVariable UUID facilityId) {
+        return activityService.enlarge(id, facilityId);
+    }
+
+    @Operation(summary = "Убрать сооружение", description = "Только мастер игры — например, замена при повышении уровня")
+    @DeleteMapping("/{id}/facilities/{facilityId}")
+    public PlayerBastionResponse removeFacility(@PathVariable UUID id, @PathVariable UUID facilityId) {
+        return activityService.removeFacility(id, facilityId);
     }
 }

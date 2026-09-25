@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.player.rest.dto;
 
+import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
@@ -38,6 +39,8 @@ public record PlayerBastionResponse(
      * @param canEditFacilities    открывший может менять сооружения этого персонажа: мастер или
      *                             сам игрок, пока бастион в закладке
      * @param basicComplete        выбраны оба стартовых базовых сооружения
+     * @param canGiveOrders        открывший может отдавать приказы сооружениям персонажа,
+     *                             строить и расширять их: бастион запущен, это мастер или сам игрок
      */
     @Schema(description = "Игрок с доступом к бастиону")
     public record Member(
@@ -49,6 +52,7 @@ public record PlayerBastionResponse(
             int specialFacilityLimit,
             boolean canEditFacilities,
             boolean basicComplete,
+            boolean canGiveOrders,
             List<Facility> facilities) {
     }
 
@@ -57,6 +61,12 @@ public record PlayerBastionResponse(
      *
      * @param prerequisiteConfirmed требование подтверждено мастером (у сооружений без требования — всегда)
      * @param hirelings             число наёмников сооружения
+     * @param status                готово или строится
+     * @param readyOnTurn           ход, на котором достроится
+     * @param pendingSpace          пространство, до которого идёт расширение
+     * @param pendingReadyOnTurn    ход, на котором закончится расширение
+     * @param enlargeable           сооружение можно расширить сейчас: готово, не расширяется, и
+     *                              расширять есть куда
      */
     @Schema(description = "Сооружение персонажа")
     public record Facility(
@@ -71,6 +81,11 @@ public record PlayerBastionResponse(
             List<BastionLabel> orders,
             BastionLabel prerequisite,
             boolean prerequisiteConfirmed,
-            List<SelectedChoice> choices) {
+            List<SelectedChoice> choices,
+            FacilityStatus status,
+            Integer readyOnTurn,
+            FacilitySpaceResponse pendingSpace,
+            Integer pendingReadyOnTurn,
+            boolean enlargeable) {
     }
 }

@@ -67,4 +67,29 @@ public class PlayerBastionFacility extends Timestamped {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb", nullable = false)
     private List<SelectedChoice> choices = new ArrayList<>();
+
+    /** Готово или строится. Стартовые сооружения готовы сразу. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private FacilityStatus status = FacilityStatus.READY;
+
+    /** Ход, на котором стройка закончится; у готовых — {@code null}. */
+    @Column(name = "ready_on_turn")
+    private Integer readyOnTurn;
+
+    /**
+     * Пространство, до которого сооружение расширяется. Пока идёт расширение, сооружение
+     * работает в прежнем пространстве; {@code null} — не расширяется.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pending_space", length = 16)
+    private FacilitySpace pendingSpace;
+
+    /** Ход, на котором закончится расширение. */
+    @Column(name = "pending_ready_on_turn")
+    private Integer pendingReadyOnTurn;
+
+    public boolean isReady() {
+        return status == FacilityStatus.READY;
+    }
 }

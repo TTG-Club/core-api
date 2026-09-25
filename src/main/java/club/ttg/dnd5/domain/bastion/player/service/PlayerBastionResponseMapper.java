@@ -66,7 +66,9 @@ public class PlayerBastionResponseMapper {
         boolean member = bastion.getMembers().stream().anyMatch(item -> item.getUserId().equals(userId));
 
         List<PlayerBastionResponse.Member> members = bastion.getMembers().stream()
-                .map(item -> toMember(item, setup && (master || item.getUserId().equals(userId)), reference))
+                .map(item -> toMember(item, setup && (master || item.getUserId().equals(userId)),
+                        bastion.getStatus() == PlayerBastionStatus.ACTIVE && (master || item.getUserId().equals(userId)),
+                        reference))
                 .toList();
 
         return new PlayerBastionResponse(
@@ -86,6 +88,7 @@ public class PlayerBastionResponseMapper {
 
     private static PlayerBastionResponse.Member toMember(PlayerBastionMember member,
                                                          boolean canEditFacilities,
+                                                         boolean canGiveOrders,
                                                          Map<String, BastionFacility> reference) {
         List<PlayerBastionResponse.Facility> facilities = member.getFacilities().stream()
                 .map(facility -> toFacility(facility, reference.get(facility.getFacilityUrl())))
@@ -106,6 +109,7 @@ public class PlayerBastionResponseMapper {
                 BastionRules.specialFacilityLimit(member.getCharacterLevel()),
                 canEditFacilities,
                 basicComplete,
+                canGiveOrders,
                 facilities);
     }
 
@@ -130,6 +134,30 @@ public class PlayerBastionResponseMapper {
                         .map(prerequisite -> new BastionLabel(prerequisite.name(), prerequisite.getName()))
                         .orElse(null),
                 facility.isPrerequisiteConfirmed(),
-                facility.getChoices());
+                facility.getChoices(),
+                facility.getStatus(),
+                facility.getReadyOnTurn(),
+                Optional.ofNullable(facility.getPendingSpace())
+                        .map(space -> new FacilitySpaceResponse(space.name(), space.getName(), space.getSquares()))
+                        .orElse(null),
+                facility.getPendingReadyOnTurn(),
+                isEnlargeable(facility, reference));
+    }
+
+    /**
+     * Можно ли расширить сооружение сейчас. Базовое — до следующего пространства по
+     * правилам, специализированное — если его описание допускает расширение и оно ещё
+     * не сделано.
+     */
+    private static boolean isEnlargeable(PlayerBastionFacility facility, BastionFacility reference) {
+        if (reference == null || !facility.isReady() || facility.getPendingSpace() != null) {
+            return false;
+        }
+        if (reference.getCategory() == FacilityCategory.BASIC) {
+            return facility.getSpace().next() != null;
+        }
+        return reference.getEnlargement() != null
+                && reference.getEnlargement().getSpace() != null
+                && reference.getEnlargement().getSpace() != facility.getSpace();
     }
 }

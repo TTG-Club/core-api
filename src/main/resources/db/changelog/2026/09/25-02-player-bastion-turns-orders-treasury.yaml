@@ -1,0 +1,228 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-25-02-player-bastion-facility-construction
+      author: Magistrus
+      changes:
+        # Стройка и расширение: сооружение готово или строится до хода ready_on_turn;
+        # расширение до pending_space закончится на ходу pending_ready_on_turn.
+        - addColumn:
+            tableName: player_bastion_facility
+            columns:
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  defaultValue: READY
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ready_on_turn
+                  type: INTEGER
+              - column:
+                  name: pending_space
+                  type: VARCHAR(16)
+              - column:
+                  name: pending_ready_on_turn
+                  type: INTEGER
+  - changeSet:
+      id: 2026-09-25-02-create-player-bastion-order-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        # Приказы бастиона: сооружению или всему бастиону («Обслуживать» — facility_id пуст).
+        - createTable:
+            tableName: player_bastion_order
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_player_bastion_order
+              - column:
+                  name: bastion_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_player_bastion_order_bastion
+                    references: player_bastion(id)
+                    deleteCascade: true
+              - column:
+                  name: facility_id
+                  type: UUID
+              - column:
+                  name: order_code
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: option_name
+                  type: VARCHAR(200)
+              - column:
+                  name: cost_gp
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: given_on_turn
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completes_on_turn
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: given_by
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: result
+                  type: TEXT
+              - column:
+                  name: note
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - createIndex:
+            tableName: player_bastion_order
+            indexName: player_bastion_order_bastion_id_index
+            columns:
+              - column:
+                  name: bastion_id
+  - changeSet:
+      id: 2026-09-25-02-create-player-bastion-ledger-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        # Журнал казны: каждое движение — строка; итог хранится в player_bastion.treasury_gp.
+        - createTable:
+            tableName: player_bastion_ledger
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_player_bastion_ledger
+              - column:
+                  name: bastion_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_player_bastion_ledger_bastion
+                    references: player_bastion(id)
+                    deleteCascade: true
+              - column:
+                  name: turn
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount_gp
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: VARCHAR(500)
+              - column:
+                  name: created_by
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: player_bastion_ledger
+            indexName: player_bastion_ledger_bastion_id_index
+            columns:
+              - column:
+                  name: bastion_id
+  - changeSet:
+      id: 2026-09-25-02-create-player-bastion-turn-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        # Журнал ходов бастиона.
+        - createTable:
+            tableName: player_bastion_turn
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_player_bastion_turn
+              - column:
+                  name: bastion_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_player_bastion_turn_bastion
+                    references: player_bastion(id)
+                    deleteCascade: true
+              - column:
+                  name: number
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: maintain
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event
+                  type: TEXT
+              - column:
+                  name: summary
+                  type: JSONB
+                  defaultValue: '[]'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: performed_by
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: performed_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: player_bastion_turn
+            indexName: player_bastion_turn_bastion_id_index
+            columns:
+              - column:
+                  name: bastion_id
