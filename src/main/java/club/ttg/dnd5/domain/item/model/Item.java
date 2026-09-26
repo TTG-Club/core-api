@@ -54,7 +54,7 @@ public class Item extends NamedEntity {
     /**
      * Категория снаряжения в вокабуляре VTTG ({@code EquipmentCategory}):
      * {@code adventurer-equipment}, {@code trinket}, {@code clothing}, {@code ring},
-     * {@code wand}, {@code wondrous}, {@code food}, {@code vehicle-equipment}.
+     * {@code wand}, {@code wondrous}, {@code potion}, {@code food}, {@code vehicle-equipment}.
      *
      * <p>Броню задаёт {@link #armor} своим словарём сайта, поэтому её значения здесь не
      * ожидаются. Пусто — категория выводится из типов предмета, как раньше.</p>
