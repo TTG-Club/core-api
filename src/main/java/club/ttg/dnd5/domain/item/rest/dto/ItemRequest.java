@@ -54,7 +54,7 @@ public class ItemRequest extends BaseRequest {
      * Категория снаряжения в вокабуляре VTTG. Пусто — выводится из типов предмета.
      */
     @Schema(description = "Категория снаряжения для виртуального стола",
-            examples = {"adventurer-equipment", "trinket", "food"})
+            examples = {"adventurer-equipment", "trinket", "food", "potion"})
     private String equipmentCategory;
 
     /**

@@ -41,12 +41,13 @@ import java.util.regex.Pattern;
  *
  * <p>Тип отдаётся родной: оружие → {@code weapon}, всё остальное → {@code equipment} с флагом
  * {@code isMagical=true} (отдельного типа «magic-item» нет). {@code section} раскладывает запись
- * по листу дерева разделов (weapons/armor/rings/wands/wondrous). Магический боеприпас, хоть
+ * по листу дерева разделов (weapons/armor/rings/wands/wondrous/potions). Магический боеприпас, хоть
  * и заведён оружием, уходит снаряжением к обычным стрелам (gear) — см. {@link #isAmmunition}.</p>
  *
  * <p>Сопоставление справочников выполнено под перечисления VTTG ({@code EquipmentCategory},
  * {@code ItemRarity}). Категории без точного соответствия отображаются на близкий аналог
- * (жезл/посох → wand, зелье/свиток → wondrous). Структурных данных оружия/доспеха в самой модели
+ * (жезл/посох → wand, свиток → wondrous; зелье → своя категория potion
+ * и свой лист «Зелья»). Структурных данных оружия/доспеха в самой модели
  * {@code MagicItem} нет, поэтому боевые/доспешные поля (а также вес и стоимость) выводятся из
  * базового предмета {@link Item}, найденного по уточнению ({@code clarification}); для «общих»
  * зачарований и неразрешённых уточнений эти поля опускаются (как в эталоне SRD-бэкапа).</p>
@@ -839,11 +840,12 @@ public class VttgMagicItemMapper {
             case ARMOR -> "armor";
             case RING -> "rings";
             case WAND, ROD, STAFF -> "wands";
-            case POTION, SCROLL, SUBJECT -> "wondrous";
+            case POTION -> VttgItemMapper.POTIONS_SECTION;
+            case SCROLL, SUBJECT -> "wondrous";
         };
     }
 
-    /** MagicItemCategory → EquipmentCategory VTTG (ring|wand|wondrous|light|medium|heavy|shield|clothing...). */
+    /** MagicItemCategory → EquipmentCategory VTTG (ring|wand|wondrous|potion|light|medium|heavy|shield|clothing...). */
     private String equipmentCategory(MagicItemCategory category) {
         if (category == null) {
             return "wondrous";
@@ -852,7 +854,8 @@ public class VttgMagicItemMapper {
             case RING -> "ring";
             case WAND, ROD, STAFF -> "wand";   // нет отдельных rod/staff — implement-аналог
             case ARMOR -> null;                // класс брони (light|medium|heavy|shield) в модели не задан
-            case POTION, SCROLL, SUBJECT -> "wondrous";
+            case POTION -> VttgItemMapper.POTION_CATEGORY; // значок колбы в dnd5e-2024 новее 0.8.89
+            case SCROLL, SUBJECT -> "wondrous";
             case WEAPON -> null;               // обрабатывается как type=weapon
         };
     }

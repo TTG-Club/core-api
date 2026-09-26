@@ -31,7 +31,7 @@ public class VttgMagicItem {
     private String type;
     /** Отображаемая метка типа (напр. «Снаряжение»/«Оружие»). */
     private String typeLabel;
-    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous). */
+    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous/potions). */
     private String section;
     /**
      * Раздел сайта в адресе страницы-источника — всегда {@code magic-items}. По паре
@@ -63,7 +63,7 @@ public class VttgMagicItem {
     private String rarity;
     private boolean equipped;
     /**
-     * {@code EquipmentCategory}: wand, ring, wondrous, light, medium, heavy, shield, trinket, clothing...
+     * {@code EquipmentCategory}: wand, ring, wondrous, potion, light, medium, heavy, shield, trinket, clothing...
      * Опускается для оружия (у него своя категория) и для брони без известного класса.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)

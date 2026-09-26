@@ -66,6 +66,11 @@ public class VttgItemMapper {
 
     private static final String TRINKET_CATEGORY = "trinket";
 
+    /** Раздел «Зелья»: обычные предметы категории {@link #POTION_CATEGORY} и магические зелья. */
+    static final String POTIONS_SECTION = "potions";
+
+    static final String POTION_CATEGORY = "potion";
+
     private final VttgMarkupConverter markupConverter;
 
     /**
@@ -235,16 +240,23 @@ public class VttgItemMapper {
 
     // ── Прочее снаряжение ───────────────────────────────────────────────────────────────────────
     /**
-     * Прочее снаряжение: раздел «Снаряжение приключенца», а «Безделушки» — только для
-     * предметов этой категории. Раньше всё снаряжение уезжало в «Безделушки», и там
+     * Прочее снаряжение: раздел «Снаряжение приключенца», а «Безделушки» и «Зелья» — только для
+     * предметов своей категории. Раньше всё снаряжение уезжало в «Безделушки», и там
      * лежали верёвки, стрелы и повозки.
      */
     private void putGear(Map<String, Object> data, Item item) {
         String category = equipmentCategory(item);
         data.put("type", "equipment");
         data.put("typeLabel", "Снаряжение");
-        data.put("section", TRINKET_CATEGORY.equals(category) ? TRINKETS_SECTION : GEAR_SECTION);
+        data.put("section", gearSection(category));
         data.put("equipmentCategory", category);
+    }
+
+    private String gearSection(String category) {
+        if (TRINKET_CATEGORY.equals(category)) {
+            return TRINKETS_SECTION;
+        }
+        return POTION_CATEGORY.equals(category) ? POTIONS_SECTION : GEAR_SECTION;
     }
 
     /**

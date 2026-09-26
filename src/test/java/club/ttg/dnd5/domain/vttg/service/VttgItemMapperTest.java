@@ -478,6 +478,13 @@ class VttgItemMapperTest {
         item.setEquipmentCategory("clothing");
 
         assertEquals("clothing", json(item).get("equipmentCategory").asText());
+
+        Item antitoxin = baseItem("antitoxin", "Противоядие", "Antitoxin");
+        antitoxin.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+        antitoxin.setEquipmentCategory("potion");
+
+        assertEquals("potion", json(antitoxin).get("equipmentCategory").asText());
+        assertEquals("potions", json(antitoxin).get("section").asText());
     }
 
     /** Заклинательная фокусировка: у справочника это тип, у системы — свойство предмета. */

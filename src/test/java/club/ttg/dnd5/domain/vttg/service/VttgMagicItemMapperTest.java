@@ -129,6 +129,36 @@ class VttgMagicItemMapperTest {
         assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
     }
 
+    /**
+     * Зелье уходит своей категорией {@code potion} (значок колбы в VTTG) в свой лист «Зелья».
+     * Свиток остаётся чудесным предметом.
+     */
+    @Test
+    void mapsPotionIntoPotionsSection() {
+        MagicItem potion = new MagicItem();
+        potion.setUrl("potion-of-healing");
+        potion.setName("Зелье лечения");
+        potion.setCategory(MagicItemCategory.POTION);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        potion.setSource(source);
+
+        VttgMagicItem potionResult = mapper.toVttg(potion);
+        assertEquals("equipment", potionResult.getType());
+        assertEquals("potion", potionResult.getEquipmentCategory());
+        assertEquals("potions", potionResult.getSection());
+
+        MagicItem scroll = new MagicItem();
+        scroll.setUrl("spell-scroll");
+        scroll.setName("Свиток заклинания");
+        scroll.setCategory(MagicItemCategory.SCROLL);
+        scroll.setSource(source);
+
+        VttgMagicItem scrollResult = mapper.toVttg(scroll);
+        assertEquals("wondrous", scrollResult.getEquipmentCategory());
+        assertEquals("wondrous", scrollResult.getSection());
+    }
+
     /** Галочка «Расходуемый» работает и без условия применения. */
     @Test
     void marksConsumableByFlag() {
