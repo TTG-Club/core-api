@@ -29,6 +29,11 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResourceCounter {
     /**
+     * Сколько зарядов возвращает короткий отдых у отката {@link ResourceRecovery#SHORT_REST_ONE}.
+     */
+    private static final int SHORT_REST_ONE_AMOUNT = 1;
+
+    /**
      * Стабильный ключ ресурса в пределах черты: по нему лист хранит потраченный остаток и
      * переживает правку названия.
      */
@@ -97,9 +102,28 @@ public class ResourceCounter {
     @Schema(description = "Показывать ресурс колонкой таблицы прогрессии")
     private boolean showInTable;
 
-    @Schema(description = "Каким отдыхом восстанавливается",
+    /**
+     * Откат одним словом. Читается, только если раздельных правил {@link #shortRest} и
+     * {@link #longRest} нет — у записей, сохранённых до них.
+     */
+    @Schema(description = "Каким отдыхом восстанавливается (легаси: читается, если нет"
+            + " shortRest и longRest)",
             examples = {"SHORT_REST", "LONG_REST", "SHORT_REST_ONE"})
     private ResourceRecovery recovery;
+
+    /**
+     * Что возвращает короткий отдых. Вместе с {@link #longRest} описывает восстановление
+     * раздельно, как ресурс листа: «один заряд коротким, все продолжительным», «два
+     * заряда коротким», «ничего коротким, три заряда продолжительным».
+     */
+    @Schema(description = "Что возвращает короткий отдых; нет обоих правил — выводится из recovery",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private CounterRestRule shortRest;
+
+    /** Что возвращает продолжительный отдых. */
+    @Schema(description = "Что возвращает продолжительный отдых; нет обоих правил — выводится"
+            + " из recovery", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private CounterRestRule longRest;
 
     /**
      * Нижняя граница максимума с поправкой на её отсутствие: ноль и отрицательное число
@@ -118,6 +142,51 @@ public class ResourceCounter {
      * @return каким отдыхом восстанавливается ресурс.
      */
     public ResourceRecovery resolveRecovery() {
+        if (hasRestRules()) {
+            // Ближайшее одно слово для потребителей, которые правил ещё не читают:
+            // различаются три значения только коротким отдыхом
+            return switch (resolveShortRest().resolveMode()) {
+                case ALL -> ResourceRecovery.SHORT_REST;
+                case AMOUNT -> ResourceRecovery.SHORT_REST_ONE;
+                case NONE -> ResourceRecovery.LONG_REST;
+            };
+        }
         return recovery == null ? ResourceRecovery.LONG_REST : recovery;
+    }
+
+    /**
+     * Что возвращает короткий отдых. Есть хоть одно раздельное правило — недостающее
+     * читается как «ничего»; нет ни одного — правило выводится из отката одним словом.
+     *
+     * @return правило короткого отдыха.
+     */
+    public CounterRestRule resolveShortRest() {
+        if (hasRestRules()) {
+            return shortRest == null ? CounterRestRule.none() : shortRest;
+        }
+        ResourceRecovery legacy = recovery == null ? ResourceRecovery.LONG_REST : recovery;
+        return switch (legacy) {
+            case SHORT_REST -> CounterRestRule.all();
+            case SHORT_REST_ONE -> CounterRestRule.amount(SHORT_REST_ONE_AMOUNT);
+            case LONG_REST -> CounterRestRule.none();
+        };
+    }
+
+    /**
+     * Что возвращает продолжительный отдых. Без раздельных правил — все заряды: короткий
+     * отдых в правилах короче продолжительного, и ресурс, который вернул короткий,
+     * возвращает и продолжительный.
+     *
+     * @return правило продолжительного отдыха.
+     */
+    public CounterRestRule resolveLongRest() {
+        if (hasRestRules()) {
+            return longRest == null ? CounterRestRule.none() : longRest;
+        }
+        return CounterRestRule.all();
+    }
+
+    private boolean hasRestRules() {
+        return shortRest != null || longRest != null;
     }
 }
