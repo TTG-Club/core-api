@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-25-01-create-player-bastion-plan-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        # План бастиона: корпуса с контурами и этажами, переходы, стены — один документ.
+        # Своя версия, чтобы рисование не конфликтовало с правкой сооружений и состава.
+        - createTable:
+            tableName: player_bastion_plan
+            columns:
+              - column:
+                  name: bastion_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_player_bastion_plan
+                    foreignKeyName: fk_player_bastion_plan_bastion
+                    references: player_bastion(id)
+                    deleteCascade: true
+              - column:
+                  name: version
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: document
+                  type: JSONB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)

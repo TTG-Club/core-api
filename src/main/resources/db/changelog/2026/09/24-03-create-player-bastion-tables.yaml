@@ -1,0 +1,139 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-24-03-create-player-bastion-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        # Бастион игроков в игре каталога (find-game-api). Игра живёт в соседнем сервисе:
+        # здесь только её id и мастер на момент создания, права проверяются по каталогу.
+        - createTable:
+            tableName: player_bastion
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_player_bastion
+              - column:
+                  name: game_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: master_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  defaultValue: SETUP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: turn
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: treasury_gp
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - createIndex:
+            tableName: player_bastion
+            indexName: player_bastion_game_id_index
+            columns:
+              - column:
+                  name: game_id
+  - changeSet:
+      id: 2026-09-24-03-create-player-bastion-member-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        # Игрок с доступом к бастиону и его персонаж: лимиты сооружений считаются на персонажа.
+        - createTable:
+            tableName: player_bastion_member
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_player_bastion_member
+              - column:
+                  name: bastion_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_player_bastion_member_bastion
+                    references: player_bastion(id)
+                    deleteCascade: true
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: character_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: character_level
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: character_sheet_id
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - addUniqueConstraint:
+            tableName: player_bastion_member
+            columnNames: bastion_id, user_id
+            constraintName: player_bastion_member_user_unique
+        - createIndex:
+            tableName: player_bastion_member
+            indexName: player_bastion_member_user_id_index
+            columns:
+              - column:
+                  name: user_id

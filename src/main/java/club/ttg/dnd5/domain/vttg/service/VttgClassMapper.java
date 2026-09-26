@@ -269,7 +269,8 @@ public class VttgClassMapper {
                     optional(counter.getShortName()), counterStartLevel(counter),
                     VttgDictionaries.recovery(counter.resolveRecovery()),
                     progression, hasMax ? counter.getMax() : null, counter.resolveMin(), subclassKey,
-                    owned.featureKey()));
+                    owned.featureKey(), VttgDictionaries.restRule(counter.resolveShortRest()),
+                    VttgDictionaries.restRule(counter.resolveLongRest())));
         }
         return result;
     }
@@ -386,7 +387,7 @@ public class VttgClassMapper {
 
         return new VttgClass.Counter(columnKey(column), column.getName(),
                 optional(column.getShortName()), startLevel, recovery(column.getResourceRecovery()),
-                progression, null, null, subclassKey, null);
+                progression, null, null, subclassKey, null, null, null);
     }
 
     /** Способ восстановления в словаре потребителя. */

@@ -318,12 +318,28 @@ public class VttgFeatData {
      *                    максимум целиком, а не прибавка (как у {@code VttgClass.Counter});
      *                    заданы — старше формулы; {@code null} — ступеней нет
      * @param min         нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
-     * @param recovery    каким отдыхом восстанавливается: {@code short}, {@code long} либо
-     *                    {@code short-one} (один заряд коротким, все — продолжительным)
+     * @param recovery    каким отдыхом восстанавливается одним словом: {@code short},
+     *                    {@code long} либо {@code short-one} (один заряд коротким, все —
+     *                    продолжительным). Легаси для потребителей, которые не читают
+     *                    {@code shortRest}/{@code longRest}: у раздельных правил это ближайшее
+     *                    значение по короткому отдыху
+     * @param shortRest   что возвращает короткий отдых
+     * @param longRest    что возвращает продолжительный отдых
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Counter(String key, String name, String shortName, String max,
-                          Map<String, Integer> progression, Integer min, String recovery) {
+                          Map<String, Integer> progression, Integer min, String recovery,
+                          RestRule shortRest, RestRule longRest) {
+    }
+
+    /**
+     * Что возвращает ресурсу один вид отдыха — в форме правила ресурса листа
+     * ({@code CounterRecoveryRule} системы D&D).
+     *
+     * @param mode   {@code none} — ничего, {@code all} — все заряды, {@code amount} — своё число
+     * @param amount число возвращаемых зарядов; учитывается только при {@code amount}
+     */
+    public record RestRule(String mode, int amount) {
     }
 
     /**

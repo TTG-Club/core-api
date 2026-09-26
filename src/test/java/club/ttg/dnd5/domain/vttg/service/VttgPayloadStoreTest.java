@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
 import club.ttg.dnd5.domain.vttg.repository.VttgExportRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgChange;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -30,11 +31,18 @@ import static org.mockito.Mockito.when;
 
 class VttgPayloadStoreTest {
     private static final String TYPE = "spells";
+    private static final int SCHEMA_VERSION = 35;
 
     private final VttgExportRepository repository = mock(VttgExportRepository.class);
+    private final VttgCompendiumVersionService versionService = mock(VttgCompendiumVersionService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final VttgPayloadStore store =
-            new VttgPayloadStore(repository, objectMapper, mock(PlatformTransactionManager.class));
+            new VttgPayloadStore(repository, versionService, objectMapper, mock(PlatformTransactionManager.class));
+
+    @BeforeEach
+    void currentVersion() {
+        when(versionService.current()).thenReturn(SCHEMA_VERSION);
+    }
 
     private final Function<String, String> identity = url -> url;
     private final Function<String, Object> toDto = url -> Map.of("name", url);
@@ -43,7 +51,7 @@ class VttgPayloadStoreTest {
     void freshPayloadUsedWithoutRecompute() {
         Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
         when(repository.findByTypeAndUrlIn(eq(TYPE), any()))
-                .thenReturn(List.of(stored("fireball", node("stored"), changedAt, VttgPayloadStore.SCHEMA_VERSION)));
+                .thenReturn(List.of(stored("fireball", node("stored"), changedAt, SCHEMA_VERSION)));
         AtomicBoolean recomputed = new AtomicBoolean(false);
 
         List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt)),
@@ -59,7 +67,7 @@ class VttgPayloadStoreTest {
     void staleSrcTimestampTriggersRecomputeAndSave() {
         when(repository.findByTypeAndUrlIn(eq(TYPE), any()))
                 .thenReturn(List.of(stored("fireball", node("old"),
-                        Instant.parse("2026-05-01T00:00:00Z"), VttgPayloadStore.SCHEMA_VERSION)));
+                        Instant.parse("2026-05-01T00:00:00Z"), SCHEMA_VERSION)));
         Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
 
         List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt)),
@@ -72,14 +80,14 @@ class VttgPayloadStoreTest {
         verify(repository).saveAll(captor.capture());
         VttgExport saved = captor.getValue().get(0);
         assertEquals(changedAt, saved.getSrcUpdatedAt());
-        assertEquals(VttgPayloadStore.SCHEMA_VERSION, saved.getSchemaVer());
+        assertEquals(SCHEMA_VERSION, saved.getSchemaVer());
     }
 
     @Test
     void schemaVersionMismatchTriggersRecompute() {
         Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
         when(repository.findByTypeAndUrlIn(eq(TYPE), any()))
-                .thenReturn(List.of(stored("fireball", node("old"), changedAt, VttgPayloadStore.SCHEMA_VERSION - 1)));
+                .thenReturn(List.of(stored("fireball", node("old"), changedAt, SCHEMA_VERSION - 1)));
         AtomicBoolean recomputed = new AtomicBoolean(false);
 
         store.load(TYPE, refs(ref("fireball", changedAt)), () -> null, trackedByUrls(recomputed), identity, toDto);
@@ -89,12 +97,32 @@ class VttgPayloadStoreTest {
     }
 
     @Test
+    void raisedCompendiumVersionMakesStoredPayloadStale() {
+        Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
+        // payload сохранён под текущей версией, затем админ поднял версию компендиума.
+        when(repository.findByTypeAndUrlIn(eq(TYPE), any()))
+                .thenReturn(List.of(stored("fireball", node("old"), changedAt, SCHEMA_VERSION)));
+        when(versionService.current()).thenReturn(SCHEMA_VERSION + 1);
+        AtomicBoolean recomputed = new AtomicBoolean(false);
+
+        List<VttgChange> changes = store.load(TYPE, refs(ref("fireball", changedAt)),
+                () -> null, trackedByUrls(recomputed), identity, toDto);
+
+        assertTrue(recomputed.get(), "payload старой версии компендиума устарел и пересчитывается");
+        assertEquals(objectMapper.valueToTree(Map.of("name", "fireball")), changes.get(0).data());
+        ArgumentCaptor<List<VttgExport>> captor = captor();
+        verify(repository).saveAll(captor.capture());
+        assertEquals(SCHEMA_VERSION + 1, captor.getValue().get(0).getSchemaVer(),
+                "пересчитанный payload сохраняется под новой версией");
+    }
+
+    @Test
     void newerDependencyStampInvalidatesPayload() {
         Instant changedAt = Instant.parse("2026-06-01T00:00:00Z");
         Instant dependencyStamp = Instant.parse("2026-06-10T00:00:00Z");
         // payload сохранён по собственному времени сущности — но зависимость изменилась позже.
         when(repository.findByTypeAndUrlIn(eq(TYPE), any()))
-                .thenReturn(List.of(stored("flametongue", node("old"), changedAt, VttgPayloadStore.SCHEMA_VERSION)));
+                .thenReturn(List.of(stored("flametongue", node("old"), changedAt, SCHEMA_VERSION)));
         AtomicBoolean recomputed = new AtomicBoolean(false);
 
         store.load(TYPE, refs(ref("flametongue", changedAt)), () -> dependencyStamp,

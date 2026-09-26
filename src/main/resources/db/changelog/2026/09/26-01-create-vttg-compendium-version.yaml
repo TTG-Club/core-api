@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-26-01-create-vttg-compendium-version
+      author: claude
+      changes:
+        # Версия формата выгрузки VTTG (раньше — константа VttgPayloadStore.SCHEMA_VERSION).
+        # Одна строка с id = 1; админ поднимает версию через /api/v2/vttg/admin/compendium-version.
+        - sqlFile:
+            path: sql/26-01-create-vttg-compendium-version.sql
+            relativeToChangelogFile: true

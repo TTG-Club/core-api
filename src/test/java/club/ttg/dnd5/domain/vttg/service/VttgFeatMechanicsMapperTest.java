@@ -27,6 +27,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestRule;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
@@ -1330,6 +1331,43 @@ class VttgFeatMechanicsMapperTest {
 
         assertEquals("short-one",
                 json(feat).get("featData").get("counters").get(0).get("recovery").asText());
+    }
+
+    /**
+     * Откат одним словом раскладывается в раздельные правила отдыха: потребитель, который их
+     * читает, не должен разбирать легаси-строку сам.
+     */
+    @Test
+    void mapsLegacyRecoveryToRestRules() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("uses", "2", ResourceRecovery.SHORT_REST_ONE)));
+        feat.setMechanics(mechanics);
+
+        JsonNode counter = json(feat).get("featData").get("counters").get(0);
+        assertEquals("amount", counter.get("shortRest").get("mode").asText());
+        assertEquals(1, counter.get("shortRest").get("amount").asInt());
+        assertEquals("all", counter.get("longRest").get("mode").asText());
+    }
+
+    /**
+     * Раздельные правила главнее отката одним словом, а сам откат для старых потребителей
+     * выводится из короткого отдыха: «два заряда коротким, ничего продолжительным».
+     */
+    @Test
+    void mapsCounterRestRules() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("uses", "@prof", ResourceRecovery.LONG_REST);
+        counter.setShortRest(CounterRestRule.amount(2));
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        JsonNode exported = json(feat).get("featData").get("counters").get(0);
+        assertEquals("amount", exported.get("shortRest").get("mode").asText());
+        assertEquals(2, exported.get("shortRest").get("amount").asInt());
+        assertEquals("none", exported.get("longRest").get("mode").asText());
+        assertEquals("short-one", exported.get("recovery").asText());
     }
 
     /** Нижняя граница максимума едет вместе с формулой: с модификатором +0 ресурс не пропадёт. */
