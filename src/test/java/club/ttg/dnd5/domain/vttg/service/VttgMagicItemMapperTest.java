@@ -130,11 +130,11 @@ class VttgMagicItemMapperTest {
     }
 
     /**
-     * Зелье уходит своей категорией {@code potion} (значок колбы в VTTG), но лежит всё в том же
-     * листе «Чудесные предметы». Свиток остаётся чудесным предметом.
+     * Зелье уходит своей категорией {@code potion} (значок колбы в VTTG) в свой лист «Зелья».
+     * Свиток остаётся чудесным предметом.
      */
     @Test
-    void mapsPotionCategoryIntoWondrousSection() {
+    void mapsPotionIntoPotionsSection() {
         MagicItem potion = new MagicItem();
         potion.setUrl("potion-of-healing");
         potion.setName("Зелье лечения");
@@ -146,7 +146,7 @@ class VttgMagicItemMapperTest {
         VttgMagicItem potionResult = mapper.toVttg(potion);
         assertEquals("equipment", potionResult.getType());
         assertEquals("potion", potionResult.getEquipmentCategory());
-        assertEquals("wondrous", potionResult.getSection());
+        assertEquals("potions", potionResult.getSection());
 
         MagicItem scroll = new MagicItem();
         scroll.setUrl("spell-scroll");

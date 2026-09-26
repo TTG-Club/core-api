@@ -31,7 +31,7 @@ public class VttgMagicItem {
     private String type;
     /** Отображаемая метка типа (напр. «Снаряжение»/«Оружие»). */
     private String typeLabel;
-    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous). */
+    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous/potions). */
     private String section;
     /**
      * Раздел сайта в адресе страницы-источника — всегда {@code magic-items}. По паре
