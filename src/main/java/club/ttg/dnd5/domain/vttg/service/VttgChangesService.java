@@ -109,6 +109,7 @@ public class VttgChangesService {
     private final VttgGlossaryMapper glossaryMapper;
     private final VttgCompendiumSections compendiumSections;
     private final VttgPayloadStore payloadStore;
+    private final VttgCompendiumVersionService versionService;
     private final PlatformTransactionManager transactionManager;
     private final ExecutorService exportExecutor;
 
@@ -176,7 +177,7 @@ public class VttgChangesService {
 
         long total = byType.values().stream().mapToLong(Long::longValue).sum();
         return new VttgChangesStatus(window.since(), window.until(), total > 0, total, byType,
-                VttgPayloadStore.SCHEMA_VERSION);
+                versionService.current());
     }
 
     /**
@@ -190,10 +191,13 @@ public class VttgChangesService {
      * одновременно. Инкрементальный поллинг ({@code since} задан и свежий) не кэшируется и всегда
      * свежий; верхняя граница {@code until} в кэшированном ответе «заморожена», что безопасно —
      * повторная выборка идемпотентна.</p>
+     *
+     * <p>Версия формата выгрузки входит в ключ кэша: после её поднятия (в том числе на другом
+     * экземпляре core-api) старый дамп со старой {@code schemaVersion} больше не отдаётся.</p>
      */
     @Cacheable(cacheNames = CacheConfig.VTTG_FULL_EXPORT,
             condition = "#sinceParam == null || #sinceParam.toEpochMilli() <= 0",
-            key = "{#srdVersion, #types, #srdOnly}",
+            key = "{#srdVersion, #types, #srdOnly, @vttgCompendiumVersionService.current()}",
             sync = true)
     public VttgChangesResponse changes(Instant sinceParam, String srdVersion, Set<String> types, boolean srdOnly) {
         long startedAt = System.nanoTime();
@@ -280,7 +284,7 @@ public class VttgChangesService {
 
         VttgChangesResponse response = new VttgChangesResponse(
                 window.until(), upserts, compendiumSections.changesTree(), sources(upserts),
-                VttgPayloadStore.SCHEMA_VERSION);
+                versionService.current());
         logTimings(timings, upserts.size(), millisSince(startedAt, System.nanoTime()));
         return response;
     }

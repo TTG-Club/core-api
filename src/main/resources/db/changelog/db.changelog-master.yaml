@@ -365,3 +365,5 @@ databaseChangeLog:
       file: db/changelog/2026/09/25-01-create-player-bastion-plan-table.yaml
   - include:
       file: db/changelog/2026/09/25-02-player-bastion-turns-orders-treasury.yaml
+  - include:
+      file: db/changelog/2026/09/26-01-create-vttg-compendium-version.yaml
