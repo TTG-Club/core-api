@@ -208,6 +208,56 @@ class VttgJsonContractTest {
     }
 
     /**
+     * Замена свойств оружия эффектом («Дубинка», система с 0.8.96): ключи
+     * {@code weapon.*}, значения — не только формулы ({@code spell}, {@code force},
+     * кость со скобками {@code к(…)}), а условие — строка с кавычками и ключами
+     * вида оружия листа VTTG. Бэкенд строки не разбирает: всё обязано вернуться
+     * тем же, включая вариант.
+     */
+    @Test
+    void activeEffectKeepsWeaponOverrideChanges() throws Exception {
+        String json = """
+                {
+                  "id": "effect_shillelagh_force",
+                  "name": "Дубинка",
+                  "effectTarget": "self",
+                  "duration": { "type": "minutes", "value": 1 },
+                  "variant": { "group": "Урон", "label": "Силовой" },
+                  "changes": [
+                    { "key": "weapon.damageDice", "mode": "override", "priority": 20,
+                      "value": "(1 + steps(@level, 17))к(8 + 2 * steps(@level, 5, 11) - 6 * steps(@level, 17))",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.attackAbility", "mode": "override", "priority": 20,
+                      "value": "spell",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.damageType", "mode": "override", "priority": 20,
+                      "value": "force",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" }
+                  ],
+                  "flags": []
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+        List<ActiveEffect.Change> changes = effect.getChanges();
+
+        assertEquals("weapon.damageDice", changes.get(0).getKey());
+        assertEquals("(1 + steps(@level, 17))к(8 + 2 * steps(@level, 5, 11) - 6 * steps(@level, 17))",
+                changes.get(0).getValue());
+        assertEquals("spell", changes.get(1).getValue());
+        assertEquals("force", changes.get(2).getValue());
+        assertEquals("weapon.baseType === \"club, quarterstaff\"", changes.get(2).getCondition());
+        assertEquals("Урон", effect.getVariant().getGroup());
+        assertEquals("Силовой", effect.getVariant().getLabel());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertEquals(mapper.readTree(json), mapper.readTree(serialized));
+        assertTrue(serialized.contains(
+                "\"condition\":\"weapon.baseType === \\\"club, quarterstaff\\\"\""));
+    }
+
+    /**
      * Спасбросок урона каждый ход: {@code dc = 0} — это «Сл наложившего», а не
      * «не задано», поэтому ноль обязан пережить круг, а не выпасть как пустое.
      */

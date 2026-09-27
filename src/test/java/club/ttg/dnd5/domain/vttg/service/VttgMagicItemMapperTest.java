@@ -1122,6 +1122,48 @@ class VttgMagicItemMapperTest {
         assertEquals(1, mapper.toVttg(item).getMagicBonus());
     }
 
+    /**
+     * Эффект с заменами свойств оружия на самом магическом оружии: в VTTG он действует
+     * только на этот предмет, а выгрузка отдаёт его теми же строками, без бонуса к КД
+     * и без перевода ключей вида оружия в условии.
+     */
+    @Test
+    void exportsWeaponOverrideEffectOfMagicWeaponAsAuthored() throws Exception {
+        MagicItem item = new MagicItem();
+        item.setUrl("druid-staff");
+        item.setName("Посох друида");
+        item.setCategory(MagicItemCategory.WEAPON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        JsonNode authored = objectMapper.readTree("""
+                {
+                  "id": "effect_druid_staff_force",
+                  "name": "Силовой удар",
+                  "origin": "item",
+                  "transfer": true,
+                  "duration": { "type": "permanent" },
+                  "changes": [
+                    { "key": "weapon.attackAbility", "mode": "override", "priority": 20,
+                      "value": "spell",
+                      "condition": "weapon.baseType === \\"quarterstaff\\"" },
+                    { "key": "weapon.damageType", "mode": "override", "priority": 20,
+                      "value": "force" }
+                  ],
+                  "flags": []
+                }
+                """);
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActiveEffects(List.of(objectMapper.treeToValue(authored, ActiveEffect.class)));
+        item.setMechanics(mechanics);
+
+        JsonNode exported = objectMapper.readTree(objectMapper.writeValueAsString(mapper.toVttg(item)))
+                .get("activeEffects");
+
+        assertEquals(1, exported.size());
+        assertEquals(authored, exported.get(0));
+    }
+
     private DamagePart damagePart(String formula) {
         DamagePart part = new DamagePart();
         part.setFormula(formula);

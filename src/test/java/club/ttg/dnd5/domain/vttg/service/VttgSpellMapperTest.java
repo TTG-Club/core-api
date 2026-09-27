@@ -654,6 +654,53 @@ class VttgSpellMapperTest {
         assertEquals(effect.getTriggers().getFirst(), exported.get("triggers").get(0));
     }
 
+    /**
+     * «Дубинка»: замены свойств оружия уходят в выгрузку теми же строками — ключи
+     * {@code weapon.*}, значения {@code spell}/{@code force}, условие с ключами вида
+     * оружия листа VTTG ({@code club}, {@code quarterstaff}), не переведёнными в слаги
+     * страниц сайта.
+     */
+    @Test
+    void exportsWeaponOverrideEffectAsAuthored() throws Exception {
+        Spell spell = new Spell();
+        spell.setUrl("shillelagh");
+        spell.setName("Дубинка");
+        spell.setEnglish("Shillelagh");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.TRANSMUTATION).build());
+
+        ObjectMapper json = new ObjectMapper();
+        var authored = json.readTree("""
+                {
+                  "id": "effect_shillelagh_force",
+                  "name": "Дубинка",
+                  "effectTarget": "self",
+                  "duration": { "type": "minutes", "value": 1 },
+                  "variant": { "group": "Урон", "label": "Силовой" },
+                  "changes": [
+                    { "key": "weapon.damageDice", "mode": "override", "priority": 20,
+                      "value": "(1 + steps(@level, 17))к(8 + 2 * steps(@level, 5, 11) - 6 * steps(@level, 17))",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.attackAbility", "mode": "override", "priority": 20,
+                      "value": "spell",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.damageType", "mode": "override", "priority": 20,
+                      "value": "force",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" }
+                  ],
+                  "flags": []
+                }
+                """);
+        spell.setActiveEffects(List.of(json.treeToValue(authored, ActiveEffect.class)));
+
+        var exported = json.readTree(json.writeValueAsString(mapper.toVttg(spell)))
+                .get("activeEffects").get(0);
+
+        assertEquals(authored, exported);
+        assertEquals("weapon.baseType === \"club, quarterstaff\"",
+                exported.get("changes").get(0).get("condition").asText());
+    }
+
     /** Заклинание без активных эффектов не несёт поле activeEffects (омитится). */
     @Test
     void omitsActiveEffectsWhenAbsent() {
