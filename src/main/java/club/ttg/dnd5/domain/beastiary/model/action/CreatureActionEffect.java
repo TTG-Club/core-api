@@ -52,6 +52,13 @@ public class CreatureActionEffect {
     private List<DamagePart> damageParts;
 
     /**
+     * Урон «или»: наборы частей урона, целиком заменяющие {@link #damageParts}.
+     * Условие варианта — состояние в его формуле; способ выбора
+     * ({@code formula}, {@code ask}, {@code random}) — строка словаря VTTG.
+     */
+    private List<CreatureDamageAlternative> damageAlternatives;
+
+    /**
      * Спасброски цели. Список, потому что в данных сайта они лежали списком;
      * система знает только один — в выгрузку идёт первый.
      */
