@@ -843,4 +843,28 @@ class VttgSpellMapperTest {
         tier.setCount(count);
         return tier;
     }
+
+    /**
+     * Состояния в формуле ({@code @self.status.*}, {@code @target.status.*}) — не старые
+     * маркеры цели: вычистка {@code @target.self} / {@code @target.separate} их не трогает.
+     */
+    @Test
+    void keepsStatusTokensInVttgDamageParts() {
+        Spell spell = new Spell();
+        spell.setUrl("status-bolt");
+        spell.setName("Status Bolt");
+        spell.setEnglish("Status Bolt");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.NECROMANCY).build());
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("1к6@self.status.bloodied", "2к6@dmg.necrotic@target.status.prone"));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals("1к6@self.status.bloodied", result.getDamageParts().getFirst().getFormula());
+        assertEquals("2к6@dmg.necrotic@target.status.prone", result.getDamageParts().get(1).getFormula());
+        assertEquals("selected", result.getDamageParts().get(1).getTarget());
+    }
 }

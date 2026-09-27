@@ -9,6 +9,8 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.common.model.DamagePart;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -105,6 +107,37 @@ class ActionMapperTest {
         // Легаси-поля держатся в согласии с механикой: разбор описания у соседних
         // записей читает именно их.
         assertEquals(AttackType.MELEE, stored.getAttackType());
+    }
+
+    /**
+     * Урон «или» и состояния в формуле переживают круг целиком: запрос формы → JSONB
+     * записи → {@code /raw}. Порядок вариантов, подписи и части не меняются.
+     */
+    @Test
+    void keepsDamageAlternativesThroughFormRoundTrip() throws Exception {
+        ObjectMapper json = new ObjectMapper();
+        String alternatives = """
+                [
+                  {"condition": "formula",
+                   "damageParts": [{"formula": "2к8@dmg.necrotic@self.status.bloodied + 2"}]},
+                  {"condition": "ask", "label": "С преимуществом",
+                   "damageParts": [{"formula": "4к6@dmg.piercing + 4", "target": "selected"},
+                                   {"formula": "1к6@dmg.fire"}]}
+                ]""";
+        String requestJson = """
+                {"name": {"rus": "Рой хватающих рук"},
+                 "effect": {
+                   "attackBonus": 4,
+                   "damageParts": [{"formula": "1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone"}],
+                   "damageAlternatives": %s}}""".formatted(alternatives);
+
+        CreatureAction stored = mapper.toEntity(json.readValue(requestJson, ActionRequest.class));
+        CreatureAction reloaded = json.readValue(json.writeValueAsString(stored), CreatureAction.class);
+        JsonNode raw = json.valueToTree(mapper.toRequest(reloaded)).get("effect");
+
+        assertEquals(json.readTree(alternatives), raw.get("damageAlternatives"));
+        assertEquals("1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone",
+                raw.get("damageParts").get(0).get("formula").asText());
     }
 
     private SawingThrow savingThrow(Ability ability, int dc) {

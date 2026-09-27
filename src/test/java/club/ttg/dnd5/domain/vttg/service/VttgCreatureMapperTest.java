@@ -16,6 +16,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureDamageAlternative;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -886,6 +887,120 @@ class VttgCreatureMapperTest {
         result.setUrl(url);
         result.setName(name);
         result.setQuantity(quantity);
+        return result;
+    }
+
+    /**
+     * Состояния в формуле — часть строки: бэкенд их не разбирает и не чистит,
+     * а везёт в компендиум как есть.
+     */
+    @Test
+    void keepsStatusTokensInDamageFormulas() {
+        Map<?, ?> mapped = mappedAction(effectWith("1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone"));
+
+        assertDamagePart(mapped, "1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone", null);
+    }
+
+    /** Рой: «или 11 (2к8 + 2), если рой окровавлен» — вариант по формуле с состоянием. */
+    @Test
+    void exportsDamageAlternativeByFormula() {
+        CreatureActionEffect effect = effectWith("4к8@dmg.necrotic + 2");
+        effect.setDamageAlternatives(List.of(
+                alternative("formula", null, "2к8@dmg.necrotic@self.status.bloodied + 2")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        assertEquals(1, alternatives.size());
+        Map<?, ?> alternative = (Map<?, ?>) alternatives.getFirst();
+        assertEquals("formula", alternative.get("condition"));
+        assertFalse(alternative.containsKey("label"));
+        assertDamagePart(alternative, "2к8@dmg.necrotic@self.status.bloodied + 2", null);
+    }
+
+    /** Химера: своя подпись варианта уезжает обрезанной. */
+    @Test
+    void trimsDamageAlternativeLabel() {
+        CreatureActionEffect effect = effectWith("2к6@dmg.piercing + 4");
+        effect.setDamageAlternatives(List.of(
+                alternative("random", "  С преимуществом ", "4к6@dmg.piercing + 4")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        Map<?, ?> alternative = (Map<?, ?>) alternatives.getFirst();
+        assertEquals("random", alternative.get("condition"));
+        assertEquals("С преимуществом", alternative.get("label"));
+    }
+
+    /**
+     * Мусор система отбрасывает при чтении — в компендиум он не едет: вариант без
+     * частей, с частью без формулы и со способом прежних версий.
+     */
+    @Test
+    void skipsBrokenDamageAlternatives() {
+        CreatureDamageAlternative withoutParts = new CreatureDamageAlternative();
+        withoutParts.setCondition("ask");
+
+        CreatureActionEffect effect = effectWith("4к8@dmg.necrotic + 2");
+        effect.setDamageAlternatives(Arrays.asList(
+                null,
+                withoutParts,
+                alternative("ask", "Пусто", "  "),
+                alternative("selfStatus", null, "2к8@dmg.necrotic + 2"),
+                alternative("selfBloodied", null, "2к8@dmg.necrotic + 2")));
+
+        assertFalse(mappedAction(effect).containsKey("damageAlternatives"));
+    }
+
+    /** Больше пяти вариантов система не читает — уезжают первые пять по порядку. */
+    @Test
+    void limitsDamageAlternativesToFive() {
+        CreatureActionEffect effect = effectWith("1к6@dmg.slashing");
+        effect.setDamageAlternatives(List.of(
+                alternative("ask", "1", "1к8@dmg.slashing"),
+                alternative("ask", "2", "1к8@dmg.slashing"),
+                alternative("ask", "3", "1к8@dmg.slashing"),
+                alternative("ask", "4", "1к8@dmg.slashing"),
+                alternative("ask", "5", "1к8@dmg.slashing"),
+                alternative("ask", "6", "1к8@dmg.slashing")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        assertEquals(List.of("1", "2", "3", "4", "5"), alternatives.stream()
+                .map(alternative -> ((Map<?, ?>) alternative).get("label"))
+                .toList());
+    }
+
+    /** Нет вариантов — нет и ключа: выгрузка старых записей не меняется. */
+    @Test
+    void omitsDamageAlternativesWhenNotSet() {
+        CreatureActionEffect withoutList = effectWith("1к6@dmg.slashing");
+        CreatureActionEffect withEmptyList = effectWith("1к6@dmg.slashing");
+        withEmptyList.setDamageAlternatives(List.of());
+
+        assertFalse(mappedAction(withoutList).containsKey("damageAlternatives"));
+        assertFalse(mappedAction(withEmptyList).containsKey("damageAlternatives"));
+    }
+
+    private CreatureActionEffect effectWith(String formula) {
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackBonus(4);
+        effect.setDamageParts(List.of(damagePart(formula)));
+        return effect;
+    }
+
+    private Map<?, ?> mappedAction(CreatureActionEffect effect) {
+        Creature creature = creature("swarm-of-crawling-claws-mm");
+        CreatureAction action = action("Рой хватающих рук", "[]");
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+        return firstAction(mapper.toVttg(creature).getSystem());
+    }
+
+    private CreatureDamageAlternative alternative(String condition, String label, String formula) {
+        CreatureDamageAlternative result = new CreatureDamageAlternative();
+        result.setCondition(condition);
+        result.setLabel(label);
+        result.setDamageParts(List.of(damagePart(formula)));
         return result;
     }
 

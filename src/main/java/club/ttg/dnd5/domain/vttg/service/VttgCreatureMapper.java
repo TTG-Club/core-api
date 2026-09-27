@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureDamageAlternative;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguage;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +52,16 @@ import java.util.stream.Stream;
 @Component
 @RequiredArgsConstructor
 public class VttgCreatureMapper {
+    /**
+     * Способы выбора варианта урона «или» — словарь системы
+     * ({@code CREATURE_DAMAGE_CONDITIONS}). Незнакомый способ система отбрасывает
+     * вместе с вариантом, поэтому он не выгружается.
+     */
+    private static final Set<String> DAMAGE_ALTERNATIVE_CONDITIONS = Set.of("formula", "ask", "random");
+
+    /** Предел вариантов урона у записи — {@code MAX_CREATURE_DAMAGE_ALTERNATIVES} системы. */
+    private static final int MAX_DAMAGE_ALTERNATIVES = 5;
+
     private final VttgMarkupConverter markupConverter;
     private final VttgEquipmentMapper equipmentMapper;
     private final VttgCreatureSpellcastingMapper spellcastingMapper;
@@ -420,6 +432,10 @@ public class VttgCreatureMapper {
         if (!parts.isEmpty()) {
             result.put("damageParts", parts);
         }
+        List<Map<String, Object>> alternatives = damageAlternatives(mechanics.getDamageAlternatives());
+        if (!alternatives.isEmpty()) {
+            result.put("damageAlternatives", alternatives);
+        }
 
         if (hasSave) {
             result.put("saveType", save.getAbility().name().toLowerCase(Locale.ROOT));
@@ -493,6 +509,37 @@ public class VttgCreatureMapper {
                     return result;
                 })
                 .toList();
+    }
+
+    /**
+     * Варианты урона «или» в формате компендиума — по тем же правилам, по которым их
+     * читает система: не больше пяти по порядку (из сработавших по состоянию берётся
+     * верхний), только знакомый способ выбора, только с частями, у которых есть формула.
+     *
+     * @param alternatives варианты урона записи.
+     * @return варианты для компендиума; пустой список — поле не пишется.
+     */
+    private List<Map<String, Object>> damageAlternatives(List<CreatureDamageAlternative> alternatives) {
+        if (CollectionUtils.isEmpty(alternatives)) return List.of();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (CreatureDamageAlternative alternative : alternatives.subList(
+                0, Math.min(alternatives.size(), MAX_DAMAGE_ALTERNATIVES))) {
+            if (alternative == null || !DAMAGE_ALTERNATIVE_CONDITIONS.contains(alternative.getCondition())) {
+                continue;
+            }
+            List<Map<String, Object>> parts = damageParts(alternative.getDamageParts());
+            if (parts.isEmpty()) {
+                continue;
+            }
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("condition", alternative.getCondition());
+            if (StringUtils.hasText(alternative.getLabel())) {
+                entry.put("label", alternative.getLabel().trim());
+            }
+            entry.put("damageParts", parts);
+            result.add(entry);
+        }
+        return result;
     }
 
     /**
