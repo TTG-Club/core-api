@@ -21,7 +21,6 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -264,29 +263,36 @@ public class VttgSpeciesMapper {
     /**
      * Заклинания умения. Имя берётся из справочника: у потребителя запись подписана им, а
      * снимок в ссылке мог устареть — заклинание переименовали уже после сохранения вида.
+     *
+     * <p>Отметка «Подготавливать не нужно» уезжает только снятой ({@code false}): у вида
+     * выданное заклинание по умолчанию подготовлено всегда, и {@code true} ничего не
+     * добавил бы. При повторе одного заклинания отметку даёт первая ссылка на него.</p>
      */
     private List<VttgSpecies.GrantedSpell> grantedSpells(SpeciesFeature feature) {
         if (CollectionUtils.isEmpty(feature.getGrantedSpells())) {
             return null;
         }
 
-        Set<String> urls = feature.getGrantedSpells().stream()
-                .map(GrantedSpellRef::getUrl)
-                .filter(StringUtils::hasText)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        if (urls.isEmpty()) {
+        Map<String, GrantedSpellRef> refs = new LinkedHashMap<>();
+        for (GrantedSpellRef ref : feature.getGrantedSpells()) {
+            if (ref != null && StringUtils.hasText(ref.getUrl())) {
+                refs.putIfAbsent(ref.getUrl(), ref);
+            }
+        }
+        if (refs.isEmpty()) {
             return null;
         }
 
-        Map<String, String> names = spellRepository.findAllShortByUrlIn(urls).stream()
+        Map<String, String> names = spellRepository.findAllShortByUrlIn(refs.keySet()).stream()
                 .collect(Collectors.toMap(Spell::getUrl, Spell::getName, (first, second) -> first));
 
-        List<VttgSpecies.GrantedSpell> result = new ArrayList<>(urls.size());
-        for (String url : urls) {
-            String name = names.get(url);
+        List<VttgSpecies.GrantedSpell> result = new ArrayList<>(refs.size());
+        for (GrantedSpellRef ref : refs.values()) {
+            String name = names.get(ref.getUrl());
             if (StringUtils.hasText(name)) {
                 // Заклинания нет в справочнике — выдавать нечего, и подписать нечем
-                result.add(new VttgSpecies.GrantedSpell(name, url));
+                Boolean alwaysPrepared = Boolean.FALSE.equals(ref.getAlwaysPrepared()) ? Boolean.FALSE : null;
+                result.add(new VttgSpecies.GrantedSpell(name, ref.getUrl(), alwaysPrepared));
             }
         }
         return result.isEmpty() ? null : result;
