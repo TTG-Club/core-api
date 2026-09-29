@@ -571,15 +571,21 @@ public class VttgCreatureMapper {
 
     /**
      * Тип дальности записи по типу атаки. «Рукопашная или дальнобойная» уезжает
-     * рукопашной: у неё заполнены и досягаемость, и дальность, а выбрать основную VTTG
-     * умеет только одну.
+     * {@code meleeOrRanged}: у неё заполнены и досягаемость, и дальность, и система
+     * (с 0.8.114) перед броском спрашивает, каким видом атаковать. Старая система
+     * незнакомое значение читает рукопашной атакой.
      *
      * @param attackType тип атаки записи.
-     * @return {@code melee}, {@code ranged} или {@code null}, если тип не задан.
+     * @return {@code melee}, {@code ranged}, {@code meleeOrRanged} или {@code null},
+     *         если тип не задан.
      */
     private String rangeType(AttackType attackType) {
         if (attackType == null) return null;
-        return attackType == AttackType.RANGE ? "ranged" : "melee";
+        return switch (attackType) {
+            case MELEE -> "melee";
+            case RANGE -> "ranged";
+            case MELEE_OR_RANGE -> "meleeOrRanged";
+        };
     }
 
     /**

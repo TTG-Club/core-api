@@ -179,9 +179,8 @@ public class VttgClassMapper {
             return null;
         }
 
-        // Заклинания и ресурсы у класса уже выведены своими полями записи
-        // ({@code Feature.grantedSpells}, {@code counters}); повтори их блок даров — и
-        // потребитель выдал бы то же самое дважды
+        // Ресурсы у класса уже выведены своими полями записи ({@code counters}); повтори
+        // их блок даров — и потребитель выдал бы то же самое дважды
         ClassMechanics withoutDuplicates = new ClassMechanics();
 
         withoutDuplicates.setModifiers(mechanics.getModifiers());
@@ -189,8 +188,36 @@ public class VttgClassMapper {
         withoutDuplicates.setChoices(mechanics.getChoices());
         withoutDuplicates.setSpellList(mechanics.getSpellList());
         withoutDuplicates.setFeats(mechanics.getFeats());
+        withoutDuplicates.setSpells(spellsWithoutClassLists(mechanics.getSpells()));
 
         return mechanicsMapper.featData(withoutDuplicates, null);
+    }
+
+    /**
+     * Выдача заклинаний для блока даров умения — без списков классов целиком.
+     *
+     * <p>Перечень остаётся: только в нём едут отметка «Подготавливать не нужно» и
+     * характеристика — у записи ({@code grantedSpellsAlwaysPrepared}) и у отдельной
+     * ссылки. Без них лист считал заклинания домена обычными, и их приходилось
+     * готовить. Потребитель выдаёт перечень по {@code Feature.grantedSpells}, а повтор
+     * здесь отсеивает по названию.</p>
+     *
+     * <p>Списки классов уезжают полем умения ({@code Feature.grantedClassSpells}): в блоке
+     * даров их прочёл бы и лист, который не умеет спросить «весь список или выбрать», — и
+     * положил бы чародею все заклинания класса разом.</p>
+     *
+     * @param grant выдача из механики; {@code null} — выдавать нечего
+     * @return копия выдачи без списков классов либо {@code null}
+     */
+    private SpellGrant spellsWithoutClassLists(SpellGrant grant) {
+        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
+            return null;
+        }
+        SpellGrant result = new SpellGrant();
+        result.setSpells(grant.getSpells());
+        result.setSpellcastingAbility(grant.getSpellcastingAbility());
+        result.setAlwaysPrepared(grant.getAlwaysPrepared());
+        return result;
     }
 
     // ── Счётчики ресурсов ────────────────────────────────────────
@@ -506,7 +533,9 @@ public class VttgClassMapper {
                     choiceConfig(feature.getOptionsChoice(), feature.getOptionsName()),
                     flag(feature.isAbilityImprovement()), flag(feature.isFightingStyleChoice()),
                     featureSkillChoice(feature.getSkillChoice()), flag(feature.isInformationalOnly()),
-                    grantedSpells(feature.getMechanics()), effects(feature.getActiveEffects()),
+                    grantedSpells(feature.getMechanics(), feature.getLevel()),
+                    grantedSpellsByLevel(feature.getMechanics(), feature.getLevel()),
+                    grantedClassSpells(feature.getMechanics()), effects(feature.getActiveEffects()),
                     featData(feature.getMechanics())));
             appendScaling(result, feature, key, subclassKey);
         }
@@ -532,7 +561,7 @@ public class VttgClassMapper {
             target.add(new VttgClass.Feature(baseKey + "-" + scaling.getLevel(), name,
                     displayDescription(scaling.getDescription()), scaling.getLevel(), subclassKey, null, null,
                     flag(feature.isAbilityImprovement()), null, null, flag(feature.isInformationalOnly()),
-                    null, null, null));
+                    null, null, null, null, null));
         }
     }
 
@@ -863,28 +892,81 @@ public class VttgClassMapper {
     }
 
     /**
-     * Заклинания, которые умение выдаёт без выбора, — списком id (они же url записей
-     * справочника), как их ждёт {@code ClassFeature.grantedSpells} эталона.
+     * Заклинания, которые умение выдаёт без выбора на уровне самого умения, — списком id
+     * (они же url записей справочника), как их ждёт {@code ClassFeature.grantedSpells}
+     * эталона.
      *
-     * <p>Уровень доступности отдельного заклинания здесь не нужен: у класса гейт задан
-     * уровнем самого умения, и вторым уровнем внутри умения он бы только разошёлся с
-     * первым.</p>
+     * <p>Ссылка, открывающаяся позже умения, сюда не идёт — она в
+     * {@link #grantedSpellsByLevel}. Иначе жрец домена получал бы на 3 уровне все десять
+     * заклинаний домена, вплоть до 5 круга.</p>
+     *
+     * @param mechanics    механика умения
+     * @param featureLevel уровень класса, на котором умение получают
      */
-    private List<String> grantedSpells(ClassMechanics mechanics) {
-        if (mechanics == null) {
-            return null;
-        }
-        SpellGrant grant = mechanics.getSpells();
-        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
-            return null;
-        }
-        List<String> result = grant.getSpells().stream()
-                .filter(Objects::nonNull)
-                .map(GrantedSpellRef::getUrl)
-                .filter(StringUtils::hasText)
+    private List<String> grantedSpells(ClassMechanics mechanics, Integer featureLevel) {
+        List<String> result = grantedSpellRefs(mechanics).stream()
+                .filter(ref -> opensLater(ref, featureLevel) == null)
+                .map(ref -> ref.getUrl().trim())
                 .distinct()
                 .toList();
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Заклинания умения, открывающиеся позже него: {@code уровень класса строкой → id}.
+     *
+     * @param mechanics    механика умения
+     * @param featureLevel уровень класса, на котором умение получают
+     * @return поуровневая выдача либо {@code null}, если всё открывается сразу
+     */
+    private Map<String, List<String>> grantedSpellsByLevel(ClassMechanics mechanics, Integer featureLevel) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        grantedSpellRefs(mechanics).stream()
+                .filter(ref -> opensLater(ref, featureLevel) != null)
+                .sorted(Comparator.comparing(GrantedSpellRef::getRequiredLevel))
+                .forEach(ref -> {
+                    List<String> spells = result.computeIfAbsent(
+                            String.valueOf(ref.getRequiredLevel()), level -> new ArrayList<>());
+                    String url = ref.getUrl().trim();
+                    if (!spells.contains(url)) {
+                        spells.add(url);
+                    }
+                });
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Списки классов, которые умение выдаёт целиком, — полем умения (см.
+     * {@link #spellsWithoutClassLists}).
+     *
+     * @param mechanics механика умения
+     * @return группы списков либо {@code null}
+     */
+    private List<VttgFeatData.GrantedClassSpells> grantedClassSpells(ClassMechanics mechanics) {
+        return mechanics == null ? null : mechanicsMapper.grantedClassSpells(mechanics.getSpells());
+    }
+
+    /** Ссылки выдачи умения с непустым url. */
+    private List<GrantedSpellRef> grantedSpellRefs(ClassMechanics mechanics) {
+        SpellGrant grant = mechanics == null ? null : mechanics.getSpells();
+        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
+            return List.of();
+        }
+        return grant.getSpells().stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> StringUtils.hasText(ref.getUrl()))
+                .toList();
+    }
+
+    /**
+     * Уровень класса, на котором ссылка открывается позже умения.
+     *
+     * @return уровень ссылки либо {@code null}, если она открывается вместе с умением
+     */
+    private Integer opensLater(GrantedSpellRef ref, Integer featureLevel) {
+        Integer required = ref.getRequiredLevel();
+        int gained = featureLevel == null ? 1 : featureLevel;
+        return required != null && required > gained ? required : null;
     }
 
     /**
