@@ -270,6 +270,66 @@ class VttgCreatureMapperTest {
         assertActiveEffect(mapped, "poisoned");
     }
 
+    /**
+     * «Рукопашная или дальнобойная» уезжает своим типом с досягаемостью и дистанцией сразу:
+     * вид атаки система спрашивает перед броском.
+     */
+    @Test
+    void exportsMeleeOrRangedAttackWithReachAndRange() {
+        Map<?, ?> mapped = mappedAttack(AttackType.MELEE_OR_RANGE, 5, 30, 120);
+        Map<?, ?> range = (Map<?, ?>) mapped.get("range");
+
+        assertEquals("meleeOrRanged", mapped.get("rangeType"));
+        assertEquals(5, mapped.get("reach"));
+        assertEquals("ft", mapped.get("distanceUnit"));
+        assertEquals(30, range.get("normal"));
+        assertEquals(120, range.get("long"));
+    }
+
+    /** Без максимальной дистанции уезжает только обычная. */
+    @Test
+    void exportsMeleeOrRangedAttackWithoutLongRange() {
+        Map<?, ?> mapped = mappedAttack(AttackType.MELEE_OR_RANGE, 5, 120, null);
+        Map<?, ?> range = (Map<?, ?>) mapped.get("range");
+
+        assertEquals("meleeOrRanged", mapped.get("rangeType"));
+        assertEquals(120, range.get("normal"));
+        assertFalse(range.containsKey("long"));
+    }
+
+    @Test
+    void exportsMeleeAndRangedAttackTypes() {
+        assertEquals("melee", mappedAttack(AttackType.MELEE, 5, null, null).get("rangeType"));
+        assertEquals("ranged", mappedAttack(AttackType.RANGE, null, 80, 320).get("rangeType"));
+    }
+
+    @Test
+    void skipsRangeTypeWhenAttackTypeNotSet() {
+        Map<?, ?> mapped = mappedAttack(null, null, null, null);
+
+        assertFalse(mapped.containsKey("rangeType"));
+        assertFalse(mapped.containsKey("distanceUnit"));
+    }
+
+    private Map<?, ?> mappedAttack(AttackType attackType, Integer reach, Integer rangeNormal,
+                                   Integer rangeLong) {
+        Creature creature = creature("hobgoblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Метательное копьё");
+        action.setDescription("[\"Бросок атаки: +5.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackType(attackType);
+        effect.setAttackBonus(5);
+        effect.setReach(reach);
+        effect.setRangeNormal(rangeNormal);
+        effect.setRangeLong(rangeLong);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        return firstAction(mapper.toVttg(creature).getSystem());
+    }
+
     /** Черта тоже бывает бросаемой — её механика уезжает так же, как у действия. */
     @Test
     void exportsAuthoredTraitMechanics() {
