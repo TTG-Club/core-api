@@ -277,10 +277,10 @@ public class VttgClassMapper {
      */
     private List<VttgClass.Counter> mechanicsCounters(CharacterClass characterClass, String subclassKey) {
         List<OwnedCounter> counters = new ArrayList<>();
-        collectCounters(characterClass.getMechanics(), null, counters);
+        collectCounters(characterClass.getMechanics(), null, 1, counters);
         for (ClassFeature feature : Optional.ofNullable(characterClass.getFeatures()).orElse(List.of())) {
             if (feature != null) {
-                collectCounters(feature.getMechanics(), featureKey(feature), counters);
+                collectCounters(feature.getMechanics(), featureKey(feature), feature.getLevel(), counters);
             }
         }
 
@@ -293,7 +293,7 @@ public class VttgClassMapper {
                 continue;
             }
             result.add(new VttgClass.Counter(counter.getKey(), counterName(counter),
-                    optional(counter.getShortName()), counterStartLevel(counter),
+                    optional(counter.getShortName()), counterStartLevel(counter, owned.ownerLevel()),
                     VttgDictionaries.recovery(counter.resolveRecovery()),
                     progression, hasMax ? counter.getMax() : null, counter.resolveMin(), subclassKey,
                     owned.featureKey(), VttgDictionaries.restRule(counter.resolveShortRest()),
@@ -312,38 +312,48 @@ public class VttgClassMapper {
      *
      * @param counter    ресурс из механики.
      * @param featureKey ключ умения; {@code null} — ресурс самой записи.
+     * @param ownerLevel уровень умения, раньше которого ресурса нет; у ресурса записи — 1.
      */
-    private record OwnedCounter(ResourceCounter counter, String featureKey) {
+    private record OwnedCounter(ResourceCounter counter, String featureKey, int ownerLevel) {
     }
 
     /**
-     * Уровень, с которого счётчик появляется: первая ступень, а без ступеней — первый.
+     * Уровень, с которого счётчик появляется: первая ступень с зарядами, но не раньше
+     * умения, механикой которого ресурс заведён.
      *
      * <p>Ресурс со ступенями до первой из них не существует вовсе: кости превосходства
      * появляются на третьем уровне вместе с подклассом, и счётчик «0 из 0» на первых двух
-     * уровнях листа только мешал бы.</p>
+     * уровнях листа только мешал бы. Ступень с нулём зарядов ресурс тоже не открывает.</p>
      *
-     * @param counter ресурс из механики.
+     * <p>Ресурс умения без ступеней появляется вместе с умением: иначе у варвара шестого
+     * уровня на листе уже висела «Непреклонная ярость» одиннадцатого.</p>
+     *
+     * @param counter    ресурс из механики.
+     * @param ownerLevel уровень умения; у ресурса самой записи — 1.
      * @return уровень появления счётчика.
      */
-    private int counterStartLevel(ResourceCounter counter) {
+    private int counterStartLevel(ResourceCounter counter, int ownerLevel) {
+        int floor = Math.max(ownerLevel, 1);
         if (CollectionUtils.isEmpty(counter.getScaling())) {
-            return 1;
+            return floor;
         }
-        return counter.getScaling().stream()
-                .filter(step -> step != null && step.getLevel() != null && step.getMax() != null)
+        int firstStep = counter.getScaling().stream()
+                .filter(step -> step != null && step.getLevel() != null
+                        && step.getMax() != null && step.getMax() > 0)
                 .mapToInt(CounterScaling::getLevel)
                 .min()
                 .orElse(1);
+        return Math.max(firstStep, floor);
     }
 
-    private void collectCounters(ClassMechanics mechanics, String featureKey, List<OwnedCounter> target) {
+    private void collectCounters(ClassMechanics mechanics, String featureKey, int ownerLevel,
+                                 List<OwnedCounter> target) {
         if (mechanics == null || CollectionUtils.isEmpty(mechanics.getCounters())) {
             return;
         }
         for (ResourceCounter counter : mechanics.getCounters()) {
             if (counter != null) {
-                target.add(new OwnedCounter(counter, featureKey));
+                target.add(new OwnedCounter(counter, featureKey, ownerLevel));
             }
         }
     }

@@ -738,6 +738,56 @@ class VttgClassMapperTest {
     }
 
     /**
+     * Ресурс умения без ступеней появляется вместе с умением: «Непреклонная ярость»
+     * одиннадцатого уровня уже висела на листе варвара шестого.
+     */
+    @Test
+    void startsFeatureCounterAtFeatureLevel() {
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        ClassFeature relentless = feature("relentless-rage", 11, "Непреклонная ярость",
+                "Не падайте до 0 хитов.");
+        relentless.setMechanics(counterMechanics(counter("relentless-rage", "@classLevel", null)));
+
+        barbarian.setFeatures(List.of(relentless));
+
+        assertEquals(11, json(barbarian).get("counters").get(0).get("startLevel").asInt());
+    }
+
+    /**
+     * Ступени ресурса умения: первая ступень с зарядами, но не раньше уровня умения —
+     * ступень с нулём зарядов ресурс не открывает.
+     */
+    @Test
+    void startsScaledFeatureCounterNotBeforeFeature() {
+        CharacterClass monk = baseClass("monk", "Монах", "Monk");
+        ClassFeature focus = feature("monks-focus", 2, "Сосредоточенность монаха", "Очки сосредоточенности.");
+        focus.setMechanics(counterMechanics(counter("focus-points", null, List.of(
+                new CounterScaling(1, 0),
+                new CounterScaling(2, 2),
+                new CounterScaling(3, 3)))));
+
+        ClassFeature late = feature("late-feature", 5, "Позднее умение", "Ступени раньше умения.");
+        late.setMechanics(counterMechanics(counter("late-points", null, List.of(
+                new CounterScaling(2, 1),
+                new CounterScaling(9, 2)))));
+
+        monk.setFeatures(List.of(focus, late));
+
+        JsonNode counters = json(monk).get("counters");
+        assertEquals(2, counterByKey(counters, "focus-points").get("startLevel").asInt());
+        assertEquals(5, counterByKey(counters, "late-points").get("startLevel").asInt());
+    }
+
+    /** Ресурс самой записи умению не принадлежит и есть с первого уровня. */
+    @Test
+    void startsClassCounterAtFirstLevel() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        fighter.setMechanics(counterMechanics(counter("resolve", "@prof", null)));
+
+        assertEquals(1, json(fighter).get("counters").get(0).get("startLevel").asInt());
+    }
+
+    /**
      * «Второе дыхание» 2024 года: один заряд возвращает короткий отдых, все —
      * продолжительный. Такой откат — своё значение словаря, а не короткий отдых: тот
      * возвращает ресурс целиком.
@@ -1278,5 +1328,31 @@ class VttgClassMapperTest {
         scaling.setName(name);
         scaling.setDescription(description);
         return scaling;
+    }
+
+    private ResourceCounter counter(String key, String max, List<CounterScaling> scaling) {
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey(key);
+        counter.setName(key);
+        counter.setMax(max);
+        counter.setScaling(scaling);
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        return counter;
+    }
+
+    private ClassMechanics counterMechanics(ResourceCounter counter) {
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        return mechanics;
+    }
+
+    /** Счётчик выгрузки по ключу. */
+    private JsonNode counterByKey(JsonNode counters, String key) {
+        for (JsonNode counter : counters) {
+            if (key.equals(counter.get("key").asText())) {
+                return counter;
+            }
+        }
+        throw new AssertionError("Счётчик не выгружен: " + key);
     }
 }
