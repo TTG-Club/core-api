@@ -400,6 +400,35 @@ class VttgSpeciesMapperTest {
         assertEquals(1, granted.size());
         assertEquals("Фокусы", granted.get(0).get("name").asText());
         assertEquals("prestidigitation", granted.get(0).get("spellId").asText());
+        assertFalse(granted.get(0).has("alwaysPrepared"));
+    }
+
+    /**
+     * Снятая отметка «Подготавливать не нужно» уезжает {@code alwaysPrepared: false};
+     * поставленная — значение по умолчанию у вида, и поля нет.
+     */
+    @Test
+    void mapsFeatureGrantedSpellsAlwaysPreparedOnlyWhenCleared() {
+        Species species = baseSpecies("high-elf", "Высший эльф", "High Elf");
+        SpeciesFeature feature = new SpeciesFeature(
+                "elven-lineage", "Эльфийское наследие", "Elven Lineage", "Заклинания.", null);
+        GrantedSpellRef prepared = new GrantedSpellRef("prestidigitation", null, null);
+        prepared.setAlwaysPrepared(true);
+        GrantedSpellRef notPrepared = new GrantedSpellRef("detect-magic", null, 3);
+        notPrepared.setAlwaysPrepared(false);
+        feature.setGrantedSpells(List.of(prepared, notPrepared));
+        species.setFeatures(List.of(feature));
+
+        when(spellRepository.findAllShortByUrlIn(Set.of("prestidigitation", "detect-magic")))
+                .thenReturn(List.of(spell("prestidigitation", "Фокусы"),
+                        spell("detect-magic", "Обнаружение магии")));
+
+        JsonNode granted = json(species).get("features").get(0).get("grantedSpells");
+        assertEquals(2, granted.size());
+        assertEquals("prestidigitation", granted.get(0).get("spellId").asText());
+        assertFalse(granted.get(0).has("alwaysPrepared"));
+        assertEquals("detect-magic", granted.get(1).get("spellId").asText());
+        assertFalse(granted.get(1).get("alwaysPrepared").asBoolean(true));
     }
 
     /** Ссылка на удалённое заклинание блок не роняет и не уезжает пустой записью. */

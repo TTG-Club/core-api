@@ -135,8 +135,15 @@ public class VttgSpecies {
      * Заклинание, выдаваемое умением вида.
      *
      * @param name    название заклинания — показывается, даже если записи нет в паках
-     * @param spellId {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     * @param spellId        {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     * @param alwaysPrepared заклинание нужно готовить, как обычное; уезжает только
+     *                       {@code false} — у вида по умолчанию выданное заклинание
+     *                       подготовлено всегда (врождённая магия)
      */
-    public record GrantedSpell(String name, String spellId) {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record GrantedSpell(String name, String spellId, Boolean alwaysPrepared) {
+        public GrantedSpell(String name, String spellId) {
+            this(name, spellId, null);
+        }
     }
 }
