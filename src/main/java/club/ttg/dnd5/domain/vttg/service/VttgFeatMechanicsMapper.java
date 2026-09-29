@@ -433,8 +433,11 @@ public class VttgFeatMechanicsMapper {
      *
      * <p>Группа без единого канонического класса опускается: сверять в мире будет нечего, а
      * пустой список в записи читался бы как «выдаёт весь компендиум».</p>
+     *
+     * <p>Открыт для выгрузки класса: у умения класса списки уезжают полем самого умения,
+     * а не блоком даров.</p>
      */
-    private List<VttgFeatData.GrantedClassSpells> grantedClassSpells(SpellGrant grant) {
+    List<VttgFeatData.GrantedClassSpells> grantedClassSpells(SpellGrant grant) {
         if (grant == null || CollectionUtils.isEmpty(grant.getClassLists())) {
             return null;
         }

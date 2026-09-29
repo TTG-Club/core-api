@@ -28,6 +28,7 @@ import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
+import club.ttg.dnd5.domain.common.model.mechanics.ClassSpellListGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
@@ -442,6 +443,79 @@ class VttgClassMapperTest {
 
         JsonNode feature = json(ranger).get("features").get(0);
         assertEquals("[\"hunters-mark\"]", feature.get("grantedSpells").toString());
+    }
+
+    /**
+     * Заклинания домена открываются по уровням класса и держатся подготовленными: уровень
+     * ссылки раскладывает их по {@code grantedSpellsByLevel}, а отметка «Подготавливать не
+     * нужно» едет в блоке даров. Без неё лист заставлял готовить заклинания домена.
+     */
+    @Test
+    void exportsDomainSpellsByLevelWithPreparedMark() {
+        CharacterClass lifeDomain = baseClass("life-domain", "Домен Жизни", "Life Domain");
+        ClassFeature domainSpells = feature("life-domain-spells", 3, "Заклинания Домена Жизни", "Домен.");
+
+        SpellGrant grant = new SpellGrant();
+        grant.setSpells(List.of(spellRef("bless", 3, null), spellRef("cure-wounds", null, null),
+                spellRef("revivify", 5, Boolean.FALSE), spellRef("aura-of-life", 7, null)));
+        grant.setAlwaysPrepared(Boolean.TRUE);
+        grant.setSpellcastingAbility(Ability.WISDOM);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setSpells(grant);
+        domainSpells.setMechanics(mechanics);
+        lifeDomain.setFeatures(List.of(domainSpells));
+
+        JsonNode feature = json(lifeDomain).get("features").get(0);
+
+        assertEquals("[\"bless\",\"cure-wounds\"]", feature.get("grantedSpells").toString());
+        assertEquals("{\"5\":[\"revivify\"],\"7\":[\"aura-of-life\"]}",
+                feature.get("grantedSpellsByLevel").toString());
+
+        JsonNode featData = feature.get("featData");
+        assertTrue(featData.get("grantedSpellsAlwaysPrepared").asBoolean());
+        assertEquals("wisdom", featData.get("spellcastingAbility").asText());
+        // Отметка отдельной ссылки старше отметки записи — ссылка едет своим флагом
+        assertFalse(featData.get("grantedSpells").get(2).get("alwaysPrepared").asBoolean());
+    }
+
+    /**
+     * Весь список класса уезжает полем умения, а не блоком даров: лист, не умеющий спросить
+     * «весь список или выбрать», иначе положил бы на лист все заклинания класса.
+     */
+    @Test
+    void exportsClassListsAsFeatureField() {
+        CharacterClass sorcerer = baseClass("sorcerer", "Чародей", "Sorcerer");
+        ClassFeature spellcasting = feature("spellcasting", 1, "Использование заклинаний", "Магия.");
+
+        ClassSpellListGrant classList = new ClassSpellListGrant();
+        classList.setRequiredLevel(3);
+        classList.setLevel(2);
+        classList.setAlwaysPrepared(Boolean.FALSE);
+        classList.setClasses(List.of(new EntityRef("sorcerer-phb", "Чародей")));
+        SpellGrant grant = new SpellGrant();
+        grant.setClassLists(List.of(classList));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setSpells(grant);
+        spellcasting.setMechanics(mechanics);
+        sorcerer.setFeatures(List.of(spellcasting));
+
+        JsonNode feature = json(sorcerer).get("features").get(0);
+        JsonNode group = feature.get("grantedClassSpells").get(0);
+
+        assertEquals("sorcerer", group.get("classKeys").get(0).asText());
+        assertEquals(3, group.get("requiredLevel").asInt());
+        assertEquals(2, group.get("level").asInt());
+        assertFalse(group.get("alwaysPrepared").asBoolean());
+        assertFalse(feature.has("grantedSpells"));
+        assertTrue(feature.get("featData") == null || !feature.get("featData").has("grantedClassSpells"));
+    }
+
+    private static GrantedSpellRef spellRef(String url, Integer requiredLevel, Boolean alwaysPrepared) {
+        GrantedSpellRef reference = new GrantedSpellRef();
+        reference.setUrl(url);
+        reference.setRequiredLevel(requiredLevel);
+        reference.setAlwaysPrepared(alwaysPrepared);
+        return reference;
     }
 
     /**

@@ -203,14 +203,23 @@ public class VttgClass {
      * владения навыками. Без них потребитель угадывает ASI по виду ключа
      * ({@code asi-4}), и на переведённых или самописных классах шаг молча пропадает.
      * Флаги выводятся только когда взведены — у обычного умения полей нет.</p>
+     *
+     * <p>Выданные заклинания разложены по уровню КЛАССА, на котором они открываются:
+     * {@code grantedSpells} — с уровнем самого умения, {@code grantedSpellsByLevel} —
+     * позже («Заклинания домена»: 3, 5, 7 и 9 уровни). Отметки подготовки и
+     * характеристика лежат в {@code featData} ({@code grantedSpellsAlwaysPrepared} и
+     * ссылки {@code grantedSpells}). Списки классов целиком ({@code grantedClassSpells})
+     * выведены полем умения, а не блоком даров: потребитель, который про них не знает,
+     * иначе положил бы на лист весь список класса без спроса.</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Feature(String key, String name, String description, Integer level,
                           String subclassKey, List<Choice> choices, ChoiceConfig choiceConfig,
                           Boolean abilityImprovement, Boolean fightingStyleChoice,
                           SkillChoices skillChoice, Boolean isInformationalOnly,
-                          List<String> grantedSpells, List<ActiveEffect> activeEffects,
-                          VttgFeatData featData) {
+                          List<String> grantedSpells, Map<String, List<String>> grantedSpellsByLevel,
+                          List<VttgFeatData.GrantedClassSpells> grantedClassSpells,
+                          List<ActiveEffect> activeEffects, VttgFeatData featData) {
 
         /**
          * Умение без собственных флагов: развороты {@code scaling} и записи, у которых в
@@ -219,7 +228,7 @@ public class VttgClass {
         public Feature(String key, String name, String description, Integer level,
                        String subclassKey, List<Choice> choices) {
             this(key, name, description, level, subclassKey, choices, null,
-                    null, null, null, null, null, null, null);
+                    null, null, null, null, null, null, null, null, null);
         }
     }
 
