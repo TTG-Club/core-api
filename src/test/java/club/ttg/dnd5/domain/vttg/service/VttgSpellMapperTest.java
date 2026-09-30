@@ -371,8 +371,31 @@ class VttgSpellMapperTest {
         var result = mapper.toVttg(spell);
 
         assertEquals(1, result.getScaling().getAdditionalTargets());
+        assertNull(result.getScaling().getAdditionalAreaSize());
         // Незаполненное поле явного блока добирается из разбора текста.
         assertTrue(result.getScaling().getDescription().contains("дополнительный луч"));
+    }
+
+    /** Рост области за круг уезжает как есть: из текста его не выводим. */
+    @Test
+    void exportsAdditionalAreaSize() {
+        Spell spell = new Spell();
+        spell.setUrl("fog-cloud");
+        spell.setName("Туманное облако");
+        spell.setEnglish("Fog Cloud");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.CONJURATION).build());
+        spell.setUpcastable(true);
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Scaling scaling = new SpellEffect.Scaling();
+        scaling.setAdditionalAreaSize(20);
+        effect.setScaling(scaling);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals(20, result.getScaling().getAdditionalAreaSize());
     }
 
     @Test

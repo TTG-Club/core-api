@@ -142,4 +142,21 @@ class SpellMapperTest
         assertEquals(List.of("1к6@self.status.bloodied"),
                 mapper.toRequest(spell).getEffect().getDamageFormulas());
     }
+
+    /** Рост области за круг форма получает из {@code /raw} и сохраняет обратно без потерь. */
+    @Test
+    void rawKeepsScalingAdditionalAreaSize()
+    {
+        SpellEffect.Scaling scaling = new SpellEffect.Scaling();
+        scaling.setAdditionalAreaSize(20);
+        SpellEffect effect = new SpellEffect();
+        effect.setScaling(scaling);
+        Spell spell = new Spell();
+        spell.setEffect(effect);
+
+        Spell saved = new Spell();
+        mapper.updateEntity(saved, mapper.toRequest(spell));
+
+        assertEquals(20, saved.getEffect().getScaling().getAdditionalAreaSize());
+    }
 }

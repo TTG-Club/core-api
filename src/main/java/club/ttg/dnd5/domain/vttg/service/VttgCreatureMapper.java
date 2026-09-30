@@ -368,9 +368,19 @@ public class VttgCreatureMapper {
         if (traits == null) return List.of();
         return traits.stream().filter(Objects::nonNull)
                 // Черта тоже бывает бросаемой («Облако слизи» — спасбросок с уроном).
-                .map(trait -> entry(trait.getName(), trait.getEnglish(), description(trait.getDescription()),
-                        trait.getRecharge(), trait.getEffect(), null, null))
+                .map(this::trait)
                 .toList();
+    }
+
+    private Map<String, Object> trait(CreatureTrait trait) {
+        Map<String, Object> result = entry(trait.getName(), trait.getEnglish(), description(trait.getDescription()),
+                trait.getRecharge(), trait.getEffect(), null, null);
+        // «Легендарное сопротивление»: число вне 1–20 система не примет — такое не отдаём.
+        Integer perDay = trait.getSaveSuccessPerDay();
+        if (perDay != null && perDay >= 1 && perDay <= 20) {
+            result.put("saveSuccessPerDay", perDay);
+        }
+        return result;
     }
 
     private List<Map<String, Object>> actions(Collection<CreatureAction> actions) {

@@ -542,6 +542,31 @@ class VttgCreatureMapperTest {
         assertEquals("lr", mappedTrait.get("recharge"));
     }
 
+    /** «Легендарное сопротивление 3/день» уезжает числом у черты — так его читает система. */
+    @Test
+    void exportsTraitSaveSuccessPerDay() {
+        Creature creature = creature("aboleth-mm");
+        CreatureTrait resistance = new CreatureTrait();
+        resistance.setName("Легендарное сопротивление");
+        resistance.setDescription("[\"Существо преуспевает в спасброске.\"]");
+        resistance.setSaveSuccessPerDay(3);
+        CreatureTrait plain = new CreatureTrait();
+        plain.setName("Амфибия");
+        plain.setDescription("[\"Дышит воздухом и водой.\"]");
+        CreatureTrait broken = new CreatureTrait();
+        broken.setName("Сломанное");
+        broken.setDescription("[\"Число вне диапазона.\"]");
+        broken.setSaveSuccessPerDay(0);
+        creature.setTraits(List.of(resistance, plain, broken));
+
+        List<?> traits = (List<?>) mapper.toVttg(creature).getSystem().get("traits");
+
+        assertEquals(3, ((Map<?, ?>) traits.get(0)).get("saveSuccessPerDay"));
+        // Пусто или вне 1–20 — ключа нет, запись как раньше.
+        assertFalse(((Map<?, ?>) traits.get(1)).containsKey("saveSuccessPerDay"));
+        assertFalse(((Map<?, ?>) traits.get(2)).containsKey("saveSuccessPerDay"));
+    }
+
     /** Перезарядки нет — ключа нет. */
     @Test
     void skipsRechargeWhenNotSet() {

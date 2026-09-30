@@ -25,4 +25,6 @@ public class TraitRequest {
     private RechargeType recharge;
     @Schema(description = "Боевая механика умения: урон, атака, спасбросок, область, эффекты")
     private CreatureActionEffect effect;
+    @Schema(description = "Провал спасброска → успех, раз в день (Легендарное сопротивление): целое 1–20")
+    private Integer saveSuccessPerDay;
 }

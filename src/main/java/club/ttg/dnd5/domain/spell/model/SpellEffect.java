@@ -9,7 +9,9 @@ import club.ttg.dnd5.domain.common.model.DamagePart;
 import club.ttg.dnd5.domain.spell.model.enums.SpellTargetType;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -85,6 +87,7 @@ public class SpellEffect {
      */
     private Uses uses;
     /** Усиление при трате ячейки выше круга заклинания. */
+    @Valid
     private Scaling scaling;
     /**
      * Поуровневые тиры масштабирования заговора: с каждого порога уровня
@@ -119,6 +122,12 @@ public class SpellEffect {
         private String additionalDice;
         /** Дополнительных целей или снарядов за круг усиления. */
         private Integer additionalTargets;
+        /**
+         * Рост размера области за круг усиления — в единицах области заклинания
+         * («Туманное облако»: {@code 20} фт за круг). Только у заклинания 1+ круга с областью.
+         */
+        @Positive
+        private Integer additionalAreaSize;
         /** Текстовое описание усиления. */
         private String description;
     }

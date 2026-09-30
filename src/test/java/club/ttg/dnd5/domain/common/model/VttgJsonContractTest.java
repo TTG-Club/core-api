@@ -62,6 +62,7 @@ class VttgJsonContractTest {
                   "scaling": {
                     "additionalDice": "1к6",
                     "additionalTargets": 1,
+                    "additionalAreaSize": 20,
                     "description": "Урон увеличивается на 1к6 за круг."
                   },
                   "cantripScalingTiers": [
@@ -81,6 +82,7 @@ class VttgJsonContractTest {
         assertEquals(2, effect.getAttackBonus());
         assertEquals("1к6", effect.getScaling().getAdditionalDice());
         assertEquals(1, effect.getScaling().getAdditionalTargets());
+        assertEquals(20, effect.getScaling().getAdditionalAreaSize());
         assertEquals(5, effect.getCantripScalingTiers().getFirst().getLevel());
         assertEquals("2к12@dmg.necrotic",
                 effect.getCantripScalingTiers().getFirst().getParts().getFirst().getFormula());
@@ -91,6 +93,7 @@ class VttgJsonContractTest {
 
         assertTrue(serialized.contains("\"deliveryType\":\"sight\""));
         assertTrue(serialized.contains("\"attackBonus\":2"));
+        assertTrue(serialized.contains("\"additionalAreaSize\":20"));
         assertTrue(serialized.contains("\"cantripScalingTiers\""));
     }
 

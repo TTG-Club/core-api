@@ -407,17 +407,23 @@ public class VttgSpellMapper {
         Integer additionalTargets = explicit.getAdditionalTargets() != null && explicit.getAdditionalTargets() > 0
                 ? explicit.getAdditionalTargets()
                 : (extracted == null ? null : extracted.getAdditionalTargets());
+        // Из текста рост области не выводится: число есть, только если его завёл автор.
+        Integer additionalAreaSize = explicit.getAdditionalAreaSize() != null && explicit.getAdditionalAreaSize() > 0
+                ? explicit.getAdditionalAreaSize()
+                : null;
         String description = StringUtils.hasText(explicit.getDescription())
                 ? explicit.getDescription().trim()
                 : (extracted == null ? null : extracted.getDescription());
 
-        if (additionalDice == null && additionalTargets == null && !StringUtils.hasText(description)) {
+        if (additionalDice == null && additionalTargets == null && additionalAreaSize == null
+                && !StringUtils.hasText(description)) {
             return null;
         }
 
         return VttgSpellScaling.builder()
                 .additionalDice(additionalDice)
                 .additionalTargets(additionalTargets)
+                .additionalAreaSize(additionalAreaSize)
                 .description(description)
                 .build();
     }
