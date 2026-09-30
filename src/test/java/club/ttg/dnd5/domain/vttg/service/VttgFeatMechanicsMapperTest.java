@@ -42,6 +42,7 @@ import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -904,6 +905,29 @@ class VttgFeatMechanicsMapperTest {
         JsonNode spellFilter = json(feat).get("featData").get("choices").get(0).get("spellFilter");
         assertEquals("wizard-phb", spellFilter.get("classes").get(0).get("url").asText());
         assertEquals("wizard", spellFilter.get("classKeys").get(0).asText());
+    }
+
+    /**
+     * Бонусное действие в фильтре — тем же словом, что у времени накладывания заклинания:
+     * VTTG сверяет их напрямую, иначе фильтр отсеет все бонусные заклинания.
+     */
+    @Test
+    void mapsBonusCastingTimeFilterLikeSpell() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        SpellFilter filter = new SpellFilter();
+        filter.setCastingTime(CastingUnit.BONUS);
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("spell");
+        choice.setType(ChoiceType.SPELL);
+        choice.setSpellFilter(filter);
+        mechanics.setChoices(List.of(choice));
+        feat.setMechanics(mechanics);
+
+        JsonNode spellFilter = json(feat).get("featData").get("choices").get(0).get("spellFilter");
+        assertEquals("bonus-action", spellFilter.get("castingTime").asText());
     }
 
     /**

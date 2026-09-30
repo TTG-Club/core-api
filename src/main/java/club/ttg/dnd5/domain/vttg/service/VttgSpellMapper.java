@@ -43,6 +43,12 @@ import java.util.stream.Stream;
 @Component
 @RequiredArgsConstructor
 public class VttgSpellMapper {
+    /**
+     * Бонусное действие в словаре VTTG. Одно значение на время накладывания заклинания и
+     * фильтр выбора заклинаний черты: потребитель сверяет их между собой и по нему же
+     * запрещает бонусное действие («Замедление»).
+     */
+    static final String BONUS_ACTION_UNIT = "bonus-action";
     private static final List<Integer> CANTRIP_SCALING_LEVELS = List.of(5, 11, 17);
     /** Способы применения VTTG: чужое значение к потребителю не уезжает. */
     private static final Set<String> DELIVERY_TYPES =
@@ -142,7 +148,7 @@ public class VttgSpellMapper {
             return "action";
         }
         return switch (time.getUnit()) {
-            case BONUS -> "bonus";
+            case BONUS -> BONUS_ACTION_UNIT;
             case REACTION -> "reaction";
             case MINUTE -> "minute";
             case HOUR -> "hour";
