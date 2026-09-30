@@ -39,6 +39,7 @@ import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
 import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgEntityRef;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
@@ -1321,6 +1322,7 @@ public class VttgFeatMechanicsMapper {
         List<VttgEntityRef> classes = refs(source.getClasses());
         List<String> classKeys = classKeys(source.getClasses());
         String castingTime = source.getCastingTime() == null ? null
+                : source.getCastingTime() == CastingUnit.BONUS ? VttgSpellMapper.BONUS_ACTION_UNIT
                 : source.getCastingTime().name().toLowerCase(Locale.ROOT);
         String classesFromChoiceKey = trimmed(source.getClassesFromChoiceKey());
 

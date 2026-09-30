@@ -758,7 +758,7 @@ class VttgSpellMapperTest {
 
         var result = mapper.toVttg(spell);
 
-        assertEquals("bonus", result.getCastingTimeUnit());
+        assertEquals("bonus-action", result.getCastingTimeUnit());
         assertEquals("self", result.getRangeUnit());
     }
 
