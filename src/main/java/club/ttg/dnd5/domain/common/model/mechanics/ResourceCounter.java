@@ -126,6 +126,18 @@ public class ResourceCounter {
     private CounterRestRule longRest;
 
     /**
+     * Ресурс появляется на листе пустым — 0 из максимума, а не полным.
+     *
+     * <p>Нужен ресурсу, который набирают действием, а не отдыхом: «Очки мутации» друида
+     * появляются от потраченной ячейки, и полный запас при получении умения был бы
+     * подарком, которого в правилах нет. Обычно стоит вместе с правилами «отдых ничего не
+     * возвращает». Пусто и {@code false} — как у всех остальных, ресурс появляется полным.</p>
+     */
+    @Schema(description = "Ресурс появляется на листе пустым (0 из максимума); пусто — полным",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Boolean startsEmpty;
+
+    /**
      * Нижняя граница максимума с поправкой на её отсутствие: ноль и отрицательное число
      * границей не являются — ресурса меньше чем на ноль зарядов не бывает.
      *
@@ -184,6 +196,15 @@ public class ResourceCounter {
             return longRest == null ? CounterRestRule.none() : longRest;
         }
         return CounterRestRule.all();
+    }
+
+    /**
+     * Отметка «появляется пустым» с поправкой на незаполненное поле.
+     *
+     * @return {@code true} — ресурс появляется на листе пустым.
+     */
+    public boolean resolveStartsEmpty() {
+        return Boolean.TRUE.equals(startsEmpty);
     }
 
     private boolean hasRestRules() {

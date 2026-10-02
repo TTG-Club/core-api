@@ -325,11 +325,13 @@ public class VttgFeatData {
      *                    значение по короткому отдыху
      * @param shortRest   что возвращает короткий отдых
      * @param longRest    что возвращает продолжительный отдых
+     * @param startsEmpty ресурс появляется на листе пустым (0 из максимума): его набирают
+     *                    действием, а не отдыхом; {@code null} — появляется полным
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Counter(String key, String name, String shortName, String max,
                           Map<String, Integer> progression, Integer min, String recovery,
-                          RestRule shortRest, RestRule longRest) {
+                          RestRule shortRest, RestRule longRest, Boolean startsEmpty) {
     }
 
     /**

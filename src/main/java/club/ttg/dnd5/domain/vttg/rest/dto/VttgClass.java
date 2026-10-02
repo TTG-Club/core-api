@@ -308,11 +308,15 @@ public class VttgClass {
      *                    (только там известен уровень класса для ступеней), и без этого ключа
      *                    потребитель не может вернуть его в умение: в мастерской «Бардовское
      *                    вдохновение» оказывалось ресурсом класса, а само умение — пустым
+     * @param startsEmpty ресурс появляется на листе пустым (0 из максимума): его набирают
+     *                    действием, а не отдыхом; {@code null} — появляется полным, как и ресурс
+     *                    из колонки таблицы
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Counter(String key, String name, String shortName, int startLevel, String recovery,
                           Map<String, Integer> progression, String formula, Integer min, String subclassKey,
-                          String featureKey, VttgFeatData.RestRule shortRest, VttgFeatData.RestRule longRest) {
+                          String featureKey, VttgFeatData.RestRule shortRest, VttgFeatData.RestRule longRest,
+                          Boolean startsEmpty) {
     }
 
     /**

@@ -359,7 +359,8 @@ public class VttgFeatMechanicsMapper {
                     trimmed(counter.getShortName()), max, progression, counter.resolveMin(),
                     VttgDictionaries.recovery(counter.resolveRecovery()),
                     VttgDictionaries.restRule(counter.resolveShortRest()),
-                    VttgDictionaries.restRule(counter.resolveLongRest())));
+                    VttgDictionaries.restRule(counter.resolveLongRest()),
+                    flag(counter.getStartsEmpty())));
         }
         return emptyToNull(result);
     }

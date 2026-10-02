@@ -148,6 +148,7 @@ class SpeciesMechanicsMappingTest {
         counter.setKey("breath-weapon");
         counter.setName("Дыхание дракона");
         counter.setMax("@prof");
+        counter.setStartsEmpty(true);
         SpeciesMechanics mechanics = new SpeciesMechanics();
         mechanics.setCounters(List.of(counter));
         SpeciesFeature feature = new SpeciesFeature("breath-weapon", "Дыхание дракона",
@@ -160,6 +161,8 @@ class SpeciesMechanicsMappingTest {
         ResourceCounter restoredCounter = restored.getMechanics().getCounters().getFirst();
         assertEquals("breath-weapon", restoredCounter.getKey());
         assertEquals("@prof", restoredCounter.getMax());
+        // Отметка «появляется пустым» едет вместе с остальным счётчиком
+        assertEquals(Boolean.TRUE, restoredCounter.getStartsEmpty());
     }
 
     /**
