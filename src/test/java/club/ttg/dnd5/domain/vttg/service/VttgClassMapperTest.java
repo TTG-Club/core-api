@@ -33,6 +33,8 @@ import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceScaling;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestMode;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestRule;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
@@ -809,6 +811,60 @@ class VttgClassMapperTest {
         fighter.setFeatures(List.of(secondWind));
 
         assertEquals("short-one", json(fighter).get("counters").get(0).get("recovery").asText());
+    }
+
+    /**
+     * «Очки мутации» друида: ресурс появляется пустым и отдыхом не возвращается — его
+     * набирают от потраченной ячейки. Оба правила «ничего» доезжают как есть, отметка
+     * «появляется пустым» — рядом; слова для такого отката у легаси-поля нет, и оно
+     * отдаёт ближайшее — продолжительный отдых.
+     */
+    @Test
+    void exportsStartsEmptyCounterWithoutRestRecovery() {
+        CharacterClass druid = baseClass("druid", "Друид", "Druid");
+        ClassFeature mutation = feature("mutation", 3, "Мутация", "Наберите очки мутации.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("mutation-points");
+        counter.setName("Очки мутации");
+        counter.setMax("9 + max(1, @mod.wis)");
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        counter.setShortRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        counter.setLongRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        counter.setStartsEmpty(true);
+        mutation.setMechanics(counterMechanics(counter));
+        druid.setFeatures(List.of(mutation));
+
+        JsonNode exported = json(druid).get("counters").get(0);
+        assertTrue(exported.get("startsEmpty").asBoolean());
+        assertEquals("none", exported.get("shortRest").get("mode").asText());
+        assertEquals("none", exported.get("longRest").get("mode").asText());
+        assertEquals("long", exported.get("recovery").asText());
+    }
+
+    /**
+     * Отметки нет или она снята — поля в выгрузке нет: ресурс появляется полным. Нет его и
+     * у ресурса из колонки таблицы: колонка об отметке не знает.
+     */
+    @Test
+    void omitsStartsEmptyWhenNotSet() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassTableColumn column = new ClassTableColumn("Ярости", List.of(new ClassTableItem(1, "2")));
+        column.setKey("rages");
+        column.setResourceRecovery(ClassResourceRecovery.LONG_REST);
+        fighter.setTable(List.of(column));
+
+        ResourceCounter cleared = counter("second-wind", "2", null);
+        cleared.setStartsEmpty(false);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter("resolve", "@prof", null), cleared));
+        fighter.setMechanics(mechanics);
+
+        JsonNode counters = json(fighter).get("counters");
+        assertEquals(3, counters.size());
+        assertFalse(counterByKey(counters, "resolve").has("startsEmpty"));
+        assertFalse(counterByKey(counters, "second-wind").has("startsEmpty"));
+        assertFalse(counterByKey(counters, "rages").has("startsEmpty"));
     }
 
     /**

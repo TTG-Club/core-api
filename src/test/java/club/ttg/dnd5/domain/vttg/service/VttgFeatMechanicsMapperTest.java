@@ -27,6 +27,7 @@ import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestMode;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterRestRule;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
@@ -1392,6 +1393,58 @@ class VttgFeatMechanicsMapperTest {
         assertEquals(2, exported.get("shortRest").get("amount").asInt());
         assertEquals("none", exported.get("longRest").get("mode").asText());
         assertEquals("short-one", exported.get("recovery").asText());
+    }
+
+    /**
+     * «Отдых не восстанавливает»: оба правила с режимом «ничего» доезжают как есть. Слова
+     * для такого отката у легаси-поля нет — оно отдаёт ближайшее, продолжительный отдых.
+     */
+    @Test
+    void mapsCounterWithoutRestRecovery() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("mutation-points", "9", ResourceRecovery.LONG_REST);
+        counter.setShortRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        counter.setLongRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        JsonNode exported = json(feat).get("featData").get("counters").get(0);
+        assertEquals("none", exported.get("shortRest").get("mode").asText());
+        assertEquals("none", exported.get("longRest").get("mode").asText());
+        assertEquals("long", exported.get("recovery").asText());
+    }
+
+    /**
+     * «Появляется пустым» едет отметкой: такой ресурс набирают действием, и полным на
+     * листе он появляться не должен.
+     */
+    @Test
+    void mapsStartsEmptyCounter() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("mutation-points", "9", ResourceRecovery.LONG_REST);
+        counter.setStartsEmpty(true);
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        assertTrue(json(feat).get("featData").get("counters").get(0).get("startsEmpty").asBoolean());
+    }
+
+    /** Отметки нет или она снята — поля в выгрузке нет: ресурс появляется полным. */
+    @Test
+    void omitsStartsEmptyWhenNotSet() {
+        Feat feat = baseFeat();
+        ResourceCounter cleared = counter("uses", "1", ResourceRecovery.LONG_REST);
+        cleared.setStartsEmpty(false);
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("luck-points", "@prof", ResourceRecovery.LONG_REST),
+                cleared));
+        feat.setMechanics(mechanics);
+
+        JsonNode counters = json(feat).get("featData").get("counters");
+        assertFalse(counters.get(0).has("startsEmpty"));
+        assertFalse(counters.get(1).has("startsEmpty"));
     }
 
     /** Нижняя граница максимума едет вместе с формулой: с модификатором +0 ресурс не пропадёт. */
