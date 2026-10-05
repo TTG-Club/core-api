@@ -117,10 +117,25 @@ class TelegramPublisherTest {
     }
 
     @Test
-    void longFloodWaitIsLeftForNextTick() {
-        server.expect(requestTo(SEND_MESSAGE)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"ok\":false,\"error_code\":429,\"parameters\":{\"retry_after\":600}}"));
+    void postGoesWithoutCardWhenFloodWaitPersists() {
+        // 429 на пост с карточкой, не снятый паузой, — Telegram не смог приготовить превью ссылки:
+        // новость уходит без карточки, заголовком и ссылкой на сайт.
+        expectFloodWait();
+        server.expect(requestTo(SEND_MESSAGE))
+                .andExpect(jsonPath("$.text").value("<b>Бестиарий пополнился</b>\n\n"
+                        + "<a href=\"https://ttg.club/articles/bestiary-update\">Читать на сайте →</a>"))
+                .andExpect(jsonPath("$.link_preview_options").doesNotExist())
+                .andRespond(withSuccess(OK_RESPONSE, MediaType.APPLICATION_JSON));
+
+        assertEquals(TelegramPublisher.PublishResult.Status.POSTED, publisher.publish(article()).status());
+        server.verify();
+    }
+
+    @Test
+    void floodWaitOnPlainPostIsLeftForNextTick() {
+        // Отказ и без карточки — это уже настоящий лимит частоты: повторим на следующем тике.
+        expectFloodWait();
+        expectFloodWait();
 
         assertEquals(TelegramPublisher.PublishResult.Status.RETRY, publisher.publish(article()).status());
         server.verify();
@@ -153,6 +168,13 @@ class TelegramPublisherTest {
                         .value("https://t.me/iv?url=https%3A%2F%2Fttg.club%2Fiv%2Farticles%2Fbestiary-update&rhash="
                                 + RHASH))
                 .andRespond(withSuccess(OK_RESPONSE, MediaType.APPLICATION_JSON));
+    }
+
+    /** Отказ 429 с паузой дольше той, что пережидаем на месте (см. {@code telegram.max-retry-after}). */
+    private void expectFloodWait() {
+        server.expect(requestTo(SEND_MESSAGE)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"ok\":false,\"error_code\":429,\"parameters\":{\"retry_after\":600}}"));
     }
 
     /** Новость, у которой выбран компактный вид поста (карточка Instant View). */
