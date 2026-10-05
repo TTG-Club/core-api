@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.vttg.service.VttgMarkupConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -17,6 +18,7 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /**
@@ -98,6 +100,29 @@ class TelegramPublisherTest {
         expectSendMessage(BLANK_TEXT);
 
         assertEquals(TelegramPublisher.PublishResult.Status.POSTED, publisher.publish(article).status());
+        server.verify();
+    }
+
+    @Test
+    void retriesRightAwayAfterShortFloodWait() {
+        // Telegram отвечает 429, пока сам готовит карточку ссылки: пережидаем названную паузу и повторяем
+        // тут же — к следующему тику планировщика всё началось бы заново.
+        server.expect(requestTo(SEND_MESSAGE)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"ok\":false,\"error_code\":429,\"parameters\":{\"retry_after\":0}}"));
+        expectSendMessage(BLANK_TEXT);
+
+        assertEquals(TelegramPublisher.PublishResult.Status.POSTED, publisher.publish(article()).status());
+        server.verify();
+    }
+
+    @Test
+    void longFloodWaitIsLeftForNextTick() {
+        server.expect(requestTo(SEND_MESSAGE)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"ok\":false,\"error_code\":429,\"parameters\":{\"retry_after\":600}}"));
+
+        assertEquals(TelegramPublisher.PublishResult.Status.RETRY, publisher.publish(article()).status());
         server.verify();
     }
 

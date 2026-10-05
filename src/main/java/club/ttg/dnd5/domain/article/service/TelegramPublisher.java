@@ -541,7 +541,29 @@ public class TelegramPublisher {
         return sendBody(method, payload, MediaType.APPLICATION_JSON);
     }
 
+    /**
+     * Вызов Bot API с одним повтором при 429. Telegram в отказе сам называет паузу ({@code retry_after},
+     * секунды) — если она короткая, пережидаем её и повторяем тут же. Ждать следующего тика нельзя
+     * полагаться: при посте с карточкой ссылки Telegram отвечает 429, пока сам готовит превью страницы,
+     * и к следующему тику (через минуту) всё начинается заново — новость так и не уходит.
+     */
     private SendOutcome sendBody(String method, Object body, MediaType contentType) {
+        SendOutcome outcome = sendOnce(method, body, contentType);
+        Integer retryAfter = outcome.retryAfterSeconds();
+        if (retryAfter == null || retryAfter > properties.getMaxRetryAfter().toSeconds()) {
+            return outcome;
+        }
+        try {
+            // +1 с запаса: retry_after целочисленный, ровно на границе Telegram ещё может отказать.
+            Thread.sleep(retryAfter == 0 ? 0 : (retryAfter + 1) * 1000L);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return outcome;
+        }
+        return sendOnce(method, body, contentType);
+    }
+
+    private SendOutcome sendOnce(String method, Object body, MediaType contentType) {
         try {
             JsonNode response = telegramRestClient.post()
                     // Токен — часть пути (…/bot<token>/method). В шаблон не оборачиваем,
@@ -552,11 +574,14 @@ public class TelegramPublisher {
                     .retrieve()
                     .body(JsonNode.class);
             Long messageId = response != null ? response.path("result").path("message_id").asLong() : null;
-            return new SendOutcome(SendResult.SENT, messageId);
+            return new SendOutcome(SendResult.SENT, messageId, null);
         } catch (RestClientResponseException ex) {
             log.warn("Telegram {} вернул {}: {}", method, ex.getStatusCode(), ex.getResponseBodyAsString());
-            boolean retriable = ex.getStatusCode().value() == 429 || ex.getStatusCode().is5xxServerError();
-            return new SendOutcome(retriable ? SendResult.TRANSIENT : SendResult.REJECTED, null);
+            if (ex.getStatusCode().value() == 429) {
+                return new SendOutcome(SendResult.TRANSIENT, null, retryAfterSeconds(ex));
+            }
+            boolean retriable = ex.getStatusCode().is5xxServerError();
+            return new SendOutcome(retriable ? SendResult.TRANSIENT : SendResult.REJECTED, null, null);
         } catch (RestClientException ex) {
             // Сеть/таймаут (в т.ч. потерянный ответ на уже доставленный запрос) — считаем временным.
             // Логируем причину (IOException), а НЕ ex.getMessage(): RestClient вшивает в него полный URL
@@ -564,7 +589,17 @@ public class TelegramPublisher {
             Throwable cause = ex.getCause();
             log.warn("Не удалось вызвать Telegram {}: {}", method,
                     cause != null ? cause.getMessage() : ex.getClass().getSimpleName());
-            return new SendOutcome(SendResult.TRANSIENT, null);
+            return new SendOutcome(SendResult.TRANSIENT, null, null);
+        }
+    }
+
+    /** Пауза из отказа 429 ({@code parameters.retry_after}, секунды); {@code null} — Telegram её не назвал. */
+    private static Integer retryAfterSeconds(RestClientResponseException ex) {
+        try {
+            JsonNode retryAfter = ex.getResponseBodyAs(JsonNode.class).path("parameters").path("retry_after");
+            return retryAfter.isInt() ? Math.max(0, retryAfter.asInt()) : null;
+        } catch (RuntimeException parseFailure) {
+            return null;
         }
     }
 
@@ -586,7 +621,10 @@ public class TelegramPublisher {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
-    /** Итог вызова Bot API: результат и id сообщения (при успехе отправки). */
-    private record SendOutcome(SendResult result, Long messageId) {
+    /**
+     * Итог вызова Bot API: результат, id сообщения (при успехе отправки) и пауза, названная Telegram
+     * в отказе 429 ({@code null} — отказа не было либо пауза не названа).
+     */
+    private record SendOutcome(SendResult result, Long messageId, Integer retryAfterSeconds) {
     }
 }
