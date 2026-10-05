@@ -13,6 +13,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+import java.time.Instant;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
@@ -138,6 +140,23 @@ class TelegramPublisherTest {
         expectFloodWait();
 
         assertEquals(TelegramPublisher.PublishResult.Status.RETRY, publisher.publish(article()).status());
+        server.verify();
+    }
+
+    @Test
+    void pageAddressCarriesVersionOfLastEdit() {
+        // Правка новости меняет адрес страницы — Telegram читает её заново, а не отдаёт запомненный
+        // (возможно, неудачный) результат разбора.
+        Article article = article();
+        article.setUpdatedAt(Instant.ofEpochSecond(1791212926L));
+
+        server.expect(requestTo(SEND_MESSAGE))
+                .andExpect(jsonPath("$.link_preview_options.url")
+                        .value("https://t.me/iv?url=https%3A%2F%2Fttg.club%2Fiv%2Farticles%2Fbestiary-update"
+                                + "%3Fv%3D1791212926&rhash=" + RHASH))
+                .andRespond(withSuccess(OK_RESPONSE, MediaType.APPLICATION_JSON));
+
+        assertEquals(TelegramPublisher.PublishResult.Status.POSTED, publisher.publish(article).status());
         server.verify();
     }
 

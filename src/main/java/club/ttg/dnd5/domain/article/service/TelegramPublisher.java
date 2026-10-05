@@ -242,9 +242,19 @@ public class TelegramPublisher {
         if (base == null) {
             return null;
         }
-        String page = base + "/iv/articles/" + article.getUrl();
+        String page = base + "/iv/articles/" + article.getUrl() + pageVersion(article);
         return "https://t.me/iv?url=" + URLEncoder.encode(page, StandardCharsets.UTF_8)
                 + "&rhash=" + rhash.trim();
+    }
+
+    /**
+     * Версия страницы в адресе ({@code ?v=<момент последней правки>}). Telegram запоминает результат разбора
+     * страницы по её адресу — в том числе неудачный: если карточку однажды собрать не вышло (например,
+     * из-за обложки), по тому же адресу он отказывает и после исправления новости. Правка меняет адрес,
+     * и Telegram читает страницу заново; заодно карточка поста обновляется при синхронизации правки.
+     */
+    private static String pageVersion(Article article) {
+        return article.getUpdatedAt() == null ? "" : "?v=" + article.getUpdatedAt().getEpochSecond();
     }
 
     /**
