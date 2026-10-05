@@ -131,11 +131,13 @@ public class TelegramPublisher {
         if (instantViewUrl != null) {
             SendOutcome sent = send("sendMessage",
                     linkPreviewPayload(instantViewText(article), instantViewUrl));
-            if (sent.result() == SendResult.REJECTED) {
+            if (sent.result() == SendResult.REJECTED || sent.retryAfterSeconds() != null) {
                 // Карточку собрать не удалось (страница ещё не отдаётся роботу, битый rhash) — новость
-                // всё равно должна уйти. Без карточки пустой текст-заглушка оставил бы в канале пустое
+                // всё равно должна уйти. Сюда же попадает 429, не снятый паузой: так Telegram отвечает,
+                // когда сам не смог приготовить превью ссылки, и ждать тут бесполезно — отказ повторяется
+                // на каждом тике. Без карточки пустой текст-заглушка оставил бы в канале пустое
                 // сообщение, поэтому в фоллбэке пишем заголовок и ссылку на статью.
-                log.warn("Telegram отклонил пост с превью Instant View для {} — отправляю без карточки",
+                log.warn("Telegram не принял пост с превью Instant View для {} — отправляю без карточки",
                         article.getUrl());
                 sent = send("sendMessage", messagePayload(noPreviewText(article)));
             }
@@ -240,9 +242,19 @@ public class TelegramPublisher {
         if (base == null) {
             return null;
         }
-        String page = base + "/iv/articles/" + article.getUrl();
+        String page = base + "/iv/articles/" + article.getUrl() + pageVersion(article);
         return "https://t.me/iv?url=" + URLEncoder.encode(page, StandardCharsets.UTF_8)
                 + "&rhash=" + rhash.trim();
+    }
+
+    /**
+     * Версия страницы в адресе ({@code ?v=<момент последней правки>}). Telegram запоминает результат разбора
+     * страницы по её адресу — в том числе неудачный: если карточку однажды собрать не вышло (например,
+     * из-за обложки), по тому же адресу он отказывает и после исправления новости. Правка меняет адрес,
+     * и Telegram читает страницу заново; заодно карточка поста обновляется при синхронизации правки.
+     */
+    private static String pageVersion(Article article) {
+        return article.getUpdatedAt() == null ? "" : "?v=" + article.getUpdatedAt().getEpochSecond();
     }
 
     /**
