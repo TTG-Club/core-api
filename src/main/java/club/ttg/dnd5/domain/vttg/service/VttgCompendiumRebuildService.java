@@ -112,7 +112,7 @@ public class VttgCompendiumRebuildService {
             VttgRebuildStatus result;
             try {
                 evictFullExport();
-                changesService.changes(null, null, null, false);
+                changesService.changes(null, null, null, VttgAutomation.FULL);
                 result = new VttgRebuildStatus(State.DONE, startedAt, Instant.now(), null);
                 log.info("VTTG: пересборка выгрузки завершена");
             } catch (Throwable failure) {

@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -50,12 +49,12 @@ class VttgCompendiumRebuildServiceTest {
 
         assertEquals(State.RUNNING, requested.status());
         assertNotNull(requested.startedAt());
-        verify(changesService, never()).changes(any(), any(), any(), anyBoolean());
+        verify(changesService, never()).changes(any(), any(), any(), any());
 
         runTasks();
 
         verify(fullExportCache).clear();
-        verify(changesService).changes(isNull(), isNull(), isNull(), eq(false));
+        verify(changesService).changes(isNull(), isNull(), isNull(), eq(VttgAutomation.FULL));
         VttgRebuildStatus done = service.status();
         assertEquals(State.DONE, done.status());
         assertEquals(requested.startedAt(), done.startedAt());
@@ -68,7 +67,7 @@ class VttgCompendiumRebuildServiceTest {
         service.request();
         AtomicInteger runs = new AtomicInteger();
         // Пока идёт первый прогон, приходит ещё один запрос.
-        when(changesService.changes(any(), any(), any(), anyBoolean())).thenAnswer(invocation -> {
+        when(changesService.changes(any(), any(), any(), any())).thenAnswer(invocation -> {
             if (runs.incrementAndGet() == 1) {
                 service.request();
                 assertEquals(State.RUNNING, service.status().status());
@@ -79,13 +78,13 @@ class VttgCompendiumRebuildServiceTest {
         runTasks();
 
         assertEquals(1, executedTasks, "второй параллельный прогон не запускается");
-        verify(changesService, times(2)).changes(isNull(), isNull(), isNull(), eq(false));
+        verify(changesService, times(2)).changes(isNull(), isNull(), isNull(), eq(VttgAutomation.FULL));
         assertEquals(State.DONE, service.status().status());
     }
 
     @Test
     void failureIsReportedToAdmin() {
-        when(changesService.changes(any(), any(), any(), anyBoolean()))
+        when(changesService.changes(any(), any(), any(), any()))
                 .thenThrow(new IllegalStateException("БД недоступна"));
 
         service.request();
