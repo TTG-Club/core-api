@@ -20,10 +20,16 @@ import org.springframework.stereotype.Service;
  * {@code SUBSCRIBER} из токена: роль кэшируется в JWT и остаётся до перелогина.
  * Если бы доступ зависел от роли, истёкшая подписка всё равно открывала бы автоматизацию.
  * <p>
+ * <p>
+ * Роль на автоматизацию не влияет, правило одно для всех: админ без действующей подписки
+ * получает эффекты только у SRD, как и любой другой. Иначе клиент VTTG, который судит о
+ * подписке сам, прятал бы у админа записи вне SRD: сервер упорно присылал бы их с эффектами.
+ * Роли {@code ADMIN} и {@code VTTG} дают лишь ранний доступ — право на экспорт без
+ * зарегистрированной подписки.
+ * <p>
  * Fail-closed: при любой ошибке вызова subscriber-service (недоступен/таймаут/не-2xx)
  * считаем подписку отсутствующей ({@code active = false, registered = false}) — полная
- * автоматизация в этом случае не отдаётся никогда. Админ проверяется по JWT <b>до</b> вызова,
- * поэтому от недоступности subscriber-service не страдает.
+ * автоматизация в этом случае не отдаётся никогда, в том числе админу.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -32,18 +38,13 @@ public class VttgAccessService {
     private final SubscriptionStatusClient subscriptionStatusClient;
 
     /**
-     * Вычисляет объём автоматизации для текущего пользователя. Админ — всегда полный;
-     * для остальных полный только при действующей подписке, иначе эффекты лишь у SRD.
+     * Вычисляет объём автоматизации для текущего пользователя: полный только при
+     * действующей подписке, иначе эффекты лишь у SRD. От роли объём не зависит.
      *
      * @throws ApiException 403, если у пользователя без раннего доступа нет даже
      *                      зарегистрированной подписки
      */
     public VttgAccess access() {
-        boolean admin = SecurityUtils.userRoles().anyMatch("ADMIN"::equals);
-        if (admin) {
-            return new VttgAccess(VttgAutomation.FULL);
-        }
-
         String username = SecurityUtils.getUser().getUsername();
         SubscriptionStatus status = subscriptionStatusClient.status(username)
                 .orElseGet(SubscriptionStatus::denied);
@@ -54,7 +55,8 @@ public class VttgAccessService {
         }
 
         // Подписка закончилась (или ещё не активирована): записи те же, эффекты только у SRD.
-        boolean earlyAccess = SecurityUtils.userRoles().anyMatch("VTTG"::equals);
+        boolean earlyAccess = SecurityUtils.userRoles()
+                .anyMatch(role -> "VTTG".equals(role) || "ADMIN".equals(role));
         if (!earlyAccess && !status.registered()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Для экспорта VTTG нужна зарегистрированная подписка");
         }

@@ -53,10 +53,33 @@ class VttgAccessServiceTest {
     }
 
     @Test
-    void adminGetsFullAutomationWithoutCallingSubscriber() {
+    void adminWithoutActiveSubscriptionGetsSrdAutomation() {
         authenticate("admin", "ADMIN");
-        // никакого ожидания на сервере — admin не должен звать subscriber-service
+        // роль даёт только ранний доступ: без подписки эффекты лишь у SRD, но не 403
+        expectStatus("admin", "{\"active\":false,\"registered\":false}");
+
+        assertEquals(VttgAutomation.SRD, service.access().automation());
+        server.verify();
+    }
+
+    @Test
+    void adminWithActiveSubscriptionGetsFullAutomation() {
+        authenticate("admin", "ADMIN");
+        expectStatus("admin", "{\"active\":true,\"registered\":true}");
+
         assertEquals(VttgAutomation.FULL, service.access().automation());
+        server.verify();
+    }
+
+    @Test
+    void subscriberServiceFailureGivesAdminSrdAutomation() {
+        authenticate("admin", "ADMIN");
+        server.expect(requestTo(BASE_URL + "/api/internal/subscriptions/admin/status"))
+                .andExpect(method(GET))
+                .andRespond(withServerError());
+
+        // недоступность subscriber-service → подписки «нет» → эффекты лишь у SRD
+        assertEquals(VttgAutomation.SRD, service.access().automation());
         server.verify();
     }
 
