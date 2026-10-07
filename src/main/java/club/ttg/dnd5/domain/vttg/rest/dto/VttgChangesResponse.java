@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.vttg.service.VttgAutomation;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +24,15 @@ import java.util.Map;
  *                 версии меняет записи целиком, но их {@code updatedAt} не сдвигает, и
  *                 инкрементальное окно их не отдаст: клиент, у которого сохранена другая
  *                 версия, пересобирает паки полной выгрузкой
+ * @param automation с какой автоматизацией собран ответ: {@code full} — активные эффекты у всех
+ *                 записей, {@code srd} — только у записей SRD. Меняется со сменой подписки и
+ *                 {@code updatedAt} записей тоже не сдвигает: клиент, у которого сохранено другое
+ *                 значение, пересобирает паки полной выгрузкой
  */
 public record VttgChangesResponse(Instant until,
                                   List<VttgChange> upserts,
                                   List<Map<String, Object>> sections,
                                   List<VttgSource> sources,
-                                  int schemaVersion) {
+                                  int schemaVersion,
+                                  VttgAutomation automation) {
 }

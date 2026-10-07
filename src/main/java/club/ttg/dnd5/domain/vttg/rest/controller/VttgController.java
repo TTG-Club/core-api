@@ -34,7 +34,7 @@ public class VttgController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant since,
             @RequestParam(required = false) String srdVersion,
             @RequestParam(required = false) Set<String> types) {
-        return changesService.status(since, srdVersion, types, accessService.access().srdOnly());
+        return changesService.status(since, srdVersion, types, accessService.access().automation());
     }
 
     @Operation(summary = "Получить дельту изменений сущностей для VTTG",
@@ -47,6 +47,6 @@ public class VttgController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant since,
             @RequestParam(required = false) String srdVersion,
             @RequestParam(required = false) Set<String> types) {
-        return changesService.changes(since, srdVersion, types, accessService.access().srdOnly());
+        return changesService.changes(since, srdVersion, types, accessService.access().automation());
     }
 }

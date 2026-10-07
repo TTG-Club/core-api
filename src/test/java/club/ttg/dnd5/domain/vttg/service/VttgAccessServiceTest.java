@@ -17,9 +17,8 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -54,37 +53,37 @@ class VttgAccessServiceTest {
     }
 
     @Test
-    void adminGetsFullExportWithoutCallingSubscriber() {
+    void adminGetsFullAutomationWithoutCallingSubscriber() {
         authenticate("admin", "ADMIN");
         // никакого ожидания на сервере — admin не должен звать subscriber-service
-        assertFalse(service.access().srdOnly());
+        assertEquals(VttgAutomation.FULL, service.access().automation());
         server.verify();
     }
 
     @Test
-    void earlyAccessVttgRoleGetsOnlySrdWithoutActiveSubscription() {
+    void earlyAccessVttgRoleGetsSrdAutomationWithoutActiveSubscription() {
         authenticate("early", "VTTG");
         expectStatus("early", "{\"active\":false,\"registered\":false}");
 
-        assertTrue(service.access().srdOnly());
+        assertEquals(VttgAutomation.SRD, service.access().automation());
         server.verify();
     }
 
     @Test
-    void activeSubscriptionGetsFullExport() {
+    void activeSubscriptionGetsFullAutomation() {
         authenticate("subscriber", "USER");
         expectStatus("subscriber", "{\"active\":true,\"registered\":true}");
 
-        assertFalse(service.access().srdOnly());
+        assertEquals(VttgAutomation.FULL, service.access().automation());
         server.verify();
     }
 
     @Test
-    void registeredInactiveSubscriptionGetsOnlySrd() {
+    void registeredInactiveSubscriptionGetsSrdAutomation() {
         authenticate("registered", "USER");
         expectStatus("registered", "{\"active\":false,\"registered\":true}");
 
-        assertTrue(service.access().srdOnly());
+        assertEquals(VttgAutomation.SRD, service.access().automation());
         server.verify();
     }
 
