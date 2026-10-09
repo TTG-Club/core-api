@@ -51,7 +51,8 @@ public class CharacterSheetEditorController {
         return editorService.approve(id, editorId);
     }
 
-    @Operation(summary = "Отклонить запрос или отозвать право. Повторный запрос — не раньше чем через сутки")
+    @Operation(summary = "Отклонить запрос (повторный — не раньше чем через сутки) или отозвать право "
+            + "(попросить заново можно сразу)")
     @DeleteMapping("/{id}/editors/{editorId}")
     public CharacterSheetEditorListResponse remove(@PathVariable final UUID id,
                                                    @PathVariable final UUID editorId) {

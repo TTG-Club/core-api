@@ -37,8 +37,9 @@ import java.util.stream.Collectors;
  * <p>
  * Право выдаётся только по запросу. Просить может лишь тот, кто уже сохранил лист по живой ссылке
  * «поделиться», поэтому искать пользователей по логину или почте не нужно и перебирать их некому.
- * Отказ и отзыв права оставляют запись со временем решения: повторный запрос возможен только после
- * паузы, иначе владельца можно было бы засыпать уведомлениями.
+ * Отказ оставляет запись со временем решения: повторный запрос возможен только после паузы, иначе
+ * владельца можно было бы засыпать уведомлениями. Отзыв выданного права запись удаляет — это не
+ * блокировка, и попросить право заново можно сразу.
  */
 @RequiredArgsConstructor
 @Service
@@ -47,7 +48,7 @@ public class CharacterSheetEditorService {
     /** Сколько редакторов может быть у одного листа одновременно. */
     static final int MAX_EDITORS = 5;
 
-    /** Пауза после отказа или отзыва, до которой повторный запрос не принимается. */
+    /** Пауза после отказа, до которой повторный запрос не принимается. */
     static final Duration REQUEST_COOLDOWN = Duration.ofDays(1);
 
     private static final String SAVED_NOT_FOUND_MESSAGE = "Сохранённый лист персонажа не найден";
@@ -114,13 +115,16 @@ public class CharacterSheetEditorService {
 
     /**
      * Отклоняет запрос или отзывает выданное право — для владельца это одно действие «убрать».
-     * Запись остаётся отказом со временем решения: от него отсчитывается пауза до нового запроса.
+     * Отклонённый запрос остаётся отказом со временем решения: от него отсчитывается пауза до
+     * нового запроса. Отозванное право удаляется целиком: пользователь может попросить его снова.
      */
     @Transactional
     public CharacterSheetEditorListResponse remove(UUID sheetId, UUID editorId) {
         CharacterSheet sheet = getOwnedActive(sheetId);
         CharacterSheetEditor editor = getEditor(sheet, editorId);
-        if (editor.getStatus() != CharacterSheetEditorStatus.DECLINED) {
+        if (editor.getStatus() == CharacterSheetEditorStatus.APPROVED) {
+            editorRepository.delete(editor);
+        } else if (editor.getStatus() == CharacterSheetEditorStatus.PENDING) {
             editor.setStatus(CharacterSheetEditorStatus.DECLINED);
             editor.setDecidedAt(Instant.now());
         }

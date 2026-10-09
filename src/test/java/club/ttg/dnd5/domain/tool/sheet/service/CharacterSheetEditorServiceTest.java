@@ -185,7 +185,7 @@ class CharacterSheetEditorServiceTest {
     }
 
     @Test
-    void removeRevokesRightAndStartsCooldown() {
+    void removeRevokesRightWithoutCooldown() {
         UUID owner = authenticate();
         CharacterSheet sheet = sharedSheet(owner);
         CharacterSheetEditor editor = editor(sheet, UUID.randomUUID(), CharacterSheetEditorStatus.APPROVED);
@@ -194,8 +194,23 @@ class CharacterSheetEditorServiceTest {
 
         service.remove(sheet.getId(), editor.getId());
 
+        verify(editorRepository).delete(editor);
+        assertEquals(CharacterSheetEditorStatus.APPROVED, editor.getStatus());
+    }
+
+    @Test
+    void removeDeclinesPendingRequestAndStartsCooldown() {
+        UUID owner = authenticate();
+        CharacterSheet sheet = sharedSheet(owner);
+        CharacterSheetEditor editor = editor(sheet, UUID.randomUUID(), CharacterSheetEditorStatus.PENDING);
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        when(editorRepository.findByIdAndSheetId(editor.getId(), sheet.getId())).thenReturn(Optional.of(editor));
+
+        service.remove(sheet.getId(), editor.getId());
+
         assertEquals(CharacterSheetEditorStatus.DECLINED, editor.getStatus());
         assertNotNull(editor.getDecidedAt());
+        verify(editorRepository, never()).delete(editor);
     }
 
     @Test
