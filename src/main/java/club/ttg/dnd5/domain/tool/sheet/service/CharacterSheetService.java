@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditor;
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditorStatus;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
+import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetPresenceRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetListResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetPublicResponse;
@@ -51,6 +52,7 @@ public class CharacterSheetService {
 
     private final CharacterSheetRepository sheetRepository;
     private final CharacterSheetEditorRepository editorRepository;
+    private final CharacterSheetPresenceRepository presenceRepository;
     private final CharacterSheetMapper sheetMapper;
     private final CharacterSheetLimits sheetLimits;
 
@@ -144,6 +146,9 @@ public class CharacterSheetService {
         User user = SecurityUtils.getUser();
         CharacterSheet sheet = getOwnedActive(sheetId);
         sheet.setDeleted(true);
+        // Удалённый лист никто не правит: отметки «открыт у такого-то» больше никому не покажутся,
+        // а сами по себе из таблицы они не уйдут — их чистят только отметки того же листа.
+        presenceRepository.deleteAllBySheetIdIn(List.of(sheet.getId()));
         trimDeletedHistory(user);
     }
 
@@ -268,8 +273,10 @@ public class CharacterSheetService {
      * Активный лист, который пользователь может открыть и сохранить: свой или тот, на который
      * владелец дал ему право. Остальное — 403, как и раньше для чужого листа: загрузчик клиента по
      * этому ответу решает, перечитывать ли лист администраторской ручкой.
+     * <p>
+     * Package-private: тем же правилом закрыта отметка присутствия ({@link CharacterSheetPresenceService}).
      */
-    private CharacterSheet getEditableActive(UUID sheetId, User user) {
+    CharacterSheet getEditableActive(UUID sheetId, User user) {
         CharacterSheet sheet = getActive(sheetId);
         if (!isOwner(sheet, user) && !isApprovedEditor(sheet, user)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Доступ к листу персонажа запрещен");

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.tool.sheet.service;
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditorStatus;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
+import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetPresenceRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetListResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetPublicResponse;
@@ -49,10 +50,11 @@ class CharacterSheetServiceTest {
 
     private final CharacterSheetRepository sheetRepository = mock(CharacterSheetRepository.class);
     private final CharacterSheetEditorRepository editorRepository = mock(CharacterSheetEditorRepository.class);
+    private final CharacterSheetPresenceRepository presenceRepository = mock(CharacterSheetPresenceRepository.class);
     private final CharacterSheetMapper sheetMapper = mock(CharacterSheetMapper.class);
     private final CharacterSheetLimits sheetLimits = mock(CharacterSheetLimits.class);
     private final CharacterSheetService service =
-            new CharacterSheetService(sheetRepository, editorRepository, sheetMapper, sheetLimits);
+            new CharacterSheetService(sheetRepository, editorRepository, presenceRepository, sheetMapper, sheetLimits);
 
     @BeforeEach
     void withoutSubscriptionByDefault() {
@@ -138,6 +140,18 @@ class CharacterSheetServiceTest {
         assertTrue(sheet.isDeleted());
         // Вытесняется только самый старый лист — те, что между 20 и 30, остаются
         verify(sheetRepository).deleteAll(List.of(deleted.getLast()));
+    }
+
+    @Test
+    void deleteDropsPresenceMarks() {
+        UUID owner = authenticate();
+        CharacterSheet sheet = sheet(owner);
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        when(sheetRepository.findAllByUserIdAndDeletedTrueOrderByUpdatedAtDesc(owner)).thenReturn(List.of(sheet));
+
+        service.delete(sheet.getId());
+
+        verify(presenceRepository).deleteAllBySheetIdIn(List.of(sheet.getId()));
     }
 
     @Test

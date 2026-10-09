@@ -373,3 +373,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/09-01-add-character-sheet-version.yaml
   - include:
       file: db/changelog/2026/10/09-02-create-character-sheet-editor-table.yaml
+  - include:
+      file: db/changelog/2026/10/09-03-create-character-sheet-presence-table.yaml
