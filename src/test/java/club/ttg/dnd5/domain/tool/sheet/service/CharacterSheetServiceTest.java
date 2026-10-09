@@ -137,6 +137,51 @@ class CharacterSheetServiceTest {
     }
 
     @Test
+    void updateWithStaleVersionIsConflictAndKeepsDocument() {
+        UUID owner = authenticate();
+        CharacterSheet sheet = sheet(owner);
+        sheet.setVersion(5);
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        CharacterSheetRequest request = updateRequest("Леголас", 4L);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> service.update(sheet.getId(), request));
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
+        // Правка из устаревшей версии не применяется даже частично
+        assertEquals("Гимли", sheet.getName());
+        verify(sheetRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateWithCurrentVersionIsSavedAndFlushed() {
+        UUID owner = authenticate();
+        CharacterSheet sheet = sheet(owner);
+        sheet.setVersion(5);
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        when(sheetRepository.saveAndFlush(sheet)).thenReturn(sheet);
+
+        service.update(sheet.getId(), updateRequest("Леголас", 5L));
+
+        assertEquals("Леголас", sheet.getName());
+        // Флаш обязателен: без него в ответ ушла бы версия до UPDATE
+        verify(sheetRepository).saveAndFlush(sheet);
+    }
+
+    @Test
+    void updateWithoutVersionSkipsCheckForOldClients() {
+        UUID owner = authenticate();
+        CharacterSheet sheet = sheet(owner);
+        sheet.setVersion(5);
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        when(sheetRepository.saveAndFlush(sheet)).thenReturn(sheet);
+
+        service.update(sheet.getId(), updateRequest("Леголас", null));
+
+        assertEquals("Леголас", sheet.getName());
+    }
+
+    @Test
     void shareIssuesTokenAndKeepsItOnRepeatedCalls() {
         UUID owner = authenticate();
         CharacterSheet sheet = sheet(owner);
@@ -247,6 +292,13 @@ class CharacterSheetServiceTest {
     private static CharacterSheetRequest request() {
         CharacterSheetRequest request = new CharacterSheetRequest();
         request.setData(JsonNodeFactory.instance.objectNode());
+        return request;
+    }
+
+    private static CharacterSheetRequest updateRequest(String name, Long version) {
+        CharacterSheetRequest request = request();
+        request.setName(name);
+        request.setVersion(version);
         return request;
     }
 

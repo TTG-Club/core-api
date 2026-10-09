@@ -66,7 +66,8 @@ public class CharacterSheetController {
         return sheetService.findById(id);
     }
 
-    @Operation(summary = "Обновление листа: название и/или документ. Применяются только переданные поля")
+    @Operation(summary = "Обновление листа: название и/или документ. Применяются только переданные поля. "
+            + "Устаревшая version — 409: лист уже изменили в другом месте")
     @PutMapping("/{id}")
     public CharacterSheetResponse update(@PathVariable final UUID id,
                                          @RequestBody @Valid final CharacterSheetRequest request) {

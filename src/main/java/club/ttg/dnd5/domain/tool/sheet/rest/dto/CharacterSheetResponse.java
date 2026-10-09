@@ -38,6 +38,10 @@ public class CharacterSheetResponse {
             + "Отдаётся только владельцу листа")
     private UUID shareToken;
 
+    @Schema(description = "Версия листа: её клиент присылает при сохранении, чтобы не затереть "
+            + "правку, сделанную в другом месте")
+    private long version;
+
     @Nullable
     @Schema(description = "Дата создания")
     private Instant createdAt;

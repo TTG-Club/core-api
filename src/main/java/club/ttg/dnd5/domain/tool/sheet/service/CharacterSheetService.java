@@ -38,6 +38,9 @@ public class CharacterSheetService {
 
     private static final String DEFAULT_NAME = "Новый персонаж";
 
+    private static final String VERSION_CONFLICT_MESSAGE =
+            "Лист персонажа уже изменили в другом месте — загрузите актуальную версию";
+
     private final CharacterSheetRepository sheetRepository;
     private final CharacterSheetMapper sheetMapper;
     private final CharacterSheetLimits sheetLimits;
@@ -91,17 +94,26 @@ public class CharacterSheetService {
 
     /**
      * Обновление листа: применяются только заполненные поля (название, документ), null — «не менять».
+     * <p>
+     * Лист пишется целиком, поэтому присланная версия сверяется с текущей: устаревшая — 409, иначе
+     * сохранение из одной вкладки молча затёрло бы правку из другой (или хиты, записанные мастером
+     * боя). Без версии проверки нет — так пишут клиенты, ещё не знающие о ней.
      */
     @Transactional
     public CharacterSheetResponse update(UUID sheetId, CharacterSheetRequest request) {
         CharacterSheet sheet = getOwnedActive(sheetId);
+        if (request.getVersion() != null && request.getVersion() != sheet.getVersion()) {
+            throw new ApiException(HttpStatus.CONFLICT, VERSION_CONFLICT_MESSAGE);
+        }
         if (StringUtils.hasText(request.getName())) {
             sheet.setName(request.getName().trim());
         }
         if (request.getData() != null && !request.getData().isNull()) {
             sheet.setData(request.getData());
         }
-        return sheetMapper.toResponse(sheet);
+        // Флаш сразу: версию увеличивает Hibernate при UPDATE, без него в ответе была бы прежняя,
+        // и следующее сохранение клиента получило бы ложный конфликт.
+        return sheetMapper.toResponse(sheetRepository.saveAndFlush(sheet));
     }
 
     /**

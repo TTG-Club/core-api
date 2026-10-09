@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-09-01-add-character-sheet-version
+      author: Peterko
+      comment: >
+        Версия листа персонажа для оптимистической блокировки. Лист сохраняется целиком,
+        и без версии одновременные правки (две вкладки, хиты от мастера боя) молча
+        затирали друг друга. Существующие листы начинают с нуля.
+      changes:
+        - addColumn:
+            tableName: character_sheet
+            columns:
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: character_sheet
+            columnName: version
