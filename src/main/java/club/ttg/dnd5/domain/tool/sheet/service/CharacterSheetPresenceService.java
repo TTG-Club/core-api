@@ -22,10 +22,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Мягкая блокировка листа: кто держит его открытым на правку. Клиент шлёт отметку, пока лист
- * открыт, и в ответ узнаёт, у кого ещё он открыт, — чтобы предупредить «сейчас редактирует такой-то».
- * Запретов нет: одновременное сохранение и так отсекает версия листа (409), отметка лишь
- * предупреждает заранее.
+ * Совместная правка листа: кто держит его открытым и какая версия сейчас на сервере. Клиент шлёт
+ * отметку, пока лист открыт, и по версии в ответе подтягивает чужие правки, сливая их со своими.
+ * Запретов нет: устаревшее сохранение по-прежнему получает 409, и клиент сливает правки перед
+ * повтором.
  * <p>
  * Отмечаться может тот же круг, что открывает лист на правку: владелец и редакторы с выданным
  * правом. Зрителю по ссылке отметка не нужна — он ничего не меняет.
@@ -47,7 +47,8 @@ public class CharacterSheetPresenceService {
     private final DisplayNameService displayNameService;
 
     /**
-     * Отмечает, что лист открыт у текущего пользователя, и возвращает остальных, у кого он открыт.
+     * Отмечает, что лист открыт у текущего пользователя, и возвращает остальных, у кого он открыт, вместе
+     * с текущей версией листа.
      * Заодно чистит отметки этого листа, которые давно не освежались: ушедшие без прощания (закрытая
      * вкладка, пропавшая сеть) иначе копились бы в таблице.
      */
@@ -61,7 +62,7 @@ public class CharacterSheetPresenceService {
         presenceRepository.upsert(UUID.randomUUID(), sheet.getId(), user.getUuid(), now);
         List<CharacterSheetPresence> others = presenceRepository
                 .findAllBySheetIdAndUserIdNotAndSeenAtAfter(sheet.getId(), user.getUuid(), freshSince);
-        return new CharacterSheetPresenceResponse(toUsers(others));
+        return new CharacterSheetPresenceResponse(toUsers(others), sheet.getVersion());
     }
 
     /**

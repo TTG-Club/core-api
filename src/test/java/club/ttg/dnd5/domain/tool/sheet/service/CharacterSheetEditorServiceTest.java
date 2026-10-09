@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.tool.sheet.model.SavedCharacterSheet;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.SavedCharacterSheetRepository;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditAccessResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditRequestResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditorListResponse;
 import club.ttg.dnd5.domain.user.model.User;
@@ -203,6 +204,34 @@ class CharacterSheetEditorServiceTest {
         when(editorRepository.countPendingForOwner(owner)).thenReturn(3L);
 
         assertEquals(3L, service.countIncoming().getCount());
+    }
+
+    @Test
+    void editAccessListsOnlyRequestedSavedSheets() {
+        UUID requester = authenticate();
+        CharacterSheet requested = sharedSheet(UUID.randomUUID());
+        CharacterSheet untouched = sharedSheet(UUID.randomUUID());
+        SavedCharacterSheet requestedSaved = savedRecord(requester, requested);
+        SavedCharacterSheet untouchedSaved = savedRecord(requester, untouched);
+        when(savedRepository.findAllByUserIdOrderByCreatedAtDesc(requester))
+                .thenReturn(List.of(requestedSaved, untouchedSaved));
+        when(editorRepository.findAllByUserIdAndSheetIdIn(requester, List.of(requested.getId(), untouched.getId())))
+                .thenReturn(List.of(editor(requested, requester, CharacterSheetEditorStatus.APPROVED)));
+
+        List<CharacterSheetEditAccessResponse> sheets = service.findMyEditAccess().getSheets();
+
+        assertEquals(1, sheets.size());
+        assertEquals(requestedSaved.getId(), sheets.getFirst().getSavedId());
+        assertEquals(CharacterSheetEditorStatus.APPROVED, sheets.getFirst().getStatus());
+    }
+
+    @Test
+    void editAccessWithoutSavedSheetsIsEmpty() {
+        UUID requester = authenticate();
+        when(savedRepository.findAllByUserIdOrderByCreatedAtDesc(requester)).thenReturn(List.of());
+
+        assertEquals(0, service.findMyEditAccess().getSheets().size());
+        verify(editorRepository, never()).findAllByUserIdAndSheetIdIn(any(), anyCollection());
     }
 
     private static CharacterSheet sharedSheet(UUID ownerId) {

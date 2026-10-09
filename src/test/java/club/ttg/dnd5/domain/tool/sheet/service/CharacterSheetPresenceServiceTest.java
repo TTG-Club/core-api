@@ -66,6 +66,16 @@ class CharacterSheetPresenceServiceTest {
     }
 
     @Test
+    void heartbeatReturnsCurrentSheetVersion() {
+        User user = authenticate();
+        CharacterSheet sheet = sheet();
+        sheet.setVersion(7);
+        when(sheetService.getEditableActive(sheet.getId(), user)).thenReturn(sheet);
+
+        assertEquals(7, service.heartbeat(sheet.getId()).getVersion());
+    }
+
+    @Test
     void heartbeatAloneReturnsNobodyWithoutResolvingNames() {
         User user = authenticate();
         CharacterSheet sheet = sheet();

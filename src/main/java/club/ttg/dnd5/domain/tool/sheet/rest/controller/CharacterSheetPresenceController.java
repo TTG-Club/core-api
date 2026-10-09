@@ -30,8 +30,8 @@ public class CharacterSheetPresenceController {
 
     private final CharacterSheetPresenceService presenceService;
 
-    @Operation(summary = "Отметить, что лист открыт, и узнать, у кого ещё он открыт. "
-            + "Слать, пока лист открыт: отметка живёт 45 секунд")
+    @Operation(summary = "Отметить, что лист открыт, и узнать, у кого ещё он открыт и какая версия "
+            + "листа на сервере. Слать, пока лист открыт: отметка живёт 45 секунд")
     @PostMapping("/{id}/presence")
     public CharacterSheetPresenceResponse heartbeat(@PathVariable final UUID id) {
         return presenceService.heartbeat(id);

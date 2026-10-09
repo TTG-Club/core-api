@@ -7,6 +7,8 @@ import club.ttg.dnd5.domain.tool.sheet.model.SavedCharacterSheet;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.SavedCharacterSheetRepository;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditAccessListResponse;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditAccessResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditRequestCountResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditRequestResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditorListResponse;
@@ -131,6 +133,30 @@ public class CharacterSheetEditorService {
     public CharacterSheetEditRequestCountResponse countIncoming() {
         User user = SecurityUtils.getUser();
         return new CharacterSheetEditRequestCountResponse(editorRepository.countPendingForOwner(user.getUuid()));
+    }
+
+    /**
+     * Права на редактирование сохранённых листов текущего пользователя — без документов, чтобы
+     * клиент мог часто спрашивать, не ответил ли владелец. Листы, по которым ничего не запрашивали,
+     * в ответ не попадают.
+     */
+    public CharacterSheetEditAccessListResponse findMyEditAccess() {
+        User user = SecurityUtils.getUser();
+        List<SavedCharacterSheet> saved = savedRepository.findAllByUserIdOrderByCreatedAtDesc(user.getUuid());
+        if (saved.isEmpty()) {
+            return new CharacterSheetEditAccessListResponse(List.of());
+        }
+        List<UUID> sheetIds = saved.stream().map(SavedCharacterSheet::getSheetId).toList();
+        Map<UUID, CharacterSheetEditorStatus> statuses = editorRepository
+                .findAllByUserIdAndSheetIdIn(user.getUuid(), sheetIds)
+                .stream()
+                .collect(Collectors.toMap(CharacterSheetEditor::getSheetId, CharacterSheetEditor::getStatus));
+        List<CharacterSheetEditAccessResponse> sheets = saved.stream()
+                .filter(savedSheet -> statuses.containsKey(savedSheet.getSheetId()))
+                .map(savedSheet -> new CharacterSheetEditAccessResponse(savedSheet.getId(),
+                        savedSheet.getSheetId(), savedSheet.getName(), statuses.get(savedSheet.getSheetId())))
+                .toList();
+        return new CharacterSheetEditAccessListResponse(sheets);
     }
 
     private CharacterSheetEditor newRequest(CharacterSheet sheet, User user) {

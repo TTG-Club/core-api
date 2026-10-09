@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.tool.sheet.rest.controller;
 
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditAccessListResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditRequestResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetHitPointsRequest;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetListResponse;
@@ -45,6 +46,13 @@ public class CharacterSheetSavedController {
     @GetMapping
     public SavedCharacterSheetListResponse findMine() {
         return savedSheetService.findMine();
+    }
+
+    @Operation(summary = "Права на редактирование сохранённых листов — лёгкая сводка без документов, "
+            + "чтобы сразу узнать ответ владельца на запрос")
+    @GetMapping("/edit-access")
+    public CharacterSheetEditAccessListResponse findMyEditAccess() {
+        return editorService.findMyEditAccess();
     }
 
     @Operation(summary = "Сохранение чужого листа по токену ссылки: до 16 записей, до 40 при "
