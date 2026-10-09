@@ -34,6 +34,6 @@ public class CharacterSheetEditAccessResponse {
 
     @NotNull
     @Schema(description = "PENDING — ждёт ответа владельца, APPROVED — можно редактировать, "
-            + "DECLINED — отклонено или отозвано")
+            + "DECLINED — отказ из прежних версий; можно сразу попросить снова")
     private CharacterSheetEditorStatus status;
 }

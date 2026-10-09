@@ -47,6 +47,6 @@ public class SavedCharacterSheetResponse {
 
     @Nullable
     @Schema(description = "Право на редактирование листа: null — не запрашивалось, PENDING — ждёт ответа "
-            + "владельца, APPROVED — лист можно редактировать, DECLINED — отклонено или отозвано")
+            + "владельца, APPROVED — лист можно редактировать, DECLINED — отказ из прежних версий; можно сразу попросить снова")
     private CharacterSheetEditorStatus editStatus;
 }

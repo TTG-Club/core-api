@@ -24,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -37,9 +36,8 @@ import java.util.stream.Collectors;
  * <p>
  * Право выдаётся только по запросу. Просить может лишь тот, кто уже сохранил лист по живой ссылке
  * «поделиться», поэтому искать пользователей по логину или почте не нужно и перебирать их некому.
- * Отказ оставляет запись со временем решения: повторный запрос возможен только после паузы, иначе
- * владельца можно было бы засыпать уведомлениями. Отзыв выданного права запись удаляет — это не
- * блокировка, и попросить право заново можно сразу.
+ * Решений у владельца два — разрешить или нет. Отказ и отзыв права запись удаляют: никаких
+ * блокировок и пауз, попросить право заново можно сразу.
  */
 @RequiredArgsConstructor
 @Service
@@ -47,9 +45,6 @@ public class CharacterSheetEditorService {
 
     /** Сколько редакторов может быть у одного листа одновременно. */
     static final int MAX_EDITORS = 5;
-
-    /** Пауза после отказа, до которой повторный запрос не принимается. */
-    static final Duration REQUEST_COOLDOWN = Duration.ofDays(1);
 
     private static final String SAVED_NOT_FOUND_MESSAGE = "Сохранённый лист персонажа не найден";
     private static final String EDITOR_NOT_FOUND_MESSAGE = "Запрос на редактирование не найден";
@@ -63,7 +58,7 @@ public class CharacterSheetEditorService {
     /**
      * Запрос на редактирование листа, сохранённого по ссылке. Отозванная ссылка или удалённый лист —
      * 404, как и при просмотре. Повтор идемпотентен: ждущий запрос не дублируется, выданное право
-     * остаётся. После отказа новый запрос принимается только по истечении {@link #REQUEST_COOLDOWN}.
+     * остаётся. Отказ, оставшийся от прежних версий, сразу превращается в новый запрос.
      */
     @Transactional
     public CharacterSheetEditRequestResponse requestEdit(UUID savedId) {
@@ -76,7 +71,6 @@ public class CharacterSheetEditorService {
         CharacterSheetEditor editor = editorRepository.findBySheetIdAndUserId(sheet.getId(), user.getUuid())
                 .orElseGet(() -> newRequest(sheet, user));
         if (editor.getStatus() == CharacterSheetEditorStatus.DECLINED) {
-            requireCooldownPassed(editor);
             editor.setStatus(CharacterSheetEditorStatus.PENDING);
             editor.setDecidedAt(null);
         }
@@ -115,19 +109,12 @@ public class CharacterSheetEditorService {
 
     /**
      * Отклоняет запрос или отзывает выданное право — для владельца это одно действие «убрать».
-     * Отклонённый запрос остаётся отказом со временем решения: от него отсчитывается пауза до
-     * нового запроса. Отозванное право удаляется целиком: пользователь может попросить его снова.
+     * Запись удаляется целиком: пользователь может попросить право снова, когда захочет.
      */
     @Transactional
     public CharacterSheetEditorListResponse remove(UUID sheetId, UUID editorId) {
         CharacterSheet sheet = getOwnedActive(sheetId);
-        CharacterSheetEditor editor = getEditor(sheet, editorId);
-        if (editor.getStatus() == CharacterSheetEditorStatus.APPROVED) {
-            editorRepository.delete(editor);
-        } else if (editor.getStatus() == CharacterSheetEditorStatus.PENDING) {
-            editor.setStatus(CharacterSheetEditorStatus.DECLINED);
-            editor.setDecidedAt(Instant.now());
-        }
+        editorRepository.delete(getEditor(sheet, editorId));
         return toListResponse(sheet);
     }
 
@@ -169,14 +156,6 @@ public class CharacterSheetEditorService {
         editor.setUserId(user.getUuid());
         editor.setStatus(CharacterSheetEditorStatus.PENDING);
         return editor;
-    }
-
-    private void requireCooldownPassed(CharacterSheetEditor editor) {
-        Instant decidedAt = editor.getDecidedAt();
-        if (decidedAt != null && decidedAt.plus(REQUEST_COOLDOWN).isAfter(Instant.now())) {
-            throw new ApiException(HttpStatus.CONFLICT,
-                    "Владелец отклонил запрос. Повторить его можно через сутки после отказа");
-        }
     }
 
     private CharacterSheetEditor getEditor(CharacterSheet sheet, UUID editorId) {

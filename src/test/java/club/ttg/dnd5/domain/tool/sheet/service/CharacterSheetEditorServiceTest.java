@@ -102,29 +102,12 @@ class CharacterSheetEditorServiceTest {
     }
 
     @Test
-    void requestRightAfterDeclineIsRejected() {
+    void requestAfterOldDeclineIsPendingAgain() {
         UUID requester = authenticate();
         CharacterSheet sheet = sharedSheet(UUID.randomUUID());
         SavedCharacterSheet saved = savedRecord(requester, sheet);
         CharacterSheetEditor editor = editor(sheet, requester, CharacterSheetEditorStatus.DECLINED);
         editor.setDecidedAt(Instant.now().minus(Duration.ofHours(1)));
-        when(savedRepository.findByIdAndUserId(saved.getId(), requester)).thenReturn(Optional.of(saved));
-        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
-        when(editorRepository.findBySheetIdAndUserId(sheet.getId(), requester)).thenReturn(Optional.of(editor));
-
-        ApiException exception = assertThrows(ApiException.class, () -> service.requestEdit(saved.getId()));
-
-        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
-        assertEquals(CharacterSheetEditorStatus.DECLINED, editor.getStatus());
-    }
-
-    @Test
-    void requestAfterCooldownIsPendingAgain() {
-        UUID requester = authenticate();
-        CharacterSheet sheet = sharedSheet(UUID.randomUUID());
-        SavedCharacterSheet saved = savedRecord(requester, sheet);
-        CharacterSheetEditor editor = editor(sheet, requester, CharacterSheetEditorStatus.DECLINED);
-        editor.setDecidedAt(Instant.now().minus(Duration.ofDays(2)));
         when(savedRepository.findByIdAndUserId(saved.getId(), requester)).thenReturn(Optional.of(saved));
         when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
         when(editorRepository.findBySheetIdAndUserId(sheet.getId(), requester)).thenReturn(Optional.of(editor));
@@ -185,7 +168,7 @@ class CharacterSheetEditorServiceTest {
     }
 
     @Test
-    void removeRevokesRightWithoutCooldown() {
+    void removeRevokesRightWithoutBlocking() {
         UUID owner = authenticate();
         CharacterSheet sheet = sharedSheet(owner);
         CharacterSheetEditor editor = editor(sheet, UUID.randomUUID(), CharacterSheetEditorStatus.APPROVED);
@@ -195,11 +178,10 @@ class CharacterSheetEditorServiceTest {
         service.remove(sheet.getId(), editor.getId());
 
         verify(editorRepository).delete(editor);
-        assertEquals(CharacterSheetEditorStatus.APPROVED, editor.getStatus());
     }
 
     @Test
-    void removeDeclinesPendingRequestAndStartsCooldown() {
+    void removeDeclinesPendingRequestWithoutBlocking() {
         UUID owner = authenticate();
         CharacterSheet sheet = sharedSheet(owner);
         CharacterSheetEditor editor = editor(sheet, UUID.randomUUID(), CharacterSheetEditorStatus.PENDING);
@@ -208,9 +190,7 @@ class CharacterSheetEditorServiceTest {
 
         service.remove(sheet.getId(), editor.getId());
 
-        assertEquals(CharacterSheetEditorStatus.DECLINED, editor.getStatus());
-        assertNotNull(editor.getDecidedAt());
-        verify(editorRepository, never()).delete(editor);
+        verify(editorRepository).delete(editor);
     }
 
     @Test
