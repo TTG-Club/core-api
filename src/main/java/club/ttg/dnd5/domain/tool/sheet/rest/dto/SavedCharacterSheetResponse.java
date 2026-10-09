@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.tool.sheet.rest.dto;
 
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditorStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
@@ -43,4 +44,9 @@ public class SavedCharacterSheetResponse {
 
     @Schema(description = "Лист всё ещё открыт по этой ссылке: не удалён и токен не отозван")
     private boolean available;
+
+    @Nullable
+    @Schema(description = "Право на редактирование листа: null — не запрашивалось, PENDING — ждёт ответа "
+            + "владельца, APPROVED — лист можно редактировать, DECLINED — отклонено или отозвано")
+    private CharacterSheetEditorStatus editStatus;
 }

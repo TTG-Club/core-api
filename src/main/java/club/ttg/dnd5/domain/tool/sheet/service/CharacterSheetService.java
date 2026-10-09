@@ -1,6 +1,9 @@
 package club.ttg.dnd5.domain.tool.sheet.service;
 
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditor;
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditorStatus;
+import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetListResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetPublicResponse;
@@ -19,11 +22,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Листы персонажей: CRUD с владением по uuid пользователя из JWT, лимитом активных листов
  * и мягким удалением с восстановлением. Содержимое листа — непрозрачный для сервера JSON.
+ * <p>
+ * Открыть и сохранить лист может и редактор, которому владелец дал право
+ * ({@link CharacterSheetEditorService}); удаление, восстановление и ссылка — только у владельца.
  */
 @RequiredArgsConstructor
 @Service
@@ -42,6 +50,7 @@ public class CharacterSheetService {
             "Лист персонажа уже изменили в другом месте — загрузите актуальную версию";
 
     private final CharacterSheetRepository sheetRepository;
+    private final CharacterSheetEditorRepository editorRepository;
     private final CharacterSheetMapper sheetMapper;
     private final CharacterSheetLimits sheetLimits;
 
@@ -83,13 +92,21 @@ public class CharacterSheetService {
                 ? sheetRepository.findAllByUserIdOrderByCreatedAtDesc(user.getUuid())
                 : sheetRepository.findAllByUserIdAndDeletedFalseOrderByCreatedAtDesc(user.getUuid());
         long activeCount = sheets.stream().filter(sheet -> !sheet.isDeleted()).count();
+        List<CharacterSheetResponse> responses = sheetMapper.toListItemResponseList(sheets);
+        Map<UUID, Long> pendingRequests = countPendingEditRequests(sheets);
+        responses.forEach(response -> response.setPendingEditRequests(
+                pendingRequests.getOrDefault(response.getId(), 0L).intValue()));
         return new CharacterSheetListResponse(limits.activeSheets(), subscriberLimits.activeSheets(),
                 limits.deletedHistory(), subscriberLimits.deletedHistory(),
-                (int) activeCount, sheetMapper.toListItemResponseList(sheets));
+                (int) activeCount, responses);
     }
 
+    /**
+     * Лист целиком — владельцу или редактору, которому владелец дал право.
+     */
     public CharacterSheetResponse findById(UUID sheetId) {
-        return sheetMapper.toResponse(getOwnedActive(sheetId));
+        User user = SecurityUtils.getUser();
+        return toAccessibleResponse(getEditableActive(sheetId, user), user);
     }
 
     /**
@@ -101,7 +118,8 @@ public class CharacterSheetService {
      */
     @Transactional
     public CharacterSheetResponse update(UUID sheetId, CharacterSheetRequest request) {
-        CharacterSheet sheet = getOwnedActive(sheetId);
+        User user = SecurityUtils.getUser();
+        CharacterSheet sheet = getEditableActive(sheetId, user);
         if (request.getVersion() != null && request.getVersion() != sheet.getVersion()) {
             throw new ApiException(HttpStatus.CONFLICT, VERSION_CONFLICT_MESSAGE);
         }
@@ -113,7 +131,7 @@ public class CharacterSheetService {
         }
         // Флаш сразу: версию увеличивает Hibernate при UPDATE, без него в ответе была бы прежняя,
         // и следующее сохранение клиента получило бы ложный конфликт.
-        return sheetMapper.toResponse(sheetRepository.saveAndFlush(sheet));
+        return toAccessibleResponse(sheetRepository.saveAndFlush(sheet), user);
     }
 
     /**
@@ -164,10 +182,15 @@ public class CharacterSheetService {
     /**
      * Отзывает доступ по ссылке: выданная ранее ссылка перестаёт открываться немедленно
      * и навсегда — повторное «поделиться» выдаст новый токен. Повторный отзыв безопасен.
+     * <p>
+     * Вместе со ссылкой снимаются права редакторов и неотвеченные запросы: у владельца один
+     * рубильник «закрыть всё», и редактор не остаётся в листе, который владелец считает закрытым.
      */
     @Transactional
     public void revokeShare(UUID sheetId) {
-        getOwnedActive(sheetId).setShareToken(null);
+        CharacterSheet sheet = getOwnedActive(sheetId);
+        sheet.setShareToken(null);
+        editorRepository.deleteAllBySheetId(sheet.getId());
     }
 
     /**
@@ -228,7 +251,9 @@ public class CharacterSheetService {
         List<CharacterSheet> deleted = sheetRepository
                 .findAllByUserIdAndDeletedTrueOrderByUpdatedAtDesc(user.getUuid());
         if (deleted.size() > keep) {
-            sheetRepository.deleteAll(deleted.subList(keep, deleted.size()));
+            List<CharacterSheet> evicted = deleted.subList(keep, deleted.size());
+            editorRepository.deleteAllBySheetIdIn(evicted.stream().map(CharacterSheet::getId).toList());
+            sheetRepository.deleteAll(evicted);
         }
     }
 
@@ -239,6 +264,53 @@ public class CharacterSheetService {
         return sheet;
     }
 
+    /**
+     * Активный лист, который пользователь может открыть и сохранить: свой или тот, на который
+     * владелец дал ему право. Остальное — 403, как и раньше для чужого листа: загрузчик клиента по
+     * этому ответу решает, перечитывать ли лист администраторской ручкой.
+     */
+    private CharacterSheet getEditableActive(UUID sheetId, User user) {
+        CharacterSheet sheet = getActive(sheetId);
+        if (!isOwner(sheet, user) && !isApprovedEditor(sheet, user)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Доступ к листу персонажа запрещен");
+        }
+        return sheet;
+    }
+
+    /**
+     * Ответ с листом с учётом того, кто его открыл. Редактору токен ссылки не отдаётся: управлять
+     * доступом может только владелец, а по токену редактор раздал бы лист дальше.
+     */
+    private CharacterSheetResponse toAccessibleResponse(CharacterSheet sheet, User user) {
+        CharacterSheetResponse response = sheetMapper.toResponse(sheet);
+        if (!isOwner(sheet, user)) {
+            response.setShareToken(null);
+            response.setEditor(true);
+        }
+        return response;
+    }
+
+    private boolean isApprovedEditor(CharacterSheet sheet, User user) {
+        return editorRepository.existsBySheetIdAndUserIdAndStatus(
+                sheet.getId(), user.getUuid(), CharacterSheetEditorStatus.APPROVED);
+    }
+
+    /**
+     * Неотвеченные запросы по активным листам одним запросом: метка на карточке нужна списку сразу.
+     */
+    private Map<UUID, Long> countPendingEditRequests(List<CharacterSheet> sheets) {
+        List<UUID> activeIds = sheets.stream()
+                .filter(sheet -> !sheet.isDeleted())
+                .map(CharacterSheet::getId)
+                .toList();
+        if (activeIds.isEmpty()) {
+            return Map.of();
+        }
+        return editorRepository.findAllBySheetIdInAndStatus(activeIds, CharacterSheetEditorStatus.PENDING)
+                .stream()
+                .collect(Collectors.groupingBy(CharacterSheetEditor::getSheetId, Collectors.counting()));
+    }
+
     private CharacterSheet getActive(UUID sheetId) {
         return sheetRepository.findById(sheetId)
                 .filter(found -> !found.isDeleted())
@@ -246,8 +318,12 @@ public class CharacterSheetService {
                         String.format("Лист персонажа с id %s не существует", sheetId)));
     }
 
+    private boolean isOwner(CharacterSheet sheet, User user) {
+        return sheet.getUserId().equals(user.getUuid());
+    }
+
     private void requireOwner(CharacterSheet sheet, User user) {
-        if (!sheet.getUserId().equals(user.getUuid())) {
+        if (!isOwner(sheet, user)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Доступ к листу персонажа запрещен");
         }
     }

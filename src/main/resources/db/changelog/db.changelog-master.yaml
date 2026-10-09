@@ -371,3 +371,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/06-01-drop-link-image-url.yaml
   - include:
       file: db/changelog/2026/10/09-01-add-character-sheet-version.yaml
+  - include:
+      file: db/changelog/2026/10/09-02-create-character-sheet-editor-table.yaml

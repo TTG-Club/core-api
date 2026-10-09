@@ -1,7 +1,10 @@
 package club.ttg.dnd5.domain.tool.sheet.service;
 
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditor;
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditorStatus;
 import club.ttg.dnd5.domain.tool.sheet.model.SavedCharacterSheet;
+import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.SavedCharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetListResponse;
@@ -44,9 +47,10 @@ class SavedCharacterSheetServiceTest {
 
     private final SavedCharacterSheetRepository savedRepository = mock(SavedCharacterSheetRepository.class);
     private final CharacterSheetRepository sheetRepository = mock(CharacterSheetRepository.class);
+    private final CharacterSheetEditorRepository editorRepository = mock(CharacterSheetEditorRepository.class);
     private final CharacterSheetLimits sheetLimits = mock(CharacterSheetLimits.class);
     private final SavedCharacterSheetService service =
-            new SavedCharacterSheetService(savedRepository, sheetRepository, sheetLimits);
+            new SavedCharacterSheetService(savedRepository, sheetRepository, editorRepository, sheetLimits);
 
     @BeforeEach
     void withoutSubscriptionByDefault() {
@@ -270,6 +274,61 @@ class SavedCharacterSheetServiceTest {
         assertThrows(EntityNotFoundException.class, () -> service.delete(savedId));
 
         verify(savedRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteDropsPendingOrApprovedEditRight() {
+        UUID user = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        SavedCharacterSheet saved = savedRecord(user, sheet);
+        CharacterSheetEditor editor = editRight(sheet, user, CharacterSheetEditorStatus.APPROVED);
+        when(savedRepository.findByIdAndUserId(saved.getId(), user)).thenReturn(Optional.of(saved));
+        when(editorRepository.findBySheetIdAndUserId(sheet.getId(), user)).thenReturn(Optional.of(editor));
+
+        service.delete(saved.getId());
+
+        verify(editorRepository).delete(editor);
+        verify(savedRepository).delete(saved);
+    }
+
+    @Test
+    void deleteKeepsDeclineSoCooldownCannotBeBypassed() {
+        UUID user = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        SavedCharacterSheet saved = savedRecord(user, sheet);
+        CharacterSheetEditor editor = editRight(sheet, user, CharacterSheetEditorStatus.DECLINED);
+        when(savedRepository.findByIdAndUserId(saved.getId(), user)).thenReturn(Optional.of(saved));
+        when(editorRepository.findBySheetIdAndUserId(sheet.getId(), user)).thenReturn(Optional.of(editor));
+
+        service.delete(saved.getId());
+
+        // Иначе «удалить и сохранить заново» обходило бы паузу до повторного запроса
+        verify(editorRepository, never()).delete(any());
+    }
+
+    @Test
+    void findMineReportsEditStatus() {
+        UUID user = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        SavedCharacterSheet saved = savedRecord(user, sheet);
+        when(savedRepository.findAllByUserIdOrderByCreatedAtDesc(user)).thenReturn(List.of(saved));
+        when(sheetRepository.findAllById(List.of(sheet.getId()))).thenReturn(List.of(sheet));
+        when(editorRepository.findAllByUserIdAndSheetIdIn(user, List.of(sheet.getId())))
+                .thenReturn(List.of(editRight(sheet, user, CharacterSheetEditorStatus.PENDING)));
+
+        SavedCharacterSheetListResponse response = service.findMine();
+
+        assertEquals(CharacterSheetEditorStatus.PENDING, response.getSheets().getFirst().getEditStatus());
+    }
+
+    private static CharacterSheetEditor editRight(CharacterSheet sheet, UUID userId,
+                                                  CharacterSheetEditorStatus status) {
+        CharacterSheetEditor editor = new CharacterSheetEditor();
+        editor.setId(UUID.randomUUID());
+        editor.setSheetId(sheet.getId());
+        editor.setUserId(userId);
+        editor.setStatus(status);
+        return editor;
     }
 
     private static CharacterSheet sharedSheet() {

@@ -38,6 +38,14 @@ public class CharacterSheetResponse {
             + "Отдаётся только владельцу листа")
     private UUID shareToken;
 
+    @Schema(description = "Лист открыт редактором, которому владелец дал право, а не самим владельцем: "
+            + "удаление, ссылка и раздача прав ему недоступны")
+    private boolean editor;
+
+    @Schema(description = "Неотвеченные запросы на редактирование листа; заполняется только в списке "
+            + "листов владельца")
+    private int pendingEditRequests;
+
     @Schema(description = "Версия листа: её клиент присылает при сохранении, чтобы не затереть "
             + "правку, сделанную в другом месте")
     private long version;

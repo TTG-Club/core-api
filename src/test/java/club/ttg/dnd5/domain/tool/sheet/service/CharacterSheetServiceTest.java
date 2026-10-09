@@ -1,10 +1,13 @@
 package club.ttg.dnd5.domain.tool.sheet.service;
 
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditorStatus;
+import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetListResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetPublicResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetRequest;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetShareResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.mapper.CharacterSheetMapper;
 import club.ttg.dnd5.domain.user.model.User;
@@ -45,10 +48,11 @@ class CharacterSheetServiceTest {
     private static final SheetLimits SUBSCRIBER_LIMITS = new SheetLimits(20, 40, 30, 30);
 
     private final CharacterSheetRepository sheetRepository = mock(CharacterSheetRepository.class);
+    private final CharacterSheetEditorRepository editorRepository = mock(CharacterSheetEditorRepository.class);
     private final CharacterSheetMapper sheetMapper = mock(CharacterSheetMapper.class);
     private final CharacterSheetLimits sheetLimits = mock(CharacterSheetLimits.class);
     private final CharacterSheetService service =
-            new CharacterSheetService(sheetRepository, sheetMapper, sheetLimits);
+            new CharacterSheetService(sheetRepository, editorRepository, sheetMapper, sheetLimits);
 
     @BeforeEach
     void withoutSubscriptionByDefault() {
@@ -221,6 +225,74 @@ class CharacterSheetServiceTest {
     }
 
     @Test
+    void approvedEditorOpensSheetWithoutShareToken() {
+        CharacterSheet sheet = sheet(UUID.randomUUID());
+        sheet.setShareToken(UUID.randomUUID());
+        UUID editor = authenticate();
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        when(editorRepository.existsBySheetIdAndUserIdAndStatus(
+                sheet.getId(), editor, CharacterSheetEditorStatus.APPROVED)).thenReturn(true);
+        when(sheetMapper.toResponse(sheet)).thenReturn(response(sheet));
+
+        CharacterSheetResponse response = service.findById(sheet.getId());
+
+        assertTrue(response.isEditor());
+        // По токену редактор раздал бы лист дальше — доступом управляет только владелец
+        assertNull(response.getShareToken());
+    }
+
+    @Test
+    void approvedEditorSavesSheet() {
+        CharacterSheet sheet = sheet(UUID.randomUUID());
+        UUID editor = authenticate();
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        when(editorRepository.existsBySheetIdAndUserIdAndStatus(
+                sheet.getId(), editor, CharacterSheetEditorStatus.APPROVED)).thenReturn(true);
+        when(sheetRepository.saveAndFlush(sheet)).thenReturn(sheet);
+        when(sheetMapper.toResponse(sheet)).thenReturn(response(sheet));
+
+        service.update(sheet.getId(), updateRequest("Леголас", null));
+
+        assertEquals("Леголас", sheet.getName());
+    }
+
+    @Test
+    void userWithoutRightCannotOpenForeignSheet() {
+        authenticate();
+        CharacterSheet foreign = sheet(UUID.randomUUID());
+        when(sheetRepository.findById(foreign.getId())).thenReturn(Optional.of(foreign));
+
+        ApiException exception = assertThrows(ApiException.class, () -> service.findById(foreign.getId()));
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+    }
+
+    @Test
+    void editorCannotShareSheet() {
+        CharacterSheet sheet = sheet(UUID.randomUUID());
+        UUID editor = authenticate();
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+        when(editorRepository.existsBySheetIdAndUserIdAndStatus(
+                sheet.getId(), editor, CharacterSheetEditorStatus.APPROVED)).thenReturn(true);
+
+        ApiException exception = assertThrows(ApiException.class, () -> service.share(sheet.getId()));
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+    }
+
+    @Test
+    void revokeShareRemovesEditors() {
+        UUID owner = authenticate();
+        CharacterSheet sheet = sheet(owner);
+        sheet.setShareToken(UUID.randomUUID());
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        service.revokeShare(sheet.getId());
+
+        verify(editorRepository).deleteAllBySheetId(sheet.getId());
+    }
+
+    @Test
     void findSharedReturnsSheetToAnonymousViewer() {
         CharacterSheet sheet = sheet(UUID.randomUUID());
         UUID token = UUID.randomUUID();
@@ -293,6 +365,13 @@ class CharacterSheetServiceTest {
         CharacterSheetRequest request = new CharacterSheetRequest();
         request.setData(JsonNodeFactory.instance.objectNode());
         return request;
+    }
+
+    private static CharacterSheetResponse response(CharacterSheet sheet) {
+        CharacterSheetResponse response = new CharacterSheetResponse();
+        response.setId(sheet.getId());
+        response.setShareToken(sheet.getShareToken());
+        return response;
     }
 
     private static CharacterSheetRequest updateRequest(String name, Long version) {
