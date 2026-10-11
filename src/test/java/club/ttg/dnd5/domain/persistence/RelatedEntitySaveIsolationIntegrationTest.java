@@ -2,6 +2,8 @@ package club.ttg.dnd5.domain.persistence;
 
 import club.ttg.dnd5.PortalApplication;
 import club.ttg.dnd5.domain.background.repository.BackgroundRepository;
+import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.background.rest.dto.BackgroundRequest;
 import club.ttg.dnd5.domain.background.service.BackgroundService;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
@@ -97,6 +99,8 @@ class RelatedEntitySaveIsolationIntegrationTest {
     @Autowired
     SpellRepository spellRepository;
     @Autowired
+    CreatureRepository creatureRepository;
+    @Autowired
     BackgroundRepository backgroundRepository;
     @Autowired
     SourceRepository sourceRepository;
@@ -124,6 +128,7 @@ class RelatedEntitySaveIsolationIntegrationTest {
 
         backgroundRepository.deleteAll();
         spellRepository.deleteAll();
+        creatureRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();
         featRepository.deleteAll();
@@ -196,6 +201,29 @@ class RelatedEntitySaveIsolationIntegrationTest {
         userRepository.saveAndFlush(user);
 
         assertThat(statistics.getEntityStatistics(Role.class.getName()).getUpdateCount()).isZero();
+    }
+
+    @Test
+    void readOnlyCreatureLookupIsNotFlushedBack() {
+        Source source = saveSource("creature-source");
+        Creature creature = new Creature();
+        creature.setUrl("creature-read-only");
+        creature.setName("creature-read-only name");
+        creature.setEnglish("creature-read-only english");
+        creature.setSource(source);
+        creatureRepository.saveAndFlush(creature);
+        entityManager.clear();
+        statistics.clear();
+
+        // Трекер грузит существо в пишущей транзакции: изменение (в т.ч. «ложное» в jsonb) не должно уйти в БД
+        Creature loaded = creatureRepository.findReadOnlyByUrl("creature-read-only").orElseThrow();
+        loaded.setName("changed");
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(statistics.getEntityStatistics(Creature.class.getName()).getUpdateCount()).isZero();
+        assertThat(creatureRepository.findById("creature-read-only").orElseThrow().getName())
+                .isEqualTo("creature-read-only name");
     }
 
     private void assertNoUpdatesForRelatedEntities() {

@@ -304,7 +304,8 @@ public class InitiativeTrackerService {
         }
         int count = request.getCount() != null ? request.getCount() : 1;
         validateCreatureLimit(tracker.getId(), count);
-        Creature creature = creatureRepository.findById(request.getCreatureUrl())
+        // Только чтение: трекер не должен обновлять бестиарий (dirty-check jsonb-полей двигал updated_at).
+        Creature creature = creatureRepository.findReadOnlyByUrl(request.getCreatureUrl())
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Существо с URL: %s не существует", request.getCreatureUrl())));
 

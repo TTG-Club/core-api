@@ -205,7 +205,7 @@ class InitiativeTrackerServiceTest {
         when(participantRepository.findAllByTrackerId(tracker.getId())).thenReturn(List.of(
                 creatureParticipant("Гоблин 1", "goblin", 5),
                 creatureParticipant("Гоблин 3", "goblin", 7)));
-        when(creatureRepository.findById("goblin")).thenReturn(Optional.of(goblin()));
+        when(creatureRepository.findReadOnlyByUrl("goblin")).thenReturn(Optional.of(goblin()));
 
         ParticipantAddRequest request = new ParticipantAddRequest();
         request.setType(ParticipantType.CREATURE);

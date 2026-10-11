@@ -2,19 +2,32 @@ package club.ttg.dnd5.domain.beastiary.repository;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.vttg.repository.VttgEntityRef;
+import jakarta.persistence.QueryHint;
+import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CreatureRepository extends JpaRepository<Creature, String> {
+    /**
+     * Существо только для чтения: Hibernate не делает ему dirty-check, поэтому загрузка в пишущей
+     * транзакции чужого домена (трекер инициативы) не выпустит UPDATE bestiary и не сдвинет updated_at —
+     * иначе существо всплывает в «Последних обновлениях» без ревизии.
+     */
+    @QueryHints(@QueryHint(name = HibernateHints.HINT_READ_ONLY, value = "true"))
+    @Query("select c from Creature c where c.url = :url")
+    Optional<Creature> findReadOnlyByUrl(@Param("url") String url);
+
     @Query(value = """
             select b from Creature b
             where b.name ilike concat('%', :searchLine, '%')
