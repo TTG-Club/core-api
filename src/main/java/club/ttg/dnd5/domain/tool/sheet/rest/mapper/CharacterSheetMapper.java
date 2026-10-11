@@ -15,6 +15,8 @@ import java.util.List;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.ERROR, componentModel = "spring")
 public interface CharacterSheetMapper {
 
+    @Mapping(target = "editor", ignore = true)
+    @Mapping(target = "pendingEditRequests", ignore = true)
     CharacterSheetResponse toResponse(CharacterSheet sheet);
 
     /**
@@ -22,6 +24,8 @@ public interface CharacterSheetMapper {
      * название и даты, а полный JSON вернётся после восстановления).
      */
     @Named("listItem")
+    @Mapping(target = "editor", ignore = true)
+    @Mapping(target = "pendingEditRequests", ignore = true)
     @Mapping(target = "data", expression = "java(sheet.isDeleted() ? null : sheet.getData())")
     CharacterSheetResponse toListItemResponse(CharacterSheet sheet);
 

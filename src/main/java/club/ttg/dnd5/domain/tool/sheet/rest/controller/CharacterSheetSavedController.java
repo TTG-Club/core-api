@@ -1,9 +1,12 @@
 package club.ttg.dnd5.domain.tool.sheet.rest.controller;
 
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditAccessListResponse;
+import club.ttg.dnd5.domain.tool.sheet.rest.dto.CharacterSheetEditRequestResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetHitPointsRequest;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetListResponse;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetRequest;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetResponse;
+import club.ttg.dnd5.domain.tool.sheet.service.CharacterSheetEditorService;
 import club.ttg.dnd5.domain.tool.sheet.service.SavedCharacterSheetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,12 +39,20 @@ import java.util.UUID;
 public class CharacterSheetSavedController {
 
     private final SavedCharacterSheetService savedSheetService;
+    private final CharacterSheetEditorService editorService;
 
     @Operation(summary = "Сохранённые ссылки текущего пользователя с лимитом; "
             + "у листов, к которым доступ закрыт, data = null и available = false")
     @GetMapping
     public SavedCharacterSheetListResponse findMine() {
         return savedSheetService.findMine();
+    }
+
+    @Operation(summary = "Права на редактирование сохранённых листов — лёгкая сводка без документов, "
+            + "чтобы сразу узнать ответ владельца на запрос")
+    @GetMapping("/edit-access")
+    public CharacterSheetEditAccessListResponse findMyEditAccess() {
+        return editorService.findMyEditAccess();
     }
 
     @Operation(summary = "Сохранение чужого листа по токену ссылки: до 16 записей, до 40 при "
@@ -61,7 +72,15 @@ public class CharacterSheetSavedController {
         savedSheetService.updateCurrentHitPoints(id, request.getCurrent());
     }
 
-    @Operation(summary = "Удаление сохранённой ссылки")
+    @Operation(summary = "Запрос владельцу на редактирование сохранённого листа. Повтор не дублирует "
+            + "запрос; после отказа или отзыва — 409 в течение суток. Отозванная ссылка — 404")
+    @PostMapping("/{id}/edit-request")
+    public CharacterSheetEditRequestResponse requestEdit(@PathVariable final UUID id) {
+        return editorService.requestEdit(id);
+    }
+
+    @Operation(summary = "Удаление сохранённой ссылки; ждущий запрос и право на редактирование "
+            + "уходят вместе с ней")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable final UUID id) {
         savedSheetService.delete(id);
