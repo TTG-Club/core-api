@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OnlineUserService
@@ -36,14 +37,19 @@ public class OnlineUserService
                 .build();
     }
 
-    public HeartbeatResponse heartbeat(OnlineType type, String key, String previousGuestKey)
+    public HeartbeatResponse heartbeat(
+            OnlineType type,
+            String key,
+            String previousGuestKey,
+            Map<String, String> preferences
+    )
     {
         try
         {
             HeartbeatResponse response = restClient.post()
                     .uri("/api/v1/online/heartbeat")
                     .headers(this::addServiceHeaders)
-                    .body(new HeartbeatRequest(properties.getSiteId(), key, previousGuestKey, type))
+                    .body(new HeartbeatRequest(properties.getSiteId(), key, previousGuestKey, type, preferences))
                     .retrieve()
                     .body(HeartbeatResponse.class);
 
@@ -143,7 +149,13 @@ public class OnlineUserService
         return new ResponseStatusException(status, "Online service request failed", ex);
     }
 
-    public record HeartbeatRequest(String siteId, String key, String previousGuestKey, OnlineType type) {}
+    public record HeartbeatRequest(
+            String siteId,
+            String key,
+            String previousGuestKey,
+            OnlineType type,
+            Map<String, String> preferences
+    ) {}
 
     public record HeartbeatResponse(long total) {}
 
@@ -152,8 +164,24 @@ public class OnlineUserService
      *                зарегистрированных, поэтому в {@code total} оно не складывается. Поле
      *                отдаёт только online-service, и мы обязаны его пронести дальше: без него
      *                админка не отличит «никто не играет» от «числа нет».
+     * @param preferences чем пользуются посетители сайта (тема, ширина сайта) за разные периоды.
+     *                    Без этого поля срезы не дошли бы до админки.
      */
-    public record OnlineStatsResponse(long windowMinutes, String siteId, long guests, long registered, long players, long total) {}
+    public record OnlineStatsResponse(
+            long windowMinutes,
+            String siteId,
+            long guests,
+            long registered,
+            long players,
+            long total,
+            List<PreferencePeriodStats> preferences
+    ) {}
+
+    /**
+     * @param days        за сколько последних суток (включая сегодня) посчитаны посетители
+     * @param preferences имя настройки - значение - число уникальных посетителей
+     */
+    public record PreferencePeriodStats(int days, Map<String, Map<String, Long>> preferences) {}
 
     public record OnlineCount(long guests, long registered, long players, long total) {}
 

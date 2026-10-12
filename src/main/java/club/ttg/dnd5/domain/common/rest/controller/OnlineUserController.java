@@ -46,7 +46,8 @@ public class OnlineUserController
             OnlineUserService.HeartbeatResponse response = service.heartbeat(
                     request.type(),
                     request.key(),
-                    request.previousGuestKey()
+                    request.previousGuestKey(),
+                    request.preferences()
             );
 
             return ResponseEntity.ok(response);
@@ -58,7 +59,8 @@ public class OnlineUserController
             OnlineUserService.HeartbeatResponse response = service.heartbeat(
                     OnlineType.REGISTERED,
                     userKey,
-                    visitorId
+                    visitorId,
+                    null
             );
 
             return ResponseEntity.ok(response);
@@ -71,6 +73,7 @@ public class OnlineUserController
         OnlineUserService.HeartbeatResponse response = service.heartbeat(
                 OnlineType.GUEST,
                 ensuredVisitorId,
+                null,
                 null
         );
 
@@ -138,6 +141,13 @@ public class OnlineUserController
             String previousGuestKey,
 
             @NotNull
-            OnlineType type
+            OnlineType type,
+
+            /*
+             * Настройки отображения посетителя (тема, ширина сайта) для статистики в админке.
+             * Не обязательны: online-service сам отбросит то, что не отслеживает.
+             */
+            @Size(max = 8)
+            Map<String, String> preferences
     ) {}
 }
