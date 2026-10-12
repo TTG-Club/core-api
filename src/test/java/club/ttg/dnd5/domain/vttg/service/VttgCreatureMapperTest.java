@@ -420,6 +420,51 @@ class VttgCreatureMapperTest {
         assertEquals(30, mappedArea.get("size"));
     }
 
+    /** Автопопадание снимает бросок атаки и спасбросок: урон идёт сразу. */
+    @Test
+    void autoHitReplacesAttackBonusAndSave() {
+        Creature creature = creature("will-o-wisp-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Разряд");
+        action.setDescription("[\"Цель получает урон электричеством.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAutoHit(true);
+        effect.setAttackBonus(4);
+        effect.setSavingThrows(List.of(savingThrow(Ability.DEXTERITY, 12)));
+        effect.setDamageParts(List.of(damagePart("2к8@dmg.lightning")));
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(true, mapped.get("autoHit"));
+        assertNull(mapped.get("attackBonus"));
+        assertNull(mapped.get("saveType"));
+        assertNull(mapped.get("saveDC"));
+        assertEquals(1, ((List<?>) mapped.get("damageParts")).size());
+    }
+
+    /** Без автопопадания флаг в выгрузку не идёт. */
+    @Test
+    void skipsAutoHitWhenNotSet() {
+        Creature creature = creature("goblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Скимитар");
+        action.setDescription("[\"Рукопашная атака.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAutoHit(false);
+        effect.setAttackBonus(4);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertNull(mapped.get("autoHit"));
+        assertEquals(4, mapped.get("attackBonus"));
+    }
+
     /**
      * Пустой объект области форма мастерской шлёт у КАЖДОЙ записи, а размер на ней
      * необязателен: шаблон нулевого размера на столе бесполезен.
