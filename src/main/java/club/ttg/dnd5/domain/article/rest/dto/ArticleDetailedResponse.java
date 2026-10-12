@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -71,6 +72,10 @@ public class ArticleDetailedResponse {
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String preview;
+
+    @NotNull
+    @Schema(description = "Теги записи, по алфавиту")
+    private List<String> tags;
 
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Текст статьи / новости")

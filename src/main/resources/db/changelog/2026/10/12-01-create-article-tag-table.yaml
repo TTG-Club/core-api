@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-12-01-create-article-tag-table
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Теги статей / новостей (лор, механика, местность и т.д.) для фильтрации в листинге.
+      changes:
+        - createTable:
+            tableName: article_tag
+            columns:
+              - column:
+                  name: article_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_article_tag
+                    foreignKeyName: fk_article_tag_article
+                    references: article(id)
+                    deleteCascade: true
+              - column:
+                  name: tag
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_article_tag
+        # Фильтр листинга ищет записи по тегу.
+        - createIndex:
+            columns:
+              - column:
+                  name: tag
+            indexName: article_tag_tag_index
+            tableName: article_tag
