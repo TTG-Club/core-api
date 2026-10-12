@@ -10,6 +10,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 @AllArgsConstructor
 @Service
 public class RatingService {
@@ -38,6 +42,20 @@ public class RatingService {
     public RatingResponse getRating(final String section, final String url) {
         var ratingStats = ratingRepository.getRating(section, url);
         return  ratingMapper.toResponse(ratingStats);
+    }
+
+    /**
+     * Рейтинги нескольких записей раздела одним запросом: url → рейтинг. Записям без оценок — нулевой рейтинг.
+     */
+    public Map<String, RatingResponse> getRatings(final String section, final Collection<String> urls) {
+        Map<String, RatingResponse> ratings = new HashMap<>();
+        if (urls.isEmpty()) {
+            return ratings;
+        }
+        ratingRepository.getRatings(section, urls)
+                .forEach(stats -> ratings.put(stats.getUrl(), ratingMapper.toResponse(stats)));
+        urls.forEach(url -> ratings.computeIfAbsent(url, ignored -> new RatingResponse()));
+        return ratings;
     }
 
     public String getCurrentUsername() {

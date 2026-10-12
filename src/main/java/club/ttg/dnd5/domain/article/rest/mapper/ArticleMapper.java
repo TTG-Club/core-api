@@ -33,6 +33,7 @@ public interface ArticleMapper {
     @Mapping(target = "vkPostId", ignore = true)
     @Mapping(target = "vkAttachment", ignore = true)
     @Mapping(target = "vkDirty", ignore = true)
+    @Mapping(target = "tags", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     Article toEntity(ArticleRequest article);
 
@@ -53,6 +54,7 @@ public interface ArticleMapper {
     @Mapping(target = "vkPostId", ignore = true)
     @Mapping(target = "vkAttachment", ignore = true)
     @Mapping(target = "vkDirty", ignore = true)
+    @Mapping(target = "tags", ignore = true)
     @BaseMapping.TimestampedMappingIgnore
     void updateEntity(@MappingTarget Article article, ArticleRequest articleRequest);
 
@@ -64,6 +66,7 @@ public interface ArticleMapper {
 
     @Mapping(source = "type.name", target = "typeName")
     @Mapping(source = "status.name", target = "statusName")
+    @Mapping(target = "rating", ignore = true)
     ArticleShortResponse toShortResponse(Article article);
 
     List<ArticleShortResponse> toShortResponseList(Collection<Article> articles);

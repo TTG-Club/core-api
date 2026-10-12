@@ -1,22 +1,30 @@
 package club.ttg.dnd5.domain.article.model;
 
 import club.ttg.dnd5.domain.common.model.Timestamped;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -231,6 +239,17 @@ public class Article extends Timestamped {
      */
     @Column(nullable = false)
     private boolean vkDirty;
+
+    /**
+     * Теги записи (лор, механика, местность и т.д.) — произвольный набор для фильтрации в листинге.
+     * Хранятся нормализованными (см. {@link ArticleTags#normalize}), отдаются по алфавиту.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "article_tag", joinColumns = @JoinColumn(name = "article_id"))
+    @Column(name = "tag", length = ArticleTags.MAX_LENGTH, nullable = false)
+    @OrderBy
+    @BatchSize(size = 50)
+    private Set<String> tags = new LinkedHashSet<>();
 
     /**
      * Вычисляемый статус: черновик / запланирована / активна / неактивна.

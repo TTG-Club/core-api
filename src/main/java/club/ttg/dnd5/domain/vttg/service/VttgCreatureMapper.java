@@ -425,7 +425,9 @@ public class VttgCreatureMapper {
                 ? legacyAttackType : mechanics.getAttackType();
         SawingThrow save = first(CollectionUtils.isEmpty(mechanics.getSavingThrows())
                 ? legacySaves : mechanics.getSavingThrows());
-        boolean hasSave = save != null && save.getAbility() != null;
+        // Автопопадание снимает и бросок атаки, и спасбросок: урон идёт сразу.
+        boolean autoHit = Boolean.TRUE.equals(mechanics.getAutoHit());
+        boolean hasSave = !autoHit && save != null && save.getAbility() != null;
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", value(name));
@@ -434,7 +436,9 @@ public class VttgCreatureMapper {
         putIfHasText(result, "recharge", recharge(recharge));
 
         // Спас заменяет бросок попадания — то же правило, что в форме системы.
-        if (!hasSave) {
+        if (autoHit) {
+            result.put("autoHit", true);
+        } else if (!hasSave) {
             putIfNotNull(result, "attackBonus", mechanics.getAttackBonus());
         }
 

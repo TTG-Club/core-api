@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -109,6 +110,11 @@ public class ArticleRequest {
             + "наступлении даты) запись один раз уйдёт на стену, если интеграция включена глобально. false — "
             + "на стену не отправлять. Независима от Telegram и Discord.")
     private boolean publishToVk;
+
+    @Schema(description = "Теги записи (лор, механика, местность и т.д.) — произвольные. Сохраняются "
+            + "нормализованными: без лишних пробелов, в нижнем регистре, без повторов.")
+    @Nullable
+    private List<String> tags;
 
     @Schema(description = "Текст превью")
     @NotNull
