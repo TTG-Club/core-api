@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.article.repository;
 
 import club.ttg.dnd5.domain.article.model.Article;
+import club.ttg.dnd5.domain.article.model.ArticleSorting;
 import club.ttg.dnd5.domain.article.model.ArticleType;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +45,14 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
      * инлайном `(:type is null or ...)`, как в остальных репозиториях проекта.
      * Параметр pattern — готовый LIKE-шаблон в нижнем регистре ("%текст%" или "%" без фильтра);
      * он собирается в сервисе, чтобы не давать Hibernate вывести тип строкового параметра как bytea.
+     * <p>
+     * Фильтр по тегам: при {@code anyTag=true} — записи, у которых есть хотя бы один из {@code tags}
+     * (список никогда не пустой — сервис подставляет заглушку, чтобы не строить пустой {@code IN}).
+     * <p>
+     * Сортировка ({@code sorting} — имя {@link ArticleSorting}) выбирается CASE-ключами: неактивные
+     * ключи дают константу и порядок не меняют. Рейтинг — средняя оценка, затем число оценок из
+     * общей таблицы {@code Rating} (раздел {@code ratingSection}, ключ — url записи). Последний ключ —
+     * дата выхода, он же порядок по умолчанию и разрешение равенств.
      */
     @Query("""
             SELECT a FROM Article a
@@ -52,10 +62,41 @@ public interface ArticleRepository extends JpaRepository<Article, UUID> {
               AND a.publishDateTime < :now
               AND (:type IS NULL OR a.type = :type)
               AND LOWER(a.title) LIKE :pattern
-            ORDER BY a.publishDateTime DESC
+              AND (:anyTag = false OR EXISTS (
+                SELECT 1 FROM Article tagged JOIN tagged.tags tag
+                WHERE tagged.id = a.id AND tag IN :tags
+              ))
+            ORDER BY
+              CASE WHEN :sorting = 'RATING' THEN (
+                SELECT COALESCE(AVG(r.value), 0) FROM Rating r
+                WHERE r.section = :ratingSection AND r.url = a.url
+              ) ELSE 0 END DESC,
+              CASE WHEN :sorting = 'RATING' THEN (
+                SELECT COUNT(r) FROM Rating r
+                WHERE r.section = :ratingSection AND r.url = a.url
+              ) ELSE 0 END DESC,
+              CASE WHEN :sorting = 'TITLE' THEN LOWER(a.title) ELSE '' END ASC,
+              a.publishDateTime DESC
             """)
     List<Article> findPublished(@Param("now") Instant now, @Param("type") ArticleType type,
-                                @Param("pattern") String pattern, Limit limit);
+                                @Param("pattern") String pattern,
+                                @Param("anyTag") boolean anyTag, @Param("tags") Collection<String> tags,
+                                @Param("sorting") String sorting, @Param("ratingSection") String ratingSection,
+                                Limit limit);
+
+    /**
+     * Теги опубликованных и активных записей (для фильтра листинга и подсказок в редакторе), по алфавиту.
+     */
+    @Query("""
+            SELECT DISTINCT tag FROM Article a JOIN a.tags tag
+            WHERE a.deleted = false
+              AND a.draft = false
+              AND a.active = true
+              AND a.publishDateTime < :now
+              AND (:type IS NULL OR a.type = :type)
+            ORDER BY tag
+            """)
+    List<String> findPublishedTags(@Param("now") Instant now, @Param("type") ArticleType type);
 
     /**
      * Не-живые записи (черновики + запланированные + неактивные) для модерации.

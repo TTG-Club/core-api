@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.article.rest.dto;
 
 import club.ttg.dnd5.domain.article.model.ArticleStatus;
 import club.ttg.dnd5.domain.article.model.ArticleType;
+import club.ttg.dnd5.domain.common.rest.dto.rating.RatingResponse;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -70,4 +72,12 @@ public class ArticleShortResponse {
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String preview;
+
+    @NotNull
+    @Schema(description = "Теги записи, по алфавиту")
+    private List<String> tags;
+
+    @Nullable
+    @Schema(description = "Рейтинг записи: средняя оценка и число оценок. Заполняется в публичном листинге")
+    private RatingResponse rating;
 }
