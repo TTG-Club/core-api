@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.filter.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,9 @@ import java.util.Map;
 @AllArgsConstructor
 public class FilterMetadataResponse {
     private List<FilterGroupMeta> filters;
+    // Разделы без источников (например, статьи) не отдают поле вовсе: клиент
+    // считает его необязательным массивом, а не null.
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<SourceGroupMeta> sources;
 
     @Data

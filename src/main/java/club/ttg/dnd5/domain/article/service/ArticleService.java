@@ -11,6 +11,8 @@ import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
 import club.ttg.dnd5.domain.article.rest.mapper.ArticleMapper;
 import club.ttg.dnd5.domain.common.rest.dto.rating.RatingResponse;
 import club.ttg.dnd5.domain.common.service.RatingService;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
@@ -46,6 +48,10 @@ public class ArticleService {
     private static final List<String> NO_TAGS = List.of("");
 
     private static final int DEFAULT_SEARCH_SIZE = 10;
+
+    /** Ключ группы тегов в фильтре листинга — совпадает с параметром {@code tags} поиска. */
+    private static final String TAGS_FILTER_KEY = "tags";
+
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
     private final EntityRevisionService revisionService;
@@ -371,6 +377,31 @@ public class ArticleService {
      */
     public List<String> findPublishedTags(ArticleType type) {
         return articleRepository.findPublishedTags(Instant.now(), type);
+    }
+
+    /**
+     * Метаданные фильтра листинга в общем формате разделов: одна группа «Теги»
+     * с тегами опубликованных записей. Ключ группы совпадает с параметром
+     * {@code tags} поиска. Источников у записей нет, поэтому {@code sources} не заполняется.
+     */
+    public FilterMetadataResponse getFilterMetadata(ArticleType type) {
+        List<String> tags = findPublishedTags(type);
+        if (tags.isEmpty()) {
+            return FilterMetadataResponse.builder().filters(List.of()).build();
+        }
+        FilterMetadataResponse.FilterGroupMeta tagGroup = FilterMetadataResponse.FilterGroupMeta.builder()
+                .key(TAGS_FILTER_KEY)
+                .name("Теги")
+                .supports(SupportsConfig.builder().mode(false).union(false).build())
+                .values(tags.stream()
+                        .map(tag -> FilterMetadataResponse.FilterValueMeta.builder()
+                                .id(tag)
+                                .value(tag)
+                                .name(tag)
+                                .build())
+                        .toList())
+                .build();
+        return FilterMetadataResponse.builder().filters(List.of(tagGroup)).build();
     }
 
     public List<ArticleShortResponse> searchUnpublished(Integer cnt, ArticleType type, String search) {
