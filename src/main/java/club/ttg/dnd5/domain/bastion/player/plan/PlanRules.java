@@ -64,7 +64,8 @@ public class PlanRules {
 
     /**
      * Приводит план к виду, который сервер хранит: клетки башен пересчитаны по окружности,
-     * сооружения, убранные из бастиона, сняты с комнат, пустые списки вместо {@code null}.
+     * сооружения, убранные из бастиона, сняты с комнат, ворота вне защитной стены убраны,
+     * пустые списки вместо {@code null}.
      *
      * @param document   план от клиента или из базы
      * @param facilities сооружения бастиона
@@ -83,10 +84,16 @@ public class PlanRules {
                                 ? PlanGeometry.cellsInside(room.shape()) : list(room.cells()),
                         room.kind() == RoomKind.TOWER ? room.shape() : null))
                 .toList();
+        List<Cell> defenseWalls = list(document.defenseWalls());
+        Set<Cell> wallCells = new HashSet<>(defenseWalls);
+        List<Cell> defenseGates = list(document.defenseGates()).stream()
+                .filter(wallCells::contains)
+                .distinct()
+                .toList();
         return new PlanDocument(levels.isEmpty() ? List.of(0) : levels, withoutOverlaps(rooms),
                 list(document.doors()), list(document.windows()), list(document.towerOpenings()),
-                list(document.stairs()), list(document.columns()), list(document.defenseWalls()),
-                list(document.furniture()));
+                list(document.stairs()), list(document.columns()), defenseWalls,
+                list(document.furniture()), defenseGates);
     }
 
     /**

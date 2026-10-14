@@ -433,18 +433,24 @@ public class PlayerBastionActivityService {
     }
 
     /**
-     * Мастер убирает сооружение — так делается замена специализированного сооружения при
-     * повышении уровня. Незавершённые приказы сооружения отменяются без возврата денег:
-     * работа уже шла. Клетки сооружения исчезают с плана сами.
+     * Убирает сооружение. Пока бастион в закладке, ошибочно выбранное сооружение убирает игрок
+     * этого персонажа или тот, кто ведёт бастион. В запущенном бастионе — только тот, кто ведёт:
+     * так делается замена специализированного сооружения при повышении уровня. Незавершённые
+     * приказы сооружения отменяются без возврата денег: работа уже шла. Клетки сооружения
+     * исчезают с плана сами.
      */
     @Transactional
     public PlayerBastionResponse removeFacility(UUID bastionId, UUID facilityId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        BastionViewer viewer = access.requireManager(bastion, userId);
         PlayerBastionAccess.requireNotArchived(bastion);
+        BastionViewer viewer = bastion.getStatus() == PlayerBastionStatus.SETUP
+                ? access.requireViewer(bastion, userId)
+                : access.requireManager(bastion, userId);
 
         PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Сооружение убирает игрок этого персонажа или тот, кто ведёт бастион");
         orderRepository.findAllByBastionIdAndStatus(bastionId, OrderStatus.ACTIVE).stream()
                 .filter(order -> facilityId.equals(order.getFacilityId()))
                 .forEach(order -> {
