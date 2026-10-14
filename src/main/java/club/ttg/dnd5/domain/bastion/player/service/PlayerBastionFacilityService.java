@@ -4,8 +4,6 @@ import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
-import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
-import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
@@ -59,9 +57,9 @@ public class PlayerBastionFacilityService {
     public PlayerBastionResponse updateSetup(UUID bastionId, UUID memberId, FacilitySetupRequest request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         PlayerBastionMember member = findMember(bastion, memberId);
-        if (membership.role() != GameRole.MASTER && !member.getUserId().equals(userId)) {
+        if (!viewer.manager() && !member.getUserId().equals(userId)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Сооружения персонажа выбирает его игрок или мастер");
         }
         if (bastion.getStatus() != PlayerBastionStatus.SETUP) {
@@ -76,7 +74,7 @@ public class PlayerBastionFacilityService {
         PlayerBastionSetupRules.validate(member.getCharacterLevel(), request, reference);
 
         replaceFacilities(member, request, reference);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /** Мастер подтверждает или снимает подтверждение требования сооружения. */
@@ -84,7 +82,7 @@ public class PlayerBastionFacilityService {
     public PlayerBastionResponse confirmPrerequisite(UUID bastionId, UUID facilityId, boolean confirmed) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         PlayerBastionAccess.requireNotArchived(bastion);
 
         PlayerBastionFacility facility = bastion.getMembers().stream()
@@ -94,7 +92,7 @@ public class PlayerBastionFacilityService {
                 .orElseThrow(() -> new EntityNotFoundException("Сооружение %s не найдено".formatted(facilityId)));
         facility.setPrerequisiteConfirmed(confirmed);
 
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /**

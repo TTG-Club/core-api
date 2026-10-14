@@ -8,8 +8,6 @@ import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerEntry.Reason;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStatus;
-import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
-import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
@@ -18,6 +16,7 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
+import club.ttg.dnd5.domain.bastion.player.service.BastionViewer;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionSetupRules;
@@ -89,8 +88,8 @@ public class PlayerBastionActivityService {
     public ActivityResponse findActivity(UUID bastionId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
-        boolean master = membership.role() == GameRole.MASTER;
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        boolean master = viewer.manager();
 
         Map<UUID, PlayerBastionFacility> facilities = facilitiesById(bastion);
         Map<String, BastionFacility> reference = loadReference(facilities.values().stream()
@@ -141,8 +140,8 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse giveOrder(UUID bastionId, ActivityRequests.GiveOrder request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
-        boolean master = membership.role() == GameRole.MASTER;
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        boolean master = viewer.manager();
         requireActive(bastion);
 
         List<PlayerBastionOrder> givenThisTurn = orderRepository.findAllByBastionIdAndGivenOnTurnAndStatusNot(
@@ -197,7 +196,7 @@ public class PlayerBastionActivityService {
         }
 
         orderRepository.save(order);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /** Отмена приказа в тот же ход — цена возвращается в казну. */
@@ -205,13 +204,13 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse cancelOrder(UUID bastionId, UUID orderId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
 
         PlayerBastionOrder order = orderRepository.findById(orderId)
                 .filter(item -> item.getBastionId().equals(bastionId))
                 .orElseThrow(() -> new EntityNotFoundException("Приказ %s не найден".formatted(orderId)));
-        if (membership.role() != GameRole.MASTER && !order.getGivenBy().equals(userId)) {
+        if (!viewer.manager() && !order.getGivenBy().equals(userId)) {
             throw forbidden("Отменить приказ может тот, кто его отдал, или мастер");
         }
         if (order.getStatus() != OrderStatus.ACTIVE || order.getGivenOnTurn() != bastion.getTurn()) {
@@ -225,7 +224,7 @@ public class PlayerBastionActivityService {
                     "Отмена приказа «%s»".formatted(order.getOrder().getName()), userId);
         }
         orderRepository.save(order);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ ход
@@ -239,7 +238,7 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse performTurn(UUID bastionId, ActivityRequests.Turn request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         requireActive(bastion);
 
         int next = bastion.getTurn() + 1;
@@ -297,7 +296,7 @@ public class PlayerBastionActivityService {
         turnRepository.save(turn);
 
         bastion.setTurn(next);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ казна
@@ -306,7 +305,7 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse adjustTreasury(UUID bastionId, ActivityRequests.Treasury request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         PlayerBastionAccess.requireNotArchived(bastion);
 
         long amount = request.amountGp();
@@ -318,7 +317,7 @@ public class PlayerBastionActivityService {
         }
         bastion.setTreasuryGp(bastion.getTreasuryGp() + amount);
         record(bastion, amount, amount > 0 ? Reason.DEPOSIT : Reason.WITHDRAWAL, trimToNull(request.note()), userId);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ стройка
@@ -328,10 +327,10 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse buildBasic(UUID bastionId, UUID memberId, ActivityRequests.BuildBasic request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
         PlayerBastionMember member = findMember(bastion, memberId);
-        requireOwnerOrMaster(member, userId, membership.role() == GameRole.MASTER,
+        requireOwnerOrMaster(member, userId, viewer.manager(),
                 "Строит сооружения игрок этого персонажа или мастер");
 
         BastionFacility reference = loadReference(Stream.of(request.facilityUrl())).get(request.facilityUrl());
@@ -351,7 +350,7 @@ public class PlayerBastionActivityService {
         facility.setReadyOnTurn(bastion.getTurn() + turnsFor(space.getBuildDays()));
         member.getFacilities().add(facility);
 
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /**
@@ -362,10 +361,10 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse enlarge(UUID bastionId, UUID facilityId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
         PlayerBastionFacility facility = findFacility(bastion, facilityId);
-        requireOwnerOrMaster(facility, userId, membership.role() == GameRole.MASTER,
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
                 "Расширяет сооружение игрок этого персонажа или мастер");
         if (!facility.isReady() || facility.getPendingSpace() != null) {
             throw conflict("Сооружение ещё строится или уже расширяется");
@@ -395,7 +394,7 @@ public class PlayerBastionActivityService {
         charge(bastion, cost, Reason.ENLARGE, "Расширение: %s".formatted(reference.getName()), userId);
         facility.setPendingSpace(target);
         facility.setPendingReadyOnTurn(bastion.getTurn() + turnsFor(days));
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /** Новое специализированное сооружение, полученное с уровнем, — сразу и бесплатно. */
@@ -403,10 +402,10 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse addSpecial(UUID bastionId, UUID memberId, ActivityRequests.AddSpecial request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
         PlayerBastionMember member = findMember(bastion, memberId);
-        requireOwnerOrMaster(member, userId, membership.role() == GameRole.MASTER,
+        requireOwnerOrMaster(member, userId, viewer.manager(),
                 "Сооружения персонажа выбирает его игрок или мастер");
 
         Map<String, BastionFacility> reference = loadReference(Stream.concat(
@@ -430,7 +429,7 @@ public class PlayerBastionActivityService {
         facility.setPrerequisiteConfirmed(added.getPrerequisite() == null);
         member.getFacilities().add(facility);
 
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /**
@@ -442,7 +441,7 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse removeFacility(UUID bastionId, UUID facilityId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         PlayerBastionAccess.requireNotArchived(bastion);
 
         PlayerBastionFacility facility = findFacility(bastion, facilityId);
@@ -453,7 +452,7 @@ public class PlayerBastionActivityService {
                     orderRepository.save(order);
                 });
         facility.getMember().getFacilities().remove(facility);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ помощники

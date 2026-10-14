@@ -2,11 +2,10 @@ package club.ttg.dnd5.domain.bastion.player.plan;
 
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
-import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
-import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.service.BastionViewer;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.exception.ApiException;
@@ -39,14 +38,14 @@ public class PlayerBastionPlanService {
     public PlanResponse find(UUID bastionId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
 
         Optional<PlayerBastionPlan> plan = planRepository.findById(bastionId);
         PlanDocument document = plan.map(PlayerBastionPlan::getDocument).orElseGet(PlanDocument::empty);
 
         return new PlanResponse(bastionId,
                 plan.map(PlayerBastionPlan::getVersion).orElse(0L),
-                canEdit(bastion, membership, userId),
+                canEdit(bastion, viewer),
                 PlanRules.normalize(document, facilitySpaces(bastion)));
     }
 
@@ -54,8 +53,8 @@ public class PlayerBastionPlanService {
     public PlanResponse save(UUID bastionId, PlanRequest request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
-        if (!canEdit(bastion, membership, userId)) {
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        if (!canEdit(bastion, viewer)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "План рисуют мастер и игроки с доступом к бастиону");
         }
 
@@ -79,10 +78,8 @@ public class PlayerBastionPlanService {
         return new PlanResponse(bastionId, saved.getVersion(), true, saved.getDocument());
     }
 
-    private static boolean canEdit(PlayerBastion bastion, GameMembership membership, UUID userId) {
-        boolean member = bastion.getMembers().stream().anyMatch(item -> item.getUserId().equals(userId));
-        return bastion.getStatus() != PlayerBastionStatus.ARCHIVED
-                && (membership.role() == GameRole.MASTER || member);
+    private static boolean canEdit(PlayerBastion bastion, BastionViewer viewer) {
+        return bastion.getStatus() != PlayerBastionStatus.ARCHIVED && viewer.canEdit();
     }
 
     private static Map<UUID, FacilitySpace> facilitySpaces(PlayerBastion bastion) {

@@ -23,27 +23,37 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Бастион игроков в игре из каталога (find-game-api).
+ * Бастион игроков. Принадлежит создавшему его пользователю ({@link #ownerId}), как лист
+ * персонажа, и может быть добавлен в одну игру из каталога (find-game-api).
  *
  * <p>Игра живёт в соседнем сервисе, здесь от неё только {@link #gameId} и мастер на момент
- * создания. Права каждый раз проверяются по актуальному составу игры, а {@link #masterId}
- * нужен, чтобы находить бастионы мастера без похода в каталог.</p>
+ * добавления. Права в игре каждый раз проверяются по актуальному составу игры, а
+ * {@link #masterId} нужен, чтобы находить бастионы мастера без похода в каталог. Вне игры
+ * бастионом распоряжается владелец.</p>
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
 @Table(name = "player_bastion",
-        indexes = @Index(name = "player_bastion_game_id_index", columnList = "game_id"))
+        indexes = {
+                @Index(name = "player_bastion_game_id_index", columnList = "game_id"),
+                @Index(name = "player_bastion_owner_id_index", columnList = "owner_id")
+        })
 public class PlayerBastion extends Timestamped {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "game_id", nullable = false)
+    @Column(name = "owner_id", nullable = false)
+    private UUID ownerId;
+
+    /** Игра, в которую добавлен бастион; {@code null} — бастион вне игры. */
+    @Column(name = "game_id")
     private UUID gameId;
 
-    @Column(name = "master_id", nullable = false)
+    /** Мастер игры на момент добавления; {@code null} — бастион вне игры. */
+    @Column(name = "master_id")
     private UUID masterId;
 
     @Column(nullable = false, length = 100)

@@ -9,12 +9,12 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 /**
- * Игрок, которому мастер даёт доступ к бастиону, и его персонаж.
+ * Игрок с доступом к бастиону и его персонаж.
  *
- * @param userId           игрок игры с одобренной заявкой
+ * @param userId           владелец, игрок с доступом или, в игре, игрок с одобренной заявкой
  * @param characterName    имя персонажа; пусто — берётся из заявки в игру
  * @param characterLevel   уровень персонажа: от него зависит число специализированных сооружений
- * @param characterSheetId лист персонажа, если мастер хочет его привязать
+ * @param characterSheetId лист персонажа, если его хотят привязать
  */
 @Schema(description = "Игрок с доступом к бастиону")
 public record PlayerBastionMemberRequest(

@@ -14,20 +14,28 @@ import java.util.UUID;
 /**
  * Бастион глазами того, кто его открыл.
  *
- * @param canManage можно менять название, состав, казну, подтверждать требования и делать ходы (мастер)
- * @param canEdit   можно рисовать план и отдавать приказы
+ * @param gameId          игра, в которую добавлен бастион; {@code null} — бастион вне игры
+ * @param ownerId         владелец — тот, кто создал бастион
+ * @param owned           открывший — владелец: может переименовать, удалить и добавить в игру
+ * @param canManage       можно менять состав, казну, подтверждать требования и делать ходы:
+ *                        мастер игры, а вне игры — владелец
+ * @param canEdit         можно рисовать план и отдавать приказы
+ * @param canLeaveGame    можно убрать бастион из игры: владелец или мастер этой игры
  */
 @Schema(description = "Бастион игроков")
 public record PlayerBastionResponse(
         UUID id,
         UUID gameId,
+        UUID ownerId,
         String name,
         PlayerBastionStatus status,
         int turn,
         long treasuryGp,
         long version,
+        boolean owned,
         boolean canManage,
         boolean canEdit,
+        boolean canLeaveGame,
         List<Member> members,
         Instant createdAt,
         Instant updatedAt) {
