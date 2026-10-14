@@ -6,105 +6,120 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * План бастиона — один документ на бастион. Координаты — в клетках 5×5 футов.
+ * План бастиона — один документ на бастион, упрощённая карта в духе карт подземелий.
+ * Координаты — в клетках 5×5 футов.
  *
- * <p>Бастион собирается из корпусов (башня, донжон, крыло, флигель). У корпуса векторный
- * контур и свои этажи; сооружения закрашивают клетки этажа внутри контура. Площадь по
- * правилам — число клеток сооружения по всем этажам и корпусам. Переходы и защитная стена
- * лежат вне корпусов.</p>
+ * <p>План собирается из комнат на этажах. Комната — набор клеток одного этажа: зал, коридор,
+ * открытый двор или круглая башня. Стены не хранятся: редактор строит их сам по границам
+ * комнат. Двери и окна стоят на рёбрах клеток, лестницы и колонны — на полу.</p>
  *
- * <p>План косметический: перерисовка ничего не стоит. По правилам проверяются только
- * площадь и геометрия ({@code PlanRules}).</p>
+ * <p>Площадь сооружения по правилам — число клеток всех комнат, которым оно назначено.
+ * План косметический: перерисовка ничего не стоит. По правилам проверяются только площадь
+ * и целостность документа ({@code PlanRules}).</p>
  *
- * @param buildings корпуса
- * @param passages  коридоры, галереи и мосты вне корпусов
- * @param walls     клетки защитной стены (на уровне земли)
+ * @param levels        этажи плана; 0 — первый этаж, отрицательные — подвалы
+ * @param rooms         комнаты всех этажей
+ * @param doors         двери в стенах между клетками
+ * @param windows       окна в стенах между клетками
+ * @param towerOpenings двери и окна в круглой стене башен
+ * @param stairs        лестницы
+ * @param columns       колонны
+ * @param defenseWalls  клетки защитной стены (на уровне земли)
  */
 @Schema(description = "План бастиона")
-public record PlanDocument(List<Building> buildings, List<Passage> passages, List<Cell> walls) {
+public record PlanDocument(List<Integer> levels,
+                           List<Room> rooms,
+                           List<Door> doors,
+                           List<Window> windows,
+                           List<TowerOpening> towerOpenings,
+                           List<Stair> stairs,
+                           List<Column> columns,
+                           List<Cell> defenseWalls) {
 
     public static PlanDocument empty() {
-        return new PlanDocument(List.of(), List.of(), List.of());
+        return new PlanDocument(List.of(0), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of());
     }
 
-    /** Вид корпуса — подпись и подсказка редактору, на правила не влияет. */
-    public enum BuildingKind { TOWER, KEEP, WING, HALL, OUTBUILDING }
+    /**
+     * Вид комнаты. Коридоры, соединённые друг с другом, стены между собой не получают; у двора
+     * вместо стены — пунктир; у башни круглая стена, клетки считаются по её окружности.
+     */
+    public enum RoomKind { ROOM, CORRIDOR, COURTYARD, TOWER }
 
-    /** Вид контура. */
-    public enum OutlineType { CIRCLE, RECTANGLE, POLYGON }
-
-    /** Сторона клетки, на которой стоит дверь или окно. */
+    /** Сторона клетки, на ребре которой стоит дверь или окно. */
     public enum Side { N, E, S, W }
 
-    /** Дверь: обычная, запертая, секретная, решётка (глава 3 «Двери»). */
-    public enum DoorKind { DOOR, LOCKED, SECRET, PORTCULLIS }
+    /** Дверь: обычная, запертая, секретная, решётка (глава 3 «Двери») или открытый проём. */
+    public enum DoorKind { DOOR, LOCKED, SECRET, PORTCULLIS, ARCH }
 
-    /** Переход: коридор, пандус, галерея или мост. В площадь сооружений не входит. */
-    public enum PassageKind { CORRIDOR, RAMP, GALLERY, BRIDGE }
+    /** Что стоит в стене башни. */
+    public enum OpeningType { DOOR, WINDOW }
+
+    /** Лестница: прямой марш или винтовая. */
+    public enum StairKind { STRAIGHT, SPIRAL }
 
     /**
-     * Корпус.
+     * Комната.
      *
-     * @param id      идентификатор внутри плана (генерирует редактор)
-     * @param name    название: «Северная башня»
-     * @param kind    вид корпуса
-     * @param outline контур на земле
-     * @param floors  этажи; уровень 0 — первый этаж, отрицательные — подвалы
+     * @param id         идентификатор внутри плана (генерирует редактор)
+     * @param name       название: «Главный зал»
+     * @param kind       вид комнаты
+     * @param level      этаж
+     * @param facilityId сооружение персонажа, которое здесь стоит; {@code null} — просто помещение
+     * @param cells      клетки; у башни сервер пересчитывает их по окружности
+     * @param shape      окружность башни; у остальных комнат {@code null}
      */
-    @Schema(description = "Корпус")
-    public record Building(String id, String name, BuildingKind kind, Outline outline, List<Floor> floors) {
+    @Schema(description = "Комната")
+    public record Room(String id, String name, RoomKind kind, int level, UUID facilityId, List<Cell> cells,
+                       Circle shape) {
     }
 
     /**
-     * Контур корпуса в клетках. Окружность — центр и радиус, прямоугольник — угол и
-     * размеры, многоугольник — вершины. Значения могут быть дробными (кратными 0.5),
-     * чтобы центр окружности вставал и в угол клетки, и в её середину.
+     * Окружность башни в клетках: центр и радиус, кратные половине клетки. Клетки башни —
+     * те, чей центр лежит внутри окружности.
      */
-    @Schema(description = "Контур корпуса")
-    public record Outline(OutlineType type,
-                          Double cx, Double cy, Double r,
-                          Double x, Double y, Double width, Double height,
-                          List<List<Double>> points) {
+    @Schema(description = "Окружность башни")
+    public record Circle(double cx, double cy, double r) {
     }
 
     /**
-     * Этаж корпуса.
+     * Дверь на ребре клетки.
      *
-     * @param level   уровень этажа
-     * @param cells   клетки сооружений
-     * @param doors   двери
-     * @param windows окна
-     * @param stairs  лестницы на другие этажи этого корпуса
+     * @param side сторона клетки {@code (x, y)}; ребро с соседней клеткой одно и то же
      */
-    @Schema(description = "Этаж корпуса")
-    public record Floor(int level, List<FacilityCell> cells, List<Door> doors, List<Window> windows,
-                        List<Stair> stairs) {
-    }
-
-    /** Клетка, занятая сооружением персонажа. */
-    @Schema(description = "Клетка сооружения")
-    public record FacilityCell(int x, int y, UUID facilityId) {
-    }
-
     @Schema(description = "Дверь")
-    public record Door(int x, int y, Side side, DoorKind kind) {
+    public record Door(int level, int x, int y, Side side, DoorKind kind) {
     }
 
     @Schema(description = "Окно")
-    public record Window(int x, int y, Side side) {
-    }
-
-    @Schema(description = "Лестница")
-    public record Stair(int x, int y, int toLevel) {
+    public record Window(int level, int x, int y, Side side) {
     }
 
     /**
-     * Переход вне корпусов.
+     * Дверь или окно в стене башни.
      *
-     * @param level уровень: галерея и мост могут идти на втором этаже
+     * @param angle угол в градусах от направления на восток по часовой стрелке, шаг 22.5°
+     * @param kind  вид двери; у окна {@code null}
      */
-    @Schema(description = "Переход")
-    public record Passage(PassageKind kind, int level, List<Cell> cells) {
+    @Schema(description = "Проём в стене башни")
+    public record TowerOpening(String roomId, double angle, OpeningType type, DoorKind kind) {
+    }
+
+    /**
+     * Лестница — прямоугольник клеток.
+     *
+     * @param direction куда идёт подъём
+     * @param toLevel   этаж, на который ведёт лестница
+     */
+    @Schema(description = "Лестница")
+    public record Stair(int level, int x, int y, int width, int height, Side direction, int toLevel,
+                        StairKind kind) {
+    }
+
+    /** Колонна в центре клетки или на пересечении линий сетки: координаты кратны половине клетки. */
+    @Schema(description = "Колонна")
+    public record Column(int level, double x, double y) {
     }
 
     @Schema(description = "Клетка")

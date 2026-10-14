@@ -7,8 +7,6 @@ import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Building;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Floor;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.exception.ApiException;
@@ -27,8 +25,8 @@ import java.util.stream.Collectors;
  * План бастиона: чтение для всех участников игры, правка — мастеру и игрокам с доступом.
  *
  * <p>Сооружение, убранное из выбора персонажа, с плана исчезает само: при чтении и
- * сохранении клетки несуществующих сооружений отбрасываются. Иначе план с такой клеткой
- * нельзя было бы сохранить, пока игрок вручную не нашёл бы её на холсте.</p>
+ * сохранении комнаты несуществующих сооружений становятся просто помещениями. Иначе план
+ * с такой комнатой нельзя было бы сохранить, пока игрок вручную не нашёл бы её на холсте.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -49,7 +47,7 @@ public class PlayerBastionPlanService {
         return new PlanResponse(bastionId,
                 plan.map(PlayerBastionPlan::getVersion).orElse(0L),
                 canEdit(bastion, membership, userId),
-                withoutMissingFacilities(document, facilitySpaces(bastion)));
+                PlanRules.normalize(document, facilitySpaces(bastion)));
     }
 
     @Transactional
@@ -73,7 +71,7 @@ public class PlayerBastionPlanService {
         }
 
         Map<UUID, FacilitySpace> spaces = facilitySpaces(bastion);
-        PlanDocument document = withoutMissingFacilities(request.document(), spaces);
+        PlanDocument document = PlanRules.normalize(request.document(), spaces);
         PlanRules.validate(document, spaces, facilityNames(bastion));
 
         plan.setDocument(document);
@@ -106,26 +104,5 @@ public class PlayerBastionPlanService {
         return bastion.getMembers().stream()
                 .flatMap(member -> member.getFacilities().stream())
                 .toList();
-    }
-
-    /** Убирает клетки сооружений, которых больше нет в бастионе. */
-    static PlanDocument withoutMissingFacilities(PlanDocument document, Map<UUID, ?> facilities) {
-        if (document == null) {
-            return PlanDocument.empty();
-        }
-        List<Building> buildings = Optional.ofNullable(document.buildings()).orElse(List.of()).stream()
-                .map(building -> building == null ? null : new Building(building.id(), building.name(),
-                        building.kind(), building.outline(),
-                        Optional.ofNullable(building.floors()).orElse(List.of()).stream()
-                                .map(floor -> floor == null ? null : new Floor(floor.level(),
-                                        Optional.ofNullable(floor.cells()).orElse(List.of()).stream()
-                                                .filter(cell -> cell != null && facilities.containsKey(cell.facilityId()))
-                                                .toList(),
-                                        floor.doors(), floor.windows(), floor.stairs()))
-                                .toList()))
-                .toList();
-        return new PlanDocument(buildings,
-                Optional.ofNullable(document.passages()).orElse(List.of()),
-                Optional.ofNullable(document.walls()).orElse(List.of()));
     }
 }

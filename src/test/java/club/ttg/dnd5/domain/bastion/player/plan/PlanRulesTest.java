@@ -1,26 +1,31 @@
 package club.ttg.dnd5.domain.bastion.player.plan;
 
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Building;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.BuildingKind;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Cell;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.FacilityCell;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Floor;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Outline;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.OutlineType;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Circle;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Column;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Door;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.DoorKind;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.OpeningType;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Room;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.RoomKind;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Side;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Stair;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.StairKind;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.TowerOpening;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Window;
 import club.ttg.dnd5.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,7 +38,7 @@ class PlanRulesTest {
     /** Круглая башня радиусом 10 футов (2 клетки) — 12 клеток: квадрат 4×4 без углов. */
     @Test
     void roundTowerOfTenFeetRadiusHasTwelveCells() {
-        Set<Cell> cells = PlanGeometry.cellsInside(circle(5, 6, 2));
+        List<Cell> cells = PlanGeometry.cellsInside(new Circle(5, 6, 2));
 
         assertEquals(12, cells.size());
         assertTrue(cells.contains(new Cell(4, 5)));
@@ -41,108 +46,170 @@ class PlanRulesTest {
     }
 
     @Test
-    void polygonUsesCellCenters() {
-        Outline triangle = new Outline(OutlineType.POLYGON, null, null, null, null, null, null, null,
-                List.of(List.of(0.0, 0.0), List.of(4.0, 0.0), List.of(0.0, 4.0)));
-
-        Set<Cell> cells = PlanGeometry.cellsInside(triangle);
-
-        assertTrue(cells.contains(new Cell(0, 0)));
-        assertTrue(cells.contains(new Cell(1, 1)));
-        assertFalse(cells.contains(new Cell(3, 3)));
+    void edgeIsTheSameFromBothSides() {
+        assertEquals(PlanGeometry.edgeKey(3, 4, Side.S), PlanGeometry.edgeKey(3, 5, Side.N));
+        assertEquals(PlanGeometry.edgeKey(3, 4, Side.E), PlanGeometry.edgeKey(4, 4, Side.W));
     }
 
-    /** Библиотека разложена по двум этажам башни: 12 + 4 = 16 — ровно вместительное пространство. */
+    /** Сервер не верит клеткам башни от клиента и считает их по окружности. */
+    @Test
+    void towerCellsAreRecomputed() {
+        Room tower = new Room("tower", "Башня", RoomKind.TOWER, 0, null, List.of(new Cell(0, 0)),
+                new Circle(5, 6, 2));
+
+        PlanDocument normalized = PlanRules.normalize(plan(List.of(0), tower), spaces);
+
+        assertEquals(12, normalized.rooms().getFirst().cells().size());
+    }
+
+    /** Библиотека в двух комнатах на разных этажах: 12 + 4 = 16 — ровно вместительное пространство. */
     @Test
     void facilityMaySpanFloors() {
-        List<Cell> towerCells = new ArrayList<>(PlanGeometry.cellsInside(circle(5, 6, 2)));
-        Building tower = new Building("tower", "Северная башня", BuildingKind.TOWER, circle(5, 6, 2), List.of(
-                floor(0, cells(towerCells, library, 12), List.of(new Stair(4, 5, 1))),
-                floor(1, cells(towerCells, library, 4), List.of())));
+        Room tower = new Room("tower", "Башня", RoomKind.TOWER, 0, library, List.of(), new Circle(5, 6, 2));
+        Room study = room("study", 1, library, rect(3, 4, 2, 2));
+        PlanDocument document = PlanRules.normalize(plan(List.of(0, 1), tower, study), spaces);
 
-        assertDoesNotThrow(() -> PlanRules.validate(plan(tower), spaces, names));
+        assertDoesNotThrow(() -> PlanRules.validate(document, spaces, names));
     }
 
     @Test
     void areaAboveSpaceIsRejected() {
-        Building keep = new Building("keep", "Донжон", BuildingKind.KEEP, rectangle(0, 0, 3, 2), List.of(
-                floor(0, List.of(
-                        new FacilityCell(0, 0, bedroom), new FacilityCell(1, 0, bedroom),
-                        new FacilityCell(2, 0, bedroom), new FacilityCell(0, 1, bedroom),
-                        new FacilityCell(1, 1, bedroom)), List.of())));
+        PlanDocument document = plan(List.of(0), room("bed", 0, bedroom, rect(0, 0, 3, 2)));
 
-        ApiException error = assertThrows(ApiException.class, () -> PlanRules.validate(plan(keep), spaces, names));
+        ApiException error = assertThrows(ApiException.class, () -> PlanRules.validate(document, spaces, names));
 
         assertTrue(error.getMessage().contains("Спальня"), error.getMessage());
         assertTrue(error.getMessage().contains("не больше 4"), error.getMessage());
     }
 
     @Test
-    void cellOutsideOutlineIsRejected() {
-        Building keep = new Building("keep", "Донжон", BuildingKind.KEEP, rectangle(0, 0, 2, 2), List.of(
-                floor(0, List.of(new FacilityCell(5, 5, bedroom)), List.of())));
+    void roomsMustNotOverlap() {
+        PlanDocument document = plan(List.of(0),
+                room("hall", 0, null, rect(0, 0, 3, 3)),
+                room("kitchen", 0, null, rect(2, 2, 2, 2)));
 
-        assertRejected(plan(keep), "вне контура");
+        assertThrows(ApiException.class, () -> PlanRules.validate(document, spaces, names));
     }
 
     @Test
-    void unknownFacilityIsRejected() {
-        Building keep = new Building("keep", "Донжон", BuildingKind.KEEP, rectangle(0, 0, 2, 2), List.of(
-                floor(0, List.of(new FacilityCell(0, 0, UUID.randomUUID())), List.of())));
+    void sameCellsOnDifferentFloorsAreFine() {
+        PlanDocument document = plan(List.of(0, 1),
+                room("hall", 0, null, rect(0, 0, 3, 3)),
+                room("chambers", 1, null, rect(0, 0, 3, 3)));
 
-        assertRejected(plan(keep), "нет в бастионе");
+        assertDoesNotThrow(() -> PlanRules.validate(document, spaces, names));
     }
 
     @Test
-    void stairMustLeadToExistingFloor() {
-        Building keep = new Building("keep", "Донжон", BuildingKind.KEEP, rectangle(0, 0, 2, 2), List.of(
-                floor(0, List.of(), List.of(new Stair(0, 0, 3)))));
-
-        assertRejected(plan(keep), "Лестница");
-    }
-
-    @Test
-    void outlineOutsideGridIsRejected() {
-        Building keep = new Building("keep", "Донжон", BuildingKind.KEEP, circle(1, 1, 3), List.of(
-                floor(0, List.of(), List.of())));
-
-        assertRejected(plan(keep), "Контур");
-    }
-
-    @Test
-    void cellsOfRemovedFacilitiesAreDropped() {
+    void removedFacilityLeavesPlainRoom() {
         UUID removed = UUID.randomUUID();
-        Building keep = new Building("keep", "Донжон", BuildingKind.KEEP, rectangle(0, 0, 2, 2), List.of(
-                floor(0, List.of(new FacilityCell(0, 0, removed), new FacilityCell(1, 0, bedroom)), List.of())));
 
-        PlanDocument cleaned = PlayerBastionPlanService.withoutMissingFacilities(plan(keep), spaces);
+        PlanDocument normalized = PlanRules.normalize(plan(List.of(0), room("hall", 0, removed, rect(0, 0, 2, 2))),
+                spaces);
 
-        assertEquals(List.of(new FacilityCell(1, 0, bedroom)),
-                cleaned.buildings().getFirst().floors().getFirst().cells());
+        assertNull(normalized.rooms().getFirst().facilityId());
+        assertDoesNotThrow(() -> PlanRules.validate(normalized, spaces, names));
     }
 
-    private void assertRejected(PlanDocument document, String messagePart) {
-        ApiException error = assertThrows(ApiException.class, () -> PlanRules.validate(document, spaces, names));
-        assertTrue(error.getMessage().contains(messagePart), error.getMessage());
+    @Test
+    void doorsAndWindowsStandOnRoomEdges() {
+        Room hall = room("hall", 0, null, rect(0, 0, 3, 3));
+        PlanDocument valid = withObjects(plan(List.of(0), hall),
+                List.of(new Door(0, 0, 0, Side.N, DoorKind.DOOR)),
+                List.of(new Window(0, 2, 1, Side.E)));
+        PlanDocument farAway = withObjects(plan(List.of(0), hall),
+                List.of(new Door(0, 10, 10, Side.N, DoorKind.DOOR)), List.of());
+        PlanDocument twice = withObjects(plan(List.of(0), hall),
+                List.of(new Door(0, 0, 2, Side.S, DoorKind.DOOR)),
+                List.of(new Window(0, 0, 3, Side.N)));
+
+        assertDoesNotThrow(() -> PlanRules.validate(valid, spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(farAway, spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(twice, spaces, names));
     }
 
-    private static PlanDocument plan(Building building) {
-        return new PlanDocument(List.of(building), List.of(), List.of());
+    @Test
+    void stairsLeadToExistingFloor() {
+        PlanDocument base = plan(List.of(0, 1), room("hall", 0, null, rect(0, 0, 3, 3)));
+        Stair up = new Stair(0, 1, 1, 1, 2, Side.N, 1, StairKind.STRAIGHT);
+        Stair nowhere = new Stair(0, 1, 1, 1, 2, Side.N, 2, StairKind.STRAIGHT);
+
+        assertDoesNotThrow(() -> PlanRules.validate(withStairs(base, up), spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(withStairs(base, nowhere), spaces, names));
     }
 
-    private static Floor floor(int level, List<FacilityCell> cells, List<Stair> stairs) {
-        return new Floor(level, cells, List.of(), List.of(), stairs);
+    @Test
+    void towerOpeningsSnapToAngleStep() {
+        Room tower = new Room("tower", "Башня", RoomKind.TOWER, 0, null, List.of(), new Circle(5, 6, 2));
+        PlanDocument base = PlanRules.normalize(plan(List.of(0), tower), spaces);
+
+        assertDoesNotThrow(() -> PlanRules.validate(withOpening(base,
+                new TowerOpening("tower", 22.5, OpeningType.WINDOW, null)), spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(withOpening(base,
+                new TowerOpening("tower", 10, OpeningType.WINDOW, null)), spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(withOpening(base,
+                new TowerOpening("missing", 0, OpeningType.DOOR, DoorKind.DOOR)), spaces, names));
     }
 
-    private static List<FacilityCell> cells(List<Cell> source, UUID facilityId, int count) {
-        return source.stream().limit(count).map(cell -> new FacilityCell(cell.x(), cell.y(), facilityId)).toList();
+    @Test
+    void firstFloorIsRequired() {
+        PlanDocument document = plan(List.of(1), room("hall", 1, null, rect(0, 0, 2, 2)));
+
+        assertThrows(ApiException.class, () -> PlanRules.validate(document, spaces, names));
     }
 
-    private static Outline circle(double cx, double cy, double r) {
-        return new Outline(OutlineType.CIRCLE, cx, cy, r, null, null, null, null, null);
+    @Test
+    void emptyPlanIsValid() {
+        PlanDocument document = PlanRules.normalize(PlanDocument.empty(), spaces);
+
+        assertDoesNotThrow(() -> PlanRules.validate(document, spaces, names));
     }
 
-    private static Outline rectangle(double x, double y, double width, double height) {
-        return new Outline(OutlineType.RECTANGLE, null, null, null, x, y, width, height, null);
+    @Test
+    void columnsSnapToHalfCells() {
+        PlanDocument base = plan(List.of(0));
+
+        assertDoesNotThrow(() -> PlanRules.validate(withColumn(base, new Column(0, 2.5, 3)), spaces, names));
+        assertThrows(ApiException.class,
+                () -> PlanRules.validate(withColumn(base, new Column(0, 2.3, 3)), spaces, names));
+    }
+
+    private static Room room(String id, int level, UUID facilityId, List<Cell> cells) {
+        return new Room(id, id, RoomKind.ROOM, level, facilityId, cells, null);
+    }
+
+    private static List<Cell> rect(int x, int y, int width, int height) {
+        List<Cell> cells = new ArrayList<>();
+        for (int row = y; row < y + height; row++) {
+            for (int column = x; column < x + width; column++) {
+                cells.add(new Cell(column, row));
+            }
+        }
+        return cells;
+    }
+
+    private static PlanDocument plan(List<Integer> levels, Room... rooms) {
+        return new PlanDocument(levels, List.of(rooms), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of());
+    }
+
+    private static PlanDocument withObjects(PlanDocument document, List<Door> doors, List<Window> windows) {
+        return new PlanDocument(document.levels(), document.rooms(), doors, windows, List.of(), List.of(),
+                List.of(), List.of());
+    }
+
+    private static PlanDocument withStairs(PlanDocument document, Stair stair) {
+        return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(),
+                List.of(stair), List.of(), List.of());
+    }
+
+    private static PlanDocument withOpening(PlanDocument document, TowerOpening opening) {
+        return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(opening),
+                List.of(), List.of(), List.of());
+    }
+
+    private static PlanDocument withColumn(PlanDocument document, Column column) {
+        return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(), List.of(),
+                List.of(column), List.of());
     }
 }
