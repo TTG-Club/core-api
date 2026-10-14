@@ -4,9 +4,11 @@ import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
+import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionEditor;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PlayerBastionResponseMapper {
     private final BastionFacilityRepository facilityRepository;
+    private final PlayerBastionEditorRepository editorRepository;
 
     public PlayerBastionResponse toResponse(PlayerBastion bastion, BastionViewer viewer) {
         return toResponses(List.of(bastion), item -> viewer).getFirst();
@@ -83,6 +86,11 @@ public class PlayerBastionResponseMapper {
                 manager && !archived,
                 viewer.canEdit() && !archived,
                 bastion.getGameId() != null && (viewer.owner() || manager),
+                viewer.owner() ? bastion.getShareToken() : null,
+                viewer.owner() && bastion.getShareToken() != null
+                        ? editorRepository.countByBastionIdAndStatus(bastion.getId(), PlayerBastionEditor.Status.PENDING)
+                        : 0,
+                viewer.editor(),
                 members,
                 bastion.getCreatedAt(),
                 bastion.getUpdatedAt());

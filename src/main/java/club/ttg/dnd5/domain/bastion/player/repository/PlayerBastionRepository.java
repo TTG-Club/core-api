@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +26,14 @@ public interface PlayerBastionRepository extends JpaRepository<PlayerBastion, UU
     List<PlayerBastion> findAllByOwnerIdOrderByCreatedAtAsc(UUID ownerId);
 
     long countByOwnerId(UUID ownerId);
+
+    /** Бастион по ссылке «поделиться» вместе с участниками. */
+    @EntityGraph(attributePaths = "members")
+    Optional<PlayerBastion> findWithMembersByShareToken(UUID shareToken);
+
+    /** Бастионы по списку вместе с участниками, старые первыми. */
+    @EntityGraph(attributePaths = "members")
+    List<PlayerBastion> findAllByIdInOrderByCreatedAtAsc(Collection<UUID> ids);
 
     /**
      * Удаляет бастион одним запросом: участников, сооружения, план, приказы, ходы и журнал

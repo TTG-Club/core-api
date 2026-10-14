@@ -10,7 +10,9 @@ import java.util.List;
  * @param limit           сколько бастионов можно создать сейчас
  * @param subscriberLimit сколько даёт подписка: подсказка «с подпиской доступно больше»
  * @param bastions        свои бастионы, старые первыми
+ * @param shared          чужие бастионы, которые владелец разрешил править по ссылке
  */
 @Schema(description = "Мои бастионы")
-public record MyPlayerBastionsResponse(int limit, int subscriberLimit, List<PlayerBastionResponse> bastions) {
+public record MyPlayerBastionsResponse(int limit, int subscriberLimit, List<PlayerBastionResponse> bastions,
+                                       List<PlayerBastionResponse> shared) {
 }

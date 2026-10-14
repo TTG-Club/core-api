@@ -39,13 +39,22 @@ public class PlayerBastionPlanService {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
         BastionViewer viewer = access.requireViewer(bastion, userId);
+        return toResponse(bastion, canEdit(bastion, viewer));
+    }
 
-        Optional<PlayerBastionPlan> plan = planRepository.findById(bastionId);
+    /** План бастиона, открытого по ссылке «поделиться»: только чтение. */
+    @Transactional(readOnly = true)
+    public PlanResponse findByLink(PlayerBastion bastion) {
+        return toResponse(bastion, false);
+    }
+
+    private PlanResponse toResponse(PlayerBastion bastion, boolean canEdit) {
+        Optional<PlayerBastionPlan> plan = planRepository.findById(bastion.getId());
         PlanDocument document = plan.map(PlayerBastionPlan::getDocument).orElseGet(PlanDocument::empty);
 
-        return new PlanResponse(bastionId,
+        return new PlanResponse(bastion.getId(),
                 plan.map(PlayerBastionPlan::getVersion).orElse(0L),
-                canEdit(bastion, viewer),
+                canEdit,
                 PlanRules.normalize(document, facilitySpaces(bastion)));
     }
 

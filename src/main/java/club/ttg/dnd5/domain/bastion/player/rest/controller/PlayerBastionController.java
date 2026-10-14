@@ -16,6 +16,8 @@ import club.ttg.dnd5.domain.bastion.player.rest.dto.PrerequisiteConfirmationRequ
 import club.ttg.dnd5.domain.bastion.player.rest.dto.UpdatePlayerBastionRequest;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionFacilityService;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionService;
+import club.ttg.dnd5.domain.bastion.player.share.PlayerBastionEditorResponse;
+import club.ttg.dnd5.domain.bastion.player.share.PlayerBastionShareService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -49,6 +52,7 @@ public class PlayerBastionController {
     private final PlayerBastionFacilityService facilityService;
     private final PlayerBastionPlanService planService;
     private final PlayerBastionActivityService activityService;
+    private final PlayerBastionShareService shareService;
 
     @Operation(summary = "Мои бастионы", description = "Свои бастионы и лимит: 3 без подписки, 12 с подпиской")
     @GetMapping("/my")
@@ -129,6 +133,37 @@ public class PlayerBastionController {
     @PostMapping("/{id}/activate")
     public PlayerBastionResponse activate(@PathVariable UUID id) {
         return service.activate(id);
+    }
+
+    @Operation(summary = "Поделиться бастионом",
+            description = "Владелец включает ссылку: по ней бастион открывается только на чтение")
+    @PostMapping("/{id}/share")
+    public PlayerBastionResponse share(@PathVariable UUID id) {
+        return shareService.share(id);
+    }
+
+    @Operation(summary = "Отозвать ссылку", description = "Вместе со ссылкой снимаются все права на правку")
+    @DeleteMapping("/{id}/share")
+    public PlayerBastionResponse revokeShare(@PathVariable UUID id) {
+        return shareService.revoke(id);
+    }
+
+    @Operation(summary = "Запросы на правку", description = "Ждущие ответа и разрешённые — для владельца")
+    @GetMapping("/{id}/editors")
+    public List<PlayerBastionEditorResponse> findEditors(@PathVariable UUID id) {
+        return shareService.findEditors(id);
+    }
+
+    @Operation(summary = "Разрешить править бастион")
+    @PostMapping("/{id}/editors/{editorId}/approve")
+    public List<PlayerBastionEditorResponse> approveEditor(@PathVariable UUID id, @PathVariable UUID editorId) {
+        return shareService.approve(id, editorId);
+    }
+
+    @Operation(summary = "Отклонить запрос или отозвать право на правку")
+    @DeleteMapping("/{id}/editors/{editorId}")
+    public List<PlayerBastionEditorResponse> removeEditor(@PathVariable UUID id, @PathVariable UUID editorId) {
+        return shareService.remove(id, editorId);
     }
 
     @Operation(summary = "План бастиона", description = "Смотреть может любой участник игры")

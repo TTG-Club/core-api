@@ -3,7 +3,9 @@ package club.ttg.dnd5.domain.bastion.player.service;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
+import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionEditor;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.user.service.UserService;
 import club.ttg.dnd5.exception.ApiException;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PlayerBastionAccess {
     private final PlayerBastionRepository bastionRepository;
+    private final PlayerBastionEditorRepository editorRepository;
     private final GameMembershipClient membershipClient;
     private final UserService userService;
 
@@ -41,9 +44,12 @@ public class PlayerBastionAccess {
 
     /** Кем пользователь приходится бастиону; не может смотреть — 403. */
     public BastionViewer requireViewer(PlayerBastion bastion, UUID userId) {
+        boolean editor = !userId.equals(bastion.getOwnerId()) && editorRepository.existsByBastionIdAndUserIdAndStatus(
+                bastion.getId(), userId, PlayerBastionEditor.Status.APPROVED);
         BastionViewer viewer = bastion.getGameId() == null
-                ? BastionViewer.outsideGame(bastion, userId)
-                : BastionViewer.inGame(bastion, membershipClient.membership(bastion.getGameId(), userId), userId);
+                ? BastionViewer.outsideGame(bastion, userId, editor)
+                : BastionViewer.inGame(bastion, membershipClient.membership(bastion.getGameId(), userId), userId,
+                        editor);
         if (!viewer.visible()) {
             throw new ApiException(HttpStatus.FORBIDDEN,
                     "Бастион видят его владелец, игроки с доступом и участники его игры");

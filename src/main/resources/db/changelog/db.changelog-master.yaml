@@ -381,3 +381,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/14-01-player-bastion-owner.yaml
   - include:
       file: db/changelog/2026/10/14-02-basic-facility-without-space.yaml
+  - include:
+      file: db/changelog/2026/10/14-03-player-bastion-share.yaml

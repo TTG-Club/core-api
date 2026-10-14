@@ -5,8 +5,10 @@ import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembe
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
 import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
+import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionEditor;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.CreatePlayerBastionRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.JoinGameRequest;
@@ -51,6 +53,7 @@ public class PlayerBastionService {
     private static final String DEFAULT_CHARACTER_NAME = "Персонаж";
 
     private final PlayerBastionRepository bastionRepository;
+    private final PlayerBastionEditorRepository editorRepository;
     private final GameMembershipClient membershipClient;
     private final PlayerBastionAccess access;
     private final PlayerBastionResponseMapper mapper;
@@ -65,7 +68,15 @@ public class PlayerBastionService {
                 bastionRepository.findAllByOwnerIdOrderByCreatedAtAsc(userId),
                 bastion -> access.requireViewer(bastion, userId));
 
-        return new MyPlayerBastionsResponse(limits.forCurrentUser(), PlayerBastionLimits.SUBSCRIBER, bastions);
+        List<UUID> sharedIds = editorRepository.findBastionIdsByUserIdAndStatus(userId,
+                PlayerBastionEditor.Status.APPROVED);
+        List<PlayerBastionResponse> shared = sharedIds.isEmpty()
+                ? List.of()
+                : mapper.toResponses(bastionRepository.findAllByIdInOrderByCreatedAtAsc(sharedIds),
+                        bastion -> access.requireViewer(bastion, userId));
+
+        return new MyPlayerBastionsResponse(limits.forCurrentUser(), PlayerBastionLimits.SUBSCRIBER, bastions,
+                shared);
     }
 
     /** Бастионы игры и, для мастера, игроки, которым можно дать доступ. */

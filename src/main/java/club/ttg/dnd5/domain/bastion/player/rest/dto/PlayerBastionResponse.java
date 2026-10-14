@@ -21,6 +21,9 @@ import java.util.UUID;
  *                        мастер игры, а вне игры — владелец
  * @param canEdit         можно рисовать план и отдавать приказы
  * @param canLeaveGame    можно убрать бастион из игры: владелец или мастер этой игры
+ * @param shareToken      секрет ссылки «поделиться»; видит только владелец, {@code null} — ссылки нет
+ * @param editRequests    сколько запросов на правку ждут ответа; считается только для владельца
+ * @param editor          владелец разрешил открывшему править бастион по ссылке
  */
 @Schema(description = "Бастион игроков")
 public record PlayerBastionResponse(
@@ -36,6 +39,9 @@ public record PlayerBastionResponse(
         boolean canManage,
         boolean canEdit,
         boolean canLeaveGame,
+        UUID shareToken,
+        long editRequests,
+        boolean editor,
         List<Member> members,
         Instant createdAt,
         Instant updatedAt) {
