@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-14-02-basic-facility-without-space
+      author: Magistrus
+      comment: >
+        У базового сооружения нет своего пространства: при закладке игрок делает
+        одно из двух сооружений тесным, а другое — вместительным.
+      changes:
+        - sql:
+            sql: UPDATE bastion_facility SET space = NULL WHERE category = 'BASIC'
+      rollback:
+        - empty
