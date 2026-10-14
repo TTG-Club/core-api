@@ -6,6 +6,8 @@ import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Circle;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Column;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Door;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.DoorKind;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Furniture;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.FurnitureKind;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.OpeningType;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Room;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.RoomKind;
@@ -110,7 +112,7 @@ class PlanRulesTest {
         PlanDocument base = plan(List.of(0, 1), room("hall", 0, null, rect(0, 0, 3, 3)));
         Stair stair = new Stair("same", 0, 1, 1, 1, 2, Side.N, 1, StairKind.STRAIGHT);
         PlanDocument clash = new PlanDocument(base.levels(), base.rooms(), List.of(), List.of(), List.of(),
-                List.of(stair), List.of(new Column("same", 0, 1, 1)), List.of());
+                List.of(stair), List.of(new Column("same", 0, 1, 1)), List.of(), List.of());
 
         assertThrows(ApiException.class, () -> PlanRules.validate(clash, spaces, names));
     }
@@ -198,6 +200,34 @@ class PlanRulesTest {
                 () -> PlanRules.validate(withColumn(base, new Column("column", 0, 2.3, 3)), spaces, names));
     }
 
+    @Test
+    void acceptsFurnitureInsideTheGrid() {
+        PlanDocument base = plan(List.of(0), room("hall", 0, null, rect(0, 0, 3, 3)));
+        PlanDocument withBed = withFurniture(base, new Furniture("bed", 0, 1, 1, FurnitureKind.BED, 90));
+
+        assertDoesNotThrow(() -> PlanRules.validate(withBed, spaces, names));
+    }
+
+    @Test
+    void rejectsFurnitureWithOddRotationOrOutsideTheGrid() {
+        PlanDocument base = plan(List.of(0), room("hall", 0, null, rect(0, 0, 3, 3)));
+        PlanDocument tilted = withFurniture(base, new Furniture("table", 0, 1, 1, FurnitureKind.TABLE, 45));
+        PlanDocument outside = withFurniture(base,
+                new Furniture("sofa", 0, PlanRules.GRID_SIZE - 1, 0, FurnitureKind.SOFA, 0));
+        PlanDocument noLevel = withFurniture(base, new Furniture("chair", 3, 1, 1, FurnitureKind.CHAIR, 0));
+
+        assertThrows(ApiException.class, () -> PlanRules.validate(tilted, spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(outside, spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(noLevel, spaces, names));
+    }
+
+    @Test
+    void normalizeTurnsMissingFurnitureIntoEmptyList() {
+        PlanDocument legacy = new PlanDocument(List.of(0), List.of(), null, null, null, null, null, null, null);
+
+        assertEquals(List.of(), PlanRules.normalize(legacy, Map.of()).furniture());
+    }
+
     private static Room room(String id, int level, UUID facilityId, List<Cell> cells) {
         return new Room(id, id, RoomKind.ROOM, level, facilityId, cells, null);
     }
@@ -214,26 +244,31 @@ class PlanRulesTest {
 
     private static PlanDocument plan(List<Integer> levels, Room... rooms) {
         return new PlanDocument(levels, List.of(rooms), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of());
+                List.of(), List.of());
     }
 
     private static PlanDocument withObjects(PlanDocument document, List<Door> doors, List<Window> windows) {
         return new PlanDocument(document.levels(), document.rooms(), doors, windows, List.of(), List.of(),
-                List.of(), List.of());
+                List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withStairs(PlanDocument document, Stair stair) {
         return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(),
-                List.of(stair), List.of(), List.of());
+                List.of(stair), List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withOpening(PlanDocument document, TowerOpening opening) {
         return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(opening),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withColumn(PlanDocument document, Column column) {
         return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(), List.of(),
-                List.of(column), List.of());
+                List.of(column), List.of(), List.of());
+    }
+
+    private static PlanDocument withFurniture(PlanDocument document, Furniture furniture) {
+        return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(furniture));
     }
 }

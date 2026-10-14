@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Cell;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Circle;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Column;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Door;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Furniture;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.OpeningType;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Room;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.RoomKind;
@@ -84,7 +85,8 @@ public class PlanRules {
                 .toList();
         return new PlanDocument(levels.isEmpty() ? List.of(0) : levels, withoutOverlaps(rooms),
                 list(document.doors()), list(document.windows()), list(document.towerOpenings()),
-                list(document.stairs()), list(document.columns()), list(document.defenseWalls()));
+                list(document.stairs()), list(document.columns()), list(document.defenseWalls()),
+                list(document.furniture()));
     }
 
     /**
@@ -125,9 +127,10 @@ public class PlanRules {
         validateArea(document.rooms(), facilities, names);
 
         int objects = document.doors().size() + document.windows().size() + document.towerOpenings().size()
-                + document.stairs().size() + document.columns().size();
+                + document.stairs().size() + document.columns().size() + document.furniture().size();
         if (objects > MAX_OBJECTS) {
-            throw badRequest("Слишком много дверей, окон, лестниц и колонн: больше %d".formatted(MAX_OBJECTS));
+            throw badRequest("Слишком много дверей, окон, лестниц, колонн и мебели: больше %d"
+                    .formatted(MAX_OBJECTS));
         }
 
         Set<String> edges = new HashSet<>();
@@ -152,6 +155,11 @@ public class PlanRules {
             if (!halfStep(column.x()) || !halfStep(column.y()) || !onGrid(column.x(), column.y())) {
                 throw badRequest("Колонна стоит вне сетки участка");
             }
+        }
+
+        for (Furniture furniture : document.furniture()) {
+            requireObjectId(objectIds, furniture.id());
+            validateFurniture(furniture, levels);
         }
 
         if (document.defenseWalls().size() > MAX_WALL_CELLS) {
@@ -282,7 +290,7 @@ public class PlanRules {
 
     private static void requireObjectId(Set<String> ids, String id) {
         if (!StringUtils.hasText(id) || !ids.add(id)) {
-            throw badRequest("У каждой лестницы и колонны должен быть свой идентификатор");
+            throw badRequest("У каждой лестницы, колонны и предмета мебели должен быть свой идентификатор");
         }
     }
 
@@ -306,6 +314,22 @@ public class PlanRules {
                 && circle.r() >= MIN_TOWER_RADIUS && circle.r() <= MAX_TOWER_RADIUS
                 && onGrid(circle.cx() - circle.r(), circle.cy() - circle.r())
                 && onGrid(circle.cx() + circle.r(), circle.cy() + circle.r());
+    }
+
+    private static void validateFurniture(Furniture furniture, Set<Integer> levels) {
+        if (furniture.kind() == null) {
+            throw badRequest("У мебели не указан вид");
+        }
+        if (furniture.rotation() % 90 != 0 || furniture.rotation() < 0 || furniture.rotation() >= 360) {
+            throw badRequest("Мебель поворачивается только на 0, 90, 180 или 270 градусов");
+        }
+        requireLevel(levels, furniture.level());
+        boolean turned = furniture.rotation() % 180 != 0;
+        int width = turned ? furniture.kind().depth() : furniture.kind().width();
+        int depth = turned ? furniture.kind().width() : furniture.kind().depth();
+        if (!onGrid(furniture.x(), furniture.y()) || !onGrid(furniture.x() + width, furniture.y() + depth)) {
+            throw badRequest("Мебель стоит вне участка");
+        }
     }
 
     private static void requireLevel(Set<Integer> levels, int level) {
