@@ -17,6 +17,7 @@ import lombok.experimental.UtilityClass;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
  *     <li>площадь каждого сооружения — сумма клеток его комнат по всем этажам — не больше
  *     его пространства (тесное 4, вместительное 16, просторное 36);</li>
  *     <li>на плане только сооружения этого бастиона;</li>
- *     <li>клетка этажа принадлежит одной комнате;</li>
+ *     <li>клетка этажа принадлежит одной комнате — пересечения разводит {@link #normalize};</li>
  *     <li>двери и окна стоят на краю комнаты, лестница ведёт на существующий этаж;</li>
  *     <li>размеры плана ограничены, чтобы документ не разрастался бесконечно.</li>
  * </ul>
@@ -81,9 +82,31 @@ public class PlanRules {
                                 ? PlanGeometry.cellsInside(room.shape()) : list(room.cells()),
                         room.kind() == RoomKind.TOWER ? room.shape() : null))
                 .toList();
-        return new PlanDocument(levels.isEmpty() ? List.of(0) : levels, rooms,
+        return new PlanDocument(levels.isEmpty() ? List.of(0) : levels, withoutOverlaps(rooms),
                 list(document.doors()), list(document.windows()), list(document.towerOpenings()),
                 list(document.stairs()), list(document.columns()), list(document.defenseWalls()));
+    }
+
+    /**
+     * Разводит комнаты, претендующие на одну клетку этажа: клетка остаётся за башней, а среди
+     * прочих — за комнатой, что раньше в списке. Так одновременные правки двух человек дают
+     * предсказуемый план, а не отказ в сохранении. Опустевшие комнаты убираются.
+     */
+    private static List<Room> withoutOverlaps(List<Room> rooms) {
+        Map<Integer, Set<Cell>> taken = new HashMap<>();
+        List<Room> ordered = new ArrayList<>(rooms.stream().filter(room -> room.kind() == RoomKind.TOWER).toList());
+        ordered.addAll(rooms.stream().filter(room -> room.kind() != RoomKind.TOWER).toList());
+
+        Map<Room, List<Cell>> kept = new HashMap<>();
+        for (Room room : ordered) {
+            Set<Cell> floor = taken.computeIfAbsent(room.level(), level -> new HashSet<>());
+            kept.put(room, room.cells().stream().filter(floor::add).toList());
+        }
+        return rooms.stream()
+                .map(room -> new Room(room.id(), room.name(), room.kind(), room.level(), room.facilityId(),
+                        kept.get(room), room.shape()))
+                .filter(room -> !room.cells().isEmpty())
+                .toList();
     }
 
     /**
@@ -118,10 +141,13 @@ public class PlanRules {
             requireEdge(floors, edges, window.level(), window.x(), window.y(), window.side(), "Окно");
         }
         validateTowerOpenings(document.towerOpenings(), document.rooms());
+        Set<String> objectIds = new HashSet<>();
         for (Stair stair : document.stairs()) {
+            requireObjectId(objectIds, stair.id());
             validateStair(stair, levels);
         }
         for (Column column : document.columns()) {
+            requireObjectId(objectIds, column.id());
             requireLevel(levels, column.level());
             if (!halfStep(column.x()) || !halfStep(column.y()) || !onGrid(column.x(), column.y())) {
                 throw badRequest("Колонна стоит вне сетки участка");
@@ -251,6 +277,12 @@ public class PlanRules {
             if (!taken.add(opening.roomId() + ":" + Math.rint(steps))) {
                 throw badRequest("В стене «%s» два проёма в одном месте".formatted(title(tower)));
             }
+        }
+    }
+
+    private static void requireObjectId(Set<String> ids, String id) {
+        if (!StringUtils.hasText(id) || !ids.add(id)) {
+            throw badRequest("У каждой лестницы и колонны должен быть свой идентификатор");
         }
     }
 

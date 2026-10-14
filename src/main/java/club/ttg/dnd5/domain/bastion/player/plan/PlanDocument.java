@@ -9,6 +9,10 @@ import java.util.UUID;
  * План бастиона — один документ на бастион, упрощённая карта в духе карт подземелий.
  * Координаты — в клетках 5×5 футов.
  *
+ * <p>У каждого объекта плана свой идентификатор (у дверей и окон — ребро клетки), а
+ * пересечения клеток сервер разрешает сам: так правки нескольких человек сливаются
+ * без отказа в сохранении.</p>
+ *
  * <p>План собирается из комнат на этажах. Комната — набор клеток одного этажа: зал, коридор,
  * открытый двор или круглая башня. Стены не хранятся: редактор строит их сам по границам
  * комнат. Двери и окна стоят на рёбрах клеток, лестницы и колонны — на полу.</p>
@@ -109,17 +113,22 @@ public record PlanDocument(List<Integer> levels,
     /**
      * Лестница — прямоугольник клеток.
      *
+     * @param id        идентификатор внутри плана (генерирует редактор)
      * @param direction куда идёт подъём
      * @param toLevel   этаж, на который ведёт лестница
      */
     @Schema(description = "Лестница")
-    public record Stair(int level, int x, int y, int width, int height, Side direction, int toLevel,
+    public record Stair(String id, int level, int x, int y, int width, int height, Side direction, int toLevel,
                         StairKind kind) {
     }
 
-    /** Колонна в центре клетки или на пересечении линий сетки: координаты кратны половине клетки. */
+    /**
+     * Колонна в центре клетки или на пересечении линий сетки: координаты кратны половине клетки.
+     *
+     * @param id идентификатор внутри плана (генерирует редактор)
+     */
     @Schema(description = "Колонна")
-    public record Column(int level, double x, double y) {
+    public record Column(String id, int level, double x, double y) {
     }
 
     @Schema(description = "Клетка")

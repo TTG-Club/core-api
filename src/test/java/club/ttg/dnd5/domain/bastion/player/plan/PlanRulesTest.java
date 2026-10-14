@@ -82,13 +82,37 @@ class PlanRulesTest {
         assertTrue(error.getMessage().contains("не больше 4"), error.getMessage());
     }
 
+    /** Пересечение комнат не отказ, а правило: клетка остаётся за той, что раньше в списке. */
     @Test
-    void roomsMustNotOverlap() {
-        PlanDocument document = plan(List.of(0),
+    void overlappingCellsStayWithFirstRoom() {
+        PlanDocument document = PlanRules.normalize(plan(List.of(0),
                 room("hall", 0, null, rect(0, 0, 3, 3)),
-                room("kitchen", 0, null, rect(2, 2, 2, 2)));
+                room("kitchen", 0, null, rect(2, 2, 2, 2))), spaces);
 
-        assertThrows(ApiException.class, () -> PlanRules.validate(document, spaces, names));
+        assertEquals(9, document.rooms().get(0).cells().size());
+        assertEquals(3, document.rooms().get(1).cells().size());
+        assertDoesNotThrow(() -> PlanRules.validate(document, spaces, names));
+    }
+
+    @Test
+    void towerKeepsItsCellsAndSwallowedRoomDisappears() {
+        Room closet = room("closet", 0, null, List.of(new Cell(4, 5)));
+        Room tower = new Room("tower", "Башня", RoomKind.TOWER, 0, null, List.of(), new Circle(5, 6, 2));
+
+        PlanDocument document = PlanRules.normalize(plan(List.of(0), closet, tower), spaces);
+
+        assertEquals(1, document.rooms().size());
+        assertEquals(12, document.rooms().getFirst().cells().size());
+    }
+
+    @Test
+    void stairsAndColumnsNeedUniqueIds() {
+        PlanDocument base = plan(List.of(0, 1), room("hall", 0, null, rect(0, 0, 3, 3)));
+        Stair stair = new Stair("same", 0, 1, 1, 1, 2, Side.N, 1, StairKind.STRAIGHT);
+        PlanDocument clash = new PlanDocument(base.levels(), base.rooms(), List.of(), List.of(), List.of(),
+                List.of(stair), List.of(new Column("same", 0, 1, 1)), List.of());
+
+        assertThrows(ApiException.class, () -> PlanRules.validate(clash, spaces, names));
     }
 
     @Test
@@ -131,8 +155,8 @@ class PlanRulesTest {
     @Test
     void stairsLeadToExistingFloor() {
         PlanDocument base = plan(List.of(0, 1), room("hall", 0, null, rect(0, 0, 3, 3)));
-        Stair up = new Stair(0, 1, 1, 1, 2, Side.N, 1, StairKind.STRAIGHT);
-        Stair nowhere = new Stair(0, 1, 1, 1, 2, Side.N, 2, StairKind.STRAIGHT);
+        Stair up = new Stair("stair", 0, 1, 1, 1, 2, Side.N, 1, StairKind.STRAIGHT);
+        Stair nowhere = new Stair("stair", 0, 1, 1, 1, 2, Side.N, 2, StairKind.STRAIGHT);
 
         assertDoesNotThrow(() -> PlanRules.validate(withStairs(base, up), spaces, names));
         assertThrows(ApiException.class, () -> PlanRules.validate(withStairs(base, nowhere), spaces, names));
@@ -169,9 +193,9 @@ class PlanRulesTest {
     void columnsSnapToHalfCells() {
         PlanDocument base = plan(List.of(0));
 
-        assertDoesNotThrow(() -> PlanRules.validate(withColumn(base, new Column(0, 2.5, 3)), spaces, names));
+        assertDoesNotThrow(() -> PlanRules.validate(withColumn(base, new Column("column", 0, 2.5, 3)), spaces, names));
         assertThrows(ApiException.class,
-                () -> PlanRules.validate(withColumn(base, new Column(0, 2.3, 3)), spaces, names));
+                () -> PlanRules.validate(withColumn(base, new Column("column", 0, 2.3, 3)), spaces, names));
     }
 
     private static Room room(String id, int level, UUID facilityId, List<Cell> cells) {
