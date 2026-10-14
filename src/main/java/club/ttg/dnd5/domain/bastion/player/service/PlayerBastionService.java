@@ -9,6 +9,8 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.CreatePlayerBastionRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.JoinGameRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.MyPlayerBastionsResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionGameResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionMemberRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
@@ -23,23 +25,25 @@ import org.springframework.util.StringUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Бастионы игроков в играх каталога.
+ * Бастионы игроков.
  *
- * <p>Права берутся из актуального состава игры в find-game-api ({@link PlayerBastionAccess}):
+ * <p>Бастион принадлежит создавшему его пользователю, как лист персонажа, и может быть
+ * добавлен в одну игру каталога. Права ({@link BastionViewer}):
  * <ul>
- *     <li>смотреть бастионы игры может любой её участник — мастер и игроки с одобренной заявкой;</li>
- *     <li>создавать, переименовывать, менять состав и архивировать — только мастер;</li>
+ *     <li>создавать, удалять и добавлять в игру — владелец;</li>
+ *     <li>вести бастион (состав, казна, ходы, требования, архив) — мастер его игры, а вне
+ *     игры — владелец;</li>
+ *     <li>убрать бастион из игры — владелец или мастер этой игры;</li>
+ *     <li>смотреть бастион в игре — любой её участник; вне игры — владелец и игроки с
+ *     доступом;</li>
  *     <li>выбирать сооружения своего персонажа — его игрок, пока бастион в закладке.</li>
- * </ul>
- * Игрок, чью заявку отозвали, теряет доступ сразу (с точностью до кеша клиента), даже если
- * он ещё числится в составе бастиона.</p>
+ * </ul></p>
  */
 @Service
 @RequiredArgsConstructor
@@ -51,6 +55,18 @@ public class PlayerBastionService {
     private final PlayerBastionAccess access;
     private final PlayerBastionResponseMapper mapper;
     private final PlayerBastionFacilityService facilityService;
+    private final PlayerBastionLimits limits;
+
+    /** Свои бастионы и лимит на создание. */
+    @Transactional(readOnly = true)
+    public MyPlayerBastionsResponse findMine() {
+        UUID userId = access.currentUserId();
+        List<PlayerBastionResponse> bastions = mapper.toResponses(
+                bastionRepository.findAllByOwnerIdOrderByCreatedAtAsc(userId),
+                bastion -> access.requireViewer(bastion, userId));
+
+        return new MyPlayerBastionsResponse(limits.forCurrentUser(), PlayerBastionLimits.SUBSCRIBER, bastions);
+    }
 
     /** Бастионы игры и, для мастера, игроки, которым можно дать доступ. */
     @Transactional(readOnly = true)
@@ -66,45 +82,116 @@ public class PlayerBastionService {
                 : List.of();
 
         List<PlayerBastionResponse> bastions = mapper.toResponses(
-                bastionRepository.findAllByGameIdOrderByCreatedAtAsc(gameId), membership, userId);
+                bastionRepository.findAllByGameIdOrderByCreatedAtAsc(gameId),
+                bastion -> BastionViewer.inGame(bastion, membership, userId));
 
-        return new PlayerBastionGameResponse(gameId, membership.title(), membership.role(), master, players, bastions);
+        return new PlayerBastionGameResponse(gameId, membership.title(), membership.role(), true, players, bastions);
     }
 
     @Transactional(readOnly = true)
     public PlayerBastionResponse findById(UUID id) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(id);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
-        return mapper.toResponse(bastion, membership, userId);
+        return mapper.toResponse(bastion, access.requireViewer(bastion, userId));
     }
 
+    /** Создаёт бастион вне игры; персонаж владельца сразу получает доступ. */
     @Transactional
     public PlayerBastionResponse create(CreatePlayerBastionRequest request) {
         UUID userId = access.currentUserId();
-        GameMembership membership = access.requireMaster(request.gameId(), userId);
+        int limit = limits.forCurrentUser();
+        if (bastionRepository.countByOwnerId(userId) >= limit) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Достигнут лимит бастионов: %d. Удалите один из существующих".formatted(limit));
+        }
 
         PlayerBastion bastion = new PlayerBastion();
-        bastion.setGameId(request.gameId());
-        bastion.setMasterId(membership.masterId());
+        bastion.setOwnerId(userId);
         bastion.setName(request.name().trim());
-        replaceMembers(bastion, Optional.ofNullable(request.members()).orElse(List.of()), request.gameId());
 
-        return mapper.toResponse(bastionRepository.save(bastion), membership, userId);
+        PlayerBastionMember member = new PlayerBastionMember();
+        member.setBastion(bastion);
+        member.setUserId(userId);
+        member.setCharacterName(StringUtils.hasText(request.characterName())
+                ? request.characterName().trim()
+                : DEFAULT_CHARACTER_NAME);
+        member.setCharacterLevel(request.characterLevel());
+        member.setCharacterSheetId(request.characterSheetId());
+        bastion.getMembers().add(member);
+
+        PlayerBastion saved = bastionRepository.save(bastion);
+        return mapper.toResponse(saved, BastionViewer.outsideGame(saved, userId));
     }
 
     @Transactional
     public PlayerBastionResponse update(UUID id, UpdatePlayerBastionRequest request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(id);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         PlayerBastionAccess.requireNotArchived(bastion);
         PlayerBastionAccess.requireVersion(bastion, request.version());
 
         bastion.setName(request.name().trim());
-        replaceMembers(bastion, request.members(), bastion.getGameId());
+        replaceMembers(bastion, request.members());
 
-        return mapper.toResponse(bastionRepository.saveAndFlush(bastion), membership, userId);
+        return mapper.toResponse(bastionRepository.saveAndFlush(bastion), viewer);
+    }
+
+    /** Удаляет бастион вместе с планом и журналами. Только владелец. */
+    @Transactional
+    public void delete(UUID id) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(id);
+        access.requireOwner(bastion, userId);
+
+        bastionRepository.deleteBastion(bastion.getId());
+    }
+
+    /**
+     * Добавляет свой бастион в игру, участник которой владелец. Бастион может быть только в
+     * одной игре; вести его там начинает мастер этой игры.
+     */
+    @Transactional
+    public PlayerBastionResponse joinGame(UUID id, JoinGameRequest request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(id);
+        access.requireOwner(bastion, userId);
+        PlayerBastionAccess.requireNotArchived(bastion);
+        if (bastion.getGameId() != null) {
+            throw new ApiException(HttpStatus.CONFLICT,
+                    "Бастион уже в другой игре: сначала уберите его оттуда");
+        }
+        GameMembership membership = access.requireParticipant(request.gameId(), userId);
+
+        bastion.setGameId(request.gameId());
+        bastion.setMasterId(membership.masterId());
+
+        PlayerBastion saved = bastionRepository.saveAndFlush(bastion);
+        return mapper.toResponse(saved, BastionViewer.inGame(saved, membership, userId));
+    }
+
+    /**
+     * Убирает бастион из игры: владелец уходит с ним сам или мастер убирает его из своей игры.
+     * Бастион остаётся у владельца со всеми сооружениями, планом и журналами.
+     */
+    @Transactional
+    public PlayerBastionResponse leaveGame(UUID id) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(id);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        if (bastion.getGameId() == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "Бастион не добавлен в игру");
+        }
+        if (!viewer.owner() && !viewer.manager()) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Убрать бастион из игры могут его владелец и мастер игры");
+        }
+
+        bastion.setGameId(null);
+        bastion.setMasterId(null);
+
+        PlayerBastion saved = bastionRepository.saveAndFlush(bastion);
+        return mapper.toResponse(saved, BastionViewer.outsideGame(saved, userId));
     }
 
     /**
@@ -115,14 +202,14 @@ public class PlayerBastionService {
     public PlayerBastionResponse activate(UUID id) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(id);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         if (bastion.getStatus() != PlayerBastionStatus.SETUP) {
             throw new ApiException(HttpStatus.CONFLICT, "Запустить можно только бастион в закладке");
         }
         facilityService.requireSetupComplete(bastion);
 
         bastion.setStatus(PlayerBastionStatus.ACTIVE);
-        return mapper.toResponse(bastionRepository.saveAndFlush(bastion), membership, userId);
+        return mapper.toResponse(bastionRepository.saveAndFlush(bastion), viewer);
     }
 
     /** Архивирует бастион: игра закончилась, бастион остаётся только для просмотра. */
@@ -130,17 +217,19 @@ public class PlayerBastionService {
     public PlayerBastionResponse archive(UUID id) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(id);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
 
         bastion.setStatus(PlayerBastionStatus.ARCHIVED);
-        return mapper.toResponse(bastionRepository.saveAndFlush(bastion), membership, userId);
+        return mapper.toResponse(bastionRepository.saveAndFlush(bastion), viewer);
     }
 
     /**
      * Заменяет состав бастиона. Существующие записи обновляются на месте: к ним привязаны
      * сооружения персонажей. Удалённый из состава игрок теряет и сооружения своего персонажа.
+     * Новым в составе может быть только владелец или, когда бастион в игре, игрок этой игры
+     * с одобренной заявкой.
      */
-    private void replaceMembers(PlayerBastion bastion, List<PlayerBastionMemberRequest> requested, UUID gameId) {
+    private void replaceMembers(PlayerBastion bastion, List<PlayerBastionMemberRequest> requested) {
         Set<UUID> seen = new HashSet<>();
         for (PlayerBastionMemberRequest member : requested) {
             if (!seen.add(member.userId())) {
@@ -148,19 +237,18 @@ public class PlayerBastionService {
             }
         }
 
-        Map<UUID, GameMembers.Player> players = requested.isEmpty()
-                ? Map.of()
-                : membershipClient.members(gameId).players().stream()
-                        .collect(Collectors.toMap(GameMembers.Player::userId, Function.identity(), (first, second) -> first));
+        Map<UUID, PlayerBastionMember> existing = bastion.getMembers().stream()
+                .collect(Collectors.toMap(PlayerBastionMember::getUserId, Function.identity()));
+        Map<UUID, GameMembers.Player> players = gamePlayers(bastion, requested, existing);
         for (PlayerBastionMemberRequest member : requested) {
-            if (!players.containsKey(member.userId())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST,
-                        "Доступ к бастиону можно дать только игроку этой игры с одобренной заявкой");
+            boolean known = existing.containsKey(member.userId()) || bastion.getOwnerId().equals(member.userId());
+            if (!known && !players.containsKey(member.userId())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, bastion.getGameId() == null
+                        ? "Дать доступ другим игрокам можно, когда бастион добавлен в игру"
+                        : "Доступ к бастиону можно дать только игроку этой игры с одобренной заявкой");
             }
         }
 
-        Map<UUID, PlayerBastionMember> existing = bastion.getMembers().stream()
-                .collect(Collectors.toMap(PlayerBastionMember::getUserId, Function.identity()));
         bastion.getMembers().removeIf(member -> !seen.contains(member.getUserId()));
 
         for (PlayerBastionMemberRequest request : requested) {
@@ -173,15 +261,36 @@ public class PlayerBastionService {
             } else if (member.getCharacterLevel() != request.characterLevel()) {
                 facilityService.requireLevelFits(member, request.characterLevel());
             }
-            member.setCharacterName(characterName(request, players.get(request.userId())));
+            member.setCharacterName(characterName(request, member, players.get(request.userId())));
             member.setCharacterLevel(request.characterLevel());
             member.setCharacterSheetId(request.characterSheetId());
         }
     }
 
-    private static String characterName(PlayerBastionMemberRequest request, GameMembers.Player player) {
+    /**
+     * Игроки игры бастиона — только если в составе есть новые лица: состав игры стоит похода
+     * в каталог.
+     */
+    private Map<UUID, GameMembers.Player> gamePlayers(PlayerBastion bastion,
+                                                     List<PlayerBastionMemberRequest> requested,
+                                                     Map<UUID, PlayerBastionMember> existing) {
+        boolean hasNewcomers = requested.stream()
+                .anyMatch(member -> !existing.containsKey(member.userId()));
+        if (!hasNewcomers || bastion.getGameId() == null) {
+            return Map.of();
+        }
+        return membershipClient.members(bastion.getGameId()).players().stream()
+                .collect(Collectors.toMap(GameMembers.Player::userId, Function.identity(), (first, second) -> first));
+    }
+
+    private static String characterName(PlayerBastionMemberRequest request,
+                                        PlayerBastionMember member,
+                                        GameMembers.Player player) {
         if (StringUtils.hasText(request.characterName())) {
             return request.characterName().trim();
+        }
+        if (StringUtils.hasText(member.getCharacterName())) {
+            return member.getCharacterName();
         }
         if (player != null && StringUtils.hasText(player.characterName())) {
             return player.characterName().trim();

@@ -10,7 +10,7 @@ import java.util.UUID;
  * Бастионы игры одним ответом — для страницы «Бастионы» игры.
  *
  * @param role      кем открывший приходится игре
- * @param canCreate может создавать бастионы (мастер)
+ * @param canAdd    может добавить в игру свой бастион (любой участник)
  * @param players   игроки с одобренной заявкой — кому мастер может дать доступ; другим пусто
  * @param bastions  все бастионы игры: смотреть их может любой участник
  */
@@ -19,7 +19,7 @@ public record PlayerBastionGameResponse(
         UUID gameId,
         String title,
         GameRole role,
-        boolean canCreate,
+        boolean canAdd,
         List<Player> players,
         List<PlayerBastionResponse> bastions) {
 

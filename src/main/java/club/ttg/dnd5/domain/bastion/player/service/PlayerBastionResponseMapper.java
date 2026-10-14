@@ -3,8 +3,6 @@ package club.ttg.dnd5.domain.bastion.player.service;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
-import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
-import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
@@ -21,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,13 +31,17 @@ import java.util.stream.Collectors;
 public class PlayerBastionResponseMapper {
     private final BastionFacilityRepository facilityRepository;
 
-    public PlayerBastionResponse toResponse(PlayerBastion bastion, GameMembership membership, UUID userId) {
-        return toResponses(List.of(bastion), membership, userId).getFirst();
+    public PlayerBastionResponse toResponse(PlayerBastion bastion, BastionViewer viewer) {
+        return toResponses(List.of(bastion), item -> viewer).getFirst();
     }
 
+    /**
+     * Ответы о нескольких бастионах.
+     *
+     * @param viewerOf права открывшего на каждый бастион
+     */
     public List<PlayerBastionResponse> toResponses(Collection<PlayerBastion> bastions,
-                                                   GameMembership membership,
-                                                   UUID userId) {
+                                                   Function<PlayerBastion, BastionViewer> viewerOf) {
         Set<String> urls = bastions.stream()
                 .flatMap(bastion -> bastion.getMembers().stream())
                 .flatMap(member -> member.getFacilities().stream())
@@ -52,35 +53,36 @@ public class PlayerBastionResponseMapper {
                         .collect(Collectors.toMap(BastionFacility::getUrl, Function.identity()));
 
         return bastions.stream()
-                .map(bastion -> toResponse(bastion, membership, userId, reference))
+                .map(bastion -> toResponse(bastion, viewerOf.apply(bastion), reference))
                 .toList();
     }
 
     private PlayerBastionResponse toResponse(PlayerBastion bastion,
-                                             GameMembership membership,
-                                             UUID userId,
+                                             BastionViewer viewer,
                                              Map<String, BastionFacility> reference) {
-        boolean master = membership.role() == GameRole.MASTER;
+        boolean manager = viewer.manager();
         boolean archived = bastion.getStatus() == PlayerBastionStatus.ARCHIVED;
         boolean setup = bastion.getStatus() == PlayerBastionStatus.SETUP;
-        boolean member = bastion.getMembers().stream().anyMatch(item -> item.getUserId().equals(userId));
 
         List<PlayerBastionResponse.Member> members = bastion.getMembers().stream()
-                .map(item -> toMember(item, setup && (master || item.getUserId().equals(userId)),
-                        bastion.getStatus() == PlayerBastionStatus.ACTIVE && (master || item.getUserId().equals(userId)),
+                .map(item -> toMember(item, setup && (manager || viewer.is(item.getUserId())),
+                        bastion.getStatus() == PlayerBastionStatus.ACTIVE && (manager || viewer.is(item.getUserId())),
                         reference))
                 .toList();
 
         return new PlayerBastionResponse(
                 bastion.getId(),
                 bastion.getGameId(),
+                bastion.getOwnerId(),
                 bastion.getName(),
                 bastion.getStatus(),
                 bastion.getTurn(),
                 bastion.getTreasuryGp(),
                 bastion.getVersion(),
-                master && !archived,
-                (master || member) && !archived,
+                viewer.owner(),
+                manager && !archived,
+                viewer.canEdit() && !archived,
+                bastion.getGameId() != null && (viewer.owner() || manager),
                 members,
                 bastion.getCreatedAt(),
                 bastion.getUpdatedAt());

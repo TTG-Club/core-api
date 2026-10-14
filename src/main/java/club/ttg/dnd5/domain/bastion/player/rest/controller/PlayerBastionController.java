@@ -8,6 +8,8 @@ import club.ttg.dnd5.domain.bastion.player.plan.PlanResponse;
 import club.ttg.dnd5.domain.bastion.player.plan.PlayerBastionPlanService;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.CreatePlayerBastionRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.JoinGameRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.MyPlayerBastionsResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionGameResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PrerequisiteConfirmationRequest;
@@ -33,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * Бастионы игроков в играх каталога. Только для авторизованных: {@code /api/v2/**} открыт
+ * Бастионы игроков: свои бастионы и бастионы в играх каталога. Только для авторизованных: {@code /api/v2/**} открыт
  * в конфигурации безопасности, поэтому доступ закрывает {@code @Secured("USER")}, а права
  * внутри игры проверяет сервис.
  */
@@ -41,12 +43,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/player-bastions")
 @Secured("USER")
-@Tag(name = "Бастионы игроков", description = "Бастионы в играх каталога")
+@Tag(name = "Бастионы игроков", description = "Свои бастионы и бастионы в играх каталога")
 public class PlayerBastionController {
     private final PlayerBastionService service;
     private final PlayerBastionFacilityService facilityService;
     private final PlayerBastionPlanService planService;
     private final PlayerBastionActivityService activityService;
+
+    @Operation(summary = "Мои бастионы", description = "Свои бастионы и лимит: 3 без подписки, 12 с подпиской")
+    @GetMapping("/my")
+    public MyPlayerBastionsResponse findMine() {
+        return service.findMine();
+    }
 
     @Operation(summary = "Бастионы игры", description = "Все бастионы игры и, для мастера, игроки, которым можно дать доступ")
     @GetMapping("/games/{gameId}")
@@ -60,20 +68,40 @@ public class PlayerBastionController {
         return service.findById(id);
     }
 
-    @Operation(summary = "Создать бастион", description = "Только мастер игры")
+    @Operation(summary = "Создать бастион", description = "Бастион принадлежит создавшему; лимит зависит от подписки")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PlayerBastionResponse create(@Valid @RequestBody CreatePlayerBastionRequest request) {
         return service.create(request);
     }
 
-    @Operation(summary = "Изменить название и состав игроков", description = "Только мастер игры")
+    @Operation(summary = "Изменить название и состав игроков",
+            description = "Мастер игры, а вне игры — владелец")
     @PutMapping("/{id}")
     public PlayerBastionResponse update(@PathVariable UUID id, @Valid @RequestBody UpdatePlayerBastionRequest request) {
         return service.update(id, request);
     }
 
-    @Operation(summary = "Отправить бастион в архив", description = "Только мастер игры")
+    @Operation(summary = "Удалить бастион", description = "Только владелец; вместе с планом и журналами")
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id) {
+        service.delete(id);
+    }
+
+    @Operation(summary = "Добавить бастион в игру", description = "Только владелец, участник этой игры")
+    @PostMapping("/{id}/game")
+    public PlayerBastionResponse joinGame(@PathVariable UUID id, @Valid @RequestBody JoinGameRequest request) {
+        return service.joinGame(id, request);
+    }
+
+    @Operation(summary = "Убрать бастион из игры", description = "Владелец или мастер игры")
+    @DeleteMapping("/{id}/game")
+    public PlayerBastionResponse leaveGame(@PathVariable UUID id) {
+        return service.leaveGame(id);
+    }
+
+    @Operation(summary = "Отправить бастион в архив", description = "Мастер игры, а вне игры — владелец")
     @PostMapping("/{id}/archive")
     public PlayerBastionResponse archive(@PathVariable UUID id) {
         return service.archive(id);
@@ -96,7 +124,8 @@ public class PlayerBastionController {
         return facilityService.confirmPrerequisite(id, facilityId, request.confirmed());
     }
 
-    @Operation(summary = "Запустить бастион", description = "Только мастер игры: закладка закончена, начинаются ходы")
+    @Operation(summary = "Запустить бастион",
+            description = "Мастер игры, а вне игры — владелец: закладка закончена, начинаются ходы")
     @PostMapping("/{id}/activate")
     public PlayerBastionResponse activate(@PathVariable UUID id) {
         return service.activate(id);

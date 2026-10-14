@@ -377,3 +377,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/09-03-create-character-sheet-presence-table.yaml
   - include:
       file: db/changelog/2026/10/12-01-create-article-tag-table.yaml
+  - include:
+      file: db/changelog/2026/10/14-01-player-bastion-owner.yaml
