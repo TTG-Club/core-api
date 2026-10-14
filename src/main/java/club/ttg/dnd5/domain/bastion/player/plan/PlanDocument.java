@@ -29,6 +29,7 @@ import java.util.UUID;
  * @param stairs        лестницы
  * @param columns       колонны
  * @param defenseWalls  клетки защитной стены (на уровне земли)
+ * @param furniture     мебель
  */
 @Schema(description = "План бастиона")
 public record PlanDocument(List<Integer> levels,
@@ -38,11 +39,12 @@ public record PlanDocument(List<Integer> levels,
                            List<TowerOpening> towerOpenings,
                            List<Stair> stairs,
                            List<Column> columns,
-                           List<Cell> defenseWalls) {
+                           List<Cell> defenseWalls,
+                           List<Furniture> furniture) {
 
     public static PlanDocument empty() {
         return new PlanDocument(List.of(0), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of());
+                List.of(), List.of());
     }
 
     /**
@@ -62,6 +64,33 @@ public record PlanDocument(List<Integer> levels,
 
     /** Лестница: прямой марш или винтовая. */
     public enum StairKind { STRAIGHT, SPIRAL }
+
+    /**
+     * Предмет мебели и его размер в клетках без поворота: ширина вдоль x, глубина вдоль y.
+     */
+    public enum FurnitureKind {
+        TABLE(2, 1),
+        CHAIR(1, 1),
+        WARDROBE(2, 1),
+        SOFA(2, 1),
+        BED(1, 2);
+
+        private final int width;
+        private final int depth;
+
+        FurnitureKind(int width, int depth) {
+            this.width = width;
+            this.depth = depth;
+        }
+
+        public int width() {
+            return width;
+        }
+
+        public int depth() {
+            return depth;
+        }
+    }
 
     /**
      * Комната.
@@ -129,6 +158,17 @@ public record PlanDocument(List<Integer> levels,
      */
     @Schema(description = "Колонна")
     public record Column(String id, int level, double x, double y) {
+    }
+
+    /**
+     * Мебель: прямоугольник клеток от угла {@code (x, y)}; при повороте на 90° и 270° ширина и
+     * глубина меняются местами.
+     *
+     * @param id       идентификатор внутри плана (генерирует редактор)
+     * @param rotation поворот по часовой стрелке: 0, 90, 180 или 270 градусов
+     */
+    @Schema(description = "Мебель")
+    public record Furniture(String id, int level, int x, int y, FurnitureKind kind, int rotation) {
     }
 
     @Schema(description = "Клетка")
