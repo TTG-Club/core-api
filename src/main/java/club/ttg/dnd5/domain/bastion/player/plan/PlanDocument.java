@@ -30,6 +30,7 @@ import java.util.UUID;
  * @param columns       колонны
  * @param defenseWalls  клетки защитной стены (на уровне земли)
  * @param furniture     мебель
+ * @param defenseGates  клетки защитной стены, где стоят ворота
  */
 @Schema(description = "План бастиона")
 public record PlanDocument(List<Integer> levels,
@@ -40,11 +41,12 @@ public record PlanDocument(List<Integer> levels,
                            List<Stair> stairs,
                            List<Column> columns,
                            List<Cell> defenseWalls,
-                           List<Furniture> furniture) {
+                           List<Furniture> furniture,
+                           List<Cell> defenseGates) {
 
     public static PlanDocument empty() {
         return new PlanDocument(List.of(0), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of());
+                List.of(), List.of(), List.of());
     }
 
     /**
@@ -73,7 +75,8 @@ public record PlanDocument(List<Integer> levels,
         CHAIR(1, 1),
         WARDROBE(2, 1),
         SOFA(2, 1),
-        BED(1, 2);
+        BED(1, 2),
+        CHEST(1, 1);
 
         private final int width;
         private final int depth;

@@ -288,6 +288,32 @@ class PlayerBastionActivityServiceTest {
                 new ActivityRequests.GiveOrder(library.getId(), BastionOrder.RESEARCH, null, null))).getStatus());
     }
 
+    @Test
+    void inSetupPlayerRemovesOwnFacilityButNotForeign() {
+        bastion.setStatus(PlayerBastionStatus.SETUP);
+
+        actAs(otherPlayerId);
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ApiException.class,
+                () -> service.removeFacility(bastion.getId(), library.getId())).getStatus());
+
+        actAs(playerId);
+        service.removeFacility(bastion.getId(), library.getId());
+
+        assertTrue(member.getFacilities().isEmpty());
+    }
+
+    @Test
+    void inActiveBastionOnlyMasterRemovesFacility() {
+        actAs(playerId);
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ApiException.class,
+                () -> service.removeFacility(bastion.getId(), library.getId())).getStatus());
+
+        actAs(masterId);
+        service.removeFacility(bastion.getId(), library.getId());
+
+        assertTrue(member.getFacilities().isEmpty());
+    }
+
     private void actAs(UUID userId) {
         when(userService.getCurrentUserId()).thenReturn(Optional.of(userId));
     }

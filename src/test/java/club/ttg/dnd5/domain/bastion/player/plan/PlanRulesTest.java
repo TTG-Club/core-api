@@ -112,7 +112,7 @@ class PlanRulesTest {
         PlanDocument base = plan(List.of(0, 1), room("hall", 0, null, rect(0, 0, 3, 3)));
         Stair stair = new Stair("same", 0, 1, 1, 1, 2, Side.N, 1, StairKind.STRAIGHT);
         PlanDocument clash = new PlanDocument(base.levels(), base.rooms(), List.of(), List.of(), List.of(),
-                List.of(stair), List.of(new Column("same", 0, 1, 1)), List.of(), List.of());
+                List.of(stair), List.of(new Column("same", 0, 1, 1)), List.of(), List.of(), List.of());
 
         assertThrows(ApiException.class, () -> PlanRules.validate(clash, spaces, names));
     }
@@ -223,9 +223,21 @@ class PlanRulesTest {
 
     @Test
     void normalizeTurnsMissingFurnitureIntoEmptyList() {
-        PlanDocument legacy = new PlanDocument(List.of(0), List.of(), null, null, null, null, null, null, null);
+        PlanDocument legacy = new PlanDocument(List.of(0), List.of(), null, null, null, null, null, null, null, null);
 
-        assertEquals(List.of(), PlanRules.normalize(legacy, Map.of()).furniture());
+        PlanDocument normalized = PlanRules.normalize(legacy, Map.of());
+
+        assertEquals(List.of(), normalized.furniture());
+        assertEquals(List.of(), normalized.defenseGates());
+    }
+
+    @Test
+    void normalizeKeepsGatesOnlyOnDefenseWall() {
+        List<Cell> walls = List.of(new Cell(5, 5), new Cell(6, 5));
+        PlanDocument document = new PlanDocument(List.of(0), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), walls, List.of(), List.of(new Cell(5, 5), new Cell(5, 5), new Cell(9, 9)));
+
+        assertEquals(List.of(new Cell(5, 5)), PlanRules.normalize(document, Map.of()).defenseGates());
     }
 
     private static Room room(String id, int level, UUID facilityId, List<Cell> cells) {
@@ -244,31 +256,31 @@ class PlanRulesTest {
 
     private static PlanDocument plan(List<Integer> levels, Room... rooms) {
         return new PlanDocument(levels, List.of(rooms), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of());
+                List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withObjects(PlanDocument document, List<Door> doors, List<Window> windows) {
         return new PlanDocument(document.levels(), document.rooms(), doors, windows, List.of(), List.of(),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withStairs(PlanDocument document, Stair stair) {
         return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(),
-                List.of(stair), List.of(), List.of(), List.of());
+                List.of(stair), List.of(), List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withOpening(PlanDocument document, TowerOpening opening) {
         return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(opening),
-                List.of(), List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withColumn(PlanDocument document, Column column) {
         return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(), List.of(),
-                List.of(column), List.of(), List.of());
+                List.of(column), List.of(), List.of(), List.of());
     }
 
     private static PlanDocument withFurniture(PlanDocument document, Furniture furniture) {
         return new PlanDocument(document.levels(), document.rooms(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(furniture));
+                List.of(), List.of(), List.of(furniture), List.of());
     }
 }
