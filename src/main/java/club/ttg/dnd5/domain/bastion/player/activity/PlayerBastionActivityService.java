@@ -200,12 +200,17 @@ public class PlayerBastionActivityService {
             long cost = recruitDefenders ? 0 : option.map(FacilityOrderOption::getCost).orElse(0);
             order.setFacilityId(facility.getId());
             order.setOptionName(option.map(FacilityOrderOption::getName).orElse(null));
-            craftItem(facility, reference, request).ifPresent(item -> {
-                order.setItemUrl(item.getUrl());
-                order.setItemName(item.getName());
+            Optional<PlayerBastionResponse.CraftableItem> item = craftItem(facility, reference, request);
+            item.ifPresent(craft -> {
+                order.setItemUrl(craft.url());
+                order.setItemName(craft.name());
             });
+            // Срок изготовления предмета считается по его цене и наёмникам, а не по варианту
+            Integer days = item.map(PlayerBastionResponse.CraftableItem::days)
+                    .or(() -> option.map(FacilityOrderOption::getDays))
+                    .orElse(null);
             order.setCostGp(cost);
-            order.setCompletesOnTurn(bastion.getTurn() + turnsFor(option.map(FacilityOrderOption::getDays).orElse(null)));
+            order.setCompletesOnTurn(bastion.getTurn() + turnsFor(days));
             charge(bastion, cost, Reason.ORDER, "Приказ «%s» — %s".formatted(request.order().getName(),
                     reference.getName()), userId);
         }
@@ -542,9 +547,9 @@ public class PlayerBastionActivityService {
      * Предмет, который мастерская изготовит по приказу: только из тех, что создаются
      * выбранными в ней инструментами.
      */
-    private Optional<EntityRef> craftItem(PlayerBastionFacility facility,
-                                          BastionFacility reference,
-                                          ActivityRequests.GiveOrder request) {
+    private Optional<PlayerBastionResponse.CraftableItem> craftItem(PlayerBastionFacility facility,
+                                                                    BastionFacility reference,
+                                                                    ActivityRequests.GiveOrder request) {
         String url = trimToNull(request.itemUrl());
         if (url == null) {
             return Optional.empty();
@@ -552,10 +557,10 @@ public class PlayerBastionActivityService {
         if (request.order() != BastionOrder.CRAFT) {
             throw badRequest("Предмет выбирается только для приказа «%s»".formatted(BastionOrder.CRAFT.getName()));
         }
-        EntityRef item = Optional.ofNullable(mapper.craftableItems(facility, reference))
+        PlayerBastionResponse.CraftableItem item = Optional.ofNullable(mapper.craftableItems(facility, reference))
                 .orElse(List.of())
                 .stream()
-                .filter(craft -> url.equals(craft.getUrl()))
+                .filter(craft -> url.equals(craft.url()))
                 .findFirst()
                 .orElseThrow(() -> badRequest("«%s» не изготавливает предмет «%s» выбранными инструментами"
                         .formatted(reference.getName(), url)));

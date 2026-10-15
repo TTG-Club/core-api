@@ -168,20 +168,34 @@ public class PlayerBastionResponseMapper {
     }
 
     /**
-     * Что сооружение может изготовить выбранными инструментами (мастерская).
+     * Что сооружение может изготовить выбранными инструментами (мастерская), с ценой и
+     * сроком изготовления силами наёмников сооружения.
      *
      * @return предметы; {@code null}, если у сооружения нет выбора инструментов
      */
-    public List<EntityRef> craftableItems(PlayerBastionFacility facility, BastionFacility reference) {
+    public List<PlayerBastionResponse.CraftableItem> craftableItems(PlayerBastionFacility facility,
+                                                                    BastionFacility reference) {
         return craftableItems(facility, reference, choiceOptions.resolver());
     }
 
-    private List<EntityRef> craftableItems(PlayerBastionFacility facility,
-                                           BastionFacility reference,
-                                           Function<FacilityChoice, List<FacilityChoiceOption>> options) {
-        return reference == null
+    private List<PlayerBastionResponse.CraftableItem> craftableItems(
+            PlayerBastionFacility facility,
+            BastionFacility reference,
+            Function<FacilityChoice, List<FacilityChoiceOption>> options) {
+        List<EntityRef> crafts = reference == null
                 ? null
                 : choiceOptions.crafts(reference.getChoices(), facility.getChoices(), options);
+        if (crafts == null) {
+            return null;
+        }
+        Map<String, Double> prices = choiceOptions.pricesGp(crafts.stream().map(EntityRef::getUrl).toList());
+        return crafts.stream()
+                .map(item -> {
+                    Double price = prices.get(item.getUrl());
+                    return new PlayerBastionResponse.CraftableItem(item.getUrl(), item.getName(), price,
+                            price == null ? null : BastionRules.craftDays(price, reference.getHirelings()));
+                })
+                .toList();
     }
 
     /** Сооружение справочника — барак, в нём живут защитники. */

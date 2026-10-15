@@ -24,6 +24,7 @@ import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
@@ -433,8 +434,11 @@ class PlayerBastionActivityServiceTest {
     @Test
     void workshopCraftsOnlyItemsOfChosenTools() {
         when(itemRepository.findArtisanTools()).thenReturn(List.of(
-                tool("smiths-tools", "Инструменты кузнеца", new EntityRef("dagger", "Кинжал")),
+                tool("smiths-tools", "Инструменты кузнеца", new EntityRef("dagger", "Кинжал"),
+                        new EntityRef("chain", "Цепь")),
                 tool("weavers-tools", "Инструменты ткача", new EntityRef("rope", "Верёвка"))));
+        when(itemRepository.findAllById(any())).thenReturn(List.of(
+                priced("dagger", "2", Coin.GC), priced("chain", "150", Coin.GC)));
         PlayerBastionFacility workshop = new PlayerBastionFacility();
         workshop.setId(UUID.randomUUID());
         workshop.setMember(member);
@@ -451,10 +455,15 @@ class PlayerBastionActivityServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, foreign.getStatus());
 
         PlayerBastionResponse response = service.giveOrder(bastion.getId(),
-                new ActivityRequests.GiveOrder(workshop.getId(), BastionOrder.CRAFT, null, null, null, "dagger"));
-        assertEquals("dagger", orders.getFirst().getItemUrl());
-        assertEquals("Кинжал", orders.getFirst().getItemName());
-        assertEquals(List.of(new EntityRef("dagger", "Кинжал")), response.members().getFirst().facilities().stream()
+                new ActivityRequests.GiveOrder(workshop.getId(), BastionOrder.CRAFT, null, null, null, "chain"));
+        assertEquals("chain", orders.getFirst().getItemUrl());
+        assertEquals("Цепь", orders.getFirst().getItemName());
+        // 150 зм / (10 зм × 2 наёмника) = 8 дней → 2 хода
+        assertEquals(bastion.getTurn() + 2, orders.getFirst().getCompletesOnTurn());
+        assertEquals(List.of(
+                new PlayerBastionResponse.CraftableItem("dagger", "Кинжал", 2.0, 1),
+                new PlayerBastionResponse.CraftableItem("chain", "Цепь", 150.0, 8)),
+                response.members().getFirst().facilities().stream()
                 .filter(facility -> facility.id().equals(workshop.getId()))
                 .findFirst()
                 .orElseThrow()
@@ -484,6 +493,14 @@ class PlayerBastionActivityServiceTest {
         return item;
     }
 
+    private static Item priced(String url, String cost, Coin coin) {
+        Item item = new Item();
+        item.setUrl(url);
+        item.setCost(cost);
+        item.setCoin(coin);
+        return item;
+    }
+
     private static BastionFacility workshop() {
         BastionFacility facility = new BastionFacility();
         facility.setUrl("workshop");
@@ -491,6 +508,7 @@ class PlayerBastionActivityServiceTest {
         facility.setCategory(FacilityCategory.SPECIAL);
         facility.setLevel(5L);
         facility.setSpace(FacilitySpace.ROOMY);
+        facility.setHirelings(2);
         facility.setOrders(List.of(BastionOrder.CRAFT));
         FacilityChoice tools = new FacilityChoice();
         tools.setName("Инструменты ремесленников");

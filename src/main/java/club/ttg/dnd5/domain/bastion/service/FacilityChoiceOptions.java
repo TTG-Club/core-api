@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.bastion.service;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceOption;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceSource;
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.item.model.Item;
@@ -11,6 +12,7 @@ import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,6 +88,46 @@ public class FacilityChoiceOptions {
                     .forEach(item -> crafts.putIfAbsent(item.getUrl(), item));
         }
         return List.copyOf(crafts.values());
+    }
+
+    /**
+     * Покупная стоимость предметов справочника в зм.
+     *
+     * @param urls предметы
+     * @return стоимость по адресу; предметов без числовой цены в ответе нет
+     */
+    public Map<String, Double> pricesGp(Collection<String> urls) {
+        if (urls.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Double> prices = new LinkedHashMap<>();
+        for (Item item : itemRepository.findAllById(urls)) {
+            Double price = priceGp(item.getCost(), item.getCoin());
+            if (price != null) {
+                prices.put(item.getUrl(), price);
+            }
+        }
+        return prices;
+    }
+
+    /**
+     * Цена предмета в зм: число из поля стоимости («50», «1 500», «0,5») по курсу монеты.
+     * Запятая с тремя цифрами после неё — разделитель тысяч, иначе — десятичная.
+     */
+    static Double priceGp(String cost, Coin coin) {
+        if (cost == null) {
+            return null;
+        }
+        String number = cost.replaceAll("[\\s\u00A0]", "");
+        if (number.matches("\\d{1,3}(,\\d{3})+")) {
+            number = number.replace(",", "");
+        }
+        number = number.replace(',', '.');
+        if (!number.matches("\\d+(\\.\\d+)?")) {
+            return null;
+        }
+        float rate = coin == null ? 1f : coin.getExchangeForGold();
+        return Double.parseDouble(number) * rate;
     }
 
     private static List<String> selectedOptions(List<SelectedChoice> selected, String name) {
