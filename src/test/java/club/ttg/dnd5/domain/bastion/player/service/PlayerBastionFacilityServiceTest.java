@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
@@ -44,8 +45,8 @@ class PlayerBastionFacilityServiceTest {
     private final UserService userService = mock(UserService.class);
     private final PlayerBastionFacilityService service = new PlayerBastionFacilityService(
             repository, facilityRepository,
-            new PlayerBastionAccess(repository, client, userService),
-            new PlayerBastionResponseMapper(facilityRepository),
+            new PlayerBastionAccess(repository, mock(PlayerBastionEditorRepository.class), client, userService),
+            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class)),
             mock(EntityManager.class));
 
     private final UUID gameId = UUID.randomUUID();

@@ -17,6 +17,7 @@ import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OptimisticLock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,8 @@ import java.util.UUID;
 @Table(name = "player_bastion",
         indexes = {
                 @Index(name = "player_bastion_game_id_index", columnList = "game_id"),
-                @Index(name = "player_bastion_owner_id_index", columnList = "owner_id")
+                @Index(name = "player_bastion_owner_id_index", columnList = "owner_id"),
+                @Index(name = "player_bastion_share_token_index", columnList = "share_token", unique = true)
         })
 public class PlayerBastion extends Timestamped {
     @Id
@@ -70,6 +72,15 @@ public class PlayerBastion extends Timestamped {
     /** Казна бастиона, зм. Пополняет и списывает только мастер. */
     @Column(name = "treasury_gp", nullable = false)
     private long treasuryGp;
+
+    /**
+     * Секрет ссылки «поделиться бастионом»: {@code null} — ссылки нет. По ссылке бастион
+     * открывается кому угодно, но только на чтение. Из версии исключён: включить или отозвать
+     * ссылку можно, пока бастион правят, и правка не должна после этого получать конфликт.
+     */
+    @OptimisticLock(excluded = true)
+    @Column(name = "share_token")
+    private UUID shareToken;
 
     /** Оптимистическая блокировка: мастер и игроки правят бастион одновременно. */
     @Version

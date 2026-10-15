@@ -3,9 +3,12 @@ package club.ttg.dnd5.domain.bastion.player.service;
 import club.ttg.dnd5.domain.subscription.client.SubscriptionStatusClient;
 import club.ttg.dnd5.domain.subscription.client.SubscriptionStatusClient.SubscriptionStatus;
 import club.ttg.dnd5.domain.user.model.User;
+import club.ttg.dnd5.domain.user.repository.UserRepository;
 import club.ttg.dnd5.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 /**
  * Сколько бастионов может создать пользователь: 3 без подписки и 12 с действующей подпиской.
@@ -25,6 +28,7 @@ public class PlayerBastionLimits {
     public static final int SUBSCRIBER = 12;
 
     private final SubscriptionStatusClient subscriptionStatusClient;
+    private final UserRepository userRepository;
 
     /** Лимит текущего пользователя. */
     public int forCurrentUser() {
@@ -32,5 +36,16 @@ public class PlayerBastionLimits {
         return subscriptionStatusClient.status(user.getUsername())
                 .map(SubscriptionStatus::active)
                 .orElse(false) ? SUBSCRIBER : BASE;
+    }
+
+    /**
+     * Есть ли у пользователя действующая подписка. Недоступность subscriber-service — не
+     * подписка (fail-closed): платное не выдаётся, пока связь не восстановится.
+     */
+    public boolean isSubscriber(UUID userId) {
+        return userRepository.findById(userId)
+                .flatMap(user -> subscriptionStatusClient.status(user.getUsername()))
+                .map(SubscriptionStatus::active)
+                .orElse(false);
     }
 }

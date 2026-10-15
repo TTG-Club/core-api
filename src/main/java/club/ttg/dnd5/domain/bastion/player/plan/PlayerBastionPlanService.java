@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.service.BastionViewer;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
+import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionLimits;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.exception.ApiException;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,6 +28,10 @@ import java.util.stream.Collectors;
  * <p>Сооружение, убранное из выбора персонажа, с плана исчезает само: при чтении и
  * сохранении комнаты несуществующих сооружений становятся просто помещениями. Иначе план
  * с такой комнатой нельзя было бы сохранить, пока игрок вручную не нашёл бы её на холсте.</p>
+ *
+ * <p>Предметы интерьера по подписке ставит только бастион владельца с действующей подпиской.
+ * Уже стоящие такие предметы после окончания подписки остаются: их можно двигать и убирать,
+ * но не добавлять новые.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -33,19 +39,31 @@ public class PlayerBastionPlanService {
     private final PlayerBastionPlanRepository planRepository;
     private final BastionFacilityRepository facilityRepository;
     private final PlayerBastionAccess access;
+    private final PlayerBastionLimits limits;
 
     @Transactional(readOnly = true)
     public PlanResponse find(UUID bastionId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
         BastionViewer viewer = access.requireViewer(bastion, userId);
+        boolean canEdit = canEdit(bastion, viewer);
+        return toResponse(bastion, canEdit, canEdit && limits.isSubscriber(bastion.getOwnerId()));
+    }
 
-        Optional<PlayerBastionPlan> plan = planRepository.findById(bastionId);
+    /** План бастиона, открытого по ссылке «поделиться»: только чтение. */
+    @Transactional(readOnly = true)
+    public PlanResponse findByLink(PlayerBastion bastion) {
+        return toResponse(bastion, false, false);
+    }
+
+    private PlanResponse toResponse(PlayerBastion bastion, boolean canEdit, boolean premium) {
+        Optional<PlayerBastionPlan> plan = planRepository.findById(bastion.getId());
         PlanDocument document = plan.map(PlayerBastionPlan::getDocument).orElseGet(PlanDocument::empty);
 
-        return new PlanResponse(bastionId,
+        return new PlanResponse(bastion.getId(),
                 plan.map(PlayerBastionPlan::getVersion).orElse(0L),
-                canEdit(bastion, viewer),
+                canEdit,
+                premium,
                 PlanRules.normalize(document, facilitySpaces(bastion)));
     }
 
@@ -73,9 +91,26 @@ public class PlayerBastionPlanService {
         PlanDocument document = PlanRules.normalize(request.document(), spaces);
         PlanRules.validate(document, spaces, facilityNames(bastion));
 
+        boolean premium = limits.isSubscriber(bastion.getOwnerId());
+        if (!premium && hasNewPremiumFurniture(plan.getDocument(), document)) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Предметы интерьера по подписке доступны, когда подписка есть у владельца бастиона");
+        }
+
         plan.setDocument(document);
         PlayerBastionPlan saved = planRepository.saveAndFlush(plan);
-        return new PlanResponse(bastionId, saved.getVersion(), true, saved.getDocument());
+        return new PlanResponse(bastionId, saved.getVersion(), true,
+                premium, saved.getDocument());
+    }
+
+    /** В плане появился предмет по подписке, которого не было в сохранённой версии. */
+    static boolean hasNewPremiumFurniture(PlanDocument saved, PlanDocument next) {
+        Set<String> existing = saved == null || saved.furniture() == null ? Set.of() : saved.furniture().stream()
+                .filter(item -> item.kind().premium())
+                .map(PlanDocument.Furniture::id)
+                .collect(Collectors.toSet());
+        return next.furniture().stream()
+                .anyMatch(item -> item.kind().premium() && !existing.contains(item.id()));
     }
 
     private static boolean canEdit(PlayerBastion bastion, BastionViewer viewer) {
