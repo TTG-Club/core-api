@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
+import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityEnlargement;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
@@ -189,7 +190,12 @@ public class PlayerBastionActivityService {
                         throw badRequest("Вариант «%s» доступен с %d уровня".formatted(request.optionName(), minLevel));
                     });
 
-            long cost = option.map(FacilityOrderOption::getCost).orElse(0);
+            boolean recruitDefenders = isRecruitDefenders(reference, request.order());
+            if (recruitDefenders && facility.getDefenders() >= BastionRules.barrackCapacity(facility.getSpace())) {
+                throw conflict("В «%s» больше не помещается защитников".formatted(reference.getName()));
+            }
+            // Защитников барак вербует бесплатно, какую бы цену ни указал вариант
+            long cost = recruitDefenders ? 0 : option.map(FacilityOrderOption::getCost).orElse(0);
             order.setFacilityId(facility.getId());
             order.setOptionName(option.map(FacilityOrderOption::getName).orElse(null));
             order.setCostGp(cost);
@@ -303,12 +309,18 @@ public class PlayerBastionActivityService {
             }
             order.setStatus(OrderStatus.COMPLETED);
             order.setResult(trimToNull(results.get(order.getId())));
-            String target = Optional.ofNullable(order.getFacilityId())
-                    .map(facilities::get)
+            Optional<PlayerBastionFacility> orderFacility = Optional.ofNullable(order.getFacilityId())
+                    .map(facilities::get);
+            String target = orderFacility
                     .map(facility -> facilityName(facility, reference))
                     .orElse("бастион");
-            summary.add("Выполнен приказ «%s» — %s%s%s".formatted(order.getOrder().getName(), target,
+            String recruited = orderFacility
+                    .filter(facility -> isRecruitDefenders(reference.get(facility.getFacilityUrl()), order.getOrder()))
+                    .map(PlayerBastionActivityService::recruitDefenders)
+                    .orElse("");
+            summary.add("Выполнен приказ «%s» — %s%s%s%s".formatted(order.getOrder().getName(), target,
                     Optional.ofNullable(order.getOptionName()).map(option -> ": " + option).orElse(""),
+                    recruited,
                     Optional.ofNullable(order.getResult()).map(result -> ". " + result).orElse("")));
             orderRepository.save(order);
         }
@@ -500,6 +512,24 @@ public class PlayerBastionActivityService {
         if (!Optional.ofNullable(reference.getOrders()).orElse(List.of()).contains(order)) {
             throw badRequest("«%s» не принимает приказ «%s»".formatted(reference.getName(), order.getName()));
         }
+    }
+
+    /** Приказ «Завербовать» бараку: нанимает защитников бастиона. */
+    private static boolean isRecruitDefenders(BastionFacility reference, BastionOrder order) {
+        return order == BastionOrder.RECRUIT && PlayerBastionResponseMapper.isBarrack(reference);
+    }
+
+    /**
+     * Барак нанимает защитников, сколько поместится.
+     *
+     * @return приписка к записи хода: сколько нанято и сколько стало
+     */
+    private static String recruitDefenders(PlayerBastionFacility barrack) {
+        int capacity = BastionRules.barrackCapacity(barrack.getSpace());
+        int hired = Math.max(0, Math.min(BastionRules.BARRACK_DEFENDERS_PER_RECRUIT,
+                capacity - barrack.getDefenders()));
+        barrack.setDefenders(barrack.getDefenders() + hired);
+        return ", защитников +%d (%d из %d)".formatted(hired, barrack.getDefenders(), capacity);
     }
 
     private static Optional<FacilityOrderOption> findOption(BastionFacility reference, BastionOrder order, String name) {

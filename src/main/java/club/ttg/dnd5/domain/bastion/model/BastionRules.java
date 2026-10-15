@@ -29,6 +29,18 @@ public class BastionRules {
     /** На сколько меньше кубиков потерь защитников при атаке на полностью окружённый стенами бастион. */
     public static final int DEFENSIVE_WALL_DEFENDER_DICE_REDUCTION = 2;
 
+    /** Сколько защитников бесплатно нанимает один приказ «Завербовать» в бараке. */
+    public static final int BARRACK_DEFENDERS_PER_RECRUIT = 4;
+    /** Сколько защитников помещается во вместительном бараке. */
+    public static final int BARRACK_ROOMY_CAPACITY = 12;
+    /** Сколько защитников помещается в просторном (расширенном) бараке. */
+    public static final int BARRACK_VAST_CAPACITY = 24;
+
+    /** Сколько защитников помещается в бараке этого пространства. */
+    public static int barrackCapacity(FacilitySpace space) {
+        return space == FacilitySpace.VAST ? BARRACK_VAST_CAPACITY : BARRACK_ROOMY_CAPACITY;
+    }
+
     /**
      * Сколько специализированных сооружений положено персонажу этого уровня. До 5 уровня
      * бастиона нет — ноль.
