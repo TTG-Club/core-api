@@ -21,6 +21,7 @@ import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionSetupRules;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
@@ -73,6 +74,7 @@ public class PlayerBastionActivityService {
     private final PlayerBastionAccess access;
     private final PlayerBastionResponseMapper mapper;
     private final EntityManager entityManager;
+    private final FacilityChoiceOptions choiceOptions;
 
     /** Сколько ходов занимает дело на столько-то дней; меньше хода не бывает. */
     public static int turnsFor(Integer days) {
@@ -443,7 +445,7 @@ public class PlayerBastionActivityService {
                 .map(facility -> new FacilitySetupRequest.Special(facility.getFacilityUrl(), facility.getChoices()))
                 .toList());
         special.add(new FacilitySetupRequest.Special(request.facilityUrl(), request.choices()));
-        PlayerBastionSetupRules.validateSpecial(member.getCharacterLevel(), special, reference);
+        PlayerBastionSetupRules.validateSpecial(member.getCharacterLevel(), special, reference, choiceOptions.resolver());
 
         BastionFacility added = reference.get(request.facilityUrl());
         PlayerBastionFacility facility = new PlayerBastionFacility();

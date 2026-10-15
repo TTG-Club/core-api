@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.persistence.EntityManager;
@@ -51,6 +52,7 @@ public class PlayerBastionFacilityService {
     private final PlayerBastionAccess access;
     private final PlayerBastionResponseMapper mapper;
     private final EntityManager entityManager;
+    private final FacilityChoiceOptions choiceOptions;
 
     /** Заменяет стартовый выбор сооружений персонажа. */
     @Transactional
@@ -71,7 +73,7 @@ public class PlayerBastionFacilityService {
         Map<String, BastionFacility> reference = loadReference(Stream.concat(
                 request.basic().stream().map(FacilitySetupRequest.Basic::facilityUrl),
                 request.special().stream().map(FacilitySetupRequest.Special::facilityUrl)));
-        PlayerBastionSetupRules.validate(member.getCharacterLevel(), request, reference);
+        PlayerBastionSetupRules.validate(member.getCharacterLevel(), request, reference, choiceOptions.resolver());
 
         replaceFacilities(member, request, reference);
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);

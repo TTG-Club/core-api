@@ -19,6 +19,8 @@ import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.user.service.UserService;
 import club.ttg.dnd5.exception.ApiException;
 import jakarta.persistence.EntityManager;
@@ -58,7 +60,8 @@ class PlayerBastionActivityServiceTest {
             bastionRepository, facilityRepository, orderRepository, ledgerRepository, turnRepository,
             new PlayerBastionAccess(bastionRepository, mock(PlayerBastionEditorRepository.class), client, userService),
             new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class)),
-            mock(EntityManager.class));
+            mock(EntityManager.class),
+            new FacilityChoiceOptions(mock(ItemRepository.class)));
 
     private final UUID gameId = UUID.randomUUID();
     private final UUID masterId = UUID.randomUUID();
