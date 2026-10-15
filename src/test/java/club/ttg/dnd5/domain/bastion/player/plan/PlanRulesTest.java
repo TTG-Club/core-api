@@ -108,6 +108,20 @@ class PlanRulesTest {
     }
 
     @Test
+    void squareTowerKeepsItsCellsOverEarlierRoom() {
+        Room hall = room("hall", 0, null, List.of(new Cell(4, 5), new Cell(5, 5)));
+        Room tower = new Room("tower", "Башня", RoomKind.SQUARE_TOWER, 0, null,
+                List.of(new Cell(5, 5), new Cell(6, 5), new Cell(5, 6), new Cell(6, 6)), null);
+
+        PlanDocument document = PlanRules.normalize(plan(List.of(0), hall, tower), spaces);
+
+        assertEquals(List.of(new Cell(4, 5)), document.rooms().get(0).cells());
+        assertEquals(4, document.rooms().get(1).cells().size());
+        assertNull(document.rooms().get(1).shape());
+        assertDoesNotThrow(() -> PlanRules.validate(document, spaces, names));
+    }
+
+    @Test
     void stairsAndColumnsNeedUniqueIds() {
         PlanDocument base = plan(List.of(0, 1), room("hall", 0, null, rect(0, 0, 3, 3)));
         Stair stair = new Stair("same", 0, 1, 1, 1, 2, Side.N, 1, StairKind.STRAIGHT);
