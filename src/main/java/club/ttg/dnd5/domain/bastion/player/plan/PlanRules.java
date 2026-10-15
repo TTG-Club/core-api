@@ -287,13 +287,17 @@ public class PlanRules {
                 throw badRequest("Проём в стене башни, которой нет на плане");
             }
             double steps = opening.angle() / TOWER_ANGLE_STEP;
-            if (opening.angle() < 0 || opening.angle() >= 360 || Math.abs(steps - Math.rint(steps)) > 1e-9) {
+            List<Double> sides = PlanGeometry.sideAngles(tower.shape());
+            boolean onStep = sides.isEmpty()
+                    ? Math.abs(steps - Math.rint(steps)) <= 1e-9
+                    : sides.stream().anyMatch(side -> Math.abs(side - opening.angle()) <= 1e-6);
+            if (opening.angle() < 0 || opening.angle() >= 360 || !onStep) {
                 throw badRequest("Проём в «%s» стоит под неверным углом".formatted(title(tower)));
             }
             if (opening.type() == null || opening.type() == OpeningType.DOOR && opening.kind() == null) {
                 throw badRequest("У проёма в «%s» не указан вид".formatted(title(tower)));
             }
-            if (!taken.add(opening.roomId() + ":" + Math.rint(steps))) {
+            if (!taken.add(opening.roomId() + ":" + Math.rint(opening.angle() * 1000))) {
                 throw badRequest("В стене «%s» два проёма в одном месте".formatted(title(tower)));
             }
         }
@@ -321,7 +325,8 @@ public class PlanRules {
     }
 
     private static boolean validCircle(Circle circle) {
-        return circle != null && halfStep(circle.cx()) && halfStep(circle.cy()) && halfStep(circle.r())
+        return circle != null && (circle.sides() == null || PlanGeometry.TOWER_SIDES.contains(circle.sides()))
+                && halfStep(circle.cx()) && halfStep(circle.cy()) && halfStep(circle.r())
                 && circle.r() >= MIN_TOWER_RADIUS && circle.r() <= MAX_TOWER_RADIUS
                 && onGrid(circle.cx() - circle.r(), circle.cy() - circle.r())
                 && onGrid(circle.cx() + circle.r(), circle.cy() + circle.r());

@@ -192,6 +192,35 @@ class PlanRulesTest {
     }
 
     @Test
+    void octagonTowerKeepsCellsInsidePolygon() {
+        List<Cell> cells = PlanGeometry.cellsInside(new Circle(5, 6, 2, 8));
+
+        assertEquals(12, cells.size());
+        assertFalse(cells.contains(new Cell(3, 4)));
+        assertTrue(cells.contains(new Cell(3, 5)));
+    }
+
+    @Test
+    void pentagonOpeningsStandOnSideMiddles() {
+        Room tower = new Room("tower", "Башня", RoomKind.TOWER, 0, null, List.of(), new Circle(10, 10, 3, 5));
+        PlanDocument base = PlanRules.normalize(plan(List.of(0), tower), spaces);
+
+        assertDoesNotThrow(() -> PlanRules.validate(withOpening(base,
+                new TowerOpening("tower", 18, OpeningType.WINDOW, null)), spaces, names));
+        assertThrows(ApiException.class, () -> PlanRules.validate(withOpening(base,
+                new TowerOpening("tower", 22.5, OpeningType.WINDOW, null)), spaces, names));
+    }
+
+    @Test
+    void towerWithUnknownSidesIsRejected() {
+        Room tower = new Room("tower", "Башня", RoomKind.TOWER, 0, null, rect(9, 9, 2, 2),
+                new Circle(10, 10, 3, 6));
+        PlanDocument document = PlanRules.normalize(plan(List.of(0), tower), spaces);
+
+        assertThrows(ApiException.class, () -> PlanRules.validate(document, spaces, names));
+    }
+
+    @Test
     void firstFloorIsRequired() {
         PlanDocument document = plan(List.of(1), room("hall", 1, null, rect(0, 0, 2, 2)));
 
