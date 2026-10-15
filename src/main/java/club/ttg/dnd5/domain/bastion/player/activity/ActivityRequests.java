@@ -3,9 +3,11 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -81,6 +83,19 @@ public final class ActivityRequests {
      */
     @Schema(description = "Ход бастиона")
     public record Turn(@Size(max = 4000) String event, Map<UUID, @Size(max = 4000) String> results) {
+    }
+
+    /**
+     * Решение по событию бастиона.
+     *
+     * @param decision  заплатить, отказаться, отправить защитников или записать предмет
+     * @param defenders для просьбы о помощи: сколько защитников отправить
+     * @param note      для волшебного открытия и сокровища: какой предмет получен
+     */
+    @Schema(description = "Решение по событию бастиона")
+    public record EventDecision(@NotNull PlayerBastionEvent.Decision decision,
+                                @Min(1) Integer defenders,
+                                @Size(max = 500) String note) {
     }
 
     /**

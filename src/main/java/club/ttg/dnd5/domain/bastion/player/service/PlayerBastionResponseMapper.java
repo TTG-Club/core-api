@@ -102,6 +102,11 @@ public class PlayerBastionResponseMapper {
                         : 0,
                 viewer.editor(),
                 members,
+                Optional.ofNullable(bastion.getGuests()).orElse(List.of()).stream()
+                        .map(guest -> new PlayerBastionResponse.Guest(guest.getId(),
+                                new BastionLabel(guest.getKind().name(), guest.getKind().getName()),
+                                guest.getName(), guest.getCount(), guest.getArrivedOnTurn(), guest.getLeavesOnTurn()))
+                        .toList(),
                 bastion.getCreatedAt(),
                 bastion.getUpdatedAt());
     }
@@ -168,7 +173,15 @@ public class PlayerBastionResponseMapper {
                 isBarrack(reference) ? facility.getDefenders() : null,
                 isBarrack(reference) ? BastionRules.barrackCapacity(facility.getSpace()) : null,
                 craftableItems(facility, reference, options),
-                isMenagerie(reference) ? menagerie(facility) : null);
+                isMenagerie(reference) ? menagerie(facility) : null,
+                isUnavailable(facility) ? facility.getUnavailableOnTurn() : null,
+                isUnavailable(facility) ? facility.getUnavailableReason() : null);
+    }
+
+    /** Сооружение не работает в текущий или следующий ход бастиона после события. */
+    public static boolean isUnavailable(PlayerBastionFacility facility) {
+        return facility.getUnavailableOnTurn() != null
+                && facility.getUnavailableOnTurn() >= facility.getMember().getBastion().getTurn();
     }
 
     /** Сооружение справочника — зверинец, в вольерах живут существа. */

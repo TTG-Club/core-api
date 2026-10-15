@@ -391,3 +391,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/15-03-bastion-order-item.yaml
   - include:
       file: db/changelog/2026/10/15-04-menagerie.yaml
+  - include:
+      file: db/changelog/2026/10/15-05-bastion-events.yaml

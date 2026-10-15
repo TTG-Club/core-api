@@ -9,6 +9,9 @@ import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerEntry.Reason;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStatus;
+import club.ttg.dnd5.domain.bastion.player.event.BastionEventService;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEventRepository;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
@@ -49,7 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Жизнь запущенного бастиона: приказы, ходы, казна, стройка и расширение.
+ * Жизнь запущенного бастиона: приказы, ходы, казна, стройка, расширение и события.
  *
  * <p>Ход бастиона — 7 игровых дней. Сроки из справочника переводятся в ходы с
  * округлением вверх ({@link #turnsFor}): 7 дней — 1 ход, 20 дней — 3 хода.</p>
@@ -78,6 +81,8 @@ public class PlayerBastionActivityService {
     private final PlayerBastionResponseMapper mapper;
     private final EntityManager entityManager;
     private final FacilityChoiceOptions choiceOptions;
+    private final BastionEventService events;
+    private final PlayerBastionEventRepository eventRepository;
 
     /** Сколько ходов занимает дело на столько-то дней; меньше хода не бывает. */
     public static int turnsFor(Integer days) {
@@ -137,7 +142,36 @@ public class PlayerBastionActivityService {
                         entry.getNote(), entry.getCreatedBy(), entry.getCreatedAt()))
                 .toList();
 
-        return new ActivityResponse(orders, turns, ledger);
+        Map<UUID, PlayerBastionMember> members = bastion.getMembers().stream()
+                .collect(Collectors.toMap(PlayerBastionMember::getId, Function.identity()));
+        boolean active = bastion.getStatus() == PlayerBastionStatus.ACTIVE;
+        List<ActivityResponse.Event> bastionEvents = eventRepository
+                .findAllByBastionIdOrderByCreatedAtDesc(bastionId, page)
+                .stream()
+                .map(event -> {
+                    PlayerBastionMember member = members.get(event.getMemberId());
+                    boolean canDecide = active && event.isPending()
+                            && (master || member != null && member.getUserId().equals(userId));
+                    return new ActivityResponse.Event(
+                            event.getId(),
+                            event.getMemberId(),
+                            event.getCharacterName(),
+                            event.getTurn(),
+                            event.getRoll(),
+                            new BastionLabel(event.getType().name(), event.getType().getName()),
+                            event.getStatus(),
+                            event.getSummary(),
+                            event.getDetails(),
+                            event.getDecision(),
+                            event.getNote(),
+                            event.getParentId(),
+                            event.isPending() ? BastionEventService.decisions(event.getType()) : List.of(),
+                            canDecide,
+                            canDecide ? events.defenderCount(bastion, member, reference) : 0);
+                })
+                .toList();
+
+        return new ActivityResponse(orders, turns, ledger, bastionEvents);
     }
 
     // ------------------------------------------------------------------ приказы
@@ -169,6 +203,8 @@ public class PlayerBastionActivityService {
             }
             cancelForMaintain(bastion, userId, master, Boolean.TRUE.equals(request.cancelActive()));
             order.setCompletesOnTurn(bastion.getTurn() + 1);
+            // Сразу после приказа Мастер бросает по таблице «События бастиона» за каждого персонажа
+            events.rollForMaintain(bastion, allReference(bastion), userId);
         } else {
             PlayerBastionFacility facility = findFacility(bastion, request.facilityId());
             requireOwnerOrMaster(facility, userId, master, "Приказы сооружению отдаёт игрок этого персонажа или мастер");
@@ -177,6 +213,12 @@ public class PlayerBastionActivityService {
             }
             BastionFacility reference = referenceOf(facility);
             validateFacilityOrder(facility, reference, request.order());
+            if (PlayerBastionResponseMapper.isUnavailable(facility)
+                    && facility.getUnavailableOnTurn() == bastion.getTurn()) {
+                throw conflict("«%s» не работает в этот ход: %s".formatted(reference.getName(),
+                        Optional.ofNullable(facility.getUnavailableReason()).orElse("событие бастиона")
+                                .toLowerCase()));
+            }
             boolean busy = orderRepository.findAllByBastionIdAndStatus(bastionId, OrderStatus.ACTIVE).stream()
                     .anyMatch(item -> facility.getId().equals(item.getFacilityId()));
             if (busy) {
@@ -267,6 +309,42 @@ public class PlayerBastionActivityService {
                 .orElseThrow(() -> new EntityNotFoundException("Существо %s не найдено".formatted(creatureId)));
     }
 
+    /** Решение по событию бастиона: игрок персонажа, за которого бросали, или мастер. */
+    @Transactional
+    public PlayerBastionResponse decideEvent(UUID bastionId, UUID eventId, ActivityRequests.EventDecision request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionEvent event = eventRepository.findById(eventId)
+                .filter(item -> item.getBastionId().equals(bastionId))
+                .orElseThrow(() -> new EntityNotFoundException("Событие %s не найдено".formatted(eventId)));
+        boolean owner = bastion.getMembers().stream()
+                .anyMatch(member -> member.getId().equals(event.getMemberId()) && member.getUserId().equals(userId));
+        if (!viewer.manager() && !owner) {
+            throw forbidden("Решение по событию принимает игрок этого персонажа или мастер");
+        }
+        events.decide(bastion, event, request.decision(), request.defenders(), request.note(),
+                allReference(bastion), userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /** Отсылает гостя бастиона или находит беженцам новый дом. */
+    @Transactional
+    public PlayerBastionResponse dismissGuest(UUID bastionId, String guestId) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        if (!viewer.manager() && !isMember(bastion, userId)) {
+            throw forbidden("Гостей отсылают мастер и игроки бастиона");
+        }
+        if (!bastion.getGuests().removeIf(guest -> guestId.equals(guest.getId()))) {
+            throw new EntityNotFoundException("Гость %s не найден".formatted(guestId));
+        }
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
     /** Отмена приказа в тот же ход — цена возвращается в казну. */
     @Transactional
     public PlayerBastionResponse cancelOrder(UUID bastionId, UUID orderId) {
@@ -283,6 +361,9 @@ public class PlayerBastionActivityService {
         }
         if (order.getStatus() != OrderStatus.ACTIVE || order.getGivenOnTurn() != bastion.getTurn()) {
             throw conflict("Отменить можно только приказ, отданный в текущий ход");
+        }
+        if (order.getOrder().isBastionWide() && events.rolledOnTurn(bastion, bastion.getTurn())) {
+            throw conflict("События бастиона уже произошли: «Обслуживать» не отменить");
         }
 
         cancel(bastion, order, userId);
@@ -360,6 +441,12 @@ public class PlayerBastionActivityService {
                 bastionId, bastion.getTurn(), OrderStatus.CANCELLED);
         boolean maintain = givenThisTurn.isEmpty()
                 || givenThisTurn.stream().anyMatch(order -> order.getOrder().isBastionWide());
+
+        // Ход без приказов — тоже обслуживание: событие бросается, если его ещё не было
+        if (maintain && !events.rolledOnTurn(bastion, bastion.getTurn())) {
+            events.rollForMaintain(bastion, reference, userId);
+        }
+        summary.addAll(events.departures(bastion, next));
 
         Map<UUID, String> results = Optional.ofNullable(request.results()).orElse(Map.of());
         for (PlayerBastionOrder order : orderRepository.findAllByBastionIdAndStatus(bastionId, OrderStatus.ACTIVE)) {
@@ -781,6 +868,10 @@ public class PlayerBastionActivityService {
         return facilityRepository.findById(facility.getFacilityUrl())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Сооружения %s нет в справочнике".formatted(facility.getFacilityUrl())));
+    }
+
+    private Map<String, BastionFacility> allReference(PlayerBastion bastion) {
+        return loadReference(facilitiesById(bastion).values().stream().map(PlayerBastionFacility::getFacilityUrl));
     }
 
     private Map<String, BastionFacility> loadReference(Stream<String> urls) {
