@@ -44,6 +44,9 @@ public class BastionFacilityRequest extends BaseRequest {
     @Schema(description = "Можно ли иметь больше одного такого сооружения")
     private Boolean repeatable;
 
+    @Schema(description = "Барак: размещает защитников бастиона")
+    private Boolean barrack;
+
     @Schema(description = "Приказы сооружения")
     private List<BastionOrder> orders;
 

@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-15-02-barrack-defenders
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Барак размещает защитников бастиона: во вместительном 12, в просторном 24.
+        Приказ «Завербовать» в бараке бесплатно нанимает четырёх защитников.
+      changes:
+        - addColumn:
+            tableName: bastion_facility
+            columns:
+              - column:
+                  name: barrack
+                  type: BOOLEAN
+        - addColumn:
+            tableName: player_bastion_facility
+            columns:
+              - column:
+                  name: defenders
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: update bastion_facility set barrack = true where english ilike 'barrack%'

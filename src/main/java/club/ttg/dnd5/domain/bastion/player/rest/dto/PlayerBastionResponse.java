@@ -100,6 +100,8 @@ public record PlayerBastionResponse(
             Integer readyOnTurn,
             FacilitySpaceResponse pendingSpace,
             Integer pendingReadyOnTurn,
-            boolean enlargeable) {
+            boolean enlargeable,
+            @Schema(description = "Защитников в бараке; null — сооружение не барак") Integer defenders,
+            @Schema(description = "Сколько защитников помещается в барак; null — не барак") Integer defenderCapacity) {
     }
 }

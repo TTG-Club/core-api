@@ -89,6 +89,10 @@ public class PlayerBastionFacility extends Timestamped {
     @Column(name = "pending_ready_on_turn")
     private Integer pendingReadyOnTurn;
 
+    /** Защитники бастиона, которые живут в этом сооружении (только у барака). */
+    @Column(nullable = false)
+    private int defenders;
+
     public boolean isReady() {
         return status == FacilityStatus.READY;
     }

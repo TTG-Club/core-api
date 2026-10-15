@@ -29,6 +29,8 @@ public class BastionFacilityDetailResponse extends BaseResponse {
     private Integer hirelings;
     @Schema(description = "Можно ли иметь больше одного такого сооружения")
     private Boolean repeatable;
+    @Schema(description = "Барак: размещает защитников бастиона")
+    private Boolean barrack;
     @Schema(description = "Приказы сооружения")
     private List<BastionLabel> orders;
     @Schema(description = "Варианты исполнения приказов")

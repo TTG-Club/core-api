@@ -48,6 +48,12 @@ public class BastionFacility extends NamedEntity {
     /** Можно ли иметь в бастионе больше одного такого сооружения. */
     private Boolean repeatable;
 
+    /**
+     * Барак: размещает защитников бастиона. Приказ «Завербовать» в нём бесплатно нанимает
+     * защитников, их число ограничено пространством ({@link BastionRules#barrackCapacity}).
+     */
+    private Boolean barrack;
+
     /** Приказы, которые принимает сооружение. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

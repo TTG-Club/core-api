@@ -16,6 +16,7 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
@@ -73,6 +74,7 @@ class PlayerBastionActivityServiceTest {
     private final List<PlayerBastionTurn> turns = new ArrayList<>();
     private final Map<String, BastionFacility> reference = Map.of(
             "library", library(),
+            "barrack", barrack(),
             "bedroom", basic("bedroom"));
 
     private PlayerBastion bastion;
@@ -371,6 +373,65 @@ class PlayerBastionActivityServiceTest {
         assertTrue(member.getFacilities().isEmpty());
     }
 
+    @Test
+    void barrackRecruitsFourDefendersForFreeUpToCapacity() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setDefenders(10);
+
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(barrack.getId(), BastionOrder.RECRUIT,
+                "Защитники бастиона", null));
+        assertEquals(100, bastion.getTreasuryGp());
+        assertEquals(0, orders.getFirst().getCostGp());
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertEquals(12, barrack.getDefenders());
+        assertTrue(turns.getFirst().getSummary().getFirst().contains("защитников +2 (12 из 12)"),
+                turns.getFirst().getSummary().getFirst());
+
+        actAs(playerId);
+        ApiException full = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(barrack.getId(), BastionOrder.RECRUIT, null, null)));
+        assertEquals(HttpStatus.CONFLICT, full.getStatus());
+    }
+
+    @Test
+    void vastBarrackHoldsTwentyFourDefenders() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setSpace(FacilitySpace.VAST);
+        barrack.setDefenders(12);
+
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(barrack.getId(), BastionOrder.RECRUIT,
+                null, null));
+        actAs(masterId);
+        PlayerBastionResponse response = service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+
+        PlayerBastionResponse.Facility shown = response.members().getFirst().facilities().stream()
+                .filter(facility -> facility.id().equals(barrack.getId()))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(16, shown.defenders());
+        assertEquals(24, shown.defenderCapacity());
+        assertNull(response.members().getFirst().facilities().stream()
+                .filter(facility -> facility.id().equals(library.getId()))
+                .findFirst()
+                .orElseThrow()
+                .defenderCapacity());
+    }
+
+    private PlayerBastionFacility addBarrack() {
+        PlayerBastionFacility barrack = new PlayerBastionFacility();
+        barrack.setId(UUID.randomUUID());
+        barrack.setMember(member);
+        barrack.setFacilityUrl("barrack");
+        barrack.setSpace(FacilitySpace.ROOMY);
+        barrack.setPrerequisiteConfirmed(true);
+        member.getFacilities().add(barrack);
+        return barrack;
+    }
+
     private void actAs(UUID userId) {
         when(userService.getCurrentUserId()).thenReturn(Optional.of(userId));
     }
@@ -392,6 +453,24 @@ class PlayerBastionActivityServiceTest {
         option.setName("тему");
         option.setDays(7);
         option.setCost(10);
+        facility.setOrderOptions(List.of(option));
+        return facility;
+    }
+
+    private static BastionFacility barrack() {
+        BastionFacility facility = new BastionFacility();
+        facility.setUrl("barrack");
+        facility.setName("Барак");
+        facility.setCategory(FacilityCategory.SPECIAL);
+        facility.setLevel(5L);
+        facility.setSpace(FacilitySpace.ROOMY);
+        facility.setBarrack(true);
+        facility.setOrders(List.of(BastionOrder.RECRUIT));
+        FacilityOrderOption option = new FacilityOrderOption();
+        option.setOrder(BastionOrder.RECRUIT);
+        option.setName("Защитники бастиона");
+        option.setDays(7);
+        option.setCost(50);
         facility.setOrderOptions(List.of(option));
         return facility;
     }

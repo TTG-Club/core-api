@@ -151,7 +151,14 @@ public class PlayerBastionResponseMapper {
                         .map(space -> new FacilitySpaceResponse(space.name(), space.getName(), space.getSquares()))
                         .orElse(null),
                 facility.getPendingReadyOnTurn(),
-                isEnlargeable(facility, reference));
+                isEnlargeable(facility, reference),
+                isBarrack(reference) ? facility.getDefenders() : null,
+                isBarrack(reference) ? BastionRules.barrackCapacity(facility.getSpace()) : null);
+    }
+
+    /** Сооружение справочника — барак, в нём живут защитники. */
+    public static boolean isBarrack(BastionFacility reference) {
+        return reference != null && Boolean.TRUE.equals(reference.getBarrack());
     }
 
     /**
