@@ -68,22 +68,47 @@ public record PlanDocument(List<Integer> levels,
     public enum StairKind { STRAIGHT, SPIRAL }
 
     /**
-     * Предмет мебели и его размер в клетках без поворота: ширина вдоль x, глубина вдоль y.
+     * Предмет интерьера и его размер в клетках без поворота: ширина вдоль x, глубина вдоль y.
+     * Предметы с признаком {@code premium} ставятся только в бастион владельца с подпиской.
      */
     public enum FurnitureKind {
-        TABLE(2, 1),
-        CHAIR(1, 1),
-        WARDROBE(2, 1),
-        SOFA(2, 1),
-        BED(1, 2),
-        CHEST(1, 1);
+        TABLE(2, 1, false),
+        CHAIR(1, 1, false),
+        WARDROBE(2, 1, false),
+        SOFA(2, 1, false),
+        BED(1, 2, false),
+        CHEST(1, 1, false),
+        STATUE(1, 1, true),
+        FOUNTAIN(2, 2, true),
+        ALTAR(2, 1, true),
+        THRONE(1, 1, true),
+        BOOKSHELF(2, 1, true),
+        FIREPLACE(2, 1, true),
+        DINING_TABLE(4, 2, true),
+        BARREL(1, 1, true),
+        PANTRY_RACK(2, 1, true),
+        WORKBENCH(2, 1, true),
+        ANVIL(1, 1, true),
+        ALCHEMY_TABLE(2, 1, true),
+        WEAPON_RACK(2, 1, true),
+        TRAINING_DUMMY(1, 1, true),
+        CAGE(2, 2, true),
+        RUG(3, 2, true),
+        TAPESTRY(2, 1, true),
+        WELL(1, 1, true),
+        TREE(2, 2, true),
+        FLOWERBED(2, 1, true),
+        TELESCOPE(1, 1, true),
+        MAGIC_CIRCLE(3, 3, true);
 
         private final int width;
         private final int depth;
+        private final boolean premium;
 
-        FurnitureKind(int width, int depth) {
+        FurnitureKind(int width, int depth, boolean premium) {
             this.width = width;
             this.depth = depth;
+            this.premium = premium;
         }
 
         public int width() {
@@ -92,6 +117,11 @@ public record PlanDocument(List<Integer> levels,
 
         public int depth() {
             return depth;
+        }
+
+        /** Доступен только бастиону владельца с подпиской. */
+        public boolean premium() {
+            return premium;
         }
     }
 
