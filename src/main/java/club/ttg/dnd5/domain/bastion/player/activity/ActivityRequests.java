@@ -24,12 +24,17 @@ public final class ActivityRequests {
      * @param order      приказ
      * @param optionName вариант приказа из справочника: «книгу», «лейтенанта»
      * @param note       пояснение: тема исследования, что изготовить
+     * @param cancelActive для «Обслуживать»: отменить приказы, которые сооружения ещё выполняют
      */
     @Schema(description = "Приказ бастиона")
     public record GiveOrder(UUID facilityId,
                             @NotNull BastionOrder order,
                             @Size(max = 200) String optionName,
-                            @Size(max = 2000) String note) {
+                            @Size(max = 2000) String note,
+                            Boolean cancelActive) {
+        public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note) {
+            this(facilityId, order, optionName, note, null);
+        }
     }
 
     /**
