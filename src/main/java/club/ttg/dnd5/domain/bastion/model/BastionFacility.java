@@ -54,6 +54,12 @@ public class BastionFacility extends NamedEntity {
      */
     private Boolean barrack;
 
+    /**
+     * Зверинец: в вольерах живут существа, они считаются защитниками бастиона. Приказ
+     * «Завербовать» добавляет существо из таблицы зверинца ({@link MenagerieBeast}).
+     */
+    private Boolean menagerie;
+
     /** Приказы, которые принимает сооружение. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerEntry.Reason;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStatus;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
+import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
@@ -196,19 +197,28 @@ public class PlayerBastionActivityService {
             if (recruitDefenders && facility.getDefenders() >= BastionRules.barrackCapacity(facility.getSpace())) {
                 throw conflict("В «%s» больше не помещается защитников".formatted(reference.getName()));
             }
-            // Защитников барак вербует бесплатно, какую бы цену ни указал вариант
-            long cost = recruitDefenders ? 0 : option.map(FacilityOrderOption::getCost).orElse(0);
+            MenagerieCreature creature = recruitCreature(facility, reference, request, master);
+            // Защитников барак вербует бесплатно, какую бы цену ни указал вариант; существо
+            // зверинца стоит столько, сколько указано в таблице зверинца
+            long cost = recruitDefenders ? 0
+                    : creature != null ? creature.getCost()
+                    : option.map(FacilityOrderOption::getCost).orElse(0);
             order.setFacilityId(facility.getId());
-            order.setOptionName(option.map(FacilityOrderOption::getName).orElse(null));
+            order.setOptionName(creature != null
+                    ? creature.getName()
+                    : option.map(FacilityOrderOption::getName).orElse(null));
+            order.setCreature(creature);
             Optional<PlayerBastionResponse.CraftableItem> item = craftItem(facility, reference, request);
             item.ifPresent(craft -> {
                 order.setItemUrl(craft.url());
                 order.setItemName(craft.name());
             });
             // Срок изготовления предмета считается по его цене и наёмникам, а не по варианту
-            Integer days = item.map(PlayerBastionResponse.CraftableItem::days)
-                    .or(() -> option.map(FacilityOrderOption::getDays))
-                    .orElse(null);
+            Integer days = creature != null
+                    ? Integer.valueOf(BastionRules.MENAGERIE_RECRUIT_DAYS)
+                    : item.map(PlayerBastionResponse.CraftableItem::days)
+                            .or(() -> option.map(FacilityOrderOption::getDays))
+                            .orElse(null);
             order.setCostGp(cost);
             order.setCompletesOnTurn(bastion.getTurn() + turnsFor(days));
             charge(bastion, cost, Reason.ORDER, "Приказ «%s» — %s".formatted(request.order().getName(),
@@ -217,6 +227,44 @@ public class PlayerBastionActivityService {
 
         orderRepository.save(order);
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Выводит существо зверинца из защитников бастиона или возвращает его туда.
+     */
+    @Transactional
+    public PlayerBastionResponse setCreatureDefender(UUID bastionId, UUID facilityId, String creatureId,
+                                                     ActivityRequests.CreatureDefender request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Существами зверинца распоряжается игрок этого персонажа или мастер");
+        findCreature(facility, creatureId).setDefender(request.defender());
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /** Убирает существо из зверинца — например, оно погибло, защищая бастион. */
+    @Transactional
+    public PlayerBastionResponse removeCreature(UUID bastionId, UUID facilityId, String creatureId) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Существами зверинца распоряжается игрок этого персонажа или мастер");
+        facility.getCreatures().remove(findCreature(facility, creatureId));
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    private static MenagerieCreature findCreature(PlayerBastionFacility facility, String creatureId) {
+        return facility.getCreatures().stream()
+                .filter(creature -> creatureId.equals(creature.getId()))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Существо %s не найдено".formatted(creatureId)));
     }
 
     /** Отмена приказа в тот же ход — цена возвращается в казну. */
@@ -328,9 +376,15 @@ public class PlayerBastionActivityService {
             String recruited = orderFacility
                     .filter(facility -> isRecruitDefenders(reference.get(facility.getFacilityUrl()), order.getOrder()))
                     .map(PlayerBastionActivityService::recruitDefenders)
+                    .or(() -> orderFacility
+                            .filter(facility -> order.getCreature() != null)
+                            .map(facility -> settleCreature(facility, order.getCreature())))
                     .orElse("");
             summary.add("Выполнен приказ «%s» — %s%s%s%s".formatted(order.getOrder().getName(), target,
-                    Optional.ofNullable(order.getOptionName()).map(option -> ": " + option).orElse(""),
+                    Optional.ofNullable(order.getOptionName())
+                            .filter(option -> order.getCreature() == null)
+                            .map(option -> ": " + option)
+                            .orElse(""),
                     recruited,
                     Optional.ofNullable(order.getResult()).map(result -> ". " + result).orElse("")));
             orderRepository.save(order);
@@ -541,6 +595,80 @@ public class PlayerBastionActivityService {
                 capacity - barrack.getDefenders()));
         barrack.setDefenders(barrack.getDefenders() + hired);
         return ", защитников +%d (%d из %d)".formatted(hired, barrack.getDefenders(), capacity);
+    }
+
+    /** Приказ «Завербовать» зверинцу: в вольеры добавляется существо. */
+    private static boolean isRecruitCreature(BastionFacility reference, BastionOrder order) {
+        return order == BastionOrder.RECRUIT && PlayerBastionResponseMapper.isMenagerie(reference);
+    }
+
+    /**
+     * Существо, которое зверинец вербует по приказу: из таблицы зверинца или, если приказ
+     * отдаёт Мастер, любое другое с ценой по показателю опасности. В вольерах должно
+     * хватать места.
+     *
+     * @return существо; {@code null}, если приказ не вербует существо
+     */
+    private static MenagerieCreature recruitCreature(PlayerBastionFacility facility,
+                                                     BastionFacility reference,
+                                                     ActivityRequests.GiveOrder request,
+                                                     boolean master) {
+        ActivityRequests.RecruitCreature wanted = request.creature();
+        if (!isRecruitCreature(reference, request.order())) {
+            if (wanted != null) {
+                throw badRequest("Существо вербует только зверинец");
+            }
+            return null;
+        }
+        if (wanted == null) {
+            throw badRequest("Выберите существо для зверинца");
+        }
+
+        MenagerieCreature creature = new MenagerieCreature();
+        creature.setId(UUID.randomUUID().toString());
+        if (wanted.beast() != null) {
+            creature.setBeast(wanted.beast());
+            creature.setName(wanted.beast().getName());
+            creature.setSize(wanted.beast().getSize());
+            creature.setCost(wanted.beast().getCost());
+        } else {
+            if (!master) {
+                throw forbidden("Существо не из таблицы зверинца добавляется с согласия Мастера: приказ отдаёт Мастер");
+            }
+            String name = trimToNull(wanted.name());
+            if (name == null) {
+                throw badRequest("Укажите, какое существо вербовать");
+            }
+            if (BastionRules.menagerieSpace(wanted.size()) == 0) {
+                throw badRequest("В вольерах держат существ не больше большого размера");
+            }
+            creature.setName(name);
+            creature.setSize(wanted.size());
+            creature.setCost(BastionRules.menagerieChallengeCost(wanted.challenge())
+                    .orElseThrow(() -> badRequest("Зверинец принимает существ с ПО от 0 до 3")));
+            creature.setChallenge(wanted.challenge().trim());
+        }
+
+        int occupied = PlayerBastionResponseMapper.menagerieOccupied(facility);
+        if (occupied + BastionRules.menagerieSpace(creature.getSize()) > BastionRules.MENAGERIE_CAPACITY) {
+            throw conflict("В вольерах «%s» нет места для существа «%s»".formatted(reference.getName(),
+                    creature.getName()));
+        }
+        return creature;
+    }
+
+    /**
+     * Завербованное существо поселяется в вольерах, если там ещё есть место.
+     *
+     * @return приписка к записи хода
+     */
+    private static String settleCreature(PlayerBastionFacility menagerie, MenagerieCreature creature) {
+        int space = BastionRules.menagerieSpace(creature.getSize());
+        if (PlayerBastionResponseMapper.menagerieOccupied(menagerie) + space > BastionRules.MENAGERIE_CAPACITY) {
+            return ": %s — в вольерах нет места".formatted(creature.getName());
+        }
+        menagerie.getCreatures().add(creature);
+        return ": %s поселяется в вольерах".formatted(creature.getName());
     }
 
     /**

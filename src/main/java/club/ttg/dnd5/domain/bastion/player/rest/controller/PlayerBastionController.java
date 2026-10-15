@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -233,6 +234,24 @@ public class PlayerBastionController {
     @PostMapping("/{id}/facilities/{facilityId}/enlarge")
     public PlayerBastionResponse enlarge(@PathVariable UUID id, @PathVariable UUID facilityId) {
         return activityService.enlarge(id, facilityId);
+    }
+
+    @Operation(summary = "Существо зверинца — защитник бастиона или нет",
+            description = "Игрок этого персонажа или мастер")
+    @PatchMapping("/{id}/facilities/{facilityId}/creatures/{creatureId}")
+    public PlayerBastionResponse setCreatureDefender(@PathVariable UUID id,
+                                                     @PathVariable UUID facilityId,
+                                                     @PathVariable String creatureId,
+                                                     @Valid @RequestBody ActivityRequests.CreatureDefender request) {
+        return activityService.setCreatureDefender(id, facilityId, creatureId, request);
+    }
+
+    @Operation(summary = "Убрать существо из зверинца", description = "Например, оно погибло, защищая бастион")
+    @DeleteMapping("/{id}/facilities/{facilityId}/creatures/{creatureId}")
+    public PlayerBastionResponse removeCreature(@PathVariable UUID id,
+                                                @PathVariable UUID facilityId,
+                                                @PathVariable String creatureId) {
+        return activityService.removeCreature(id, facilityId, creatureId);
     }
 
     @Operation(summary = "Убрать сооружение", description = "Только мастер игры — например, замена при повышении уровня")

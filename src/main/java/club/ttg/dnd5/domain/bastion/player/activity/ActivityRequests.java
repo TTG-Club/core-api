@@ -2,8 +2,10 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
+import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -26,6 +28,7 @@ public final class ActivityRequests {
      * @param note       пояснение: тема исследования, что изготовить
      * @param cancelActive для «Обслуживать»: отменить приказы, которые сооружения ещё выполняют
      * @param itemUrl    для «Изготовить» в мастерской: предмет из тех, что создаются её инструментами
+     * @param creature   для «Завербовать» в зверинце: какое существо добавить в вольеры
      */
     @Schema(description = "Приказ бастиона")
     public record GiveOrder(UUID facilityId,
@@ -33,10 +36,41 @@ public final class ActivityRequests {
                             @Size(max = 200) String optionName,
                             @Size(max = 2000) String note,
                             Boolean cancelActive,
-                            @Size(max = 200) String itemUrl) {
+                            @Size(max = 200) String itemUrl,
+                            @Valid RecruitCreature creature) {
         public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note) {
-            this(facilityId, order, optionName, note, null, null);
+            this(facilityId, order, optionName, note, null, null, null);
         }
+
+        public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note,
+                         Boolean cancelActive, String itemUrl) {
+            this(facilityId, order, optionName, note, cancelActive, itemUrl, null);
+        }
+    }
+
+    /**
+     * Существо, которое вербует зверинец: из таблицы зверинца или, с согласия Мастера, любое
+     * другое — тогда цена считается по показателю опасности.
+     *
+     * @param beast     существо из таблицы «Существа зверинца»
+     * @param name      название существа не из таблицы
+     * @param size      размер существа не из таблицы
+     * @param challenge показатель опасности существа не из таблицы: «1/4», «2»
+     */
+    @Schema(description = "Существо для зверинца")
+    public record RecruitCreature(MenagerieBeast beast,
+                                  @Size(max = 100) String name,
+                                  club.ttg.dnd5.domain.common.dictionary.Size size,
+                                  @Size(max = 8) String challenge) {
+    }
+
+    /**
+     * Считать ли существо зверинца защитником бастиона.
+     *
+     * @param defender {@code false} — существо не призывают на защиту, оно действует по своей природе
+     */
+    @Schema(description = "Существо зверинца — защитник бастиона")
+    public record CreatureDefender(@NotNull Boolean defender) {
     }
 
     /**

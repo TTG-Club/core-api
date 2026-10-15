@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceOption;
+import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionEditor;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
@@ -16,10 +17,12 @@ import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.bastion.rest.dto.FacilitySpaceResponse;
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -164,7 +167,40 @@ public class PlayerBastionResponseMapper {
                 isEnlargeable(facility, reference),
                 isBarrack(reference) ? facility.getDefenders() : null,
                 isBarrack(reference) ? BastionRules.barrackCapacity(facility.getSpace()) : null,
-                craftableItems(facility, reference, options));
+                craftableItems(facility, reference, options),
+                isMenagerie(reference) ? menagerie(facility) : null);
+    }
+
+    /** Сооружение справочника — зверинец, в вольерах живут существа. */
+    public static boolean isMenagerie(BastionFacility reference) {
+        return reference != null && Boolean.TRUE.equals(reference.getMenagerie());
+    }
+
+    /** Сколько места в вольерах занимают существа зверинца, в четвертях большого. */
+    public static int menagerieOccupied(PlayerBastionFacility facility) {
+        return Optional.ofNullable(facility.getCreatures()).orElse(List.of()).stream()
+                .mapToInt(creature -> BastionRules.menagerieSpace(creature.getSize()))
+                .sum();
+    }
+
+    private static PlayerBastionResponse.Menagerie menagerie(PlayerBastionFacility facility) {
+        List<PlayerBastionResponse.Creature> creatures = Optional.ofNullable(facility.getCreatures())
+                .orElse(List.of())
+                .stream()
+                .map(creature -> new PlayerBastionResponse.Creature(creature.getId(), creature.getName(),
+                        sizeLabel(creature.getSize()), creature.getChallenge(),
+                        BastionRules.menagerieSpace(creature.getSize()), creature.isDefender()))
+                .toList();
+        List<PlayerBastionResponse.Beast> beasts = Arrays.stream(MenagerieBeast.values())
+                .map(beast -> new PlayerBastionResponse.Beast(beast.name(), beast.getName(),
+                        sizeLabel(beast.getSize()), BastionRules.menagerieSpace(beast.getSize()), beast.getCost()))
+                .toList();
+        return new PlayerBastionResponse.Menagerie(BastionRules.MENAGERIE_CAPACITY, menagerieOccupied(facility),
+                creatures, beasts, BastionRules.MENAGERIE_CHALLENGE_COSTS);
+    }
+
+    private static BastionLabel sizeLabel(Size size) {
+        return size == null ? null : new BastionLabel(size.name(), size.getNames()[0]);
     }
 
     /**

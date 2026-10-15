@@ -1,8 +1,10 @@
 package club.ttg.dnd5.domain.bastion.model;
 
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Общие числа правил бастиона, не привязанные к конкретному сооружению. Отдаются сайту и
@@ -35,6 +37,56 @@ public class BastionRules {
     public static final int BARRACK_ROOMY_CAPACITY = 12;
     /** Сколько защитников помещается в просторном (расширенном) бараке. */
     public static final int BARRACK_VAST_CAPACITY = 24;
+
+    /**
+     * Вместимость вольеров зверинца в четвертях большого существа: 4 больших, а каждые
+     * 4 маленьких или средних занимают место одного большого.
+     */
+    public static final int MENAGERIE_CAPACITY = 16;
+    /** Сколько дней наёмники зверинца вербуют существо. */
+    public static final int MENAGERIE_RECRUIT_DAYS = 7;
+    /**
+     * Цена существа не из таблицы зверинца по показателю опасности, зм. Существ опаснее
+     * ПО 3 зверинец не принимает.
+     */
+    public static final List<ChallengeCost> MENAGERIE_CHALLENGE_COSTS = List.of(
+            new ChallengeCost("0", 50),
+            new ChallengeCost("1/8", 50),
+            new ChallengeCost("1/4", 250),
+            new ChallengeCost("1/2", 500),
+            new ChallengeCost("1", 1000),
+            new ChallengeCost("2", 2000),
+            new ChallengeCost("3", 3500));
+
+    /**
+     * Цена существа не из таблицы зверинца.
+     *
+     * @param challenge показатель опасности: «1/4», «2»
+     * @return цена, зм; пусто — зверинец такое существо не принимает
+     */
+    public static Optional<Integer> menagerieChallengeCost(String challenge) {
+        String value = challenge == null ? "" : challenge.trim();
+        return MENAGERIE_CHALLENGE_COSTS.stream()
+                .filter(item -> item.challenge().equals(value))
+                .map(ChallengeCost::cost)
+                .findFirst();
+    }
+
+    /**
+     * Сколько места в вольерах занимает существо этого размера, в четвертях большого.
+     *
+     * @return 4 у большого, 1 у крошечного, маленького и среднего; 0 — в зверинце не держат
+     */
+    public static int menagerieSpace(Size size) {
+        if (size == null) {
+            return 0;
+        }
+        return switch (size) {
+            case TINY, SMALL, MEDIUM -> 1;
+            case LARGE -> 4;
+            default -> 0;
+        };
+    }
 
     /** Сколько защитников помещается в бараке этого пространства. */
     public static int barrackCapacity(FacilitySpace space) {
@@ -72,5 +124,9 @@ public class BastionRules {
     }
 
     public record Progression(int level, int count) {
+    }
+
+    /** Цена существа зверинца по показателю опасности. */
+    public record ChallengeCost(String challenge, int cost) {
     }
 }
