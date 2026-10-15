@@ -31,6 +31,8 @@ public class BastionFacilityDetailResponse extends BaseResponse {
     private Boolean repeatable;
     @Schema(description = "Барак: размещает защитников бастиона")
     private Boolean barrack;
+    @Schema(description = "Зверинец: в вольерах живут существа-защитники")
+    private Boolean menagerie;
     @Schema(description = "Приказы сооружения")
     private List<BastionLabel> orders;
     @Schema(description = "Варианты исполнения приказов")

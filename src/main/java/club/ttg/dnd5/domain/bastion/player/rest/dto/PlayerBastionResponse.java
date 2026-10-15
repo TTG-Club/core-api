@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.player.rest.dto;
 
+import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
@@ -104,7 +105,41 @@ public record PlayerBastionResponse(
             @Schema(description = "Защитников в бараке; null — сооружение не барак") Integer defenders,
             @Schema(description = "Сколько защитников помещается в барак; null — не барак") Integer defenderCapacity,
             @Schema(description = "Что можно изготовить выбранными инструментами; null — у сооружения нет выбора инструментов")
-            List<CraftableItem> craftableItems) {
+            List<CraftableItem> craftableItems,
+            @Schema(description = "Вольеры зверинца; null — сооружение не зверинец") Menagerie menagerie) {
+    }
+
+    /**
+     * Вольеры зверинца. Место считается в четвертях большого существа: большое занимает 4,
+     * маленькое или среднее — 1.
+     *
+     * @param capacity       вместимость, четвертей
+     * @param occupied       занято существами, четвертей
+     * @param creatures      существа в вольерах
+     * @param beasts         таблица «Существа зверинца»
+     * @param challengeCosts цены существ не из таблицы по показателю опасности
+     */
+    @Schema(description = "Вольеры зверинца")
+    public record Menagerie(int capacity,
+                            int occupied,
+                            List<Creature> creatures,
+                            List<Beast> beasts,
+                            List<BastionRules.ChallengeCost> challengeCosts) {
+    }
+
+    /**
+     * Существо в вольерах.
+     *
+     * @param space    сколько места занимает, четвертей большого
+     * @param defender считается защитником бастиона
+     */
+    @Schema(description = "Существо зверинца")
+    public record Creature(String id, String name, BastionLabel size, String challenge, int space, boolean defender) {
+    }
+
+    /** Существо из таблицы зверинца с ценой вербовки, зм. */
+    @Schema(description = "Существо из таблицы зверинца")
+    public record Beast(String value, String name, BastionLabel size, int space, int cost) {
     }
 
     /**

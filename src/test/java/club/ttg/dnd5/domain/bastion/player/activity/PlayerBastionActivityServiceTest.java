@@ -7,11 +7,13 @@ import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceSource;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
+import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStatus;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
 import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
+import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
@@ -25,6 +27,7 @@ import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.domain.common.dictionary.Coin;
+import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
@@ -85,6 +88,7 @@ class PlayerBastionActivityServiceTest {
             "library", library(),
             "barrack", barrack(),
             "workshop", workshop(),
+            "menagerie", menagerie(),
             "bedroom", basic("bedroom"));
 
     private PlayerBastion bastion;
@@ -491,6 +495,124 @@ class PlayerBastionActivityServiceTest {
         item.setName(name);
         item.setTool(tool);
         return item;
+    }
+
+    @Test
+    void menagerieRecruitsBeastFromTableForItsCostInSevenDays() {
+        PlayerBastionFacility menagerie = addMenagerie();
+        bastion.setTreasuryGp(2000);
+
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(menagerie.getId(), BastionOrder.RECRUIT,
+                null, null, null, null, new ActivityRequests.RecruitCreature(MenagerieBeast.LION, null, null, null)));
+        assertEquals(1000, bastion.getTreasuryGp());
+        assertEquals("Лев", orders.getFirst().getOptionName());
+        assertEquals(bastion.getTurn() + 1, orders.getFirst().getCompletesOnTurn());
+
+        actAs(masterId);
+        PlayerBastionResponse response = service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertEquals(1, menagerie.getCreatures().size());
+        assertTrue(menagerie.getCreatures().getFirst().isDefender());
+        assertTrue(turns.getFirst().getSummary().getFirst().contains("Лев поселяется в вольерах"),
+                turns.getFirst().getSummary().getFirst());
+        PlayerBastionResponse.Menagerie shown = response.members().getFirst().facilities().stream()
+                .filter(facility -> facility.id().equals(menagerie.getId()))
+                .findFirst()
+                .orElseThrow()
+                .menagerie();
+        assertEquals(16, shown.capacity());
+        assertEquals(4, shown.occupied());
+        assertEquals(MenagerieBeast.values().length, shown.beasts().size());
+    }
+
+    @Test
+    void menagerieHoldsFourLargeOrSixteenSmallCreatures() {
+        PlayerBastionFacility menagerie = addMenagerie();
+        for (int i = 0; i < 3; i++) {
+            menagerie.getCreatures().add(creature("Тигр", Size.LARGE));
+        }
+        menagerie.getCreatures().add(creature("Шакал", Size.SMALL));
+        bastion.setTreasuryGp(5000);
+
+        actAs(playerId);
+        ApiException full = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(menagerie.getId(), BastionOrder.RECRUIT, null, null, null, null,
+                        new ActivityRequests.RecruitCreature(MenagerieBeast.LION, null, null, null))));
+        assertEquals(HttpStatus.CONFLICT, full.getStatus());
+
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(menagerie.getId(), BastionOrder.RECRUIT,
+                null, null, null, null, new ActivityRequests.RecruitCreature(MenagerieBeast.HYENA, null, null, null)));
+        assertEquals(50, orders.getFirst().getCostGp());
+    }
+
+    @Test
+    void creatureOutsideTableNeedsMasterAndCostsByChallenge() {
+        PlayerBastionFacility menagerie = addMenagerie();
+        bastion.setTreasuryGp(5000);
+        ActivityRequests.RecruitCreature griffon =
+                new ActivityRequests.RecruitCreature(null, "Грифон", Size.LARGE, "2");
+
+        actAs(playerId);
+        ApiException player = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(menagerie.getId(), BastionOrder.RECRUIT, null, null, null, null, griffon)));
+        assertEquals(HttpStatus.FORBIDDEN, player.getStatus());
+
+        actAs(masterId);
+        ApiException tooStrong = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(menagerie.getId(), BastionOrder.RECRUIT, null, null, null, null,
+                        new ActivityRequests.RecruitCreature(null, "Мантикора", Size.LARGE, "5"))));
+        assertEquals(HttpStatus.BAD_REQUEST, tooStrong.getStatus());
+
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(menagerie.getId(), BastionOrder.RECRUIT,
+                null, null, null, null, griffon));
+        assertEquals(2000, orders.getFirst().getCostGp());
+        assertEquals("2", orders.getFirst().getCreature().getChallenge());
+    }
+
+    @Test
+    void creatureCanLeaveDefendersOrBeRemoved() {
+        PlayerBastionFacility menagerie = addMenagerie();
+        MenagerieCreature tiger = creature("Тигр", Size.LARGE);
+        menagerie.getCreatures().add(tiger);
+
+        actAs(playerId);
+        service.setCreatureDefender(bastion.getId(), menagerie.getId(), tiger.getId(),
+                new ActivityRequests.CreatureDefender(false));
+        assertEquals(false, tiger.isDefender());
+
+        service.removeCreature(bastion.getId(), menagerie.getId(), tiger.getId());
+        assertTrue(menagerie.getCreatures().isEmpty());
+    }
+
+    private PlayerBastionFacility addMenagerie() {
+        PlayerBastionFacility menagerie = new PlayerBastionFacility();
+        menagerie.setId(UUID.randomUUID());
+        menagerie.setMember(member);
+        menagerie.setFacilityUrl("menagerie");
+        menagerie.setSpace(FacilitySpace.VAST);
+        menagerie.setPrerequisiteConfirmed(true);
+        member.getFacilities().add(menagerie);
+        return menagerie;
+    }
+
+    private static MenagerieCreature creature(String name, Size size) {
+        MenagerieCreature creature = new MenagerieCreature();
+        creature.setId(UUID.randomUUID().toString());
+        creature.setName(name);
+        creature.setSize(size);
+        return creature;
+    }
+
+    private static BastionFacility menagerie() {
+        BastionFacility facility = new BastionFacility();
+        facility.setUrl("menagerie");
+        facility.setName("Зверинец");
+        facility.setCategory(FacilityCategory.SPECIAL);
+        facility.setLevel(13L);
+        facility.setSpace(FacilitySpace.VAST);
+        facility.setMenagerie(true);
+        facility.setOrders(List.of(BastionOrder.RECRUIT));
+        return facility;
     }
 
     private static Item priced(String url, String cost, Coin coin) {

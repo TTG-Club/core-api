@@ -93,6 +93,11 @@ public class PlayerBastionFacility extends Timestamped {
     @Column(nullable = false)
     private int defenders;
 
+    /** Существа в вольерах (только у зверинца). */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private List<MenagerieCreature> creatures = new ArrayList<>();
+
     public boolean isReady() {
         return status == FacilityStatus.READY;
     }
