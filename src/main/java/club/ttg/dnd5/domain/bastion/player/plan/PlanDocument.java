@@ -151,10 +151,16 @@ public record PlanDocument(List<Integer> levels,
 
     /**
      * Окружность башни в клетках: центр и радиус, кратные половине клетки. Клетки башни —
-     * те, чей центр лежит внутри окружности.
+     * те, чей центр лежит внутри окружности, а у многоугольной — внутри правильного
+     * многоугольника, вписанного в неё.
+     *
+     * @param sides число сторон многоугольной башни (5 или 8); у круглой {@code null}
      */
     @Schema(description = "Окружность башни")
-    public record Circle(double cx, double cy, double r) {
+    public record Circle(double cx, double cy, double r, Integer sides) {
+        public Circle(double cx, double cy, double r) {
+            this(cx, cy, r, null);
+        }
     }
 
     /**
