@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.bastion.service;
 
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
+import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceOption;
@@ -8,6 +9,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilityChoiceSource;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionSetupRules;
+import club.ttg.dnd5.domain.common.dictionary.Coin;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
@@ -32,6 +34,25 @@ import static org.mockito.Mockito.when;
 class FacilityChoiceOptionsTest {
     private final ItemRepository itemRepository = mock(ItemRepository.class);
     private final FacilityChoiceOptions choiceOptions = new FacilityChoiceOptions(itemRepository);
+
+    @Test
+    void priceIsReadInGoldWhateverTheFormat() {
+        assertEquals(50.0, FacilityChoiceOptions.priceGp("50", Coin.GC));
+        assertEquals(1500.0, FacilityChoiceOptions.priceGp("1 500", Coin.GC));
+        assertEquals(1500.0, FacilityChoiceOptions.priceGp("1,500", Coin.GC));
+        assertEquals(0.5, FacilityChoiceOptions.priceGp("0,5", Coin.GC));
+        assertEquals(0.5, FacilityChoiceOptions.priceGp("5", Coin.SC), 1e-6);
+        assertNull(FacilityChoiceOptions.priceGp("—", Coin.GC));
+        assertNull(FacilityChoiceOptions.priceGp(null, Coin.GC));
+    }
+
+    @Test
+    void craftTakesTenGoldPerDaySharedByHirelings() {
+        assertEquals(5, BastionRules.craftDays(50, 1));
+        assertEquals(3, BastionRules.craftDays(50, 2));
+        assertEquals(1, BastionRules.craftDays(0.5, null));
+        assertEquals(8, BastionRules.craftDays(150, 2));
+    }
 
     @Test
     void artisanToolsComeFromItemsWithTheirCrafts() {

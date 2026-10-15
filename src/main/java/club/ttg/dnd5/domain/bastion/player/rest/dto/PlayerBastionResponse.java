@@ -5,7 +5,6 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.bastion.rest.dto.FacilitySpaceResponse;
-import club.ttg.dnd5.domain.common.model.EntityRef;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -105,6 +104,16 @@ public record PlayerBastionResponse(
             @Schema(description = "Защитников в бараке; null — сооружение не барак") Integer defenders,
             @Schema(description = "Сколько защитников помещается в барак; null — не барак") Integer defenderCapacity,
             @Schema(description = "Что можно изготовить выбранными инструментами; null — у сооружения нет выбора инструментов")
-            List<EntityRef> craftableItems) {
+            List<CraftableItem> craftableItems) {
+    }
+
+    /**
+     * Предмет, который мастерская может изготовить.
+     *
+     * @param priceGp покупная стоимость, зм; null — в справочнике нет числовой цены
+     * @param days    сколько дней изготавливать с наёмниками сооружения; null — цена неизвестна
+     */
+    @Schema(description = "Предмет для изготовления")
+    public record CraftableItem(String url, String name, Double priceGp, Integer days) {
     }
 }

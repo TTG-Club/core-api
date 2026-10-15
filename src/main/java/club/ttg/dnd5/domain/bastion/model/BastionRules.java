@@ -41,6 +41,22 @@ public class BastionRules {
         return space == FacilitySpace.VAST ? BARRACK_VAST_CAPACITY : BARRACK_ROOMY_CAPACITY;
     }
 
+    /** Сколько зм стоимости предмета изготавливается за один 8-часовой рабочий день. */
+    public static final int CRAFT_GP_PER_DAY = 10;
+
+    /**
+     * Сколько дней мастерская изготавливает предмет: покупная стоимость в зм делится на
+     * {@value #CRAFT_GP_PER_DAY} за каждый 8-часовой день, наёмники работают одновременно и
+     * делят работу. Дробная часть округляется до полного дня, меньше дня не бывает.
+     *
+     * @param priceGp   покупная стоимость предмета, зм
+     * @param hirelings наёмники сооружения; пусто — один
+     */
+    public static int craftDays(double priceGp, Integer hirelings) {
+        int workers = hirelings == null || hirelings < 1 ? 1 : hirelings;
+        return Math.max(1, (int) Math.ceil(priceGp / ((double) CRAFT_GP_PER_DAY * workers)));
+    }
+
     /**
      * Сколько специализированных сооружений положено персонажу этого уровня. До 5 уровня
      * бастиона нет — ноль.
