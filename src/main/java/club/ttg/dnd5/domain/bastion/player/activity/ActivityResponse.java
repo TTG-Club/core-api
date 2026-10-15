@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -17,6 +18,7 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
      * Приказ.
      *
      * @param facilityName название сооружения; пусто у «Обслуживать»
+     * @param item         изготавливаемый предмет справочника; пусто, если не выбирался
      * @param canCancel    открывший может отменить приказ: он отдан в текущий ход
      */
     @Schema(description = "Приказ")
@@ -25,6 +27,7 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
                         String facilityName,
                         BastionLabel order,
                         String optionName,
+                        EntityRef item,
                         long costGp,
                         int givenOnTurn,
                         int completesOnTurn,

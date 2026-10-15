@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.bastion.player.service;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
+import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
+import club.ttg.dnd5.domain.bastion.model.FacilityChoiceOption;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionEditor;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
@@ -13,6 +15,8 @@ import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.bastion.rest.dto.FacilitySpaceResponse;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +37,7 @@ import java.util.stream.Collectors;
 public class PlayerBastionResponseMapper {
     private final BastionFacilityRepository facilityRepository;
     private final PlayerBastionEditorRepository editorRepository;
+    private final FacilityChoiceOptions choiceOptions;
 
     public PlayerBastionResponse toResponse(PlayerBastion bastion, BastionViewer viewer) {
         return toResponses(List.of(bastion), item -> viewer).getFirst();
@@ -55,14 +60,16 @@ public class PlayerBastionResponseMapper {
                 : facilityRepository.findAllById(urls).stream()
                         .collect(Collectors.toMap(BastionFacility::getUrl, Function.identity()));
 
+        Function<FacilityChoice, List<FacilityChoiceOption>> options = choiceOptions.resolver();
         return bastions.stream()
-                .map(bastion -> toResponse(bastion, viewerOf.apply(bastion), reference))
+                .map(bastion -> toResponse(bastion, viewerOf.apply(bastion), reference, options))
                 .toList();
     }
 
     private PlayerBastionResponse toResponse(PlayerBastion bastion,
                                              BastionViewer viewer,
-                                             Map<String, BastionFacility> reference) {
+                                             Map<String, BastionFacility> reference,
+                                             Function<FacilityChoice, List<FacilityChoiceOption>> options) {
         boolean manager = viewer.manager();
         boolean archived = bastion.getStatus() == PlayerBastionStatus.ARCHIVED;
         boolean setup = bastion.getStatus() == PlayerBastionStatus.SETUP;
@@ -70,7 +77,7 @@ public class PlayerBastionResponseMapper {
         List<PlayerBastionResponse.Member> members = bastion.getMembers().stream()
                 .map(item -> toMember(item, setup && (manager || viewer.is(item.getUserId())),
                         bastion.getStatus() == PlayerBastionStatus.ACTIVE && (manager || viewer.is(item.getUserId())),
-                        reference))
+                        reference, options))
                 .toList();
 
         return new PlayerBastionResponse(
@@ -96,12 +103,13 @@ public class PlayerBastionResponseMapper {
                 bastion.getUpdatedAt());
     }
 
-    private static PlayerBastionResponse.Member toMember(PlayerBastionMember member,
-                                                         boolean canEditFacilities,
-                                                         boolean canGiveOrders,
-                                                         Map<String, BastionFacility> reference) {
+    private PlayerBastionResponse.Member toMember(PlayerBastionMember member,
+                                                  boolean canEditFacilities,
+                                                  boolean canGiveOrders,
+                                                  Map<String, BastionFacility> reference,
+                                                  Function<FacilityChoice, List<FacilityChoiceOption>> options) {
         List<PlayerBastionResponse.Facility> facilities = member.getFacilities().stream()
-                .map(facility -> toFacility(facility, reference.get(facility.getFacilityUrl())))
+                .map(facility -> toFacility(facility, reference.get(facility.getFacilityUrl()), options))
                 .toList();
         boolean basicComplete = facilities.stream()
                 .filter(facility -> facility.category() != null
@@ -123,7 +131,9 @@ public class PlayerBastionResponseMapper {
                 facilities);
     }
 
-    private static PlayerBastionResponse.Facility toFacility(PlayerBastionFacility facility, BastionFacility reference) {
+    private PlayerBastionResponse.Facility toFacility(PlayerBastionFacility facility,
+                                                      BastionFacility reference,
+                                                      Function<FacilityChoice, List<FacilityChoiceOption>> options) {
         Optional<BastionFacility> source = Optional.ofNullable(reference);
         return new PlayerBastionResponse.Facility(
                 facility.getId(),
@@ -153,7 +163,25 @@ public class PlayerBastionResponseMapper {
                 facility.getPendingReadyOnTurn(),
                 isEnlargeable(facility, reference),
                 isBarrack(reference) ? facility.getDefenders() : null,
-                isBarrack(reference) ? BastionRules.barrackCapacity(facility.getSpace()) : null);
+                isBarrack(reference) ? BastionRules.barrackCapacity(facility.getSpace()) : null,
+                craftableItems(facility, reference, options));
+    }
+
+    /**
+     * Что сооружение может изготовить выбранными инструментами (мастерская).
+     *
+     * @return предметы; {@code null}, если у сооружения нет выбора инструментов
+     */
+    public List<EntityRef> craftableItems(PlayerBastionFacility facility, BastionFacility reference) {
+        return craftableItems(facility, reference, choiceOptions.resolver());
+    }
+
+    private List<EntityRef> craftableItems(PlayerBastionFacility facility,
+                                           BastionFacility reference,
+                                           Function<FacilityChoice, List<FacilityChoiceOption>> options) {
+        return reference == null
+                ? null
+                : choiceOptions.crafts(reference.getChoices(), facility.getChoices(), options);
     }
 
     /** Сооружение справочника — барак, в нём живут защитники. */

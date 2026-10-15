@@ -47,6 +47,14 @@ public class PlayerBastionOrder extends Timestamped {
     @Column(name = "option_name", length = 200)
     private String optionName;
 
+    /** Изготавливаемый предмет справочника (мастерская). */
+    @Column(name = "item_url", length = 200)
+    private String itemUrl;
+
+    /** Название изготавливаемого предмета на момент приказа. */
+    @Column(name = "item_name", length = 200)
+    private String itemName;
+
     /** Сколько списано из казны при отдаче приказа, зм. */
     @Column(name = "cost_gp", nullable = false)
     private long costGp;

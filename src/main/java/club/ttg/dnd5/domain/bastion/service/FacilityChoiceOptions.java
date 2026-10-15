@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceOption;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceSource;
 import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,6 +56,42 @@ public class FacilityChoiceOptions {
         }
         return choices.stream()
                 .map(choice -> choice == null || choice.getSource() == null ? choice : withOptions(choice, resolver))
+                .toList();
+    }
+
+    /**
+     * Что можно создать вариантами, которые игрок выбрал в выборах из справочника: предметы
+     * выбранных инструментов мастерской, без повторов, в порядке выбора.
+     *
+     * @param choices  выборы сооружения справочника
+     * @param selected сделанные выборы игрока
+     * @return предметы; {@code null}, если у сооружения нет выбора из справочника
+     */
+    public List<EntityRef> crafts(List<FacilityChoice> choices,
+                                  List<SelectedChoice> selected,
+                                  Function<FacilityChoice, List<FacilityChoiceOption>> resolver) {
+        List<FacilityChoice> sourced = choices == null ? List.of() : choices.stream()
+                .filter(choice -> choice != null && choice.getSource() != null)
+                .toList();
+        if (sourced.isEmpty()) {
+            return null;
+        }
+        Map<String, EntityRef> crafts = new LinkedHashMap<>();
+        for (FacilityChoice choice : sourced) {
+            List<String> picked = selectedOptions(selected, choice.getName());
+            resolver.apply(choice).stream()
+                    .filter(option -> picked.contains(option.getName()))
+                    .flatMap(option -> Optional.ofNullable(option.getCrafts()).orElse(List.of()).stream())
+                    .filter(item -> item.getUrl() != null)
+                    .forEach(item -> crafts.putIfAbsent(item.getUrl(), item));
+        }
+        return List.copyOf(crafts.values());
+    }
+
+    private static List<String> selectedOptions(List<SelectedChoice> selected, String name) {
+        return Optional.ofNullable(selected).orElse(List.of()).stream()
+                .filter(choice -> choice != null && Objects.equals(choice.name(), name))
+                .flatMap(choice -> Optional.ofNullable(choice.options()).orElse(List.of()).stream())
                 .toList();
     }
 
