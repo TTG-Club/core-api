@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
+import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
+import club.ttg.dnd5.domain.bastion.model.FacilityChoiceSource;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStatus;
@@ -14,6 +16,7 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
@@ -21,6 +24,9 @@ import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.user.service.UserService;
 import club.ttg.dnd5.exception.ApiException;
@@ -57,12 +63,14 @@ class PlayerBastionActivityServiceTest {
     private final PlayerBastionTurnRepository turnRepository = mock(PlayerBastionTurnRepository.class);
     private final GameMembershipClient client = mock(GameMembershipClient.class);
     private final UserService userService = mock(UserService.class);
+    private final ItemRepository itemRepository = mock(ItemRepository.class);
     private final PlayerBastionActivityService service = new PlayerBastionActivityService(
             bastionRepository, facilityRepository, orderRepository, ledgerRepository, turnRepository,
             new PlayerBastionAccess(bastionRepository, mock(PlayerBastionEditorRepository.class), client, userService),
-            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class)),
+            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class),
+                    new FacilityChoiceOptions(itemRepository)),
             mock(EntityManager.class),
-            new FacilityChoiceOptions(mock(ItemRepository.class)));
+            new FacilityChoiceOptions(itemRepository));
 
     private final UUID gameId = UUID.randomUUID();
     private final UUID masterId = UUID.randomUUID();
@@ -75,6 +83,7 @@ class PlayerBastionActivityServiceTest {
     private final Map<String, BastionFacility> reference = Map.of(
             "library", library(),
             "barrack", barrack(),
+            "workshop", workshop(),
             "bedroom", basic("bedroom"));
 
     private PlayerBastion bastion;
@@ -236,7 +245,7 @@ class PlayerBastionActivityServiceTest {
                 new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null))).getStatus());
 
         service.giveOrder(bastion.getId(),
-                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true));
+                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true, null));
 
         assertEquals(OrderStatus.CANCELLED, orders.getFirst().getStatus());
         assertEquals(BastionOrder.MAINTAIN, orders.getLast().getOrder());
@@ -252,7 +261,7 @@ class PlayerBastionActivityServiceTest {
         bastion.setTurn(bastion.getTurn() + 1);
 
         service.giveOrder(bastion.getId(),
-                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true));
+                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true, null));
 
         assertEquals(OrderStatus.CANCELLED, orders.getFirst().getStatus());
         assertEquals(90, bastion.getTreasuryGp());
@@ -272,7 +281,7 @@ class PlayerBastionActivityServiceTest {
 
         actAs(otherPlayerId);
         ApiException error = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
-                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true)));
+                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true, null)));
 
         assertEquals(HttpStatus.FORBIDDEN, error.getStatus());
         assertEquals(OrderStatus.ACTIVE, orders.getFirst().getStatus());
@@ -419,6 +428,76 @@ class PlayerBastionActivityServiceTest {
                 .findFirst()
                 .orElseThrow()
                 .defenderCapacity());
+    }
+
+    @Test
+    void workshopCraftsOnlyItemsOfChosenTools() {
+        when(itemRepository.findArtisanTools()).thenReturn(List.of(
+                tool("smiths-tools", "Инструменты кузнеца", new EntityRef("dagger", "Кинжал")),
+                tool("weavers-tools", "Инструменты ткача", new EntityRef("rope", "Верёвка"))));
+        PlayerBastionFacility workshop = new PlayerBastionFacility();
+        workshop.setId(UUID.randomUUID());
+        workshop.setMember(member);
+        workshop.setFacilityUrl("workshop");
+        workshop.setSpace(FacilitySpace.ROOMY);
+        workshop.setPrerequisiteConfirmed(true);
+        workshop.setChoices(new ArrayList<>(List.of(
+                new SelectedChoice("Инструменты ремесленников", List.of("Инструменты кузнеца")))));
+        member.getFacilities().add(workshop);
+
+        actAs(playerId);
+        ApiException foreign = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(workshop.getId(), BastionOrder.CRAFT, null, null, null, "rope")));
+        assertEquals(HttpStatus.BAD_REQUEST, foreign.getStatus());
+
+        PlayerBastionResponse response = service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(workshop.getId(), BastionOrder.CRAFT, null, null, null, "dagger"));
+        assertEquals("dagger", orders.getFirst().getItemUrl());
+        assertEquals("Кинжал", orders.getFirst().getItemName());
+        assertEquals(List.of(new EntityRef("dagger", "Кинжал")), response.members().getFirst().facilities().stream()
+                .filter(facility -> facility.id().equals(workshop.getId()))
+                .findFirst()
+                .orElseThrow()
+                .craftableItems());
+        assertNull(response.members().getFirst().facilities().stream()
+                .filter(facility -> facility.id().equals(library.getId()))
+                .findFirst()
+                .orElseThrow()
+                .craftableItems());
+    }
+
+    @Test
+    void itemIsChosenOnlyForCraft() {
+        actAs(playerId);
+        ApiException wrong = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(library.getId(), BastionOrder.RESEARCH, null, null, null, "dagger")));
+        assertEquals(HttpStatus.BAD_REQUEST, wrong.getStatus());
+    }
+
+    private static Item tool(String url, String name, EntityRef... crafts) {
+        Tool tool = new Tool();
+        tool.setCrafts(List.of(crafts));
+        Item item = new Item();
+        item.setUrl(url);
+        item.setName(name);
+        item.setTool(tool);
+        return item;
+    }
+
+    private static BastionFacility workshop() {
+        BastionFacility facility = new BastionFacility();
+        facility.setUrl("workshop");
+        facility.setName("Мастерская");
+        facility.setCategory(FacilityCategory.SPECIAL);
+        facility.setLevel(5L);
+        facility.setSpace(FacilitySpace.ROOMY);
+        facility.setOrders(List.of(BastionOrder.CRAFT));
+        FacilityChoice tools = new FacilityChoice();
+        tools.setName("Инструменты ремесленников");
+        tools.setCount(6);
+        tools.setSource(FacilityChoiceSource.ARTISAN_TOOLS);
+        facility.setChoices(List.of(tools));
+        return facility;
     }
 
     private PlayerBastionFacility addBarrack() {

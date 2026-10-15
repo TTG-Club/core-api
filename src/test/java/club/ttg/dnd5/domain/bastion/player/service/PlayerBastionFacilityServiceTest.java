@@ -48,7 +48,7 @@ class PlayerBastionFacilityServiceTest {
     private final PlayerBastionFacilityService service = new PlayerBastionFacilityService(
             repository, facilityRepository,
             new PlayerBastionAccess(repository, mock(PlayerBastionEditorRepository.class), client, userService),
-            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class)),
+            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class), new FacilityChoiceOptions(mock(ItemRepository.class))),
             mock(EntityManager.class),
             new FacilityChoiceOptions(mock(ItemRepository.class)));
 
