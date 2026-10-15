@@ -103,8 +103,8 @@ public class PlanRules {
      */
     private static List<Room> withoutOverlaps(List<Room> rooms) {
         Map<Integer, Set<Cell>> taken = new HashMap<>();
-        List<Room> ordered = new ArrayList<>(rooms.stream().filter(room -> room.kind() == RoomKind.TOWER).toList());
-        ordered.addAll(rooms.stream().filter(room -> room.kind() != RoomKind.TOWER).toList());
+        List<Room> ordered = new ArrayList<>(rooms.stream().filter(PlanRules::isTower).toList());
+        ordered.addAll(rooms.stream().filter(room -> !isTower(room)).toList());
 
         Map<Room, List<Cell>> kept = new HashMap<>();
         for (Room room : ordered) {
@@ -116,6 +116,10 @@ public class PlanRules {
                         kept.get(room), room.shape()))
                 .filter(room -> !room.cells().isEmpty())
                 .toList();
+    }
+
+    private static boolean isTower(Room room) {
+        return room.kind() != null && room.kind().isTower();
     }
 
     /**

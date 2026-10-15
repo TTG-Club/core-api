@@ -51,9 +51,17 @@ public record PlanDocument(List<Integer> levels,
 
     /**
      * Вид комнаты. Коридоры, соединённые друг с другом, стены между собой не получают; у двора
-     * вместо стены — пунктир; у башни круглая стена, клетки считаются по её окружности.
+     * вместо стены — пунктир; у круглой башни круглая стена, клетки считаются по её окружности;
+     * квадратная башня занимает прямоугольник клеток с толстой стеной.
      */
-    public enum RoomKind { ROOM, CORRIDOR, COURTYARD, TOWER }
+    public enum RoomKind {
+        ROOM, CORRIDOR, COURTYARD, TOWER, SQUARE_TOWER;
+
+        /** Башня, круглая или квадратная: её клетки важнее клеток прочих комнат. */
+        public boolean isTower() {
+            return this == TOWER || this == SQUARE_TOWER;
+        }
+    }
 
     /** Сторона клетки, на ребре которой стоит дверь или окно. */
     public enum Side { N, E, S, W }
