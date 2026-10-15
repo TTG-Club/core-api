@@ -3,11 +3,14 @@ package club.ttg.dnd5.domain.bastion.player.service;
 import club.ttg.dnd5.domain.subscription.client.SubscriptionStatusClient;
 import club.ttg.dnd5.domain.subscription.client.SubscriptionStatusClient.SubscriptionStatus;
 import club.ttg.dnd5.domain.user.model.User;
+import club.ttg.dnd5.domain.user.model.UserDisplayName;
+import club.ttg.dnd5.domain.user.repository.UserDisplayNameRepository;
 import club.ttg.dnd5.domain.user.repository.UserRepository;
 import club.ttg.dnd5.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -29,6 +32,7 @@ public class PlayerBastionLimits {
 
     private final SubscriptionStatusClient subscriptionStatusClient;
     private final UserRepository userRepository;
+    private final UserDisplayNameRepository displayNameRepository;
 
     /** Лимит текущего пользователя. */
     public int forCurrentUser() {
@@ -43,9 +47,25 @@ public class PlayerBastionLimits {
      * подписка (fail-closed): платное не выдаётся, пока связь не восстановится.
      */
     public boolean isSubscriber(UUID userId) {
-        return userRepository.findById(userId)
-                .flatMap(user -> subscriptionStatusClient.status(user.getUsername()))
+        return username(userId)
+                .flatMap(subscriptionStatusClient::status)
                 .map(SubscriptionStatus::active)
                 .orElse(false);
+    }
+
+    /**
+     * Логин пользователя — по нему subscriber-service ищет подписку. Пользователи живут в
+     * auth-service, в core-api их таблица не заполнена: у текущего пользователя логин
+     * берётся из токена, у другого — из записи отображаемого имени, которую сайт заводит
+     * при первом входе.
+     */
+    private Optional<String> username(UUID userId) {
+        User current = SecurityUtils.getUserOrNull();
+        if (current != null && userId.equals(current.getUuid())) {
+            return Optional.ofNullable(current.getUsername());
+        }
+        return displayNameRepository.findById(userId)
+                .map(UserDisplayName::getUsername)
+                .or(() -> userRepository.findById(userId).map(User::getUsername));
     }
 }
