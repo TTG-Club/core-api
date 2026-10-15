@@ -1,9 +1,12 @@
 package club.ttg.dnd5.domain.item.model.tool;
 
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 /**
  * Параметры инструмента — то, чем инструмент отличается от прочего снаряжения на листе
@@ -44,4 +47,10 @@ public class Tool {
      * {@code proficient}, {@code expertise}. Пусто — {@code auto}.
      */
     private String proficiencyMode;
+
+    /**
+     * Предметы, которые создаются этим инструментом (у инструментов ремесленников).
+     * Мастерская бастиона берёт отсюда, что можно сделать выбранными инструментами.
+     */
+    private List<EntityRef> crafts;
 }

@@ -37,6 +37,20 @@ public interface ItemRepository extends JpaRepository<Item, String>,
         """, nativeQuery = true)
     List<String> findAllUsedSourceCodes();
 
+    /**
+     * Видимые инструменты ремесленников: по категории инструмента или, если она не задана,
+     * по типу предмета. Из них игрок выбирает инструменты мастерской бастиона.
+     */
+    @Query(value = """
+        select * from item i
+        where i.is_hidden_entity = false
+          and (i.tool ->> 'category' = 'artisan'
+               or (coalesce(i.tool ->> 'category', '') = ''
+                   and i.item_types @> cast('["ARTISAN_S_TOOLS"]' as jsonb)))
+        order by i.name
+        """, nativeQuery = true)
+    List<Item> findArtisanTools();
+
     /** Названия предметов по набору url — для подстановки в стартовое снаряжение классов. */
     @Query("select i.url as url, i.name as name from Item i where i.url in :urls")
     List<ItemNameRef> findNamesByUrls(@Param("urls") Collection<String> urls);
