@@ -158,9 +158,10 @@ public class PlayerBastionActivityService {
             if (!master && !isMember(bastion, userId)) {
                 throw forbidden("«Обслуживать» отдают мастер и игроки с доступом к бастиону");
             }
-            if (!givenThisTurn.isEmpty()) {
-                throw conflict("В этот ход уже отданы приказы: «Обслуживать» отдаётся вместо них");
+            if (givenThisTurn.stream().anyMatch(item -> item.getOrder().isBastionWide())) {
+                throw conflict("В этот ход бастион уже обслуживают");
             }
+            cancelForMaintain(bastion, userId, master, Boolean.TRUE.equals(request.cancelActive()));
             order.setCompletesOnTurn(bastion.getTurn() + 1);
         } else {
             PlayerBastionFacility facility = findFacility(bastion, request.facilityId());
@@ -217,14 +218,38 @@ public class PlayerBastionActivityService {
             throw conflict("Отменить можно только приказ, отданный в текущий ход");
         }
 
+        cancel(bastion, order, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * «Обслуживать» отдаётся вместо остальных приказов: те, что сооружения ещё выполняют,
+     * отменяются, если отдающий это подтвердил. Чужие приказы снимает только мастер.
+     */
+    private void cancelForMaintain(PlayerBastion bastion, UUID userId, boolean master, boolean confirmed) {
+        List<PlayerBastionOrder> active = orderRepository.findAllByBastionIdAndStatus(bastion.getId(),
+                OrderStatus.ACTIVE);
+        if (active.isEmpty()) {
+            return;
+        }
+        if (!confirmed) {
+            throw conflict("Сооружения ещё выполняют приказы: «Обслуживать» отменит их");
+        }
+        if (!master && active.stream().anyMatch(item -> !item.getGivenBy().equals(userId))) {
+            throw forbidden("Чужие приказы отменит мастер или тот, кто их отдал");
+        }
+        active.forEach(item -> cancel(bastion, item, userId));
+    }
+
+    /** Отменяет приказ; цена приказа, отданного в этот ход, возвращается в казну. */
+    private void cancel(PlayerBastion bastion, PlayerBastionOrder order, UUID userId) {
         order.setStatus(OrderStatus.CANCELLED);
-        if (order.getCostGp() > 0) {
+        if (order.getCostGp() > 0 && order.getGivenOnTurn() == bastion.getTurn()) {
             bastion.setTreasuryGp(bastion.getTreasuryGp() + order.getCostGp());
             record(bastion, order.getCostGp(), Reason.REFUND,
                     "Отмена приказа «%s»".formatted(order.getOrder().getName()), userId);
         }
         orderRepository.save(order);
-        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ ход

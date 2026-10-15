@@ -220,6 +220,59 @@ class PlayerBastionActivityServiceTest {
         assertEquals("Гость из соседнего королевства", turns.getFirst().getEvent());
     }
 
+    /** «Обслуживать» отменяет приказы, которые ещё выполняются, только после подтверждения. */
+    @Test
+    void maintainCancelsActiveOrdersWhenConfirmed() {
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(library.getId(), BastionOrder.RESEARCH,
+                "тему", null));
+
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null))).getStatus());
+
+        service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true));
+
+        assertEquals(OrderStatus.CANCELLED, orders.getFirst().getStatus());
+        assertEquals(BastionOrder.MAINTAIN, orders.getLast().getOrder());
+        assertEquals(100, bastion.getTreasuryGp());
+    }
+
+    /** Приказ прошлого хода отменяется без возврата: работа уже идёт. */
+    @Test
+    void maintainCancelsEarlierOrderWithoutRefund() {
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(library.getId(), BastionOrder.RESEARCH,
+                "тему", null));
+        bastion.setTurn(bastion.getTurn() + 1);
+
+        service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true));
+
+        assertEquals(OrderStatus.CANCELLED, orders.getFirst().getStatus());
+        assertEquals(90, bastion.getTreasuryGp());
+    }
+
+    @Test
+    void playerCannotCancelForeignOrdersWithMaintain() {
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(library.getId(), BastionOrder.RESEARCH,
+                null, null));
+
+        PlayerBastionMember other = new PlayerBastionMember();
+        other.setId(UUID.randomUUID());
+        other.setBastion(bastion);
+        other.setUserId(otherPlayerId);
+        bastion.getMembers().add(other);
+
+        actAs(otherPlayerId);
+        ApiException error = assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null, true)));
+
+        assertEquals(HttpStatus.FORBIDDEN, error.getStatus());
+        assertEquals(OrderStatus.ACTIVE, orders.getFirst().getStatus());
+    }
+
     @Test
     void turnWithoutOrdersIsMaintenance() {
         actAs(masterId);
