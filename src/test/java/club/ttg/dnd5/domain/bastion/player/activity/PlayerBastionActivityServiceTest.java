@@ -697,6 +697,23 @@ class PlayerBastionActivityServiceTest {
         assertEquals(PlayerBastionEvent.Status.RESOLVED, event.getStatus());
         assertEquals(1, library.getUnavailableOnTurn());
         assertEquals(100, bastion.getTreasuryGp());
+        assertEquals(1, library.missingHirelings(1));
+        assertEquals(0, library.missingHirelings(2));
+    }
+
+    /** Пропавшие наёмники не считаются в сооружении, пока им не найдут замену в конце следующего хода. */
+    @Test
+    void lostHirelingsAreMissingUntilReplaced() {
+        reference.get("library").setHirelings(2);
+        dice.push(78, 1);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        assertEquals(BastionEventType.LOST_HIRELINGS, events.getFirst().getType());
+        assertEquals(1, library.getUnavailableOnTurn());
+        assertEquals(2, library.missingHirelings(0));
+        assertEquals(2, library.missingHirelings(1));
+        assertEquals(0, library.missingHirelings(2));
     }
 
     /** Удачный случай за 500 зм бросает событие ещё раз, перебрасывая повтор удачного случая. */
