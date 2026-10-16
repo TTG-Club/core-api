@@ -44,6 +44,7 @@ public record PlayerBastionResponse(
         long editRequests,
         boolean editor,
         List<Member> members,
+        @Schema(description = "Гости бастиона из событий") List<Guest> guests,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -106,7 +107,21 @@ public record PlayerBastionResponse(
             @Schema(description = "Сколько защитников помещается в барак; null — не барак") Integer defenderCapacity,
             @Schema(description = "Что можно изготовить выбранными инструментами; null — у сооружения нет выбора инструментов")
             List<CraftableItem> craftableItems,
-            @Schema(description = "Вольеры зверинца; null — сооружение не зверинец") Menagerie menagerie) {
+            @Schema(description = "Вольеры зверинца; null — сооружение не зверинец") Menagerie menagerie,
+            @Schema(description = "Ход, в который сооружение не работает после события; null — работает")
+            Integer unavailableOnTurn,
+            @Schema(description = "Почему сооружение не работает") String unavailableReason) {
+    }
+
+    /**
+     * Гость бастиона из событий «Гость» и «Беженцы».
+     *
+     * @param count        сколько их: у беженцев 2к4
+     * @param leavesOnTurn ход, на котором гость уедет сам; null — пока не отошлют
+     */
+    @Schema(description = "Гость бастиона")
+    public record Guest(String id, BastionLabel kind, String name, int count, int arrivedOnTurn,
+                        Integer leavesOnTurn) {
     }
 
     /**

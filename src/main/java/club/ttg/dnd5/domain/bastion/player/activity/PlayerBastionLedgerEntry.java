@@ -76,6 +76,8 @@ public class PlayerBastionLedgerEntry {
         /** Постройка базового сооружения. */
         BUILD,
         /** Расширение сооружения. */
-        ENLARGE
+        ENLARGE,
+        /** Событие бастиона: плата, взятка, награда. */
+        EVENT
     }
 }

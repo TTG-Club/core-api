@@ -12,6 +12,11 @@ import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStat
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
 import club.ttg.dnd5.domain.bastion.player.client.GameRole;
+import club.ttg.dnd5.domain.bastion.player.event.BastionDice;
+import club.ttg.dnd5.domain.bastion.player.event.BastionEventService;
+import club.ttg.dnd5.domain.bastion.player.event.BastionEventType;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEventRepository;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
@@ -39,8 +44,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,13 +76,17 @@ class PlayerBastionActivityServiceTest {
     private final GameMembershipClient client = mock(GameMembershipClient.class);
     private final UserService userService = mock(UserService.class);
     private final ItemRepository itemRepository = mock(ItemRepository.class);
+    private final PlayerBastionEventRepository eventRepository = mock(PlayerBastionEventRepository.class);
+    private final QueueDice dice = new QueueDice();
     private final PlayerBastionActivityService service = new PlayerBastionActivityService(
             bastionRepository, facilityRepository, orderRepository, ledgerRepository, turnRepository,
             new PlayerBastionAccess(bastionRepository, mock(PlayerBastionEditorRepository.class), client, userService),
             new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class),
                     new FacilityChoiceOptions(itemRepository)),
             mock(EntityManager.class),
-            new FacilityChoiceOptions(itemRepository));
+            new FacilityChoiceOptions(itemRepository),
+            new BastionEventService(eventRepository, ledgerRepository, dice),
+            eventRepository);
 
     private final UUID gameId = UUID.randomUUID();
     private final UUID masterId = UUID.randomUUID();
@@ -84,6 +96,7 @@ class PlayerBastionActivityServiceTest {
     private final List<PlayerBastionOrder> orders = new ArrayList<>();
     private final List<PlayerBastionLedgerEntry> ledger = new ArrayList<>();
     private final List<PlayerBastionTurn> turns = new ArrayList<>();
+    private final List<PlayerBastionEvent> events = new ArrayList<>();
     private final Map<String, BastionFacility> reference = Map.of(
             "library", library(),
             "barrack", barrack(),
@@ -135,6 +148,20 @@ class PlayerBastionActivityServiceTest {
             turns.add(invocation.getArgument(0));
             return invocation.getArgument(0);
         });
+
+        when(eventRepository.save(any(PlayerBastionEvent.class))).thenAnswer(invocation -> {
+            PlayerBastionEvent event = invocation.getArgument(0);
+            if (event.getId() == null) {
+                event.setId(UUID.randomUUID());
+                events.add(event);
+            }
+            return event;
+        });
+        when(eventRepository.existsByBastionIdAndTurn(any(), anyInt())).thenAnswer(invocation -> events.stream()
+                .anyMatch(event -> event.getTurn() == invocation.<Integer>getArgument(1)));
+        when(eventRepository.findById(any())).thenAnswer(invocation -> events.stream()
+                .filter(event -> event.getId().equals(invocation.getArgument(0)))
+                .findFirst());
 
         bastion = new PlayerBastion();
         bastion.setId(UUID.randomUUID());
@@ -582,6 +609,186 @@ class PlayerBastionActivityServiceTest {
 
         service.removeCreature(bastion.getId(), menagerie.getId(), tiger.getId());
         assertTrue(menagerie.getCreatures().isEmpty());
+    }
+
+    /** Сразу после «Обслуживать» — бросок за персонажа; атака уносит защитников за каждую 1 на 6к6. */
+    @Test
+    void maintainRollsEventAndAttackKillsDefenders() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setDefenders(3);
+        PlayerBastionFacility menagerie = addMenagerie();
+        menagerie.getCreatures().add(creature("Лев", Size.LARGE));
+        dice.push(52, 1, 1, 3, 4, 5, 6, 4, 1);
+
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        PlayerBastionEvent event = events.getFirst();
+        assertEquals(BastionEventType.ATTACK, event.getType());
+        assertEquals(member.getId(), event.getMemberId());
+        assertEquals(List.of("Лев", "защитник из «Барак»"), event.getDetails().getLost());
+        assertEquals(2, barrack.getDefenders());
+        assertTrue(menagerie.getCreatures().isEmpty());
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class,
+                () -> service.cancelOrder(bastion.getId(), orders.getFirst().getId())).getStatus());
+    }
+
+    /** Без защитников атака повреждает случайное специализированное сооружение на следующий ход. */
+    @Test
+    void attackWithoutDefendersDisablesFacilityForNextTurn() {
+        dice.push(55, 1);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        assertEquals(1, library.getUnavailableOnTurn());
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertEquals(1, events.size());
+
+        actAs(playerId);
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(library.getId(), BastionOrder.RESEARCH, null, null))).getStatus());
+    }
+
+    /** Взятку за наёмника платят из казны; отказ оставляет сооружение без наёмника на ход. */
+    @Test
+    void criminalHirelingIsBribedOrArrested() {
+        reference.get("library").setHirelings(1);
+        dice.push(57, 1, 3);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        PlayerBastionEvent event = events.getFirst();
+        assertTrue(event.isPending());
+        assertEquals(300, event.getDetails().getAmountGp());
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class, () -> service.decideEvent(bastion.getId(),
+                event.getId(), new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.PAY, null, null)))
+                .getStatus());
+        actAs(otherPlayerId);
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ApiException.class, () -> service.decideEvent(bastion.getId(),
+                event.getId(), new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.REFUSE, null, null)))
+                .getStatus());
+
+        actAs(playerId);
+        service.decideEvent(bastion.getId(), event.getId(),
+                new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.REFUSE, null, null));
+        assertEquals(PlayerBastionEvent.Status.RESOLVED, event.getStatus());
+        assertEquals(1, library.getUnavailableOnTurn());
+        assertEquals(100, bastion.getTreasuryGp());
+    }
+
+    /** Удачный случай за 500 зм бросает событие ещё раз, перебрасывая повтор удачного случая. */
+    @Test
+    void opportunityPaysAndRollsAgainWithoutRepeating() {
+        bastion.setTreasuryGp(1000);
+        dice.push(60);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        dice.push(61, 10, 8);
+        service.decideEvent(bastion.getId(), events.getFirst().getId(),
+                new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.PAY, null, null));
+
+        assertEquals(500, bastion.getTreasuryGp());
+        assertEquals(2, events.size());
+        assertEquals(BastionEventType.ALL_IS_WELL, events.getLast().getType());
+        assertEquals(events.getFirst().getId(), events.getLast().getParentId());
+        assertEquals("Кто-то подумал, что увидел привидение.", events.getLast().getDetails().getDetail());
+    }
+
+    /** Меньше 10 на к6 отправленных защитников — половина награды и гибель одного защитника. */
+    @Test
+    void requestForAidHalvesRewardAndCostsDefenderOnLowRoll() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setDefenders(2);
+        dice.push(95);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        PlayerBastionEvent event = events.getFirst();
+        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ApiException.class, () -> service.decideEvent(
+                bastion.getId(), event.getId(),
+                new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.SEND, 3, null))).getStatus());
+
+        dice.push(2, 3, 4, 1);
+        service.decideEvent(bastion.getId(), event.getId(),
+                new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.SEND, 2, null));
+
+        assertEquals(300, bastion.getTreasuryGp());
+        assertEquals(1, barrack.getDefenders());
+        assertEquals(200, event.getDetails().getAmountGp());
+    }
+
+    /** Беженцы платят и остаются; монстр-гость отбивает атаку без потерь, беженцы при атаке уходят. */
+    @Test
+    void refugeesLeaveAndMonsterGuestProtectsOnAttack() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setDefenders(1);
+        dice.push(85, 2, 3, 2);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+        assertEquals(300, bastion.getTreasuryGp());
+        assertEquals(5, bastion.getGuests().getFirst().getCount());
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        dice.push(76, 4);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+        assertEquals(2, bastion.getGuests().size());
+
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        dice.push(53);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        assertTrue(bastion.getGuests().isEmpty());
+        assertEquals(1, barrack.getDefenders());
+        assertTrue(events.getLast().getDetails().getDice().isEmpty());
+    }
+
+    /** Ход без приказов — тоже обслуживание; известный гость уезжает к следующему ходу. */
+    @Test
+    void turnWithoutOrdersRollsEventAndCelebrityLeaves() {
+        dice.push(74, 1);
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+
+        assertEquals(BastionEventType.GUEST, events.getFirst().getType());
+        assertEquals(0, events.getFirst().getTurn());
+        assertTrue(turns.getFirst().getSummary().contains(
+                "Известная личность уезжает и оставляет рекомендательное письмо"));
+        assertTrue(bastion.getGuests().isEmpty());
+    }
+
+    /** Предмет волшебного открытия записывает игрок. */
+    @Test
+    void magicalDiscoveryRecordsChosenItem() {
+        dice.push(81);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(null, BastionOrder.MAINTAIN, null, null));
+
+        PlayerBastionEvent event = events.getFirst();
+        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ApiException.class, () -> service.decideEvent(
+                bastion.getId(), event.getId(),
+                new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.RECORD, null, " "))).getStatus());
+        service.decideEvent(bastion.getId(), event.getId(),
+                new ActivityRequests.EventDecision(PlayerBastionEvent.Decision.RECORD, null, "Зелье полёта"));
+        assertEquals("Зелье полёта", event.getNote());
+        assertEquals(PlayerBastionEvent.Status.RESOLVED, event.getStatus());
+    }
+
+    /** Кости с заранее заданными бросками; когда они кончаются, выпадает 1. */
+    private static final class QueueDice extends BastionDice {
+        private final Deque<Integer> queue = new ArrayDeque<>();
+
+        void push(int... values) {
+            Arrays.stream(values).forEach(queue::addLast);
+        }
+
+        @Override
+        public int roll(int sides) {
+            Integer value = queue.pollFirst();
+            return value == null ? 1 : value;
+        }
     }
 
     private PlayerBastionFacility addMenagerie() {

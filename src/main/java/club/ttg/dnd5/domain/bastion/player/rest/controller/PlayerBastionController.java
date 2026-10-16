@@ -207,6 +207,21 @@ public class PlayerBastionController {
         return activityService.performTurn(id, request);
     }
 
+    @Operation(summary = "Решение по событию бастиона",
+            description = "Взятка, удачный случай, просьба о помощи, полученный предмет — игрок персонажа или мастер")
+    @PostMapping("/{id}/events/{eventId}/decision")
+    public PlayerBastionResponse decideEvent(@PathVariable UUID id,
+                                             @PathVariable UUID eventId,
+                                             @Valid @RequestBody ActivityRequests.EventDecision request) {
+        return activityService.decideEvent(id, eventId, request);
+    }
+
+    @Operation(summary = "Отослать гостя бастиона", description = "Или найти беженцам новый дом")
+    @DeleteMapping("/{id}/guests/{guestId}")
+    public PlayerBastionResponse dismissGuest(@PathVariable UUID id, @PathVariable String guestId) {
+        return activityService.dismissGuest(id, guestId);
+    }
+
     @Operation(summary = "Пополнить или списать казну", description = "Только мастер игры")
     @PostMapping("/{id}/treasury")
     public PlayerBastionResponse adjustTreasury(@PathVariable UUID id,

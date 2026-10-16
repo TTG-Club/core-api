@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.bastion.player.model;
 
 import club.ttg.dnd5.domain.common.model.Timestamped;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OptimisticLock;
+import org.hibernate.annotations.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +88,11 @@ public class PlayerBastion extends Timestamped {
     @Version
     @Column(nullable = false)
     private long version;
+
+    /** Гости бастиона из событий: известные личности, наёмники, монстры, беженцы. */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private List<BastionGuest> guests = new ArrayList<>();
 
     @OneToMany(mappedBy = "bastion", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")

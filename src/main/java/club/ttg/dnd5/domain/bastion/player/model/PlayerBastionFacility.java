@@ -98,6 +98,17 @@ public class PlayerBastionFacility extends Timestamped {
     @Column(columnDefinition = "jsonb", nullable = false)
     private List<MenagerieCreature> creatures = new ArrayList<>();
 
+    /**
+     * Ход бастиона, в который сооружение не работает: его повредила атака или оно осталось
+     * без наёмников. Потом оно бесплатно чинится и снова работает.
+     */
+    @Column(name = "unavailable_on_turn")
+    private Integer unavailableOnTurn;
+
+    /** Почему сооружение не работает. */
+    @Column(name = "unavailable_reason", length = 200)
+    private String unavailableReason;
+
     public boolean isReady() {
         return status == FacilityStatus.READY;
     }
