@@ -128,6 +128,10 @@ public class PlayerBastionActivityService {
                         order.getStatus() == OrderStatus.ACTIVE
                                 && order.getGivenOnTurn() == bastion.getTurn()
                                 && bastion.getStatus() == PlayerBastionStatus.ACTIVE
+                                && (master || order.getGivenBy().equals(userId)),
+                        order.getStatus() == OrderStatus.COMPLETED
+                                && !order.getOrder().isBastionWide()
+                                && bastion.getStatus() != PlayerBastionStatus.ARCHIVED
                                 && (master || order.getGivenBy().equals(userId))))
                 .toList();
 
@@ -342,6 +346,31 @@ public class PlayerBastionActivityService {
         if (!bastion.getGuests().removeIf(guest -> guestId.equals(guest.getId()))) {
             throw new EntityNotFoundException("Гость %s не найден".formatted(guestId));
         }
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Итог выполненного приказа записывают после хода: мастер или тот, кто отдал приказ.
+     */
+    @Transactional
+    public PlayerBastionResponse writeOrderResult(UUID bastionId, UUID orderId, ActivityRequests.OrderResult request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        PlayerBastionAccess.requireNotArchived(bastion);
+
+        PlayerBastionOrder order = orderRepository.findById(orderId)
+                .filter(item -> item.getBastionId().equals(bastionId))
+                .orElseThrow(() -> new EntityNotFoundException("Приказ %s не найден".formatted(orderId)));
+        if (!viewer.manager() && !order.getGivenBy().equals(userId)) {
+            throw forbidden("Итог приказа записывает тот, кто его отдал, или мастер");
+        }
+        if (order.getStatus() != OrderStatus.COMPLETED || order.getOrder().isBastionWide()) {
+            throw conflict("Итог записывается у выполненного приказа сооружению");
+        }
+
+        order.setResult(trimToNull(request.result()));
+        orderRepository.save(order);
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 

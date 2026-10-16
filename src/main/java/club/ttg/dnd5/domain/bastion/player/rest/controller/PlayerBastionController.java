@@ -200,6 +200,14 @@ public class PlayerBastionController {
         return activityService.cancelOrder(id, orderId);
     }
 
+    @Operation(summary = "Записать итог приказа", description = "Мастер или тот, кто отдал приказ, после его выполнения")
+    @PutMapping("/{id}/orders/{orderId}/result")
+    public PlayerBastionResponse writeOrderResult(@PathVariable UUID id,
+                                                  @PathVariable UUID orderId,
+                                                  @Valid @RequestBody ActivityRequests.OrderResult request) {
+        return activityService.writeOrderResult(id, orderId, request);
+    }
+
     @Operation(summary = "Сделать ход бастиона", description = "Только мастер игры: проходят 7 дней")
     @PostMapping("/{id}/turns")
     public PlayerBastionResponse performTurn(@PathVariable UUID id,
