@@ -99,6 +99,15 @@ public final class ActivityRequests {
     }
 
     /**
+     * Итог выполненного приказа: что получили или узнали.
+     *
+     * @param result итог; пусто — стереть
+     */
+    @Schema(description = "Итог приказа")
+    public record OrderResult(@Size(max = 4000) String result) {
+    }
+
+    /**
      * Движение казны мастером.
      *
      * @param amountGp плюс — пополнение, минус — списание, зм

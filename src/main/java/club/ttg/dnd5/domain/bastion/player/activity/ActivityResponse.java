@@ -22,6 +22,8 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
      * @param facilityName название сооружения; пусто у «Обслуживать»
      * @param item         изготавливаемый предмет справочника; пусто, если не выбирался
      * @param canCancel    открывший может отменить приказ: он отдан в текущий ход
+     * @param canWriteResult открывший может записать итог выполненного приказа: мастер или тот,
+     *                       кто отдал приказ
      */
     @Schema(description = "Приказ")
     public record Order(UUID id,
@@ -37,7 +39,8 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
                         UUID givenBy,
                         String note,
                         String result,
-                        boolean canCancel) {
+                        boolean canCancel,
+                        boolean canWriteResult) {
     }
 
     @Schema(description = "Ход")

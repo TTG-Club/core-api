@@ -215,6 +215,28 @@ class PlayerBastionActivityServiceTest {
         assertEquals(false, turns.getFirst().isMaintain());
     }
 
+    /** Итог приказа записывают после хода, а не в окне хода. */
+    @Test
+    void orderResultIsWrittenAfterTurn() {
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(library.getId(), BastionOrder.RESEARCH,
+                "тему", null));
+        UUID orderId = orders.getFirst().getId();
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class, () -> service.writeOrderResult(
+                bastion.getId(), orderId, new ActivityRequests.OrderResult("рано"))).getStatus());
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, null));
+
+        actAs(otherPlayerId);
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ApiException.class, () -> service.writeOrderResult(
+                bastion.getId(), orderId, new ActivityRequests.OrderResult("чужой итог"))).getStatus());
+
+        actAs(playerId);
+        service.writeOrderResult(bastion.getId(), orderId, new ActivityRequests.OrderResult(" Три факта о Страде "));
+        assertEquals("Три факта о Страде", orders.getFirst().getResult());
+    }
+
     @Test
     void notEnoughGoldIsRejectedWithoutCharging() {
         bastion.setTreasuryGp(5);
