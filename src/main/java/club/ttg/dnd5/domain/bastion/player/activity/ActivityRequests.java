@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +19,9 @@ import java.util.UUID;
 
 /** Запросы журналов бастиона: приказы, ход, казна, стройка. */
 public final class ActivityRequests {
+    /** Больше блоков стены за раз не строят: защита от опечатки в лишний ноль. */
+    public static final int MAX_WALL_SQUARES = 1000;
+
     private ActivityRequests() {
     }
 
@@ -131,6 +135,15 @@ public final class ActivityRequests {
      */
     @Schema(description = "Постройка базового сооружения")
     public record BuildBasic(@NotBlank String facilityUrl, @NotNull FacilitySpace space) {
+    }
+
+    /**
+     * Постройка блоков защитной стены вокруг бастиона.
+     *
+     * @param squares сколько 5-футовых квадратов стены построить
+     */
+    @Schema(description = "Постройка защитной стены")
+    public record BuildWall(@NotNull @Min(1) @Max(MAX_WALL_SQUARES) Integer squares) {
     }
 
     /**

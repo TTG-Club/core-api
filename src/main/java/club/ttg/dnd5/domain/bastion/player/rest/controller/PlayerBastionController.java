@@ -245,6 +245,13 @@ public class PlayerBastionController {
         return activityService.buildBasic(id, memberId, request);
     }
 
+    @Operation(summary = "Построить блоки защитной стены", description = "250 зм и 10 дней за 5-футовый квадрат")
+    @PostMapping("/{id}/walls")
+    public PlayerBastionResponse buildWall(@PathVariable UUID id,
+                                           @Valid @RequestBody ActivityRequests.BuildWall request) {
+        return activityService.buildWall(id, request);
+    }
+
     @Operation(summary = "Новое специализированное сооружение", description = "Персонаж дорос до следующего лимита")
     @PostMapping("/{id}/members/{memberId}/facilities/special")
     public PlayerBastionResponse addSpecial(@PathVariable UUID id,

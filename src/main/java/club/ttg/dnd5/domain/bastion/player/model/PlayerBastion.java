@@ -89,6 +89,25 @@ public class PlayerBastion extends Timestamped {
     @Column(nullable = false)
     private long version;
 
+    /** Достроенные блоки защитной стены (5-футовые квадраты): столько клеток стены можно поставить на план. */
+    @Column(name = "defense_wall_squares", nullable = false)
+    private int defenseWallSquares;
+
+    /** Блоки защитной стены в стройке: на план их ставить ещё нельзя. */
+    @Column(name = "defense_wall_squares_building", nullable = false)
+    private int defenseWallSquaresBuilding;
+
+    /** Ход, к которому достроятся блоки стены в стройке. */
+    @Column(name = "defense_wall_ready_on_turn")
+    private Integer defenseWallReadyOnTurn;
+
+    /**
+     * Бастион полностью окружён защитными стенами — выставляется при сохранении плана. При
+     * атаке на такой бастион потери защитников бросаются на 2 кубика меньше.
+     */
+    @Column(name = "defense_walls_enclosed", nullable = false)
+    private boolean defenseWallsEnclosed;
+
     /** Гости бастиона из событий: известные личности, наёмники, монстры, беженцы. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb", nullable = false)

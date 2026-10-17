@@ -77,6 +77,8 @@ public class PlayerBastionLedgerEntry {
         BUILD,
         /** Расширение сооружения. */
         ENLARGE,
+        /** Постройка блоков защитной стены. */
+        WALL,
         /** Событие бастиона: плата, взятка, награда. */
         EVENT
     }
