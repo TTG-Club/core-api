@@ -401,3 +401,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/17-02-defense-walls.yaml
   - include:
       file: db/changelog/2026/10/17-03-stable.yaml
+  - include:
+      file: db/changelog/2026/10/17-04-facility-room-templates.yaml

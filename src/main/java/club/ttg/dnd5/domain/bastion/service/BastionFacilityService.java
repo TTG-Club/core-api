@@ -68,6 +68,7 @@ public class BastionFacilityService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(BastionFacilityRequest request) {
         validateOrders(request);
+        FacilityRoomTemplates.validate(request.getRoomTemplates());
         if (facilityRepository.existsById(request.getUrl())) {
             throw new EntityExistException(String.format("Сооружение бастиона с url %s уже существует",
                     request.getUrl()));
@@ -81,6 +82,7 @@ public class BastionFacilityService {
     @Transactional
     public String update(String url, BastionFacilityRequest request) {
         validateOrders(request);
+        FacilityRoomTemplates.validate(request.getRoomTemplates());
         BastionFacility existing = findByUrl(url);
         Source source = findSource(request);
 
@@ -113,6 +115,7 @@ public class BastionFacilityService {
 
     public BastionFacilityDetailResponse preview(final BastionFacilityRequest request) {
         validateOrders(request);
+        FacilityRoomTemplates.validate(request.getRoomTemplates());
         return withResolvedChoices(facilityMapper.toDetail(facilityMapper.toEntity(request, findSource(request))));
     }
 

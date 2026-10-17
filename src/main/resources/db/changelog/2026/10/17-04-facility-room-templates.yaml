@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-17-04-facility-room-templates
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Шаблоны готовой комнаты сооружения на плане бастиона: размер прямоугольника и мебель
+        для каждого пространства. Пусто — редактор плана расставляет мебель сам.
+      changes:
+        - addColumn:
+            tableName: bastion_facility
+            columns:
+              - column:
+                  name: room_templates
+                  type: JSONB
