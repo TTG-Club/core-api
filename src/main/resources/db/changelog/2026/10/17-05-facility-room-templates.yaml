@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 2026-10-17-04-facility-room-templates
+      id: 2026-10-17-05-facility-room-templates
       author: Magistrus
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       comment: >
