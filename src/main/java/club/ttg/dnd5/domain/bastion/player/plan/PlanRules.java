@@ -18,6 +18,7 @@ import lombok.experimental.UtilityClass;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -177,6 +178,52 @@ public class PlanRules {
             throw badRequest("Защитная стена длиннее %d клеток".formatted(MAX_WALL_CELLS));
         }
         document.defenseWalls().forEach(PlanRules::requireCellOnGrid);
+    }
+
+    /**
+     * Окружён ли бастион защитной стеной полностью: от края участка нельзя дойти до комнат
+     * первого этажа, не пересекая стену. Ходят только по сторонам клеток, поэтому диагональный
+     * стык двух клеток стены сплошной. Ворота стоят на клетках стены и тоже её замыкают.
+     *
+     * @param document план после {@link #normalize}
+     * @return true, если на первом этаже есть комнаты и стена их окружает
+     */
+    public static boolean isEnclosed(PlanDocument document) {
+        Set<Cell> rooms = document.rooms().stream()
+                .filter(room -> room.level() == 0)
+                .flatMap(room -> room.cells().stream())
+                .collect(Collectors.toSet());
+        Set<Cell> walls = new HashSet<>(document.defenseWalls());
+        if (rooms.isEmpty() || walls.isEmpty()) {
+            return false;
+        }
+
+        Set<Cell> visited = new HashSet<>();
+        ArrayDeque<Cell> queue = new ArrayDeque<>();
+        for (int index = 0; index < GRID_SIZE; index++) {
+            visit(new Cell(index, 0), walls, visited, queue);
+            visit(new Cell(index, GRID_SIZE - 1), walls, visited, queue);
+            visit(new Cell(0, index), walls, visited, queue);
+            visit(new Cell(GRID_SIZE - 1, index), walls, visited, queue);
+        }
+        while (!queue.isEmpty()) {
+            Cell cell = queue.poll();
+            if (rooms.contains(cell)) {
+                return false;
+            }
+            visit(new Cell(cell.x() + 1, cell.y()), walls, visited, queue);
+            visit(new Cell(cell.x() - 1, cell.y()), walls, visited, queue);
+            visit(new Cell(cell.x(), cell.y() + 1), walls, visited, queue);
+            visit(new Cell(cell.x(), cell.y() - 1), walls, visited, queue);
+        }
+        return true;
+    }
+
+    private static void visit(Cell cell, Set<Cell> walls, Set<Cell> visited, ArrayDeque<Cell> queue) {
+        boolean onGrid = cell.x() >= 0 && cell.y() >= 0 && cell.x() < GRID_SIZE && cell.y() < GRID_SIZE;
+        if (onGrid && !walls.contains(cell) && visited.add(cell)) {
+            queue.add(cell);
+        }
     }
 
     private static Set<Integer> validateLevels(List<Integer> levels) {

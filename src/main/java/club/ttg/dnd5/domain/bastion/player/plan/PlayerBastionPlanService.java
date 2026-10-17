@@ -32,6 +32,11 @@ import java.util.stream.Collectors;
  * <p>Предметы интерьера по подписке ставит только бастион владельца с действующей подпиской.
  * Уже стоящие такие предметы после окончания подписки остаются: их можно двигать и убирать,
  * но не добавлять новые.</p>
+ *
+ * <p>Защитную стену ставят только из достроенных блоков бастиона. Стена, нарисованная до
+ * того, как блоки стали покупаться, остаётся: её можно убирать, но не наращивать, пока не
+ * хватит блоков. При сохранении бастион запоминает, окружён ли он стеной полностью, — это
+ * читает атака.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -97,6 +102,16 @@ public class PlayerBastionPlanService {
                     "Предметы интерьера по подписке доступны, когда подписка есть у владельца бастиона");
         }
 
+        if (exceedsWallBlocks(plan.getDocument(), document, bastion.getDefenseWallSquares())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "На плане больше клеток защитной стены, чем достроено блоков: %d"
+                            .formatted(bastion.getDefenseWallSquares()));
+        }
+        boolean enclosed = PlanRules.isEnclosed(document);
+        if (bastion.isDefenseWallsEnclosed() != enclosed) {
+            bastion.setDefenseWallsEnclosed(enclosed);
+        }
+
         plan.setDocument(document);
         PlayerBastionPlan saved = planRepository.saveAndFlush(plan);
         return new PlanResponse(bastionId, saved.getVersion(), true,
@@ -111,6 +126,17 @@ public class PlayerBastionPlanService {
                 .collect(Collectors.toSet());
         return next.furniture().stream()
                 .anyMatch(item -> item.kind().premium() && !existing.contains(item.id()));
+    }
+
+    /**
+     * Клеток стены больше, чем достроено блоков, и больше, чем было в сохранённой версии.
+     * Ворота стоят на клетках стены и отдельно не считаются.
+     */
+    static boolean exceedsWallBlocks(PlanDocument saved, PlanDocument next, int blocks) {
+        long before = saved == null || saved.defenseWalls() == null ? 0
+                : saved.defenseWalls().stream().distinct().count();
+        long after = next.defenseWalls().stream().distinct().count();
+        return after > blocks && after > before;
     }
 
     private static boolean canEdit(PlayerBastion bastion, BastionViewer viewer) {
