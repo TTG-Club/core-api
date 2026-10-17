@@ -12,6 +12,7 @@ import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
 import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
 import club.ttg.dnd5.domain.common.model.notification.NotificationType;
 import club.ttg.dnd5.domain.source.model.SourceType;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
@@ -210,6 +211,15 @@ public class DictionariesService {
 
     public Collection<SelectOptionDto> getMagicItemCategories() {
         return Arrays.stream(MagicItemCategory.values())
+                .map(type -> SelectOptionDto.builder()
+                        .label(type.getName())
+                        .value(type.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getMagicItemThemes() {
+        return Arrays.stream(MagicItemTheme.values())
                 .map(type -> SelectOptionDto.builder()
                         .label(type.getName())
                         .value(type.name())

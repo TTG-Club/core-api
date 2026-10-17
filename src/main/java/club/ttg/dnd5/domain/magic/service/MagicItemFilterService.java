@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterGroupMeta;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse.FilterValueMeta;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,13 +37,26 @@ public class MagicItemFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        List<FilterGroupMeta> groups = new ArrayList<>(6);
+        List<FilterGroupMeta> groups = new ArrayList<>(7);
 
         groups.add(FilterGroupMeta.builder()
                 .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "category"))
                 .name("Категории")
                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                 .values(Arrays.stream(MagicItemCategory.values())
+                        .map(v -> FilterValueMeta.builder()
+                                .id(v.name())
+                                .value(v.name())
+                                .name(v.getName())
+                                .build())
+                        .toList())
+                .build());
+
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(MagicItemQueryRequest.class, "theme"))
+                .name("Тематика")
+                .supports(SupportsConfig.builder().mode(true).union(false).build())
+                .values(Arrays.stream(MagicItemTheme.values())
                         .map(v -> FilterValueMeta.builder()
                                 .id(v.name())
                                 .value(v.name())

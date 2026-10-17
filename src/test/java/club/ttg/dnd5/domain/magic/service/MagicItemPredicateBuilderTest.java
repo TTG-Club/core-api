@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateSql;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * «Исключать» у настройки, зарядов и проклятия не отменяет остальные фильтры.
@@ -78,5 +81,39 @@ class MagicItemPredicateBuilderTest
         request.setCurse(excluded());
 
         PredicateSql.assertOrStaysInsideParentheses(sql(request));
+    }
+
+    private static QueryFilter<MagicItemTheme> theme(final boolean exclude)
+    {
+        QueryFilter<MagicItemTheme> filter = new QueryFilter<>();
+        filter.setValues(Set.of(MagicItemTheme.RELIC));
+        filter.setExclude(exclude);
+        return filter;
+    }
+
+    @Test
+    @DisplayName("тематика: отбирает предметы выбранной тематики")
+    void themeFiltersByValue()
+    {
+        MagicItemQueryRequest request = requestWithCategoryAndRarity();
+        request.setTheme(theme(false));
+
+        String sql = sql(request);
+
+        assertTrue(sql.contains("theme = ?") || sql.contains("theme in "), sql);
+        PredicateSql.assertOrStaysInsideParentheses(sql);
+    }
+
+    @Test
+    @DisplayName("исключить тематику: предметы без тематики остаются, остальные фильтры в силе")
+    void excludedThemeKeepsItemsWithoutTheme()
+    {
+        MagicItemQueryRequest request = requestWithCategoryAndRarity();
+        request.setTheme(theme(true));
+
+        String sql = sql(request);
+
+        assertTrue(sql.contains("theme is null"), sql);
+        PredicateSql.assertOrStaysInsideParentheses(sql);
     }
 }

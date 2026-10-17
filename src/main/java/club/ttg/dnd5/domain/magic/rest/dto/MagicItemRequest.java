@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
+import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -17,6 +18,10 @@ public class MagicItemRequest extends BaseRequest {
     @Schema(description = "Категория", examples = {"WEAPON", "ARMOR", "WAND"},
             requiredMode = Schema.RequiredMode.REQUIRED)
     private MagicItemCategoryRequest category;
+
+    @Schema(description = "Тематика", examples = {"ARMAMENT", "MAGIC", "RELIC", "TOOL"},
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private MagicItemTheme theme;
 
     @Schema(description = "Редкость", requiredMode = Schema.RequiredMode.REQUIRED)
     private MagicItemRarityRequest rarity;
