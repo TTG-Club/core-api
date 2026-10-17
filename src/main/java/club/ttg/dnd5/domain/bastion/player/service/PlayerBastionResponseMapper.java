@@ -75,10 +75,10 @@ public class PlayerBastionResponseMapper {
                                              Function<FacilityChoice, List<FacilityChoiceOption>> options) {
         boolean manager = viewer.manager();
         boolean archived = bastion.getStatus() == PlayerBastionStatus.ARCHIVED;
-        boolean setup = bastion.getStatus() == PlayerBastionStatus.SETUP;
 
         List<PlayerBastionResponse.Member> members = bastion.getMembers().stream()
-                .map(item -> toMember(item, setup && (manager || viewer.is(item.getUserId())),
+                .map(item -> toMember(item, PlayerBastionFacilityService.canChooseStarting(bastion, item)
+                                && (manager || viewer.is(item.getUserId())),
                         bastion.getStatus() == PlayerBastionStatus.ACTIVE && (manager || viewer.is(item.getUserId())),
                         reference, options))
                 .toList();

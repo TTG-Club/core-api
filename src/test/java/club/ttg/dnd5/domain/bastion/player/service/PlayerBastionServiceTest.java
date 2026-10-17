@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.bastion.player.service;
 
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
+import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembers;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
@@ -12,6 +13,7 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.CreatePlayerBastionRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.JoinGameRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionGameResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionMemberRequest;
@@ -34,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -86,6 +89,23 @@ class PlayerBastionServiceTest {
         assertEquals(playerId, member.userId());
         assertEquals("Дриззт", member.characterName());
         assertEquals(4, member.specialFacilityLimit());
+    }
+
+    /** Со стартовыми сооружениями бастион сразу действует: закладки нет. */
+    @Test
+    void bastionWithStartingFacilitiesIsActiveAtOnce() {
+        actAs(playerId);
+        when(repository.countByOwnerId(playerId)).thenReturn(0L);
+        List<FacilitySetupRequest.Basic> basic = List.of(
+                new FacilitySetupRequest.Basic("bedroom", FacilitySpace.CRAMPED),
+                new FacilitySetupRequest.Basic("storage", FacilitySpace.ROOMY));
+
+        PlayerBastionResponse response = service.create(
+                new CreatePlayerBastionRequest("Башня", "Дриззт", 5, null, basic, List.of()));
+
+        assertEquals(PlayerBastionStatus.ACTIVE, response.status());
+        verify(facilityService).chooseStarting(any(PlayerBastionMember.class),
+                eq(new FacilitySetupRequest(basic, List.of(), 0L)));
     }
 
     @Test

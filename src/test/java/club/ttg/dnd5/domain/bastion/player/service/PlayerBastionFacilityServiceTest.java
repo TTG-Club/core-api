@@ -115,9 +115,14 @@ class PlayerBastionFacilityServiceTest {
         assertEquals(HttpStatus.FORBIDDEN, error.getStatus());
     }
 
+    /** В действующем бастионе стартовый выбор закрыт, когда сооружения у персонажа уже есть. */
     @Test
     void startingSelectionIsClosedAfterSetup() {
         bastion.setStatus(PlayerBastionStatus.ACTIVE);
+        PlayerBastionFacility bedroom = new PlayerBastionFacility();
+        bedroom.setMember(member);
+        bedroom.setFacilityUrl("bedroom");
+        member.getFacilities().add(bedroom);
         actAs(masterId);
 
         ApiException error = assertThrows(ApiException.class,

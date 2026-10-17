@@ -64,9 +64,9 @@ public class PlayerBastionFacilityService {
         if (!viewer.manager() && !member.getUserId().equals(userId)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Сооружения персонажа выбирает его игрок или мастер");
         }
-        if (bastion.getStatus() != PlayerBastionStatus.SETUP) {
+        if (!canChooseStarting(bastion, member)) {
             throw new ApiException(HttpStatus.CONFLICT,
-                    "Стартовые сооружения выбираются, пока бастион в закладке");
+                    "Стартовые сооружения выбираются, пока бастион в закладке или у персонажа их ещё нет");
         }
         PlayerBastionAccess.requireVersion(bastion, request.version());
 
@@ -77,6 +77,30 @@ public class PlayerBastionFacilityService {
 
         replaceFacilities(member, request, reference);
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Стартовые сооружения выбирают, пока бастион в закладке, а в действующем бастионе —
+     * персонаж, у которого их ещё нет: его добавили в состав после создания.
+     */
+    public static boolean canChooseStarting(PlayerBastion bastion, PlayerBastionMember member) {
+        return bastion.getStatus() == PlayerBastionStatus.SETUP
+                || bastion.getStatus() == PlayerBastionStatus.ACTIVE && member.getFacilities().isEmpty();
+    }
+
+    /**
+     * Стартовые сооружения персонажа нового бастиона: проверка правил и выбор целиком, с
+     * обоими базовыми, — бастион с ними сразу действует.
+     */
+    public void chooseStarting(PlayerBastionMember member, FacilitySetupRequest request) {
+        Map<String, BastionFacility> reference = loadReference(Stream.concat(
+                request.basic().stream().map(FacilitySetupRequest.Basic::facilityUrl),
+                request.special().stream().map(FacilitySetupRequest.Special::facilityUrl)));
+        PlayerBastionSetupRules.validate(member.getCharacterLevel(), request, reference, choiceOptions.resolver());
+        if (request.basic().size() < PlayerBastionSetupRules.STARTING_BASIC_SPACES.size()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Выберите оба стартовых базовых сооружения");
+        }
+        replaceFacilities(member, request, reference);
     }
 
     /** Мастер подтверждает или снимает подтверждение требования сооружения. */

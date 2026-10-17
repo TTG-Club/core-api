@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.CreatePlayerBastionRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.JoinGameRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.MyPlayerBastionsResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionGameResponse;
@@ -27,6 +28,7 @@ import org.springframework.util.StringUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -129,6 +131,11 @@ public class PlayerBastionService {
         member.setCharacterLevel(request.characterLevel());
         member.setCharacterSheetId(request.characterSheetId());
         bastion.getMembers().add(member);
+        if (request.basic() != null && !request.basic().isEmpty()) {
+            facilityService.chooseStarting(member, new FacilitySetupRequest(request.basic(),
+                    Optional.ofNullable(request.special()).orElse(List.of()), 0L));
+            bastion.setStatus(PlayerBastionStatus.ACTIVE);
+        }
 
         PlayerBastion saved = bastionRepository.save(bastion);
         return mapper.toResponse(saved, BastionViewer.outsideGame(saved, userId));
