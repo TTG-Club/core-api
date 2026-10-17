@@ -109,6 +109,22 @@ public class PlayerBastionFacility extends Timestamped {
     @Column(name = "unavailable_reason", length = 200)
     private String unavailableReason;
 
+    /**
+     * Наёмники, которых забрало событие: арестовали или они пропали. Замену им бесплатно
+     * находят к ходу {@link #hirelingsBackOnTurn}.
+     */
+    @Column(name = "hirelings_lost", nullable = false)
+    private int hirelingsLost;
+
+    /** Ход, с которого замена забранным наёмникам уже на месте; null — никого не забирали. */
+    @Column(name = "hirelings_back_on_turn")
+    private Integer hirelingsBackOnTurn;
+
+    /** Сколько наёмников нет в сооружении в ход {@code turn}. */
+    public int missingHirelings(int turn) {
+        return hirelingsBackOnTurn != null && turn < hirelingsBackOnTurn ? hirelingsLost : 0;
+    }
+
     public boolean isReady() {
         return status == FacilityStatus.READY;
     }

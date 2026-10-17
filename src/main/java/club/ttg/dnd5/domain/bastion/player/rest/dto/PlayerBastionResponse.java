@@ -110,7 +110,9 @@ public record PlayerBastionResponse(
             @Schema(description = "Вольеры зверинца; null — сооружение не зверинец") Menagerie menagerie,
             @Schema(description = "Ход, в который сооружение не работает после события; null — работает")
             Integer unavailableOnTurn,
-            @Schema(description = "Почему сооружение не работает") String unavailableReason) {
+            @Schema(description = "Почему сооружение не работает") String unavailableReason,
+            @Schema(description = "Наёмники, которых забрало событие и которым ещё ищут замену; "
+                    + "null — все на месте") Integer hirelingsMissing) {
     }
 
     /**

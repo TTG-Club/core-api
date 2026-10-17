@@ -154,7 +154,9 @@ public class PlayerBastionResponseMapper {
                 new FacilitySpaceResponse(facility.getSpace().name(), facility.getSpace().getName(),
                         facility.getSpace().getSquares()),
                 source.map(BastionFacility::getLevel).orElse(null),
-                source.map(BastionFacility::getHirelings).orElse(null),
+                source.map(BastionFacility::getHirelings)
+                        .map(total -> Math.max(0, total - missingHirelings(facility)))
+                        .orElse(null),
                 source.map(BastionFacility::getOrders).orElse(List.of()).stream()
                         .map(order -> new BastionLabel(order.name(), order.getName()))
                         .toList(),
@@ -175,7 +177,13 @@ public class PlayerBastionResponseMapper {
                 craftableItems(facility, reference, options),
                 isMenagerie(reference) ? menagerie(facility) : null,
                 isUnavailable(facility) ? facility.getUnavailableOnTurn() : null,
-                isUnavailable(facility) ? facility.getUnavailableReason() : null);
+                isUnavailable(facility) ? facility.getUnavailableReason() : null,
+                missingHirelings(facility) > 0 ? missingHirelings(facility) : null);
+    }
+
+    /** Сколько наёмников событие забрало и им ещё не нашли замену в текущий ход бастиона. */
+    private static int missingHirelings(PlayerBastionFacility facility) {
+        return facility.missingHirelings(facility.getMember().getBastion().getTurn());
     }
 
     /** Сооружение не работает в текущий или следующий ход бастиона после события. */

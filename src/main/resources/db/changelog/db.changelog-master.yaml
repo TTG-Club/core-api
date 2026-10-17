@@ -393,3 +393,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/15-04-menagerie.yaml
   - include:
       file: db/changelog/2026/10/15-05-bastion-events.yaml
+  - include:
+      file: db/changelog/2026/10/16-01-hirelings-lost.yaml
