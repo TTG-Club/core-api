@@ -472,6 +472,15 @@ public class PlayerBastionActivityService {
             }
         }
 
+        if (bastion.getDefenseWallSquaresBuilding() > 0
+                && bastion.getDefenseWallReadyOnTurn() != null && bastion.getDefenseWallReadyOnTurn() <= next) {
+            summary.add("Достроена защитная стена: %d бл., всего %d".formatted(bastion.getDefenseWallSquaresBuilding(),
+                    bastion.getDefenseWallSquares() + bastion.getDefenseWallSquaresBuilding()));
+            bastion.setDefenseWallSquares(bastion.getDefenseWallSquares() + bastion.getDefenseWallSquaresBuilding());
+            bastion.setDefenseWallSquaresBuilding(0);
+            bastion.setDefenseWallReadyOnTurn(null);
+        }
+
         List<PlayerBastionOrder> givenThisTurn = orderRepository.findAllByBastionIdAndGivenOnTurnAndStatusNot(
                 bastionId, bastion.getTurn(), OrderStatus.CANCELLED);
         boolean maintain = givenThisTurn.isEmpty()
@@ -576,6 +585,34 @@ public class PlayerBastionActivityService {
         facility.setReadyOnTurn(bastion.getTurn() + turnsFor(space.getBuildDays()));
         member.getFacilities().add(facility);
 
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Блоки защитной стены: каждый 5-футовый квадрат стоит 250 зм и строится 10 дней, блоки
+     * строятся друг за другом. Строит тот, кто может править бастион; пока партия в стройке,
+     * новую не начинают.
+     */
+    @Transactional
+    public PlayerBastionResponse buildWall(UUID bastionId, ActivityRequests.BuildWall request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        if (!viewer.canEdit()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Строит стены тот, кто может править бастион");
+        }
+        requireActive(bastion);
+        if (bastion.getDefenseWallSquaresBuilding() > 0) {
+            throw conflict("Стена уже строится — новые блоки можно заказать, когда она достроится к ходу %d"
+                    .formatted(bastion.getDefenseWallReadyOnTurn()));
+        }
+
+        int squares = request.squares();
+        charge(bastion, (long) squares * BastionRules.DEFENSIVE_WALL_COST_PER_SQUARE, Reason.WALL,
+                "Защитная стена: %d бл.".formatted(squares), userId);
+        bastion.setDefenseWallSquaresBuilding(squares);
+        bastion.setDefenseWallReadyOnTurn(bastion.getTurn()
+                + turnsFor(squares * BastionRules.DEFENSIVE_WALL_DAYS_PER_SQUARE));
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 

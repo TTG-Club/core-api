@@ -404,6 +404,41 @@ class PlayerBastionActivityServiceTest {
         assertNull(bedroom.getReadyOnTurn());
     }
 
+    /** Три блока стены: 750 зм и 30 дней — достроены на пятом ходу, вторую партию не начать, пока идёт первая. */
+    @Test
+    void defenseWallIsBuiltOverTurns() {
+        bastion.setTreasuryGp(1000);
+        actAs(playerId);
+
+        service.buildWall(bastion.getId(), new ActivityRequests.BuildWall(3));
+
+        assertEquals(250, bastion.getTreasuryGp());
+        assertEquals(3, bastion.getDefenseWallSquaresBuilding());
+        assertEquals(5, bastion.getDefenseWallReadyOnTurn());
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class,
+                () -> service.buildWall(bastion.getId(), new ActivityRequests.BuildWall(1))).getStatus());
+
+        actAs(masterId);
+        for (int turn = 0; turn < 4; turn++) {
+            service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, null));
+        }
+        assertEquals(0, bastion.getDefenseWallSquares());
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, null));
+        assertEquals(3, bastion.getDefenseWallSquares());
+        assertEquals(0, bastion.getDefenseWallSquaresBuilding());
+        assertNull(bastion.getDefenseWallReadyOnTurn());
+    }
+
+    @Test
+    void defenseWallNeedsTreasury() {
+        bastion.setTreasuryGp(200);
+        actAs(playerId);
+
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class,
+                () -> service.buildWall(bastion.getId(), new ActivityRequests.BuildWall(1))).getStatus());
+        assertEquals(0, bastion.getDefenseWallSquaresBuilding());
+    }
+
     @Test
     void facilityUnderConstructionTakesNoOrders() {
         library.setStatus(FacilityStatus.BUILDING);
@@ -656,6 +691,22 @@ class PlayerBastionActivityServiceTest {
         assertTrue(menagerie.getCreatures().isEmpty());
         assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class,
                 () -> service.cancelOrder(bastion.getId(), orders.getFirst().getId())).getStatus());
+    }
+
+    /** Бастион, окружённый стенами, бросает потери на 4к6 вместо 6к6. */
+    @Test
+    void enclosedBastionRollsTwoDiceFewerOnAttack() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setDefenders(5);
+        bastion.setDefenseWallsEnclosed(true);
+        dice.push(52, 1, 3, 4, 1);
+
+        maintainTurn();
+
+        PlayerBastionEvent event = events.getFirst();
+        assertEquals(List.of(1, 3, 4, 1), event.getDetails().getDice());
+        assertEquals(3, barrack.getDefenders());
+        assertTrue(event.getSummary().contains("4к6"));
     }
 
     /** Без защитников атака повреждает случайное специализированное сооружение на следующий ход. */

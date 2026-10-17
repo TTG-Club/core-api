@@ -45,6 +45,7 @@ public record PlayerBastionResponse(
         boolean editor,
         List<Member> members,
         @Schema(description = "Гости бастиона из событий") List<Guest> guests,
+        @Schema(description = "Защитные стены бастиона") DefenseWalls defenseWalls,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -113,6 +114,19 @@ public record PlayerBastionResponse(
             @Schema(description = "Почему сооружение не работает") String unavailableReason,
             @Schema(description = "Наёмники, которых забрало событие и которым ещё ищут замену; "
                     + "null — все на месте") Integer hirelingsMissing) {
+    }
+
+    /**
+     * Защитные стены вокруг бастиона.
+     *
+     * @param built       достроенные блоки (5-футовые квадраты): столько клеток стены можно
+     *                    поставить на план
+     * @param building    блоки в стройке
+     * @param readyOnTurn ход, к которому блоки в стройке достроятся
+     * @param enclosed    бастион полностью окружён стенами: при атаке на 2 кубика потерь меньше
+     */
+    @Schema(description = "Защитные стены бастиона")
+    public record DefenseWalls(int built, int building, Integer readyOnTurn, boolean enclosed) {
     }
 
     /**

@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.bastion.player.event;
 
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
+import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerEntry;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerRepository;
@@ -292,7 +293,8 @@ public class BastionEventService {
 
     /**
      * Атака: враги терпят поражение, но за каждую 1 на 6к6 гибнет защитник. Дружественный
-     * монстр защищает бастион без потерь и уходит; беженцы уходят в любом случае. Если
+     * монстр защищает бастион без потерь и уходит; беженцы уходят в любом случае. Бастион,
+     * полностью окружённый защитными стенами, бросает на 2 кубика меньше. Если
      * защитников нет, случайное специализированное сооружение повреждено на следующий ход.
      */
     private String attack(PlayerBastion bastion, PlayerBastionMember member,
@@ -324,13 +326,19 @@ public class BastionEventService {
                     .orElse(" Защитников и специализированных сооружений нет.")).toString();
         }
 
-        details.setDice(dice.rolls(ATTACK_DICE, 6));
+        int diceCount = bastion.isDefenseWallsEnclosed()
+                ? ATTACK_DICE - BastionRules.DEFENSIVE_WALL_DEFENDER_DICE_REDUCTION
+                : ATTACK_DICE;
+        if (bastion.isDefenseWallsEnclosed()) {
+            summary.append(" Бастион окружён защитными стенами.");
+        }
+        details.setDice(dice.rolls(diceCount, 6));
         long ones = details.getDice().stream().filter(value -> value == 1).count();
         List<String> lost = lose(defenders, (int) Math.min(ones, defenders.size()));
         details.setLost(lost);
         return summary.append(lost.isEmpty()
-                ? " На 6к6 ни одной 1 — защитники целы."
-                : " На 6к6 единиц: %d — погибли: %s.".formatted(ones, String.join(", ", lost))).toString();
+                ? " На %dк6 ни одной 1 — защитники целы.".formatted(diceCount)
+                : " На %dк6 единиц: %d — погибли: %s.".formatted(diceCount, ones, String.join(", ", lost))).toString();
     }
 
     /** Наёмник с криминальным прошлым: случайное специализированное сооружение с наёмниками. */

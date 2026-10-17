@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-17-02-defense-walls
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Защитные стены бастиона: достроенные блоки (5-футовые квадраты), партия в стройке и ход её
+        готовности, признак «бастион полностью окружён стенами» из плана.
+      changes:
+        - addColumn:
+            tableName: player_bastion
+            columns:
+              - column:
+                  name: defense_wall_squares
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: defense_wall_squares_building
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: defense_wall_ready_on_turn
+                  type: INTEGER
+              - column:
+                  name: defense_walls_enclosed
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

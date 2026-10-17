@@ -107,6 +107,9 @@ public class PlayerBastionResponseMapper {
                                 new BastionLabel(guest.getKind().name(), guest.getKind().getName()),
                                 guest.getName(), guest.getCount(), guest.getArrivedOnTurn(), guest.getLeavesOnTurn()))
                         .toList(),
+                new PlayerBastionResponse.DefenseWalls(bastion.getDefenseWallSquares(),
+                        bastion.getDefenseWallSquaresBuilding(), bastion.getDefenseWallReadyOnTurn(),
+                        bastion.isDefenseWallsEnclosed()),
                 bastion.getCreatedAt(),
                 bastion.getUpdatedAt());
     }
