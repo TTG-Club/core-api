@@ -79,6 +79,10 @@ public class PlayerBastionEvent {
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    /** Магический предмет из раздела «Магические предметы»; null — записан словами. */
+    @Column(name = "note_url", length = 200)
+    private String noteUrl;
+
     /** Событие, из-за которого бросили ещё раз (удачный случай). */
     @Column(name = "parent_id")
     private UUID parentId;

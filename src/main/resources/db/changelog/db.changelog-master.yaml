@@ -395,3 +395,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/15-05-bastion-events.yaml
   - include:
       file: db/changelog/2026/10/16-01-hirelings-lost.yaml
+  - include:
+      file: db/changelog/2026/10/17-01-bastion-event-item.yaml

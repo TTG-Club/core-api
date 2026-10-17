@@ -29,6 +29,8 @@ import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.magic.model.MagicItem;
+import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.persistence.EntityManager;
@@ -83,6 +85,7 @@ public class PlayerBastionActivityService {
     private final FacilityChoiceOptions choiceOptions;
     private final BastionEventService events;
     private final PlayerBastionEventRepository eventRepository;
+    private final MagicItemRepository magicItemRepository;
 
     /** Сколько ходов занимает дело на столько-то дней; меньше хода не бывает. */
     public static int turnsFor(Integer days) {
@@ -171,7 +174,8 @@ public class PlayerBastionActivityService {
                             event.getParentId(),
                             event.isPending() ? BastionEventService.decisions(event.getType()) : List.of(),
                             canDecide,
-                            canDecide ? events.defenderCount(bastion, member, reference) : 0);
+                            canDecide ? events.defenderCount(bastion, member, reference) : 0,
+                            event.getNoteUrl());
                 })
                 .toList();
 
@@ -206,9 +210,8 @@ public class PlayerBastionActivityService {
                 throw conflict("В этот ход бастион уже обслуживают");
             }
             cancelForMaintain(bastion, userId, master, Boolean.TRUE.equals(request.cancelActive()));
+            // События бастиона бросаются, когда мастер делает ход, а не сразу после приказа
             order.setCompletesOnTurn(bastion.getTurn() + 1);
-            // Сразу после приказа Мастер бросает по таблице «События бастиона» за каждого персонажа
-            events.rollForMaintain(bastion, allReference(bastion), userId);
         } else {
             PlayerBastionFacility facility = findFacility(bastion, request.facilityId());
             requireOwnerOrMaster(facility, userId, master, "Приказы сооружению отдаёт игрок этого персонажа или мастер");
@@ -328,8 +331,15 @@ public class PlayerBastionActivityService {
         if (!viewer.manager() && !owner) {
             throw forbidden("Решение по событию принимает игрок этого персонажа или мастер");
         }
-        events.decide(bastion, event, request.decision(), request.defenders(), request.note(),
+        String itemUrl = trimToNull(request.itemUrl());
+        String note = itemUrl == null ? request.note() : magicItemRepository.findById(itemUrl)
+                .map(MagicItem::getName)
+                .orElseThrow(() -> badRequest("Магический предмет %s не найден".formatted(itemUrl)));
+        events.decide(bastion, event, request.decision(), request.defenders(), note,
                 allReference(bastion), userId);
+        if (event.getNote() != null) {
+            event.setNoteUrl(itemUrl);
+        }
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
@@ -391,10 +401,6 @@ public class PlayerBastionActivityService {
         if (order.getStatus() != OrderStatus.ACTIVE || order.getGivenOnTurn() != bastion.getTurn()) {
             throw conflict("Отменить можно только приказ, отданный в текущий ход");
         }
-        if (order.getOrder().isBastionWide() && events.rolledOnTurn(bastion, bastion.getTurn())) {
-            throw conflict("События бастиона уже произошли: «Обслуживать» не отменить");
-        }
-
         cancel(bastion, order, userId);
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
