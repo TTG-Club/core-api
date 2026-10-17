@@ -267,6 +267,9 @@ public class VttgSpeciesMapper {
      * <p>Отметка «Подготавливать не нужно» уезжает только снятой ({@code false}): у вида
      * выданное заклинание по умолчанию подготовлено всегда, и {@code true} ничего не
      * добавил бы. При повторе одного заклинания отметку даёт первая ссылка на него.</p>
+     *
+     * <p>Уровень доступа уезжает только выше первого: без него потребитель выдал бы
+     * заклинания 3-го и 5-го уровня вместе с заговором, сразу при выборе вида.</p>
      */
     private List<VttgSpecies.GrantedSpell> grantedSpells(SpeciesFeature feature) {
         if (CollectionUtils.isEmpty(feature.getGrantedSpells())) {
@@ -292,7 +295,10 @@ public class VttgSpeciesMapper {
             if (StringUtils.hasText(name)) {
                 // Заклинания нет в справочнике — выдавать нечего, и подписать нечем
                 Boolean alwaysPrepared = Boolean.FALSE.equals(ref.getAlwaysPrepared()) ? Boolean.FALSE : null;
-                result.add(new VttgSpecies.GrantedSpell(name, ref.getUrl(), alwaysPrepared));
+                Integer requiredLevel = ref.getRequiredLevel() != null && ref.getRequiredLevel() > 1
+                        ? ref.getRequiredLevel()
+                        : null;
+                result.add(new VttgSpecies.GrantedSpell(name, ref.getUrl(), alwaysPrepared, requiredLevel));
             }
         }
         return result.isEmpty() ? null : result;
