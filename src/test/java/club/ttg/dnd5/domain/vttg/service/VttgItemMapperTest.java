@@ -113,6 +113,36 @@ class VttgItemMapperTest {
         assertTrue(json.get("maxDexBonus").isNull());
     }
 
+    /**
+     * Базовый тип доспеха — ключ справочника листа, а не слаг книжного названия: «Leather
+     * Armor» → {@code leather}. Иначе владеющий доспехом персонаж получал помеху.
+     */
+    @Test
+    void mapsArmorBaseTypeToSheetKey() {
+        Item item = baseItem("leather-armor-phb", "Кожаный доспех", "Leather Armor");
+        Armor armor = new Armor();
+        armor.setCategory(ArmorCategory.LIGHT);
+        armor.setArmorClass(11);
+        armor.setMod(Armor.DexterityMod.PLUS);
+        item.setArmor(armor);
+        item.setTypes(Set.of(ItemType.LIGHT_ARMOR));
+
+        assertEquals("leather", json(item).get("baseType").asText());
+    }
+
+    /** Доспех вне справочника листа остаётся со слагом названия: владение решит категория. */
+    @Test
+    void keepsSlugForArmorOutsideSheetVocabulary() {
+        Item item = baseItem("buckler-ghpg", "Баклер", "Buckler");
+        Armor armor = new Armor();
+        armor.setCategory(ArmorCategory.SHIELD);
+        armor.setArmorClass(1);
+        item.setArmor(armor);
+        item.setTypes(Set.of(ItemType.SHIELD));
+
+        assertEquals("buckler", json(item).get("baseType").asText());
+    }
+
     /** Средний доспех с требованием Силы и пределом Ловкости. */
     @Test
     void mapsMediumArmorWithStrengthAndDexCap() {
