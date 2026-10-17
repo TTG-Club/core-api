@@ -91,11 +91,17 @@ public final class ActivityRequests {
      * @param decision  заплатить, отказаться, отправить защитников или записать предмет
      * @param defenders для просьбы о помощи: сколько защитников отправить
      * @param note      для волшебного открытия и сокровища: какой предмет получен
+     * @param itemUrl   магический предмет из раздела «Магические предметы»; задан — вместо {@code note}
      */
     @Schema(description = "Решение по событию бастиона")
     public record EventDecision(@NotNull PlayerBastionEvent.Decision decision,
                                 @Min(1) Integer defenders,
-                                @Size(max = 500) String note) {
+                                @Size(max = 500) String note,
+                                @Size(max = 200) String itemUrl) {
+
+        public EventDecision(PlayerBastionEvent.Decision decision, Integer defenders, String note) {
+            this(decision, defenders, note, null);
+        }
     }
 
     /**

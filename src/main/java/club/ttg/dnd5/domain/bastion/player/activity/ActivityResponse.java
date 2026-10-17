@@ -55,6 +55,7 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
      * @param decisions решения, которые событие ждёт; пусто — разрешено само
      * @param canDecide открывший может принять решение: игрок персонажа или мастер
      * @param defenders сколько защитников персонажа можно отправить на помощь
+     * @param noteUrl   полученный магический предмет из раздела «Магические предметы»
      */
     @Schema(description = "Событие бастиона")
     public record Event(UUID id,
@@ -71,7 +72,9 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
                         UUID parentId,
                         List<PlayerBastionEvent.Decision> decisions,
                         boolean canDecide,
-                        int defenders) {
+                        int defenders,
+                        @Schema(description = "Ссылка на полученный магический предмет; null — записан словами")
+                        String noteUrl) {
     }
 
     @Schema(description = "Движение казны")
