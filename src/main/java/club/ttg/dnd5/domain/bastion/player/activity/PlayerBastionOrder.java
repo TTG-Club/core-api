@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
+import club.ttg.dnd5.domain.bastion.player.model.StableAnimal;
 import club.ttg.dnd5.domain.common.model.Timestamped;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
@@ -62,6 +63,15 @@ public class PlayerBastionOrder extends Timestamped {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private MenagerieCreature creature;
+
+    /** Животное, которое конюшня покупает или продаёт по приказу «Торговать». */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private StableAnimal animal;
+
+    /** Конюшня продаёт {@link #animal}; {@code false} — покупает. */
+    @Column(name = "animal_sale", nullable = false)
+    private boolean animalSale;
 
     /** Сколько списано из казны при отдаче приказа, зм. */
     @Column(name = "cost_gp", nullable = false)

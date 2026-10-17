@@ -28,6 +28,13 @@ public interface CreatureRepository extends JpaRepository<Creature, String> {
     @Query("select c from Creature c where c.url = :url")
     Optional<Creature> findReadOnlyByUrl(@Param("url") String url);
 
+    /**
+     * Адреса видимых существ по английским названиям: пары «название в нижнем регистре, адрес».
+     * У одного существа может быть несколько статблоков из разных книг.
+     */
+    @Query("select lower(c.english), c.url from Creature c where lower(c.english) in :names and c.isHiddenEntity = false")
+    List<Object[]> findUrlsByEnglish(@Param("names") Collection<String> names);
+
     @Query(value = """
             select b from Creature b
             where b.name ilike concat('%', :searchLine, '%')

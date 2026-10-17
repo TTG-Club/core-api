@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.player.service;
 
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityPrerequisite;
@@ -48,7 +49,8 @@ class PlayerBastionFacilityServiceTest {
     private final PlayerBastionFacilityService service = new PlayerBastionFacilityService(
             repository, facilityRepository,
             new PlayerBastionAccess(repository, mock(PlayerBastionEditorRepository.class), client, userService),
-            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class), new FacilityChoiceOptions(mock(ItemRepository.class))),
+            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class), new FacilityChoiceOptions(mock(ItemRepository.class)),
+                    mock(CreatureRepository.class)),
             mock(EntityManager.class),
             new FacilityChoiceOptions(mock(ItemRepository.class)));
 

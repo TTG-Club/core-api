@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
+import club.ttg.dnd5.domain.bastion.player.model.StableAnimal;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
@@ -210,8 +211,14 @@ public class PlayerBastionFacilityService {
         for (FacilitySetupRequest.Special special : request.special()) {
             BastionFacility facility = reference.get(special.facilityUrl());
             boolean noPrerequisite = facility.getPrerequisite() == null;
-            next.add(reuseOrCreate(member, previous, special.facilityUrl(), facility.getSpace(),
-                    Optional.ofNullable(special.choices()).orElse(List.of()), noPrerequisite));
+            PlayerBastionFacility chosen = reuseOrCreate(member, previous, special.facilityUrl(), facility.getSpace(),
+                    Optional.ofNullable(special.choices()).orElse(List.of()), noPrerequisite);
+            // Новая конюшня появляется с животными; у прежней они остаются как есть
+            if (chosen.getId() == null && PlayerBastionResponseMapper.isStable(facility)
+                    && chosen.getAnimals().isEmpty()) {
+                chosen.setAnimals(StableAnimal.starting(member.getBastion().getTurn()));
+            }
+            next.add(chosen);
         }
 
         member.getFacilities().clear();

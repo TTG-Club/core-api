@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
+import club.ttg.dnd5.domain.bastion.model.StableAnimalKind;
 import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,6 +36,7 @@ public final class ActivityRequests {
      * @param cancelActive для «Обслуживать»: отменить приказы, которые сооружения ещё выполняют
      * @param itemUrl    для «Изготовить» в мастерской: предмет из тех, что создаются её инструментами
      * @param creature   для «Завербовать» в зверинце: какое существо добавить в вольеры
+     * @param trade      для «Торговать» в конюшне: какое животное купить или продать
      */
     @Schema(description = "Приказ бастиона")
     public record GiveOrder(UUID facilityId,
@@ -43,14 +45,20 @@ public final class ActivityRequests {
                             @Size(max = 2000) String note,
                             Boolean cancelActive,
                             @Size(max = 200) String itemUrl,
-                            @Valid RecruitCreature creature) {
+                            @Valid RecruitCreature creature,
+                            @Valid StableTrade trade) {
         public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note) {
-            this(facilityId, order, optionName, note, null, null, null);
+            this(facilityId, order, optionName, note, null, null, null, null);
         }
 
         public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note,
                          Boolean cancelActive, String itemUrl) {
-            this(facilityId, order, optionName, note, cancelActive, itemUrl, null);
+            this(facilityId, order, optionName, note, cancelActive, itemUrl, null, null);
+        }
+
+        public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note,
+                         Boolean cancelActive, String itemUrl, RecruitCreature creature) {
+            this(facilityId, order, optionName, note, cancelActive, itemUrl, creature, null);
         }
     }
 
@@ -68,6 +76,24 @@ public final class ActivityRequests {
                                   @Size(max = 100) String name,
                                   club.ttg.dnd5.domain.common.dictionary.Size size,
                                   @Size(max = 8) String challenge) {
+    }
+
+    /**
+     * Сделка конюшни: продать животное из конюшни или купить новое — из таблицы или, с
+     * согласия Мастера, любое другое по указанной цене.
+     *
+     * @param sellAnimalId животное конюшни, которое продать; пусто — покупка
+     * @param kind         животное из таблицы «Верховые и прочие животные»
+     * @param name         название животного не из таблицы
+     * @param size         размер животного не из таблицы
+     * @param cost         обычная цена животного не из таблицы, зм
+     */
+    @Schema(description = "Покупка или продажа животного конюшни")
+    public record StableTrade(@Size(max = 64) String sellAnimalId,
+                              StableAnimalKind kind,
+                              @Size(max = 100) String name,
+                              club.ttg.dnd5.domain.common.dictionary.Size size,
+                              @Min(0) @Max(1_000_000) Integer cost) {
     }
 
     /**

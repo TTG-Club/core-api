@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-17-03-stable
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Конюшня держит до 3 больших животных (2 средних — как одно большое), при появлении в ней
+        ездовая лошадь и два пони. Приказ «Торговать» покупает или продаёт животное.
+      changes:
+        - addColumn:
+            tableName: bastion_facility
+            columns:
+              - column:
+                  name: stable
+                  type: BOOLEAN
+        - addColumn:
+            tableName: player_bastion_facility
+            columns:
+              - column:
+                  name: animals
+                  type: JSONB
+                  defaultValueComputed: "'[]'::jsonb"
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: player_bastion_order
+            columns:
+              - column:
+                  name: animal
+                  type: JSONB
+              - column:
+                  name: animal_sale
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: update bastion_facility set stable = true where english ilike 'stable%'
+        - sql:
+            comment: Уже построенным конюшням — стартовые животные
+            sql: >
+              update player_bastion_facility f
+              set animals = jsonb_build_array(
+                jsonb_build_object('id', gen_random_uuid()::text, 'kind', 'RIDING_HORSE',
+                  'name', 'Ездовая лошадь', 'size', 'LARGE', 'cost', 75, 'arrivedOnTurn', 0),
+                jsonb_build_object('id', gen_random_uuid()::text, 'kind', 'PONY',
+                  'name', 'Пони', 'size', 'MEDIUM', 'cost', 30, 'arrivedOnTurn', 0),
+                jsonb_build_object('id', gen_random_uuid()::text, 'kind', 'PONY',
+                  'name', 'Пони', 'size', 'MEDIUM', 'cost', 30, 'arrivedOnTurn', 0))
+              where f.animals = '[]'::jsonb
+                and f.facility_url in (select b.url from bastion_facility b where b.stable)

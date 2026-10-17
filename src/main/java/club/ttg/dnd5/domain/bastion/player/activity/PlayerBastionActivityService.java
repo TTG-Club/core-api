@@ -14,6 +14,7 @@ import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
 import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEventRepository;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
+import club.ttg.dnd5.domain.bastion.player.model.StableAnimal;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
@@ -247,16 +248,23 @@ public class PlayerBastionActivityService {
                 throw conflict("В «%s» больше не помещается защитников".formatted(reference.getName()));
             }
             MenagerieCreature creature = recruitCreature(facility, reference, request, master);
+            StableAnimal animal = tradeAnimal(facility, reference, request, master);
+            boolean sale = animal != null && trimToNull(request.trade().sellAnimalId()) != null;
             // Защитников барак вербует бесплатно, какую бы цену ни указал вариант; существо
-            // зверинца стоит столько, сколько указано в таблице зверинца
+            // зверинца стоит столько, сколько указано в таблице зверинца; покупка в конюшне —
+            // обычную цену животного, продажа ничего не стоит
             long cost = recruitDefenders ? 0
                     : creature != null ? creature.getCost()
+                    : animal != null ? (sale ? 0 : animal.getCost())
                     : option.map(FacilityOrderOption::getCost).orElse(0);
             order.setFacilityId(facility.getId());
             order.setOptionName(creature != null
                     ? creature.getName()
+                    : animal != null ? "%s «%s»".formatted(sale ? "продажа" : "покупка", animal.getName())
                     : option.map(FacilityOrderOption::getName).orElse(null));
             order.setCreature(creature);
+            order.setAnimal(animal);
+            order.setAnimalSale(sale);
             Optional<PlayerBastionResponse.CraftableItem> item = craftItem(facility, reference, request);
             item.ifPresent(craft -> {
                 order.setItemUrl(craft.url());
@@ -265,6 +273,7 @@ public class PlayerBastionActivityService {
             // Срок изготовления предмета считается по его цене и наёмникам, а не по варианту
             Integer days = creature != null
                     ? Integer.valueOf(BastionRules.MENAGERIE_RECRUIT_DAYS)
+                    : animal != null ? Integer.valueOf(BastionRules.STABLE_TRADE_DAYS)
                     : item.map(PlayerBastionResponse.CraftableItem::days)
                             .or(() -> option.map(FacilityOrderOption::getDays))
                             .orElse(null);
@@ -306,6 +315,20 @@ public class PlayerBastionActivityService {
         requireOwnerOrMaster(facility, userId, viewer.manager(),
                 "Существами зверинца распоряжается игрок этого персонажа или мастер");
         facility.getCreatures().remove(findCreature(facility, creatureId));
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /** Убирает животное из конюшни — например, персонаж забрал его в путешествие или оно погибло. */
+    @Transactional
+    public PlayerBastionResponse removeAnimal(UUID bastionId, UUID facilityId, String animalId) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Животными конюшни распоряжается игрок этого персонажа или мастер");
+        facility.getAnimals().remove(findAnimal(facility, animalId));
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
@@ -510,10 +533,15 @@ public class PlayerBastionActivityService {
                     .or(() -> orderFacility
                             .filter(facility -> order.getCreature() != null)
                             .map(facility -> settleCreature(facility, order.getCreature())))
+                    .or(() -> orderFacility
+                            .filter(facility -> order.getAnimal() != null)
+                            .map(facility -> order.isAnimalSale()
+                                    ? sellAnimal(bastion, facility, order.getAnimal(), userId)
+                                    : settleAnimal(facility, order.getAnimal(), next)))
                     .orElse("");
             summary.add("Выполнен приказ «%s» — %s%s%s%s".formatted(order.getOrder().getName(), target,
                     Optional.ofNullable(order.getOptionName())
-                            .filter(option -> order.getCreature() == null)
+                            .filter(option -> order.getCreature() == null && order.getAnimal() == null)
                             .map(option -> ": " + option)
                             .orElse(""),
                     recruited,
@@ -690,6 +718,9 @@ public class PlayerBastionActivityService {
         facility.setSpace(added.getSpace());
         facility.setChoices(new ArrayList<>(Optional.ofNullable(request.choices()).orElse(List.of())));
         facility.setPrerequisiteConfirmed(added.getPrerequisite() == null);
+        if (PlayerBastionResponseMapper.isStable(added)) {
+            facility.setAnimals(StableAnimal.starting(bastion.getTurn()));
+        }
         member.getFacilities().add(facility);
 
         return mapper.toResponse(saveWithNewVersion(bastion), viewer);
@@ -828,6 +859,111 @@ public class PlayerBastionActivityService {
         }
         menagerie.getCreatures().add(creature);
         return ": %s поселяется в вольерах".formatted(creature.getName());
+    }
+
+    /** Приказ «Торговать» конюшне: покупка или продажа животного. */
+    private static boolean isStableTrade(BastionFacility reference, BastionOrder order) {
+        return order == BastionOrder.TRADE && PlayerBastionResponseMapper.isStable(reference);
+    }
+
+    /**
+     * Животное, которое конюшня покупает или продаёт по приказу. Продают животное, которое
+     * живёт в конюшне; покупают из таблицы или, если приказ отдаёт Мастер, любое другое по
+     * указанной цене. Для покупки в конюшне должно хватать места.
+     *
+     * @return животное; {@code null}, если приказ не торгует животными
+     */
+    private static StableAnimal tradeAnimal(PlayerBastionFacility facility,
+                                            BastionFacility reference,
+                                            ActivityRequests.GiveOrder request,
+                                            boolean master) {
+        ActivityRequests.StableTrade wanted = request.trade();
+        if (!isStableTrade(reference, request.order())) {
+            if (wanted != null) {
+                throw badRequest("Животными торгует только конюшня");
+            }
+            return null;
+        }
+        if (wanted == null) {
+            throw badRequest("Выберите, какое животное купить или продать");
+        }
+
+        String sellId = trimToNull(wanted.sellAnimalId());
+        if (sellId != null) {
+            return findAnimal(facility, sellId);
+        }
+
+        StableAnimal animal;
+        if (wanted.kind() != null) {
+            animal = StableAnimal.of(wanted.kind(), 0);
+        } else {
+            if (!master) {
+                throw forbidden("Животное не из таблицы покупается с согласия Мастера: приказ отдаёт Мастер");
+            }
+            String name = trimToNull(wanted.name());
+            if (name == null) {
+                throw badRequest("Укажите, какое животное купить");
+            }
+            if (BastionRules.stableSpace(wanted.size()) == 0) {
+                throw badRequest("В конюшне держат животных не больше большого размера");
+            }
+            if (wanted.cost() == null) {
+                throw badRequest("Укажите цену животного");
+            }
+            animal = new StableAnimal();
+            animal.setId(UUID.randomUUID().toString());
+            animal.setName(name);
+            animal.setSize(wanted.size());
+            animal.setCost(wanted.cost());
+        }
+
+        if (PlayerBastionResponseMapper.stableOccupied(facility) + BastionRules.stableSpace(animal.getSize())
+                > BastionRules.STABLE_CAPACITY) {
+            throw conflict("В «%s» нет места для животного «%s»".formatted(reference.getName(), animal.getName()));
+        }
+        return animal;
+    }
+
+    private static StableAnimal findAnimal(PlayerBastionFacility facility, String animalId) {
+        return facility.getAnimals().stream()
+                .filter(animal -> animalId.equals(animal.getId()))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Животное %s не найдено".formatted(animalId)));
+    }
+
+    /**
+     * Купленное животное поселяется в конюшне, если там ещё есть место.
+     *
+     * @return приписка к записи хода
+     */
+    private static String settleAnimal(PlayerBastionFacility stable, StableAnimal animal, int turn) {
+        if (PlayerBastionResponseMapper.stableOccupied(stable) + BastionRules.stableSpace(animal.getSize())
+                > BastionRules.STABLE_CAPACITY) {
+            return ": %s — в конюшне нет места".formatted(animal.getName());
+        }
+        animal.setArrivedOnTurn(turn);
+        stable.getAnimals().add(animal);
+        return ": куплено животное «%s»".formatted(animal.getName());
+    }
+
+    /**
+     * Проданное животное уходит из конюшни, покупатель платит обычную цену с наценкой:
+     * 20%, с 13 уровня персонажа — 50%.
+     *
+     * @return приписка к записи хода
+     */
+    private String sellAnimal(PlayerBastion bastion, PlayerBastionFacility stable, StableAnimal sold, UUID userId) {
+        Optional<StableAnimal> animal = stable.getAnimals().stream()
+                .filter(item -> item.getId().equals(sold.getId()))
+                .findFirst();
+        if (animal.isEmpty()) {
+            return ": животного «%s» уже нет в конюшне".formatted(sold.getName());
+        }
+        stable.getAnimals().remove(animal.get());
+        long price = BastionRules.stableSalePrice(animal.get().getCost(), stable.getMember().getCharacterLevel());
+        bastion.setTreasuryGp(bastion.getTreasuryGp() + price);
+        record(bastion, price, Reason.SALE, "Продажа: %s".formatted(animal.get().getName()), userId);
+        return ": продано животное «%s» за %d зм".formatted(animal.get().getName(), price);
     }
 
     /**

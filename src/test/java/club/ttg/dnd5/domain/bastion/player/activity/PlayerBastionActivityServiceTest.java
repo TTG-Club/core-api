@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.player.activity;
 
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
@@ -8,6 +9,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilityChoiceSource;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
+import club.ttg.dnd5.domain.bastion.model.StableAnimalKind;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStatus;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
@@ -19,6 +21,7 @@ import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
 import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEventRepository;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
+import club.ttg.dnd5.domain.bastion.player.model.StableAnimal;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
@@ -59,6 +62,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,6 +82,7 @@ class PlayerBastionActivityServiceTest {
     private final GameMembershipClient client = mock(GameMembershipClient.class);
     private final UserService userService = mock(UserService.class);
     private final ItemRepository itemRepository = mock(ItemRepository.class);
+    private final CreatureRepository creatureRepository = mock(CreatureRepository.class);
     private final PlayerBastionEventRepository eventRepository = mock(PlayerBastionEventRepository.class);
     private final MagicItemRepository magicItemRepository = mock(MagicItemRepository.class);
     private final QueueDice dice = new QueueDice();
@@ -85,7 +90,7 @@ class PlayerBastionActivityServiceTest {
             bastionRepository, facilityRepository, orderRepository, ledgerRepository, turnRepository,
             new PlayerBastionAccess(bastionRepository, mock(PlayerBastionEditorRepository.class), client, userService),
             new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class),
-                    new FacilityChoiceOptions(itemRepository)),
+                    new FacilityChoiceOptions(itemRepository), creatureRepository),
             mock(EntityManager.class),
             new FacilityChoiceOptions(itemRepository),
             new BastionEventService(eventRepository, ledgerRepository, dice),
@@ -105,6 +110,7 @@ class PlayerBastionActivityServiceTest {
             "barrack", barrack(),
             "workshop", workshop(),
             "menagerie", menagerie(),
+            "stable", stable(),
             "bedroom", basic("bedroom"));
 
     private PlayerBastion bastion;
@@ -586,6 +592,81 @@ class PlayerBastionActivityServiceTest {
     }
 
     @Test
+    void stableBuysAnimalFromTableForItsCostAndShowsBestiaryLinks() {
+        PlayerBastionFacility stable = addStable();
+        bastion.setTreasuryGp(100);
+        when(creatureRepository.findUrlsByEnglish(anyCollection())).thenReturn(List.of(
+                new Object[]{"mule", "mule-phb"}, new Object[]{"mule", "mule-mm"}));
+
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(stable.getId(), BastionOrder.TRADE,
+                null, null, null, null, null, new ActivityRequests.StableTrade(null, StableAnimalKind.MULE,
+                        null, null, null)));
+        assertEquals(92, bastion.getTreasuryGp());
+        assertEquals("покупка «Мул»", orders.getFirst().getOptionName());
+        assertEquals(bastion.getTurn() + 1, orders.getFirst().getCompletesOnTurn());
+
+        actAs(masterId);
+        PlayerBastionResponse response = service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertEquals(4, stable.getAnimals().size());
+        assertTrue(turns.getFirst().getSummary().getFirst().contains("куплено животное «Мул»"),
+                turns.getFirst().getSummary().getFirst());
+        PlayerBastionResponse.Stable shown = response.members().getFirst().facilities().stream()
+                .filter(facility -> facility.id().equals(stable.getId()))
+                .findFirst()
+                .orElseThrow()
+                .stable();
+        assertEquals(6, shown.capacity());
+        assertEquals(5, shown.occupied());
+        assertEquals(20, shown.saleBonusPercent());
+        PlayerBastionResponse.Animal mule = shown.animals().getLast();
+        assertEquals("mule-mm", mule.bestiaryUrl());
+        assertFalse(mule.bonded());
+        assertTrue(shown.animals().getFirst().bonded(), "Стартовая лошадь живёт в конюшне больше 14 дней");
+    }
+
+    @Test
+    void stableSellsAnimalAboveItsCost() {
+        PlayerBastionFacility stable = addStable();
+        StableAnimal horse = stable.getAnimals().getFirst();
+        bastion.setTreasuryGp(0);
+        member.setCharacterLevel(13);
+
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(stable.getId(), BastionOrder.TRADE,
+                null, null, null, null, null, new ActivityRequests.StableTrade(horse.getId(), null, null, null, null)));
+        assertEquals(0, bastion.getTreasuryGp());
+        assertEquals(3, stable.getAnimals().size(), "Животное уходит, когда сделка завершена");
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertEquals(2, stable.getAnimals().size());
+        assertEquals(112, bastion.getTreasuryGp(), "75 зм и 50% наценки с 13 уровня");
+        assertEquals(PlayerBastionLedgerEntry.Reason.SALE, ledger.getLast().getReason());
+    }
+
+    @Test
+    void stableHoldsThreeLargeAnimals() {
+        PlayerBastionFacility stable = addStable();
+        stable.getAnimals().add(StableAnimal.of(StableAnimalKind.PONY, 0));
+        bastion.setTreasuryGp(1000);
+
+        actAs(playerId);
+        assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(stable.getId(), BastionOrder.TRADE, null, null, null, null, null,
+                        new ActivityRequests.StableTrade(null, StableAnimalKind.WARHORSE, null, null, null))));
+        assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(stable.getId(), BastionOrder.TRADE, null, null, null, null, null,
+                        new ActivityRequests.StableTrade(null, null, "Грифон", Size.LARGE, 100))),
+                "Животное не из таблицы покупает только Мастер");
+
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(stable.getId(), BastionOrder.TRADE,
+                null, null, null, null, null, new ActivityRequests.StableTrade(null, StableAnimalKind.MULE,
+                        null, null, null)));
+        assertEquals(992, bastion.getTreasuryGp());
+    }
+
+    @Test
     void menagerieRecruitsBeastFromTableForItsCostInSevenDays() {
         PlayerBastionFacility menagerie = addMenagerie();
         bastion.setTreasuryGp(2000);
@@ -899,6 +980,30 @@ class PlayerBastionActivityServiceTest {
         menagerie.setPrerequisiteConfirmed(true);
         member.getFacilities().add(menagerie);
         return menagerie;
+    }
+
+    private PlayerBastionFacility addStable() {
+        PlayerBastionFacility stable = new PlayerBastionFacility();
+        stable.setId(UUID.randomUUID());
+        stable.setMember(member);
+        stable.setFacilityUrl("stable");
+        stable.setSpace(FacilitySpace.ROOMY);
+        stable.setPrerequisiteConfirmed(true);
+        stable.setAnimals(StableAnimal.starting(bastion.getTurn() - 2));
+        member.getFacilities().add(stable);
+        return stable;
+    }
+
+    private static BastionFacility stable() {
+        BastionFacility facility = new BastionFacility();
+        facility.setUrl("stable");
+        facility.setName("Конюшня");
+        facility.setCategory(FacilityCategory.SPECIAL);
+        facility.setLevel(5L);
+        facility.setSpace(FacilitySpace.ROOMY);
+        facility.setStable(true);
+        facility.setOrders(List.of(BastionOrder.TRADE));
+        return facility;
     }
 
     private static MenagerieCreature creature(String name, Size size) {

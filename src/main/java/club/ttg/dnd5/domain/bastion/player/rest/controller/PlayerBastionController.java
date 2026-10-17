@@ -284,6 +284,15 @@ public class PlayerBastionController {
         return activityService.removeCreature(id, facilityId, creatureId);
     }
 
+    @Operation(summary = "Убрать животное из конюшни",
+            description = "Например, персонаж забрал его в путешествие или оно погибло")
+    @DeleteMapping("/{id}/facilities/{facilityId}/animals/{animalId}")
+    public PlayerBastionResponse removeAnimal(@PathVariable UUID id,
+                                              @PathVariable UUID facilityId,
+                                              @PathVariable String animalId) {
+        return activityService.removeAnimal(id, facilityId, animalId);
+    }
+
     @Operation(summary = "Убрать сооружение", description = "Только мастер игры — например, замена при повышении уровня")
     @DeleteMapping("/{id}/facilities/{facilityId}")
     public PlayerBastionResponse removeFacility(@PathVariable UUID id, @PathVariable UUID facilityId) {

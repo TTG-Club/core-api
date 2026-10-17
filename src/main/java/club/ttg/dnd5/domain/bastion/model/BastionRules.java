@@ -88,6 +88,49 @@ public class BastionRules {
         };
     }
 
+    /**
+     * Вместимость конюшни в половинах большого животного: 3 больших, а 2 средних занимают
+     * место одного большого.
+     */
+    public static final int STABLE_CAPACITY = 6;
+    /** Сколько дней наёмник конюшни покупает или продаёт животное. */
+    public static final int STABLE_TRADE_DAYS = 7;
+    /** Сколько дней животное живёт в конюшне, чтобы проверки Ухода за животными шли с преимуществом. */
+    public static final int STABLE_BOND_DAYS = 14;
+    /** На сколько процентов дороже обычной цены покупатель платит за животное из конюшни. */
+    public static final int STABLE_SALE_BONUS_PERCENT = 20;
+    /** Наценка при продаже с {@link #STABLE_SALE_BONUS_HIGH_LEVEL} уровня, процентов. */
+    public static final int STABLE_SALE_BONUS_HIGH_PERCENT = 50;
+    public static final int STABLE_SALE_BONUS_HIGH_LEVEL = 13;
+
+    /**
+     * Сколько места в конюшне занимает животное этого размера, в половинах большого.
+     *
+     * @return 2 у большого, 1 у крошечного, маленького и среднего; 0 — в конюшне не держат
+     */
+    public static int stableSpace(Size size) {
+        if (size == null) {
+            return 0;
+        }
+        return switch (size) {
+            case TINY, SMALL, MEDIUM -> 1;
+            case LARGE -> 2;
+            default -> 0;
+        };
+    }
+
+    /** Наценка при продаже животного из конюшни персонажем этого уровня, процентов. */
+    public static int stableSaleBonusPercent(int characterLevel) {
+        return characterLevel >= STABLE_SALE_BONUS_HIGH_LEVEL
+                ? STABLE_SALE_BONUS_HIGH_PERCENT
+                : STABLE_SALE_BONUS_PERCENT;
+    }
+
+    /** Сколько платит покупатель за животное из конюшни, зм: обычная цена с наценкой. */
+    public static long stableSalePrice(int cost, int characterLevel) {
+        return (long) cost * (100 + stableSaleBonusPercent(characterLevel)) / 100;
+    }
+
     /** Сколько защитников помещается в бараке этого пространства. */
     public static int barrackCapacity(FacilitySpace space) {
         return space == FacilitySpace.VAST ? BARRACK_VAST_CAPACITY : BARRACK_ROOMY_CAPACITY;
