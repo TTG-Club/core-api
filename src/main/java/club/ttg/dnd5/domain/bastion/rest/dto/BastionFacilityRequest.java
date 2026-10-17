@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityEnlargement;
 import club.ttg.dnd5.domain.bastion.model.FacilityFeature;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
+import club.ttg.dnd5.domain.bastion.model.FacilityRoomTemplate;
 import club.ttg.dnd5.domain.bastion.model.FacilityPrerequisite;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
@@ -67,4 +68,7 @@ public class BastionFacilityRequest extends BaseRequest {
 
     @Schema(description = "Выборы игрока для сооружения")
     private List<FacilityChoice> choices;
+
+    @Schema(description = "Шаблоны готовой комнаты на плане бастиона, по одному на пространство")
+    private List<FacilityRoomTemplate> roomTemplates;
 }

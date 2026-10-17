@@ -403,3 +403,5 @@ databaseChangeLog:
       file: db/changelog/2026/10/17-03-stable.yaml
   - include:
       file: db/changelog/2026/10/17-04-magic-item-theme.yaml
+  - include:
+      file: db/changelog/2026/10/17-05-facility-room-templates.yaml

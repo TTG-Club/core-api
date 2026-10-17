@@ -91,6 +91,11 @@ public class BastionFacility extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private List<FacilityChoice> choices;
 
+    /** Шаблоны готовой комнаты на плане бастиона, по одному на пространство. */
+    @Type(JsonType.class)
+    @Column(name = "room_templates", columnDefinition = "jsonb")
+    private List<FacilityRoomTemplate> roomTemplates;
+
     @ManyToOne
     @JoinColumn(name = "source")
     private Source source;

@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.bastion.player.rest.dto;
 
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
+import club.ttg.dnd5.domain.bastion.model.FacilityRoomTemplate;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
@@ -114,7 +115,9 @@ public record PlayerBastionResponse(
             Integer unavailableOnTurn,
             @Schema(description = "Почему сооружение не работает") String unavailableReason,
             @Schema(description = "Наёмники, которых забрало событие и которым ещё ищут замену; "
-                    + "null — все на месте") Integer hirelingsMissing) {
+                    + "null — все на месте") Integer hirelingsMissing,
+            @Schema(description = "Шаблон готовой комнаты на плане для текущего пространства; "
+                    + "null — мебель расставит редактор плана") FacilityRoomTemplate roomTemplate) {
     }
 
     /**
