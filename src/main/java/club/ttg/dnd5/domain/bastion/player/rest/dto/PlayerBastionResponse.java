@@ -109,6 +109,7 @@ public record PlayerBastionResponse(
             @Schema(description = "Что можно изготовить выбранными инструментами; null — у сооружения нет выбора инструментов")
             List<CraftableItem> craftableItems,
             @Schema(description = "Вольеры зверинца; null — сооружение не зверинец") Menagerie menagerie,
+            @Schema(description = "Животные конюшни; null — сооружение не конюшня") Stable stable,
             @Schema(description = "Ход, в который сооружение не работает после события; null — работает")
             Integer unavailableOnTurn,
             @Schema(description = "Почему сооружение не работает") String unavailableReason,
@@ -166,6 +167,44 @@ public record PlayerBastionResponse(
      */
     @Schema(description = "Существо зверинца")
     public record Creature(String id, String name, BastionLabel size, String challenge, int space, boolean defender) {
+    }
+
+    /**
+     * Конюшня. Место считается в половинах большого животного: большое занимает 2,
+     * маленькое или среднее — 1.
+     *
+     * @param capacity         вместимость, половин
+     * @param occupied         занято животными, половин
+     * @param animals          животные в конюшне
+     * @param kinds            таблица «Верховые и прочие животные» с обычными ценами
+     * @param saleBonusPercent на сколько процентов дороже обычной цены покупатель платит при продаже
+     */
+    @Schema(description = "Конюшня")
+    public record Stable(int capacity,
+                         int occupied,
+                         List<Animal> animals,
+                         List<AnimalKind> kinds,
+                         int saleBonusPercent) {
+    }
+
+    /**
+     * Животное в конюшне.
+     *
+     * @param kind          животное из таблицы; null — другое, с согласия Мастера
+     * @param space         сколько места занимает, половин большого
+     * @param cost          обычная цена, зм
+     * @param arrivedOnTurn ход, с которого животное в конюшне
+     * @param bonded        прожило в конюшне 14 дней: проверки Ухода за животными с преимуществом
+     * @param bestiaryUrl   статблок в бестиарии; null — не найден
+     */
+    @Schema(description = "Животное конюшни")
+    public record Animal(String id, String kind, String name, BastionLabel size, int space, int cost,
+                         int arrivedOnTurn, boolean bonded, String bestiaryUrl) {
+    }
+
+    /** Животное из таблицы «Верховые и прочие животные» с обычной ценой, зм. */
+    @Schema(description = "Животное из таблицы конюшни")
+    public record AnimalKind(String value, String name, BastionLabel size, int space, int cost, String bestiaryUrl) {
     }
 
     /** Существо из таблицы зверинца с ценой вербовки, зм. */

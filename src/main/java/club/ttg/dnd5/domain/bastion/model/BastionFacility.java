@@ -60,6 +60,12 @@ public class BastionFacility extends NamedEntity {
      */
     private Boolean menagerie;
 
+    /**
+     * Конюшня: в ней живут верховые животные ({@link StableAnimalKind}), при появлении —
+     * ездовая лошадь и два пони. Приказ «Торговать» покупает или продаёт животное.
+     */
+    private Boolean stable;
+
     /** Приказы, которые принимает сооружение. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

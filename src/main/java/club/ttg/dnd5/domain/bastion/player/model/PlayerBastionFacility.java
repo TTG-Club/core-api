@@ -98,6 +98,11 @@ public class PlayerBastionFacility extends Timestamped {
     @Column(columnDefinition = "jsonb", nullable = false)
     private List<MenagerieCreature> creatures = new ArrayList<>();
 
+    /** Животные в конюшне (только у конюшни). */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private List<StableAnimal> animals = new ArrayList<>();
+
     /**
      * Ход бастиона, в который сооружение не работает: его повредила атака или оно осталось
      * без наёмников. Потом оно бесплатно чинится и снова работает.

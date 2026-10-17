@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.player.share;
 
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient;
@@ -44,7 +45,8 @@ class PlayerBastionShareServiceTest {
     private final PlayerBastionAccess access = new PlayerBastionAccess(bastionRepository, editorRepository,
             mock(GameMembershipClient.class), userService);
     private final PlayerBastionResponseMapper mapper = new PlayerBastionResponseMapper(
-            mock(BastionFacilityRepository.class), editorRepository, new FacilityChoiceOptions(mock(ItemRepository.class)));
+            mock(BastionFacilityRepository.class), editorRepository, new FacilityChoiceOptions(mock(ItemRepository.class)),
+            mock(CreatureRepository.class));
     private final PlayerBastionShareService service = new PlayerBastionShareService(bastionRepository,
             editorRepository, access, mapper, mock(PlayerBastionPlanService.class), userService);
 
