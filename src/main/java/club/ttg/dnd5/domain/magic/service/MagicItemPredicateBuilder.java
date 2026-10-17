@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.magic.service;
 
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
+import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
 import club.ttg.dnd5.domain.magic.model.QMagicItem;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
@@ -15,6 +16,7 @@ public class MagicItemPredicateBuilder
 {
     private static final QMagicItem Q = QMagicItem.magicItem;
     private static final StringPath CATEGORY_PATH = Expressions.stringPath("category");
+    private static final StringPath THEME_PATH = Expressions.stringPath("theme");
     private static final StringPath RARITY_PATH = Expressions.stringPath("rarity");
 
     public BooleanBuilder build(final MagicItemQueryRequest request)
@@ -23,6 +25,7 @@ public class MagicItemPredicateBuilder
         builder.and(Q.isHiddenEntity.isFalse());
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH, MagicItemCategory.class);
+        PredicateUtils.applyFilterEnum(builder, request.getTheme(), THEME_PATH, MagicItemTheme.class);
         PredicateUtils.applyFilterEnum(builder, request.getRarity(), RARITY_PATH, Rarity.class);
         if (request.getAttunement() != null && request.getAttunement().isActive())
         {

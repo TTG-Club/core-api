@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-17-04-magic-item-theme
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Тематика магического предмета — вооружение, магия, реликвии или инструменты:
+        строка enum-а MagicItemTheme, по ней фильтруется раздел. Колонка nullable:
+        у существующих записей тематика не задана, пока её не выставят в редакторе.
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: theme
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: magic_item
+            columnName: theme

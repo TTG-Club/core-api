@@ -33,6 +33,13 @@ public class MagicItem extends NamedEntity {
     private MagicItemCategory category;
 
     /**
+     * Тематика магического предмета: вооружение, магия, реликвии или инструменты.
+     * {@code null} — у записей, сохранённых до появления поля.
+     */
+    @Enumerated(EnumType.STRING)
+    private MagicItemTheme theme;
+
+    /**
      * Уточнение типа магического предмета, например (любой меч)
      */
     private String clarification;
