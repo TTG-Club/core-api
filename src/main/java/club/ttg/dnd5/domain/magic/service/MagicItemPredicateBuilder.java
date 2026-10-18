@@ -23,6 +23,10 @@ public class MagicItemPredicateBuilder
     {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
+        if (request.isListedOnly())
+        {
+            builder.and(Q.showInList.isTrue());
+        }
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH, MagicItemCategory.class);
         PredicateUtils.applyFilterEnum(builder, request.getTheme(), THEME_PATH, MagicItemTheme.class);

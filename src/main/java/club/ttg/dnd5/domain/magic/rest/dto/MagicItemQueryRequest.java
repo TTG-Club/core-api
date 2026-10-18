@@ -32,4 +32,10 @@ public class MagicItemQueryRequest extends AbstractQueryRequest
 
     @FilterParam
     private QueryFilter<String> curse;
+
+    /**
+     * True — только предметы, которые показываются в списке раздела ({@code showInList}).
+     * Передаёт страница списка; выбор предмета в листе персонажа и других полях ищет по всем.
+     */
+    private boolean listedOnly;
 }
