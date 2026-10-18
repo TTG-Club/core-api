@@ -32,4 +32,10 @@ public class MagicItemQueryRequest extends AbstractQueryRequest
 
     @FilterParam
     private QueryFilter<String> curse;
+
+    /**
+     * True — отдавать и предметы, скрытые из списка раздела ({@code showInList = false}).
+     * Передаёт выбор предмета в листе персонажа: туда варианты вроде «Стрела +1» добавляют.
+     */
+    private boolean includeUnlisted;
 }
