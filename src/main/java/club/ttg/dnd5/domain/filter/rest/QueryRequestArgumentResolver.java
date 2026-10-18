@@ -104,6 +104,10 @@ public class QueryRequestArgumentResolver implements HandlerMethodArgumentResolv
             {
                 field.set(request, raw);
             }
+            else if (field.getType() == boolean.class)
+            {
+                field.setBoolean(request, FLAG_ON.equals(raw) || Boolean.parseBoolean(raw));
+            }
             else if (field.getType().isEnum())
             {
                 @SuppressWarnings("unchecked")
