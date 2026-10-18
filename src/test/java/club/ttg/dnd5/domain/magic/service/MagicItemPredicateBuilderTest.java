@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -119,24 +118,12 @@ class MagicItemPredicateBuilderTest
     }
 
     @Test
-    @DisplayName("только для списка: скрытые из списка предметы не отдаются")
-    void listedOnlySkipsItemsHiddenFromList()
-    {
-        MagicItemQueryRequest request = requestWithCategoryAndRarity();
-        request.setListedOnly(true);
-
-        String sql = sql(request);
-
-        assertTrue(sql.contains("showInList = ?") || sql.contains("showInList = true"), sql);
-        PredicateSql.assertOrStaysInsideParentheses(sql);
-    }
-
-    @Test
-    @DisplayName("без признака списка: поиск отдаёт и скрытые из списка предметы")
-    void searchWithoutListedOnlyKeepsHiddenFromList()
+    @DisplayName("скрытые из списка предметы не находятся поиском")
+    void searchSkipsItemsHiddenFromList()
     {
         String sql = sql(requestWithCategoryAndRarity());
 
-        assertFalse(sql.contains("showInList"), sql);
+        assertTrue(sql.contains("showInList = ?") || sql.contains("showInList = true"), sql);
+        PredicateSql.assertOrStaysInsideParentheses(sql);
     }
 }
