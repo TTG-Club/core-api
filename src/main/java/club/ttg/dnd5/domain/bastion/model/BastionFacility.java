@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.model;
 
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.source.model.Source;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -91,10 +92,13 @@ public class BastionFacility extends NamedEntity {
     @Column(columnDefinition = "jsonb")
     private List<FacilityChoice> choices;
 
-    /** Шаблоны готовой комнаты на плане бастиона, по одному на пространство. */
+    /**
+     * Предметы интерьера, которые бывают в сооружении: ими редактор плана случайно обставляет
+     * готовую комнату. Пусто — набор по умолчанию для вида сооружения.
+     */
     @Type(JsonType.class)
-    @Column(name = "room_templates", columnDefinition = "jsonb")
-    private List<FacilityRoomTemplate> roomTemplates;
+    @Column(name = "furniture", columnDefinition = "jsonb")
+    private List<PlanDocument.FurnitureKind> furniture;
 
     @ManyToOne
     @JoinColumn(name = "source")
