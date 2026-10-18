@@ -23,9 +23,12 @@ public class MagicItemPredicateBuilder
     {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(Q.isHiddenEntity.isFalse());
-        // Скрытые из списка варианты («Стрела +1») не находятся ни списком, ни поиском, ни
-        // выбором предмета: они открываются только по ссылке.
-        builder.and(Q.showInList.isTrue());
+        // Скрытые из списка варианты («Стрела +1») не находятся ни списком, ни поиском раздела:
+        // они открываются по ссылке и находятся только выбором предмета в листе персонажа.
+        if (!request.isIncludeUnlisted())
+        {
+            builder.and(Q.showInList.isTrue());
+        }
         builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
         PredicateUtils.applyFilterEnum(builder, request.getCategory(), CATEGORY_PATH, MagicItemCategory.class);
         PredicateUtils.applyFilterEnum(builder, request.getTheme(), THEME_PATH, MagicItemTheme.class);
