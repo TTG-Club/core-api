@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.magic.rest.dto;
 
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.filter.rest.FilterParam;
+import club.ttg.dnd5.domain.filter.rest.QueryParam;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
@@ -37,5 +38,6 @@ public class MagicItemQueryRequest extends AbstractQueryRequest
      * True — отдавать и предметы, скрытые из списка раздела ({@code showInList = false}).
      * Передаёт выбор предмета в листе персонажа: туда варианты вроде «Стрела +1» добавляют.
      */
+    @QueryParam
     private boolean includeUnlisted;
 }
