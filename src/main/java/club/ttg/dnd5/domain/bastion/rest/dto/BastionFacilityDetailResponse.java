@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityEnlargement;
 import club.ttg.dnd5.domain.bastion.model.FacilityFeature;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
+import club.ttg.dnd5.domain.bastion.model.FacilityRoomTemplate;
 import club.ttg.dnd5.domain.common.rest.dto.BaseResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -29,6 +30,12 @@ public class BastionFacilityDetailResponse extends BaseResponse {
     private Integer hirelings;
     @Schema(description = "Можно ли иметь больше одного такого сооружения")
     private Boolean repeatable;
+    @Schema(description = "Барак: размещает защитников бастиона")
+    private Boolean barrack;
+    @Schema(description = "Зверинец: в вольерах живут существа-защитники")
+    private Boolean menagerie;
+    @Schema(description = "Конюшня: в ней живут верховые животные, «Торговать» покупает и продаёт их")
+    private Boolean stable;
     @Schema(description = "Приказы сооружения")
     private List<BastionLabel> orders;
     @Schema(description = "Варианты исполнения приказов")
@@ -39,4 +46,6 @@ public class BastionFacilityDetailResponse extends BaseResponse {
     private List<FacilityFeature> features;
     @Schema(description = "Выборы игрока для сооружения")
     private List<FacilityChoice> choices;
+    @Schema(description = "Шаблоны готовой комнаты на плане бастиона, по одному на пространство")
+    private List<FacilityRoomTemplate> roomTemplates;
 }

@@ -2,15 +2,19 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
+import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityEnlargement;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerEntry.Reason;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionOrder.OrderStatus;
-import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
-import club.ttg.dnd5.domain.bastion.player.client.GameRole;
+import club.ttg.dnd5.domain.bastion.player.event.BastionEventService;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEventRepository;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
+import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
+import club.ttg.dnd5.domain.bastion.player.model.StableAnimal;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
@@ -18,11 +22,16 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
+import club.ttg.dnd5.domain.bastion.player.service.BastionViewer;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionAccess;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionResponseMapper;
 import club.ttg.dnd5.domain.bastion.player.service.PlayerBastionSetupRules;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
+import club.ttg.dnd5.domain.common.model.EntityRef;
+import club.ttg.dnd5.domain.magic.model.MagicItem;
+import club.ttg.dnd5.domain.magic.repository.MagicItemRepository;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.persistence.EntityManager;
@@ -46,7 +55,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Жизнь запущенного бастиона: приказы, ходы, казна, стройка и расширение.
+ * Жизнь запущенного бастиона: приказы, ходы, казна, стройка, расширение и события.
  *
  * <p>Ход бастиона — 7 игровых дней. Сроки из справочника переводятся в ходы с
  * округлением вверх ({@link #turnsFor}): 7 дней — 1 ход, 20 дней — 3 хода.</p>
@@ -74,6 +83,10 @@ public class PlayerBastionActivityService {
     private final PlayerBastionAccess access;
     private final PlayerBastionResponseMapper mapper;
     private final EntityManager entityManager;
+    private final FacilityChoiceOptions choiceOptions;
+    private final BastionEventService events;
+    private final PlayerBastionEventRepository eventRepository;
+    private final MagicItemRepository magicItemRepository;
 
     /** Сколько ходов занимает дело на столько-то дней; меньше хода не бывает. */
     public static int turnsFor(Integer days) {
@@ -89,8 +102,8 @@ public class PlayerBastionActivityService {
     public ActivityResponse findActivity(UUID bastionId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
-        boolean master = membership.role() == GameRole.MASTER;
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        boolean master = viewer.manager();
 
         Map<UUID, PlayerBastionFacility> facilities = facilitiesById(bastion);
         Map<String, BastionFacility> reference = loadReference(facilities.values().stream()
@@ -108,6 +121,7 @@ public class PlayerBastionActivityService {
                                 .orElse(null),
                         new BastionLabel(order.getOrder().name(), order.getOrder().getName()),
                         order.getOptionName(),
+                        order.getItemUrl() == null ? null : new EntityRef(order.getItemUrl(), order.getItemName()),
                         order.getCostGp(),
                         order.getGivenOnTurn(),
                         order.getCompletesOnTurn(),
@@ -118,6 +132,10 @@ public class PlayerBastionActivityService {
                         order.getStatus() == OrderStatus.ACTIVE
                                 && order.getGivenOnTurn() == bastion.getTurn()
                                 && bastion.getStatus() == PlayerBastionStatus.ACTIVE
+                                && (master || order.getGivenBy().equals(userId)),
+                        order.getStatus() == OrderStatus.COMPLETED
+                                && !order.getOrder().isBastionWide()
+                                && bastion.getStatus() != PlayerBastionStatus.ARCHIVED
                                 && (master || order.getGivenBy().equals(userId))))
                 .toList();
 
@@ -132,7 +150,37 @@ public class PlayerBastionActivityService {
                         entry.getNote(), entry.getCreatedBy(), entry.getCreatedAt()))
                 .toList();
 
-        return new ActivityResponse(orders, turns, ledger);
+        Map<UUID, PlayerBastionMember> members = bastion.getMembers().stream()
+                .collect(Collectors.toMap(PlayerBastionMember::getId, Function.identity()));
+        boolean active = bastion.getStatus() == PlayerBastionStatus.ACTIVE;
+        List<ActivityResponse.Event> bastionEvents = eventRepository
+                .findAllByBastionIdOrderByCreatedAtDesc(bastionId, page)
+                .stream()
+                .map(event -> {
+                    PlayerBastionMember member = members.get(event.getMemberId());
+                    boolean canDecide = active && event.isPending()
+                            && (master || member != null && member.getUserId().equals(userId));
+                    return new ActivityResponse.Event(
+                            event.getId(),
+                            event.getMemberId(),
+                            event.getCharacterName(),
+                            event.getTurn(),
+                            event.getRoll(),
+                            new BastionLabel(event.getType().name(), event.getType().getName()),
+                            event.getStatus(),
+                            event.getSummary(),
+                            event.getDetails(),
+                            event.getDecision(),
+                            event.getNote(),
+                            event.getParentId(),
+                            event.isPending() ? BastionEventService.decisions(event.getType()) : List.of(),
+                            canDecide,
+                            canDecide ? events.defenderCount(bastion, member, reference) : 0,
+                            event.getNoteUrl());
+                })
+                .toList();
+
+        return new ActivityResponse(orders, turns, ledger, bastionEvents);
     }
 
     // ------------------------------------------------------------------ приказы
@@ -141,8 +189,8 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse giveOrder(UUID bastionId, ActivityRequests.GiveOrder request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
-        boolean master = membership.role() == GameRole.MASTER;
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        boolean master = viewer.manager();
         requireActive(bastion);
 
         List<PlayerBastionOrder> givenThisTurn = orderRepository.findAllByBastionIdAndGivenOnTurnAndStatusNot(
@@ -159,9 +207,11 @@ public class PlayerBastionActivityService {
             if (!master && !isMember(bastion, userId)) {
                 throw forbidden("«Обслуживать» отдают мастер и игроки с доступом к бастиону");
             }
-            if (!givenThisTurn.isEmpty()) {
-                throw conflict("В этот ход уже отданы приказы: «Обслуживать» отдаётся вместо них");
+            if (givenThisTurn.stream().anyMatch(item -> item.getOrder().isBastionWide())) {
+                throw conflict("В этот ход бастион уже обслуживают");
             }
+            cancelForMaintain(bastion, userId, master, Boolean.TRUE.equals(request.cancelActive()));
+            // События бастиона бросаются, когда мастер делает ход, а не сразу после приказа
             order.setCompletesOnTurn(bastion.getTurn() + 1);
         } else {
             PlayerBastionFacility facility = findFacility(bastion, request.facilityId());
@@ -171,6 +221,12 @@ public class PlayerBastionActivityService {
             }
             BastionFacility reference = referenceOf(facility);
             validateFacilityOrder(facility, reference, request.order());
+            if (PlayerBastionResponseMapper.isUnavailable(facility)
+                    && facility.getUnavailableOnTurn() == bastion.getTurn()) {
+                throw conflict("«%s» не работает в этот ход: %s".formatted(reference.getName(),
+                        Optional.ofNullable(facility.getUnavailableReason()).orElse("событие бастиона")
+                                .toLowerCase()));
+            }
             boolean busy = orderRepository.findAllByBastionIdAndStatus(bastionId, OrderStatus.ACTIVE).stream()
                     .anyMatch(item -> facility.getId().equals(item.getFacilityId()));
             if (busy) {
@@ -187,17 +243,168 @@ public class PlayerBastionActivityService {
                         throw badRequest("Вариант «%s» доступен с %d уровня".formatted(request.optionName(), minLevel));
                     });
 
-            long cost = option.map(FacilityOrderOption::getCost).orElse(0);
+            boolean recruitDefenders = isRecruitDefenders(reference, request.order());
+            if (recruitDefenders && facility.getDefenders() >= BastionRules.barrackCapacity(facility.getSpace())) {
+                throw conflict("В «%s» больше не помещается защитников".formatted(reference.getName()));
+            }
+            MenagerieCreature creature = recruitCreature(facility, reference, request, master);
+            StableAnimal animal = tradeAnimal(facility, reference, request, master);
+            boolean sale = animal != null && trimToNull(request.trade().sellAnimalId()) != null;
+            // Защитников барак вербует бесплатно, какую бы цену ни указал вариант; существо
+            // зверинца стоит столько, сколько указано в таблице зверинца; покупка в конюшне —
+            // обычную цену животного, продажа ничего не стоит
+            long cost = recruitDefenders ? 0
+                    : creature != null ? creature.getCost()
+                    : animal != null ? (sale ? 0 : animal.getCost())
+                    : option.map(FacilityOrderOption::getCost).orElse(0);
             order.setFacilityId(facility.getId());
-            order.setOptionName(option.map(FacilityOrderOption::getName).orElse(null));
+            order.setOptionName(creature != null
+                    ? creature.getName()
+                    : animal != null ? "%s «%s»".formatted(sale ? "продажа" : "покупка", animal.getName())
+                    : option.map(FacilityOrderOption::getName).orElse(null));
+            order.setCreature(creature);
+            order.setAnimal(animal);
+            order.setAnimalSale(sale);
+            Optional<PlayerBastionResponse.CraftableItem> item = craftItem(facility, reference, request);
+            item.ifPresent(craft -> {
+                order.setItemUrl(craft.url());
+                order.setItemName(craft.name());
+            });
+            // Срок изготовления предмета считается по его цене и наёмникам, а не по варианту
+            Integer days = creature != null
+                    ? Integer.valueOf(BastionRules.MENAGERIE_RECRUIT_DAYS)
+                    : animal != null ? Integer.valueOf(BastionRules.STABLE_TRADE_DAYS)
+                    : item.map(PlayerBastionResponse.CraftableItem::days)
+                            .or(() -> option.map(FacilityOrderOption::getDays))
+                            .orElse(null);
             order.setCostGp(cost);
-            order.setCompletesOnTurn(bastion.getTurn() + turnsFor(option.map(FacilityOrderOption::getDays).orElse(null)));
+            order.setCompletesOnTurn(bastion.getTurn() + turnsFor(days));
             charge(bastion, cost, Reason.ORDER, "Приказ «%s» — %s".formatted(request.order().getName(),
                     reference.getName()), userId);
         }
 
         orderRepository.save(order);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Выводит существо зверинца из защитников бастиона или возвращает его туда.
+     */
+    @Transactional
+    public PlayerBastionResponse setCreatureDefender(UUID bastionId, UUID facilityId, String creatureId,
+                                                     ActivityRequests.CreatureDefender request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Существами зверинца распоряжается игрок этого персонажа или мастер");
+        findCreature(facility, creatureId).setDefender(request.defender());
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /** Убирает существо из зверинца — например, оно погибло, защищая бастион. */
+    @Transactional
+    public PlayerBastionResponse removeCreature(UUID bastionId, UUID facilityId, String creatureId) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Существами зверинца распоряжается игрок этого персонажа или мастер");
+        facility.getCreatures().remove(findCreature(facility, creatureId));
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /** Убирает животное из конюшни — например, персонаж забрал его в путешествие или оно погибло. */
+    @Transactional
+    public PlayerBastionResponse removeAnimal(UUID bastionId, UUID facilityId, String animalId) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Животными конюшни распоряжается игрок этого персонажа или мастер");
+        facility.getAnimals().remove(findAnimal(facility, animalId));
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    private static MenagerieCreature findCreature(PlayerBastionFacility facility, String creatureId) {
+        return facility.getCreatures().stream()
+                .filter(creature -> creatureId.equals(creature.getId()))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Существо %s не найдено".formatted(creatureId)));
+    }
+
+    /** Решение по событию бастиона: игрок персонажа, за которого бросали, или мастер. */
+    @Transactional
+    public PlayerBastionResponse decideEvent(UUID bastionId, UUID eventId, ActivityRequests.EventDecision request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        PlayerBastionEvent event = eventRepository.findById(eventId)
+                .filter(item -> item.getBastionId().equals(bastionId))
+                .orElseThrow(() -> new EntityNotFoundException("Событие %s не найдено".formatted(eventId)));
+        boolean owner = bastion.getMembers().stream()
+                .anyMatch(member -> member.getId().equals(event.getMemberId()) && member.getUserId().equals(userId));
+        if (!viewer.manager() && !owner) {
+            throw forbidden("Решение по событию принимает игрок этого персонажа или мастер");
+        }
+        String itemUrl = trimToNull(request.itemUrl());
+        String note = itemUrl == null ? request.note() : magicItemRepository.findById(itemUrl)
+                .map(MagicItem::getName)
+                .orElseThrow(() -> badRequest("Магический предмет %s не найден".formatted(itemUrl)));
+        events.decide(bastion, event, request.decision(), request.defenders(), note,
+                allReference(bastion), userId);
+        if (event.getNote() != null) {
+            event.setNoteUrl(itemUrl);
+        }
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /** Отсылает гостя бастиона или находит беженцам новый дом. */
+    @Transactional
+    public PlayerBastionResponse dismissGuest(UUID bastionId, String guestId) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        requireActive(bastion);
+        if (!viewer.manager() && !isMember(bastion, userId)) {
+            throw forbidden("Гостей отсылают мастер и игроки бастиона");
+        }
+        if (!bastion.getGuests().removeIf(guest -> guestId.equals(guest.getId()))) {
+            throw new EntityNotFoundException("Гость %s не найден".formatted(guestId));
+        }
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Итог выполненного приказа записывают после хода: мастер или тот, кто отдал приказ.
+     */
+    @Transactional
+    public PlayerBastionResponse writeOrderResult(UUID bastionId, UUID orderId, ActivityRequests.OrderResult request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        PlayerBastionAccess.requireNotArchived(bastion);
+
+        PlayerBastionOrder order = orderRepository.findById(orderId)
+                .filter(item -> item.getBastionId().equals(bastionId))
+                .orElseThrow(() -> new EntityNotFoundException("Приказ %s не найден".formatted(orderId)));
+        if (!viewer.manager() && !order.getGivenBy().equals(userId)) {
+            throw forbidden("Итог приказа записывает тот, кто его отдал, или мастер");
+        }
+        if (order.getStatus() != OrderStatus.COMPLETED || order.getOrder().isBastionWide()) {
+            throw conflict("Итог записывается у выполненного приказа сооружению");
+        }
+
+        order.setResult(trimToNull(request.result()));
+        orderRepository.save(order);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /** Отмена приказа в тот же ход — цена возвращается в казну. */
@@ -205,27 +412,50 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse cancelOrder(UUID bastionId, UUID orderId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
 
         PlayerBastionOrder order = orderRepository.findById(orderId)
                 .filter(item -> item.getBastionId().equals(bastionId))
                 .orElseThrow(() -> new EntityNotFoundException("Приказ %s не найден".formatted(orderId)));
-        if (membership.role() != GameRole.MASTER && !order.getGivenBy().equals(userId)) {
+        if (!viewer.manager() && !order.getGivenBy().equals(userId)) {
             throw forbidden("Отменить приказ может тот, кто его отдал, или мастер");
         }
         if (order.getStatus() != OrderStatus.ACTIVE || order.getGivenOnTurn() != bastion.getTurn()) {
             throw conflict("Отменить можно только приказ, отданный в текущий ход");
         }
+        cancel(bastion, order, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
 
+    /**
+     * «Обслуживать» отдаётся вместо остальных приказов: те, что сооружения ещё выполняют,
+     * отменяются, если отдающий это подтвердил. Чужие приказы снимает только мастер.
+     */
+    private void cancelForMaintain(PlayerBastion bastion, UUID userId, boolean master, boolean confirmed) {
+        List<PlayerBastionOrder> active = orderRepository.findAllByBastionIdAndStatus(bastion.getId(),
+                OrderStatus.ACTIVE);
+        if (active.isEmpty()) {
+            return;
+        }
+        if (!confirmed) {
+            throw conflict("Сооружения ещё выполняют приказы: «Обслуживать» отменит их");
+        }
+        if (!master && active.stream().anyMatch(item -> !item.getGivenBy().equals(userId))) {
+            throw forbidden("Чужие приказы отменит мастер или тот, кто их отдал");
+        }
+        active.forEach(item -> cancel(bastion, item, userId));
+    }
+
+    /** Отменяет приказ; цена приказа, отданного в этот ход, возвращается в казну. */
+    private void cancel(PlayerBastion bastion, PlayerBastionOrder order, UUID userId) {
         order.setStatus(OrderStatus.CANCELLED);
-        if (order.getCostGp() > 0) {
+        if (order.getCostGp() > 0 && order.getGivenOnTurn() == bastion.getTurn()) {
             bastion.setTreasuryGp(bastion.getTreasuryGp() + order.getCostGp());
             record(bastion, order.getCostGp(), Reason.REFUND,
                     "Отмена приказа «%s»".formatted(order.getOrder().getName()), userId);
         }
         orderRepository.save(order);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
     }
 
     // ------------------------------------------------------------------ ход
@@ -239,7 +469,7 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse performTurn(UUID bastionId, ActivityRequests.Turn request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         requireActive(bastion);
 
         int next = bastion.getTurn() + 1;
@@ -265,10 +495,25 @@ public class PlayerBastionActivityService {
             }
         }
 
+        if (bastion.getDefenseWallSquaresBuilding() > 0
+                && bastion.getDefenseWallReadyOnTurn() != null && bastion.getDefenseWallReadyOnTurn() <= next) {
+            summary.add("Достроена защитная стена: %d бл., всего %d".formatted(bastion.getDefenseWallSquaresBuilding(),
+                    bastion.getDefenseWallSquares() + bastion.getDefenseWallSquaresBuilding()));
+            bastion.setDefenseWallSquares(bastion.getDefenseWallSquares() + bastion.getDefenseWallSquaresBuilding());
+            bastion.setDefenseWallSquaresBuilding(0);
+            bastion.setDefenseWallReadyOnTurn(null);
+        }
+
         List<PlayerBastionOrder> givenThisTurn = orderRepository.findAllByBastionIdAndGivenOnTurnAndStatusNot(
                 bastionId, bastion.getTurn(), OrderStatus.CANCELLED);
         boolean maintain = givenThisTurn.isEmpty()
                 || givenThisTurn.stream().anyMatch(order -> order.getOrder().isBastionWide());
+
+        // Ход без приказов — тоже обслуживание: событие бросается, если его ещё не было
+        if (maintain && !events.rolledOnTurn(bastion, bastion.getTurn())) {
+            events.rollForMaintain(bastion, reference, userId);
+        }
+        summary.addAll(events.departures(bastion, next));
 
         Map<UUID, String> results = Optional.ofNullable(request.results()).orElse(Map.of());
         for (PlayerBastionOrder order : orderRepository.findAllByBastionIdAndStatus(bastionId, OrderStatus.ACTIVE)) {
@@ -277,12 +522,29 @@ public class PlayerBastionActivityService {
             }
             order.setStatus(OrderStatus.COMPLETED);
             order.setResult(trimToNull(results.get(order.getId())));
-            String target = Optional.ofNullable(order.getFacilityId())
-                    .map(facilities::get)
+            Optional<PlayerBastionFacility> orderFacility = Optional.ofNullable(order.getFacilityId())
+                    .map(facilities::get);
+            String target = orderFacility
                     .map(facility -> facilityName(facility, reference))
                     .orElse("бастион");
-            summary.add("Выполнен приказ «%s» — %s%s%s".formatted(order.getOrder().getName(), target,
-                    Optional.ofNullable(order.getOptionName()).map(option -> ": " + option).orElse(""),
+            String recruited = orderFacility
+                    .filter(facility -> isRecruitDefenders(reference.get(facility.getFacilityUrl()), order.getOrder()))
+                    .map(PlayerBastionActivityService::recruitDefenders)
+                    .or(() -> orderFacility
+                            .filter(facility -> order.getCreature() != null)
+                            .map(facility -> settleCreature(facility, order.getCreature())))
+                    .or(() -> orderFacility
+                            .filter(facility -> order.getAnimal() != null)
+                            .map(facility -> order.isAnimalSale()
+                                    ? sellAnimal(bastion, facility, order.getAnimal(), userId)
+                                    : settleAnimal(facility, order.getAnimal(), next)))
+                    .orElse("");
+            summary.add("Выполнен приказ «%s» — %s%s%s%s".formatted(order.getOrder().getName(), target,
+                    Optional.ofNullable(order.getOptionName())
+                            .filter(option -> order.getCreature() == null && order.getAnimal() == null)
+                            .map(option -> ": " + option)
+                            .orElse(""),
+                    recruited,
                     Optional.ofNullable(order.getResult()).map(result -> ". " + result).orElse("")));
             orderRepository.save(order);
         }
@@ -297,7 +559,7 @@ public class PlayerBastionActivityService {
         turnRepository.save(turn);
 
         bastion.setTurn(next);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ казна
@@ -306,7 +568,7 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse adjustTreasury(UUID bastionId, ActivityRequests.Treasury request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         PlayerBastionAccess.requireNotArchived(bastion);
 
         long amount = request.amountGp();
@@ -318,7 +580,7 @@ public class PlayerBastionActivityService {
         }
         bastion.setTreasuryGp(bastion.getTreasuryGp() + amount);
         record(bastion, amount, amount > 0 ? Reason.DEPOSIT : Reason.WITHDRAWAL, trimToNull(request.note()), userId);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ стройка
@@ -328,10 +590,10 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse buildBasic(UUID bastionId, UUID memberId, ActivityRequests.BuildBasic request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
         PlayerBastionMember member = findMember(bastion, memberId);
-        requireOwnerOrMaster(member, userId, membership.role() == GameRole.MASTER,
+        requireOwnerOrMaster(member, userId, viewer.manager(),
                 "Строит сооружения игрок этого персонажа или мастер");
 
         BastionFacility reference = loadReference(Stream.of(request.facilityUrl())).get(request.facilityUrl());
@@ -351,7 +613,35 @@ public class PlayerBastionActivityService {
         facility.setReadyOnTurn(bastion.getTurn() + turnsFor(space.getBuildDays()));
         member.getFacilities().add(facility);
 
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Блоки защитной стены: каждый 5-футовый квадрат стоит 250 зм и строится 10 дней, блоки
+     * строятся друг за другом. Строит тот, кто может править бастион; пока партия в стройке,
+     * новую не начинают.
+     */
+    @Transactional
+    public PlayerBastionResponse buildWall(UUID bastionId, ActivityRequests.BuildWall request) {
+        UUID userId = access.currentUserId();
+        PlayerBastion bastion = access.findBastion(bastionId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
+        if (!viewer.canEdit()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Строит стены тот, кто может править бастион");
+        }
+        requireActive(bastion);
+        if (bastion.getDefenseWallSquaresBuilding() > 0) {
+            throw conflict("Стена уже строится — новые блоки можно заказать, когда она достроится к ходу %d"
+                    .formatted(bastion.getDefenseWallReadyOnTurn()));
+        }
+
+        int squares = request.squares();
+        charge(bastion, (long) squares * BastionRules.DEFENSIVE_WALL_COST_PER_SQUARE, Reason.WALL,
+                "Защитная стена: %d бл.".formatted(squares), userId);
+        bastion.setDefenseWallSquaresBuilding(squares);
+        bastion.setDefenseWallReadyOnTurn(bastion.getTurn()
+                + turnsFor(squares * BastionRules.DEFENSIVE_WALL_DAYS_PER_SQUARE));
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /**
@@ -362,10 +652,10 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse enlarge(UUID bastionId, UUID facilityId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
         PlayerBastionFacility facility = findFacility(bastion, facilityId);
-        requireOwnerOrMaster(facility, userId, membership.role() == GameRole.MASTER,
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
                 "Расширяет сооружение игрок этого персонажа или мастер");
         if (!facility.isReady() || facility.getPendingSpace() != null) {
             throw conflict("Сооружение ещё строится или уже расширяется");
@@ -395,7 +685,7 @@ public class PlayerBastionActivityService {
         charge(bastion, cost, Reason.ENLARGE, "Расширение: %s".formatted(reference.getName()), userId);
         facility.setPendingSpace(target);
         facility.setPendingReadyOnTurn(bastion.getTurn() + turnsFor(days));
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /** Новое специализированное сооружение, полученное с уровнем, — сразу и бесплатно. */
@@ -403,10 +693,10 @@ public class PlayerBastionActivityService {
     public PlayerBastionResponse addSpecial(UUID bastionId, UUID memberId, ActivityRequests.AddSpecial request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         requireActive(bastion);
         PlayerBastionMember member = findMember(bastion, memberId);
-        requireOwnerOrMaster(member, userId, membership.role() == GameRole.MASTER,
+        requireOwnerOrMaster(member, userId, viewer.manager(),
                 "Сооружения персонажа выбирает его игрок или мастер");
 
         Map<String, BastionFacility> reference = loadReference(Stream.concat(
@@ -419,7 +709,7 @@ public class PlayerBastionActivityService {
                 .map(facility -> new FacilitySetupRequest.Special(facility.getFacilityUrl(), facility.getChoices()))
                 .toList());
         special.add(new FacilitySetupRequest.Special(request.facilityUrl(), request.choices()));
-        PlayerBastionSetupRules.validateSpecial(member.getCharacterLevel(), special, reference);
+        PlayerBastionSetupRules.validateSpecial(member.getCharacterLevel(), special, reference, choiceOptions.resolver());
 
         BastionFacility added = reference.get(request.facilityUrl());
         PlayerBastionFacility facility = new PlayerBastionFacility();
@@ -428,24 +718,33 @@ public class PlayerBastionActivityService {
         facility.setSpace(added.getSpace());
         facility.setChoices(new ArrayList<>(Optional.ofNullable(request.choices()).orElse(List.of())));
         facility.setPrerequisiteConfirmed(added.getPrerequisite() == null);
+        if (PlayerBastionResponseMapper.isStable(added)) {
+            facility.setAnimals(StableAnimal.starting(bastion.getTurn()));
+        }
         member.getFacilities().add(facility);
 
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /**
-     * Мастер убирает сооружение — так делается замена специализированного сооружения при
-     * повышении уровня. Незавершённые приказы сооружения отменяются без возврата денег:
-     * работа уже шла. Клетки сооружения исчезают с плана сами.
+     * Убирает сооружение. Пока бастион в закладке, ошибочно выбранное сооружение убирает игрок
+     * этого персонажа или тот, кто ведёт бастион. В запущенном бастионе — только тот, кто ведёт:
+     * так делается замена специализированного сооружения при повышении уровня. Незавершённые
+     * приказы сооружения отменяются без возврата денег: работа уже шла. Клетки сооружения
+     * исчезают с плана сами.
      */
     @Transactional
     public PlayerBastionResponse removeFacility(UUID bastionId, UUID facilityId) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
         PlayerBastionAccess.requireNotArchived(bastion);
+        BastionViewer viewer = bastion.getStatus() == PlayerBastionStatus.SETUP
+                ? access.requireViewer(bastion, userId)
+                : access.requireManager(bastion, userId);
 
         PlayerBastionFacility facility = findFacility(bastion, facilityId);
+        requireOwnerOrMaster(facility, userId, viewer.manager(),
+                "Сооружение убирает игрок этого персонажа или тот, кто ведёт бастион");
         orderRepository.findAllByBastionIdAndStatus(bastionId, OrderStatus.ACTIVE).stream()
                 .filter(order -> facilityId.equals(order.getFacilityId()))
                 .forEach(order -> {
@@ -453,7 +752,7 @@ public class PlayerBastionActivityService {
                     orderRepository.save(order);
                 });
         facility.getMember().getFacilities().remove(facility);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     // ------------------------------------------------------------------ помощники
@@ -468,6 +767,227 @@ public class PlayerBastionActivityService {
         if (!Optional.ofNullable(reference.getOrders()).orElse(List.of()).contains(order)) {
             throw badRequest("«%s» не принимает приказ «%s»".formatted(reference.getName(), order.getName()));
         }
+    }
+
+    /** Приказ «Завербовать» бараку: нанимает защитников бастиона. */
+    private static boolean isRecruitDefenders(BastionFacility reference, BastionOrder order) {
+        return order == BastionOrder.RECRUIT && PlayerBastionResponseMapper.isBarrack(reference);
+    }
+
+    /**
+     * Барак нанимает защитников, сколько поместится.
+     *
+     * @return приписка к записи хода: сколько нанято и сколько стало
+     */
+    private static String recruitDefenders(PlayerBastionFacility barrack) {
+        int capacity = BastionRules.barrackCapacity(barrack.getSpace());
+        int hired = Math.max(0, Math.min(BastionRules.BARRACK_DEFENDERS_PER_RECRUIT,
+                capacity - barrack.getDefenders()));
+        barrack.setDefenders(barrack.getDefenders() + hired);
+        return ", защитников +%d (%d из %d)".formatted(hired, barrack.getDefenders(), capacity);
+    }
+
+    /** Приказ «Завербовать» зверинцу: в вольеры добавляется существо. */
+    private static boolean isRecruitCreature(BastionFacility reference, BastionOrder order) {
+        return order == BastionOrder.RECRUIT && PlayerBastionResponseMapper.isMenagerie(reference);
+    }
+
+    /**
+     * Существо, которое зверинец вербует по приказу: из таблицы зверинца или, если приказ
+     * отдаёт Мастер, любое другое с ценой по показателю опасности. В вольерах должно
+     * хватать места.
+     *
+     * @return существо; {@code null}, если приказ не вербует существо
+     */
+    private static MenagerieCreature recruitCreature(PlayerBastionFacility facility,
+                                                     BastionFacility reference,
+                                                     ActivityRequests.GiveOrder request,
+                                                     boolean master) {
+        ActivityRequests.RecruitCreature wanted = request.creature();
+        if (!isRecruitCreature(reference, request.order())) {
+            if (wanted != null) {
+                throw badRequest("Существо вербует только зверинец");
+            }
+            return null;
+        }
+        if (wanted == null) {
+            throw badRequest("Выберите существо для зверинца");
+        }
+
+        MenagerieCreature creature = new MenagerieCreature();
+        creature.setId(UUID.randomUUID().toString());
+        if (wanted.beast() != null) {
+            creature.setBeast(wanted.beast());
+            creature.setName(wanted.beast().getName());
+            creature.setSize(wanted.beast().getSize());
+            creature.setCost(wanted.beast().getCost());
+        } else {
+            if (!master) {
+                throw forbidden("Существо не из таблицы зверинца добавляется с согласия Мастера: приказ отдаёт Мастер");
+            }
+            String name = trimToNull(wanted.name());
+            if (name == null) {
+                throw badRequest("Укажите, какое существо вербовать");
+            }
+            if (BastionRules.menagerieSpace(wanted.size()) == 0) {
+                throw badRequest("В вольерах держат существ не больше большого размера");
+            }
+            creature.setName(name);
+            creature.setSize(wanted.size());
+            creature.setCost(BastionRules.menagerieChallengeCost(wanted.challenge())
+                    .orElseThrow(() -> badRequest("Зверинец принимает существ с ПО от 0 до 3")));
+            creature.setChallenge(wanted.challenge().trim());
+        }
+
+        int occupied = PlayerBastionResponseMapper.menagerieOccupied(facility);
+        if (occupied + BastionRules.menagerieSpace(creature.getSize()) > BastionRules.MENAGERIE_CAPACITY) {
+            throw conflict("В вольерах «%s» нет места для существа «%s»".formatted(reference.getName(),
+                    creature.getName()));
+        }
+        return creature;
+    }
+
+    /**
+     * Завербованное существо поселяется в вольерах, если там ещё есть место.
+     *
+     * @return приписка к записи хода
+     */
+    private static String settleCreature(PlayerBastionFacility menagerie, MenagerieCreature creature) {
+        int space = BastionRules.menagerieSpace(creature.getSize());
+        if (PlayerBastionResponseMapper.menagerieOccupied(menagerie) + space > BastionRules.MENAGERIE_CAPACITY) {
+            return ": %s — в вольерах нет места".formatted(creature.getName());
+        }
+        menagerie.getCreatures().add(creature);
+        return ": %s поселяется в вольерах".formatted(creature.getName());
+    }
+
+    /** Приказ «Торговать» конюшне: покупка или продажа животного. */
+    private static boolean isStableTrade(BastionFacility reference, BastionOrder order) {
+        return order == BastionOrder.TRADE && PlayerBastionResponseMapper.isStable(reference);
+    }
+
+    /**
+     * Животное, которое конюшня покупает или продаёт по приказу. Продают животное, которое
+     * живёт в конюшне; покупают из таблицы или, если приказ отдаёт Мастер, любое другое по
+     * указанной цене. Для покупки в конюшне должно хватать места.
+     *
+     * @return животное; {@code null}, если приказ не торгует животными
+     */
+    private static StableAnimal tradeAnimal(PlayerBastionFacility facility,
+                                            BastionFacility reference,
+                                            ActivityRequests.GiveOrder request,
+                                            boolean master) {
+        ActivityRequests.StableTrade wanted = request.trade();
+        if (!isStableTrade(reference, request.order())) {
+            if (wanted != null) {
+                throw badRequest("Животными торгует только конюшня");
+            }
+            return null;
+        }
+        if (wanted == null) {
+            throw badRequest("Выберите, какое животное купить или продать");
+        }
+
+        String sellId = trimToNull(wanted.sellAnimalId());
+        if (sellId != null) {
+            return findAnimal(facility, sellId);
+        }
+
+        StableAnimal animal;
+        if (wanted.kind() != null) {
+            animal = StableAnimal.of(wanted.kind(), 0);
+        } else {
+            if (!master) {
+                throw forbidden("Животное не из таблицы покупается с согласия Мастера: приказ отдаёт Мастер");
+            }
+            String name = trimToNull(wanted.name());
+            if (name == null) {
+                throw badRequest("Укажите, какое животное купить");
+            }
+            if (BastionRules.stableSpace(wanted.size()) == 0) {
+                throw badRequest("В конюшне держат животных не больше большого размера");
+            }
+            if (wanted.cost() == null) {
+                throw badRequest("Укажите цену животного");
+            }
+            animal = new StableAnimal();
+            animal.setId(UUID.randomUUID().toString());
+            animal.setName(name);
+            animal.setSize(wanted.size());
+            animal.setCost(wanted.cost());
+        }
+
+        if (PlayerBastionResponseMapper.stableOccupied(facility) + BastionRules.stableSpace(animal.getSize())
+                > BastionRules.STABLE_CAPACITY) {
+            throw conflict("В «%s» нет места для животного «%s»".formatted(reference.getName(), animal.getName()));
+        }
+        return animal;
+    }
+
+    private static StableAnimal findAnimal(PlayerBastionFacility facility, String animalId) {
+        return facility.getAnimals().stream()
+                .filter(animal -> animalId.equals(animal.getId()))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Животное %s не найдено".formatted(animalId)));
+    }
+
+    /**
+     * Купленное животное поселяется в конюшне, если там ещё есть место.
+     *
+     * @return приписка к записи хода
+     */
+    private static String settleAnimal(PlayerBastionFacility stable, StableAnimal animal, int turn) {
+        if (PlayerBastionResponseMapper.stableOccupied(stable) + BastionRules.stableSpace(animal.getSize())
+                > BastionRules.STABLE_CAPACITY) {
+            return ": %s — в конюшне нет места".formatted(animal.getName());
+        }
+        animal.setArrivedOnTurn(turn);
+        stable.getAnimals().add(animal);
+        return ": куплено животное «%s»".formatted(animal.getName());
+    }
+
+    /**
+     * Проданное животное уходит из конюшни, покупатель платит обычную цену с наценкой:
+     * 20%, с 13 уровня персонажа — 50%.
+     *
+     * @return приписка к записи хода
+     */
+    private String sellAnimal(PlayerBastion bastion, PlayerBastionFacility stable, StableAnimal sold, UUID userId) {
+        Optional<StableAnimal> animal = stable.getAnimals().stream()
+                .filter(item -> item.getId().equals(sold.getId()))
+                .findFirst();
+        if (animal.isEmpty()) {
+            return ": животного «%s» уже нет в конюшне".formatted(sold.getName());
+        }
+        stable.getAnimals().remove(animal.get());
+        long price = BastionRules.stableSalePrice(animal.get().getCost(), stable.getMember().getCharacterLevel());
+        bastion.setTreasuryGp(bastion.getTreasuryGp() + price);
+        record(bastion, price, Reason.SALE, "Продажа: %s".formatted(animal.get().getName()), userId);
+        return ": продано животное «%s» за %d зм".formatted(animal.get().getName(), price);
+    }
+
+    /**
+     * Предмет, который мастерская изготовит по приказу: только из тех, что создаются
+     * выбранными в ней инструментами.
+     */
+    private Optional<PlayerBastionResponse.CraftableItem> craftItem(PlayerBastionFacility facility,
+                                                                    BastionFacility reference,
+                                                                    ActivityRequests.GiveOrder request) {
+        String url = trimToNull(request.itemUrl());
+        if (url == null) {
+            return Optional.empty();
+        }
+        if (request.order() != BastionOrder.CRAFT) {
+            throw badRequest("Предмет выбирается только для приказа «%s»".formatted(BastionOrder.CRAFT.getName()));
+        }
+        PlayerBastionResponse.CraftableItem item = Optional.ofNullable(mapper.craftableItems(facility, reference))
+                .orElse(List.of())
+                .stream()
+                .filter(craft -> url.equals(craft.url()))
+                .findFirst()
+                .orElseThrow(() -> badRequest("«%s» не изготавливает предмет «%s» выбранными инструментами"
+                        .formatted(reference.getName(), url)));
+        return Optional.of(item);
     }
 
     private static Optional<FacilityOrderOption> findOption(BastionFacility reference, BastionOrder order, String name) {
@@ -556,6 +1076,10 @@ public class PlayerBastionActivityService {
         return facilityRepository.findById(facility.getFacilityUrl())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Сооружения %s нет в справочнике".formatted(facility.getFacilityUrl())));
+    }
+
+    private Map<String, BastionFacility> allReference(PlayerBastion bastion) {
+        return loadReference(facilitiesById(bastion).values().stream().map(PlayerBastionFacility::getFacilityUrl));
     }
 
     private Map<String, BastionFacility> loadReference(Stream<String> urls) {

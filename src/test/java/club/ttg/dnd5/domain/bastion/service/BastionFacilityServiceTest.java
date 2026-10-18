@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionFacilityRequest;
 import club.ttg.dnd5.domain.bastion.rest.mapper.BastionFacilityMapper;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.exception.ApiException;
@@ -23,7 +24,8 @@ class BastionFacilityServiceTest {
             mock(SourceService.class),
             mock(BastionFacilityMapper.class),
             mock(BastionFacilityQueryDslSearchService.class),
-            mock(EntityRevisionService.class));
+            mock(EntityRevisionService.class),
+            new FacilityChoiceOptions(mock(ItemRepository.class)));
 
     /** «Обслуживать» отдаётся всему бастиону — сооружение его не принимает. */
     @Test

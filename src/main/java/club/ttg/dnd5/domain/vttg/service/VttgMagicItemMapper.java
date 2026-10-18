@@ -300,6 +300,7 @@ public class VttgMagicItemMapper {
                 // Расход: признак самой записи, применение «при использовании»,
                 // расходуемая основа либо сам боеприпас
                 .consumable(consumable(item, mechanics, ammunition))
+                .activeWhenCarried(activeWhenCarried(item))
                 .isAdamantine(item.isAdamantine())
                 .magicAttunement(requiresAttunement ? "required" : "none")
                 .magicBonus(bonus)
@@ -546,6 +547,23 @@ public class VttgMagicItemMapper {
         MagicItemMechanics itemMechanics = item.getMechanics();
         boolean usedUp = itemMechanics != null && itemMechanics.getActivation() == MagicItemActivation.CONSUMED;
         return item.isConsumable() || usedUp || mechanics.consumable() || ammunition ? Boolean.TRUE : null;
+    }
+
+    /**
+     * Работает ли механика предмета, пока он просто в инвентаре
+     * ({@link MagicItemActivation#CARRIED}).
+     *
+     * <p>Без признака VTTG включает эффекты только по отметке «надет», и Камень удачи в
+     * сумке не давал бы ничего, хотя по тексту работает при себе.</p>
+     *
+     * @param item магический предмет.
+     * @return {@code true} для «при себе»; иначе {@code null} — поле в выгрузку не идёт.
+     */
+    private Boolean activeWhenCarried(MagicItem item) {
+        MagicItemMechanics itemMechanics = item.getMechanics();
+        return itemMechanics != null && itemMechanics.getActivation() == MagicItemActivation.CARRIED
+                ? Boolean.TRUE
+                : null;
     }
 
     /**

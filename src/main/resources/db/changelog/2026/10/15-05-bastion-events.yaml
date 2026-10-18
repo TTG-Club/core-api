@@ -1,0 +1,104 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-15-05-bastion-events
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        События бастиона: после приказа «Обслуживать» сервер бросает 1к100 по таблице «События
+        бастиона» за каждого персонажа. Журнал событий, гости бастиона и сооружения, которые не
+        работают в следующий ход после атаки или пропажи наёмников.
+      changes:
+        - createTable:
+            tableName: player_bastion_event
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: bastion_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_player_bastion_event_bastion
+                    references: player_bastion(id)
+                    deleteCascade: true
+              - column:
+                  name: member_id
+                  type: UUID
+              - column:
+                  name: character_name
+                  type: VARCHAR(100)
+              - column:
+                  name: turn
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: roll
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: summary
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: details
+                  type: JSONB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: decision
+                  type: VARCHAR(16)
+              - column:
+                  name: note
+                  type: TEXT
+              - column:
+                  name: parent_id
+                  type: UUID
+              - column:
+                  name: resolved_by
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: player_bastion_event
+            indexName: player_bastion_event_bastion_id_index
+            columns:
+              - column:
+                  name: bastion_id
+        - addColumn:
+            tableName: player_bastion
+            columns:
+              - column:
+                  name: guests
+                  type: JSONB
+                  defaultValueComputed: "'[]'::jsonb"
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: player_bastion_facility
+            columns:
+              - column:
+                  name: unavailable_on_turn
+                  type: INTEGER
+              - column:
+                  name: unavailable_reason
+                  type: VARCHAR(200)

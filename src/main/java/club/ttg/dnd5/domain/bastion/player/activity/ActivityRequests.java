@@ -2,8 +2,14 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
+import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
+import club.ttg.dnd5.domain.bastion.model.StableAnimalKind;
+import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,6 +20,9 @@ import java.util.UUID;
 
 /** Запросы журналов бастиона: приказы, ход, казна, стройка. */
 public final class ActivityRequests {
+    /** Больше блоков стены за раз не строят: защита от опечатки в лишний ноль. */
+    public static final int MAX_WALL_SQUARES = 1000;
+
     private ActivityRequests() {
     }
 
@@ -24,12 +33,76 @@ public final class ActivityRequests {
      * @param order      приказ
      * @param optionName вариант приказа из справочника: «книгу», «лейтенанта»
      * @param note       пояснение: тема исследования, что изготовить
+     * @param cancelActive для «Обслуживать»: отменить приказы, которые сооружения ещё выполняют
+     * @param itemUrl    для «Изготовить» в мастерской: предмет из тех, что создаются её инструментами
+     * @param creature   для «Завербовать» в зверинце: какое существо добавить в вольеры
+     * @param trade      для «Торговать» в конюшне: какое животное купить или продать
      */
     @Schema(description = "Приказ бастиона")
     public record GiveOrder(UUID facilityId,
                             @NotNull BastionOrder order,
                             @Size(max = 200) String optionName,
-                            @Size(max = 2000) String note) {
+                            @Size(max = 2000) String note,
+                            Boolean cancelActive,
+                            @Size(max = 200) String itemUrl,
+                            @Valid RecruitCreature creature,
+                            @Valid StableTrade trade) {
+        public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note) {
+            this(facilityId, order, optionName, note, null, null, null, null);
+        }
+
+        public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note,
+                         Boolean cancelActive, String itemUrl) {
+            this(facilityId, order, optionName, note, cancelActive, itemUrl, null, null);
+        }
+
+        public GiveOrder(UUID facilityId, BastionOrder order, String optionName, String note,
+                         Boolean cancelActive, String itemUrl, RecruitCreature creature) {
+            this(facilityId, order, optionName, note, cancelActive, itemUrl, creature, null);
+        }
+    }
+
+    /**
+     * Существо, которое вербует зверинец: из таблицы зверинца или, с согласия Мастера, любое
+     * другое — тогда цена считается по показателю опасности.
+     *
+     * @param beast     существо из таблицы «Существа зверинца»
+     * @param name      название существа не из таблицы
+     * @param size      размер существа не из таблицы
+     * @param challenge показатель опасности существа не из таблицы: «1/4», «2»
+     */
+    @Schema(description = "Существо для зверинца")
+    public record RecruitCreature(MenagerieBeast beast,
+                                  @Size(max = 100) String name,
+                                  club.ttg.dnd5.domain.common.dictionary.Size size,
+                                  @Size(max = 8) String challenge) {
+    }
+
+    /**
+     * Сделка конюшни: продать животное из конюшни или купить новое — из таблицы или, с
+     * согласия Мастера, любое другое по указанной цене.
+     *
+     * @param sellAnimalId животное конюшни, которое продать; пусто — покупка
+     * @param kind         животное из таблицы «Верховые и прочие животные»
+     * @param name         название животного не из таблицы
+     * @param size         размер животного не из таблицы
+     * @param cost         обычная цена животного не из таблицы, зм
+     */
+    @Schema(description = "Покупка или продажа животного конюшни")
+    public record StableTrade(@Size(max = 64) String sellAnimalId,
+                              StableAnimalKind kind,
+                              @Size(max = 100) String name,
+                              club.ttg.dnd5.domain.common.dictionary.Size size,
+                              @Min(0) @Max(1_000_000) Integer cost) {
+    }
+
+    /**
+     * Считать ли существо зверинца защитником бастиона.
+     *
+     * @param defender {@code false} — существо не призывают на защиту, оно действует по своей природе
+     */
+    @Schema(description = "Существо зверинца — защитник бастиона")
+    public record CreatureDefender(@NotNull Boolean defender) {
     }
 
     /**
@@ -40,6 +113,34 @@ public final class ActivityRequests {
      */
     @Schema(description = "Ход бастиона")
     public record Turn(@Size(max = 4000) String event, Map<UUID, @Size(max = 4000) String> results) {
+    }
+
+    /**
+     * Решение по событию бастиона.
+     *
+     * @param decision  заплатить, отказаться, отправить защитников или записать предмет
+     * @param defenders для просьбы о помощи: сколько защитников отправить
+     * @param note      для волшебного открытия и сокровища: какой предмет получен
+     * @param itemUrl   магический предмет из раздела «Магические предметы»; задан — вместо {@code note}
+     */
+    @Schema(description = "Решение по событию бастиона")
+    public record EventDecision(@NotNull PlayerBastionEvent.Decision decision,
+                                @Min(1) Integer defenders,
+                                @Size(max = 500) String note,
+                                @Size(max = 200) String itemUrl) {
+
+        public EventDecision(PlayerBastionEvent.Decision decision, Integer defenders, String note) {
+            this(decision, defenders, note, null);
+        }
+    }
+
+    /**
+     * Итог выполненного приказа: что получили или узнали.
+     *
+     * @param result итог; пусто — стереть
+     */
+    @Schema(description = "Итог приказа")
+    public record OrderResult(@Size(max = 4000) String result) {
     }
 
     /**
@@ -60,6 +161,15 @@ public final class ActivityRequests {
      */
     @Schema(description = "Постройка базового сооружения")
     public record BuildBasic(@NotBlank String facilityUrl, @NotNull FacilitySpace space) {
+    }
+
+    /**
+     * Постройка блоков защитной стены вокруг бастиона.
+     *
+     * @param squares сколько 5-футовых квадратов стены построить
+     */
+    @Schema(description = "Постройка защитной стены")
+    public record BuildWall(@NotNull @Min(1) @Max(MAX_WALL_SQUARES) Integer squares) {
     }
 
     /**

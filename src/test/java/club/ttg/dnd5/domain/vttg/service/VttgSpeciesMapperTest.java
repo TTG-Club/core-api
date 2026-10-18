@@ -431,6 +431,38 @@ class VttgSpeciesMapperTest {
         assertFalse(granted.get(1).get("alwaysPrepared").asBoolean(true));
     }
 
+    /**
+     * Уровень доступа заклинания уезжает вместе с ним: у чтонического тифлинга заговор
+     * есть сразу, «Псевдожизнь» — с 3-го уровня, «Луч слабости» — с 5-го. Первый уровень
+     * — значение по умолчанию, поля нет.
+     */
+    @Test
+    void mapsFeatureGrantedSpellsRequiredLevel() {
+        Species species = baseSpecies("tiefling-chthonic", "Тифлинг (чтонический)", "Chthonic Tiefling");
+        SpeciesFeature feature = new SpeciesFeature(
+                "innate-spells", "Врождённые заклинания", "Innate Spells", "Магия.", null);
+        feature.setGrantedSpells(List.of(
+                new GrantedSpellRef("chill-touch", null, null),
+                new GrantedSpellRef("first-level", null, 1),
+                new GrantedSpellRef("false-life", null, 3),
+                new GrantedSpellRef("ray-of-enfeeblement", null, 5)));
+        species.setFeatures(List.of(feature));
+
+        when(spellRepository.findAllShortByUrlIn(
+                Set.of("chill-touch", "first-level", "false-life", "ray-of-enfeeblement")))
+                .thenReturn(List.of(spell("chill-touch", "Леденящее прикосновение"),
+                        spell("first-level", "Заклинание первого уровня"),
+                        spell("false-life", "Псевдожизнь"),
+                        spell("ray-of-enfeeblement", "Луч слабости")));
+
+        JsonNode granted = json(species).get("features").get(0).get("grantedSpells");
+        assertEquals(4, granted.size());
+        assertFalse(granted.get(0).has("requiredLevel"));
+        assertFalse(granted.get(1).has("requiredLevel"));
+        assertEquals(3, granted.get(2).get("requiredLevel").asInt());
+        assertEquals(5, granted.get(3).get("requiredLevel").asInt());
+    }
+
     /** Ссылка на удалённое заклинание блок не роняет и не уезжает пустой записью. */
     @Test
     void skipsFeatureGrantedSpellsMissingFromCatalog() {

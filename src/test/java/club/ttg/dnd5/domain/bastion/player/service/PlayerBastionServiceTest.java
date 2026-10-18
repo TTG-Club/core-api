@@ -1,5 +1,9 @@
 package club.ttg.dnd5.domain.bastion.player.service;
 
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
+import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembers;
 import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
@@ -7,8 +11,11 @@ import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.CreatePlayerBastionRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
+import club.ttg.dnd5.domain.bastion.player.rest.dto.JoinGameRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionGameResponse;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionMemberRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
@@ -26,9 +33,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,9 +49,12 @@ class PlayerBastionServiceTest {
     private final UserService userService = mock(UserService.class);
     private final BastionFacilityRepository facilityRepository = mock(BastionFacilityRepository.class);
     private final PlayerBastionFacilityService facilityService = mock(PlayerBastionFacilityService.class);
-    private final PlayerBastionService service = new PlayerBastionService(repository, client,
-            new PlayerBastionAccess(repository, client, userService),
-            new PlayerBastionResponseMapper(facilityRepository), facilityService);
+    private final PlayerBastionLimits limits = mock(PlayerBastionLimits.class);
+    private final PlayerBastionEditorRepository editorRepository = mock(PlayerBastionEditorRepository.class);
+    private final PlayerBastionService service = new PlayerBastionService(repository, editorRepository, client,
+            new PlayerBastionAccess(repository, editorRepository, client, userService),
+            new PlayerBastionResponseMapper(facilityRepository, editorRepository, new FacilityChoiceOptions(mock(ItemRepository.class)),
+                    mock(CreatureRepository.class)), facilityService, limits);
 
     private final UUID gameId = UUID.randomUUID();
     private final UUID masterId = UUID.randomUUID();
@@ -58,43 +70,161 @@ class PlayerBastionServiceTest {
                 List.of(new GameMembers.Player(playerId, "Дриззт"))));
         when(repository.save(any(PlayerBastion.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(repository.saveAndFlush(any(PlayerBastion.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(limits.forCurrentUser()).thenReturn(PlayerBastionLimits.BASE);
     }
 
+    /** Бастион принадлежит создавшему, его персонаж сразу в составе, бастион вне игры. */
     @Test
-    void masterCreatesBastionWithPlayerCharacterNameFromRegistration() {
-        actAs(masterId);
+    void anyoneCreatesOwnBastionOutsideGame() {
+        actAs(playerId);
+        when(repository.countByOwnerId(playerId)).thenReturn(0L);
 
-        PlayerBastionResponse response = service.create(new CreatePlayerBastionRequest(gameId, " Вороний утёс ",
-                List.of(new PlayerBastionMemberRequest(playerId, null, 9, null))));
+        PlayerBastionResponse response = service.create(
+                new CreatePlayerBastionRequest(" Вороний утёс ", "Дриззт", 9, null));
 
         assertEquals("Вороний утёс", response.name());
         assertEquals(PlayerBastionStatus.SETUP, response.status());
+        assertNull(response.gameId());
+        assertTrue(response.owned());
         assertTrue(response.canManage());
         PlayerBastionResponse.Member member = response.members().getFirst();
+        assertEquals(playerId, member.userId());
         assertEquals("Дриззт", member.characterName());
         assertEquals(4, member.specialFacilityLimit());
     }
 
+    /** Со стартовыми сооружениями бастион сразу действует: закладки нет. */
     @Test
-    void playerCannotCreateBastion() {
+    void bastionWithStartingFacilitiesIsActiveAtOnce() {
         actAs(playerId);
+        when(repository.countByOwnerId(playerId)).thenReturn(0L);
+        List<FacilitySetupRequest.Basic> basic = List.of(
+                new FacilitySetupRequest.Basic("bedroom", FacilitySpace.CRAMPED),
+                new FacilitySetupRequest.Basic("storage", FacilitySpace.ROOMY));
+
+        PlayerBastionResponse response = service.create(
+                new CreatePlayerBastionRequest("Башня", "Дриззт", 5, null, basic, List.of()));
+
+        assertEquals(PlayerBastionStatus.ACTIVE, response.status());
+        verify(facilityService).chooseStarting(any(PlayerBastionMember.class),
+                eq(new FacilitySetupRequest(basic, List.of(), 0L)));
+    }
+
+    @Test
+    void creationStopsAtLimit() {
+        actAs(playerId);
+        when(repository.countByOwnerId(playerId)).thenReturn((long) PlayerBastionLimits.BASE);
 
         ApiException error = assertThrows(ApiException.class,
-                () -> service.create(new CreatePlayerBastionRequest(gameId, "Башня", List.of())));
+                () -> service.create(new CreatePlayerBastionRequest("Башня", null, 5, null)));
 
-        assertEquals(HttpStatus.FORBIDDEN, error.getStatus());
+        assertEquals(HttpStatus.CONFLICT, error.getStatus());
+        assertTrue(error.getMessage().contains("3"), error.getMessage());
         verify(repository, never()).save(any());
     }
 
-    /** Доступ даётся только игрокам игры с одобренной заявкой. */
+    /** Вне игры дать доступ другим нельзя: брать игроков неоткуда. */
     @Test
-    void accessCanBeGrantedOnlyToApprovedPlayers() {
-        actAs(masterId);
+    void outsideGameOnlyOwnerIsInComposition() {
+        PlayerBastion bastion = ownBastion(playerId);
+        when(repository.findWithMembersById(bastion.getId())).thenReturn(Optional.of(bastion));
+        actAs(playerId);
 
-        ApiException error = assertThrows(ApiException.class, () -> service.create(new CreatePlayerBastionRequest(
-                gameId, "Башня", List.of(new PlayerBastionMemberRequest(strangerId, "Чужак", 5, null)))));
+        ApiException error = assertThrows(ApiException.class, () -> service.update(bastion.getId(),
+                new UpdatePlayerBastionRequest("Башня", List.of(
+                        new PlayerBastionMemberRequest(playerId, "Дриззт", 5, null),
+                        new PlayerBastionMemberRequest(strangerId, "Чужак", 5, null)), 0L)));
 
         assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
+    }
+
+    /** В игре доступ даётся только игрокам игры с одобренной заявкой. */
+    @Test
+    void inGameAccessCanBeGrantedOnlyToApprovedPlayers() {
+        PlayerBastion bastion = bastion("Башня", playerId);
+        when(repository.findWithMembersById(bastion.getId())).thenReturn(Optional.of(bastion));
+        actAs(masterId);
+
+        ApiException error = assertThrows(ApiException.class, () -> service.update(bastion.getId(),
+                new UpdatePlayerBastionRequest("Башня", List.of(
+                        new PlayerBastionMemberRequest(playerId, null, 5, null),
+                        new PlayerBastionMemberRequest(strangerId, "Чужак", 5, null)), 0L)));
+
+        assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
+    }
+
+    /** Игрок добавляет свой бастион в игру, и вести его начинает мастер этой игры. */
+    @Test
+    void ownerAddsBastionToGameAndMasterTakesOver() {
+        PlayerBastion bastion = ownBastion(playerId);
+        when(repository.findWithMembersById(bastion.getId())).thenReturn(Optional.of(bastion));
+        actAs(playerId);
+
+        PlayerBastionResponse response = service.joinGame(bastion.getId(), new JoinGameRequest(gameId));
+
+        assertEquals(gameId, response.gameId());
+        assertEquals(masterId, bastion.getMasterId());
+        assertFalse(response.canManage());
+        assertTrue(response.canEdit());
+        assertTrue(response.canLeaveGame());
+    }
+
+    @Test
+    void strangerCannotAddBastionToGame() {
+        PlayerBastion bastion = ownBastion(strangerId);
+        when(repository.findWithMembersById(bastion.getId())).thenReturn(Optional.of(bastion));
+        actAs(strangerId);
+
+        ApiException error = assertThrows(ApiException.class,
+                () -> service.joinGame(bastion.getId(), new JoinGameRequest(gameId)));
+
+        assertEquals(HttpStatus.FORBIDDEN, error.getStatus());
+        assertNull(bastion.getGameId());
+    }
+
+    @Test
+    void bastionCannotBeInTwoGames() {
+        PlayerBastion bastion = bastion("Башня", playerId);
+        bastion.setOwnerId(playerId);
+        when(repository.findWithMembersById(bastion.getId())).thenReturn(Optional.of(bastion));
+        actAs(playerId);
+
+        ApiException error = assertThrows(ApiException.class,
+                () -> service.joinGame(bastion.getId(), new JoinGameRequest(UUID.randomUUID())));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatus());
+    }
+
+    /** Мастер убирает чужой бастион из своей игры, и тот возвращается к владельцу. */
+    @Test
+    void masterRemovesBastionFromGame() {
+        PlayerBastion bastion = bastion("Башня", playerId);
+        bastion.setOwnerId(playerId);
+        when(repository.findWithMembersById(bastion.getId())).thenReturn(Optional.of(bastion));
+        actAs(masterId);
+
+        service.leaveGame(bastion.getId());
+
+        assertNull(bastion.getGameId());
+        assertNull(bastion.getMasterId());
+    }
+
+    @Test
+    void onlyOwnerDeletesBastion() {
+        PlayerBastion bastion = bastion("Башня", playerId);
+        bastion.setOwnerId(playerId);
+        when(repository.findWithMembersById(bastion.getId())).thenReturn(Optional.of(bastion));
+        actAs(masterId);
+
+        ApiException error = assertThrows(ApiException.class, () -> service.delete(bastion.getId()));
+
+        assertEquals(HttpStatus.FORBIDDEN, error.getStatus());
+        verify(repository, never()).deleteBastion(any());
+
+        actAs(playerId);
+        service.delete(bastion.getId());
+
+        verify(repository).deleteBastion(bastion.getId());
     }
 
     /** Смотреть бастионы игры может любой участник, менять — только те, у кого есть доступ. */
@@ -108,7 +238,7 @@ class PlayerBastionServiceTest {
         PlayerBastionGameResponse response = service.findForGame(gameId);
 
         assertEquals(2, response.bastions().size());
-        assertFalse(response.canCreate());
+        assertTrue(response.canAdd());
         assertTrue(response.players().isEmpty());
         assertTrue(response.bastions().get(0).canEdit());
         assertFalse(response.bastions().get(1).canEdit());
@@ -175,11 +305,21 @@ class PlayerBastionServiceTest {
         return new GameMembership(gameId, "Проклятие Страда", masterId, userId, role);
     }
 
+    /** Свой бастион вне игры: владелец — единственный в составе. */
+    private PlayerBastion ownBastion(UUID ownerId) {
+        PlayerBastion bastion = bastion("Башня", ownerId);
+        bastion.setOwnerId(ownerId);
+        bastion.setGameId(null);
+        bastion.setMasterId(null);
+        return bastion;
+    }
+
     private PlayerBastion bastion(String name, UUID memberUserId) {
         PlayerBastion bastion = new PlayerBastion();
         bastion.setId(UUID.randomUUID());
         bastion.setGameId(gameId);
         bastion.setMasterId(masterId);
+        bastion.setOwnerId(masterId);
         bastion.setName(name);
         PlayerBastionMember member = new PlayerBastionMember();
         member.setBastion(bastion);

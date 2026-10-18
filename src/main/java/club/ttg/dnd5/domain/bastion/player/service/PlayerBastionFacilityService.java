@@ -4,17 +4,17 @@ import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
-import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
-import club.ttg.dnd5.domain.bastion.player.client.GameRole;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
+import club.ttg.dnd5.domain.bastion.player.model.StableAnimal;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
 import club.ttg.dnd5.exception.ApiException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import jakarta.persistence.EntityManager;
@@ -53,30 +53,55 @@ public class PlayerBastionFacilityService {
     private final PlayerBastionAccess access;
     private final PlayerBastionResponseMapper mapper;
     private final EntityManager entityManager;
+    private final FacilityChoiceOptions choiceOptions;
 
     /** Заменяет стартовый выбор сооружений персонажа. */
     @Transactional
     public PlayerBastionResponse updateSetup(UUID bastionId, UUID memberId, FacilitySetupRequest request) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireParticipant(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireViewer(bastion, userId);
         PlayerBastionMember member = findMember(bastion, memberId);
-        if (membership.role() != GameRole.MASTER && !member.getUserId().equals(userId)) {
+        if (!viewer.manager() && !member.getUserId().equals(userId)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Сооружения персонажа выбирает его игрок или мастер");
         }
-        if (bastion.getStatus() != PlayerBastionStatus.SETUP) {
+        if (!canChooseStarting(bastion, member)) {
             throw new ApiException(HttpStatus.CONFLICT,
-                    "Стартовые сооружения выбираются, пока бастион в закладке");
+                    "Стартовые сооружения выбираются, пока бастион в закладке или у персонажа их ещё нет");
         }
         PlayerBastionAccess.requireVersion(bastion, request.version());
 
         Map<String, BastionFacility> reference = loadReference(Stream.concat(
                 request.basic().stream().map(FacilitySetupRequest.Basic::facilityUrl),
                 request.special().stream().map(FacilitySetupRequest.Special::facilityUrl)));
-        PlayerBastionSetupRules.validate(member.getCharacterLevel(), request, reference);
+        PlayerBastionSetupRules.validate(member.getCharacterLevel(), request, reference, choiceOptions.resolver());
 
         replaceFacilities(member, request, reference);
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
+    }
+
+    /**
+     * Стартовые сооружения выбирают, пока бастион в закладке, а в действующем бастионе —
+     * персонаж, у которого их ещё нет: его добавили в состав после создания.
+     */
+    public static boolean canChooseStarting(PlayerBastion bastion, PlayerBastionMember member) {
+        return bastion.getStatus() == PlayerBastionStatus.SETUP
+                || bastion.getStatus() == PlayerBastionStatus.ACTIVE && member.getFacilities().isEmpty();
+    }
+
+    /**
+     * Стартовые сооружения персонажа нового бастиона: проверка правил и выбор целиком, с
+     * обоими базовыми, — бастион с ними сразу действует.
+     */
+    public void chooseStarting(PlayerBastionMember member, FacilitySetupRequest request) {
+        Map<String, BastionFacility> reference = loadReference(Stream.concat(
+                request.basic().stream().map(FacilitySetupRequest.Basic::facilityUrl),
+                request.special().stream().map(FacilitySetupRequest.Special::facilityUrl)));
+        PlayerBastionSetupRules.validate(member.getCharacterLevel(), request, reference, choiceOptions.resolver());
+        if (request.basic().size() < PlayerBastionSetupRules.STARTING_BASIC_SPACES.size()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Выберите оба стартовых базовых сооружения");
+        }
+        replaceFacilities(member, request, reference);
     }
 
     /** Мастер подтверждает или снимает подтверждение требования сооружения. */
@@ -84,7 +109,7 @@ public class PlayerBastionFacilityService {
     public PlayerBastionResponse confirmPrerequisite(UUID bastionId, UUID facilityId, boolean confirmed) {
         UUID userId = access.currentUserId();
         PlayerBastion bastion = access.findBastion(bastionId);
-        GameMembership membership = access.requireMaster(bastion.getGameId(), userId);
+        BastionViewer viewer = access.requireManager(bastion, userId);
         PlayerBastionAccess.requireNotArchived(bastion);
 
         PlayerBastionFacility facility = bastion.getMembers().stream()
@@ -94,7 +119,7 @@ public class PlayerBastionFacilityService {
                 .orElseThrow(() -> new EntityNotFoundException("Сооружение %s не найдено".formatted(facilityId)));
         facility.setPrerequisiteConfirmed(confirmed);
 
-        return mapper.toResponse(saveWithNewVersion(bastion), membership, userId);
+        return mapper.toResponse(saveWithNewVersion(bastion), viewer);
     }
 
     /**
@@ -186,8 +211,14 @@ public class PlayerBastionFacilityService {
         for (FacilitySetupRequest.Special special : request.special()) {
             BastionFacility facility = reference.get(special.facilityUrl());
             boolean noPrerequisite = facility.getPrerequisite() == null;
-            next.add(reuseOrCreate(member, previous, special.facilityUrl(), facility.getSpace(),
-                    Optional.ofNullable(special.choices()).orElse(List.of()), noPrerequisite));
+            PlayerBastionFacility chosen = reuseOrCreate(member, previous, special.facilityUrl(), facility.getSpace(),
+                    Optional.ofNullable(special.choices()).orElse(List.of()), noPrerequisite);
+            // Новая конюшня появляется с животными; у прежней они остаются как есть
+            if (chosen.getId() == null && PlayerBastionResponseMapper.isStable(facility)
+                    && chosen.getAnimals().isEmpty()) {
+                chosen.setAnimals(StableAnimal.starting(member.getBastion().getTurn()));
+            }
+            next.add(chosen);
         }
 
         member.getFacilities().clear();

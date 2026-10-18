@@ -35,16 +35,22 @@ public class BastionFacilityService {
     private final BastionFacilityMapper facilityMapper;
     private final BastionFacilityQueryDslSearchService searchService;
     private final EntityRevisionService revisionService;
+    private final FacilityChoiceOptions choiceOptions;
 
     public List<BastionFacilityShortResponse> search(final BastionFacilityQueryRequest request) {
         var predicate = BastionFacilityPredicateBuilder.build(request);
+        var resolver = choiceOptions.resolver();
         return searchService.search(predicate, request.getPage(), request.getPageSize()).stream()
-                .map(facilityMapper::toShort)
+                .map(facility -> {
+                    BastionFacilityShortResponse response = facilityMapper.toShort(facility);
+                    response.setChoices(choiceOptions.resolve(response.getChoices(), resolver));
+                    return response;
+                })
                 .toList();
     }
 
     public BastionFacilityDetailResponse findDetailedByUrl(String url) {
-        return facilityMapper.toDetail(findByUrl(url));
+        return withResolvedChoices(facilityMapper.toDetail(findByUrl(url)));
     }
 
     public BastionFacilityRequest findFormByUrl(String url) {
@@ -62,6 +68,7 @@ public class BastionFacilityService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(BastionFacilityRequest request) {
         validateOrders(request);
+        FacilityRoomTemplates.validate(request.getRoomTemplates());
         if (facilityRepository.existsById(request.getUrl())) {
             throw new EntityExistException(String.format("Сооружение бастиона с url %s уже существует",
                     request.getUrl()));
@@ -75,6 +82,7 @@ public class BastionFacilityService {
     @Transactional
     public String update(String url, BastionFacilityRequest request) {
         validateOrders(request);
+        FacilityRoomTemplates.validate(request.getRoomTemplates());
         BastionFacility existing = findByUrl(url);
         Source source = findSource(request);
 
@@ -107,7 +115,14 @@ public class BastionFacilityService {
 
     public BastionFacilityDetailResponse preview(final BastionFacilityRequest request) {
         validateOrders(request);
-        return facilityMapper.toDetail(facilityMapper.toEntity(request, findSource(request)));
+        FacilityRoomTemplates.validate(request.getRoomTemplates());
+        return withResolvedChoices(facilityMapper.toDetail(facilityMapper.toEntity(request, findSource(request))));
+    }
+
+    /** Варианты выборов с источником ({@code FacilityChoice#getSource()}) — из справочника. */
+    private BastionFacilityDetailResponse withResolvedChoices(BastionFacilityDetailResponse response) {
+        response.setChoices(choiceOptions.resolve(response.getChoices(), choiceOptions.resolver()));
+        return response;
     }
 
     /**

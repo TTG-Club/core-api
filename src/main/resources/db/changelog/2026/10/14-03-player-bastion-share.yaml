@@ -1,0 +1,90 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-14-03-player-bastion-share
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Бастионом можно поделиться по ссылке, как листом персонажа: по ссылке бастион
+        открывается только на чтение, а право на правку пользователь просит у владельца.
+      changes:
+        - addColumn:
+            tableName: player_bastion
+            columns:
+              - column:
+                  name: share_token
+                  type: UUID
+        - createIndex:
+            tableName: player_bastion
+            indexName: player_bastion_share_token_index
+            unique: true
+            columns:
+              - column:
+                  name: share_token
+        # Запрос на правку и решение владельца; один пользователь — одна запись на бастион.
+        - createTable:
+            tableName: player_bastion_editor
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_player_bastion_editor
+              - column:
+                  name: bastion_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_player_bastion_editor_bastion
+                    references: player_bastion(id)
+                    deleteCascade: true
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: decided_at
+                  type: DATETIME
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        - createIndex:
+            tableName: player_bastion_editor
+            indexName: player_bastion_editor_bastion_user_index
+            unique: true
+            columns:
+              - column:
+                  name: bastion_id
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: player_bastion_editor
+            indexName: player_bastion_editor_user_id_index
+            columns:
+              - column:
+                  name: user_id
+      rollback:
+        - dropTable:
+            tableName: player_bastion_editor
+        - dropIndex:
+            tableName: player_bastion
+            indexName: player_bastion_share_token_index
+        - dropColumn:
+            tableName: player_bastion
+            columnName: share_token

@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-15-03-bastion-order-item
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Приказ «Изготовить» в мастерской запоминает выбранный предмет справочника:
+        адрес и название на момент приказа.
+      changes:
+        - addColumn:
+            tableName: player_bastion_order
+            columns:
+              - column:
+                  name: item_url
+                  type: VARCHAR(200)
+              - column:
+                  name: item_name
+                  type: VARCHAR(200)

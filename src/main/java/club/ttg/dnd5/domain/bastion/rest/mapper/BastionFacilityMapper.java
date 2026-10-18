@@ -12,6 +12,7 @@ import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.bastion.rest.dto.FacilitySpaceResponse;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -49,6 +50,17 @@ public interface BastionFacilityMapper {
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     void updateEntity(BastionFacilityRequest request, Source source, @MappingTarget BastionFacility facility);
+
+    /**
+     * У базового сооружения нет своего пространства: при закладке игрок делает одно из двух
+     * сооружений тесным, а другое — вместительным.
+     */
+    @AfterMapping
+    default void clearBasicSpace(@MappingTarget BastionFacility facility) {
+        if (facility.getCategory() == FacilityCategory.BASIC) {
+            facility.setSpace(null);
+        }
+    }
 
     default BastionLabel toLabel(FacilityCategory category) {
         return category == null ? null : new BastionLabel(category.name(), category.getName());

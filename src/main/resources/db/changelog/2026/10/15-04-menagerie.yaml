@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-15-04-menagerie
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Зверинец держит в вольерах до 4 больших существ (4 маленьких или средних — как одно
+        большое). Приказ «Завербовать» добавляет существо из таблицы зверинца, существа
+        считаются защитниками бастиона.
+      changes:
+        - addColumn:
+            tableName: bastion_facility
+            columns:
+              - column:
+                  name: menagerie
+                  type: BOOLEAN
+        - addColumn:
+            tableName: player_bastion_facility
+            columns:
+              - column:
+                  name: creatures
+                  type: JSONB
+                  defaultValueComputed: "'[]'::jsonb"
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: player_bastion_order
+            columns:
+              - column:
+                  name: creature
+                  type: JSONB
+        - sql:
+            sql: update bastion_facility set menagerie = true where english ilike 'menagerie%'

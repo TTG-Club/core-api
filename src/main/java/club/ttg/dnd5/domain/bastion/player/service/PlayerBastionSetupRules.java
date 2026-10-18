@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -48,8 +49,21 @@ public class PlayerBastionSetupRules {
     public static void validate(int characterLevel,
                                 FacilitySetupRequest request,
                                 Map<String, BastionFacility> reference) {
+        validate(characterLevel, request, reference, FacilityChoice::getOptions);
+    }
+
+    /**
+     * Проверяет выбор персонажа.
+     *
+     * @param optionsOf варианты выбора: у выбора с источником ({@code FacilityChoice#getSource()})
+     *                  они берутся из справочника, а не из списка сооружения
+     */
+    public static void validate(int characterLevel,
+                                FacilitySetupRequest request,
+                                Map<String, BastionFacility> reference,
+                                Function<FacilityChoice, List<FacilityChoiceOption>> optionsOf) {
         validateBasic(request.basic(), reference);
-        validateSpecial(characterLevel, request.special(), reference);
+        validateSpecial(characterLevel, request.special(), reference, optionsOf);
     }
 
     private static void validateBasic(List<FacilitySetupRequest.Basic> basic, Map<String, BastionFacility> reference) {
@@ -79,6 +93,14 @@ public class PlayerBastionSetupRules {
     public static void validateSpecial(int characterLevel,
                                         List<FacilitySetupRequest.Special> special,
                                         Map<String, BastionFacility> reference) {
+        validateSpecial(characterLevel, special, reference, FacilityChoice::getOptions);
+    }
+
+    /** {@link #validateSpecial(int, List, Map)} с вариантами выбора из {@code optionsOf}. */
+    public static void validateSpecial(int characterLevel,
+                                        List<FacilitySetupRequest.Special> special,
+                                        Map<String, BastionFacility> reference,
+                                        Function<FacilityChoice, List<FacilityChoiceOption>> optionsOf) {
         int limit = BastionRules.specialFacilityLimit(characterLevel);
         if (special.size() > limit) {
             throw badRequest("Персонажу %d уровня положено специализированных сооружений: %d"
@@ -97,11 +119,13 @@ public class PlayerBastionSetupRules {
             if (!taken.add(facility.getUrl()) && !Boolean.TRUE.equals(facility.getRepeatable())) {
                 throw badRequest("«%s» можно взять только один раз".formatted(facility.getName()));
             }
-            validateChoices(facility, Optional.ofNullable(selection.choices()).orElse(List.of()));
+            validateChoices(facility, Optional.ofNullable(selection.choices()).orElse(List.of()), optionsOf);
         }
     }
 
-    private static void validateChoices(BastionFacility facility, List<SelectedChoice> selected) {
+    private static void validateChoices(BastionFacility facility,
+                                        List<SelectedChoice> selected,
+                                        Function<FacilityChoice, List<FacilityChoiceOption>> optionsOf) {
         Map<String, FacilityChoice> available = Optional.ofNullable(facility.getChoices()).orElse(List.of()).stream()
                 .filter(choice -> choice.getName() != null)
                 .collect(Collectors.toMap(FacilityChoice::getName, choice -> choice, (first, second) -> first));
@@ -112,7 +136,7 @@ public class PlayerBastionSetupRules {
                 throw badRequest("У «%s» нет выбора «%s»".formatted(facility.getName(), choice.name()));
             }
             List<String> options = Optional.ofNullable(choice.options()).orElse(List.of());
-            Set<String> allowed = Optional.ofNullable(definition.getOptions()).orElse(List.of()).stream()
+            Set<String> allowed = Optional.ofNullable(optionsOf.apply(definition)).orElse(List.of()).stream()
                     .map(FacilityChoiceOption::getName)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());

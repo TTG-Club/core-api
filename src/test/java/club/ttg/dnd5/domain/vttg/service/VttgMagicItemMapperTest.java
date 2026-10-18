@@ -186,6 +186,18 @@ class VttgMagicItemMapperTest {
 
         assertNull(result.getConsumable());
         assertFalse(objectMapper.valueToTree(result).has("consumable"));
+        assertFalse(objectMapper.valueToTree(result).has("activeWhenCarried"));
+    }
+
+    /** «При себе» уезжает признаком: эффекты работают без отметки «надет». */
+    @Test
+    void marksCarriedItemActiveWhenCarried() {
+        MagicItem item = wandOfFear();
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActivation(MagicItemActivation.CARRIED);
+        item.setMechanics(mechanics);
+
+        assertEquals(Boolean.TRUE, mapper.toVttg(item).getActiveWhenCarried());
     }
 
     /** Доспешные поля опускаются для не-брони — как в эталоне (жезл). */

@@ -48,6 +48,24 @@ public class BastionFacility extends NamedEntity {
     /** Можно ли иметь в бастионе больше одного такого сооружения. */
     private Boolean repeatable;
 
+    /**
+     * Барак: размещает защитников бастиона. Приказ «Завербовать» в нём бесплатно нанимает
+     * защитников, их число ограничено пространством ({@link BastionRules#barrackCapacity}).
+     */
+    private Boolean barrack;
+
+    /**
+     * Зверинец: в вольерах живут существа, они считаются защитниками бастиона. Приказ
+     * «Завербовать» добавляет существо из таблицы зверинца ({@link MenagerieBeast}).
+     */
+    private Boolean menagerie;
+
+    /**
+     * Конюшня: в ней живут верховые животные ({@link StableAnimalKind}), при появлении —
+     * ездовая лошадь и два пони. Приказ «Торговать» покупает или продаёт животное.
+     */
+    private Boolean stable;
+
     /** Приказы, которые принимает сооружение. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
@@ -72,6 +90,11 @@ public class BastionFacility extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private List<FacilityChoice> choices;
+
+    /** Шаблоны готовой комнаты на плане бастиона, по одному на пространство. */
+    @Type(JsonType.class)
+    @Column(name = "room_templates", columnDefinition = "jsonb")
+    private List<FacilityRoomTemplate> roomTemplates;
 
     @ManyToOne
     @JoinColumn(name = "source")

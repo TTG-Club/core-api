@@ -3,25 +3,36 @@ package club.ttg.dnd5.domain.bastion.player.service;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
-import club.ttg.dnd5.domain.bastion.player.client.GameMembershipClient.GameMembership;
-import club.ttg.dnd5.domain.bastion.player.client.GameRole;
+import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
+import club.ttg.dnd5.domain.bastion.model.FacilityChoiceOption;
+import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
+import club.ttg.dnd5.domain.bastion.model.StableAnimalKind;
+import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionActivityService;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
+import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionEditor;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.bastion.rest.dto.FacilitySpaceResponse;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.bastion.service.FacilityRoomTemplates;
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
+import club.ttg.dnd5.domain.common.dictionary.Size;
+import club.ttg.dnd5.domain.common.model.EntityRef;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,14 +44,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PlayerBastionResponseMapper {
     private final BastionFacilityRepository facilityRepository;
+    private final PlayerBastionEditorRepository editorRepository;
+    private final FacilityChoiceOptions choiceOptions;
+    private final CreatureRepository creatureRepository;
 
-    public PlayerBastionResponse toResponse(PlayerBastion bastion, GameMembership membership, UUID userId) {
-        return toResponses(List.of(bastion), membership, userId).getFirst();
+    public PlayerBastionResponse toResponse(PlayerBastion bastion, BastionViewer viewer) {
+        return toResponses(List.of(bastion), item -> viewer).getFirst();
     }
 
+    /**
+     * Ответы о нескольких бастионах.
+     *
+     * @param viewerOf права открывшего на каждый бастион
+     */
     public List<PlayerBastionResponse> toResponses(Collection<PlayerBastion> bastions,
-                                                   GameMembership membership,
-                                                   UUID userId) {
+                                                   Function<PlayerBastion, BastionViewer> viewerOf) {
         Set<String> urls = bastions.stream()
                 .flatMap(bastion -> bastion.getMembers().stream())
                 .flatMap(member -> member.getFacilities().stream())
@@ -51,47 +69,82 @@ public class PlayerBastionResponseMapper {
                 : facilityRepository.findAllById(urls).stream()
                         .collect(Collectors.toMap(BastionFacility::getUrl, Function.identity()));
 
+        Function<FacilityChoice, List<FacilityChoiceOption>> options = choiceOptions.resolver();
+        Map<String, String> bestiary = reference.values().stream().anyMatch(PlayerBastionResponseMapper::isStable)
+                ? stableBestiaryUrls()
+                : Map.of();
         return bastions.stream()
-                .map(bastion -> toResponse(bastion, membership, userId, reference))
+                .map(bastion -> toResponse(bastion, viewerOf.apply(bastion), reference, options, bestiary))
                 .toList();
     }
 
+    /**
+     * Адреса животных конюшни в бестиарии по английскому названию в нижнем регистре. Из
+     * нескольких статблоков берётся самый короткий адрес — обычно он у основной книги.
+     */
+    private Map<String, String> stableBestiaryUrls() {
+        List<String> names = Arrays.stream(StableAnimalKind.values())
+                .map(kind -> kind.getEnglish().toLowerCase(Locale.ROOT))
+                .toList();
+        return creatureRepository.findUrlsByEnglish(names).stream()
+                .collect(Collectors.toMap(row -> (String) row[0], row -> (String) row[1],
+                        (first, second) -> first.length() <= second.length() ? first : second));
+    }
+
     private PlayerBastionResponse toResponse(PlayerBastion bastion,
-                                             GameMembership membership,
-                                             UUID userId,
-                                             Map<String, BastionFacility> reference) {
-        boolean master = membership.role() == GameRole.MASTER;
+                                             BastionViewer viewer,
+                                             Map<String, BastionFacility> reference,
+                                             Function<FacilityChoice, List<FacilityChoiceOption>> options,
+                                             Map<String, String> bestiary) {
+        boolean manager = viewer.manager();
         boolean archived = bastion.getStatus() == PlayerBastionStatus.ARCHIVED;
-        boolean setup = bastion.getStatus() == PlayerBastionStatus.SETUP;
-        boolean member = bastion.getMembers().stream().anyMatch(item -> item.getUserId().equals(userId));
 
         List<PlayerBastionResponse.Member> members = bastion.getMembers().stream()
-                .map(item -> toMember(item, setup && (master || item.getUserId().equals(userId)),
-                        bastion.getStatus() == PlayerBastionStatus.ACTIVE && (master || item.getUserId().equals(userId)),
-                        reference))
+                .map(item -> toMember(item, PlayerBastionFacilityService.canChooseStarting(bastion, item)
+                                && (manager || viewer.is(item.getUserId())),
+                        bastion.getStatus() == PlayerBastionStatus.ACTIVE && (manager || viewer.is(item.getUserId())),
+                        reference, options, bestiary))
                 .toList();
 
         return new PlayerBastionResponse(
                 bastion.getId(),
                 bastion.getGameId(),
+                bastion.getOwnerId(),
                 bastion.getName(),
                 bastion.getStatus(),
                 bastion.getTurn(),
                 bastion.getTreasuryGp(),
                 bastion.getVersion(),
-                master && !archived,
-                (master || member) && !archived,
+                viewer.owner(),
+                manager && !archived,
+                viewer.canEdit() && !archived,
+                bastion.getGameId() != null && (viewer.owner() || manager),
+                viewer.owner() ? bastion.getShareToken() : null,
+                viewer.owner() && bastion.getShareToken() != null
+                        ? editorRepository.countByBastionIdAndStatus(bastion.getId(), PlayerBastionEditor.Status.PENDING)
+                        : 0,
+                viewer.editor(),
                 members,
+                Optional.ofNullable(bastion.getGuests()).orElse(List.of()).stream()
+                        .map(guest -> new PlayerBastionResponse.Guest(guest.getId(),
+                                new BastionLabel(guest.getKind().name(), guest.getKind().getName()),
+                                guest.getName(), guest.getCount(), guest.getArrivedOnTurn(), guest.getLeavesOnTurn()))
+                        .toList(),
+                new PlayerBastionResponse.DefenseWalls(bastion.getDefenseWallSquares(),
+                        bastion.getDefenseWallSquaresBuilding(), bastion.getDefenseWallReadyOnTurn(),
+                        bastion.isDefenseWallsEnclosed()),
                 bastion.getCreatedAt(),
                 bastion.getUpdatedAt());
     }
 
-    private static PlayerBastionResponse.Member toMember(PlayerBastionMember member,
-                                                         boolean canEditFacilities,
-                                                         boolean canGiveOrders,
-                                                         Map<String, BastionFacility> reference) {
+    private PlayerBastionResponse.Member toMember(PlayerBastionMember member,
+                                                  boolean canEditFacilities,
+                                                  boolean canGiveOrders,
+                                                  Map<String, BastionFacility> reference,
+                                                  Function<FacilityChoice, List<FacilityChoiceOption>> options,
+                                                  Map<String, String> bestiary) {
         List<PlayerBastionResponse.Facility> facilities = member.getFacilities().stream()
-                .map(facility -> toFacility(facility, reference.get(facility.getFacilityUrl())))
+                .map(facility -> toFacility(facility, reference.get(facility.getFacilityUrl()), options, bestiary))
                 .toList();
         boolean basicComplete = facilities.stream()
                 .filter(facility -> facility.category() != null
@@ -113,7 +166,10 @@ public class PlayerBastionResponseMapper {
                 facilities);
     }
 
-    private static PlayerBastionResponse.Facility toFacility(PlayerBastionFacility facility, BastionFacility reference) {
+    private PlayerBastionResponse.Facility toFacility(PlayerBastionFacility facility,
+                                                      BastionFacility reference,
+                                                      Function<FacilityChoice, List<FacilityChoiceOption>> options,
+                                                      Map<String, String> bestiary) {
         Optional<BastionFacility> source = Optional.ofNullable(reference);
         return new PlayerBastionResponse.Facility(
                 facility.getId(),
@@ -126,7 +182,9 @@ public class PlayerBastionResponseMapper {
                 new FacilitySpaceResponse(facility.getSpace().name(), facility.getSpace().getName(),
                         facility.getSpace().getSquares()),
                 source.map(BastionFacility::getLevel).orElse(null),
-                source.map(BastionFacility::getHirelings).orElse(null),
+                source.map(BastionFacility::getHirelings)
+                        .map(total -> Math.max(0, total - missingHirelings(facility)))
+                        .orElse(null),
                 source.map(BastionFacility::getOrders).orElse(List.of()).stream()
                         .map(order -> new BastionLabel(order.name(), order.getName()))
                         .toList(),
@@ -141,7 +199,134 @@ public class PlayerBastionResponseMapper {
                         .map(space -> new FacilitySpaceResponse(space.name(), space.getName(), space.getSquares()))
                         .orElse(null),
                 facility.getPendingReadyOnTurn(),
-                isEnlargeable(facility, reference));
+                isEnlargeable(facility, reference),
+                isBarrack(reference) ? facility.getDefenders() : null,
+                isBarrack(reference) ? BastionRules.barrackCapacity(facility.getSpace()) : null,
+                craftableItems(facility, reference, options),
+                isMenagerie(reference) ? menagerie(facility) : null,
+                isStable(reference) ? stable(facility, bestiary) : null,
+                isUnavailable(facility) ? facility.getUnavailableOnTurn() : null,
+                isUnavailable(facility) ? facility.getUnavailableReason() : null,
+                missingHirelings(facility) > 0 ? missingHirelings(facility) : null,
+                source.map(BastionFacility::getRoomTemplates)
+                        .map(templates -> FacilityRoomTemplates.forSpace(templates, facility.getSpace()))
+                        .orElse(null));
+    }
+
+    /** Сколько наёмников событие забрало и им ещё не нашли замену в текущий ход бастиона. */
+    private static int missingHirelings(PlayerBastionFacility facility) {
+        return facility.missingHirelings(facility.getMember().getBastion().getTurn());
+    }
+
+    /** Сооружение не работает в текущий или следующий ход бастиона после события. */
+    public static boolean isUnavailable(PlayerBastionFacility facility) {
+        return facility.getUnavailableOnTurn() != null
+                && facility.getUnavailableOnTurn() >= facility.getMember().getBastion().getTurn();
+    }
+
+    /** Сооружение справочника — зверинец, в вольерах живут существа. */
+    public static boolean isMenagerie(BastionFacility reference) {
+        return reference != null && Boolean.TRUE.equals(reference.getMenagerie());
+    }
+
+    /** Сколько места в вольерах занимают существа зверинца, в четвертях большого. */
+    public static int menagerieOccupied(PlayerBastionFacility facility) {
+        return Optional.ofNullable(facility.getCreatures()).orElse(List.of()).stream()
+                .mapToInt(creature -> BastionRules.menagerieSpace(creature.getSize()))
+                .sum();
+    }
+
+    private static PlayerBastionResponse.Menagerie menagerie(PlayerBastionFacility facility) {
+        List<PlayerBastionResponse.Creature> creatures = Optional.ofNullable(facility.getCreatures())
+                .orElse(List.of())
+                .stream()
+                .map(creature -> new PlayerBastionResponse.Creature(creature.getId(), creature.getName(),
+                        sizeLabel(creature.getSize()), creature.getChallenge(),
+                        BastionRules.menagerieSpace(creature.getSize()), creature.isDefender()))
+                .toList();
+        List<PlayerBastionResponse.Beast> beasts = Arrays.stream(MenagerieBeast.values())
+                .map(beast -> new PlayerBastionResponse.Beast(beast.name(), beast.getName(),
+                        sizeLabel(beast.getSize()), BastionRules.menagerieSpace(beast.getSize()), beast.getCost()))
+                .toList();
+        return new PlayerBastionResponse.Menagerie(BastionRules.MENAGERIE_CAPACITY, menagerieOccupied(facility),
+                creatures, beasts, BastionRules.MENAGERIE_CHALLENGE_COSTS);
+    }
+
+    /** Сооружение справочника — конюшня, в ней живут верховые животные. */
+    public static boolean isStable(BastionFacility reference) {
+        return reference != null && Boolean.TRUE.equals(reference.getStable());
+    }
+
+    /** Сколько места в конюшне занимают животные, в половинах большого. */
+    public static int stableOccupied(PlayerBastionFacility facility) {
+        return Optional.ofNullable(facility.getAnimals()).orElse(List.of()).stream()
+                .mapToInt(animal -> BastionRules.stableSpace(animal.getSize()))
+                .sum();
+    }
+
+    private static PlayerBastionResponse.Stable stable(PlayerBastionFacility facility, Map<String, String> bestiary) {
+        int turn = facility.getMember().getBastion().getTurn();
+        int bondTurns = PlayerBastionActivityService.turnsFor(BastionRules.STABLE_BOND_DAYS);
+        List<PlayerBastionResponse.Animal> animals = Optional.ofNullable(facility.getAnimals())
+                .orElse(List.of())
+                .stream()
+                .map(animal -> new PlayerBastionResponse.Animal(animal.getId(),
+                        Optional.ofNullable(animal.getKind()).map(StableAnimalKind::name).orElse(null),
+                        animal.getName(), sizeLabel(animal.getSize()), BastionRules.stableSpace(animal.getSize()),
+                        animal.getCost(), animal.getArrivedOnTurn(), turn - animal.getArrivedOnTurn() >= bondTurns,
+                        Optional.ofNullable(animal.getKind()).map(kind -> bestiaryUrl(kind, bestiary)).orElse(null)))
+                .toList();
+        List<PlayerBastionResponse.AnimalKind> kinds = Arrays.stream(StableAnimalKind.values())
+                .map(kind -> new PlayerBastionResponse.AnimalKind(kind.name(), kind.getName(),
+                        sizeLabel(kind.getSize()), BastionRules.stableSpace(kind.getSize()), kind.getCost(),
+                        bestiaryUrl(kind, bestiary)))
+                .toList();
+        return new PlayerBastionResponse.Stable(BastionRules.STABLE_CAPACITY, stableOccupied(facility), animals, kinds,
+                BastionRules.stableSaleBonusPercent(facility.getMember().getCharacterLevel()));
+    }
+
+    private static String bestiaryUrl(StableAnimalKind kind, Map<String, String> bestiary) {
+        return bestiary.get(kind.getEnglish().toLowerCase(Locale.ROOT));
+    }
+
+    private static BastionLabel sizeLabel(Size size) {
+        return size == null ? null : new BastionLabel(size.name(), size.getNames()[0]);
+    }
+
+    /**
+     * Что сооружение может изготовить выбранными инструментами (мастерская), с ценой и
+     * сроком изготовления силами наёмников сооружения.
+     *
+     * @return предметы; {@code null}, если у сооружения нет выбора инструментов
+     */
+    public List<PlayerBastionResponse.CraftableItem> craftableItems(PlayerBastionFacility facility,
+                                                                    BastionFacility reference) {
+        return craftableItems(facility, reference, choiceOptions.resolver());
+    }
+
+    private List<PlayerBastionResponse.CraftableItem> craftableItems(
+            PlayerBastionFacility facility,
+            BastionFacility reference,
+            Function<FacilityChoice, List<FacilityChoiceOption>> options) {
+        List<EntityRef> crafts = reference == null
+                ? null
+                : choiceOptions.crafts(reference.getChoices(), facility.getChoices(), options);
+        if (crafts == null) {
+            return null;
+        }
+        Map<String, Double> prices = choiceOptions.pricesGp(crafts.stream().map(EntityRef::getUrl).toList());
+        return crafts.stream()
+                .map(item -> {
+                    Double price = prices.get(item.getUrl());
+                    return new PlayerBastionResponse.CraftableItem(item.getUrl(), item.getName(), price,
+                            price == null ? null : BastionRules.craftDays(price, reference.getHirelings()));
+                })
+                .toList();
+    }
+
+    /** Сооружение справочника — барак, в нём живут защитники. */
+    public static boolean isBarrack(BastionFacility reference) {
+        return reference != null && Boolean.TRUE.equals(reference.getBarrack());
     }
 
     /**

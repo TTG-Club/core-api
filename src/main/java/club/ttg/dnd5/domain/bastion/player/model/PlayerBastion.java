@@ -1,6 +1,7 @@
 package club.ttg.dnd5.domain.bastion.player.model;
 
 import club.ttg.dnd5.domain.common.model.Timestamped;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,33 +18,46 @@ import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OptimisticLock;
+import org.hibernate.annotations.Type;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Бастион игроков в игре из каталога (find-game-api).
+ * Бастион игроков. Принадлежит создавшему его пользователю ({@link #ownerId}), как лист
+ * персонажа, и может быть добавлен в одну игру из каталога (find-game-api).
  *
  * <p>Игра живёт в соседнем сервисе, здесь от неё только {@link #gameId} и мастер на момент
- * создания. Права каждый раз проверяются по актуальному составу игры, а {@link #masterId}
- * нужен, чтобы находить бастионы мастера без похода в каталог.</p>
+ * добавления. Права в игре каждый раз проверяются по актуальному составу игры, а
+ * {@link #masterId} нужен, чтобы находить бастионы мастера без похода в каталог. Вне игры
+ * бастионом распоряжается владелец.</p>
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
 @Table(name = "player_bastion",
-        indexes = @Index(name = "player_bastion_game_id_index", columnList = "game_id"))
+        indexes = {
+                @Index(name = "player_bastion_game_id_index", columnList = "game_id"),
+                @Index(name = "player_bastion_owner_id_index", columnList = "owner_id"),
+                @Index(name = "player_bastion_share_token_index", columnList = "share_token", unique = true)
+        })
 public class PlayerBastion extends Timestamped {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "game_id", nullable = false)
+    @Column(name = "owner_id", nullable = false)
+    private UUID ownerId;
+
+    /** Игра, в которую добавлен бастион; {@code null} — бастион вне игры. */
+    @Column(name = "game_id")
     private UUID gameId;
 
-    @Column(name = "master_id", nullable = false)
+    /** Мастер игры на момент добавления; {@code null} — бастион вне игры. */
+    @Column(name = "master_id")
     private UUID masterId;
 
     @Column(nullable = false, length = 100)
@@ -61,10 +75,43 @@ public class PlayerBastion extends Timestamped {
     @Column(name = "treasury_gp", nullable = false)
     private long treasuryGp;
 
+    /**
+     * Секрет ссылки «поделиться бастионом»: {@code null} — ссылки нет. По ссылке бастион
+     * открывается кому угодно, но только на чтение. Из версии исключён: включить или отозвать
+     * ссылку можно, пока бастион правят, и правка не должна после этого получать конфликт.
+     */
+    @OptimisticLock(excluded = true)
+    @Column(name = "share_token")
+    private UUID shareToken;
+
     /** Оптимистическая блокировка: мастер и игроки правят бастион одновременно. */
     @Version
     @Column(nullable = false)
     private long version;
+
+    /** Достроенные блоки защитной стены (5-футовые квадраты): столько клеток стены можно поставить на план. */
+    @Column(name = "defense_wall_squares", nullable = false)
+    private int defenseWallSquares;
+
+    /** Блоки защитной стены в стройке: на план их ставить ещё нельзя. */
+    @Column(name = "defense_wall_squares_building", nullable = false)
+    private int defenseWallSquaresBuilding;
+
+    /** Ход, к которому достроятся блоки стены в стройке. */
+    @Column(name = "defense_wall_ready_on_turn")
+    private Integer defenseWallReadyOnTurn;
+
+    /**
+     * Бастион полностью окружён защитными стенами — выставляется при сохранении плана. При
+     * атаке на такой бастион потери защитников бросаются на 2 кубика меньше.
+     */
+    @Column(name = "defense_walls_enclosed", nullable = false)
+    private boolean defenseWallsEnclosed;
+
+    /** Гости бастиона из событий: известные личности, наёмники, монстры, беженцы. */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private List<BastionGuest> guests = new ArrayList<>();
 
     @OneToMany(mappedBy = "bastion", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")

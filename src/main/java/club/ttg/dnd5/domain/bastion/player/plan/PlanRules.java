@@ -1,20 +1,25 @@
 package club.ttg.dnd5.domain.bastion.player.plan;
 
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Building;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Cell;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Circle;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Column;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Door;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.FacilityCell;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Floor;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Outline;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Passage;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Furniture;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.OpeningType;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Room;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.RoomKind;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Side;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Stair;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.TowerOpening;
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Window;
 import club.ttg.dnd5.exception.ApiException;
 import lombok.experimental.UtilityClass;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,30 +36,97 @@ import java.util.stream.Collectors;
  * <p>План косметический, поэтому строго проверяется только то, что относится к правилам и
  * к целостности документа:
  * <ul>
- *     <li>площадь каждого сооружения — сумма его клеток по всем этажам и корпусам — не
- *     больше его пространства (тесное 4, вместительное 16, просторное 36);</li>
- *     <li>клетки сооружений лежат внутри контура своего корпуса и не повторяются на этаже;</li>
+ *     <li>площадь каждого сооружения — сумма клеток его комнат по всем этажам — не больше
+ *     его пространства (тесное 4, вместительное 16, просторное 36);</li>
  *     <li>на плане только сооружения этого бастиона;</li>
- *     <li>двери, окна и лестницы стоят внутри корпуса, лестница ведёт на существующий этаж;</li>
+ *     <li>клетка этажа принадлежит одной комнате — пересечения разводит {@link #normalize};</li>
+ *     <li>двери и окна стоят на краю комнаты, лестница ведёт на существующий этаж;</li>
  *     <li>размеры плана ограничены, чтобы документ не разрастался бесконечно.</li>
- * </ul></p>
+ * </ul>
+ * Где именно встают стены, сервер не проверяет: их строит редактор.</p>
  */
 @UtilityClass
 public class PlanRules {
     /** Сторона участка в клетках: 200 клеток — 1000 футов. */
     public static final int GRID_SIZE = 200;
-    public static final int MAX_BUILDINGS = 40;
     public static final int MAX_FLOORS = 10;
     public static final int MIN_LEVEL = -3;
     public static final int MAX_LEVEL = 9;
-    public static final int MAX_POLYGON_POINTS = 64;
-    public static final int MAX_LOOSE_CELLS = 4_000;
+    public static final int MAX_ROOMS = 300;
+    public static final int MAX_CELLS = 20_000;
+    public static final int MAX_OBJECTS = 2_000;
+    public static final int MAX_WALL_CELLS = 4_000;
     public static final int MAX_NAME_LENGTH = 100;
+    public static final int MAX_STAIR_SIDE = 10;
+    public static final double MIN_TOWER_RADIUS = 1;
+    public static final double MAX_TOWER_RADIUS = 25;
+    /** Шаг угла проёма в стене башни, градусы. */
+    public static final double TOWER_ANGLE_STEP = 22.5;
 
     /**
-     * Проверяет план.
+     * Приводит план к виду, который сервер хранит: клетки башен пересчитаны по окружности,
+     * сооружения, убранные из бастиона, сняты с комнат, ворота вне защитной стены убраны,
+     * пустые списки вместо {@code null}.
      *
-     * @param document   план
+     * @param document   план от клиента или из базы
+     * @param facilities сооружения бастиона
+     * @return нормализованный план
+     */
+    public static PlanDocument normalize(PlanDocument document, Map<UUID, ?> facilities) {
+        if (document == null) {
+            return PlanDocument.empty();
+        }
+        List<Integer> levels = list(document.levels());
+        List<Room> rooms = list(document.rooms()).stream()
+                .map(room -> new Room(room.id(), room.name(), room.kind(), room.level(),
+                        room.facilityId() != null && facilities.containsKey(room.facilityId())
+                                ? room.facilityId() : null,
+                        room.kind() == RoomKind.TOWER && validCircle(room.shape())
+                                ? PlanGeometry.cellsInside(room.shape()) : list(room.cells()),
+                        room.kind() == RoomKind.TOWER ? room.shape() : null))
+                .toList();
+        List<Cell> defenseWalls = list(document.defenseWalls());
+        Set<Cell> wallCells = new HashSet<>(defenseWalls);
+        List<Cell> defenseGates = list(document.defenseGates()).stream()
+                .filter(wallCells::contains)
+                .distinct()
+                .toList();
+        return new PlanDocument(levels.isEmpty() ? List.of(0) : levels, withoutOverlaps(rooms),
+                list(document.doors()), list(document.windows()), list(document.towerOpenings()),
+                list(document.stairs()), list(document.columns()), defenseWalls,
+                list(document.furniture()), defenseGates);
+    }
+
+    /**
+     * Разводит комнаты, претендующие на одну клетку этажа: клетка остаётся за башней, а среди
+     * прочих — за комнатой, что раньше в списке. Так одновременные правки двух человек дают
+     * предсказуемый план, а не отказ в сохранении. Опустевшие комнаты убираются.
+     */
+    private static List<Room> withoutOverlaps(List<Room> rooms) {
+        Map<Integer, Set<Cell>> taken = new HashMap<>();
+        List<Room> ordered = new ArrayList<>(rooms.stream().filter(PlanRules::isTower).toList());
+        ordered.addAll(rooms.stream().filter(room -> !isTower(room)).toList());
+
+        Map<Room, List<Cell>> kept = new HashMap<>();
+        for (Room room : ordered) {
+            Set<Cell> floor = taken.computeIfAbsent(room.level(), level -> new HashSet<>());
+            kept.put(room, room.cells().stream().filter(floor::add).toList());
+        }
+        return rooms.stream()
+                .map(room -> new Room(room.id(), room.name(), room.kind(), room.level(), room.facilityId(),
+                        kept.get(room), room.shape()))
+                .filter(room -> !room.cells().isEmpty())
+                .toList();
+    }
+
+    private static boolean isTower(Room room) {
+        return room.kind() != null && room.kind().isTower();
+    }
+
+    /**
+     * Проверяет нормализованный план.
+     *
+     * @param document   план после {@link #normalize}
      * @param facilities сооружения бастиона: id → пространство
      * @param names      названия сооружений для сообщений об ошибке
      * @throws ApiException 400 с объяснением
@@ -62,23 +134,170 @@ public class PlanRules {
     public static void validate(PlanDocument document,
                                 Map<UUID, FacilitySpace> facilities,
                                 Map<UUID, String> names) {
-        List<Building> buildings = list(document.buildings());
-        if (buildings.size() > MAX_BUILDINGS) {
-            throw badRequest("На плане не больше %d корпусов".formatted(MAX_BUILDINGS));
+        Set<Integer> levels = validateLevels(document.levels());
+        Map<Integer, Map<Cell, Room>> floors = validateRooms(document.rooms(), levels);
+        validateArea(document.rooms(), facilities, names);
+
+        int objects = document.doors().size() + document.windows().size() + document.towerOpenings().size()
+                + document.stairs().size() + document.columns().size() + document.furniture().size();
+        if (objects > MAX_OBJECTS) {
+            throw badRequest("Слишком много дверей, окон, лестниц, колонн и мебели: больше %d"
+                    .formatted(MAX_OBJECTS));
         }
 
-        Map<UUID, Integer> area = new HashMap<>();
+        Set<String> edges = new HashSet<>();
+        for (Door door : document.doors()) {
+            if (door.kind() == null) {
+                throw badRequest("У двери не указан вид");
+            }
+            requireEdge(floors, edges, door.level(), door.x(), door.y(), door.side(), "Дверь");
+        }
+        for (Window window : document.windows()) {
+            requireEdge(floors, edges, window.level(), window.x(), window.y(), window.side(), "Окно");
+        }
+        validateTowerOpenings(document.towerOpenings(), document.rooms());
+        Set<String> objectIds = new HashSet<>();
+        for (Stair stair : document.stairs()) {
+            requireObjectId(objectIds, stair.id());
+            validateStair(stair, levels);
+        }
+        for (Column column : document.columns()) {
+            requireObjectId(objectIds, column.id());
+            requireLevel(levels, column.level());
+            if (!halfStep(column.x()) || !halfStep(column.y()) || !onGrid(column.x(), column.y())) {
+                throw badRequest("Колонна стоит вне сетки участка");
+            }
+        }
+
+        for (Furniture furniture : document.furniture()) {
+            requireObjectId(objectIds, furniture.id());
+            validateFurniture(furniture, levels);
+        }
+
+        if (document.defenseWalls().size() > MAX_WALL_CELLS) {
+            throw badRequest("Защитная стена длиннее %d клеток".formatted(MAX_WALL_CELLS));
+        }
+        document.defenseWalls().forEach(PlanRules::requireCellOnGrid);
+    }
+
+    /**
+     * Окружён ли бастион защитной стеной полностью: от края участка нельзя дойти до комнат
+     * первого этажа, не пересекая стену. Ходят только по сторонам клеток, поэтому диагональный
+     * стык двух клеток стены сплошной. Ворота стоят на клетках стены и тоже её замыкают.
+     *
+     * @param document план после {@link #normalize}
+     * @return true, если на первом этаже есть комнаты и стена их окружает
+     */
+    public static boolean isEnclosed(PlanDocument document) {
+        Set<Cell> rooms = document.rooms().stream()
+                .filter(room -> room.level() == 0)
+                .flatMap(room -> room.cells().stream())
+                .collect(Collectors.toSet());
+        Set<Cell> walls = new HashSet<>(document.defenseWalls());
+        if (rooms.isEmpty() || walls.isEmpty()) {
+            return false;
+        }
+
+        Set<Cell> visited = new HashSet<>();
+        ArrayDeque<Cell> queue = new ArrayDeque<>();
+        for (int index = 0; index < GRID_SIZE; index++) {
+            visit(new Cell(index, 0), walls, visited, queue);
+            visit(new Cell(index, GRID_SIZE - 1), walls, visited, queue);
+            visit(new Cell(0, index), walls, visited, queue);
+            visit(new Cell(GRID_SIZE - 1, index), walls, visited, queue);
+        }
+        while (!queue.isEmpty()) {
+            Cell cell = queue.poll();
+            if (rooms.contains(cell)) {
+                return false;
+            }
+            visit(new Cell(cell.x() + 1, cell.y()), walls, visited, queue);
+            visit(new Cell(cell.x() - 1, cell.y()), walls, visited, queue);
+            visit(new Cell(cell.x(), cell.y() + 1), walls, visited, queue);
+            visit(new Cell(cell.x(), cell.y() - 1), walls, visited, queue);
+        }
+        return true;
+    }
+
+    private static void visit(Cell cell, Set<Cell> walls, Set<Cell> visited, ArrayDeque<Cell> queue) {
+        boolean onGrid = cell.x() >= 0 && cell.y() >= 0 && cell.x() < GRID_SIZE && cell.y() < GRID_SIZE;
+        if (onGrid && !walls.contains(cell) && visited.add(cell)) {
+            queue.add(cell);
+        }
+    }
+
+    private static Set<Integer> validateLevels(List<Integer> levels) {
+        Set<Integer> unique = new HashSet<>(levels);
+        if (unique.size() != levels.size() || levels.size() > MAX_FLOORS) {
+            throw badRequest("Этажей должно быть от 1 до %d, без повторов".formatted(MAX_FLOORS));
+        }
+        if (!unique.contains(0)) {
+            throw badRequest("У плана должен быть первый этаж");
+        }
+        for (int level : unique) {
+            if (level < MIN_LEVEL || level > MAX_LEVEL) {
+                throw badRequest("Этаж должен быть от %d до %d".formatted(MIN_LEVEL, MAX_LEVEL));
+            }
+        }
+        return unique;
+    }
+
+    /** Комнаты и клетки этажей: уровень → клетка → комната. */
+    private static Map<Integer, Map<Cell, Room>> validateRooms(List<Room> rooms, Set<Integer> levels) {
+        if (rooms.size() > MAX_ROOMS) {
+            throw badRequest("На плане не больше %d комнат".formatted(MAX_ROOMS));
+        }
+        int total = rooms.stream().mapToInt(room -> room.cells().size()).sum();
+        if (total > MAX_CELLS) {
+            throw badRequest("Слишком большой план: больше %d клеток".formatted(MAX_CELLS));
+        }
+
         Set<String> ids = new HashSet<>();
-        for (Building building : buildings) {
-            if (!StringUtils.hasText(building.id()) || !ids.add(building.id())) {
-                throw badRequest("У каждого корпуса должен быть свой идентификатор");
+        Map<Integer, Map<Cell, Room>> floors = new HashMap<>();
+        for (Room room : rooms) {
+            if (!StringUtils.hasText(room.id()) || !ids.add(room.id())) {
+                throw badRequest("У каждой комнаты должен быть свой идентификатор");
             }
-            if (building.name() != null && building.name().length() > MAX_NAME_LENGTH) {
-                throw badRequest("Название корпуса длиннее %d символов".formatted(MAX_NAME_LENGTH));
+            String title = title(room);
+            if (room.name() != null && room.name().length() > MAX_NAME_LENGTH) {
+                throw badRequest("Название «%s» длиннее %d символов".formatted(title, MAX_NAME_LENGTH));
             }
-            validateBuilding(building, facilities, area);
+            if (room.kind() == null) {
+                throw badRequest("У «%s» не указан вид".formatted(title));
+            }
+            if (room.kind() == RoomKind.TOWER && !validCircle(room.shape())) {
+                throw badRequest("Окружность башни «%s» задана неверно или выходит за участок".formatted(title));
+            }
+            requireLevel(levels, room.level());
+            if (room.cells().isEmpty()) {
+                throw badRequest("В «%s» нет ни одной клетки".formatted(title));
+            }
+            Map<Cell, Room> floor = floors.computeIfAbsent(room.level(), level -> new HashMap<>());
+            for (Cell cell : room.cells()) {
+                requireCellOnGrid(cell);
+                Room other = floor.putIfAbsent(cell, room);
+                if (other != null) {
+                    throw badRequest("Клетка (%d, %d) занята и «%s», и «%s»"
+                            .formatted(cell.x(), cell.y(), title(other), title));
+                }
+            }
         }
+        return floors;
+    }
 
+    private static void validateArea(List<Room> rooms,
+                                     Map<UUID, FacilitySpace> facilities,
+                                     Map<UUID, String> names) {
+        Map<UUID, Integer> area = new HashMap<>();
+        for (Room room : rooms) {
+            if (room.facilityId() == null) {
+                continue;
+            }
+            if (!facilities.containsKey(room.facilityId())) {
+                throw badRequest("На плане сооружение, которого нет в бастионе");
+            }
+            area.merge(room.facilityId(), room.cells().size(), Integer::sum);
+        }
         area.forEach((facilityId, squares) -> {
             FacilitySpace space = facilities.get(facilityId);
             if (squares > space.getSquares()) {
@@ -87,113 +306,98 @@ public class PlanRules {
                                 space.getName().toLowerCase(), space.getSquares()));
             }
         });
-
-        int looseCells = list(document.walls()).size() + list(document.passages()).stream()
-                .mapToInt(passage -> list(passage.cells()).size())
-                .sum();
-        if (looseCells > MAX_LOOSE_CELLS) {
-            throw badRequest("Слишком много клеток переходов и стен: больше %d".formatted(MAX_LOOSE_CELLS));
-        }
-        for (Passage passage : list(document.passages())) {
-            if (passage.kind() == null) {
-                throw badRequest("У перехода не указан вид");
-            }
-            requireLevel(passage.level());
-            list(passage.cells()).forEach(PlanRules::requireCellOnGrid);
-        }
-        list(document.walls()).forEach(PlanRules::requireCellOnGrid);
     }
 
-    private static void validateBuilding(Building building,
-                                         Map<UUID, FacilitySpace> facilities,
-                                         Map<UUID, Integer> area) {
-        String title = Optional.ofNullable(building.name()).filter(StringUtils::hasText).orElse("Корпус");
-        Outline outline = requireOutline(building.outline(), title);
-        Set<Cell> inside = PlanGeometry.cellsInside(outline);
-
-        List<Floor> floors = list(building.floors());
-        if (floors.isEmpty() || floors.size() > MAX_FLOORS) {
-            throw badRequest("У «%s» должно быть от 1 до %d этажей".formatted(title, MAX_FLOORS));
+    /** Дверь или окно стоит на ребре, у которого хотя бы с одной стороны комната, и ребро не занято. */
+    private static void requireEdge(Map<Integer, Map<Cell, Room>> floors, Set<String> edges,
+                                    int level, int x, int y, Side side, String what) {
+        if (side == null) {
+            throw badRequest("%s без стороны клетки".formatted(what));
         }
-        Set<Integer> levels = floors.stream().map(Floor::level).collect(Collectors.toSet());
-        if (levels.size() != floors.size()) {
-            throw badRequest("У «%s» два этажа на одном уровне".formatted(title));
+        Map<Cell, Room> floor = floors.getOrDefault(level, Map.of());
+        if (PlanGeometry.edgeCells(x, y, side).stream().noneMatch(floor::containsKey)) {
+            throw badRequest("%s в (%d, %d) стоит не у комнаты".formatted(what, x, y));
         }
+        if (!edges.add(level + ":" + PlanGeometry.edgeKey(x, y, side))) {
+            throw badRequest("В стене у (%d, %d) две двери или окна в одном месте".formatted(x, y));
+        }
+    }
 
-        for (Floor floor : floors) {
-            requireLevel(floor.level());
-            Set<Cell> taken = new HashSet<>();
-            for (FacilityCell cell : list(floor.cells())) {
-                Cell position = new Cell(cell.x(), cell.y());
-                if (!inside.contains(position)) {
-                    throw badRequest("Клетка сооружения (%d, %d) лежит вне контура «%s»"
-                            .formatted(cell.x(), cell.y(), title));
-                }
-                if (!taken.add(position)) {
-                    throw badRequest("Клетка (%d, %d) в «%s» занята дважды".formatted(cell.x(), cell.y(), title));
-                }
-                if (cell.facilityId() == null || !facilities.containsKey(cell.facilityId())) {
-                    throw badRequest("На плане сооружение, которого нет в бастионе");
-                }
-                area.merge(cell.facilityId(), 1, Integer::sum);
+    private static void validateTowerOpenings(List<TowerOpening> openings, List<Room> rooms) {
+        Map<String, Room> towers = rooms.stream()
+                .filter(room -> room.kind() == RoomKind.TOWER)
+                .collect(Collectors.toMap(Room::id, room -> room));
+        Set<String> taken = new HashSet<>();
+        for (TowerOpening opening : openings) {
+            Room tower = towers.get(opening.roomId());
+            if (tower == null) {
+                throw badRequest("Проём в стене башни, которой нет на плане");
             }
-            validateOpenings(floor, inside, title);
-            for (Stair stair : list(floor.stairs())) {
-                requireInside(inside, stair.x(), stair.y(), title, "Лестница");
-                if (stair.toLevel() == floor.level() || !levels.contains(stair.toLevel())) {
-                    throw badRequest("Лестница в «%s» ведёт на этаж, которого нет".formatted(title));
-                }
+            double steps = opening.angle() / TOWER_ANGLE_STEP;
+            List<Double> sides = PlanGeometry.sideAngles(tower.shape());
+            boolean onStep = sides.isEmpty()
+                    ? Math.abs(steps - Math.rint(steps)) <= 1e-9
+                    : sides.stream().anyMatch(side -> Math.abs(side - opening.angle()) <= 1e-6);
+            if (opening.angle() < 0 || opening.angle() >= 360 || !onStep) {
+                throw badRequest("Проём в «%s» стоит под неверным углом".formatted(title(tower)));
+            }
+            if (opening.type() == null || opening.type() == OpeningType.DOOR && opening.kind() == null) {
+                throw badRequest("У проёма в «%s» не указан вид".formatted(title(tower)));
+            }
+            if (!taken.add(opening.roomId() + ":" + Math.rint(opening.angle() * 1000))) {
+                throw badRequest("В стене «%s» два проёма в одном месте".formatted(title(tower)));
             }
         }
     }
 
-    private static void validateOpenings(Floor floor, Set<Cell> inside, String title) {
-        Set<String> doors = new HashSet<>();
-        for (Door door : list(floor.doors())) {
-            requireInside(inside, door.x(), door.y(), title, "Дверь");
-            if (door.side() == null || door.kind() == null
-                    || !doors.add(door.x() + ":" + door.y() + ":" + door.side())) {
-                throw badRequest("Дверь в «%s» указана неверно или дважды".formatted(title));
-            }
-        }
-        Set<String> windows = new HashSet<>();
-        for (Window window : list(floor.windows())) {
-            requireInside(inside, window.x(), window.y(), title, "Окно");
-            if (window.side() == null || !windows.add(window.x() + ":" + window.y() + ":" + window.side())) {
-                throw badRequest("Окно в «%s» указано неверно или дважды".formatted(title));
-            }
+    private static void requireObjectId(Set<String> ids, String id) {
+        if (!StringUtils.hasText(id) || !ids.add(id)) {
+            throw badRequest("У каждой лестницы, колонны и предмета мебели должен быть свой идентификатор");
         }
     }
 
-    private static Outline requireOutline(Outline outline, String title) {
-        if (outline == null || outline.type() == null) {
-            throw badRequest("У «%s» нет контура".formatted(title));
+    private static void validateStair(Stair stair, Set<Integer> levels) {
+        requireLevel(levels, stair.level());
+        if (stair.direction() == null || stair.kind() == null) {
+            throw badRequest("У лестницы не указан вид или направление");
         }
-        boolean valid = switch (outline.type()) {
-            case CIRCLE -> allHalfSteps(outline.cx(), outline.cy(), outline.r())
-                    && outline.r() >= 0.5 && outline.r() <= GRID_SIZE / 2.0
-                    && onGrid(outline.cx() - outline.r(), outline.cy() - outline.r())
-                    && onGrid(outline.cx() + outline.r(), outline.cy() + outline.r());
-            case RECTANGLE -> allHalfSteps(outline.x(), outline.y(), outline.width(), outline.height())
-                    && outline.width() >= 1 && outline.height() >= 1
-                    && onGrid(outline.x(), outline.y())
-                    && onGrid(outline.x() + outline.width(), outline.y() + outline.height());
-            case POLYGON -> {
-                List<List<Double>> points = list(outline.points());
-                yield points.size() >= 3 && points.size() <= MAX_POLYGON_POINTS
-                        && points.stream().allMatch(point -> point != null && point.size() == 2
-                        && allHalfSteps(point.get(0), point.get(1)) && onGrid(point.get(0), point.get(1)));
-            }
-        };
-        if (!valid) {
-            throw badRequest("Контур «%s» задан неверно или выходит за участок".formatted(title));
+        if (stair.toLevel() == stair.level() || !levels.contains(stair.toLevel())) {
+            throw badRequest("Лестница ведёт на этаж, которого нет");
         }
-        return outline;
+        if (stair.width() < 1 || stair.height() < 1
+                || stair.width() > MAX_STAIR_SIDE || stair.height() > MAX_STAIR_SIDE
+                || !onGrid(stair.x(), stair.y()) || !onGrid(stair.x() + stair.width(), stair.y() + stair.height())) {
+            throw badRequest("Лестница задана неверно или выходит за участок");
+        }
     }
 
-    private static void requireInside(Set<Cell> inside, int x, int y, String title, String what) {
-        if (!inside.contains(new Cell(x, y))) {
-            throw badRequest("%s в «%s» стоит вне контура".formatted(what, title));
+    private static boolean validCircle(Circle circle) {
+        return circle != null && (circle.sides() == null || PlanGeometry.TOWER_SIDES.contains(circle.sides()))
+                && halfStep(circle.cx()) && halfStep(circle.cy()) && halfStep(circle.r())
+                && circle.r() >= MIN_TOWER_RADIUS && circle.r() <= MAX_TOWER_RADIUS
+                && onGrid(circle.cx() - circle.r(), circle.cy() - circle.r())
+                && onGrid(circle.cx() + circle.r(), circle.cy() + circle.r());
+    }
+
+    private static void validateFurniture(Furniture furniture, Set<Integer> levels) {
+        if (furniture.kind() == null) {
+            throw badRequest("У мебели не указан вид");
+        }
+        if (furniture.rotation() % 90 != 0 || furniture.rotation() < 0 || furniture.rotation() >= 360) {
+            throw badRequest("Мебель поворачивается только на 0, 90, 180 или 270 градусов");
+        }
+        requireLevel(levels, furniture.level());
+        boolean turned = furniture.rotation() % 180 != 0;
+        int width = turned ? furniture.kind().depth() : furniture.kind().width();
+        int depth = turned ? furniture.kind().width() : furniture.kind().depth();
+        if (!onGrid(furniture.x(), furniture.y()) || !onGrid(furniture.x() + width, furniture.y() + depth)) {
+            throw badRequest("Мебель стоит вне участка");
+        }
+    }
+
+    private static void requireLevel(Set<Integer> levels, int level) {
+        if (!levels.contains(level)) {
+            throw badRequest("На плане нет этажа %d".formatted(level));
         }
     }
 
@@ -203,24 +407,17 @@ public class PlanRules {
         }
     }
 
-    private static void requireLevel(int level) {
-        if (level < MIN_LEVEL || level > MAX_LEVEL) {
-            throw badRequest("Этаж должен быть от %d до %d".formatted(MIN_LEVEL, MAX_LEVEL));
-        }
-    }
-
     private static boolean onGrid(double x, double y) {
         return x >= 0 && y >= 0 && x <= GRID_SIZE && y <= GRID_SIZE;
     }
 
-    /** Значения заданы и кратны половине клетки. */
-    private static boolean allHalfSteps(Double... values) {
-        for (Double value : values) {
-            if (value == null || !Double.isFinite(value) || Math.abs(value * 2 - Math.rint(value * 2)) > 1e-9) {
-                return false;
-            }
-        }
-        return true;
+    /** Значение конечное и кратно половине клетки. */
+    private static boolean halfStep(double value) {
+        return Double.isFinite(value) && Math.abs(value * 2 - Math.rint(value * 2)) <= 1e-9;
+    }
+
+    private static String title(Room room) {
+        return Optional.ofNullable(room.name()).filter(StringUtils::hasText).orElse("Комната");
     }
 
     private static <T> List<T> list(List<T> values) {

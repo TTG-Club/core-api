@@ -377,3 +377,31 @@ databaseChangeLog:
       file: db/changelog/2026/10/09-03-create-character-sheet-presence-table.yaml
   - include:
       file: db/changelog/2026/10/12-01-create-article-tag-table.yaml
+  - include:
+      file: db/changelog/2026/10/14-01-player-bastion-owner.yaml
+  - include:
+      file: db/changelog/2026/10/14-02-basic-facility-without-space.yaml
+  - include:
+      file: db/changelog/2026/10/14-03-player-bastion-share.yaml
+  - include:
+      file: db/changelog/2026/10/15-01-workshop-artisan-tools.yaml
+  - include:
+      file: db/changelog/2026/10/15-02-barrack-defenders.yaml
+  - include:
+      file: db/changelog/2026/10/15-03-bastion-order-item.yaml
+  - include:
+      file: db/changelog/2026/10/15-04-menagerie.yaml
+  - include:
+      file: db/changelog/2026/10/15-05-bastion-events.yaml
+  - include:
+      file: db/changelog/2026/10/16-01-hirelings-lost.yaml
+  - include:
+      file: db/changelog/2026/10/17-01-bastion-event-item.yaml
+  - include:
+      file: db/changelog/2026/10/17-02-defense-walls.yaml
+  - include:
+      file: db/changelog/2026/10/17-03-stable.yaml
+  - include:
+      file: db/changelog/2026/10/17-04-magic-item-theme.yaml
+  - include:
+      file: db/changelog/2026/10/17-05-facility-room-templates.yaml
