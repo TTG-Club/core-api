@@ -1,10 +1,10 @@
 package club.ttg.dnd5.domain.bastion.player.rest.dto;
 
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
-import club.ttg.dnd5.domain.bastion.model.FacilityRoomTemplate;
 import club.ttg.dnd5.domain.bastion.player.model.FacilityStatus;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
 import club.ttg.dnd5.domain.bastion.player.model.SelectedChoice;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.bastion.rest.dto.FacilitySpaceResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -116,8 +116,8 @@ public record PlayerBastionResponse(
             @Schema(description = "Почему сооружение не работает") String unavailableReason,
             @Schema(description = "Наёмники, которых забрало событие и которым ещё ищут замену; "
                     + "null — все на месте") Integer hirelingsMissing,
-            @Schema(description = "Шаблон готовой комнаты на плане для текущего пространства; "
-                    + "null — мебель расставит редактор плана") FacilityRoomTemplate roomTemplate) {
+            @Schema(description = "Предметы интерьера сооружения для готовой комнаты на плане; "
+                    + "null — набор по умолчанию") List<PlanDocument.FurnitureKind> furniture) {
     }
 
     /**
