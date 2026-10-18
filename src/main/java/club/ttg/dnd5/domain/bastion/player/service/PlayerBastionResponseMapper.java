@@ -19,7 +19,6 @@ import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionLabel;
 import club.ttg.dnd5.domain.bastion.rest.dto.FacilitySpaceResponse;
 import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
-import club.ttg.dnd5.domain.bastion.service.FacilityRoomTemplates;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.common.model.EntityRef;
@@ -208,9 +207,7 @@ public class PlayerBastionResponseMapper {
                 isUnavailable(facility) ? facility.getUnavailableOnTurn() : null,
                 isUnavailable(facility) ? facility.getUnavailableReason() : null,
                 missingHirelings(facility) > 0 ? missingHirelings(facility) : null,
-                source.map(BastionFacility::getRoomTemplates)
-                        .map(templates -> FacilityRoomTemplates.forSpace(templates, facility.getSpace()))
-                        .orElse(null));
+                source.map(BastionFacility::getFurniture).orElse(null));
     }
 
     /** Сколько наёмников событие забрало и им ещё не нашли замену в текущий ход бастиона. */

@@ -405,3 +405,9 @@ databaseChangeLog:
       file: db/changelog/2026/10/17-04-magic-item-theme.yaml
   - include:
       file: db/changelog/2026/10/17-05-facility-room-templates.yaml
+  - include:
+      file: db/changelog/2026/10/18-01-facility-furniture.yaml
+  - include:
+      file: db/changelog/2026/10/18-02-magic-item-show-in-list.yaml
+  - include:
+      file: db/changelog/2026/10/18-03-update-full-name-search-view-magic-item-show-in-list.yaml

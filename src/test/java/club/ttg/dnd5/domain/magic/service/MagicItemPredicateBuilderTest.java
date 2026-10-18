@@ -116,4 +116,14 @@ class MagicItemPredicateBuilderTest
         assertTrue(sql.contains("theme is null"), sql);
         PredicateSql.assertOrStaysInsideParentheses(sql);
     }
+
+    @Test
+    @DisplayName("скрытые из списка предметы не находятся поиском")
+    void searchSkipsItemsHiddenFromList()
+    {
+        String sql = sql(requestWithCategoryAndRarity());
+
+        assertTrue(sql.contains("showInList = ?") || sql.contains("showInList = true"), sql);
+        PredicateSql.assertOrStaysInsideParentheses(sql);
+    }
 }

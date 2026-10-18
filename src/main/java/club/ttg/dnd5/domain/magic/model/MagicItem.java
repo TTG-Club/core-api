@@ -111,6 +111,14 @@ public class MagicItem extends NamedEntity {
      * True если предмет адамантиновый.
      */
     private boolean adamantine;
+    /**
+     * True если предмет показывается в списке раздела «Магические предметы». Варианты вроде
+     * «Стрела +1» или «Короткий меч +2» скрывают, чтобы не засорять список: такие предметы не
+     * находятся ни поиском раздела, ни общим поиском, ни выбором предмета и открываются только
+     * по ссылке. Выгрузка в VTTG от признака не зависит.
+     */
+    @Column(name = "show_in_list", nullable = false)
+    private boolean showInList = true;
 
     @ManyToOne
     @JoinColumn(name = "source")
