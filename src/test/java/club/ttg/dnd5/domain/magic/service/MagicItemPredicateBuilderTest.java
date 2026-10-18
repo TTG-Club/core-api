@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -124,6 +125,19 @@ class MagicItemPredicateBuilderTest
         String sql = sql(requestWithCategoryAndRarity());
 
         assertTrue(sql.contains("showInList = ?") || sql.contains("showInList = true"), sql);
+        PredicateSql.assertOrStaysInsideParentheses(sql);
+    }
+
+    @Test
+    @DisplayName("выбор предмета в листе персонажа находит и скрытые из списка предметы")
+    void includeUnlistedKeepsItemsHiddenFromList()
+    {
+        MagicItemQueryRequest request = requestWithCategoryAndRarity();
+        request.setIncludeUnlisted(true);
+
+        String sql = sql(request);
+
+        assertFalse(sql.contains("showInList"), sql);
         PredicateSql.assertOrStaysInsideParentheses(sql);
     }
 }
