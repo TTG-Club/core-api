@@ -205,7 +205,7 @@ public class VttgItemMapper {
         data.put("type", "equipment");
         data.put("typeLabel", "Снаряжение");
         data.put("section", "armor");
-        data.put("baseType", baseType(item));
+        data.put("baseType", armorBaseType(item));
         if (armor == null) {
             return;
         }
@@ -292,6 +292,17 @@ public class VttgItemMapper {
             return weapon.getBaseType();
         }
         String byUrl = VttgWeaponKeys.ofUrl(item.getUrl());
+        return byUrl != null ? byUrl : baseType(item);
+    }
+
+    /**
+     * Базовый доспех для листа персонажа: ключ по адресу страницы ({@link VttgArmorKeys}).
+     * Слаг английского названия не годится — книга пишет «Leather Armor», а лист знает
+     * {@code leather}, и владеющий доспехом персонаж получал помеху. Доспех вне справочника
+     * листа (баклер) остаётся со слагом: владение им лист решит по категории.
+     */
+    private String armorBaseType(Item item) {
+        String byUrl = VttgArmorKeys.ofUrl(item.getUrl());
         return byUrl != null ? byUrl : baseType(item);
     }
 
