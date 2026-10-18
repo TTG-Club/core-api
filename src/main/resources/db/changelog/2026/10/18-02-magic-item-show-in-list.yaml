@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-18-02-magic-item-show-in-list
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Признак «показывать в списке» у магического предмета: скрытые предметы
+        (варианты вроде «Стрела +1») не попадают в список раздела. Существующие
+        записи остаются в списке.
+      changes:
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: show_in_list
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: magic_item
+            columnName: show_in_list

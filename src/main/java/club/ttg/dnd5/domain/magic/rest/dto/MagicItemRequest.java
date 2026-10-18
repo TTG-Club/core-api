@@ -56,6 +56,9 @@ public class MagicItemRequest extends BaseRequest {
     @Schema(description = "true если предмет адамантиновый")
     private boolean adamantine;
 
+    @Schema(description = "true если предмет показывается в списке раздела; по умолчанию true")
+    private boolean showInList = true;
+
     @Schema(description = "URL связанных немагических предметов (для веса/стоимости при экспорте в VTTG и фильтрации)",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private List<String> items;
