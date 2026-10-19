@@ -1,7 +1,11 @@
 package club.ttg.dnd5.domain.common.model;
 
+import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellGroup;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellUsageMode;
 import club.ttg.dnd5.domain.beastiary.rest.dto.ActionRequest;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
@@ -961,6 +965,7 @@ class VttgJsonContractTest {
                   "name": { "rus": "Укус", "eng": "Bite" },
                   "description": "Кусает",
                   "recharge": "D5",
+                  "cooldownTurns": 3,
                   "effect": {
                     "attackType": "MELEE",
                     "attackBonus": 9,
@@ -985,6 +990,7 @@ class VttgJsonContractTest {
         CreatureActionEffect effect = request.getEffect();
 
         assertEquals(RechargeType.D5, request.getRecharge());
+        assertEquals(3, request.getCooldownTurns());
         assertEquals(AttackType.MELEE, effect.getAttackType());
         assertEquals(9, effect.getAttackBonus());
         assertEquals(10, effect.getReach());
@@ -999,6 +1005,32 @@ class VttgJsonContractTest {
         assertEquals(30, effect.getAreaOfEffect().getValue1());
         assertEquals(List.of(DamageType.PIERCING), List.copyOf(effect.getDamageTypes()));
         assertEquals("target", effect.getActiveEffects().getFirst().getEffectTarget());
+    }
+
+    /**
+     * «Раз в N ходов» переживает JSONB записи, черты и порции заклинаний: класс без поля
+     * молча выбросил бы его при чтении, и выгрузке нечего было бы отдать.
+     */
+    @Test
+    void creatureEntriesKeepCooldownTurns() throws Exception {
+        CreatureAction action = mapper.readValue("""
+                {"name": "Ледяной вихрь", "cooldownTurns": 3}""", CreatureAction.class);
+        CreatureTrait trait = mapper.readValue("""
+                {"name": "Морозная вспышка", "cooldownTurns": 4}""", CreatureTrait.class);
+        CreatureSpellGroup group = mapper.readValue("""
+                {"mode": "COOLDOWN", "cooldownTurns": 5, "spells": []}""", CreatureSpellGroup.class);
+
+        assertEquals(3, action.getCooldownTurns());
+        assertEquals(4, trait.getCooldownTurns());
+        assertEquals(CreatureSpellUsageMode.COOLDOWN, group.getMode());
+        assertEquals(5, group.getCooldownTurns());
+        assertTrue(mapper.writeValueAsString(action).contains("\"cooldownTurns\":3"));
+        assertTrue(mapper.writeValueAsString(trait).contains("\"cooldownTurns\":4"));
+        String serializedGroup = mapper.writeValueAsString(group);
+        assertTrue(serializedGroup.contains("\"mode\":\"COOLDOWN\""));
+        assertTrue(serializedGroup.contains("\"cooldownTurns\":5"));
+        // Пустое в JSONB не пишется: старые записи остаются как были.
+        assertFalse(mapper.writeValueAsString(new CreatureAction()).contains("cooldownTurns"));
     }
 
     /**

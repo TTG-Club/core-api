@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.mapper;
 
+import club.ttg.dnd5.domain.beastiary.model.action.CooldownTurns;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.rest.dto.ActionRequest;
@@ -93,5 +94,20 @@ public interface ActionMapper {
         action.setAttackType(effect.getAttackType());
         action.setSawingThrows(effect.getSavingThrows());
         action.setDamageTypes(effect.getDamageTypes());
+    }
+
+    /**
+     * Не даёт сохранить «раз в N ходов», которое система не примет.
+     *
+     * Вне 2–20 число ходов система отбросит, а рядом с перезарядкой оно не действует:
+     * система берёт перезарядку. Храни мы такое значение, форма показывала бы
+     * ограничение, которого в игре нет.
+     *
+     * @param request запрос из формы.
+     * @param action собранная MapStruct запись, которая уходит в базу.
+     */
+    @AfterMapping
+    default void dropInapplicableCooldown(ActionRequest request, @MappingTarget CreatureAction action) {
+        action.setCooldownTurns(CooldownTurns.resolve(action.getRecharge(), action.getCooldownTurns()));
     }
 }

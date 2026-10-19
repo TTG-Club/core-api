@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.beastiary.model.action.CooldownTurns;
 import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellGroup;
 import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellRef;
 import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellRestKind;
@@ -138,9 +139,9 @@ public class VttgCreatureSpellcastingMapper {
      * Заряды заклинания по режиму порции.
      *
      * <p>{@code SpellUses} в VTTG — счётчик ОДНОГО заклинания, поэтому общий пул порции
-     * («1/день» на весь список) и перезарядка ей невыразимы: у таких порций зарядов на
-     * заклинании нет вовсе. Пусть лучше счётчика не будет, чем он будет неверным —
-     * ограничение видно в {@code system.spellcastingBlocks}.</p>
+     * («1/день» на весь список), перезарядка и «раз в N ходов» ей невыразимы: у таких
+     * порций зарядов на заклинании нет вовсе. Пусть лучше счётчика не будет, чем он будет
+     * неверным — ограничение видно в {@code system.spellcastingBlocks}.</p>
      *
      * @param group порция блока.
      * @return заряды заклинания или {@code null}, если счётчик порции невыразим.
@@ -160,7 +161,7 @@ public class VttgCreatureSpellcastingMapper {
             case PER_DAY_EACH -> counted(group.getCount(), "longRest");
             case PER_REST_EACH -> counted(group.getCount(),
                     group.getRest() == CreatureSpellRestKind.SHORT ? "shortRest" : "longRest");
-            case PER_DAY_POOL, PER_REST_POOL, RECHARGE -> null;
+            case PER_DAY_POOL, PER_REST_POOL, RECHARGE, COOLDOWN -> null;
         };
     }
 
@@ -228,6 +229,11 @@ public class VttgCreatureSpellcastingMapper {
         putIfNotNull(result, "count", group.getCount());
         putIfNotNull(result, "rest", rest(group.getRest()));
         putIfNotNull(result, "recharge", recharge(group.getRecharge()));
+        // «Раз в N ходов» имеет смысл только у своего режима, и число вне 2–20 система не примет.
+        if (group.getMode() == CreatureSpellUsageMode.COOLDOWN
+                && CooldownTurns.isValid(group.getCooldownTurns())) {
+            result.put("cooldownTurns", group.getCooldownTurns());
+        }
         putIfHasText(result, "label", group.getLabel());
         result.put("spells", spellRefs(group).stream()
                 .filter(ref -> StringUtils.hasText(ref.getUrl()))
@@ -273,6 +279,7 @@ public class VttgCreatureSpellcastingMapper {
             case PER_REST_POOL -> "perRestPool";
             case RECHARGE -> "recharge";
             case CONSTANT -> "constant";
+            case COOLDOWN -> "cooldown";
         };
     }
 

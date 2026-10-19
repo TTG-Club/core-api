@@ -612,6 +612,70 @@ class VttgCreatureMapperTest {
         assertFalse(((Map<?, ?>) traits.get(2)).containsKey("saveSuccessPerDay"));
     }
 
+    /**
+     * «Раз в N ходов» уезжает числом рядом с перезарядкой — у действия и у черты одинаково:
+     * так его читает система.
+     */
+    @Test
+    void exportsCooldownTurns() {
+        Creature creature = creature("frost-elemental-hb");
+        CreatureAction vortex = action("Ледяной вихрь", "[\"Существо закручивает вихрь.\"]");
+        vortex.setCooldownTurns(3);
+        creature.setActions(List.of(vortex));
+        CreatureTrait burst = new CreatureTrait();
+        burst.setName("Морозная вспышка");
+        burst.setDescription("[\"Холод расходится волной.\"]");
+        burst.setCooldownTurns(20);
+        creature.setTraits(List.of(burst));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) system.get("traits")).getFirst();
+
+        assertEquals(3, firstAction(system).get("cooldownTurns"));
+        assertFalse(firstAction(system).containsKey("recharge"));
+        assertEquals(20, mappedTrait.get("cooldownTurns"));
+    }
+
+    /** Пусто или вне 2–20 — ключа нет: такое число система не примет. */
+    @Test
+    void skipsCooldownTurnsOutOfRange() {
+        Creature creature = creature("frost-elemental-hb");
+        CreatureAction everyTurn = action("Каждый ход", "[\"Раз в ход — это без ограничения.\"]");
+        everyTurn.setCooldownTurns(1);
+        CreatureAction tooRare = action("Слишком редко", "[\"Число вне диапазона.\"]");
+        tooRare.setCooldownTurns(21);
+        CreatureAction plain = action("Укус", "[\"Существо кусает.\"]");
+        creature.setActions(List.of(everyTurn, tooRare, plain));
+
+        List<?> actions = (List<?>) mapper.toVttg(creature).getSystem().get("actions");
+
+        assertTrue(actions.stream().noneMatch(entry -> ((Map<?, ?>) entry).containsKey("cooldownTurns")));
+    }
+
+    /** Перезарядка и «раз в N ходов» взаимоисключающие: при обоих уезжает только перезарядка. */
+    @Test
+    void exportsOnlyRechargeWhenBothSet() {
+        Creature creature = creature("frost-elemental-hb");
+        CreatureAction breath = action("Ледяное дыхание", "[\"Существо выдыхает холод.\"]");
+        breath.setRecharge(RechargeType.D5);
+        breath.setCooldownTurns(3);
+        creature.setActions(List.of(breath));
+        CreatureTrait burst = new CreatureTrait();
+        burst.setName("Морозная вспышка");
+        burst.setDescription("[\"Холод расходится волной.\"]");
+        burst.setRecharge(RechargeType.SLR);
+        burst.setCooldownTurns(3);
+        creature.setTraits(List.of(burst));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) system.get("traits")).getFirst();
+
+        assertEquals("d5", firstAction(system).get("recharge"));
+        assertFalse(firstAction(system).containsKey("cooldownTurns"));
+        assertEquals("slr", mappedTrait.get("recharge"));
+        assertFalse(mappedTrait.containsKey("cooldownTurns"));
+    }
+
     /** Перезарядки нет — ключа нет. */
     @Test
     void skipsRechargeWhenNotSet() {
@@ -880,6 +944,38 @@ class VttgCreatureMapperTest {
         assertEquals("long", ownGroup.get("rest"));
         assertEquals("d5", ownGroup.get("recharge"));
         assertEquals("1/день", ownGroup.get("label"));
+    }
+
+    /**
+     * Порция «раз в N ходов» уезжает своим режимом и числом ходов. Зарядов заклинанию она
+     * не даёт — счётчик применений ей невыразим. Число ходов у другого режима или вне 2–20
+     * не уезжает.
+     */
+    @Test
+    void exportsCooldownSpellGroup() {
+        catalog("cone-of-cold-phb", "shield-phb", "augury-phb");
+        Creature creature = creature("frost-mage-hb");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        CreatureSpellGroup cooldown = group(CreatureSpellUsageMode.COOLDOWN, spellRef("cone-of-cold-phb"));
+        cooldown.setCooldownTurns(3);
+        CreatureSpellGroup otherMode = counted(CreatureSpellUsageMode.PER_DAY_EACH, 1, spellRef("shield-phb"));
+        otherMode.setCooldownTurns(3);
+        CreatureSpellGroup outOfRange = group(CreatureSpellUsageMode.COOLDOWN, spellRef("augury-phb"));
+        outOfRange.setCooldownTurns(1);
+        block.setGroups(List.of(cooldown, otherMode, outOfRange));
+        creature.setSpellcasting(List.of(block));
+
+        VttgCreature mapped = mapper.toVttg(creature);
+        Map<?, ?> mappedBlock = (Map<?, ?>) ((List<?>) mapped.getSystem().get("spellcastingBlocks")).getFirst();
+        List<?> groups = (List<?>) mappedBlock.get("groups");
+        Map<?, ?> mappedCooldown = (Map<?, ?>) groups.getFirst();
+
+        assertEquals("cooldown", mappedCooldown.get("mode"));
+        assertEquals(3, mappedCooldown.get("cooldownTurns"));
+        assertNull(mapped.getSpells().getFirst().getUses());
+        assertFalse(((Map<?, ?>) groups.get(1)).containsKey("cooldownTurns"));
+        assertEquals("cooldown", ((Map<?, ?>) groups.get(2)).get("mode"));
+        assertFalse(((Map<?, ?>) groups.get(2)).containsKey("cooldownTurns"));
     }
 
     /** Существо без блоков выгружается как раньше: ни заклинаний, ни ключа заклинательства. */

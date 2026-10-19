@@ -9,6 +9,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CooldownTurns;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureDamageAlternative;
@@ -374,7 +375,7 @@ public class VttgCreatureMapper {
 
     private Map<String, Object> trait(CreatureTrait trait) {
         Map<String, Object> result = entry(trait.getName(), trait.getEnglish(), description(trait.getDescription()),
-                trait.getRecharge(), trait.getEffect(), null, null);
+                trait.getRecharge(), trait.getCooldownTurns(), trait.getEffect(), null, null);
         // «Легендарное сопротивление»: число вне 1–20 система не примет — такое не отдаём.
         Integer perDay = trait.getSaveSuccessPerDay();
         if (perDay != null && perDay >= 1 && perDay <= 20) {
@@ -392,7 +393,7 @@ public class VttgCreatureMapper {
 
     private Map<String, Object> action(CreatureAction action) {
         return entry(action.getName(), action.getEnglish(), description(action.getDescription()),
-                action.getRecharge(), action.getEffect(),
+                action.getRecharge(), action.getCooldownTurns(), action.getEffect(),
                 action.getAttackType(), action.getSawingThrows());
     }
 
@@ -408,6 +409,9 @@ public class VttgCreatureMapper {
      * @param nameEn английское название записи.
      * @param description описание записи текстом.
      * @param recharge перезарядка записи.
+     * @param cooldownTurns «раз в N ходов» записи. Уходит только целым 2–20 и только без
+     *                      перезарядки: с ней оно взаимоисключающее, и система всё равно
+     *                      взяла бы перезарядку.
      * @param effect механика записи; {@code null} — её не заводили.
      * @param legacyAttackType тип атаки старого импорта. Лежит рядом с записью, а не внутри
      *                         механики: у записи, которую ни разу не открывали в мастерской,
@@ -417,6 +421,7 @@ public class VttgCreatureMapper {
      */
     private Map<String, Object> entry(String name, String nameEn, String description,
                                       RechargeType recharge,
+                                      Integer cooldownTurns,
                                       CreatureActionEffect effect,
                                       AttackType legacyAttackType,
                                       Collection<SawingThrow> legacySaves) {
@@ -434,6 +439,7 @@ public class VttgCreatureMapper {
         putIfHasText(result, "nameEn", nameEn);
         result.put("description", paragraphsFromText(description));
         putIfHasText(result, "recharge", recharge(recharge));
+        putIfNotNull(result, "cooldownTurns", CooldownTurns.resolve(recharge, cooldownTurns));
 
         // Спас заменяет бросок попадания — то же правило, что в форме системы.
         if (autoHit) {

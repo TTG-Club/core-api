@@ -23,6 +23,8 @@ public class TraitRequest {
     @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
     private String original;
     private RechargeType recharge;
+    @Schema(description = "Раз в N ходов: целое 2–20; при заданной перезарядке не хранится")
+    private Integer cooldownTurns;
     @Schema(description = "Боевая механика умения: урон, атака, спасбросок, область, эффекты")
     private CreatureActionEffect effect;
     @Schema(description = "Провал спасброска → успех, раз в день (Легендарное сопротивление): целое 1–20")
