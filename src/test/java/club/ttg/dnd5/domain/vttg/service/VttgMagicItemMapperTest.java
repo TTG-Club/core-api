@@ -174,7 +174,10 @@ class VttgMagicItemMapperTest {
         assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
     }
 
-    /** Надетый предмет не расходуется: признака в выгрузке нет вовсе. */
+    /**
+     * Надетый предмет не расходуется и не работает «при себе»: обоих признаков в выгрузке
+     * нет вовсе.
+     */
     @Test
     void keepsWornItemNotConsumable() {
         MagicItem item = wandOfFear();

@@ -110,8 +110,8 @@ public class Weapon  {
     private String saveType;
 
     /**
-     * Что происходит с уроном при успешном спасброске: {@code half}, {@code none},
-     * {@code special}.
+     * Что спасбросок делает с уроном: {@code half}, {@code none}, {@code special}
+     * либо {@code double} — провал удваивает урон, успех ничего не меняет.
      */
     private String saveEffect;
 }
