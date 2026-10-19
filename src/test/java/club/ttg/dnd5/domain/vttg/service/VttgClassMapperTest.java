@@ -456,6 +456,26 @@ class VttgClassMapperTest {
         assertEquals(objectMapper.readTree(changes), exported);
     }
 
+    /**
+     * «Хитрое действие»: флаг {@code hide.bonusAction} (засада бонусным действием)
+     * бэкенд не сверяет со списком — уезжает в выгрузку как есть.
+     */
+    @Test
+    void exportsHideAsBonusFlagAsIs() throws Exception {
+        ActiveEffect cunning = objectMapper.readValue("""
+                {"id": "effect-rogue-phb-cunning-action-hide", "name": "Засада бонусным действием",
+                 "changes": [], "flags": ["hide.bonusAction"]}""", ActiveEffect.class);
+
+        CharacterClass rogue = baseClass("rogue", "Плут", "Rogue");
+        ClassFeature cunningAction = feature("cunning-action", 2, "Хитрое действие", "Бонусным действием.");
+        cunningAction.setActiveEffects(List.of(cunning));
+        rogue.setFeatures(List.of(cunningAction));
+
+        JsonNode exported = featureByKey(json(rogue).get("features"), "cunning-action")
+                .get("activeEffects").get(0).get("flags");
+        assertEquals(objectMapper.readTree("[\"hide.bonusAction\"]"), exported);
+    }
+
     /** Заклинания, выданные умением, уезжают списком id — как их ждёт эталон. */
     @Test
     void exportsGrantedSpellsOfFeature() {

@@ -724,6 +724,46 @@ class VttgSpellMapperTest {
                 exported.get("changes").get(0).get("condition").asText());
     }
 
+    /**
+     * «Невидимость» 2024: окончания «накладывает заклинание» и «наносит урон» —
+     * срабатывания с новыми событиями {@code spellCast} и {@code damageDealt}.
+     * Бэкенд событий не разбирает: эффект уезжает в выгрузку как есть.
+     */
+    @Test
+    void exportsInvisibilityEndingTriggersAsAuthored() throws Exception {
+        Spell spell = new Spell();
+        spell.setUrl("invisibility-phb");
+        spell.setName("Невидимость");
+        spell.setEnglish("Invisibility");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.ILLUSION).build());
+
+        ObjectMapper json = new ObjectMapper();
+        var authored = json.readTree("""
+                {
+                  "id": "effect-invisibility-phb-1",
+                  "name": "Невидимый",
+                  "effectTarget": "target",
+                  "conditionKey": "invisible",
+                  "consumeOn": "carrierAttack",
+                  "flags": ["attack.advantage", "attacksAgainst.disadvantage", "initiative.advantage", "vision.invisible"],
+                  "changes": [],
+                  "triggers": [
+                    { "id": "invisibility.spellCast", "event": "spellCast",
+                      "actions": [{ "type": "removeSelf" }] },
+                    { "id": "invisibility.damageDealt", "event": "damageDealt",
+                      "actions": [{ "type": "removeSelf" }] }
+                  ]
+                }
+                """);
+        spell.setActiveEffects(List.of(json.treeToValue(authored, ActiveEffect.class)));
+
+        var exported = json.readTree(json.writeValueAsString(mapper.toVttg(spell)))
+                .get("activeEffects").get(0);
+
+        assertEquals(authored, exported);
+    }
+
     /** Заклинание без активных эффектов не несёт поле activeEffects (омитится). */
     @Test
     void omitsActiveEffectsWhenAbsent() {
