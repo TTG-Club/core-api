@@ -1047,6 +1047,25 @@ class VttgCreatureMapperTest {
         assertDamagePart(alternative, "2к8@dmg.necrotic@self.status.bloodied + 2", null);
     }
 
+    /**
+     * Гоблин: «или …, если у атаки было преимущество» — токен {@code @roll.advantage} в
+     * формуле варианта. Способ остаётся «по формуле», формула едет как есть: токен снимает
+     * система при выборе набора.
+     */
+    @Test
+    void keepsRollAdvantageTokenInDamageAlternative() {
+        CreatureActionEffect effect = effectWith("1к6@dmg.slashing + 2");
+        effect.setDamageAlternatives(List.of(
+                alternative("formula", null, "2к6@dmg.slashing + 2@roll.advantage")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        assertEquals(1, alternatives.size());
+        Map<?, ?> alternative = (Map<?, ?>) alternatives.getFirst();
+        assertEquals("formula", alternative.get("condition"));
+        assertDamagePart(alternative, "2к6@dmg.slashing + 2@roll.advantage", null);
+    }
+
     /** Химера: своя подпись варианта уезжает обрезанной. */
     @Test
     void trimsDamageAlternativeLabel() {

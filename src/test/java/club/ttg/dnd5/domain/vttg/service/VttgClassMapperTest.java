@@ -426,6 +426,36 @@ class VttgClassMapperTest {
         assertEquals("Ярость", json.get("features").get(0).get("activeEffects").get(0).get("name").asText());
     }
 
+    /**
+     * Скрытая атака: строки с ключами {@code sneakAttack.*} и условием из групп «||»
+     * бэкенд не разбирает — сохранённые мастерской, они уезжают в выгрузку как есть.
+     */
+    @Test
+    void exportsSneakAttackChangesAsIs() throws Exception {
+        String changes = """
+                [
+                  {"key": "sneakAttack.damage", "mode": "add",
+                   "value": "(1 + steps(@classLevel, 3, 5, 7, 9, 11, 13, 15, 17, 19))к6",
+                   "condition": "weapon.property === \\"finesse\\" && roll.hasAdvantage === true || weapon.property === \\"finesse\\" && target.allyAdjacent && roll.hasDisadvantage === false || weapon.rangeType === \\"ranged\\" && roll.hasAdvantage === true || weapon.rangeType === \\"ranged\\" && target.allyAdjacent && roll.hasDisadvantage === false",
+                   "priority": 20},
+                  {"key": "sneakAttack.dice", "mode": "add", "value": "1", "priority": 20},
+                  {"key": "damage.weapon", "mode": "add", "value": "1к6",
+                   "condition": "attack.sneakAttack === true", "priority": 20}
+                ]""";
+        ActiveEffect sneakAttackEffect = objectMapper.readValue(
+                "{\"id\": \"sneak-attack\", \"name\": \"Скрытая атака\", \"changes\": " + changes + "}",
+                ActiveEffect.class);
+
+        CharacterClass rogue = baseClass("rogue", "Плут", "Rogue");
+        ClassFeature sneakAttack = feature("sneak-attack", 1, "Скрытая атака", "Раз в ход.");
+        sneakAttack.setActiveEffects(List.of(sneakAttackEffect));
+        rogue.setFeatures(List.of(sneakAttack));
+
+        JsonNode exported = featureByKey(json(rogue).get("features"), "sneak-attack")
+                .get("activeEffects").get(0).get("changes");
+        assertEquals(objectMapper.readTree(changes), exported);
+    }
+
     /** Заклинания, выданные умением, уезжают списком id — как их ждёт эталон. */
     @Test
     void exportsGrantedSpellsOfFeature() {
