@@ -270,4 +270,17 @@ class VttgSpellMechanicsExtractorTest {
 
         assertEquals("special", result.saveEffect());
     }
+
+    /** Исход «провал удваивает урон» уходит в выгрузку словом VTTG {@code double}. */
+    @Test
+    void doubleSaveEffectIsExportedLowercase() {
+        Spell spell = new Spell();
+        SpellEffect effect = new SpellEffect();
+        effect.setSaveEffect(SpellSaveEffect.DOUBLE);
+        spell.setEffect(effect);
+
+        var result = extractor.extract(spell, "");
+
+        assertEquals("double", result.saveEffect());
+    }
 }
