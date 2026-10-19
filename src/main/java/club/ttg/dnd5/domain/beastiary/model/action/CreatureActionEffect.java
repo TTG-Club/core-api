@@ -70,7 +70,10 @@ public class CreatureActionEffect {
      */
     private Collection<SawingThrow> savingThrows;
 
-    /** Что происходит с уроном при успешном спасброске. */
+    /**
+     * Что спасбросок цели делает с уроном: успех вдвое уменьшает или снимает его, а при
+     * {@link SpellSaveEffect#DOUBLE} провал удваивает урон.
+     */
     private SpellSaveEffect saveEffect;
 
     /** Область воздействия — та же модель и та же трансляция, что у заклинания. */
