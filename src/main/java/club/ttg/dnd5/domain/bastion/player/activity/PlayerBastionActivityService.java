@@ -502,14 +502,7 @@ public class PlayerBastionActivityService {
             }
         }
 
-        if (bastion.getDefenseWallSquaresBuilding() > 0
-                && bastion.getDefenseWallReadyOnTurn() != null && bastion.getDefenseWallReadyOnTurn() <= next) {
-            summary.add("Достроена защитная стена: %d бл., всего %d".formatted(bastion.getDefenseWallSquaresBuilding(),
-                    bastion.getDefenseWallSquares() + bastion.getDefenseWallSquaresBuilding()));
-            bastion.setDefenseWallSquares(bastion.getDefenseWallSquares() + bastion.getDefenseWallSquaresBuilding());
-            bastion.setDefenseWallSquaresBuilding(0);
-            bastion.setDefenseWallReadyOnTurn(null);
-        }
+        buildWallBlocks(bastion, next, summary);
 
         List<PlayerBastionOrder> givenThisTurn = orderRepository.findAllByBastionIdAndGivenOnTurnAndStatusNot(
                 bastionId, bastion.getTurn(), OrderStatus.CANCELLED);
@@ -1056,6 +1049,38 @@ public class PlayerBastionActivityService {
 
     private static boolean isMember(PlayerBastion bastion, UUID userId) {
         return bastion.getMembers().stream().anyMatch(member -> member.getUserId().equals(userId));
+    }
+
+    /**
+     * Достраивает блоки стены, готовые к ходу {@code next}: блоки появляются по одному, как только
+     * на них хватает дней, а не всей партией в конце. Отсчёт идёт от хода готовности: последний
+     * блок встаёт к нему, каждый предыдущий — на {@link BastionRules#DEFENSIVE_WALL_DAYS_PER_SQUARE}
+     * дней раньше.
+     */
+    static void buildWallBlocks(PlayerBastion bastion, int next, List<String> summary) {
+        int building = bastion.getDefenseWallSquaresBuilding();
+        Integer readyOnTurn = bastion.getDefenseWallReadyOnTurn();
+        if (building <= 0 || readyOnTurn == null) {
+            return;
+        }
+
+        int daysLeft = Math.max(0, readyOnTurn - next) * DAYS_PER_TURN;
+        int stillBuilding = Math.min(building,
+                (daysLeft + BastionRules.DEFENSIVE_WALL_DAYS_PER_SQUARE - 1) / BastionRules.DEFENSIVE_WALL_DAYS_PER_SQUARE);
+        int ready = building - stillBuilding;
+        if (ready <= 0) {
+            return;
+        }
+
+        int built = bastion.getDefenseWallSquares() + ready;
+        bastion.setDefenseWallSquares(built);
+        bastion.setDefenseWallSquaresBuilding(stillBuilding);
+        if (stillBuilding == 0) {
+            bastion.setDefenseWallReadyOnTurn(null);
+            summary.add("Достроена защитная стена: +%d бл., всего %d".formatted(ready, built));
+        } else {
+            summary.add("Защитная стена: +%d бл., всего %d, ещё строится %d".formatted(ready, built, stillBuilding));
+        }
     }
 
     /**
