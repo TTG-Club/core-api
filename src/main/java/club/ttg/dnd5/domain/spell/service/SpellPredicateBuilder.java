@@ -4,7 +4,6 @@ import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.model.enums.SpellComponent;
-import club.ttg.dnd5.domain.spell.model.enums.SpellMaterialProperty;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
@@ -15,7 +14,10 @@ import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 
 import java.util.Collection;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @UtilityClass
 public class SpellPredicateBuilder {
@@ -168,10 +170,7 @@ public class SpellPredicateBuilder {
         PredicateUtils.applyJsonbTimeFilter(builder, request.getDuration(), "duration");
 
         // Компоненты (колонки v, s и JSONB-объект m)
-        applyConditionFilter(builder, request.getComponent(), SpellPredicateBuilder::componentCondition);
-
-        // Свойства материального компонента (поля JSONB-объекта m)
-        applyConditionFilter(builder, request.getMaterial(), SpellPredicateBuilder::materialCondition);
+        applyComponentFilter(builder, request.getComponent());
 
         // Область воздействия (JSONB-объект, поле "type")
         PredicateUtils.applyJsonbObjectEnumFieldFilter(
@@ -190,32 +189,43 @@ public class SpellPredicateBuilder {
     }
 
     /**
-     * Применяет фильтр, каждое значение которого задаётся SQL-условием.
-     * Исключение отбрасывает строки, где условие истинно; null-значения колонок
-     * при этом не выбрасывают заклинание из выдачи.
+     * Фильтр по компонентам. «С ценой» и «Расходуемый» не самостоятельные условия,
+     * а уточнения материального компонента: они объединяются с ним через И, даже
+     * если сама группа работает через ИЛИ. Исключение отбрасывает строки, где
+     * условие истинно; null-значения колонок при этом не выбрасывают заклинание.
      */
-    private <E extends Enum<E>> void applyConditionFilter(BooleanBuilder builder,
-            QueryFilter<E> filter,
-            Function<E, String> conditionOf) {
+    private void applyComponentFilter(BooleanBuilder builder, QueryFilter<SpellComponent> filter) {
         if (filter == null || !filter.isActive()) {
             return;
         }
 
         if (filter.isExclude()) {
             for (var value : filter.getValues()) {
-                builder.and(Expressions.booleanTemplate("((" + conditionOf.apply(value) + ") is not true)"));
+                builder.and(Expressions.booleanTemplate("((" + componentCondition(value) + ") is not true)"));
             }
-        } else if (filter.isUnion()) {
-            for (var value : filter.getValues()) {
-                builder.and(Expressions.booleanTemplate(conditionOf.apply(value)));
-            }
-        } else {
-            BooleanBuilder orBuilder = new BooleanBuilder();
-            for (var value : filter.getValues()) {
-                orBuilder.or(Expressions.booleanTemplate(conditionOf.apply(value)));
-            }
-            builder.and(orBuilder);
+            return;
         }
+
+        List<String> conditions = new ArrayList<>();
+        List<SpellComponent> materialProperties = new ArrayList<>();
+        for (var value : filter.getValues()) {
+            if (value.isMaterialProperty()) {
+                materialProperties.add(value);
+            } else if (value != SpellComponent.MATERIAL) {
+                conditions.add(componentCondition(value));
+            }
+        }
+
+        if (filter.getValues().contains(SpellComponent.MATERIAL) || !materialProperties.isEmpty()) {
+            conditions.add(Stream.concat(Stream.of(SpellComponent.MATERIAL), materialProperties.stream())
+                    .map(SpellPredicateBuilder::componentCondition)
+                    .collect(Collectors.joining(" and ")));
+        }
+
+        String joined = conditions.stream()
+                .map(condition -> "(" + condition + ")")
+                .collect(Collectors.joining(filter.isUnion() ? " and " : " or "));
+        builder.and(Expressions.booleanTemplate("(" + joined + ")"));
     }
 
     private String componentCondition(SpellComponent component) {
@@ -224,11 +234,6 @@ public class SpellPredicateBuilder {
             case SOMATIC -> "s is true";
             // Пустой текст материального компонента при сохранении превращается в null
             case MATERIAL -> "coalesce(m->>'text', '') <> ''";
-        };
-    }
-
-    private String materialCondition(SpellMaterialProperty property) {
-        return switch (property) {
             case WITH_COST -> "(m->>'withCost') = 'true'";
             case CONSUMABLE -> "(m->>'consumable') = 'true'";
         };
