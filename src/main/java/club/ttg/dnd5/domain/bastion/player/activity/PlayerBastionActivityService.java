@@ -109,6 +109,7 @@ public class PlayerBastionActivityService {
         Map<String, BastionFacility> reference = loadReference(facilities.values().stream()
                 .map(PlayerBastionFacility::getFacilityUrl));
         PageRequest page = PageRequest.of(0, JOURNAL_LIMIT);
+        Map<UUID, String> characterByUser = charactersByUser(bastion);
 
         List<ActivityResponse.Order> orders = orderRepository.findAllByBastionIdOrderByCreatedAtDesc(bastionId, page)
                 .stream()
@@ -127,6 +128,11 @@ public class PlayerBastionActivityService {
                         order.getCompletesOnTurn(),
                         order.getStatus(),
                         order.getGivenBy(),
+                        Optional.ofNullable(order.getFacilityId())
+                                .map(facilities::get)
+                                .map(facility -> facility.getMember().getCharacterName())
+                                .orElseGet(() -> characterByUser.get(order.getGivenBy())),
+                        order.getCreatedAt(),
                         order.getNote(),
                         order.getResult(),
                         order.getStatus() == OrderStatus.ACTIVE
@@ -147,7 +153,8 @@ public class PlayerBastionActivityService {
         List<ActivityResponse.LedgerEntry> ledger = ledgerRepository.findAllByBastionIdOrderByCreatedAtDesc(bastionId, page)
                 .stream()
                 .map(entry -> new ActivityResponse.LedgerEntry(entry.getTurn(), entry.getAmountGp(), entry.getReason(),
-                        entry.getNote(), entry.getCreatedBy(), entry.getCreatedAt()))
+                        entry.getNote(), entry.getCreatedBy(), characterByUser.get(entry.getCreatedBy()),
+                        entry.getCreatedAt()))
                 .toList();
 
         Map<UUID, PlayerBastionMember> members = bastion.getMembers().stream()
@@ -1049,6 +1056,16 @@ public class PlayerBastionActivityService {
 
     private static boolean isMember(PlayerBastion bastion, UUID userId) {
         return bastion.getMembers().stream().anyMatch(member -> member.getUserId().equals(userId));
+    }
+
+    /**
+     * Персонаж каждого игрока бастиона: по нему журнал подписывает приказы и движения казны.
+     * У игрока с несколькими персонажами берётся первый.
+     */
+    private static Map<UUID, String> charactersByUser(PlayerBastion bastion) {
+        return bastion.getMembers().stream()
+                .collect(Collectors.toMap(PlayerBastionMember::getUserId, PlayerBastionMember::getCharacterName,
+                        (first, second) -> first));
     }
 
     private static Map<UUID, PlayerBastionFacility> facilitiesById(PlayerBastion bastion) {
