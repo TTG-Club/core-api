@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.spell.service;
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
 import club.ttg.dnd5.domain.spell.model.QSpell;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
+import club.ttg.dnd5.domain.spell.model.enums.SpellComponent;
+import club.ttg.dnd5.domain.spell.model.enums.SpellMaterialProperty;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.dto.base.filters.PredicateUtils;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
@@ -13,6 +15,7 @@ import com.querydsl.core.types.dsl.StringPath;
 import lombok.experimental.UtilityClass;
 
 import java.util.Collection;
+import java.util.function.Function;
 
 @UtilityClass
 public class SpellPredicateBuilder {
@@ -164,6 +167,12 @@ public class SpellPredicateBuilder {
         // Длительность (JSONB-массив)
         PredicateUtils.applyJsonbTimeFilter(builder, request.getDuration(), "duration");
 
+        // Компоненты (колонки v, s и JSONB-объект m)
+        applyConditionFilter(builder, request.getComponent(), SpellPredicateBuilder::componentCondition);
+
+        // Свойства материального компонента (поля JSONB-объекта m)
+        applyConditionFilter(builder, request.getMaterial(), SpellPredicateBuilder::materialCondition);
+
         // Область воздействия (JSONB-объект, поле "type")
         PredicateUtils.applyJsonbObjectEnumFieldFilter(
                 builder, request.getAreaOfEffectType(), "(effect->'areaOfEffect')", "type");
@@ -178,6 +187,51 @@ public class SpellPredicateBuilder {
         PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
 
         return builder;
+    }
+
+    /**
+     * Применяет фильтр, каждое значение которого задаётся SQL-условием.
+     * Исключение отбрасывает строки, где условие истинно; null-значения колонок
+     * при этом не выбрасывают заклинание из выдачи.
+     */
+    private <E extends Enum<E>> void applyConditionFilter(BooleanBuilder builder,
+            QueryFilter<E> filter,
+            Function<E, String> conditionOf) {
+        if (filter == null || !filter.isActive()) {
+            return;
+        }
+
+        if (filter.isExclude()) {
+            for (var value : filter.getValues()) {
+                builder.and(Expressions.booleanTemplate("((" + conditionOf.apply(value) + ") is not true)"));
+            }
+        } else if (filter.isUnion()) {
+            for (var value : filter.getValues()) {
+                builder.and(Expressions.booleanTemplate(conditionOf.apply(value)));
+            }
+        } else {
+            BooleanBuilder orBuilder = new BooleanBuilder();
+            for (var value : filter.getValues()) {
+                orBuilder.or(Expressions.booleanTemplate(conditionOf.apply(value)));
+            }
+            builder.and(orBuilder);
+        }
+    }
+
+    private String componentCondition(SpellComponent component) {
+        return switch (component) {
+            case VERBAL -> "v is true";
+            case SOMATIC -> "s is true";
+            // Пустой текст материального компонента при сохранении превращается в null
+            case MATERIAL -> "coalesce(m->>'text', '') <> ''";
+        };
+    }
+
+    private String materialCondition(SpellMaterialProperty property) {
+        return switch (property) {
+            case WITH_COST -> "(m->>'withCost') = 'true'";
+            case CONSUMABLE -> "(m->>'consumable') = 'true'";
+        };
     }
 
     private void applyHealingTypeFilter(BooleanBuilder builder, QueryFilter<HealingType> filter) {
