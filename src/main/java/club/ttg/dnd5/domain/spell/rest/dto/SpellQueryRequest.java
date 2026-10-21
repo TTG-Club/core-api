@@ -10,7 +10,6 @@ import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.model.enums.SpellComponent;
-import club.ttg.dnd5.domain.spell.model.enums.SpellMaterialProperty;
 import club.ttg.dnd5.dto.base.filters.AbstractQueryRequest;
 import club.ttg.dnd5.dto.base.filters.QueryFilter;
 import lombok.Data;
@@ -77,9 +76,6 @@ public class SpellQueryRequest extends AbstractQueryRequest
 
     @FilterParam(enumClass = SpellComponent.class)
     private QueryFilter<SpellComponent> component;
-
-    @FilterParam(enumClass = SpellMaterialProperty.class)
-    private QueryFilter<SpellMaterialProperty> material;
 
     @FilterParam(enumClass = AreaOfEffectType.class)
     private QueryFilter<AreaOfEffectType> areaOfEffectType;

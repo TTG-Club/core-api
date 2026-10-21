@@ -25,7 +25,6 @@ import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.spell.model.enums.SpellComponent;
-import club.ttg.dnd5.domain.spell.model.enums.SpellMaterialProperty;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -127,7 +126,7 @@ public class SpellFilterService {
         }
 
         private List<FilterGroupMeta> buildFilterGroups(Set<String> selectedSources) {
-                List<FilterGroupMeta> groups = new ArrayList<>(17);
+                List<FilterGroupMeta> groups = new ArrayList<>(16);
 
                 // Уровень
                 groups.add(FilterGroupMeta.builder()
@@ -283,7 +282,8 @@ public class SpellFilterService {
                                 .values(buildDurationValues())
                                 .build());
 
-                // Компоненты
+                // Компоненты: «С ценой» и «Расходуемый» уточняют материальный компонент
+                // и показываются, только когда выбран «Материальный»
                 String componentFilterKey = FilterKeys.keyOf(SpellQueryRequest.class, "component");
                 groups.add(FilterGroupMeta.builder()
                                 .key(componentFilterKey)
@@ -294,24 +294,11 @@ public class SpellFilterService {
                                                                 .id(c.name())
                                                                 .value(c.name())
                                                                 .name(c.getName())
-                                                                .build())
-                                                .toList())
-                                .build());
-
-                // Материальный компонент: показывается, только когда выбран «Материальный»,
-                // поэтому идёт сразу за группой компонентов
-                groups.add(FilterGroupMeta.builder()
-                                .key(FilterKeys.keyOf(SpellQueryRequest.class, "material"))
-                                .name("Материальный компонент")
-                                .supports(SupportsConfig.builder().mode(true).union(true).build())
-                                .values(Arrays.stream(SpellMaterialProperty.values())
-                                                .map(p -> FilterValueMeta.builder()
-                                                                .id(p.name())
-                                                                .value(p.name())
-                                                                .name(p.getName())
-                                                                .relations(Map.of(componentFilterKey,
-                                                                                List.of(SpellComponent.MATERIAL.name())))
-                                                                .relationsRequired(true)
+                                                                .relations(c.isMaterialProperty()
+                                                                                ? Map.of(componentFilterKey,
+                                                                                                List.of(SpellComponent.MATERIAL.name()))
+                                                                                : null)
+                                                                .relationsRequired(c.isMaterialProperty() ? true : null)
                                                                 .build())
                                                 .toList())
                                 .build());
