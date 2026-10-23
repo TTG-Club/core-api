@@ -476,6 +476,34 @@ class VttgClassMapperTest {
         assertEquals(objectMapper.readTree("[\"hide.bonusAction\"]"), exported);
     }
 
+    /**
+     * «Ярость»: действие срабатывания {@code refreshDuration} («продлить срок», с
+     * необязательным {@code on}) лежит сырым JSON внутри {@code triggers} и уезжает в
+     * выгрузку как есть — бэкенд типы действий не сверяет.
+     */
+    @Test
+    void exportsRefreshDurationTriggerActionAsIs() throws Exception {
+        String triggers = """
+                [
+                  {"id": "trigger_rage_attack", "event": "attackRoll",
+                   "actions": [{"type": "refreshDuration"}]},
+                  {"id": "trigger_rage_hit", "event": "damageDealt",
+                   "actions": [{"type": "refreshDuration", "on": "hit"}]}
+                ]""";
+        ActiveEffect rageEffect = objectMapper.readValue(
+                "{\"id\": \"rage\", \"name\": \"Ярость\", \"triggers\": " + triggers + "}",
+                ActiveEffect.class);
+
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        ClassFeature rage = feature("rage", 1, "Ярость", "Бонусным действием.");
+        rage.setActiveEffects(List.of(rageEffect));
+        barbarian.setFeatures(List.of(rage));
+
+        JsonNode exported = featureByKey(json(barbarian).get("features"), "rage")
+                .get("activeEffects").get(0).get("triggers");
+        assertEquals(objectMapper.readTree(triggers), exported);
+    }
+
     /** Заклинания, выданные умением, уезжают списком id — как их ждёт эталон. */
     @Test
     void exportsGrantedSpellsOfFeature() {
