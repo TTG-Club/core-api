@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.tool.tracker.rest.controller;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.ParticipantAddRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.ParticipantUpdateRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerDetailedResponse;
+import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerLimitsResponse;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerShortResponse;
 import club.ttg.dnd5.domain.tool.tracker.service.InitiativeTrackerService;
@@ -44,7 +45,7 @@ public class InitiativeTrackerController {
 
     private final InitiativeTrackerService trackerService;
 
-    @Operation(summary = "Создание трекера: авторизованному — до 10; анониму ключ доступа "
+    @Operation(summary = "Создание трекера: авторизованному — до 10, с подпиской до 30; анониму ключ доступа "
             + "возвращается один раз в поле accessKey (сохранить на клиенте)")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
@@ -60,6 +61,12 @@ public class InitiativeTrackerController {
             @RequestParam(required = false, defaultValue = "false")
             @Schema(description = "Включить удалённые трекеры (полная история)") final boolean includeDeleted) {
         return trackerService.findMine(includeDeleted);
+    }
+
+    @Operation(summary = "Лимит трекеров текущего пользователя и лимит по подписке")
+    @GetMapping("/limits")
+    public TrackerLimitsResponse limits() {
+        return trackerService.limits();
     }
 
     @Operation(summary = "Трекер с участниками в порядке хода")

@@ -13,6 +13,7 @@ import club.ttg.dnd5.domain.tool.tracker.repository.InitiativeParticipantReposit
 import club.ttg.dnd5.domain.tool.tracker.repository.InitiativeTrackerRepository;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.ParticipantAddRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.ParticipantUpdateRequest;
+import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerLimitsResponse;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.mapper.InitiativeTrackerMapper;
 import club.ttg.dnd5.domain.user.model.User;
@@ -47,13 +48,15 @@ class InitiativeTrackerServiceTest {
     private final TrackerCreationRateLimiter creationRateLimiter = mock(TrackerCreationRateLimiter.class);
     private final CreatureRepository creatureRepository = mock(CreatureRepository.class);
     private final InitiativeTrackerMapper trackerMapper = mock(InitiativeTrackerMapper.class);
+    private final TrackerLimits trackerLimits = mock(TrackerLimits.class);
     private final InitiativeTrackerService service = new InitiativeTrackerService(
             trackerRepository,
             participantRepository,
             new InitiativeCombatService(),
             creationRateLimiter,
             creatureRepository,
-            trackerMapper
+            trackerMapper,
+            trackerLimits
     );
 
     @AfterEach
@@ -83,6 +86,7 @@ class InitiativeTrackerServiceTest {
     @Test
     void authorizedCreateSetsOwnerAndSkipsRateLimit() {
         authenticate("dungeon-master");
+        when(trackerLimits.forUser(any(User.class))).thenReturn(TrackerLimits.BASE);
         when(trackerRepository.countByOwnerUsernameAndDeletedFalse("dungeon-master")).thenReturn(9L);
         when(trackerRepository.saveAndFlush(any(InitiativeTracker.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -99,12 +103,37 @@ class InitiativeTrackerServiceTest {
     @Test
     void authorizedCreateFailsOnTrackerLimit() {
         authenticate("dungeon-master");
+        when(trackerLimits.forUser(any(User.class))).thenReturn(TrackerLimits.BASE);
         when(trackerRepository.countByOwnerUsernameAndDeletedFalse("dungeon-master")).thenReturn(10L);
 
         ApiException exception =
                 assertThrows(ApiException.class, () -> service.create(null, "10.0.0.1"));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void subscriberCreatesBeyondBaseLimit() {
+        authenticate("dungeon-master");
+        when(trackerLimits.forUser(any(User.class))).thenReturn(TrackerLimits.SUBSCRIBER);
+        when(trackerRepository.countByOwnerUsernameAndDeletedFalse("dungeon-master")).thenReturn(10L);
+        when(trackerRepository.saveAndFlush(any(InitiativeTracker.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.create(null, "10.0.0.1");
+
+        verify(trackerRepository).saveAndFlush(any(InitiativeTracker.class));
+    }
+
+    @Test
+    void limitsReturnUserAndSubscriberLimits() {
+        authenticate("dungeon-master");
+        when(trackerLimits.forUser(any(User.class))).thenReturn(TrackerLimits.BASE);
+
+        TrackerLimitsResponse limits = service.limits();
+
+        assertEquals(TrackerLimits.BASE, limits.limit());
+        assertEquals(TrackerLimits.SUBSCRIBER, limits.subscriberLimit());
     }
 
     @Test
