@@ -35,4 +35,13 @@ public class CreatureTrait {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer saveSuccessPerDay;
+
+    /**
+     * «Раз в N ходов»: использованное в ход T снова доступно в ход T + N, без броска.
+     * Целое 2–20; {@code null} — ограничения нет. С {@link #recharge} не сочетается:
+     * при заданной перезарядке не хранится
+     * (см. {@link club.ttg.dnd5.domain.beastiary.model.action.CooldownTurns}).
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer cooldownTurns;
 }

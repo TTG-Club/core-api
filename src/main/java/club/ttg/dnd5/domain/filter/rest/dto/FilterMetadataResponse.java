@@ -43,6 +43,10 @@ public class FilterMetadataResponse {
         private String name;    // Human readable name
         private Boolean selected; // Selection state (for sources)
         private Map<String, List<String>> relations; // Parent filter key -> allowed parent value ids
+        // Значение доступно, только когда в родительской группе выбрано одно из связанных
+        // значений; без флага пустой родитель не ограничивает значение.
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Boolean relationsRequired;
     }
 
     @Data

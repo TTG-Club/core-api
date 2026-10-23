@@ -24,6 +24,7 @@ import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DistanceUnit;
 import club.ttg.dnd5.domain.spell.model.enums.DurationUnit;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
+import club.ttg.dnd5.domain.spell.model.enums.SpellComponent;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -125,7 +126,7 @@ public class SpellFilterService {
         }
 
         private List<FilterGroupMeta> buildFilterGroups(Set<String> selectedSources) {
-                List<FilterGroupMeta> groups = new ArrayList<>(15);
+                List<FilterGroupMeta> groups = new ArrayList<>(16);
 
                 // Уровень
                 groups.add(FilterGroupMeta.builder()
@@ -279,6 +280,27 @@ public class SpellFilterService {
                                 .name("Длительность")
                                 .supports(SupportsConfig.builder().mode(true).union(false).build())
                                 .values(buildDurationValues())
+                                .build());
+
+                // Компоненты: «С ценой» и «Расходуемый» уточняют материальный компонент
+                // и показываются, только когда выбран «Материальный»
+                String componentFilterKey = FilterKeys.keyOf(SpellQueryRequest.class, "component");
+                groups.add(FilterGroupMeta.builder()
+                                .key(componentFilterKey)
+                                .name("Компоненты")
+                                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                                .values(Arrays.stream(SpellComponent.values())
+                                                .map(c -> FilterValueMeta.builder()
+                                                                .id(c.name())
+                                                                .value(c.name())
+                                                                .name(c.getName())
+                                                                .relations(c.isMaterialProperty()
+                                                                                ? Map.of(componentFilterKey,
+                                                                                                List.of(SpellComponent.MATERIAL.name()))
+                                                                                : null)
+                                                                .relationsRequired(c.isMaterialProperty() ? true : null)
+                                                                .build())
+                                                .toList())
                                 .build());
 
                 // Область воздействия эффекта

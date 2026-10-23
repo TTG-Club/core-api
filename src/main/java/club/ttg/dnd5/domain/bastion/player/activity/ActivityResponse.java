@@ -21,6 +21,9 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
      *
      * @param facilityName название сооружения; пусто у «Обслуживать»
      * @param item         изготавливаемый предмет справочника; пусто, если не выбирался
+     * @param characterName персонаж, от чьего имени отдан приказ: владелец сооружения, у «Обслуживать» —
+     *                      персонаж отдавшего; пусто, если отдал мастер без персонажа в бастионе
+     * @param givenAt      когда приказ отдан
      * @param canCancel    открывший может отменить приказ: он отдан в текущий ход
      * @param canWriteResult открывший может записать итог выполненного приказа: мастер или тот,
      *                       кто отдал приказ
@@ -37,6 +40,8 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
                         int completesOnTurn,
                         PlayerBastionOrder.OrderStatus status,
                         UUID givenBy,
+                        String characterName,
+                        Instant givenAt,
                         String note,
                         String result,
                         boolean canCancel,
@@ -77,8 +82,13 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
                         String noteUrl) {
     }
 
+    /**
+     * Движение казны.
+     *
+     * @param characterName персонаж того, кто провёл движение; пусто у мастера без персонажа в бастионе
+     */
     @Schema(description = "Движение казны")
     public record LedgerEntry(int turn, long amountGp, PlayerBastionLedgerEntry.Reason reason, String note,
-                              UUID createdBy, Instant createdAt) {
+                              UUID createdBy, String characterName, Instant createdAt) {
     }
 }

@@ -9,6 +9,10 @@ package club.ttg.dnd5.domain.beastiary.model.spellcasting;
  * порцию. Отдых, перезарядка и постоянное действие встречаются у одиночных записей
  * («Щит (1/отдых)», «Очарование (перезарядка 5–6)») и заводятся тем же блоком.</p>
  *
+ * <p>{@code COOLDOWN} — «раз в N ходов» ({@code CreatureSpellGroup.cooldownTurns}):
+ * заклинание порции, наложенное в ход T, снова доступно в ход T + N, без броска. В книгах
+ * 2024 такого нет — режим для самодельных существ мастерской.</p>
+ *
  * <p>Зеркало {@code CreatureSpellUsageMode} формы сайта: значения приходят и уходят
  * этими именами.</p>
  */
@@ -19,5 +23,6 @@ public enum CreatureSpellUsageMode {
     PER_REST_EACH,
     PER_REST_POOL,
     RECHARGE,
-    CONSTANT
+    CONSTANT,
+    COOLDOWN
 }
