@@ -60,6 +60,11 @@ public class ParticipantUpdateRequest {
     private Integer maxHitPoints;
 
     @Nullable
+    @PositiveOrZero
+    @Schema(description = "Временные хиты участника; 0 — снять")
+    private Integer temporaryHitPoints;
+
+    @Nullable
     @Min(1)
     @Max(50)
     @Schema(description = "Класс доспеха игрока (существу берётся из статблока)")
