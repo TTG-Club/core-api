@@ -12,6 +12,7 @@ import club.ttg.dnd5.domain.tool.tracker.repository.InitiativeTrackerRepository;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.ParticipantAddRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.ParticipantUpdateRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerDetailedResponse;
+import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerLimitsResponse;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerRequest;
 import club.ttg.dnd5.domain.tool.tracker.rest.dto.TrackerShortResponse;
 import club.ttg.dnd5.domain.tool.tracker.rest.mapper.InitiativeTrackerMapper;
@@ -42,7 +43,6 @@ public class InitiativeTrackerService {
 
     public static final String TRACKER_KEY_HEADER = "X-Tracker-Key";
 
-    private static final int MAX_TRACKERS_PER_USER = 10;
     private static final int MAX_PLAYERS_PER_TRACKER = 50;
     private static final int MAX_CREATURES_PER_TRACKER = 100;
     private static final int MAX_DELETED_HISTORY_PER_USER = 30;
@@ -57,9 +57,10 @@ public class InitiativeTrackerService {
     private final TrackerCreationRateLimiter creationRateLimiter;
     private final CreatureRepository creatureRepository;
     private final InitiativeTrackerMapper trackerMapper;
+    private final TrackerLimits trackerLimits;
 
     /**
-     * Создаёт трекер. Авторизованному — до {@value MAX_TRACKERS_PER_USER} неудалённых, владение
+     * Создаёт трекер. Авторизованному — до {@link TrackerLimits} неудалённых, владение
      * по логину из JWT. Анониму — владение по секретному ключу {@code accessKey} (возвращается
      * в ответе, клиент хранит его в localStorage); создание ограничено по IP.
      */
@@ -68,9 +69,12 @@ public class InitiativeTrackerService {
         User user = SecurityUtils.getUserOrNull();
         if (user == null) {
             creationRateLimiter.checkAnonymousCreation(clientIp);
-        } else if (trackerRepository.countByOwnerUsernameAndDeletedFalse(user.getUsername()) >= MAX_TRACKERS_PER_USER) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, String.format(
-                    "Достигнут лимит трекеров: %d. Удалите один из существующих", MAX_TRACKERS_PER_USER));
+        } else {
+            int limit = trackerLimits.forUser(user);
+            if (trackerRepository.countByOwnerUsernameAndDeletedFalse(user.getUsername()) >= limit) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, String.format(
+                        "Достигнут лимит трекеров: %d. Удалите один из существующих", limit));
+            }
         }
 
         InitiativeTracker tracker = new InitiativeTracker();
@@ -96,6 +100,11 @@ public class InitiativeTrackerService {
                 ? trackerRepository.findAllByOwnerUsernameOrderByCreatedAtDesc(username)
                 : trackerRepository.findAllByOwnerUsernameAndDeletedFalseOrderByCreatedAtDesc(username);
         return trackerMapper.toShortResponseList(trackers);
+    }
+
+    /** Лимит трекеров текущего пользователя и тот, что даёт подписка. */
+    public TrackerLimitsResponse limits() {
+        return new TrackerLimitsResponse(trackerLimits.forUser(SecurityUtils.getUser()), TrackerLimits.SUBSCRIBER);
     }
 
     public TrackerDetailedResponse findById(UUID trackerId, String trackerKey) {
@@ -125,7 +134,7 @@ public class InitiativeTrackerService {
      * При мягком удалении участники удаляются физически (они больше недоступны), а история
      * ограничивается последними {@value MAX_DELETED_HISTORY_PER_USER} удалёнными трекерами —
      * иначе цикл «создать → наполнить → удалить» рос бы в БД без ограничений: лимит
-     * {@value MAX_TRACKERS_PER_USER} считает только неудалённые.
+     * {@link TrackerLimits} считает только неудалённые.
      */
     @Transactional
     public void delete(UUID trackerId, String trackerKey) {
@@ -192,6 +201,11 @@ public class InitiativeTrackerService {
         }
         if (request.getMaxHitPoints() != null) {
             participant.setMaxHitPoints(request.getMaxHitPoints());
+        }
+        // 0 — временные хиты сняты: храним NULL, чтобы в ответе поля не было.
+        if (request.getTemporaryHitPoints() != null) {
+            participant.setTemporaryHitPoints(
+                    request.getTemporaryHitPoints() > 0 ? request.getTemporaryHitPoints() : null);
         }
         if (request.getArmorClass() != null) {
             participant.setArmorClass(request.getArmorClass());
