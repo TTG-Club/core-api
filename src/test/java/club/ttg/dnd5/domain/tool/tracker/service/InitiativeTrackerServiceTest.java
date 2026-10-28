@@ -355,6 +355,37 @@ class InitiativeTrackerServiceTest {
     }
 
     @Test
+    void updateParticipantSetsAndClearsTemporaryHitPoints() {
+        InitiativeTracker tracker = anonymousTracker();
+        InitiativeParticipant participant = creatureParticipant("Гоблин 1", "goblin", 1);
+        when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
+        when(participantRepository.findByIdAndTrackerId(participant.getId(), tracker.getId()))
+                .thenReturn(Optional.of(participant));
+        when(participantRepository.findAllByTrackerId(tracker.getId())).thenReturn(List.of(participant));
+        String key = tracker.getAccessKey().toString();
+
+        ParticipantUpdateRequest request = new ParticipantUpdateRequest();
+        request.setTemporaryHitPoints(7);
+        service.updateParticipant(tracker.getId(), participant.getId(), request, key);
+
+        assertEquals(7, participant.getTemporaryHitPoints());
+
+        // Правка другого поля временные хиты не трогает
+        ParticipantUpdateRequest other = new ParticipantUpdateRequest();
+        other.setCurrentHitPoints(4);
+        service.updateParticipant(tracker.getId(), participant.getId(), other, key);
+
+        assertEquals(7, participant.getTemporaryHitPoints());
+
+        // 0 — снять временные хиты
+        ParticipantUpdateRequest clear = new ParticipantUpdateRequest();
+        clear.setTemporaryHitPoints(0);
+        service.updateParticipant(tracker.getId(), participant.getId(), clear, key);
+
+        assertNull(participant.getTemporaryHitPoints());
+    }
+
+    @Test
     void updateSettingsTogglesRerollEachRoundWithoutResettingName() {
         InitiativeTracker tracker = anonymousTracker();
         when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));

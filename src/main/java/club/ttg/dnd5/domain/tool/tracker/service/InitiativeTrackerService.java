@@ -202,6 +202,11 @@ public class InitiativeTrackerService {
         if (request.getMaxHitPoints() != null) {
             participant.setMaxHitPoints(request.getMaxHitPoints());
         }
+        // 0 — временные хиты сняты: храним NULL, чтобы в ответе поля не было.
+        if (request.getTemporaryHitPoints() != null) {
+            participant.setTemporaryHitPoints(
+                    request.getTemporaryHitPoints() > 0 ? request.getTemporaryHitPoints() : null);
+        }
         if (request.getArmorClass() != null) {
             participant.setArmorClass(request.getArmorClass());
         }
