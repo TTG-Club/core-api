@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
@@ -124,6 +125,10 @@ public class VttgItemMapper {
         if (isConsumable(item)) {
             data.put("consumable", true);
         }
+        Map<String, Object> container = container(item.getContainer());
+        if (container != null) {
+            data.put("container", container);
+        }
         if (!CollectionUtils.isEmpty(item.getActiveEffects())) {
             // Без преобразования: мастерская заполняет эффект сразу в вокабуляре VTTG —
             // так же, как у черты и магического предмета.
@@ -133,6 +138,25 @@ public class VttgItemMapper {
         data.put("isSRD", item.getSrdVersion() != null);
         data.put("isReadOnly", true);
         return data;
+    }
+
+    /**
+     * Блок хранилища ({@code DnDGameItem.container}): {@code capacityWeight} — когда задана
+     * вместимость, {@code weightless} — только когда содержимое не весит. Пустой объект —
+     * тоже контейнер (без ограничения); {@code null} — предмет не контейнер.
+     */
+    static Map<String, Object> container(ItemContainer container) {
+        if (container == null) {
+            return null;
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (container.getCapacityWeight() != null) {
+            result.put("capacityWeight", container.getCapacityWeight());
+        }
+        if (Boolean.TRUE.equals(container.getWeightless())) {
+            result.put("weightless", true);
+        }
+        return result;
     }
 
     // ── Оружие ──────────────────────────────────────────────────────────────────────────────────

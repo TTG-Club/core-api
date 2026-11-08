@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-08-02-item-container-fill
+      author: Peterko
+      comment: >
+        Разметка известных хранилищ по правилам PHB/DMG 2024: вместимость в фунтах и
+        невесомость содержимого у магических сумок. Бочка, колчан, футляры и прочее, у чего
+        вместимость не в фунтах, не трогаются.
+
+        Url взяты по id записей выгруженного компендиума VTTG (backpack-phb,
+        bag-of-holding-dmg и т. д.): id — это слаг страницы плюс суффикс источника, если
+        его в слаге нет, поэтому страница — либо сам id, либо он без суффикса. Обе формы
+        перечислены: url в таблице уникален, и обе формы указывают на один предмет.
+
+        Заполняются только пустые поля: разметку, уже поставленную в мастерской, миграция
+        не перетирает. Время изменения предмета не сдвигается — его показывает карточка на
+        сайте; до клиентов VTTG поле доезжает после подъёма версии компендиума.
+
+        Проверка:
+        SELECT url, name, container FROM item WHERE container IS NOT NULL;
+        SELECT url, name, container FROM magic_item WHERE container IS NOT NULL;
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              UPDATE item AS i
+              SET container = v.container::jsonb
+              FROM (VALUES
+                  ('backpack-phb', 'backpack', '{"capacityWeight": 30}'),
+                  ('sack-phb',     'sack',     '{"capacityWeight": 30}'),
+                  ('pouch-phb',    'pouch',    '{"capacityWeight": 6}'),
+                  ('basket-phb',   'basket',   '{"capacityWeight": 40}'),
+                  ('chest-phb',    'chest',    '{"capacityWeight": 300}')
+              ) AS v(url, short_url, container)
+              WHERE i.url IN (v.url, v.short_url)
+                AND i.container IS NULL;
+
+              UPDATE magic_item AS m
+              SET container = v.container::jsonb
+              FROM (VALUES
+                  ('bag-of-holding-dmg',           'bag-of-holding',           '{"capacityWeight": 500, "weightless": true}'),
+                  ('heward-s-handy-haversack-dmg', 'heward-s-handy-haversack', '{"capacityWeight": 120, "weightless": true}'),
+                  ('portable-hole-dmg',            'portable-hole',            '{"weightless": true}')
+              ) AS v(url, short_url, container)
+              WHERE m.url IN (v.url, v.short_url)
+                AND m.container IS NULL;
+      rollback:
+        - sql:
+            dbms: postgresql
+            sql: |
+              SET search_path TO ttg, public;
+              UPDATE item SET container = NULL
+              WHERE url IN ('backpack-phb', 'backpack', 'sack-phb', 'sack', 'pouch-phb', 'pouch',
+                            'basket-phb', 'basket', 'chest-phb', 'chest');
+              UPDATE magic_item SET container = NULL
+              WHERE url IN ('bag-of-holding-dmg', 'bag-of-holding', 'heward-s-handy-haversack-dmg',
+                            'heward-s-handy-haversack', 'portable-hole-dmg', 'portable-hole');

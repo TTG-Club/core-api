@@ -158,6 +158,14 @@ public class VttgMagicItem {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Boolean consumable;
+
+    /**
+     * Предмет-хранилище ({@code DnDGameItem.container}): {@code capacityWeight} — вместимость
+     * в фунтах, {@code weightless} — только когда содержимое не весит. Опускается у предметов,
+     * которые не контейнеры.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Map<String, Object> container;
     @Getter(AccessLevel.NONE)
     private boolean isSRD;
     @Getter(AccessLevel.NONE)

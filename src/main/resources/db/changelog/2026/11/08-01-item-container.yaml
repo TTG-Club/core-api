@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-08-01-item-container
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Признак «хранилище» у обычного и магического предмета (DnDGameItem.container в
+        вокабуляре VTTG): {"capacityWeight": фунты, "weightless": true}. Пусто — предмет
+        не контейнер, пустой объект — контейнер без ограничения. С dnd5e-2024 0.8.358
+        такой предмет на листе открывается окном, в которое кладут вещи.
+      changes:
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: container
+                  type: jsonb
+        - addColumn:
+            tableName: magic_item
+            columns:
+              - column:
+                  name: container
+                  type: jsonb
+      rollback:
+        - dropColumn:
+            tableName: item
+            columnName: container
+        - dropColumn:
+            tableName: magic_item
+            columnName: container

@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.item.rest.dto.ItemDetailResponse;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.domain.item.rest.dto.ItemShortResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -53,8 +54,20 @@ public interface ItemMapper {
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "request.category", target = "category", defaultValue = "ITEM")
     @Mapping(source = "request.activeEffects", target = "activeEffects")
+    @Mapping(target = "container", ignore = true)
     @Mapping(target = "source", source = "source")
     void updateEntity(ItemRequest request, Source source, @MappingTarget Item item);
+
+    /**
+     * Хранилище меняется, только если запрос прислал поле: мастерская, которая о нём ещё не
+     * знает, не стирает разметку, проставленную миграцией.
+     */
+    @AfterMapping
+    default void applyContainer(ItemRequest request, @MappingTarget Item item) {
+        if (request.isContainerSet()) {
+            item.setContainer(request.getContainer());
+        }
+    }
 
     @Named("typeToSting")
     default String typeToSting(Set<ItemType> types) {
