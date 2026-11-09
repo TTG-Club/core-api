@@ -410,7 +410,10 @@ class PlayerBastionActivityServiceTest {
         assertNull(bedroom.getReadyOnTurn());
     }
 
-    /** Три блока стены: 750 зм и 30 дней — достроены на пятом ходу, вторую партию не начать, пока идёт первая. */
+    /**
+     * Три блока стены: 750 зм и 30 дней — достроены к пятому ходу, вторую партию не начать, пока идёт
+     * первая. Блоки встают по одному, когда на них набираются дни, а не все в конце.
+     */
     @Test
     void defenseWallIsBuiltOverTurns() {
         bastion.setTreasuryGp(1000);
@@ -425,12 +428,12 @@ class PlayerBastionActivityServiceTest {
                 () -> service.buildWall(bastion.getId(), new ActivityRequests.BuildWall(1))).getStatus());
 
         actAs(masterId);
-        for (int turn = 0; turn < 4; turn++) {
+        int[] builtAfterTurn = {0, 0, 1, 2, 3};
+        for (int expected : builtAfterTurn) {
             service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, null));
+            assertEquals(expected, bastion.getDefenseWallSquares());
+            assertEquals(3 - expected, bastion.getDefenseWallSquaresBuilding());
         }
-        assertEquals(0, bastion.getDefenseWallSquares());
-        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, null));
-        assertEquals(3, bastion.getDefenseWallSquares());
         assertEquals(0, bastion.getDefenseWallSquaresBuilding());
         assertNull(bastion.getDefenseWallReadyOnTurn());
     }
