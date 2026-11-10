@@ -38,7 +38,7 @@ public class BastionFacility extends NamedEntity {
     @Enumerated(EnumType.STRING)
     private FacilityPrerequisite prerequisite;
 
-    /** Пространство, в котором сооружение появляется в бастионе. */
+    /** Пространство специализированного сооружения; у базовых пусто — его выбирает игрок. */
     @Enumerated(EnumType.STRING)
     private FacilitySpace space;
 

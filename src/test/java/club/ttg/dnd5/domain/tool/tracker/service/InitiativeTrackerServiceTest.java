@@ -132,7 +132,7 @@ class InitiativeTrackerServiceTest {
     @Test
     void ownedTrackerDeniedForAnotherUser() {
         authenticate("intruder");
-        InitiativeTracker tracker = ownedTracker("dungeon-master");
+        InitiativeTracker tracker = ownedTracker();
         when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
 
         ApiException exception = assertThrows(ApiException.class,
@@ -143,7 +143,7 @@ class InitiativeTrackerServiceTest {
 
     @Test
     void ownedTrackerDeniedForAnonymousEvenWithKey() {
-        InitiativeTracker tracker = ownedTracker("dungeon-master");
+        InitiativeTracker tracker = ownedTracker();
         when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
 
         ApiException exception = assertThrows(ApiException.class,
@@ -203,9 +203,9 @@ class InitiativeTrackerServiceTest {
                 .thenReturn(0L);
         // «Гоблин 2» удалён: нумерация должна продолжиться после максимального суффикса, без дублей
         when(participantRepository.findAllByTrackerId(tracker.getId())).thenReturn(List.of(
-                creatureParticipant("Гоблин 1", "goblin", 5),
-                creatureParticipant("Гоблин 3", "goblin", 7)));
-        when(creatureRepository.findById("goblin")).thenReturn(Optional.of(goblin()));
+                creatureParticipant("Гоблин 1", 5),
+                creatureParticipant("Гоблин 3", 7)));
+        when(creatureRepository.findReadOnlyByUrl("goblin")).thenReturn(Optional.of(goblin()));
 
         ParticipantAddRequest request = new ParticipantAddRequest();
         request.setType(ParticipantType.CREATURE);
@@ -266,7 +266,7 @@ class InitiativeTrackerServiceTest {
     @Test
     void deleteOwnedTrackerIsSoftAndPurgesParticipants() {
         authenticate("dungeon-master");
-        InitiativeTracker tracker = ownedTracker("dungeon-master");
+        InitiativeTracker tracker = ownedTracker();
         when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
         when(trackerRepository.findAllByOwnerUsernameAndDeletedTrueOrderByUpdatedAtDesc("dungeon-master"))
                 .thenReturn(List.of(tracker));
@@ -283,11 +283,11 @@ class InitiativeTrackerServiceTest {
     @Test
     void deleteOwnedTrackerTrimsHistoryBeyondLimit() {
         authenticate("dungeon-master");
-        InitiativeTracker tracker = ownedTracker("dungeon-master");
+        InitiativeTracker tracker = ownedTracker();
         when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
         List<InitiativeTracker> deletedHistory = new java.util.ArrayList<>();
         for (int i = 0; i < 31; i++) {
-            deletedHistory.add(ownedTracker("dungeon-master"));
+            deletedHistory.add(ownedTracker());
         }
         when(trackerRepository.findAllByOwnerUsernameAndDeletedTrueOrderByUpdatedAtDesc("dungeon-master"))
                 .thenReturn(deletedHistory);
@@ -311,7 +311,7 @@ class InitiativeTrackerServiceTest {
     @Test
     void updateParticipantMarksDead() {
         InitiativeTracker tracker = anonymousTracker();
-        InitiativeParticipant participant = creatureParticipant("Гоблин 1", "goblin", 1);
+        InitiativeParticipant participant = creatureParticipant("Гоблин 1", 1);
         when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
         when(participantRepository.findByIdAndTrackerId(participant.getId(), tracker.getId()))
                 .thenReturn(Optional.of(participant));
@@ -341,7 +341,7 @@ class InitiativeTrackerServiceTest {
     @Test
     void rollParticipantRollsSingleWithBonus() {
         InitiativeTracker tracker = anonymousTracker();
-        InitiativeParticipant participant = creatureParticipant("Гоблин 1", "goblin", 1);
+        InitiativeParticipant participant = creatureParticipant("Гоблин 1", 1);
         participant.setInitiativeBonus(2);
         when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
         when(participantRepository.findByIdAndTrackerId(participant.getId(), tracker.getId()))
@@ -370,18 +370,18 @@ class InitiativeTrackerServiceTest {
         return tracker;
     }
 
-    private static InitiativeTracker ownedTracker(String ownerUsername) {
+    private static InitiativeTracker ownedTracker() {
         InitiativeTracker tracker = anonymousTracker();
-        tracker.setOwnerUsername(ownerUsername);
+        tracker.setOwnerUsername("dungeon-master");
         return tracker;
     }
 
-    private static InitiativeParticipant creatureParticipant(String name, String creatureUrl, int seq) {
+    private static InitiativeParticipant creatureParticipant(String name, int seq) {
         InitiativeParticipant participant = new InitiativeParticipant();
         participant.setId(UUID.randomUUID());
         participant.setType(ParticipantType.CREATURE);
         participant.setName(name);
-        participant.setCreatureUrl(creatureUrl);
+        participant.setCreatureUrl("goblin");
         participant.setSeq(seq);
         return participant;
     }

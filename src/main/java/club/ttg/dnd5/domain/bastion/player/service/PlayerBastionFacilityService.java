@@ -108,30 +108,14 @@ public class PlayerBastionFacilityService {
     }
 
     /**
-     * Проверяет, что бастион можно запустить: в нём есть персонажи, и у каждого выбраны
-     * оба стартовых базовых сооружения — тесное и вместительное.
+     * Проверяет, что бастион можно запустить: в нём есть персонажи. Стартовые базовые
+     * сооружения не обязательны — их можно выбрать позже или не брать вовсе.
      *
-     * @throws ApiException 409 с именем персонажа, которому ещё нужно выбрать
+     * @throws ApiException 409, если доступа к бастиону нет ни у одного игрока
      */
     public void requireSetupComplete(PlayerBastion bastion) {
         if (bastion.getMembers().isEmpty()) {
             throw new ApiException(HttpStatus.CONFLICT, "Дайте доступ к бастиону хотя бы одному игроку");
-        }
-        Map<String, BastionFacility> reference = loadReference(bastion.getMembers().stream()
-                .flatMap(member -> member.getFacilities().stream())
-                .map(PlayerBastionFacility::getFacilityUrl));
-        for (PlayerBastionMember member : bastion.getMembers()) {
-            Set<FacilitySpace> basicSpaces = member.getFacilities().stream()
-                    .filter(facility -> Optional.ofNullable(reference.get(facility.getFacilityUrl()))
-                            .map(BastionFacility::getCategory)
-                            .orElse(null) == FacilityCategory.BASIC)
-                    .map(PlayerBastionFacility::getSpace)
-                    .collect(Collectors.toSet());
-            if (!basicSpaces.containsAll(PlayerBastionSetupRules.STARTING_BASIC_SPACES)) {
-                throw new ApiException(HttpStatus.CONFLICT,
-                        "У персонажа «%s» ещё не выбраны стартовые базовые сооружения"
-                                .formatted(member.getCharacterName()));
-            }
         }
     }
 

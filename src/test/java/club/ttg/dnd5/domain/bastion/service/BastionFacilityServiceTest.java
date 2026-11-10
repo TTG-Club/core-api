@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.bastion.service;
 
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
+import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
+import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionFacilityRequest;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -47,5 +51,28 @@ class BastionFacilityServiceTest {
 
         assertThrows(ApiException.class, () -> service.update("library", request));
         verifyNoInteractions(repository);
+    }
+
+    /** Пространство базового сооружения выбирает игрок — в справочнике его нет. */
+    @Test
+    void basicFacilityLosesSpace() {
+        BastionFacilityRequest request = new BastionFacilityRequest();
+        request.setCategory(FacilityCategory.BASIC);
+        request.setSpace(FacilitySpace.ROOMY);
+
+        service.preview(request);
+
+        assertNull(request.getSpace());
+    }
+
+    @Test
+    void specialFacilityKeepsSpace() {
+        BastionFacilityRequest request = new BastionFacilityRequest();
+        request.setCategory(FacilityCategory.SPECIAL);
+        request.setSpace(FacilitySpace.ROOMY);
+
+        service.preview(request);
+
+        assertEquals(FacilitySpace.ROOMY, request.getSpace());
     }
 }
