@@ -1,34 +1,50 @@
 package club.ttg.dnd5.domain.bastion.player.plan;
 
 import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Cell;
-import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Outline;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Circle;
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument.Side;
 import lombok.experimental.UtilityClass;
 
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Геометрия плана: какие клетки входят в контур корпуса.
+ * Геометрия плана.
  *
- * <p>Правило одно для сервера и редактора: клетка входит в корпус, если её центр
- * ({@code x + 0.5, y + 0.5}) лежит внутри контура. Круглая башня радиусом 2 клетки
- * (10 футов) даёт так 12 клеток на этаж. Редактор повторяет это правило в
- * {@code plan/geometry.ts} — разойдутся, и счётчики площади на экране перестанут
- * совпадать с проверкой при сохранении.</p>
+ * <p>Клетки башни — те, чей центр ({@code x + 0.5, y + 0.5}) лежит внутри окружности. Круглая
+ * башня радиусом 2 клетки (10 футов) даёт так 12 клеток. Редактор повторяет это правило в
+ * {@code plan-geometry.ts} — разойдутся, и счётчики площади на экране перестанут совпадать
+ * с проверкой при сохранении.</p>
+ *
+ * <p>Многоугольная башня вписана в свою окружность: у пятиугольной вершина смотрит на
+ * север, у восьмиугольной на север смотрит сторона. Проёмы в её стене стоят посередине
+ * сторон, угол проёма — направление от центра на середину стороны.</p>
  */
 @UtilityClass
 public class PlanGeometry {
     /** Точность сравнения: центр ровно на окружности считается внутри. */
     private static final double EPSILON = 1e-9;
 
-    /** Клетки, центр которых лежит внутри контура. */
-    public static Set<Cell> cellsInside(Outline outline) {
-        Bounds bounds = bounds(outline);
-        Set<Cell> cells = new LinkedHashSet<>();
-        for (int y = (int) Math.floor(bounds.minY()); y < Math.ceil(bounds.maxY()); y++) {
-            for (int x = (int) Math.floor(bounds.minX()); x < Math.ceil(bounds.maxX()); x++) {
-                if (contains(outline, x + 0.5, y + 0.5)) {
+    /** Числа сторон многоугольных башен. */
+    public static final Set<Integer> TOWER_SIDES = Set.of(5, 8);
+
+    /** Клетки, центр которых лежит внутри окружности или многоугольника башни, в порядке строк. */
+    public static List<Cell> cellsInside(Circle circle) {
+        List<Double> normals = sideAngles(circle);
+        double apothem = circle.sides() == null ? 0 : circle.r() * Math.cos(Math.PI / circle.sides());
+        List<Cell> cells = new ArrayList<>();
+        for (int y = (int) Math.floor(circle.cy() - circle.r()); y < Math.ceil(circle.cy() + circle.r()); y++) {
+            for (int x = (int) Math.floor(circle.cx() - circle.r()); x < Math.ceil(circle.cx() + circle.r()); x++) {
+                double dx = x + 0.5 - circle.cx();
+                double dy = y + 0.5 - circle.cy();
+                boolean inside = circle.sides() == null
+                        ? dx * dx + dy * dy <= circle.r() * circle.r() + EPSILON
+                        : normals.stream().allMatch(angle -> {
+                            double radians = Math.toRadians(angle);
+                            return dx * Math.cos(radians) + dy * Math.sin(radians) <= apothem + EPSILON;
+                        });
+                if (inside) {
                     cells.add(new Cell(x, y));
                 }
             }
@@ -36,60 +52,48 @@ public class PlanGeometry {
         return cells;
     }
 
-    /** Лежит ли точка внутри контура. */
-    public static boolean contains(Outline outline, double px, double py) {
-        return switch (outline.type()) {
-            case CIRCLE -> {
-                double dx = px - outline.cx();
-                double dy = py - outline.cy();
-                yield dx * dx + dy * dy <= outline.r() * outline.r() + EPSILON;
-            }
-            case RECTANGLE -> px >= outline.x() && px <= outline.x() + outline.width()
-                    && py >= outline.y() && py <= outline.y() + outline.height();
-            case POLYGON -> polygonContains(outline.points(), px, py);
-        };
-    }
-
-    /** Прямоугольник, в который вписан контур. */
-    public static Bounds bounds(Outline outline) {
-        return switch (outline.type()) {
-            case CIRCLE -> new Bounds(outline.cx() - outline.r(), outline.cy() - outline.r(),
-                    outline.cx() + outline.r(), outline.cy() + outline.r());
-            case RECTANGLE -> new Bounds(outline.x(), outline.y(),
-                    outline.x() + outline.width(), outline.y() + outline.height());
-            case POLYGON -> {
-                double minX = Double.MAX_VALUE;
-                double minY = Double.MAX_VALUE;
-                double maxX = -Double.MAX_VALUE;
-                double maxY = -Double.MAX_VALUE;
-                for (List<Double> point : outline.points()) {
-                    minX = Math.min(minX, point.get(0));
-                    minY = Math.min(minY, point.get(1));
-                    maxX = Math.max(maxX, point.get(0));
-                    maxY = Math.max(maxY, point.get(1));
-                }
-                yield new Bounds(minX, minY, maxX, maxY);
-            }
-        };
-    }
-
-    /** Чётно-нечётное правило (луч вправо): точка внутри, если луч пересекает контур нечётное число раз. */
-    private static boolean polygonContains(List<List<Double>> points, double px, double py) {
-        boolean inside = false;
-        for (int i = 0, j = points.size() - 1; i < points.size(); j = i++) {
-            double xi = points.get(i).get(0);
-            double yi = points.get(i).get(1);
-            double xj = points.get(j).get(0);
-            double yj = points.get(j).get(1);
-            boolean crosses = (yi > py) != (yj > py)
-                    && px < (xj - xi) * (py - yi) / (yj - yi) + xi;
-            if (crosses) {
-                inside = !inside;
-            }
+    /**
+     * Углы на середины сторон многоугольной башни, градусы от востока по часовой в
+     * {@code [0, 360)}; у круглой — пусто.
+     */
+    public static List<Double> sideAngles(Circle circle) {
+        if (circle.sides() == null) {
+            return List.of();
         }
-        return inside;
+        int sides = circle.sides();
+        double step = 360.0 / sides;
+        // Пятиугольник стоит вершиной на север, у восьмиугольника на север смотрит сторона.
+        double first = sides % 2 == 1 ? -90 + step / 2 : -90;
+        List<Double> angles = new ArrayList<>();
+        for (int index = 0; index < sides; index++) {
+            angles.add(((first + index * step) % 360 + 360) % 360);
+        }
+        return angles;
     }
 
-    public record Bounds(double minX, double minY, double maxX, double maxY) {
+    /**
+     * Ребро в каноническом виде: нижняя сторона клетки — это верхняя сторона клетки под ней,
+     * правая — левая сторона соседа справа. Так одно ребро записывается одинаково с обеих
+     * сторон.
+     *
+     * @return ключ ребра {@code "x:y:N"} или {@code "x:y:W"}
+     */
+    public static String edgeKey(int x, int y, Side side) {
+        return switch (side) {
+            case N -> x + ":" + y + ":N";
+            case S -> x + ":" + (y + 1) + ":N";
+            case W -> x + ":" + y + ":W";
+            case E -> (x + 1) + ":" + y + ":W";
+        };
+    }
+
+    /** Две клетки по обе стороны ребра. */
+    public static List<Cell> edgeCells(int x, int y, Side side) {
+        return switch (side) {
+            case N -> List.of(new Cell(x, y - 1), new Cell(x, y));
+            case S -> List.of(new Cell(x, y), new Cell(x, y + 1));
+            case W -> List.of(new Cell(x - 1, y), new Cell(x, y));
+            case E -> List.of(new Cell(x, y), new Cell(x + 1, y));
+        };
     }
 }

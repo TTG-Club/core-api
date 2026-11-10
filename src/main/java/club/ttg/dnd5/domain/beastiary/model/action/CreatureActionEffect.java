@@ -35,6 +35,12 @@ public class CreatureActionEffect {
     /** Бонус к попаданию плоским числом: у существа он не выводится. */
     private Integer attackBonus;
 
+    /**
+     * Автопопадание: запись наносит урон сразу, без броска атаки и спасброска цели.
+     * Тот же флаг, что {@code autoHit} у заклинания и у действия существа в системе.
+     */
+    private Boolean autoHit;
+
     /** Досягаемость рукопашной атаки в футах. */
     private Integer reach;
 
@@ -52,12 +58,22 @@ public class CreatureActionEffect {
     private List<DamagePart> damageParts;
 
     /**
+     * Урон «или»: наборы частей урона, целиком заменяющие {@link #damageParts}.
+     * Условие варианта — состояние в его формуле; способ выбора
+     * ({@code formula}, {@code ask}, {@code random}) — строка словаря VTTG.
+     */
+    private List<CreatureDamageAlternative> damageAlternatives;
+
+    /**
      * Спасброски цели. Список, потому что в данных сайта они лежали списком;
      * система знает только один — в выгрузку идёт первый.
      */
     private Collection<SawingThrow> savingThrows;
 
-    /** Что происходит с уроном при успешном спасброске. */
+    /**
+     * Что спасбросок цели делает с уроном: успех вдвое уменьшает или снимает его, а при
+     * {@link SpellSaveEffect#DOUBLE} провал удваивает урон.
+     */
     private SpellSaveEffect saveEffect;
 
     /** Область воздействия — та же модель и та же трансляция, что у заклинания. */

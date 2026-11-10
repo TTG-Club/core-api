@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.Roll;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
@@ -111,6 +112,36 @@ class VttgItemMapperTest {
         assertEquals(0, json.get("strengthRequirement").asInt());
         assertTrue(json.has("maxDexBonus"));
         assertTrue(json.get("maxDexBonus").isNull());
+    }
+
+    /**
+     * Базовый тип доспеха — ключ справочника листа, а не слаг книжного названия: «Leather
+     * Armor» → {@code leather}. Иначе владеющий доспехом персонаж получал помеху.
+     */
+    @Test
+    void mapsArmorBaseTypeToSheetKey() {
+        Item item = baseItem("leather-armor-phb", "Кожаный доспех", "Leather Armor");
+        Armor armor = new Armor();
+        armor.setCategory(ArmorCategory.LIGHT);
+        armor.setArmorClass(11);
+        armor.setMod(Armor.DexterityMod.PLUS);
+        item.setArmor(armor);
+        item.setTypes(Set.of(ItemType.LIGHT_ARMOR));
+
+        assertEquals("leather", json(item).get("baseType").asText());
+    }
+
+    /** Доспех вне справочника листа остаётся со слагом названия: владение решит категория. */
+    @Test
+    void keepsSlugForArmorOutsideSheetVocabulary() {
+        Item item = baseItem("buckler-ghpg", "Баклер", "Buckler");
+        Armor armor = new Armor();
+        armor.setCategory(ArmorCategory.SHIELD);
+        armor.setArmorClass(1);
+        item.setArmor(armor);
+        item.setTypes(Set.of(ItemType.SHIELD));
+
+        assertEquals("buckler", json(item).get("baseType").asText());
     }
 
     /** Средний доспех с требованием Силы и пределом Ловкости. */
@@ -478,6 +509,13 @@ class VttgItemMapperTest {
         item.setEquipmentCategory("clothing");
 
         assertEquals("clothing", json(item).get("equipmentCategory").asText());
+
+        Item antitoxin = baseItem("antitoxin", "Противоядие", "Antitoxin");
+        antitoxin.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+        antitoxin.setEquipmentCategory("potion");
+
+        assertEquals("potion", json(antitoxin).get("equipmentCategory").asText());
+        assertEquals("potions", json(antitoxin).get("section").asText());
     }
 
     /** Заклинательная фокусировка: у справочника это тип, у системы — свойство предмета. */
@@ -506,6 +544,25 @@ class VttgItemMapperTest {
 
         item.setActiveEffects(List.of());
         assertFalse(json(item).has("activeEffects"));
+    }
+
+    /** Хранилище: вместимость уходит числом, невесомость — только когда true; обычный предмет без поля. */
+    @Test
+    void exportsContainer() {
+        Item backpack = baseItem("backpack-phb", "Рюкзак", "Backpack");
+        backpack.setContainer(new ItemContainer(30.0, false));
+        JsonNode container = json(backpack).get("container");
+        assertEquals(30, container.get("capacityWeight").asInt());
+        assertFalse(container.has("weightless"));
+
+        Item box = baseItem("box", "Ящик", "Box");
+        box.setContainer(new ItemContainer());
+        JsonNode empty = json(box).get("container");
+        assertTrue(empty.isObject());
+        assertEquals(0, empty.size());
+
+        Item rope = baseItem("rope-phb", "Верёвка", "Rope");
+        assertFalse(json(rope).has("container"));
     }
 
     private JsonNode json(Item item) {

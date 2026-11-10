@@ -28,10 +28,13 @@ import club.ttg.dnd5.domain.common.model.EquipmentOption;
 import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceOption;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceType;
+import club.ttg.dnd5.domain.common.model.mechanics.ClassSpellListGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
 import club.ttg.dnd5.domain.common.model.mechanics.MechanicChoice;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.ChoiceScaling;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestMode;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestRule;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
@@ -423,6 +426,84 @@ class VttgClassMapperTest {
         assertEquals("Ярость", json.get("features").get(0).get("activeEffects").get(0).get("name").asText());
     }
 
+    /**
+     * Скрытая атака: строки с ключами {@code sneakAttack.*} и условием из групп «||»
+     * бэкенд не разбирает — сохранённые мастерской, они уезжают в выгрузку как есть.
+     */
+    @Test
+    void exportsSneakAttackChangesAsIs() throws Exception {
+        String changes = """
+                [
+                  {"key": "sneakAttack.damage", "mode": "add",
+                   "value": "(1 + steps(@classLevel, 3, 5, 7, 9, 11, 13, 15, 17, 19))к6",
+                   "condition": "weapon.property === \\"finesse\\" && roll.hasAdvantage === true || weapon.property === \\"finesse\\" && target.allyAdjacent && roll.hasDisadvantage === false || weapon.rangeType === \\"ranged\\" && roll.hasAdvantage === true || weapon.rangeType === \\"ranged\\" && target.allyAdjacent && roll.hasDisadvantage === false",
+                   "priority": 20},
+                  {"key": "sneakAttack.dice", "mode": "add", "value": "1", "priority": 20},
+                  {"key": "damage.weapon", "mode": "add", "value": "1к6",
+                   "condition": "attack.sneakAttack === true", "priority": 20}
+                ]""";
+        ActiveEffect sneakAttackEffect = objectMapper.readValue(
+                "{\"id\": \"sneak-attack\", \"name\": \"Скрытая атака\", \"changes\": " + changes + "}",
+                ActiveEffect.class);
+
+        CharacterClass rogue = baseClass("rogue", "Плут", "Rogue");
+        ClassFeature sneakAttack = feature("sneak-attack", 1, "Скрытая атака", "Раз в ход.");
+        sneakAttack.setActiveEffects(List.of(sneakAttackEffect));
+        rogue.setFeatures(List.of(sneakAttack));
+
+        JsonNode exported = featureByKey(json(rogue).get("features"), "sneak-attack")
+                .get("activeEffects").get(0).get("changes");
+        assertEquals(objectMapper.readTree(changes), exported);
+    }
+
+    /**
+     * «Хитрое действие»: флаг {@code hide.bonusAction} (засада бонусным действием)
+     * бэкенд не сверяет со списком — уезжает в выгрузку как есть.
+     */
+    @Test
+    void exportsHideAsBonusFlagAsIs() throws Exception {
+        ActiveEffect cunning = objectMapper.readValue("""
+                {"id": "effect-rogue-phb-cunning-action-hide", "name": "Засада бонусным действием",
+                 "changes": [], "flags": ["hide.bonusAction"]}""", ActiveEffect.class);
+
+        CharacterClass rogue = baseClass("rogue", "Плут", "Rogue");
+        ClassFeature cunningAction = feature("cunning-action", 2, "Хитрое действие", "Бонусным действием.");
+        cunningAction.setActiveEffects(List.of(cunning));
+        rogue.setFeatures(List.of(cunningAction));
+
+        JsonNode exported = featureByKey(json(rogue).get("features"), "cunning-action")
+                .get("activeEffects").get(0).get("flags");
+        assertEquals(objectMapper.readTree("[\"hide.bonusAction\"]"), exported);
+    }
+
+    /**
+     * «Ярость»: действие срабатывания {@code refreshDuration} («продлить срок», с
+     * необязательным {@code on}) лежит сырым JSON внутри {@code triggers} и уезжает в
+     * выгрузку как есть — бэкенд типы действий не сверяет.
+     */
+    @Test
+    void exportsRefreshDurationTriggerActionAsIs() throws Exception {
+        String triggers = """
+                [
+                  {"id": "trigger_rage_attack", "event": "attackRoll",
+                   "actions": [{"type": "refreshDuration"}]},
+                  {"id": "trigger_rage_hit", "event": "damageDealt",
+                   "actions": [{"type": "refreshDuration", "on": "hit"}]}
+                ]""";
+        ActiveEffect rageEffect = objectMapper.readValue(
+                "{\"id\": \"rage\", \"name\": \"Ярость\", \"triggers\": " + triggers + "}",
+                ActiveEffect.class);
+
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        ClassFeature rage = feature("rage", 1, "Ярость", "Бонусным действием.");
+        rage.setActiveEffects(List.of(rageEffect));
+        barbarian.setFeatures(List.of(rage));
+
+        JsonNode exported = featureByKey(json(barbarian).get("features"), "rage")
+                .get("activeEffects").get(0).get("triggers");
+        assertEquals(objectMapper.readTree(triggers), exported);
+    }
+
     /** Заклинания, выданные умением, уезжают списком id — как их ждёт эталон. */
     @Test
     void exportsGrantedSpellsOfFeature() {
@@ -442,6 +523,79 @@ class VttgClassMapperTest {
 
         JsonNode feature = json(ranger).get("features").get(0);
         assertEquals("[\"hunters-mark\"]", feature.get("grantedSpells").toString());
+    }
+
+    /**
+     * Заклинания домена открываются по уровням класса и держатся подготовленными: уровень
+     * ссылки раскладывает их по {@code grantedSpellsByLevel}, а отметка «Подготавливать не
+     * нужно» едет в блоке даров. Без неё лист заставлял готовить заклинания домена.
+     */
+    @Test
+    void exportsDomainSpellsByLevelWithPreparedMark() {
+        CharacterClass lifeDomain = baseClass("life-domain", "Домен Жизни", "Life Domain");
+        ClassFeature domainSpells = feature("life-domain-spells", 3, "Заклинания Домена Жизни", "Домен.");
+
+        SpellGrant grant = new SpellGrant();
+        grant.setSpells(List.of(spellRef("bless", 3, null), spellRef("cure-wounds", null, null),
+                spellRef("revivify", 5, Boolean.FALSE), spellRef("aura-of-life", 7, null)));
+        grant.setAlwaysPrepared(Boolean.TRUE);
+        grant.setSpellcastingAbility(Ability.WISDOM);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setSpells(grant);
+        domainSpells.setMechanics(mechanics);
+        lifeDomain.setFeatures(List.of(domainSpells));
+
+        JsonNode feature = json(lifeDomain).get("features").get(0);
+
+        assertEquals("[\"bless\",\"cure-wounds\"]", feature.get("grantedSpells").toString());
+        assertEquals("{\"5\":[\"revivify\"],\"7\":[\"aura-of-life\"]}",
+                feature.get("grantedSpellsByLevel").toString());
+
+        JsonNode featData = feature.get("featData");
+        assertTrue(featData.get("grantedSpellsAlwaysPrepared").asBoolean());
+        assertEquals("wisdom", featData.get("spellcastingAbility").asText());
+        // Отметка отдельной ссылки старше отметки записи — ссылка едет своим флагом
+        assertFalse(featData.get("grantedSpells").get(2).get("alwaysPrepared").asBoolean());
+    }
+
+    /**
+     * Весь список класса уезжает полем умения, а не блоком даров: лист, не умеющий спросить
+     * «весь список или выбрать», иначе положил бы на лист все заклинания класса.
+     */
+    @Test
+    void exportsClassListsAsFeatureField() {
+        CharacterClass sorcerer = baseClass("sorcerer", "Чародей", "Sorcerer");
+        ClassFeature spellcasting = feature("spellcasting", 1, "Использование заклинаний", "Магия.");
+
+        ClassSpellListGrant classList = new ClassSpellListGrant();
+        classList.setRequiredLevel(3);
+        classList.setLevel(2);
+        classList.setAlwaysPrepared(Boolean.FALSE);
+        classList.setClasses(List.of(new EntityRef("sorcerer-phb", "Чародей")));
+        SpellGrant grant = new SpellGrant();
+        grant.setClassLists(List.of(classList));
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setSpells(grant);
+        spellcasting.setMechanics(mechanics);
+        sorcerer.setFeatures(List.of(spellcasting));
+
+        JsonNode feature = json(sorcerer).get("features").get(0);
+        JsonNode group = feature.get("grantedClassSpells").get(0);
+
+        assertEquals("sorcerer", group.get("classKeys").get(0).asText());
+        assertEquals(3, group.get("requiredLevel").asInt());
+        assertEquals(2, group.get("level").asInt());
+        assertFalse(group.get("alwaysPrepared").asBoolean());
+        assertFalse(feature.has("grantedSpells"));
+        assertTrue(feature.get("featData") == null || !feature.get("featData").has("grantedClassSpells"));
+    }
+
+    private static GrantedSpellRef spellRef(String url, Integer requiredLevel, Boolean alwaysPrepared) {
+        GrantedSpellRef reference = new GrantedSpellRef();
+        reference.setUrl(url);
+        reference.setRequiredLevel(requiredLevel);
+        reference.setAlwaysPrepared(alwaysPrepared);
+        return reference;
     }
 
     /**
@@ -664,6 +818,56 @@ class VttgClassMapperTest {
     }
 
     /**
+     * Ресурс умения без ступеней появляется вместе с умением: «Непреклонная ярость»
+     * одиннадцатого уровня уже висела на листе варвара шестого.
+     */
+    @Test
+    void startsFeatureCounterAtFeatureLevel() {
+        CharacterClass barbarian = baseClass("barbarian", "Варвар", "Barbarian");
+        ClassFeature relentless = feature("relentless-rage", 11, "Непреклонная ярость",
+                "Не падайте до 0 хитов.");
+        relentless.setMechanics(counterMechanics(counter("relentless-rage", "@classLevel", null)));
+
+        barbarian.setFeatures(List.of(relentless));
+
+        assertEquals(11, json(barbarian).get("counters").get(0).get("startLevel").asInt());
+    }
+
+    /**
+     * Ступени ресурса умения: первая ступень с зарядами, но не раньше уровня умения —
+     * ступень с нулём зарядов ресурс не открывает.
+     */
+    @Test
+    void startsScaledFeatureCounterNotBeforeFeature() {
+        CharacterClass monk = baseClass("monk", "Монах", "Monk");
+        ClassFeature focus = feature("monks-focus", 2, "Сосредоточенность монаха", "Очки сосредоточенности.");
+        focus.setMechanics(counterMechanics(counter("focus-points", null, List.of(
+                new CounterScaling(1, 0),
+                new CounterScaling(2, 2),
+                new CounterScaling(3, 3)))));
+
+        ClassFeature late = feature("late-feature", 5, "Позднее умение", "Ступени раньше умения.");
+        late.setMechanics(counterMechanics(counter("late-points", null, List.of(
+                new CounterScaling(2, 1),
+                new CounterScaling(9, 2)))));
+
+        monk.setFeatures(List.of(focus, late));
+
+        JsonNode counters = json(monk).get("counters");
+        assertEquals(2, counterByKey(counters, "focus-points").get("startLevel").asInt());
+        assertEquals(5, counterByKey(counters, "late-points").get("startLevel").asInt());
+    }
+
+    /** Ресурс самой записи умению не принадлежит и есть с первого уровня. */
+    @Test
+    void startsClassCounterAtFirstLevel() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        fighter.setMechanics(counterMechanics(counter("resolve", "@prof", null)));
+
+        assertEquals(1, json(fighter).get("counters").get(0).get("startLevel").asInt());
+    }
+
+    /**
      * «Второе дыхание» 2024 года: один заряд возвращает короткий отдых, все —
      * продолжительный. Такой откат — своё значение словаря, а не короткий отдых: тот
      * возвращает ресурс целиком.
@@ -685,6 +889,60 @@ class VttgClassMapperTest {
         fighter.setFeatures(List.of(secondWind));
 
         assertEquals("short-one", json(fighter).get("counters").get(0).get("recovery").asText());
+    }
+
+    /**
+     * «Очки мутации» друида: ресурс появляется пустым и отдыхом не возвращается — его
+     * набирают от потраченной ячейки. Оба правила «ничего» доезжают как есть, отметка
+     * «появляется пустым» — рядом; слова для такого отката у легаси-поля нет, и оно
+     * отдаёт ближайшее — продолжительный отдых.
+     */
+    @Test
+    void exportsStartsEmptyCounterWithoutRestRecovery() {
+        CharacterClass druid = baseClass("druid", "Друид", "Druid");
+        ClassFeature mutation = feature("mutation", 3, "Мутация", "Наберите очки мутации.");
+
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("mutation-points");
+        counter.setName("Очки мутации");
+        counter.setMax("9 + max(1, @mod.wis)");
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        counter.setShortRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        counter.setLongRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        counter.setStartsEmpty(true);
+        mutation.setMechanics(counterMechanics(counter));
+        druid.setFeatures(List.of(mutation));
+
+        JsonNode exported = json(druid).get("counters").get(0);
+        assertTrue(exported.get("startsEmpty").asBoolean());
+        assertEquals("none", exported.get("shortRest").get("mode").asText());
+        assertEquals("none", exported.get("longRest").get("mode").asText());
+        assertEquals("long", exported.get("recovery").asText());
+    }
+
+    /**
+     * Отметки нет или она снята — поля в выгрузке нет: ресурс появляется полным. Нет его и
+     * у ресурса из колонки таблицы: колонка об отметке не знает.
+     */
+    @Test
+    void omitsStartsEmptyWhenNotSet() {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassTableColumn column = new ClassTableColumn("Ярости", List.of(new ClassTableItem(1, "2")));
+        column.setKey("rages");
+        column.setResourceRecovery(ClassResourceRecovery.LONG_REST);
+        fighter.setTable(List.of(column));
+
+        ResourceCounter cleared = counter("second-wind", "2", null);
+        cleared.setStartsEmpty(false);
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter("resolve", "@prof", null), cleared));
+        fighter.setMechanics(mechanics);
+
+        JsonNode counters = json(fighter).get("counters");
+        assertEquals(3, counters.size());
+        assertFalse(counterByKey(counters, "resolve").has("startsEmpty"));
+        assertFalse(counterByKey(counters, "second-wind").has("startsEmpty"));
+        assertFalse(counterByKey(counters, "rages").has("startsEmpty"));
     }
 
     /**
@@ -1204,5 +1462,31 @@ class VttgClassMapperTest {
         scaling.setName(name);
         scaling.setDescription(description);
         return scaling;
+    }
+
+    private ResourceCounter counter(String key, String max, List<CounterScaling> scaling) {
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey(key);
+        counter.setName(key);
+        counter.setMax(max);
+        counter.setScaling(scaling);
+        counter.setRecovery(ResourceRecovery.LONG_REST);
+        return counter;
+    }
+
+    private ClassMechanics counterMechanics(ResourceCounter counter) {
+        ClassMechanics mechanics = new ClassMechanics();
+        mechanics.setCounters(List.of(counter));
+        return mechanics;
+    }
+
+    /** Счётчик выгрузки по ключу. */
+    private JsonNode counterByKey(JsonNode counters, String key) {
+        for (JsonNode counter : counters) {
+            if (key.equals(counter.get("key").asText())) {
+                return counter;
+            }
+        }
+        throw new AssertionError("Счётчик не выгружен: " + key);
     }
 }

@@ -12,7 +12,6 @@ import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterRequest;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceSavedFilterResponse;
 import club.ttg.dnd5.domain.source.rest.mapper.SavedSourceFilterMapper;
 import club.ttg.dnd5.domain.user.service.UserService;
-import club.ttg.dnd5.dto.base.filters.AbstractFilterItem;
 import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -53,22 +52,33 @@ public class SourceSavedFilterService
                 .orElseGet(this::createActualAndSave);
     }
 
+    /**
+     * Источники, включённые у пользователя. Книга, которой ещё нет в сохранённом
+     * фильтре (добавлена после его сохранения), считается включённой.
+     */
     public Set<String> getSavedSources()
     {
-        return findSavedFilter()
-            .map(SourceSavedFilter::getFilter)
-            .map(FilterInfo::getGroups)
-            .stream()
-            .flatMap(Collection::stream)
-            .filter(SourceGroupFilter.class::isInstance)
-            .map(SourceGroupFilter.class::cast)
-            .flatMap(group -> group.getFilters().stream())
-            .filter(filter -> Boolean.TRUE.equals(filter.getSelected()))
-            .map(AbstractFilterItem::getValue)
-            .collect(Collectors.collectingAndThen(
-                    Collectors.toSet(),
-                    result -> result.isEmpty() ? getAllSourceAcronyms() : result
-            ));
+        Map<String, Boolean> savedSelection = findSavedFilter()
+                .map(this::collectSelection)
+                .orElseGet(Map::of);
+
+        Set<String> selected = savedSelection.entrySet().stream()
+                .filter(entry -> Boolean.TRUE.equals(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        Set<String> allAcronyms = getAllSourceAcronyms();
+
+        if (selected.isEmpty())
+        {
+            return allAcronyms;
+        }
+
+        allAcronyms.stream()
+                .filter(acronym -> !savedSelection.containsKey(acronym))
+                .forEach(selected::add);
+
+        return selected;
     }
 
     private Set<String> getAllSourceAcronyms()
@@ -86,26 +96,47 @@ public class SourceSavedFilterService
 
     private SourceSavedFilter updateToActualAndSave(SourceSavedFilter sourceSavedFilter)
     {
-        Map<String, Boolean> sourceMap = new HashMap<>();
+        SourceSavedFilterRequest filter = buildDefaultFilterInfo();
 
-        sourceSavedFilter.getFilter().getGroups().stream()
+        applySavedSelection(filter, collectSelection(sourceSavedFilter));
+
+        sourceSavedFilter.setFilter(filter.getFilter());
+        return save(sourceSavedFilter);
+    }
+
+    /**
+     * Выбор пользователя из сохранённого фильтра: акроним источника → включён ли он.
+     */
+    private Map<String, Boolean> collectSelection(SourceSavedFilter sourceSavedFilter)
+    {
+        Map<String, Boolean> selection = new HashMap<>();
+
+        Optional.ofNullable(sourceSavedFilter.getFilter())
+                .map(FilterInfo::getGroups)
+                .stream()
+                .flatMap(Collection::stream)
                 .filter(SourceGroupFilter.class::isInstance)
                 .map(SourceGroupFilter.class::cast)
                 .map(SourceGroupFilter::getFilters)
                 .flatMap(Collection::stream)
-                .forEach(item -> sourceMap.put(item.getValue(), item.getSelected()));
+                .forEach(item -> selection.put(item.getValue(), item.getSelected()));
 
-        SourceSavedFilterRequest filter = buildDefaultFilterInfo();
+        return selection;
+    }
 
+    /**
+     * Переносит выбор пользователя на актуальный список источников. Источник, которого
+     * в сохранённом фильтре ещё не было (новая книга), остаётся включённым.
+     */
+    private void applySavedSelection(SourceSavedFilterRequest filter, Map<String, Boolean> savedSelection)
+    {
         filter.getFilter().getGroups().stream()
                 .filter(SourceGroupFilter.class::isInstance)
                 .map(SourceGroupFilter.class::cast)
                 .map(SourceGroupFilter::getFilters)
                 .flatMap(Collection::stream)
-                .forEach(item -> item.setSelected(sourceMap.get(item.getValue())));
-
-        sourceSavedFilter.setFilter(filter.getFilter());
-        return save(sourceSavedFilter);
+                .filter(item -> savedSelection.containsKey(item.getValue()))
+                .forEach(item -> item.setSelected(savedSelection.get(item.getValue())));
     }
 
     private SourceSavedFilter createActualAndSave()
@@ -262,21 +293,7 @@ public class SourceSavedFilterService
             return new SourceFilterInfo(actualFilter.getFilter().getGroups());
         }
 
-        Map<String, Boolean> selectedMap = new HashMap<>();
-
-        savedFilterOptional.get().getFilter().getGroups().stream()
-                .filter(SourceGroupFilter.class::isInstance)
-                .map(SourceGroupFilter.class::cast)
-                .map(SourceGroupFilter::getFilters)
-                .flatMap(Collection::stream)
-                .forEach(item -> selectedMap.put(item.getValue(), item.getSelected()));
-
-        actualFilter.getFilter().getGroups().stream()
-                .filter(SourceGroupFilter.class::isInstance)
-                .map(SourceGroupFilter.class::cast)
-                .map(SourceGroupFilter::getFilters)
-                .flatMap(Collection::stream)
-                .forEach(item -> item.setSelected(selectedMap.get(item.getValue())));
+        applySavedSelection(actualFilter, collectSelection(savedFilterOptional.get()));
 
         return new SourceFilterInfo(actualFilter.getFilter().getGroups());
     }

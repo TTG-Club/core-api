@@ -9,11 +9,14 @@ import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.domain.common.model.DamagePart;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -105,6 +108,77 @@ class ActionMapperTest {
         // Легаси-поля держатся в согласии с механикой: разбор описания у соседних
         // записей читает именно их.
         assertEquals(AttackType.MELEE, stored.getAttackType());
+    }
+
+    /**
+     * Урон «или» и состояния в формуле переживают круг целиком: запрос формы → JSONB
+     * записи → {@code /raw}. Порядок вариантов, подписи и части не меняются.
+     */
+    @Test
+    void keepsDamageAlternativesThroughFormRoundTrip() throws Exception {
+        ObjectMapper json = new ObjectMapper();
+        String alternatives = """
+                [
+                  {"condition": "formula",
+                   "damageParts": [{"formula": "2к8@dmg.necrotic@self.status.bloodied + 2"}]},
+                  {"condition": "ask", "label": "С преимуществом",
+                   "damageParts": [{"formula": "4к6@dmg.piercing + 4", "target": "selected"},
+                                   {"formula": "1к6@dmg.fire"}]}
+                ]""";
+        String requestJson = """
+                {"name": {"rus": "Рой хватающих рук"},
+                 "effect": {
+                   "attackBonus": 4,
+                   "damageParts": [{"formula": "1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone"}],
+                   "damageAlternatives": %s}}""".formatted(alternatives);
+
+        CreatureAction stored = mapper.toEntity(json.readValue(requestJson, ActionRequest.class));
+        CreatureAction reloaded = json.readValue(json.writeValueAsString(stored), CreatureAction.class);
+        JsonNode raw = json.valueToTree(mapper.toRequest(reloaded)).get("effect");
+
+        assertEquals(json.readTree(alternatives), raw.get("damageAlternatives"));
+        assertEquals("1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone",
+                raw.get("damageParts").get(0).get("formula").asText());
+    }
+
+    /** «Раз в N ходов» переживает круг формы: запрос → JSONB записи → {@code /raw}. */
+    @Test
+    void keepsCooldownTurnsThroughFormRoundTrip() throws Exception {
+        ObjectMapper json = new ObjectMapper();
+        ActionRequest request = json.readValue("""
+                {"name": {"rus": "Ледяной вихрь"}, "cooldownTurns": 3}""",
+                ActionRequest.class);
+
+        CreatureAction stored = mapper.toEntity(request);
+        CreatureAction reloaded = json.readValue(json.writeValueAsString(stored), CreatureAction.class);
+        ActionRequest raw = mapper.toRequest(reloaded);
+
+        assertEquals(3, stored.getCooldownTurns());
+        assertEquals(3, raw.getCooldownTurns());
+        assertEquals(3, mapper.toEntity(raw).getCooldownTurns());
+    }
+
+    /**
+     * Число ходов, которое система не примет, не сохраняется: вне 2–20 или рядом с
+     * перезарядкой (её система берёт вместо него). Пустое в JSONB не пишется.
+     */
+    @Test
+    void dropsInapplicableCooldownTurns() throws Exception {
+        ActionRequest everyTurn = new ActionRequest();
+        everyTurn.setCooldownTurns(1);
+        ActionRequest tooRare = new ActionRequest();
+        tooRare.setCooldownTurns(21);
+        ActionRequest withRecharge = new ActionRequest();
+        withRecharge.setRecharge(RechargeType.D5);
+        withRecharge.setCooldownTurns(3);
+
+        CreatureAction stored = mapper.toEntity(withRecharge);
+
+        assertNull(mapper.toEntity(everyTurn).getCooldownTurns());
+        assertNull(mapper.toEntity(tooRare).getCooldownTurns());
+        assertNull(stored.getCooldownTurns());
+        assertEquals(RechargeType.D5, stored.getRecharge());
+        assertFalse(new ObjectMapper().writeValueAsString(stored).contains("cooldownTurns"));
     }
 
     private SawingThrow savingThrow(Ability ability, int dc) {

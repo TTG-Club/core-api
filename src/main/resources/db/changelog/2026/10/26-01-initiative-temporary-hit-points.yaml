@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-26-01-initiative-temporary-hit-points
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Временные хиты участника трекера инициативы: урон сначала снимает их,
+        потом текущие хиты.
+      changes:
+        - addColumn:
+            tableName: initiative_participant
+            columns:
+              - column:
+                  name: temporary_hit_points
+                  type: INT
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: initiative_participant
+            columnName: temporary_hit_points

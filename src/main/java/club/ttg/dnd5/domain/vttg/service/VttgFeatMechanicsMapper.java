@@ -39,6 +39,7 @@ import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
 import club.ttg.dnd5.domain.item.model.weapon.Mastery;
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgEntityRef;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
@@ -356,7 +357,10 @@ public class VttgFeatMechanicsMapper {
             String name = trimmed(counter.getName());
             result.add(new VttgFeatData.Counter(key, name == null ? key : name,
                     trimmed(counter.getShortName()), max, progression, counter.resolveMin(),
-                    VttgDictionaries.recovery(counter.resolveRecovery())));
+                    VttgDictionaries.recovery(counter.resolveRecovery()),
+                    VttgDictionaries.restRule(counter.resolveShortRest()),
+                    VttgDictionaries.restRule(counter.resolveLongRest()),
+                    flag(counter.getStartsEmpty())));
         }
         return emptyToNull(result);
     }
@@ -431,8 +435,11 @@ public class VttgFeatMechanicsMapper {
      *
      * <p>Группа без единого канонического класса опускается: сверять в мире будет нечего, а
      * пустой список в записи читался бы как «выдаёт весь компендиум».</p>
+     *
+     * <p>Открыт для выгрузки класса: у умения класса списки уезжают полем самого умения,
+     * а не блоком даров.</p>
      */
-    private List<VttgFeatData.GrantedClassSpells> grantedClassSpells(SpellGrant grant) {
+    List<VttgFeatData.GrantedClassSpells> grantedClassSpells(SpellGrant grant) {
         if (grant == null || CollectionUtils.isEmpty(grant.getClassLists())) {
             return null;
         }
@@ -1316,6 +1323,7 @@ public class VttgFeatMechanicsMapper {
         List<VttgEntityRef> classes = refs(source.getClasses());
         List<String> classKeys = classKeys(source.getClasses());
         String castingTime = source.getCastingTime() == null ? null
+                : source.getCastingTime() == CastingUnit.BONUS ? VttgSpellMapper.BONUS_ACTION_UNIT
                 : source.getCastingTime().name().toLowerCase(Locale.ROOT);
         String classesFromChoiceKey = trimmed(source.getClassesFromChoiceKey());
 

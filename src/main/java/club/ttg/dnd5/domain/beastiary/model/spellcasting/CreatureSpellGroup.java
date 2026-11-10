@@ -37,6 +37,13 @@ public class CreatureSpellGroup {
     @Schema(description = "Перезарядка порции")
     private RechargeType recharge;
 
+    /**
+     * «Раз в N ходов», целое 2–20; только у {@code COOLDOWN} — у других режимов в выгрузку
+     * не идёт.
+     */
+    @Schema(description = "Раз в N ходов: целое 2–20, только у режима COOLDOWN", example = "3")
+    private Integer cooldownTurns;
+
     @Schema(description = "Своя подпись порции вместо выведенной из режима", example = "1/день")
     private String label;
 

@@ -1,10 +1,12 @@
 package club.ttg.dnd5.domain.article.rest.controller;
 
+import club.ttg.dnd5.domain.article.model.ArticleSorting;
 import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
 import club.ttg.dnd5.domain.article.service.ArticleService;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -93,8 +95,29 @@ public class ArticleController {
             @RequestParam(required = false)
             @Schema(description = "Фильтр по типу: NEWS или ARTICLE (по умолчанию — все)") final ArticleType type,
             @RequestParam(required = false)
-            @Schema(description = "Поиск по подстроке в заголовке (регистронезависимо)") final String search) {
-        return articleService.searchPublished(cnt, type, search);
+            @Schema(description = "Поиск по подстроке в заголовке (регистронезависимо)") final String search,
+            @RequestParam(required = false)
+            @Schema(description = "Фильтр по тегам: записи, у которых есть хотя бы один из тегов") final List<String> tags,
+            @RequestParam(required = false, defaultValue = "DATE")
+            @Schema(description = "Сортировка: DATE — по дате выхода (по умолчанию), TITLE — по названию, "
+                    + "RATING — по рейтингу") final ArticleSorting sorting) {
+        return articleService.searchPublished(cnt, type, search, tags, sorting);
+    }
+
+    @Operation(summary = "Теги опубликованных статей / новостей (для фильтра и подсказок в редакторе)")
+    @GetMapping("/tags")
+    public List<String> findTags(
+            @RequestParam(required = false)
+            @Schema(description = "Фильтр по типу: NEWS или ARTICLE (по умолчанию — все)") final ArticleType type) {
+        return articleService.findPublishedTags(type);
+    }
+
+    @Operation(summary = "Метаданные фильтров листинга статей / новостей (группа тегов)")
+    @GetMapping("/filters")
+    public FilterMetadataResponse getFilters(
+            @RequestParam(required = false)
+            @Schema(description = "Фильтр по типу: NEWS или ARTICLE (по умолчанию — все)") final ArticleType type) {
+        return articleService.getFilterMetadata(type);
     }
 
     @Operation(summary = "Получить cnt последних неопубликованных статей / новостей (для модерации, с фильтром и поиском)")

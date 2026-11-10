@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-18-01-facility-furniture
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Вместо шаблонов готовой комнаты у сооружения хранится список предметов интерьера:
+        редактор плана расставляет их в комнате случайно. Пусто — набор по умолчанию.
+      changes:
+        - dropColumn:
+            tableName: bastion_facility
+            columnName: room_templates
+        - addColumn:
+            tableName: bastion_facility
+            columns:
+              - column:
+                  name: furniture
+                  type: JSONB

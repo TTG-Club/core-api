@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.player.service;
 
+import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityPrerequisite;
@@ -11,10 +12,13 @@ import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionFacility;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionMember;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionStatus;
+import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionEditorRepository;
 import club.ttg.dnd5.domain.bastion.player.repository.PlayerBastionRepository;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.FacilitySetupRequest;
 import club.ttg.dnd5.domain.bastion.player.rest.dto.PlayerBastionResponse;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
+import club.ttg.dnd5.domain.bastion.service.FacilityChoiceOptions;
+import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.user.service.UserService;
 import club.ttg.dnd5.exception.ApiException;
 import jakarta.persistence.EntityManager;
@@ -44,9 +48,11 @@ class PlayerBastionFacilityServiceTest {
     private final UserService userService = mock(UserService.class);
     private final PlayerBastionFacilityService service = new PlayerBastionFacilityService(
             repository, facilityRepository,
-            new PlayerBastionAccess(repository, client, userService),
-            new PlayerBastionResponseMapper(facilityRepository),
-            mock(EntityManager.class));
+            new PlayerBastionAccess(repository, mock(PlayerBastionEditorRepository.class), client, userService),
+            new PlayerBastionResponseMapper(facilityRepository, mock(PlayerBastionEditorRepository.class), new FacilityChoiceOptions(mock(ItemRepository.class)),
+                    mock(CreatureRepository.class)),
+            mock(EntityManager.class),
+            new FacilityChoiceOptions(mock(ItemRepository.class)));
 
     private final UUID gameId = UUID.randomUUID();
     private final UUID masterId = UUID.randomUUID();
@@ -111,9 +117,14 @@ class PlayerBastionFacilityServiceTest {
         assertEquals(HttpStatus.FORBIDDEN, error.getStatus());
     }
 
+    /** В действующем бастионе стартовый выбор закрыт, когда сооружения у персонажа уже есть. */
     @Test
     void startingSelectionIsClosedAfterSetup() {
         bastion.setStatus(PlayerBastionStatus.ACTIVE);
+        PlayerBastionFacility bedroom = new PlayerBastionFacility();
+        bedroom.setMember(member);
+        bedroom.setFacilityUrl("bedroom");
+        member.getFacilities().add(bedroom);
         actAs(masterId);
 
         ApiException error = assertThrows(ApiException.class,

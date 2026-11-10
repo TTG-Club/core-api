@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -67,10 +68,18 @@ public class ArticleDetailedResponse {
     @Nullable
     private String previewImageUrl;
 
+    @Schema(description = "Ссылка на ролик YouTube или ВК Видео; показывается вместо обложки")
+    @Nullable
+    private String videoUrl;
+
     @Schema(description = "Текст превью")
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     private String preview;
+
+    @NotNull
+    @Schema(description = "Теги записи, по алфавиту")
+    private List<String> tags;
 
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     @Schema(description = "Текст статьи / новости")

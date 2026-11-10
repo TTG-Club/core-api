@@ -31,7 +31,6 @@ import java.util.Set;
         }
 )
 public class Background extends NamedEntity {
-    private String linkImageUrl; //для изоброжения бэкграунда
     /** Характеристики */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

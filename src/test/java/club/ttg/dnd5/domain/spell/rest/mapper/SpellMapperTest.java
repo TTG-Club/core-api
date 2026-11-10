@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.spell.rest.mapper;
 
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.SpellSchool;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
@@ -127,5 +128,35 @@ class SpellMapperTest
         assertNull(mapper.toSchoolName(clarificationOnly));
         assertEquals(MagicSchool.EVOCATION.getName() + " (песнь)", mapper.toSchool(
                 SpellSchool.builder().school(MagicSchool.EVOCATION).additionalType("песнь").build()));
+    }
+
+    /** Состояние в формуле урона форма получает из {@code /raw} строкой как есть. */
+    @Test
+    void rawKeepsStatusTokenInDamageFormula()
+    {
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("1к6@self.status.bloodied"));
+        Spell spell = new Spell();
+        spell.setEffect(effect);
+
+        assertEquals(List.of("1к6@self.status.bloodied"),
+                mapper.toRequest(spell).getEffect().getDamageFormulas());
+    }
+
+    /** Рост области за круг форма получает из {@code /raw} и сохраняет обратно без потерь. */
+    @Test
+    void rawKeepsScalingAdditionalAreaSize()
+    {
+        SpellEffect.Scaling scaling = new SpellEffect.Scaling();
+        scaling.setAdditionalAreaSize(20);
+        SpellEffect effect = new SpellEffect();
+        effect.setScaling(scaling);
+        Spell spell = new Spell();
+        spell.setEffect(effect);
+
+        Spell saved = new Spell();
+        mapper.updateEntity(saved, mapper.toRequest(spell));
+
+        assertEquals(20, saved.getEffect().getScaling().getAdditionalAreaSize());
     }
 }

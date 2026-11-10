@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-15-01-workshop-artisan-tools
+      author: Magistrus
+      comment: >
+        Инструменты мастерской выбираются из инструментов ремесленников справочника
+        предметов: у выбора инструментов мастерской появляется источник ARTISAN_TOOLS.
+        Если такого выбора у мастерской нет, он добавляется на шесть инструментов.
+      changes:
+        - sql:
+            sql: >
+              UPDATE bastion_facility f
+              SET choices = CASE
+                WHEN EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(f.choices, '[]'::jsonb)) e
+                             WHERE e ->> 'name' ILIKE '%инструмент%')
+                THEN (SELECT jsonb_agg(CASE
+                                         WHEN e ->> 'name' ILIKE '%инструмент%'
+                                         THEN e || jsonb_build_object('source', 'ARTISAN_TOOLS',
+                                                                      'count', COALESCE((e ->> 'count')::int, 6))
+                                         ELSE e
+                                       END ORDER BY ord)
+                      FROM jsonb_array_elements(f.choices) WITH ORDINALITY t(e, ord))
+                ELSE COALESCE(f.choices, '[]'::jsonb) || jsonb_build_array(jsonb_build_object(
+                  'name', 'Инструменты ремесленников',
+                  'description', 'Мастерская оснащена шестью видами инструментов ремесленников на выбор.',
+                  'count', 6,
+                  'source', 'ARTISAN_TOOLS'))
+              END
+              WHERE f.english ILIKE 'workshop'
+      rollback:
+        - empty

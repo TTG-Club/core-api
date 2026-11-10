@@ -9,8 +9,10 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureSkill;
 import club.ttg.dnd5.domain.beastiary.model.CreatureSpeeds;
 import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CooldownTurns;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureDamageAlternative;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.language.CreatureLanguage;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +53,16 @@ import java.util.stream.Stream;
 @Component
 @RequiredArgsConstructor
 public class VttgCreatureMapper {
+    /**
+     * Способы выбора варианта урона «или» — словарь системы
+     * ({@code CREATURE_DAMAGE_CONDITIONS}). Незнакомый способ система отбрасывает
+     * вместе с вариантом, поэтому он не выгружается.
+     */
+    private static final Set<String> DAMAGE_ALTERNATIVE_CONDITIONS = Set.of("formula", "ask", "random");
+
+    /** Предел вариантов урона у записи — {@code MAX_CREATURE_DAMAGE_ALTERNATIVES} системы. */
+    private static final int MAX_DAMAGE_ALTERNATIVES = 5;
+
     private final VttgMarkupConverter markupConverter;
     private final VttgEquipmentMapper equipmentMapper;
     private final VttgCreatureSpellcastingMapper spellcastingMapper;
@@ -356,9 +369,19 @@ public class VttgCreatureMapper {
         if (traits == null) return List.of();
         return traits.stream().filter(Objects::nonNull)
                 // Черта тоже бывает бросаемой («Облако слизи» — спасбросок с уроном).
-                .map(trait -> entry(trait.getName(), trait.getEnglish(), description(trait.getDescription()),
-                        trait.getRecharge(), trait.getEffect(), null, null))
+                .map(this::trait)
                 .toList();
+    }
+
+    private Map<String, Object> trait(CreatureTrait trait) {
+        Map<String, Object> result = entry(trait.getName(), trait.getEnglish(), description(trait.getDescription()),
+                trait.getRecharge(), trait.getCooldownTurns(), trait.getEffect(), null, null);
+        // «Легендарное сопротивление»: число вне 1–20 система не примет — такое не отдаём.
+        Integer perDay = trait.getSaveSuccessPerDay();
+        if (perDay != null && perDay >= 1 && perDay <= 20) {
+            result.put("saveSuccessPerDay", perDay);
+        }
+        return result;
     }
 
     private List<Map<String, Object>> actions(Collection<CreatureAction> actions) {
@@ -370,7 +393,7 @@ public class VttgCreatureMapper {
 
     private Map<String, Object> action(CreatureAction action) {
         return entry(action.getName(), action.getEnglish(), description(action.getDescription()),
-                action.getRecharge(), action.getEffect(),
+                action.getRecharge(), action.getCooldownTurns(), action.getEffect(),
                 action.getAttackType(), action.getSawingThrows());
     }
 
@@ -386,6 +409,9 @@ public class VttgCreatureMapper {
      * @param nameEn английское название записи.
      * @param description описание записи текстом.
      * @param recharge перезарядка записи.
+     * @param cooldownTurns «раз в N ходов» записи. Уходит только целым 2–20 и только без
+     *                      перезарядки: с ней оно взаимоисключающее, и система всё равно
+     *                      взяла бы перезарядку.
      * @param effect механика записи; {@code null} — её не заводили.
      * @param legacyAttackType тип атаки старого импорта. Лежит рядом с записью, а не внутри
      *                         механики: у записи, которую ни разу не открывали в мастерской,
@@ -395,6 +421,7 @@ public class VttgCreatureMapper {
      */
     private Map<String, Object> entry(String name, String nameEn, String description,
                                       RechargeType recharge,
+                                      Integer cooldownTurns,
                                       CreatureActionEffect effect,
                                       AttackType legacyAttackType,
                                       Collection<SawingThrow> legacySaves) {
@@ -403,22 +430,31 @@ public class VttgCreatureMapper {
                 ? legacyAttackType : mechanics.getAttackType();
         SawingThrow save = first(CollectionUtils.isEmpty(mechanics.getSavingThrows())
                 ? legacySaves : mechanics.getSavingThrows());
-        boolean hasSave = save != null && save.getAbility() != null;
+        // Автопопадание снимает и бросок атаки, и спасбросок: урон идёт сразу.
+        boolean autoHit = Boolean.TRUE.equals(mechanics.getAutoHit());
+        boolean hasSave = !autoHit && save != null && save.getAbility() != null;
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("name", value(name));
         putIfHasText(result, "nameEn", nameEn);
         result.put("description", paragraphsFromText(description));
         putIfHasText(result, "recharge", recharge(recharge));
+        putIfNotNull(result, "cooldownTurns", CooldownTurns.resolve(recharge, cooldownTurns));
 
         // Спас заменяет бросок попадания — то же правило, что в форме системы.
-        if (!hasSave) {
+        if (autoHit) {
+            result.put("autoHit", true);
+        } else if (!hasSave) {
             putIfNotNull(result, "attackBonus", mechanics.getAttackBonus());
         }
 
         List<Map<String, Object>> parts = damageParts(mechanics.getDamageParts());
         if (!parts.isEmpty()) {
             result.put("damageParts", parts);
+        }
+        List<Map<String, Object>> alternatives = damageAlternatives(mechanics.getDamageAlternatives());
+        if (!alternatives.isEmpty()) {
+            result.put("damageAlternatives", alternatives);
         }
 
         if (hasSave) {
@@ -496,6 +532,37 @@ public class VttgCreatureMapper {
     }
 
     /**
+     * Варианты урона «или» в формате компендиума — по тем же правилам, по которым их
+     * читает система: не больше пяти по порядку (из сработавших по состоянию берётся
+     * верхний), только знакомый способ выбора, только с частями, у которых есть формула.
+     *
+     * @param alternatives варианты урона записи.
+     * @return варианты для компендиума; пустой список — поле не пишется.
+     */
+    private List<Map<String, Object>> damageAlternatives(List<CreatureDamageAlternative> alternatives) {
+        if (CollectionUtils.isEmpty(alternatives)) return List.of();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (CreatureDamageAlternative alternative : alternatives.subList(
+                0, Math.min(alternatives.size(), MAX_DAMAGE_ALTERNATIVES))) {
+            if (alternative == null || !DAMAGE_ALTERNATIVE_CONDITIONS.contains(alternative.getCondition())) {
+                continue;
+            }
+            List<Map<String, Object>> parts = damageParts(alternative.getDamageParts());
+            if (parts.isEmpty()) {
+                continue;
+            }
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("condition", alternative.getCondition());
+            if (StringUtils.hasText(alternative.getLabel())) {
+                entry.put("label", alternative.getLabel().trim());
+            }
+            entry.put("damageParts", parts);
+            result.add(entry);
+        }
+        return result;
+    }
+
+    /**
      * Область воздействия механики. Формы переводятся той же картой, что у заклинания:
      * словарь сайта шире словаря шаблонов VTTG, и своей карты у существа быть не должно.
      *
@@ -524,15 +591,21 @@ public class VttgCreatureMapper {
 
     /**
      * Тип дальности записи по типу атаки. «Рукопашная или дальнобойная» уезжает
-     * рукопашной: у неё заполнены и досягаемость, и дальность, а выбрать основную VTTG
-     * умеет только одну.
+     * {@code meleeOrRanged}: у неё заполнены и досягаемость, и дальность, и система
+     * (с 0.8.114) перед броском спрашивает, каким видом атаковать. Старая система
+     * незнакомое значение читает рукопашной атакой.
      *
      * @param attackType тип атаки записи.
-     * @return {@code melee}, {@code ranged} или {@code null}, если тип не задан.
+     * @return {@code melee}, {@code ranged}, {@code meleeOrRanged} или {@code null},
+     *         если тип не задан.
      */
     private String rangeType(AttackType attackType) {
         if (attackType == null) return null;
-        return attackType == AttackType.RANGE ? "ranged" : "melee";
+        return switch (attackType) {
+            case MELEE -> "melee";
+            case RANGE -> "ranged";
+            case MELEE_OR_RANGE -> "meleeOrRanged";
+        };
     }
 
     /**

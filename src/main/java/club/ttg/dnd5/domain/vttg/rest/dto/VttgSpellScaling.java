@@ -10,5 +10,6 @@ import lombok.Getter;
 public class VttgSpellScaling {
     private String additionalDice;
     private Integer additionalTargets;
+    private Integer additionalAreaSize;
     private String description;
 }

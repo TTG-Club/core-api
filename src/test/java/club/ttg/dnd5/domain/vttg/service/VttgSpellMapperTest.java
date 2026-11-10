@@ -371,8 +371,31 @@ class VttgSpellMapperTest {
         var result = mapper.toVttg(spell);
 
         assertEquals(1, result.getScaling().getAdditionalTargets());
+        assertNull(result.getScaling().getAdditionalAreaSize());
         // Незаполненное поле явного блока добирается из разбора текста.
         assertTrue(result.getScaling().getDescription().contains("дополнительный луч"));
+    }
+
+    /** Рост области за круг уезжает как есть: из текста его не выводим. */
+    @Test
+    void exportsAdditionalAreaSize() {
+        Spell spell = new Spell();
+        spell.setUrl("fog-cloud");
+        spell.setName("Туманное облако");
+        spell.setEnglish("Fog Cloud");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.CONJURATION).build());
+        spell.setUpcastable(true);
+
+        SpellEffect effect = new SpellEffect();
+        SpellEffect.Scaling scaling = new SpellEffect.Scaling();
+        scaling.setAdditionalAreaSize(20);
+        effect.setScaling(scaling);
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals(20, result.getScaling().getAdditionalAreaSize());
     }
 
     @Test
@@ -654,6 +677,93 @@ class VttgSpellMapperTest {
         assertEquals(effect.getTriggers().getFirst(), exported.get("triggers").get(0));
     }
 
+    /**
+     * «Дубинка»: замены свойств оружия уходят в выгрузку теми же строками — ключи
+     * {@code weapon.*}, значения {@code spell}/{@code force}, условие с ключами вида
+     * оружия листа VTTG ({@code club}, {@code quarterstaff}), не переведёнными в слаги
+     * страниц сайта.
+     */
+    @Test
+    void exportsWeaponOverrideEffectAsAuthored() throws Exception {
+        Spell spell = new Spell();
+        spell.setUrl("shillelagh");
+        spell.setName("Дубинка");
+        spell.setEnglish("Shillelagh");
+        spell.setLevel(0L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.TRANSMUTATION).build());
+
+        ObjectMapper json = new ObjectMapper();
+        var authored = json.readTree("""
+                {
+                  "id": "effect_shillelagh_force",
+                  "name": "Дубинка",
+                  "effectTarget": "self",
+                  "duration": { "type": "minutes", "value": 1 },
+                  "variant": { "group": "Урон", "label": "Силовой" },
+                  "changes": [
+                    { "key": "weapon.damageDice", "mode": "override", "priority": 20,
+                      "value": "(1 + steps(@level, 17))к(8 + 2 * steps(@level, 5, 11) - 6 * steps(@level, 17))",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.attackAbility", "mode": "override", "priority": 20,
+                      "value": "spell",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.damageType", "mode": "override", "priority": 20,
+                      "value": "force",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" }
+                  ],
+                  "flags": []
+                }
+                """);
+        spell.setActiveEffects(List.of(json.treeToValue(authored, ActiveEffect.class)));
+
+        var exported = json.readTree(json.writeValueAsString(mapper.toVttg(spell)))
+                .get("activeEffects").get(0);
+
+        assertEquals(authored, exported);
+        assertEquals("weapon.baseType === \"club, quarterstaff\"",
+                exported.get("changes").get(0).get("condition").asText());
+    }
+
+    /**
+     * «Невидимость» 2024: окончания «накладывает заклинание» и «наносит урон» —
+     * срабатывания с новыми событиями {@code spellCast} и {@code damageDealt}.
+     * Бэкенд событий не разбирает: эффект уезжает в выгрузку как есть.
+     */
+    @Test
+    void exportsInvisibilityEndingTriggersAsAuthored() throws Exception {
+        Spell spell = new Spell();
+        spell.setUrl("invisibility-phb");
+        spell.setName("Невидимость");
+        spell.setEnglish("Invisibility");
+        spell.setLevel(2L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.ILLUSION).build());
+
+        ObjectMapper json = new ObjectMapper();
+        var authored = json.readTree("""
+                {
+                  "id": "effect-invisibility-phb-1",
+                  "name": "Невидимый",
+                  "effectTarget": "target",
+                  "conditionKey": "invisible",
+                  "consumeOn": "carrierAttack",
+                  "flags": ["attack.advantage", "attacksAgainst.disadvantage", "initiative.advantage", "vision.invisible"],
+                  "changes": [],
+                  "triggers": [
+                    { "id": "invisibility.spellCast", "event": "spellCast",
+                      "actions": [{ "type": "removeSelf" }] },
+                    { "id": "invisibility.damageDealt", "event": "damageDealt",
+                      "actions": [{ "type": "removeSelf" }] }
+                  ]
+                }
+                """);
+        spell.setActiveEffects(List.of(json.treeToValue(authored, ActiveEffect.class)));
+
+        var exported = json.readTree(json.writeValueAsString(mapper.toVttg(spell)))
+                .get("activeEffects").get(0);
+
+        assertEquals(authored, exported);
+    }
+
     /** Заклинание без активных эффектов не несёт поле activeEffects (омитится). */
     @Test
     void omitsActiveEffectsWhenAbsent() {
@@ -688,7 +798,7 @@ class VttgSpellMapperTest {
 
         var result = mapper.toVttg(spell);
 
-        assertEquals("bonus", result.getCastingTimeUnit());
+        assertEquals("bonus-action", result.getCastingTimeUnit());
         assertEquals("self", result.getRangeUnit());
     }
 
@@ -795,5 +905,29 @@ class VttgSpellMapperTest {
         tier.setLevel(level);
         tier.setCount(count);
         return tier;
+    }
+
+    /**
+     * Состояния в формуле ({@code @self.status.*}, {@code @target.status.*}) — не старые
+     * маркеры цели: вычистка {@code @target.self} / {@code @target.separate} их не трогает.
+     */
+    @Test
+    void keepsStatusTokensInVttgDamageParts() {
+        Spell spell = new Spell();
+        spell.setUrl("status-bolt");
+        spell.setName("Status Bolt");
+        spell.setEnglish("Status Bolt");
+        spell.setLevel(1L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.NECROMANCY).build());
+
+        SpellEffect effect = new SpellEffect();
+        effect.setDamageFormulas(List.of("1к6@self.status.bloodied", "2к6@dmg.necrotic@target.status.prone"));
+        spell.setEffect(effect);
+
+        var result = mapper.toVttg(spell);
+
+        assertEquals("1к6@self.status.bloodied", result.getDamageParts().getFirst().getFormula());
+        assertEquals("2к6@dmg.necrotic@target.status.prone", result.getDamageParts().get(1).getFormula());
+        assertEquals("selected", result.getDamageParts().get(1).getTarget());
     }
 }

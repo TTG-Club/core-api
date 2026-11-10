@@ -85,6 +85,25 @@ class VttgCompendiumSectionsTest {
         assertEquals("Безделушки", trinkets.get("name"));
     }
 
+    /** «Зелья» — свой лист в группе «Снаряжение»: слаг совпадает с {@code section} зелий в мапперах. */
+    @Test
+    void exposesPotionsLeafInEquipmentGroup() {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> equipment = (List<Map<String, Object>>) sections.changesTree().stream()
+                .filter(node -> "equipment".equals(node.get("group")))
+                .findFirst()
+                .orElseThrow()
+                .get("children");
+
+        Map<String, Object> potions = equipment.stream()
+                .filter(node -> "potions".equals(node.get("section")))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("Зелья", potions.get("name"));
+        assertEquals("equipment", potions.get("dataKind"));
+    }
+
     /** Глоссарий — отдельный лист дерева: слаг совпадает с {@code section} записей, есть фильтр категорий. */
     @Test
     void exposesGlossaryLeaf() {

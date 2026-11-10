@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-14-01-player-bastion-owner
+      author: Magistrus
+      comment: >
+        Бастион принадлежит создавшему его пользователю, как лист персонажа, и
+        добавляется в игру из уже созданных. Игра и мастер становятся
+        необязательными: бастион вне игры их не имеет. Владельцем существующих
+        бастионов становится мастер их игры.
+      changes:
+        - addColumn:
+            tableName: player_bastion
+            columns:
+              - column:
+                  name: owner_id
+                  type: UUID
+        - sql:
+            sql: UPDATE player_bastion SET owner_id = master_id WHERE owner_id IS NULL
+        - addNotNullConstraint:
+            tableName: player_bastion
+            columnName: owner_id
+            columnDataType: UUID
+        - dropNotNullConstraint:
+            tableName: player_bastion
+            columnName: game_id
+            columnDataType: UUID
+        - dropNotNullConstraint:
+            tableName: player_bastion
+            columnName: master_id
+            columnDataType: UUID
+        - createIndex:
+            tableName: player_bastion
+            indexName: player_bastion_owner_id_index
+            columns:
+              - column:
+                  name: owner_id
+      rollback:
+        - dropIndex:
+            tableName: player_bastion
+            indexName: player_bastion_owner_id_index
+        - dropColumn:
+            tableName: player_bastion
+            columnName: owner_id

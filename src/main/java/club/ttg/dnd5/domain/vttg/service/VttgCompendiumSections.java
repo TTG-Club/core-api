@@ -75,7 +75,8 @@ public class VttgCompendiumSections {
                         leaf("trinkets", "Безделушки", "tabler:crystal-ball", "equipment", listView()),
                         leaf("rings", "Кольца", "tabler:circle", "equipment", listView()),
                         leaf("wands", "Жезлы", "tabler:wand", "equipment", listView()),
-                        leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", listView())
+                        leaf("wondrous", "Чудесные предметы", "tabler:diamond", "equipment", listView()),
+                        leaf(VttgItemMapper.POTIONS_SECTION, "Зелья", "tabler:flask", "equipment", listView())
                 ))
         );
     }

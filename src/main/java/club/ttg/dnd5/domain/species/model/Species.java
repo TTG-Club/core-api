@@ -54,8 +54,6 @@ public class Species extends CreatureProperties {
     @Column(name = "active_effects", columnDefinition = "jsonb")
     private List<ActiveEffect> activeEffects;
 
-    private String linkImageUrl; //для изоброжения бэкграунда
-
     /** Родительский вид */
     @ManyToOne
     @JoinColumn(name = "parent_url")

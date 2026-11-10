@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-16-01-hirelings-lost
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Наёмники, которых забрало событие бастиона (арест или пропажа): сколько их нет и с какого
+        хода замена уже на месте. Пока замены нет, число наёмников сооружения меньше справочного.
+      changes:
+        - addColumn:
+            tableName: player_bastion_facility
+            columns:
+              - column:
+                  name: hirelings_lost
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: hirelings_back_on_turn
+                  type: INTEGER

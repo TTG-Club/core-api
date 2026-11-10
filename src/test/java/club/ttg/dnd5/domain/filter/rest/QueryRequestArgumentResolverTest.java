@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureGrouping;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSorting;
+import club.ttg.dnd5.domain.magic.rest.dto.MagicItemQueryRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellQueryRequest;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellGrouping;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellSorting;
@@ -332,6 +333,35 @@ class QueryRequestArgumentResolverTest
         }
     }
 
+    // ======================== Логические параметры ========================
+
+    @Nested
+    @DisplayName("boolean @QueryParam")
+    class BooleanQueryParamTests
+    {
+        @Test
+        @DisplayName("includeUnlisted=true → true")
+        void includeUnlistedTrue() throws Exception
+        {
+            assertTrue(resolveMagicItem("includeUnlisted=true&search=%2B1").isIncludeUnlisted());
+        }
+
+        @Test
+        @DisplayName("includeUnlisted=1 → true")
+        void includeUnlistedOne() throws Exception
+        {
+            assertTrue(resolveMagicItem("includeUnlisted=1").isIncludeUnlisted());
+        }
+
+        @Test
+        @DisplayName("без параметра или includeUnlisted=false → false")
+        void includeUnlistedAbsentOrFalse() throws Exception
+        {
+            assertFalse(resolveMagicItem("search=%2B1").isIncludeUnlisted());
+            assertFalse(resolveMagicItem("includeUnlisted=false").isIncludeUnlisted());
+        }
+    }
+
     // ======================== Хелперы ========================
 
     /**
@@ -366,6 +396,20 @@ class QueryRequestArgumentResolverTest
         return (CreatureQueryRequest) resolver.resolveArgument(parameter, null, webRequest, null);
     }
 
+    private MagicItemQueryRequest resolveMagicItem(String queryString) throws Exception
+    {
+        HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+        when(httpRequest.getQueryString()).thenReturn(queryString);
+
+        NativeWebRequest webRequest = mock(NativeWebRequest.class);
+        when(webRequest.getNativeRequest(HttpServletRequest.class)).thenReturn(httpRequest);
+
+        Method method = TestController.class.getMethod("searchMagicItems", MagicItemQueryRequest.class);
+        MethodParameter parameter = new MethodParameter(method, 0);
+
+        return (MagicItemQueryRequest) resolver.resolveArgument(parameter, null, webRequest, null);
+    }
+
     /** Фиктивный контроллер для создания MethodParameter. */
     static class TestController
     {
@@ -374,5 +418,8 @@ class QueryRequestArgumentResolverTest
 
         @SuppressWarnings("unused")
         public void searchCreatures(CreatureQueryRequest request) {}
+
+        @SuppressWarnings("unused")
+        public void searchMagicItems(MagicItemQueryRequest request) {}
     }
 }

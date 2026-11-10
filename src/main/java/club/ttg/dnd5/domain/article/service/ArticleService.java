@@ -1,12 +1,19 @@
 package club.ttg.dnd5.domain.article.service;
 
 import club.ttg.dnd5.domain.article.model.Article;
+import club.ttg.dnd5.domain.article.model.ArticleSorting;
+import club.ttg.dnd5.domain.article.model.ArticleTags;
 import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.domain.article.repository.ArticleRepository;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleDetailedResponse;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleRequest;
 import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
 import club.ttg.dnd5.domain.article.rest.mapper.ArticleMapper;
+import club.ttg.dnd5.domain.common.rest.dto.rating.RatingResponse;
+import club.ttg.dnd5.domain.common.service.RatingService;
+import club.ttg.dnd5.domain.common.validation.VideoUrls;
+import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
+import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.exception.EntityExistException;
@@ -17,9 +24,12 @@ import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -28,17 +38,34 @@ public class ArticleService {
 
     public static final String REVISION_ENTITY_TYPE = "article";
 
+    /**
+     * Раздел общей таблицы рейтинга для записей (тот же ключ шлёт виджет рейтинга на фронте).
+     */
+    public static final String RATING_SECTION = "articles";
+
+    /**
+     * Заглушка для {@code IN} без выбранных тегов: пустой список в запросе не передаём.
+     */
+    private static final List<String> NO_TAGS = List.of("");
+
     private static final int DEFAULT_SEARCH_SIZE = 10;
+
+    /** Ключ группы тегов в фильтре листинга — совпадает с параметром {@code tags} поиска. */
+    private static final String TAGS_FILTER_KEY = "tags";
+
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
     private final EntityRevisionService revisionService;
+    private final RatingService ratingService;
 
     @Transactional
     public String save(ArticleRequest request) {
         validateUrlNonExistence(request.getUrl());
 
         Article toSave = articleMapper.toEntity(request);
+        toSave.setVideoUrl(VideoUrls.normalize(request.getVideoUrl()));
         applyPublication(toSave, request);
+        applyTags(toSave, request);
 
         Article saved = articleRepository.save(toSave);
         revisionService.record(REVISION_ENTITY_TYPE, saved.getUrl(), RevisionOperation.CREATE,
@@ -55,7 +82,9 @@ public class ArticleService {
         }
 
         articleMapper.updateEntity(toUpdate, request);
+        toUpdate.setVideoUrl(VideoUrls.normalize(request.getVideoUrl()));
         applyPublication(toUpdate, request);
+        applyTags(toUpdate, request);
 
         // Занята под отправку или уже отправлена в канал (и всё ещё помечена к публикации) — пометить на
         // синхронизацию. Учитываем telegramPostedAt (claim), чтобы правка в окне ПЕРВОЙ отправки не потерялась:
@@ -82,6 +111,15 @@ public class ArticleService {
         String savedUrl = articleRepository.save(toUpdate).getUrl();
         revisionService.record(REVISION_ENTITY_TYPE, savedUrl, RevisionOperation.UPDATE, findFormByUrl(savedUrl));
         return savedUrl;
+    }
+
+    /**
+     * Переносит теги из запроса в нормализованном виде. Коллекцию меняем на месте: Hibernate
+     * отслеживает её как element collection управляемой сущности.
+     */
+    private void applyTags(Article article, ArticleRequest request) {
+        article.getTags().clear();
+        article.getTags().addAll(ArticleTags.normalize(request.getTags()));
     }
 
     /**
@@ -298,7 +336,9 @@ public class ArticleService {
 
     public ArticleDetailedResponse preview(ArticleRequest request) {
         Article entity = articleMapper.toEntity(request);
+        entity.setVideoUrl(VideoUrls.normalize(request.getVideoUrl()));
         applyPublication(entity, request);
+        applyTags(entity, request);
         Instant now = Instant.now();
         entity.setId(new UUID(0L, 0L));
         entity.setCreatedAt(now);
@@ -316,9 +356,56 @@ public class ArticleService {
     }
 
 
-    public List<ArticleShortResponse> searchPublished(Integer cnt, ArticleType type, String search) {
-        return articleMapper.toShortResponseList(
-                articleRepository.findPublished(Instant.now(), type, toLikePattern(search), toLimit(cnt)));
+    /**
+     * Публичная лента: фильтр по типу, подстроке заголовка и тегам (запись подходит, если у неё есть
+     * хотя бы один из выбранных тегов), сортировка по дате выхода (по умолчанию), названию или рейтингу.
+     * Каждой записи проставляется её рейтинг.
+     */
+    public List<ArticleShortResponse> searchPublished(Integer cnt, ArticleType type, String search,
+                                                      Collection<String> tags, ArticleSorting sorting) {
+        Set<String> normalizedTags = ArticleTags.normalize(tags);
+        ArticleSorting effectiveSorting = sorting == null ? ArticleSorting.DATE : sorting;
+        List<ArticleShortResponse> articles = articleMapper.toShortResponseList(
+                articleRepository.findPublished(Instant.now(), type, toLikePattern(search),
+                        !normalizedTags.isEmpty(), normalizedTags.isEmpty() ? NO_TAGS : normalizedTags,
+                        effectiveSorting.name(), RATING_SECTION, toLimit(cnt)));
+
+        Map<String, RatingResponse> ratings = ratingService.getRatings(RATING_SECTION,
+                articles.stream().map(ArticleShortResponse::getUrl).toList());
+        articles.forEach(article -> article.setRating(ratings.get(article.getUrl())));
+        return articles;
+    }
+
+    /**
+     * Теги опубликованных записей (опционально — одного типа), по алфавиту.
+     */
+    public List<String> findPublishedTags(ArticleType type) {
+        return articleRepository.findPublishedTags(Instant.now(), type);
+    }
+
+    /**
+     * Метаданные фильтра листинга в общем формате разделов: одна группа «Теги»
+     * с тегами опубликованных записей. Ключ группы совпадает с параметром
+     * {@code tags} поиска. Источников у записей нет, поэтому {@code sources} не заполняется.
+     */
+    public FilterMetadataResponse getFilterMetadata(ArticleType type) {
+        List<String> tags = findPublishedTags(type);
+        if (tags.isEmpty()) {
+            return FilterMetadataResponse.builder().filters(List.of()).build();
+        }
+        FilterMetadataResponse.FilterGroupMeta tagGroup = FilterMetadataResponse.FilterGroupMeta.builder()
+                .key(TAGS_FILTER_KEY)
+                .name("Теги")
+                .supports(SupportsConfig.builder().mode(false).union(false).build())
+                .values(tags.stream()
+                        .map(tag -> FilterMetadataResponse.FilterValueMeta.builder()
+                                .id(tag)
+                                .value(tag)
+                                .name(tag)
+                                .build())
+                        .toList())
+                .build();
+        return FilterMetadataResponse.builder().filters(List.of(tagGroup)).build();
     }
 
     public List<ArticleShortResponse> searchUnpublished(Integer cnt, ArticleType type, String search) {

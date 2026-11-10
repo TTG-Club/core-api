@@ -1,7 +1,10 @@
 package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
+import club.ttg.dnd5.domain.bastion.player.model.MenagerieCreature;
+import club.ttg.dnd5.domain.bastion.player.model.StableAnimal;
 import club.ttg.dnd5.domain.common.model.Timestamped;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +17,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 import java.util.UUID;
 
@@ -46,6 +50,28 @@ public class PlayerBastionOrder extends Timestamped {
     /** Вариант приказа из справочника: «книгу», «лейтенанта». */
     @Column(name = "option_name", length = 200)
     private String optionName;
+
+    /** Изготавливаемый предмет справочника (мастерская). */
+    @Column(name = "item_url", length = 200)
+    private String itemUrl;
+
+    /** Название изготавливаемого предмета на момент приказа. */
+    @Column(name = "item_name", length = 200)
+    private String itemName;
+
+    /** Существо, которое вербует зверинец; добавляется в вольеры, когда приказ выполнен. */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private MenagerieCreature creature;
+
+    /** Животное, которое конюшня покупает или продаёт по приказу «Торговать». */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private StableAnimal animal;
+
+    /** Конюшня продаёт {@link #animal}; {@code false} — покупает. */
+    @Column(name = "animal_sale", nullable = false)
+    private boolean animalSale;
 
     /** Сколько списано из казны при отдаче приказа, зм. */
     @Column(name = "cost_gp", nullable = false)

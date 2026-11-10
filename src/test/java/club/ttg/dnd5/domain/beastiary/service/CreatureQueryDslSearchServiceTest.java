@@ -47,6 +47,31 @@ class CreatureQueryDslSearchServiceTest
         );
     }
 
+    @Test
+    void ratingSortingStaysInsideChallengeRatingGroups()
+    {
+        assertOrder(
+                service.getOrder(CreatureGrouping.CHALLENGE_RATING, CreatureSorting.RATING),
+                "creature.experience",
+                "(select coalesce(avg(r.value), 0) from rating r where r.section = 'bestiary' and r.url = creature.url)",
+                "(select count(r.value) from rating r where r.section = 'bestiary' and r.url = creature.url)",
+                "creature.name",
+                "creature.url"
+        );
+    }
+
+    @Test
+    void ratingSortingWithoutGroupingStartsWithRating()
+    {
+        assertOrder(
+                service.getOrder(CreatureGrouping.NONE, CreatureSorting.RATING),
+                "(select coalesce(avg(r.value), 0) from rating r where r.section = 'bestiary' and r.url = creature.url)",
+                "(select count(r.value) from rating r where r.section = 'bestiary' and r.url = creature.url)",
+                "creature.name",
+                "creature.url"
+        );
+    }
+
     private void assertOrder(final OrderSpecifier<?>[] order, final String... expectedTargets)
     {
         assertEquals(

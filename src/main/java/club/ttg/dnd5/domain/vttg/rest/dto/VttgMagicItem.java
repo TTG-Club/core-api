@@ -31,7 +31,7 @@ public class VttgMagicItem {
     private String type;
     /** Отображаемая метка типа (напр. «Снаряжение»/«Оружие»). */
     private String typeLabel;
-    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous). */
+    /** Slug листа дерева разделов, куда положить запись (weapons/armor/rings/wands/wondrous/potions). */
     private String section;
     /**
      * Раздел сайта в адресе страницы-источника — всегда {@code magic-items}. По паре
@@ -63,7 +63,7 @@ public class VttgMagicItem {
     private String rarity;
     private boolean equipped;
     /**
-     * {@code EquipmentCategory}: wand, ring, wondrous, light, medium, heavy, shield, trinket, clothing...
+     * {@code EquipmentCategory}: wand, ring, wondrous, potion, light, medium, heavy, shield, trinket, clothing...
      * Опускается для оружия (у него своя категория) и для брони без известного класса.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -101,12 +101,20 @@ public class VttgMagicItem {
      * уже в вокабуляре VTTG, как у заклинаний ({@code VttgSpell.activeEffects}).
      *
      * <p>Потребитель собирает эффекты надетых предметов наравне с эффектами самого
-     * персонажа, поэтому плащ защиты поднимает КД и спасброски сам. Различения
-     * «при себе / надет / в руке» ({@code MagicItemActivation}) у него нет — эффекты
-     * включает пара «надет + настроен», — поэтому условие активации в выгрузку не идёт.</p>
+     * персонажа, поэтому плащ защиты поднимает КД и спасброски сам. «Надет», «в руке» и
+     * «экипирован» у него — одна отметка «надет»; «при себе» уезжает отдельным признаком
+     * {@link #activeWhenCarried}.</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<ActiveEffect> activeEffects;
+
+    /**
+     * Механика работает, пока предмет просто в инвентаре, без отметки «надет»
+     * ({@code MagicItemActivation.CARRIED}: Камень удачи, Клинок удачи). Опускается у
+     * остальных: без признака потребитель включает эффекты по отметке «надет».
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean activeWhenCarried;
 
     /**
      * Заряды предмета ({@code MagicItemResource}). Опускается у предметов без зарядов.
@@ -150,6 +158,14 @@ public class VttgMagicItem {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Boolean consumable;
+
+    /**
+     * Предмет-хранилище ({@code DnDGameItem.container}): {@code capacityWeight} — вместимость
+     * в фунтах, {@code weightless} — только когда содержимое не весит. Опускается у предметов,
+     * которые не контейнеры.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Map<String, Object> container;
     @Getter(AccessLevel.NONE)
     private boolean isSRD;
     @Getter(AccessLevel.NONE)

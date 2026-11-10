@@ -1,7 +1,11 @@
 package club.ttg.dnd5.domain.common.model;
 
+import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellGroup;
+import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellUsageMode;
 import club.ttg.dnd5.domain.beastiary.rest.dto.ActionRequest;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
@@ -62,6 +66,7 @@ class VttgJsonContractTest {
                   "scaling": {
                     "additionalDice": "1к6",
                     "additionalTargets": 1,
+                    "additionalAreaSize": 20,
                     "description": "Урон увеличивается на 1к6 за круг."
                   },
                   "cantripScalingTiers": [
@@ -81,6 +86,7 @@ class VttgJsonContractTest {
         assertEquals(2, effect.getAttackBonus());
         assertEquals("1к6", effect.getScaling().getAdditionalDice());
         assertEquals(1, effect.getScaling().getAdditionalTargets());
+        assertEquals(20, effect.getScaling().getAdditionalAreaSize());
         assertEquals(5, effect.getCantripScalingTiers().getFirst().getLevel());
         assertEquals("2к12@dmg.necrotic",
                 effect.getCantripScalingTiers().getFirst().getParts().getFirst().getFormula());
@@ -91,6 +97,7 @@ class VttgJsonContractTest {
 
         assertTrue(serialized.contains("\"deliveryType\":\"sight\""));
         assertTrue(serialized.contains("\"attackBonus\":2"));
+        assertTrue(serialized.contains("\"additionalAreaSize\":20"));
         assertTrue(serialized.contains("\"cantripScalingTiers\""));
     }
 
@@ -205,6 +212,56 @@ class VttgJsonContractTest {
         String serialized = mapper.writeValueAsString(effect);
 
         assertTrue(serialized.contains("\"key\":\"damage.ranged\""));
+    }
+
+    /**
+     * Замена свойств оружия эффектом («Дубинка», система с 0.8.96): ключи
+     * {@code weapon.*}, значения — не только формулы ({@code spell}, {@code force},
+     * кость со скобками {@code к(…)}), а условие — строка с кавычками и ключами
+     * вида оружия листа VTTG. Бэкенд строки не разбирает: всё обязано вернуться
+     * тем же, включая вариант.
+     */
+    @Test
+    void activeEffectKeepsWeaponOverrideChanges() throws Exception {
+        String json = """
+                {
+                  "id": "effect_shillelagh_force",
+                  "name": "Дубинка",
+                  "effectTarget": "self",
+                  "duration": { "type": "minutes", "value": 1 },
+                  "variant": { "group": "Урон", "label": "Силовой" },
+                  "changes": [
+                    { "key": "weapon.damageDice", "mode": "override", "priority": 20,
+                      "value": "(1 + steps(@level, 17))к(8 + 2 * steps(@level, 5, 11) - 6 * steps(@level, 17))",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.attackAbility", "mode": "override", "priority": 20,
+                      "value": "spell",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" },
+                    { "key": "weapon.damageType", "mode": "override", "priority": 20,
+                      "value": "force",
+                      "condition": "weapon.baseType === \\"club, quarterstaff\\"" }
+                  ],
+                  "flags": []
+                }
+                """;
+
+        ActiveEffect effect = mapper.readValue(json, ActiveEffect.class);
+        List<ActiveEffect.Change> changes = effect.getChanges();
+
+        assertEquals("weapon.damageDice", changes.get(0).getKey());
+        assertEquals("(1 + steps(@level, 17))к(8 + 2 * steps(@level, 5, 11) - 6 * steps(@level, 17))",
+                changes.get(0).getValue());
+        assertEquals("spell", changes.get(1).getValue());
+        assertEquals("force", changes.get(2).getValue());
+        assertEquals("weapon.baseType === \"club, quarterstaff\"", changes.get(2).getCondition());
+        assertEquals("Урон", effect.getVariant().getGroup());
+        assertEquals("Силовой", effect.getVariant().getLabel());
+
+        String serialized = mapper.writeValueAsString(effect);
+
+        assertEquals(mapper.readTree(json), mapper.readTree(serialized));
+        assertTrue(serialized.contains(
+                "\"condition\":\"weapon.baseType === \\\"club, quarterstaff\\\"\""));
     }
 
     /**
@@ -908,6 +965,7 @@ class VttgJsonContractTest {
                   "name": { "rus": "Укус", "eng": "Bite" },
                   "description": "Кусает",
                   "recharge": "D5",
+                  "cooldownTurns": 3,
                   "effect": {
                     "attackType": "MELEE",
                     "attackBonus": 9,
@@ -932,6 +990,7 @@ class VttgJsonContractTest {
         CreatureActionEffect effect = request.getEffect();
 
         assertEquals(RechargeType.D5, request.getRecharge());
+        assertEquals(3, request.getCooldownTurns());
         assertEquals(AttackType.MELEE, effect.getAttackType());
         assertEquals(9, effect.getAttackBonus());
         assertEquals(10, effect.getReach());
@@ -946,6 +1005,32 @@ class VttgJsonContractTest {
         assertEquals(30, effect.getAreaOfEffect().getValue1());
         assertEquals(List.of(DamageType.PIERCING), List.copyOf(effect.getDamageTypes()));
         assertEquals("target", effect.getActiveEffects().getFirst().getEffectTarget());
+    }
+
+    /**
+     * «Раз в N ходов» переживает JSONB записи, черты и порции заклинаний: класс без поля
+     * молча выбросил бы его при чтении, и выгрузке нечего было бы отдать.
+     */
+    @Test
+    void creatureEntriesKeepCooldownTurns() throws Exception {
+        CreatureAction action = mapper.readValue("""
+                {"name": "Ледяной вихрь", "cooldownTurns": 3}""", CreatureAction.class);
+        CreatureTrait trait = mapper.readValue("""
+                {"name": "Морозная вспышка", "cooldownTurns": 4}""", CreatureTrait.class);
+        CreatureSpellGroup group = mapper.readValue("""
+                {"mode": "COOLDOWN", "cooldownTurns": 5, "spells": []}""", CreatureSpellGroup.class);
+
+        assertEquals(3, action.getCooldownTurns());
+        assertEquals(4, trait.getCooldownTurns());
+        assertEquals(CreatureSpellUsageMode.COOLDOWN, group.getMode());
+        assertEquals(5, group.getCooldownTurns());
+        assertTrue(mapper.writeValueAsString(action).contains("\"cooldownTurns\":3"));
+        assertTrue(mapper.writeValueAsString(trait).contains("\"cooldownTurns\":4"));
+        String serializedGroup = mapper.writeValueAsString(group);
+        assertTrue(serializedGroup.contains("\"mode\":\"COOLDOWN\""));
+        assertTrue(serializedGroup.contains("\"cooldownTurns\":5"));
+        // Пустое в JSONB не пишется: старые записи остаются как были.
+        assertFalse(mapper.writeValueAsString(new CreatureAction()).contains("cooldownTurns"));
     }
 
     /**

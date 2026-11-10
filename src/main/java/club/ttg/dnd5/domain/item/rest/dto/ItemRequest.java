@@ -5,6 +5,8 @@ import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
@@ -54,7 +56,7 @@ public class ItemRequest extends BaseRequest {
      * Категория снаряжения в вокабуляре VTTG. Пусто — выводится из типов предмета.
      */
     @Schema(description = "Категория снаряжения для виртуального стола",
-            examples = {"adventurer-equipment", "trinket", "food"})
+            examples = {"adventurer-equipment", "trinket", "food", "potion"})
     private String equipmentCategory;
 
     /**
@@ -64,6 +66,28 @@ public class ItemRequest extends BaseRequest {
     @Schema(description = "Расходуемый: применение тратит единицу предмета",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Boolean consumable;
+
+    /**
+     * Предмет-хранилище: вместимость в фунтах и невесомость содержимого. {@code null} —
+     * не контейнер, пустой объект — контейнер без ограничения.
+     *
+     * <p>Сохранение меняет поле, только если запрос его прислал (хотя бы {@code null}):
+     * форма, которая о поле не знает, не стирает разметку предмета.</p>
+     */
+    @Schema(description = "Хранилище: capacityWeight — вместимость в фунтах, weightless — содержимое не весит."
+            + " null — не контейнер; поле не прислано — остаётся как было",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private ItemContainer container;
+
+    /** Прислал ли запрос поле {@link #container}: отсутствие поля не стирает его при сохранении. */
+    @JsonIgnore
+    @Schema(hidden = true)
+    private boolean containerSet;
+
+    public void setContainer(ItemContainer container) {
+        this.container = container;
+        this.containerSet = true;
+    }
 
     /**
      * Активные эффекты предмета для экспорта в VTTG.

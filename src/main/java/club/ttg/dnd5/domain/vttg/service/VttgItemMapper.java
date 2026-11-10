@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
@@ -66,6 +67,11 @@ public class VttgItemMapper {
 
     private static final String TRINKET_CATEGORY = "trinket";
 
+    /** Раздел «Зелья»: обычные предметы категории {@link #POTION_CATEGORY} и магические зелья. */
+    static final String POTIONS_SECTION = "potions";
+
+    static final String POTION_CATEGORY = "potion";
+
     private final VttgMarkupConverter markupConverter;
 
     /**
@@ -119,6 +125,10 @@ public class VttgItemMapper {
         if (isConsumable(item)) {
             data.put("consumable", true);
         }
+        Map<String, Object> container = container(item.getContainer());
+        if (container != null) {
+            data.put("container", container);
+        }
         if (!CollectionUtils.isEmpty(item.getActiveEffects())) {
             // Без преобразования: мастерская заполняет эффект сразу в вокабуляре VTTG —
             // так же, как у черты и магического предмета.
@@ -128,6 +138,25 @@ public class VttgItemMapper {
         data.put("isSRD", item.getSrdVersion() != null);
         data.put("isReadOnly", true);
         return data;
+    }
+
+    /**
+     * Блок хранилища ({@code DnDGameItem.container}): {@code capacityWeight} — когда задана
+     * вместимость, {@code weightless} — только когда содержимое не весит. Пустой объект —
+     * тоже контейнер (без ограничения); {@code null} — предмет не контейнер.
+     */
+    static Map<String, Object> container(ItemContainer container) {
+        if (container == null) {
+            return null;
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (container.getCapacityWeight() != null) {
+            result.put("capacityWeight", container.getCapacityWeight());
+        }
+        if (Boolean.TRUE.equals(container.getWeightless())) {
+            result.put("weightless", true);
+        }
+        return result;
     }
 
     // ── Оружие ──────────────────────────────────────────────────────────────────────────────────
@@ -200,7 +229,7 @@ public class VttgItemMapper {
         data.put("type", "equipment");
         data.put("typeLabel", "Снаряжение");
         data.put("section", "armor");
-        data.put("baseType", baseType(item));
+        data.put("baseType", armorBaseType(item));
         if (armor == null) {
             return;
         }
@@ -235,16 +264,23 @@ public class VttgItemMapper {
 
     // ── Прочее снаряжение ───────────────────────────────────────────────────────────────────────
     /**
-     * Прочее снаряжение: раздел «Снаряжение приключенца», а «Безделушки» — только для
-     * предметов этой категории. Раньше всё снаряжение уезжало в «Безделушки», и там
+     * Прочее снаряжение: раздел «Снаряжение приключенца», а «Безделушки» и «Зелья» — только для
+     * предметов своей категории. Раньше всё снаряжение уезжало в «Безделушки», и там
      * лежали верёвки, стрелы и повозки.
      */
     private void putGear(Map<String, Object> data, Item item) {
         String category = equipmentCategory(item);
         data.put("type", "equipment");
         data.put("typeLabel", "Снаряжение");
-        data.put("section", TRINKET_CATEGORY.equals(category) ? TRINKETS_SECTION : GEAR_SECTION);
+        data.put("section", gearSection(category));
         data.put("equipmentCategory", category);
+    }
+
+    private String gearSection(String category) {
+        if (TRINKET_CATEGORY.equals(category)) {
+            return TRINKETS_SECTION;
+        }
+        return POTION_CATEGORY.equals(category) ? POTIONS_SECTION : GEAR_SECTION;
     }
 
     /**
@@ -280,6 +316,17 @@ public class VttgItemMapper {
             return weapon.getBaseType();
         }
         String byUrl = VttgWeaponKeys.ofUrl(item.getUrl());
+        return byUrl != null ? byUrl : baseType(item);
+    }
+
+    /**
+     * Базовый доспех для листа персонажа: ключ по адресу страницы ({@link VttgArmorKeys}).
+     * Слаг английского названия не годится — книга пишет «Leather Armor», а лист знает
+     * {@code leather}, и владеющий доспехом персонаж получал помеху. Доспех вне справочника
+     * листа (баклер) остаётся со слагом: владение им лист решит по категории.
+     */
+    private String armorBaseType(Item item) {
+        String byUrl = VttgArmorKeys.ofUrl(item.getUrl());
         return byUrl != null ? byUrl : baseType(item);
     }
 

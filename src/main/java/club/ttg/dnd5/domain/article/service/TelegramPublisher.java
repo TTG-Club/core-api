@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.article.service;
 import club.ttg.dnd5.config.properties.TelegramProperties;
 import club.ttg.dnd5.domain.article.model.Article;
 import club.ttg.dnd5.domain.article.model.TelegramPostFormat;
+import club.ttg.dnd5.domain.common.validation.VideoUrls;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,9 @@ public class TelegramPublisher {
      * (Telegram обрезает его и считает сообщение пустым), а word joiner не отображается ничем.
      */
     private static final String INSTANT_VIEW_TEXT = "\u2060";
+
+    /** \u041f\u043e\u0434\u043f\u0438\u0441\u044c \u043f\u0435\u0440\u0435\u0434 \u0441\u0441\u044b\u043b\u043a\u043e\u0439 \u043d\u0430 \u0440\u043e\u043b\u0438\u043a \u043d\u043e\u0432\u043e\u0441\u0442\u0438. */
+    private static final String VIDEO_LABEL = "\ud83c\udfac \u0412\u0438\u0434\u0435\u043e:";
 
     /** Итог одного вызова Bot API. */
     private enum SendResult {
@@ -131,11 +135,13 @@ public class TelegramPublisher {
         if (instantViewUrl != null) {
             SendOutcome sent = send("sendMessage",
                     linkPreviewPayload(instantViewText(article), instantViewUrl));
-            if (sent.result() == SendResult.REJECTED) {
+            if (sent.result() == SendResult.REJECTED || sent.retryAfterSeconds() != null) {
                 // Карточку собрать не удалось (страница ещё не отдаётся роботу, битый rhash) — новость
-                // всё равно должна уйти. Без карточки пустой текст-заглушка оставил бы в канале пустое
+                // всё равно должна уйти. Сюда же попадает 429, не снятый паузой: так Telegram отвечает,
+                // когда сам не смог приготовить превью ссылки, и ждать тут бесполезно — отказ повторяется
+                // на каждом тике. Без карточки пустой текст-заглушка оставил бы в канале пустое
                 // сообщение, поэтому в фоллбэке пишем заголовок и ссылку на статью.
-                log.warn("Telegram отклонил пост с превью Instant View для {} — отправляю без карточки",
+                log.warn("Telegram не принял пост с превью Instant View для {} — отправляю без карточки",
                         article.getUrl());
                 sent = send("sendMessage", messagePayload(noPreviewText(article)));
             }
@@ -240,9 +246,19 @@ public class TelegramPublisher {
         if (base == null) {
             return null;
         }
-        String page = base + "/iv/articles/" + article.getUrl();
+        String page = base + "/iv/articles/" + article.getUrl() + pageVersion(article);
         return "https://t.me/iv?url=" + URLEncoder.encode(page, StandardCharsets.UTF_8)
                 + "&rhash=" + rhash.trim();
+    }
+
+    /**
+     * Версия страницы в адресе ({@code ?v=<момент последней правки>}). Telegram запоминает результат разбора
+     * страницы по её адресу — в том числе неудачный: если карточку однажды собрать не вышло (например,
+     * из-за обложки), по тому же адресу он отказывает и после исправления новости. Правка меняет адрес,
+     * и Telegram читает страницу заново; заодно карточка поста обновляется при синхронизации правки.
+     */
+    private static String pageVersion(Article article) {
+        return article.getUpdatedAt() == null ? "" : "?v=" + article.getUpdatedAt().getEpochSecond();
     }
 
     /**
@@ -252,7 +268,19 @@ public class TelegramPublisher {
      */
     private String instantViewText(Article article) {
         String summary = summaryHtml(article);
-        return summary == null ? INSTANT_VIEW_TEXT : summary;
+        String video = videoLineHtml(article);
+        if (video == null) {
+            return summary == null ? INSTANT_VIEW_TEXT : summary;
+        }
+        return summary == null ? video : summary + "\n\n" + video;
+    }
+
+    /**
+     * Строка со ссылкой на ролик новости (Telegram-HTML). {@code null} — видео у записи нет.
+     */
+    private String videoLineHtml(Article article) {
+        String video = VideoUrls.normalize(article.getVideoUrl());
+        return video == null ? null : VIDEO_LABEL + " <a href=\"" + escape(video) + "\">" + escape(video) + "</a>";
     }
 
     /**
@@ -294,6 +322,10 @@ public class TelegramPublisher {
         String summary = summaryHtml(article);
         if (summary != null) {
             text.append(summary).append("\n\n");
+        }
+        String video = videoLineHtml(article);
+        if (video != null) {
+            text.append(video).append("\n\n");
         }
         return text.append(link).toString();
     }
@@ -418,8 +450,15 @@ public class TelegramPublisher {
      */
     private List<String> buildMessages(Article article, int firstLimit) {
         String title = nullToEmpty(article.getTitle());
+        String video = VideoUrls.normalize(article.getVideoUrl());
         String head = "<b>" + escape(title) + "</b>";
-        int firstBodyLimit = Math.max(0, firstLimit - title.length() - 2);
+        int headLength = title.length();
+        if (video != null) {
+            // Ссылка на ролик — сразу под заголовком: при длинном тексте она не уедет в хвост поста.
+            head += "\n\n" + videoLineHtml(article);
+            headLength += 2 + VIDEO_LABEL.length() + 1 + video.length();
+        }
+        int firstBodyLimit = Math.max(0, firstLimit - headLength - 2);
         List<String> bodyChunks = formatter.toHtmlChunks(description(article), firstBodyLimit, MESSAGE_LIMIT);
 
         List<String> messages = new ArrayList<>();
@@ -541,7 +580,29 @@ public class TelegramPublisher {
         return sendBody(method, payload, MediaType.APPLICATION_JSON);
     }
 
+    /**
+     * Вызов Bot API с одним повтором при 429. Telegram в отказе сам называет паузу ({@code retry_after},
+     * секунды) — если она короткая, пережидаем её и повторяем тут же. Ждать следующего тика нельзя
+     * полагаться: при посте с карточкой ссылки Telegram отвечает 429, пока сам готовит превью страницы,
+     * и к следующему тику (через минуту) всё начинается заново — новость так и не уходит.
+     */
     private SendOutcome sendBody(String method, Object body, MediaType contentType) {
+        SendOutcome outcome = sendOnce(method, body, contentType);
+        Integer retryAfter = outcome.retryAfterSeconds();
+        if (retryAfter == null || retryAfter > properties.getMaxRetryAfter().toSeconds()) {
+            return outcome;
+        }
+        try {
+            // +1 с запаса: retry_after целочисленный, ровно на границе Telegram ещё может отказать.
+            Thread.sleep(retryAfter == 0 ? 0 : (retryAfter + 1) * 1000L);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return outcome;
+        }
+        return sendOnce(method, body, contentType);
+    }
+
+    private SendOutcome sendOnce(String method, Object body, MediaType contentType) {
         try {
             JsonNode response = telegramRestClient.post()
                     // Токен — часть пути (…/bot<token>/method). В шаблон не оборачиваем,
@@ -552,11 +613,14 @@ public class TelegramPublisher {
                     .retrieve()
                     .body(JsonNode.class);
             Long messageId = response != null ? response.path("result").path("message_id").asLong() : null;
-            return new SendOutcome(SendResult.SENT, messageId);
+            return new SendOutcome(SendResult.SENT, messageId, null);
         } catch (RestClientResponseException ex) {
             log.warn("Telegram {} вернул {}: {}", method, ex.getStatusCode(), ex.getResponseBodyAsString());
-            boolean retriable = ex.getStatusCode().value() == 429 || ex.getStatusCode().is5xxServerError();
-            return new SendOutcome(retriable ? SendResult.TRANSIENT : SendResult.REJECTED, null);
+            if (ex.getStatusCode().value() == 429) {
+                return new SendOutcome(SendResult.TRANSIENT, null, retryAfterSeconds(ex));
+            }
+            boolean retriable = ex.getStatusCode().is5xxServerError();
+            return new SendOutcome(retriable ? SendResult.TRANSIENT : SendResult.REJECTED, null, null);
         } catch (RestClientException ex) {
             // Сеть/таймаут (в т.ч. потерянный ответ на уже доставленный запрос) — считаем временным.
             // Логируем причину (IOException), а НЕ ex.getMessage(): RestClient вшивает в него полный URL
@@ -564,7 +628,17 @@ public class TelegramPublisher {
             Throwable cause = ex.getCause();
             log.warn("Не удалось вызвать Telegram {}: {}", method,
                     cause != null ? cause.getMessage() : ex.getClass().getSimpleName());
-            return new SendOutcome(SendResult.TRANSIENT, null);
+            return new SendOutcome(SendResult.TRANSIENT, null, null);
+        }
+    }
+
+    /** Пауза из отказа 429 ({@code parameters.retry_after}, секунды); {@code null} — Telegram её не назвал. */
+    private static Integer retryAfterSeconds(RestClientResponseException ex) {
+        try {
+            JsonNode retryAfter = ex.getResponseBodyAs(JsonNode.class).path("parameters").path("retry_after");
+            return retryAfter.isInt() ? Math.max(0, retryAfter.asInt()) : null;
+        } catch (RuntimeException parseFailure) {
+            return null;
         }
     }
 
@@ -586,7 +660,10 @@ public class TelegramPublisher {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
-    /** Итог вызова Bot API: результат и id сообщения (при успехе отправки). */
-    private record SendOutcome(SendResult result, Long messageId) {
+    /**
+     * Итог вызова Bot API: результат, id сообщения (при успехе отправки) и пауза, названная Telegram
+     * в отказе 429 ({@code null} — отказа не было либо пауза не названа).
+     */
+    private record SendOutcome(SendResult result, Long messageId, Integer retryAfterSeconds) {
     }
 }

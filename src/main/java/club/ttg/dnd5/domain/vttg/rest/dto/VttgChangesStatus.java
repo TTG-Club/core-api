@@ -1,5 +1,7 @@
 package club.ttg.dnd5.domain.vttg.rest.dto;
 
+import club.ttg.dnd5.domain.vttg.service.VttgAutomation;
+
 import java.time.Instant;
 import java.util.Map;
 
@@ -14,11 +16,14 @@ import java.util.Map;
  * @param byType     разбивка числа изменений по типам сущностей
  * @param schemaVersion версия формата записей — та же, что в ответе {@code /changes}: по ней
  *                   клиент видит, что нужна полная пересборка, даже когда изменений в окне нет
+ * @param automation с какой автоматизацией ответил бы {@code /changes} ({@code full}/{@code srd}):
+ *                   расхождение с сохранённым у клиента — тоже повод для полной пересборки
  */
 public record VttgChangesStatus(Instant since,
                                 Instant until,
                                 boolean hasUpdates,
                                 long count,
                                 Map<String, Long> byType,
-                                int schemaVersion) {
+                                int schemaVersion,
+                                VttgAutomation automation) {
 }

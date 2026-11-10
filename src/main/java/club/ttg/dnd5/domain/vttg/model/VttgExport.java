@@ -22,8 +22,8 @@ import java.util.Objects;
  * совпадающая с типом раздела и естественным ключом сущности-источника.
  *
  * <p>Payload валиден, только если {@code srcUpdatedAt} совпадает с актуальным временем изменения
- * сущности и {@code schemaVer} — с версией логики маппера ({@link
- * club.ttg.dnd5.domain.vttg.service.VttgPayloadStore#SCHEMA_VERSION}). Иначе он пересчитывается
+ * сущности и {@code schemaVer} — с версией формата выгрузки ({@link
+ * club.ttg.dnd5.domain.vttg.service.VttgCompendiumVersionService}). Иначе он пересчитывается
  * на лету и перезаписывается.</p>
  */
 @Getter

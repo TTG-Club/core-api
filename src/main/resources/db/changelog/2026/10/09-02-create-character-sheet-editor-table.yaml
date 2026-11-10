@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-09-02-create-character-sheet-editor-table
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Права на редактирование чужого листа персонажа: запрос пользователя, сохранившего
+        лист по ссылке, и решение владельца (разрешить, отклонить, отозвать).
+      changes:
+        - createTable:
+            tableName: character_sheet_editor
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_character_sheet_editor
+                  name: id
+                  type: UUID
+              - column:
+                  name: sheet_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              # Когда владелец ответил: от отказа отсчитывается пауза до повторного запроса.
+              - column:
+                  name: decided_at
+                  type: DATETIME
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        # Один пользователь — одна запись на лист: повторный запрос обновляет её.
+        - createIndex:
+            columns:
+              - column:
+                  name: sheet_id
+              - column:
+                  name: user_id
+            indexName: character_sheet_editor_sheet_user_index
+            tableName: character_sheet_editor
+            unique: true
+        - createIndex:
+            columns:
+              - column:
+                  name: user_id
+            indexName: character_sheet_editor_user_id_index
+            tableName: character_sheet_editor

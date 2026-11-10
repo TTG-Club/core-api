@@ -65,6 +65,10 @@ public class ParticipantResponse {
     private Integer maxHitPoints;
 
     @Nullable
+    @Schema(description = "Временные хиты. NULL — не заданы")
+    private Integer temporaryHitPoints;
+
+    @Nullable
     @Schema(description = "Класс доспеха игрока. NULL — не задан либо это существо")
     private Integer armorClass;
 

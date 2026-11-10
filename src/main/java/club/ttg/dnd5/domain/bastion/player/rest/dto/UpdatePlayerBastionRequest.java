@@ -9,11 +9,12 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
- * Правка бастиона мастером: название и состав игроков целиком.
+ * Правка бастиона тем, кто его ведёт (мастер игры, а вне игры — владелец): название и
+ * состав игроков целиком.
  *
  * @param name    название бастиона
  * @param members игроки с доступом — список заменяет прежний
- * @param version версия, с которой мастер начал правку; устарела — 409
+ * @param version версия, с которой начата правка; устарела — 409
  */
 @Schema(description = "Правка бастиона")
 public record UpdatePlayerBastionRequest(

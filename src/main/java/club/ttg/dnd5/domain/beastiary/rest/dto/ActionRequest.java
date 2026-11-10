@@ -23,6 +23,8 @@ public class ActionRequest {
     @Schema(description = "Оригинальное описание на английском языке (обычный текст)")
     private String original;
     private RechargeType recharge;
+    @Schema(description = "Раз в N ходов: целое 2–20; при заданной перезарядке не хранится")
+    private Integer cooldownTurns;
     @Schema(description = "Боевая механика записи: урон, атака, спасбросок, область, эффекты")
     private CreatureActionEffect effect;
 }

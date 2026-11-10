@@ -89,6 +89,47 @@ public class PlayerBastionFacility extends Timestamped {
     @Column(name = "pending_ready_on_turn")
     private Integer pendingReadyOnTurn;
 
+    /** Защитники бастиона, которые живут в этом сооружении (только у барака). */
+    @Column(nullable = false)
+    private int defenders;
+
+    /** Существа в вольерах (только у зверинца). */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private List<MenagerieCreature> creatures = new ArrayList<>();
+
+    /** Животные в конюшне (только у конюшни). */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private List<StableAnimal> animals = new ArrayList<>();
+
+    /**
+     * Ход бастиона, в который сооружение не работает: его повредила атака или оно осталось
+     * без наёмников. Потом оно бесплатно чинится и снова работает.
+     */
+    @Column(name = "unavailable_on_turn")
+    private Integer unavailableOnTurn;
+
+    /** Почему сооружение не работает. */
+    @Column(name = "unavailable_reason", length = 200)
+    private String unavailableReason;
+
+    /**
+     * Наёмники, которых забрало событие: арестовали или они пропали. Замену им бесплатно
+     * находят к ходу {@link #hirelingsBackOnTurn}.
+     */
+    @Column(name = "hirelings_lost", nullable = false)
+    private int hirelingsLost;
+
+    /** Ход, с которого замена забранным наёмникам уже на месте; null — никого не забирали. */
+    @Column(name = "hirelings_back_on_turn")
+    private Integer hirelingsBackOnTurn;
+
+    /** Сколько наёмников нет в сооружении в ход {@code turn}. */
+    public int missingHirelings(int turn) {
+        return hirelingsBackOnTurn != null && turn < hirelingsBackOnTurn ? hirelingsLost : 0;
+    }
+
     public boolean isReady() {
         return status == FacilityStatus.READY;
     }

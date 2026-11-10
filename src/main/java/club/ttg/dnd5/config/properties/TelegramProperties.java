@@ -43,6 +43,12 @@ public class TelegramProperties {
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);
 
+    /**
+     * Самая долгая пауза из отказа 429 ({@code retry_after}), которую пережидаем на месте и сразу повторяем
+     * вызов. Дольше — не держим поток планировщика, повторим на следующем тике.
+     */
+    private Duration maxRetryAfter = Duration.ofSeconds(30);
+
     /** Сколько записей отправлять за один тик планировщика (страховка от заливки канала пачкой). */
     private int batchSize = 10;
 }

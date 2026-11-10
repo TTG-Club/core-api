@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.model;
 
+import club.ttg.dnd5.domain.bastion.player.plan.PlanDocument;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.source.model.Source;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -48,6 +49,24 @@ public class BastionFacility extends NamedEntity {
     /** Можно ли иметь в бастионе больше одного такого сооружения. */
     private Boolean repeatable;
 
+    /**
+     * Барак: размещает защитников бастиона. Приказ «Завербовать» в нём бесплатно нанимает
+     * защитников, их число ограничено пространством ({@link BastionRules#barrackCapacity}).
+     */
+    private Boolean barrack;
+
+    /**
+     * Зверинец: в вольерах живут существа, они считаются защитниками бастиона. Приказ
+     * «Завербовать» добавляет существо из таблицы зверинца ({@link MenagerieBeast}).
+     */
+    private Boolean menagerie;
+
+    /**
+     * Конюшня: в ней живут верховые животные ({@link StableAnimalKind}), при появлении —
+     * ездовая лошадь и два пони. Приказ «Торговать» покупает или продаёт животное.
+     */
+    private Boolean stable;
+
     /** Приказы, которые принимает сооружение. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
@@ -72,6 +91,14 @@ public class BastionFacility extends NamedEntity {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private List<FacilityChoice> choices;
+
+    /**
+     * Предметы интерьера, которые бывают в сооружении: ими редактор плана случайно обставляет
+     * готовую комнату. Пусто — набор по умолчанию для вида сооружения.
+     */
+    @Type(JsonType.class)
+    @Column(name = "furniture", columnDefinition = "jsonb")
+    private List<PlanDocument.FurnitureKind> furniture;
 
     @ManyToOne
     @JoinColumn(name = "source")

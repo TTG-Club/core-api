@@ -135,8 +135,23 @@ public class VttgSpecies {
      * Заклинание, выдаваемое умением вида.
      *
      * @param name    название заклинания — показывается, даже если записи нет в паках
-     * @param spellId {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     * @param spellId        {@code id} записи заклинания в выгрузке (он же {@code url} на сайте)
+     * @param alwaysPrepared заклинание нужно готовить, как обычное; уезжает только
+     *                       {@code false} — у вида по умолчанию выданное заклинание
+     *                       подготовлено всегда (врождённая магия)
+     * @param requiredLevel  уровень персонажа, с которого заклинание доступно; уезжает
+     *                       только выше первого — у «Наследия преисподней» заговор есть
+     *                       сразу, а заклинания 3-го и 5-го уровня приходят позже, хотя
+     *                       умение одно
      */
-    public record GrantedSpell(String name, String spellId) {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record GrantedSpell(String name, String spellId, Boolean alwaysPrepared, Integer requiredLevel) {
+        public GrantedSpell(String name, String spellId) {
+            this(name, spellId, null, null);
+        }
+
+        public GrantedSpell(String name, String spellId, Boolean alwaysPrepared) {
+            this(name, spellId, alwaysPrepared, null);
+        }
     }
 }

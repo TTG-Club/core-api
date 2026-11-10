@@ -115,6 +115,47 @@ class FeatMechanicsMappingTest {
         assertNull(json.get("recovery"));
     }
 
+    /**
+     * «Очки мутации»: ресурс появляется пустым и отдыхом не возвращается. Отметка лежит в
+     * JSONB механики и переживает круг «форма → запись → форма»: незнакомое поле при
+     * сохранении терялось бы молча.
+     */
+    @Test
+    void rawFormKeepsStartsEmptyCounter() throws Exception {
+        ResourceCounter stored = objectMapper.readValue("""
+                { "key": "mutation-points", "name": "Очки мутации", "max": "9 + max(1, @mod.wis)",
+                  "recovery": "LONG_REST", "shortRest": { "mode": "NONE", "amount": 1 },
+                  "longRest": { "mode": "NONE", "amount": 1 }, "startsEmpty": true }
+                """, ResourceCounter.class);
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(stored));
+        Feat feat = new Feat();
+        feat.setMechanics(mechanics);
+
+        ResourceCounter raw = mapper.toRequest(feat).getMechanics().getCounters().getFirst();
+        assertTrue(raw.resolveStartsEmpty());
+
+        JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(raw));
+        assertTrue(json.get("startsEmpty").asBoolean());
+        assertEquals("NONE", json.get("shortRest").get("mode").asText());
+        assertEquals("NONE", json.get("longRest").get("mode").asText());
+    }
+
+    /** Отметки нет — в JSONB она не пишется, и ресурс появляется полным, как раньше. */
+    @Test
+    void startsEmptyIsOmittedWhenNotSet() throws Exception {
+        ResourceCounter counter = new ResourceCounter();
+        counter.setKey("luck-points");
+        counter.setMax("@prof");
+
+        assertFalse(counter.resolveStartsEmpty());
+        assertFalse(objectMapper.readTree(objectMapper.writeValueAsString(counter)).has("startsEmpty"));
+
+        counter.setStartsEmpty(false);
+        assertFalse(counter.resolveStartsEmpty());
+    }
+
     @Test
     void choiceCountDefaultsToOne() {
         MechanicChoice choice = new MechanicChoice();

@@ -3,7 +3,6 @@ package club.ttg.dnd5.domain.species.rest.dto;
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
 import club.ttg.dnd5.domain.species.model.mechanics.SpeciesMechanics;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,8 +29,4 @@ public class SpeciesRequest extends BaseRequest {
     private Collection<SpeciesInnateSpellRequest> innateSpells;
     @Schema(description = "URL на вид", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String parent;
-
-    @JsonProperty("linkImage")
-    private String linkImageUrl;
-
 }

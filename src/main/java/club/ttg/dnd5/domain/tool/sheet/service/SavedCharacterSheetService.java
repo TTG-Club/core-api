@@ -1,7 +1,10 @@
 package club.ttg.dnd5.domain.tool.sheet.service;
 
 import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheet;
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditor;
+import club.ttg.dnd5.domain.tool.sheet.model.CharacterSheetEditorStatus;
 import club.ttg.dnd5.domain.tool.sheet.model.SavedCharacterSheet;
+import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetEditorRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.CharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.repository.SavedCharacterSheetRepository;
 import club.ttg.dnd5.domain.tool.sheet.rest.dto.SavedCharacterSheetListResponse;
@@ -40,6 +43,7 @@ public class SavedCharacterSheetService {
 
     private final SavedCharacterSheetRepository savedRepository;
     private final CharacterSheetRepository sheetRepository;
+    private final CharacterSheetEditorRepository editorRepository;
     private final CharacterSheetLimits sheetLimits;
 
     /**
@@ -50,12 +54,18 @@ public class SavedCharacterSheetService {
     public SavedCharacterSheetListResponse findMine() {
         User user = SecurityUtils.getUser();
         List<SavedCharacterSheet> saved = savedRepository.findAllByUserIdOrderByCreatedAtDesc(user.getUuid());
+        List<UUID> sheetIds = saved.stream().map(SavedCharacterSheet::getSheetId).toList();
         Map<UUID, CharacterSheet> sheets = sheetRepository
-                .findAllById(saved.stream().map(SavedCharacterSheet::getSheetId).toList())
+                .findAllById(sheetIds)
                 .stream()
                 .collect(Collectors.toMap(CharacterSheet::getId, Function.identity()));
+        Map<UUID, CharacterSheetEditorStatus> editStatuses = sheetIds.isEmpty()
+                ? Map.of()
+                : editorRepository.findAllByUserIdAndSheetIdIn(user.getUuid(), sheetIds).stream()
+                        .collect(Collectors.toMap(CharacterSheetEditor::getSheetId, CharacterSheetEditor::getStatus));
         List<SavedCharacterSheetResponse> responses = saved.stream()
-                .map(savedSheet -> toResponse(savedSheet, sheets.get(savedSheet.getSheetId())))
+                .map(savedSheet -> toResponse(savedSheet, sheets.get(savedSheet.getSheetId()),
+                        editStatuses.get(savedSheet.getSheetId())))
                 .toList();
         return new SavedCharacterSheetListResponse(sheetLimits.forUser(user).savedSheets(),
                 sheetLimits.subscriberLimits().savedSheets(), responses.size(), responses);
@@ -83,7 +93,11 @@ public class SavedCharacterSheetService {
         savedSheet.setName(sheet.getName());
         // Флаш сразу: id новой записи генерируется при INSERT, без него в ответе был бы null,
         // а клиент по нему сразу убирает запись из списка.
-        return toResponse(savedRepository.saveAndFlush(savedSheet), sheet);
+        CharacterSheetEditorStatus editStatus = editorRepository
+                .findBySheetIdAndUserId(sheet.getId(), user.getUuid())
+                .map(CharacterSheetEditor::getStatus)
+                .orElse(null);
+        return toResponse(savedRepository.saveAndFlush(savedSheet), sheet, editStatus);
     }
 
     /**
@@ -126,12 +140,19 @@ public class SavedCharacterSheetService {
 
     /**
      * Убирает сохранённую ссылку. Чужая запись, как и несуществующая, — 404.
+     * <p>
+     * Ждущий запрос и право на редактирование уходят вместе со ссылкой: запросить их можно только
+     * из сохранённого листа, и без него они висели бы у владельца без хозяина. Отказ остаётся —
+     * иначе пересохранение листа обходило бы паузу до повторного запроса.
      */
     @Transactional
     public void delete(UUID savedId) {
         User user = SecurityUtils.getUser();
         SavedCharacterSheet savedSheet = savedRepository.findByIdAndUserId(savedId, user.getUuid())
                 .orElseThrow(() -> new EntityNotFoundException(NOT_FOUND_MESSAGE));
+        editorRepository.findBySheetIdAndUserId(savedSheet.getSheetId(), user.getUuid())
+                .filter(editor -> editor.getStatus() != CharacterSheetEditorStatus.DECLINED)
+                .ifPresent(editorRepository::delete);
         savedRepository.delete(savedSheet);
     }
 
@@ -160,7 +181,8 @@ public class SavedCharacterSheetService {
      * обязательно — отзыв доступа владельцем должен гасить сохранённую ссылку, иначе выпущенная
      * позже ссылка для кого-то другого молча вернула бы доступ прежнему зрителю.
      */
-    private SavedCharacterSheetResponse toResponse(SavedCharacterSheet savedSheet, CharacterSheet sheet) {
+    private SavedCharacterSheetResponse toResponse(SavedCharacterSheet savedSheet, CharacterSheet sheet,
+                                                   CharacterSheetEditorStatus editStatus) {
         boolean available = sheet != null
                 && !sheet.isDeleted()
                 && savedSheet.getShareToken().equals(sheet.getShareToken());
@@ -170,6 +192,7 @@ public class SavedCharacterSheetService {
                 savedSheet.getShareToken(),
                 available ? sheet.getName() : savedSheet.getName(),
                 available ? sheet.getData() : null,
-                available);
+                available,
+                editStatus);
     }
 }

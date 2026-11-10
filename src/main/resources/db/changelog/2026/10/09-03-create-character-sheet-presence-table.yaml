@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-09-03-create-character-sheet-presence-table
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Мягкая блокировка листа персонажа: отметки «лист сейчас открыт у пользователя».
+        Отдельная таблица, а не колонка листа: частые отметки не должны поднимать его версию.
+      changes:
+        - createTable:
+            tableName: character_sheet_presence
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_character_sheet_presence
+                  name: id
+                  type: UUID
+              - column:
+                  name: sheet_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: seen_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+        # Одна отметка на пользователя и лист: по этому индексу отметка освежается upsert'ом.
+        - createIndex:
+            columns:
+              - column:
+                  name: sheet_id
+              - column:
+                  name: user_id
+            indexName: character_sheet_presence_sheet_user_index
+            tableName: character_sheet_presence
+            unique: true

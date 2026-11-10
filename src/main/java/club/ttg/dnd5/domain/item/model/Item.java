@@ -54,7 +54,7 @@ public class Item extends NamedEntity {
     /**
      * Категория снаряжения в вокабуляре VTTG ({@code EquipmentCategory}):
      * {@code adventurer-equipment}, {@code trinket}, {@code clothing}, {@code ring},
-     * {@code wand}, {@code wondrous}, {@code food}, {@code vehicle-equipment}.
+     * {@code wand}, {@code wondrous}, {@code potion}, {@code food}, {@code vehicle-equipment}.
      *
      * <p>Броню задаёт {@link #armor} своим словарём сайта, поэтому её значения здесь не
      * ожидаются. Пусто — категория выводится из типов предмета, как раньше.</p>
@@ -73,6 +73,14 @@ public class Item extends NamedEntity {
      * предмета.</p>
      */
     private Boolean consumable;
+
+    /**
+     * Предмет-хранилище: рюкзак, мешок, сундук ({@code DnDGameItem.container} в вокабуляре
+     * VTTG). Пусто — не контейнер.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private ItemContainer container;
 
     /**
      * Активные эффекты предмета в вокабуляре VTTG — та же модель, что у заклинания,

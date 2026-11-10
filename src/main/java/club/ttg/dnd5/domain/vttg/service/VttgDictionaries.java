@@ -8,7 +8,9 @@ import club.ttg.dnd5.domain.common.dictionary.Language;
 import club.ttg.dnd5.domain.common.dictionary.SenseType;
 import club.ttg.dnd5.domain.common.dictionary.Skill;
 import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestRule;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
+import club.ttg.dnd5.domain.vttg.rest.dto.VttgFeatData;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
@@ -191,6 +193,19 @@ final class VttgDictionaries {
             return "short";
         }
         return recovery == ResourceRecovery.SHORT_REST_ONE ? "short-one" : "long";
+    }
+
+    /**
+     * Правило отдыха ресурса в словаре потребителя: {@code NONE → "none"}, {@code ALL → "all"},
+     * {@code AMOUNT → "amount"} с числом зарядов.
+     */
+    static VttgFeatData.RestRule restRule(CounterRestRule rule) {
+        String mode = switch (rule.resolveMode()) {
+            case NONE -> "none";
+            case ALL -> "all";
+            case AMOUNT -> "amount";
+        };
+        return new VttgFeatData.RestRule(mode, rule.resolveAmount());
     }
 
     /**

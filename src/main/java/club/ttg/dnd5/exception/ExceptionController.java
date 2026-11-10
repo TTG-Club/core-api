@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -33,6 +34,17 @@ public class ExceptionController {
     @ExceptionHandler({SecurityException.class, AuthorizationDeniedException.class})
     public ResponseEntity<ErrorResponseDto> handleSecurityException() {
         return convertToResponseEntity(HttpStatus.FORBIDDEN, "Доступ запрещен");
+    }
+
+    /**
+     * Две записи одной сущности с {@code @Version} столкнулись в параллельных транзакциях: проверку
+     * версии в сервисе прошли обе, а вторую отверг UPDATE. Для клиента это тот же конфликт, что и
+     * устаревшая версия в запросе, — 409, а не 500.
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponseDto> handleOptimisticLockingFailure() {
+        return convertToResponseEntity(HttpStatus.CONFLICT,
+                "Данные уже изменили в другом месте — загрузите актуальную версию");
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)

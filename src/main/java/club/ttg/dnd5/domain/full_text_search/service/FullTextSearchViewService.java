@@ -22,6 +22,12 @@ import java.util.stream.Collectors;
 public class FullTextSearchViewService {
     private final FullTextSearchViewRepository fullTextSearchViewRepository;
 
+    private static final int EXACT_MATCH = 0;
+    private static final int PREFIX_MATCH = 1;
+    private static final int WORD_PREFIX_MATCH = 2;
+    private static final int CONTAINS_MATCH = 3;
+    private static final int NO_MATCH = 4;
+
     @Value("${global-search.limit-per-group:5}")
     private int maxItemsPerGroup;
 
@@ -31,19 +37,27 @@ public class FullTextSearchViewService {
                 .map(String::trim)
                 .map(YoUtils::replaceYo)
                 .filter(Predicate.not(String::isBlank))
-                .map(line -> fullTextSearchViewRepository.findBySearchLine(line, SwitchLayoutUtils.switchLayout(line)))
-                .map(this::getFullTextSearchViewResponse)
+                .map(this::search)
                 .orElseGet(this::getEmptyResponse);
     }
 
-    private FullTextSearchViewResponse getFullTextSearchViewResponse(Collection<FullTextSearchView> results) {
+    private FullTextSearchViewResponse search(String line) {
+        String invertedLine = SwitchLayoutUtils.switchLayout(line);
+        List<FullTextSearchView> results = fullTextSearchViewRepository.findBySearchLine(line, invertedLine);
+        return getFullTextSearchViewResponse(results, List.of(line, invertedLine));
+    }
+
+    private FullTextSearchViewResponse getFullTextSearchViewResponse(List<FullTextSearchView> results,
+                                                                     List<String> queries) {
         if (results.isEmpty()) {
             return getEmptyResponse();
         }
 
         Map<SectionType, Integer> typeCount = new HashMap<>();
 
-        List<FullTextSearchViewDto> filtered = results.parallelStream()
+        // Последовательно: лимит на группу должен брать первые N в порядке сортировки.
+        List<FullTextSearchViewDto> filtered = results.stream()
+                .sorted(byRelevance(queries))
                 .filter(ftsv -> counterFilter(ftsv, typeCount))
                 .map(this::getConvertedResult)
                 .collect(Collectors.toList());
@@ -53,6 +67,61 @@ public class FullTextSearchViewService {
                 .filtered(filtered.size())
                 .total(results.size())
                 .build();
+    }
+
+    /**
+     * Сначала полное совпадение с названием, потом названия, начинающиеся с запроса,
+     * потом запрос с начала слова внутри названия, потом любое вхождение. Среди равных —
+     * короче название (ближе к запросу), затем по алфавиту, чтобы порядок не «плавал».
+     */
+    private static Comparator<FullTextSearchView> byRelevance(List<String> queries) {
+        List<String> normalizedQueries = queries.stream()
+                .map(FullTextSearchViewService::normalize)
+                .toList();
+        return Comparator.<FullTextSearchView>comparingInt(ftsv -> matchRank(ftsv, normalizedQueries))
+                .thenComparingInt(ftsv -> ftsv.getName() == null ? Integer.MAX_VALUE : ftsv.getName().length())
+                .thenComparing(FullTextSearchView::getName, Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    private static int matchRank(FullTextSearchView ftsv, List<String> queries) {
+        int best = NO_MATCH;
+        for (String field : new String[]{ftsv.getName(), ftsv.getEnglish(), ftsv.getAlternative()}) {
+            if (field == null) {
+                continue;
+            }
+            String normalizedField = normalize(field);
+            for (String query : queries) {
+                best = Math.min(best, matchRank(normalizedField, query));
+            }
+        }
+        return best;
+    }
+
+    private static int matchRank(String field, String query) {
+        if (query.isEmpty()) {
+            return NO_MATCH;
+        }
+        if (field.equals(query)) {
+            return EXACT_MATCH;
+        }
+        if (field.startsWith(query)) {
+            return PREFIX_MATCH;
+        }
+        int index = field.indexOf(query);
+        if (index < 0) {
+            return NO_MATCH;
+        }
+        while (index >= 0) {
+            if (!Character.isLetterOrDigit(field.charAt(index - 1))) {
+                return WORD_PREFIX_MATCH;
+            }
+            index = field.indexOf(query, index + 1);
+        }
+        return CONTAINS_MATCH;
+    }
+
+    private static String normalize(String value) {
+        return YoUtils.replaceYo(value).strip().toLowerCase(Locale.ROOT);
     }
 
     private boolean counterFilter(FullTextSearchView item, Map<SectionType, Integer> typeCount) {

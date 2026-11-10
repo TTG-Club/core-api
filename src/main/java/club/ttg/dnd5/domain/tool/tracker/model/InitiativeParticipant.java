@@ -109,6 +109,14 @@ public class InitiativeParticipant extends Timestamped {
     private Integer maxHitPoints;
 
     /**
+     * Временные хиты: урон сначала снимает их, потом текущие. Правило «новые заменяют старые,
+     * только если больше» и расход при уроне считает клиент — сюда приходит итог.
+     * NULL или 0 — временных хитов нет.
+     */
+    @Column(name = "temporary_hit_points")
+    private Integer temporaryHitPoints;
+
+    /**
      * Класс доспеха игрока: у существа он свой, из статблока, и здесь не хранится.
      * NULL — не задан.
      */

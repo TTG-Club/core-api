@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-18-03-update-full-name-search-view-magic-item-show-in-list
+      author: Magistrus
+      comment: >
+        Общий поиск не находит магические предметы, скрытые из списка раздела
+        (show_in_list = false): такие предметы открываются только по ссылке.
+      changes:
+        - sqlFile:
+            path: sql/18-03-update-full-name-search-view-magic-item-show-in-list.sql
+            relativeToChangelogFile: true

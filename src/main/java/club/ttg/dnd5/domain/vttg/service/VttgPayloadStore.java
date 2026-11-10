@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * полной выгрузки — гидрацию jsonb-сущностей и маппинг на лету: в окне берётся лёгкая проекция
  * (url + время изменения), а полезная нагрузка читается из таблицы.
  *
- * <p>Payload валиден, если совпадают версия логики маппера ({@link #SCHEMA_VERSION}) и время
+ * <p>Payload валиден, если совпадают версия формата выгрузки ({@link VttgCompendiumVersionService}) и время
  * изменения источника. Невалидные/отсутствующие payload пересчитываются на лету и
  * перезаписываются (самозаполнение, отдельный backfill не нужен). Правка сущности меняет её
  * {@code updatedAt}, что автоматически инвалидирует payload — для типов без кросс-сущностных
@@ -46,17 +46,13 @@ public class VttgPayloadStore {
     private static final Logger log = LoggerFactory.getLogger(VttgPayloadStore.class);
 
     /**
-     * Версия логики мапперов. Увеличьте при изменении формата payload — все строки пересчитаются,
-     * а клиенты VTTG, увидев новую версию в ответе {@code /changes}, пересоберут паки целиком.
-     */
-    public static final int SCHEMA_VERSION = 34;
-    /**
      * Размер пакета пересчёта/сохранения: ограничивает {@code IN}-список, объём транзакции и
      * зону поражения при сбое (на поштучную обработку переходит только сбойный пакет).
      */
     static final int BATCH_SIZE = 500;
 
     private final VttgExportRepository repository;
+    private final VttgCompendiumVersionService versionService;
     private final ObjectMapper objectMapper;
     private final PlatformTransactionManager transactionManager;
 
@@ -84,6 +80,9 @@ public class VttgPayloadStore {
             return List.of();
         }
         Instant dependencyStamp = inReadOnlyTx(dependencyStampFinder::get);
+        // Версия формата выгрузки (админ поднимает её через API): payload другой версии устарел.
+        // Читается один раз на тип, чтобы весь тип считался и сохранялся под одной версией.
+        int schemaVersion = versionService.current();
 
         // Отметка валидности = max(время изменения сущности, отметка зависимостей). Правка как самой
         // сущности, так и её зависимости сдвигает отметку и делает сохранённый payload устаревшим.
@@ -97,7 +96,7 @@ public class VttgPayloadStore {
         Map<String, JsonNode> payloads = new LinkedHashMap<>();
         List<String> missing = new ArrayList<>();
         for (VttgExport stored : inReadOnlyTx(() -> repository.findByTypeAndUrlIn(type, windowStamp.keySet()))) {
-            if (isFresh(stored, validStamp.get(stored.getUrl()))) {
+            if (isFresh(stored, validStamp.get(stored.getUrl()), schemaVersion)) {
                 payloads.put(stored.getUrl(), stored.getPayload());
             }
         }
@@ -110,7 +109,7 @@ public class VttgPayloadStore {
         if (!missing.isEmpty()) {
             List<VttgExport> recomputed = new ArrayList<>(missing.size());
             for (List<String> batch : batches(missing)) {
-                recomputeBatch(type, batch, byUrlsFinder, urlOf, toDto, validStamp, payloads, recomputed);
+                recomputeBatch(type, batch, byUrlsFinder, urlOf, toDto, validStamp, schemaVersion, payloads, recomputed);
             }
             persist(type, recomputed);
         }
@@ -145,11 +144,12 @@ public class VttgPayloadStore {
     private <E> void recomputeBatch(String type, List<String> batch,
                                     Function<Collection<String>, List<E>> byUrlsFinder,
                                     Function<E, String> urlOf, Function<E, Object> toDto,
-                                    Map<String, Instant> validStamp,
+                                    Map<String, Instant> validStamp, int schemaVersion,
                                     Map<String, JsonNode> payloads, List<VttgExport> recomputed) {
         try {
             inReadOnlyTx(() -> {
-                mapEntities(type, byUrlsFinder.apply(batch), urlOf, toDto, validStamp, payloads, recomputed);
+                mapEntities(type, byUrlsFinder.apply(batch), urlOf, toDto, validStamp, schemaVersion,
+                        payloads, recomputed);
                 return null;
             });
         } catch (RuntimeException batchFailure) {
@@ -158,7 +158,8 @@ public class VttgPayloadStore {
             for (String url : batch) {
                 try {
                     inReadOnlyTx(() -> {
-                        mapEntities(type, byUrlsFinder.apply(List.of(url)), urlOf, toDto, validStamp, payloads, recomputed);
+                        mapEntities(type, byUrlsFinder.apply(List.of(url)), urlOf, toDto, validStamp, schemaVersion,
+                                payloads, recomputed);
                         return null;
                     });
                 } catch (RuntimeException entityFailure) {
@@ -171,14 +172,14 @@ public class VttgPayloadStore {
     /** Маппит сущности в payload; сбой одной сущности пропускает её, не прерывая остальные. */
     private <E> void mapEntities(String type, List<E> entities,
                                  Function<E, String> urlOf, Function<E, Object> toDto,
-                                 Map<String, Instant> validStamp,
+                                 Map<String, Instant> validStamp, int schemaVersion,
                                  Map<String, JsonNode> payloads, List<VttgExport> recomputed) {
         for (E entity : entities) {
             String url = urlOf.apply(entity);
             try {
                 JsonNode payload = objectMapper.valueToTree(toDto.apply(entity));
                 payloads.put(url, payload);
-                recomputed.add(new VttgExport(type, url, payload, validStamp.get(url), SCHEMA_VERSION));
+                recomputed.add(new VttgExport(type, url, payload, validStamp.get(url), schemaVersion));
             } catch (RuntimeException failure) {
                 log.error("VTTG export: маппинг {}/{} упал — сущность пропущена в дампе", type, url, failure);
             }
@@ -225,8 +226,8 @@ public class VttgPayloadStore {
         return id != null && id.isTextual() ? id.asText() : fallbackUrl;
     }
 
-    private boolean isFresh(VttgExport stored, Instant expectedStamp) {
-        return stored.getSchemaVer() == SCHEMA_VERSION
+    private boolean isFresh(VttgExport stored, Instant expectedStamp, int schemaVersion) {
+        return stored.getSchemaVer() == schemaVersion
                 && expectedStamp != null
                 && stored.getSrcUpdatedAt() != null
                 && stored.getSrcUpdatedAt().toEpochMilli() == expectedStamp.toEpochMilli();

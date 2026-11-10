@@ -7,6 +7,7 @@ import club.ttg.dnd5.domain.magic.rest.dto.MagicItemDetailResponse;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemRequest;
 import club.ttg.dnd5.domain.magic.rest.dto.MagicItemShortResponse;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -69,7 +70,19 @@ public interface MagicItemMapper
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(target = "source", source = "source")
     @Mapping(target = "items", source = "linkedItems")
+    @Mapping(target = "container", ignore = true)
     void updateEntity(MagicItemRequest request, Source source, Set<Item> linkedItems, @MappingTarget MagicItem magicItem);
+
+    /**
+     * Хранилище меняется, только если запрос прислал поле: мастерская, которая о нём ещё не
+     * знает, не стирает разметку, проставленную миграцией.
+     */
+    @AfterMapping
+    default void applyContainer(MagicItemRequest request, @MappingTarget MagicItem magicItem) {
+        if (request.isContainerSet()) {
+            magicItem.setContainer(request.getContainer());
+        }
+    }
 
     @Named("itemsToUrls")
     default List<String> itemsToUrls(Set<Item> items) {

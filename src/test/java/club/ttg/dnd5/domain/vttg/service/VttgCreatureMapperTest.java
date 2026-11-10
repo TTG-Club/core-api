@@ -16,6 +16,7 @@ import club.ttg.dnd5.domain.beastiary.model.CreatureTrait;
 import club.ttg.dnd5.domain.beastiary.model.action.AttackType;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureActionEffect;
 import club.ttg.dnd5.domain.beastiary.model.action.CreatureAction;
+import club.ttg.dnd5.domain.beastiary.model.action.CreatureDamageAlternative;
 import club.ttg.dnd5.domain.beastiary.model.action.SawingThrow;
 import club.ttg.dnd5.domain.beastiary.model.sense.Senses;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
@@ -269,6 +270,66 @@ class VttgCreatureMapperTest {
         assertActiveEffect(mapped, "poisoned");
     }
 
+    /**
+     * «Рукопашная или дальнобойная» уезжает своим типом с досягаемостью и дистанцией сразу:
+     * вид атаки система спрашивает перед броском.
+     */
+    @Test
+    void exportsMeleeOrRangedAttackWithReachAndRange() {
+        Map<?, ?> mapped = mappedAttack(AttackType.MELEE_OR_RANGE, 5, 30, 120);
+        Map<?, ?> range = (Map<?, ?>) mapped.get("range");
+
+        assertEquals("meleeOrRanged", mapped.get("rangeType"));
+        assertEquals(5, mapped.get("reach"));
+        assertEquals("ft", mapped.get("distanceUnit"));
+        assertEquals(30, range.get("normal"));
+        assertEquals(120, range.get("long"));
+    }
+
+    /** Без максимальной дистанции уезжает только обычная. */
+    @Test
+    void exportsMeleeOrRangedAttackWithoutLongRange() {
+        Map<?, ?> mapped = mappedAttack(AttackType.MELEE_OR_RANGE, 5, 120, null);
+        Map<?, ?> range = (Map<?, ?>) mapped.get("range");
+
+        assertEquals("meleeOrRanged", mapped.get("rangeType"));
+        assertEquals(120, range.get("normal"));
+        assertFalse(range.containsKey("long"));
+    }
+
+    @Test
+    void exportsMeleeAndRangedAttackTypes() {
+        assertEquals("melee", mappedAttack(AttackType.MELEE, 5, null, null).get("rangeType"));
+        assertEquals("ranged", mappedAttack(AttackType.RANGE, null, 80, 320).get("rangeType"));
+    }
+
+    @Test
+    void skipsRangeTypeWhenAttackTypeNotSet() {
+        Map<?, ?> mapped = mappedAttack(null, null, null, null);
+
+        assertFalse(mapped.containsKey("rangeType"));
+        assertFalse(mapped.containsKey("distanceUnit"));
+    }
+
+    private Map<?, ?> mappedAttack(AttackType attackType, Integer reach, Integer rangeNormal,
+                                   Integer rangeLong) {
+        Creature creature = creature("hobgoblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Метательное копьё");
+        action.setDescription("[\"Бросок атаки: +5.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackType(attackType);
+        effect.setAttackBonus(5);
+        effect.setReach(reach);
+        effect.setRangeNormal(rangeNormal);
+        effect.setRangeLong(rangeLong);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        return firstAction(mapper.toVttg(creature).getSystem());
+    }
+
     /** Черта тоже бывает бросаемой — её механика уезжает так же, как у действия. */
     @Test
     void exportsAuthoredTraitMechanics() {
@@ -357,6 +418,51 @@ class VttgCreatureMapperTest {
         assertEquals("half", mapped.get("saveEffect"));
         assertEquals("cone", mappedArea.get("shape"));
         assertEquals(30, mappedArea.get("size"));
+    }
+
+    /** Автопопадание снимает бросок атаки и спасбросок: урон идёт сразу. */
+    @Test
+    void autoHitReplacesAttackBonusAndSave() {
+        Creature creature = creature("will-o-wisp-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Разряд");
+        action.setDescription("[\"Цель получает урон электричеством.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAutoHit(true);
+        effect.setAttackBonus(4);
+        effect.setSavingThrows(List.of(savingThrow(Ability.DEXTERITY, 12)));
+        effect.setDamageParts(List.of(damagePart("2к8@dmg.lightning")));
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertEquals(true, mapped.get("autoHit"));
+        assertNull(mapped.get("attackBonus"));
+        assertNull(mapped.get("saveType"));
+        assertNull(mapped.get("saveDC"));
+        assertEquals(1, ((List<?>) mapped.get("damageParts")).size());
+    }
+
+    /** Без автопопадания флаг в выгрузку не идёт. */
+    @Test
+    void skipsAutoHitWhenNotSet() {
+        Creature creature = creature("goblin-mm");
+        CreatureAction action = new CreatureAction();
+        action.setName("Скимитар");
+        action.setDescription("[\"Рукопашная атака.\"]");
+
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAutoHit(false);
+        effect.setAttackBonus(4);
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+
+        Map<?, ?> mapped = firstAction(mapper.toVttg(creature).getSystem());
+
+        assertNull(mapped.get("autoHit"));
+        assertEquals(4, mapped.get("attackBonus"));
     }
 
     /**
@@ -479,6 +585,95 @@ class VttgCreatureMapperTest {
 
         assertEquals("d5", firstAction(system).get("recharge"));
         assertEquals("lr", mappedTrait.get("recharge"));
+    }
+
+    /** «Легендарное сопротивление 3/день» уезжает числом у черты — так его читает система. */
+    @Test
+    void exportsTraitSaveSuccessPerDay() {
+        Creature creature = creature("aboleth-mm");
+        CreatureTrait resistance = new CreatureTrait();
+        resistance.setName("Легендарное сопротивление");
+        resistance.setDescription("[\"Существо преуспевает в спасброске.\"]");
+        resistance.setSaveSuccessPerDay(3);
+        CreatureTrait plain = new CreatureTrait();
+        plain.setName("Амфибия");
+        plain.setDescription("[\"Дышит воздухом и водой.\"]");
+        CreatureTrait broken = new CreatureTrait();
+        broken.setName("Сломанное");
+        broken.setDescription("[\"Число вне диапазона.\"]");
+        broken.setSaveSuccessPerDay(0);
+        creature.setTraits(List.of(resistance, plain, broken));
+
+        List<?> traits = (List<?>) mapper.toVttg(creature).getSystem().get("traits");
+
+        assertEquals(3, ((Map<?, ?>) traits.get(0)).get("saveSuccessPerDay"));
+        // Пусто или вне 1–20 — ключа нет, запись как раньше.
+        assertFalse(((Map<?, ?>) traits.get(1)).containsKey("saveSuccessPerDay"));
+        assertFalse(((Map<?, ?>) traits.get(2)).containsKey("saveSuccessPerDay"));
+    }
+
+    /**
+     * «Раз в N ходов» уезжает числом рядом с перезарядкой — у действия и у черты одинаково:
+     * так его читает система.
+     */
+    @Test
+    void exportsCooldownTurns() {
+        Creature creature = creature("frost-elemental-hb");
+        CreatureAction vortex = action("Ледяной вихрь", "[\"Существо закручивает вихрь.\"]");
+        vortex.setCooldownTurns(3);
+        creature.setActions(List.of(vortex));
+        CreatureTrait burst = new CreatureTrait();
+        burst.setName("Морозная вспышка");
+        burst.setDescription("[\"Холод расходится волной.\"]");
+        burst.setCooldownTurns(20);
+        creature.setTraits(List.of(burst));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) system.get("traits")).getFirst();
+
+        assertEquals(3, firstAction(system).get("cooldownTurns"));
+        assertFalse(firstAction(system).containsKey("recharge"));
+        assertEquals(20, mappedTrait.get("cooldownTurns"));
+    }
+
+    /** Пусто или вне 2–20 — ключа нет: такое число система не примет. */
+    @Test
+    void skipsCooldownTurnsOutOfRange() {
+        Creature creature = creature("frost-elemental-hb");
+        CreatureAction everyTurn = action("Каждый ход", "[\"Раз в ход — это без ограничения.\"]");
+        everyTurn.setCooldownTurns(1);
+        CreatureAction tooRare = action("Слишком редко", "[\"Число вне диапазона.\"]");
+        tooRare.setCooldownTurns(21);
+        CreatureAction plain = action("Укус", "[\"Существо кусает.\"]");
+        creature.setActions(List.of(everyTurn, tooRare, plain));
+
+        List<?> actions = (List<?>) mapper.toVttg(creature).getSystem().get("actions");
+
+        assertTrue(actions.stream().noneMatch(entry -> ((Map<?, ?>) entry).containsKey("cooldownTurns")));
+    }
+
+    /** Перезарядка и «раз в N ходов» взаимоисключающие: при обоих уезжает только перезарядка. */
+    @Test
+    void exportsOnlyRechargeWhenBothSet() {
+        Creature creature = creature("frost-elemental-hb");
+        CreatureAction breath = action("Ледяное дыхание", "[\"Существо выдыхает холод.\"]");
+        breath.setRecharge(RechargeType.D5);
+        breath.setCooldownTurns(3);
+        creature.setActions(List.of(breath));
+        CreatureTrait burst = new CreatureTrait();
+        burst.setName("Морозная вспышка");
+        burst.setDescription("[\"Холод расходится волной.\"]");
+        burst.setRecharge(RechargeType.SLR);
+        burst.setCooldownTurns(3);
+        creature.setTraits(List.of(burst));
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+        Map<?, ?> mappedTrait = (Map<?, ?>) ((List<?>) system.get("traits")).getFirst();
+
+        assertEquals("d5", firstAction(system).get("recharge"));
+        assertFalse(firstAction(system).containsKey("cooldownTurns"));
+        assertEquals("slr", mappedTrait.get("recharge"));
+        assertFalse(mappedTrait.containsKey("cooldownTurns"));
     }
 
     /** Перезарядки нет — ключа нет. */
@@ -751,6 +946,38 @@ class VttgCreatureMapperTest {
         assertEquals("1/день", ownGroup.get("label"));
     }
 
+    /**
+     * Порция «раз в N ходов» уезжает своим режимом и числом ходов. Зарядов заклинанию она
+     * не даёт — счётчик применений ей невыразим. Число ходов у другого режима или вне 2–20
+     * не уезжает.
+     */
+    @Test
+    void exportsCooldownSpellGroup() {
+        catalog("cone-of-cold-phb", "shield-phb", "augury-phb");
+        Creature creature = creature("frost-mage-hb");
+        CreatureSpellcastingBlock block = block("spellcasting-1", "Использование заклинаний");
+        CreatureSpellGroup cooldown = group(CreatureSpellUsageMode.COOLDOWN, spellRef("cone-of-cold-phb"));
+        cooldown.setCooldownTurns(3);
+        CreatureSpellGroup otherMode = counted(CreatureSpellUsageMode.PER_DAY_EACH, 1, spellRef("shield-phb"));
+        otherMode.setCooldownTurns(3);
+        CreatureSpellGroup outOfRange = group(CreatureSpellUsageMode.COOLDOWN, spellRef("augury-phb"));
+        outOfRange.setCooldownTurns(1);
+        block.setGroups(List.of(cooldown, otherMode, outOfRange));
+        creature.setSpellcasting(List.of(block));
+
+        VttgCreature mapped = mapper.toVttg(creature);
+        Map<?, ?> mappedBlock = (Map<?, ?>) ((List<?>) mapped.getSystem().get("spellcastingBlocks")).getFirst();
+        List<?> groups = (List<?>) mappedBlock.get("groups");
+        Map<?, ?> mappedCooldown = (Map<?, ?>) groups.getFirst();
+
+        assertEquals("cooldown", mappedCooldown.get("mode"));
+        assertEquals(3, mappedCooldown.get("cooldownTurns"));
+        assertNull(mapped.getSpells().getFirst().getUses());
+        assertFalse(((Map<?, ?>) groups.get(1)).containsKey("cooldownTurns"));
+        assertEquals("cooldown", ((Map<?, ?>) groups.get(2)).get("mode"));
+        assertFalse(((Map<?, ?>) groups.get(2)).containsKey("cooldownTurns"));
+    }
+
     /** Существо без блоков выгружается как раньше: ни заклинаний, ни ключа заклинательства. */
     @Test
     void skipsSpellcastingWithoutBlocks() {
@@ -886,6 +1113,139 @@ class VttgCreatureMapperTest {
         result.setUrl(url);
         result.setName(name);
         result.setQuantity(quantity);
+        return result;
+    }
+
+    /**
+     * Состояния в формуле — часть строки: бэкенд их не разбирает и не чистит,
+     * а везёт в компендиум как есть.
+     */
+    @Test
+    void keepsStatusTokensInDamageFormulas() {
+        Map<?, ?> mapped = mappedAction(effectWith("1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone"));
+
+        assertDamagePart(mapped, "1к8@dmg.piercing + 2к6@dmg.necrotic@target.status.prone", null);
+    }
+
+    /** Рой: «или 11 (2к8 + 2), если рой окровавлен» — вариант по формуле с состоянием. */
+    @Test
+    void exportsDamageAlternativeByFormula() {
+        CreatureActionEffect effect = effectWith("4к8@dmg.necrotic + 2");
+        effect.setDamageAlternatives(List.of(
+                alternative("formula", null, "2к8@dmg.necrotic@self.status.bloodied + 2")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        assertEquals(1, alternatives.size());
+        Map<?, ?> alternative = (Map<?, ?>) alternatives.getFirst();
+        assertEquals("formula", alternative.get("condition"));
+        assertFalse(alternative.containsKey("label"));
+        assertDamagePart(alternative, "2к8@dmg.necrotic@self.status.bloodied + 2", null);
+    }
+
+    /**
+     * Гоблин: «или …, если у атаки было преимущество» — токен {@code @roll.advantage} в
+     * формуле варианта. Способ остаётся «по формуле», формула едет как есть: токен снимает
+     * система при выборе набора.
+     */
+    @Test
+    void keepsRollAdvantageTokenInDamageAlternative() {
+        CreatureActionEffect effect = effectWith("1к6@dmg.slashing + 2");
+        effect.setDamageAlternatives(List.of(
+                alternative("formula", null, "2к6@dmg.slashing + 2@roll.advantage")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        assertEquals(1, alternatives.size());
+        Map<?, ?> alternative = (Map<?, ?>) alternatives.getFirst();
+        assertEquals("formula", alternative.get("condition"));
+        assertDamagePart(alternative, "2к6@dmg.slashing + 2@roll.advantage", null);
+    }
+
+    /** Химера: своя подпись варианта уезжает обрезанной. */
+    @Test
+    void trimsDamageAlternativeLabel() {
+        CreatureActionEffect effect = effectWith("2к6@dmg.piercing + 4");
+        effect.setDamageAlternatives(List.of(
+                alternative("random", "  С преимуществом ", "4к6@dmg.piercing + 4")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        Map<?, ?> alternative = (Map<?, ?>) alternatives.getFirst();
+        assertEquals("random", alternative.get("condition"));
+        assertEquals("С преимуществом", alternative.get("label"));
+    }
+
+    /**
+     * Мусор система отбрасывает при чтении — в компендиум он не едет: вариант без
+     * частей, с частью без формулы и со способом прежних версий.
+     */
+    @Test
+    void skipsBrokenDamageAlternatives() {
+        CreatureDamageAlternative withoutParts = new CreatureDamageAlternative();
+        withoutParts.setCondition("ask");
+
+        CreatureActionEffect effect = effectWith("4к8@dmg.necrotic + 2");
+        effect.setDamageAlternatives(Arrays.asList(
+                null,
+                withoutParts,
+                alternative("ask", "Пусто", "  "),
+                alternative("selfStatus", null, "2к8@dmg.necrotic + 2"),
+                alternative("selfBloodied", null, "2к8@dmg.necrotic + 2")));
+
+        assertFalse(mappedAction(effect).containsKey("damageAlternatives"));
+    }
+
+    /** Больше пяти вариантов система не читает — уезжают первые пять по порядку. */
+    @Test
+    void limitsDamageAlternativesToFive() {
+        CreatureActionEffect effect = effectWith("1к6@dmg.slashing");
+        effect.setDamageAlternatives(List.of(
+                alternative("ask", "1", "1к8@dmg.slashing"),
+                alternative("ask", "2", "1к8@dmg.slashing"),
+                alternative("ask", "3", "1к8@dmg.slashing"),
+                alternative("ask", "4", "1к8@dmg.slashing"),
+                alternative("ask", "5", "1к8@dmg.slashing"),
+                alternative("ask", "6", "1к8@dmg.slashing")));
+
+        List<?> alternatives = (List<?>) mappedAction(effect).get("damageAlternatives");
+
+        assertEquals(List.of("1", "2", "3", "4", "5"), alternatives.stream()
+                .map(alternative -> ((Map<?, ?>) alternative).get("label"))
+                .toList());
+    }
+
+    /** Нет вариантов — нет и ключа: выгрузка старых записей не меняется. */
+    @Test
+    void omitsDamageAlternativesWhenNotSet() {
+        CreatureActionEffect withoutList = effectWith("1к6@dmg.slashing");
+        CreatureActionEffect withEmptyList = effectWith("1к6@dmg.slashing");
+        withEmptyList.setDamageAlternatives(List.of());
+
+        assertFalse(mappedAction(withoutList).containsKey("damageAlternatives"));
+        assertFalse(mappedAction(withEmptyList).containsKey("damageAlternatives"));
+    }
+
+    private CreatureActionEffect effectWith(String formula) {
+        CreatureActionEffect effect = new CreatureActionEffect();
+        effect.setAttackBonus(4);
+        effect.setDamageParts(List.of(damagePart(formula)));
+        return effect;
+    }
+
+    private Map<?, ?> mappedAction(CreatureActionEffect effect) {
+        Creature creature = creature("swarm-of-crawling-claws-mm");
+        CreatureAction action = action("Рой хватающих рук", "[]");
+        action.setEffect(effect);
+        creature.setActions(List.of(action));
+        return firstAction(mapper.toVttg(creature).getSystem());
+    }
+
+    private CreatureDamageAlternative alternative(String condition, String label, String formula) {
+        CreatureDamageAlternative result = new CreatureDamageAlternative();
+        result.setCondition(condition);
+        result.setLabel(label);
+        result.setDamageParts(List.of(damagePart(formula)));
         return result;
     }
 

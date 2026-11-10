@@ -519,6 +519,25 @@ public class DictionariesController {
         return dictionariesService.getMagicItemCategories();
     }
 
+    @Operation(summary = "Тематики магических предметов")
+    @GetMapping("/magic-items/theme")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "вооружение", "value": "ARMAMENT" },
+                              { "label": "магия", "value": "MAGIC" },
+                              { "label": "реликвии", "value": "RELIC" },
+                              { "label": "инструменты", "value": "TOOL" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getMagicItemThemes() {
+        return dictionariesService.getMagicItemThemes();
+    }
+
     @Operation(summary = "Редкость")
     @GetMapping("/rarity")
     @ApiResponse(

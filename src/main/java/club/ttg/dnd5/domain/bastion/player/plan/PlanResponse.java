@@ -9,7 +9,9 @@ import java.util.UUID;
  *
  * @param version  версия плана; 0 — план ещё не сохраняли
  * @param canEdit  открывший может рисовать: мастер или игрок с доступом, бастион не в архиве
+ * @param premium  у владельца бастиона подписка: можно ставить предметы интерьера по подписке
  */
 @Schema(description = "План бастиона")
-public record PlanResponse(UUID bastionId, long version, boolean canEdit, PlanDocument document) {
+public record PlanResponse(UUID bastionId, long version, boolean canEdit, boolean premium,
+                           PlanDocument document) {
 }

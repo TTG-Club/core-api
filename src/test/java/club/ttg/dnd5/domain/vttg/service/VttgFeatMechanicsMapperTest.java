@@ -27,6 +27,8 @@ import club.ttg.dnd5.domain.common.model.mechanics.SheetModifiers;
 import club.ttg.dnd5.domain.common.model.mechanics.HitPointsModifier;
 import club.ttg.dnd5.domain.common.model.mechanics.ProficiencyGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.CounterScaling;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestMode;
+import club.ttg.dnd5.domain.common.model.mechanics.CounterRestRule;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceCounter;
 import club.ttg.dnd5.domain.common.model.mechanics.ResourceRecovery;
 import club.ttg.dnd5.domain.common.model.mechanics.SenseGrant;
@@ -41,6 +43,7 @@ import club.ttg.dnd5.domain.feat.model.prerequisite.ClassFeatureRequirement;
 import club.ttg.dnd5.domain.feat.model.prerequisite.FeatPrerequisite;
 import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.spell.model.Spell;
+import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -906,6 +909,29 @@ class VttgFeatMechanicsMapperTest {
     }
 
     /**
+     * Бонусное действие в фильтре — тем же словом, что у времени накладывания заклинания:
+     * VTTG сверяет их напрямую, иначе фильтр отсеет все бонусные заклинания.
+     */
+    @Test
+    void mapsBonusCastingTimeFilterLikeSpell() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+
+        SpellFilter filter = new SpellFilter();
+        filter.setCastingTime(CastingUnit.BONUS);
+
+        MechanicChoice choice = new MechanicChoice();
+        choice.setKey("spell");
+        choice.setType(ChoiceType.SPELL);
+        choice.setSpellFilter(filter);
+        mechanics.setChoices(List.of(choice));
+        feat.setMechanics(mechanics);
+
+        JsonNode spellFilter = json(feat).get("featData").get("choices").get(0).get("spellFilter");
+        assertEquals("bonus-action", spellFilter.get("castingTime").asText());
+    }
+
+    /**
      * Фильтр, у которого задан только ключ выбора, не схлопывается в пустой: иначе
      * «Посвящённый в магию» потерял бы связь между списком и заговорами.
      */
@@ -1330,6 +1356,95 @@ class VttgFeatMechanicsMapperTest {
 
         assertEquals("short-one",
                 json(feat).get("featData").get("counters").get(0).get("recovery").asText());
+    }
+
+    /**
+     * Откат одним словом раскладывается в раздельные правила отдыха: потребитель, который их
+     * читает, не должен разбирать легаси-строку сам.
+     */
+    @Test
+    void mapsLegacyRecoveryToRestRules() {
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("uses", "2", ResourceRecovery.SHORT_REST_ONE)));
+        feat.setMechanics(mechanics);
+
+        JsonNode counter = json(feat).get("featData").get("counters").get(0);
+        assertEquals("amount", counter.get("shortRest").get("mode").asText());
+        assertEquals(1, counter.get("shortRest").get("amount").asInt());
+        assertEquals("all", counter.get("longRest").get("mode").asText());
+    }
+
+    /**
+     * Раздельные правила главнее отката одним словом, а сам откат для старых потребителей
+     * выводится из короткого отдыха: «два заряда коротким, ничего продолжительным».
+     */
+    @Test
+    void mapsCounterRestRules() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("uses", "@prof", ResourceRecovery.LONG_REST);
+        counter.setShortRest(CounterRestRule.amount(2));
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        JsonNode exported = json(feat).get("featData").get("counters").get(0);
+        assertEquals("amount", exported.get("shortRest").get("mode").asText());
+        assertEquals(2, exported.get("shortRest").get("amount").asInt());
+        assertEquals("none", exported.get("longRest").get("mode").asText());
+        assertEquals("short-one", exported.get("recovery").asText());
+    }
+
+    /**
+     * «Отдых не восстанавливает»: оба правила с режимом «ничего» доезжают как есть. Слова
+     * для такого отката у легаси-поля нет — оно отдаёт ближайшее, продолжительный отдых.
+     */
+    @Test
+    void mapsCounterWithoutRestRecovery() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("mutation-points", "9", ResourceRecovery.LONG_REST);
+        counter.setShortRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        counter.setLongRest(new CounterRestRule(CounterRestMode.NONE, 1));
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        JsonNode exported = json(feat).get("featData").get("counters").get(0);
+        assertEquals("none", exported.get("shortRest").get("mode").asText());
+        assertEquals("none", exported.get("longRest").get("mode").asText());
+        assertEquals("long", exported.get("recovery").asText());
+    }
+
+    /**
+     * «Появляется пустым» едет отметкой: такой ресурс набирают действием, и полным на
+     * листе он появляться не должен.
+     */
+    @Test
+    void mapsStartsEmptyCounter() {
+        Feat feat = baseFeat();
+        ResourceCounter counter = counter("mutation-points", "9", ResourceRecovery.LONG_REST);
+        counter.setStartsEmpty(true);
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter));
+        feat.setMechanics(mechanics);
+
+        assertTrue(json(feat).get("featData").get("counters").get(0).get("startsEmpty").asBoolean());
+    }
+
+    /** Отметки нет или она снята — поля в выгрузке нет: ресурс появляется полным. */
+    @Test
+    void omitsStartsEmptyWhenNotSet() {
+        Feat feat = baseFeat();
+        ResourceCounter cleared = counter("uses", "1", ResourceRecovery.LONG_REST);
+        cleared.setStartsEmpty(false);
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setCounters(List.of(counter("luck-points", "@prof", ResourceRecovery.LONG_REST),
+                cleared));
+        feat.setMechanics(mechanics);
+
+        JsonNode counters = json(feat).get("featData").get("counters");
+        assertFalse(counters.get(0).has("startsEmpty"));
+        assertFalse(counters.get(1).has("startsEmpty"));
     }
 
     /** Нижняя граница максимума едет вместе с формулой: с модификатором +0 ресурс не пропадёт. */

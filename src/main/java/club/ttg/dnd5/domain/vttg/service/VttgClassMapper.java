@@ -179,9 +179,8 @@ public class VttgClassMapper {
             return null;
         }
 
-        // Заклинания и ресурсы у класса уже выведены своими полями записи
-        // ({@code Feature.grantedSpells}, {@code counters}); повтори их блок даров — и
-        // потребитель выдал бы то же самое дважды
+        // Ресурсы у класса уже выведены своими полями записи ({@code counters}); повтори
+        // их блок даров — и потребитель выдал бы то же самое дважды
         ClassMechanics withoutDuplicates = new ClassMechanics();
 
         withoutDuplicates.setModifiers(mechanics.getModifiers());
@@ -189,8 +188,36 @@ public class VttgClassMapper {
         withoutDuplicates.setChoices(mechanics.getChoices());
         withoutDuplicates.setSpellList(mechanics.getSpellList());
         withoutDuplicates.setFeats(mechanics.getFeats());
+        withoutDuplicates.setSpells(spellsWithoutClassLists(mechanics.getSpells()));
 
         return mechanicsMapper.featData(withoutDuplicates, null);
+    }
+
+    /**
+     * Выдача заклинаний для блока даров умения — без списков классов целиком.
+     *
+     * <p>Перечень остаётся: только в нём едут отметка «Подготавливать не нужно» и
+     * характеристика — у записи ({@code grantedSpellsAlwaysPrepared}) и у отдельной
+     * ссылки. Без них лист считал заклинания домена обычными, и их приходилось
+     * готовить. Потребитель выдаёт перечень по {@code Feature.grantedSpells}, а повтор
+     * здесь отсеивает по названию.</p>
+     *
+     * <p>Списки классов уезжают полем умения ({@code Feature.grantedClassSpells}): в блоке
+     * даров их прочёл бы и лист, который не умеет спросить «весь список или выбрать», — и
+     * положил бы чародею все заклинания класса разом.</p>
+     *
+     * @param grant выдача из механики; {@code null} — выдавать нечего
+     * @return копия выдачи без списков классов либо {@code null}
+     */
+    private SpellGrant spellsWithoutClassLists(SpellGrant grant) {
+        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
+            return null;
+        }
+        SpellGrant result = new SpellGrant();
+        result.setSpells(grant.getSpells());
+        result.setSpellcastingAbility(grant.getSpellcastingAbility());
+        result.setAlwaysPrepared(grant.getAlwaysPrepared());
+        return result;
     }
 
     // ── Счётчики ресурсов ────────────────────────────────────────
@@ -250,10 +277,10 @@ public class VttgClassMapper {
      */
     private List<VttgClass.Counter> mechanicsCounters(CharacterClass characterClass, String subclassKey) {
         List<OwnedCounter> counters = new ArrayList<>();
-        collectCounters(characterClass.getMechanics(), null, counters);
+        collectCounters(characterClass.getMechanics(), null, 1, counters);
         for (ClassFeature feature : Optional.ofNullable(characterClass.getFeatures()).orElse(List.of())) {
             if (feature != null) {
-                collectCounters(feature.getMechanics(), featureKey(feature), counters);
+                collectCounters(feature.getMechanics(), featureKey(feature), feature.getLevel(), counters);
             }
         }
 
@@ -266,10 +293,12 @@ public class VttgClassMapper {
                 continue;
             }
             result.add(new VttgClass.Counter(counter.getKey(), counterName(counter),
-                    optional(counter.getShortName()), counterStartLevel(counter),
+                    optional(counter.getShortName()), counterStartLevel(counter, owned.ownerLevel()),
                     VttgDictionaries.recovery(counter.resolveRecovery()),
                     progression, hasMax ? counter.getMax() : null, counter.resolveMin(), subclassKey,
-                    owned.featureKey()));
+                    owned.featureKey(), VttgDictionaries.restRule(counter.resolveShortRest()),
+                    VttgDictionaries.restRule(counter.resolveLongRest()),
+                    flag(counter.resolveStartsEmpty())));
         }
         return result;
     }
@@ -284,38 +313,48 @@ public class VttgClassMapper {
      *
      * @param counter    ресурс из механики.
      * @param featureKey ключ умения; {@code null} — ресурс самой записи.
+     * @param ownerLevel уровень умения, раньше которого ресурса нет; у ресурса записи — 1.
      */
-    private record OwnedCounter(ResourceCounter counter, String featureKey) {
+    private record OwnedCounter(ResourceCounter counter, String featureKey, int ownerLevel) {
     }
 
     /**
-     * Уровень, с которого счётчик появляется: первая ступень, а без ступеней — первый.
+     * Уровень, с которого счётчик появляется: первая ступень с зарядами, но не раньше
+     * умения, механикой которого ресурс заведён.
      *
      * <p>Ресурс со ступенями до первой из них не существует вовсе: кости превосходства
      * появляются на третьем уровне вместе с подклассом, и счётчик «0 из 0» на первых двух
-     * уровнях листа только мешал бы.</p>
+     * уровнях листа только мешал бы. Ступень с нулём зарядов ресурс тоже не открывает.</p>
      *
-     * @param counter ресурс из механики.
+     * <p>Ресурс умения без ступеней появляется вместе с умением: иначе у варвара шестого
+     * уровня на листе уже висела «Непреклонная ярость» одиннадцатого.</p>
+     *
+     * @param counter    ресурс из механики.
+     * @param ownerLevel уровень умения; у ресурса самой записи — 1.
      * @return уровень появления счётчика.
      */
-    private int counterStartLevel(ResourceCounter counter) {
+    private int counterStartLevel(ResourceCounter counter, int ownerLevel) {
+        int floor = Math.max(ownerLevel, 1);
         if (CollectionUtils.isEmpty(counter.getScaling())) {
-            return 1;
+            return floor;
         }
-        return counter.getScaling().stream()
-                .filter(step -> step != null && step.getLevel() != null && step.getMax() != null)
+        int firstStep = counter.getScaling().stream()
+                .filter(step -> step != null && step.getLevel() != null
+                        && step.getMax() != null && step.getMax() > 0)
                 .mapToInt(CounterScaling::getLevel)
                 .min()
                 .orElse(1);
+        return Math.max(firstStep, floor);
     }
 
-    private void collectCounters(ClassMechanics mechanics, String featureKey, List<OwnedCounter> target) {
+    private void collectCounters(ClassMechanics mechanics, String featureKey, int ownerLevel,
+                                 List<OwnedCounter> target) {
         if (mechanics == null || CollectionUtils.isEmpty(mechanics.getCounters())) {
             return;
         }
         for (ResourceCounter counter : mechanics.getCounters()) {
             if (counter != null) {
-                target.add(new OwnedCounter(counter, featureKey));
+                target.add(new OwnedCounter(counter, featureKey, ownerLevel));
             }
         }
     }
@@ -386,7 +425,7 @@ public class VttgClassMapper {
 
         return new VttgClass.Counter(columnKey(column), column.getName(),
                 optional(column.getShortName()), startLevel, recovery(column.getResourceRecovery()),
-                progression, null, null, subclassKey, null);
+                progression, null, null, subclassKey, null, null, null, null);
     }
 
     /** Способ восстановления в словаре потребителя. */
@@ -505,7 +544,9 @@ public class VttgClassMapper {
                     choiceConfig(feature.getOptionsChoice(), feature.getOptionsName()),
                     flag(feature.isAbilityImprovement()), flag(feature.isFightingStyleChoice()),
                     featureSkillChoice(feature.getSkillChoice()), flag(feature.isInformationalOnly()),
-                    grantedSpells(feature.getMechanics()), effects(feature.getActiveEffects()),
+                    grantedSpells(feature.getMechanics(), feature.getLevel()),
+                    grantedSpellsByLevel(feature.getMechanics(), feature.getLevel()),
+                    grantedClassSpells(feature.getMechanics()), effects(feature.getActiveEffects()),
                     featData(feature.getMechanics())));
             appendScaling(result, feature, key, subclassKey);
         }
@@ -531,7 +572,7 @@ public class VttgClassMapper {
             target.add(new VttgClass.Feature(baseKey + "-" + scaling.getLevel(), name,
                     displayDescription(scaling.getDescription()), scaling.getLevel(), subclassKey, null, null,
                     flag(feature.isAbilityImprovement()), null, null, flag(feature.isInformationalOnly()),
-                    null, null, null));
+                    null, null, null, null, null));
         }
     }
 
@@ -862,28 +903,81 @@ public class VttgClassMapper {
     }
 
     /**
-     * Заклинания, которые умение выдаёт без выбора, — списком id (они же url записей
-     * справочника), как их ждёт {@code ClassFeature.grantedSpells} эталона.
+     * Заклинания, которые умение выдаёт без выбора на уровне самого умения, — списком id
+     * (они же url записей справочника), как их ждёт {@code ClassFeature.grantedSpells}
+     * эталона.
      *
-     * <p>Уровень доступности отдельного заклинания здесь не нужен: у класса гейт задан
-     * уровнем самого умения, и вторым уровнем внутри умения он бы только разошёлся с
-     * первым.</p>
+     * <p>Ссылка, открывающаяся позже умения, сюда не идёт — она в
+     * {@link #grantedSpellsByLevel}. Иначе жрец домена получал бы на 3 уровне все десять
+     * заклинаний домена, вплоть до 5 круга.</p>
+     *
+     * @param mechanics    механика умения
+     * @param featureLevel уровень класса, на котором умение получают
      */
-    private List<String> grantedSpells(ClassMechanics mechanics) {
-        if (mechanics == null) {
-            return null;
-        }
-        SpellGrant grant = mechanics.getSpells();
-        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
-            return null;
-        }
-        List<String> result = grant.getSpells().stream()
-                .filter(Objects::nonNull)
-                .map(GrantedSpellRef::getUrl)
-                .filter(StringUtils::hasText)
+    private List<String> grantedSpells(ClassMechanics mechanics, Integer featureLevel) {
+        List<String> result = grantedSpellRefs(mechanics).stream()
+                .filter(ref -> opensLater(ref, featureLevel) == null)
+                .map(ref -> ref.getUrl().trim())
                 .distinct()
                 .toList();
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Заклинания умения, открывающиеся позже него: {@code уровень класса строкой → id}.
+     *
+     * @param mechanics    механика умения
+     * @param featureLevel уровень класса, на котором умение получают
+     * @return поуровневая выдача либо {@code null}, если всё открывается сразу
+     */
+    private Map<String, List<String>> grantedSpellsByLevel(ClassMechanics mechanics, Integer featureLevel) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        grantedSpellRefs(mechanics).stream()
+                .filter(ref -> opensLater(ref, featureLevel) != null)
+                .sorted(Comparator.comparing(GrantedSpellRef::getRequiredLevel))
+                .forEach(ref -> {
+                    List<String> spells = result.computeIfAbsent(
+                            String.valueOf(ref.getRequiredLevel()), level -> new ArrayList<>());
+                    String url = ref.getUrl().trim();
+                    if (!spells.contains(url)) {
+                        spells.add(url);
+                    }
+                });
+        return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Списки классов, которые умение выдаёт целиком, — полем умения (см.
+     * {@link #spellsWithoutClassLists}).
+     *
+     * @param mechanics механика умения
+     * @return группы списков либо {@code null}
+     */
+    private List<VttgFeatData.GrantedClassSpells> grantedClassSpells(ClassMechanics mechanics) {
+        return mechanics == null ? null : mechanicsMapper.grantedClassSpells(mechanics.getSpells());
+    }
+
+    /** Ссылки выдачи умения с непустым url. */
+    private List<GrantedSpellRef> grantedSpellRefs(ClassMechanics mechanics) {
+        SpellGrant grant = mechanics == null ? null : mechanics.getSpells();
+        if (grant == null || CollectionUtils.isEmpty(grant.getSpells())) {
+            return List.of();
+        }
+        return grant.getSpells().stream()
+                .filter(Objects::nonNull)
+                .filter(ref -> StringUtils.hasText(ref.getUrl()))
+                .toList();
+    }
+
+    /**
+     * Уровень класса, на котором ссылка открывается позже умения.
+     *
+     * @return уровень ссылки либо {@code null}, если она открывается вместе с умением
+     */
+    private Integer opensLater(GrantedSpellRef ref, Integer featureLevel) {
+        Integer required = ref.getRequiredLevel();
+        int gained = featureLevel == null ? 1 : featureLevel;
+        return required != null && required > gained ? required : null;
     }
 
     /**

@@ -30,4 +30,6 @@ public class FacilityChoice {
     private Integer enlargedCount;
     @Schema(description = "Варианты")
     private List<FacilityChoiceOption> options;
+    @Schema(description = "Откуда берутся варианты; пусто — из списка options")
+    private FacilityChoiceSource source;
 }

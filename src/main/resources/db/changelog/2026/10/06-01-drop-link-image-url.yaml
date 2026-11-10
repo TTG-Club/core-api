@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-06-01-drop-link-image-url
+      author: Peterko
+      comment: >
+        Убирает колонки species.link_image_url и background.link_image_url — отдельную
+        картинку «для ссылки». Список видов показывает основную картинку (image), поле
+        в редакторе убрано, у предысторий оно не попадало ни в один ответ API. Сервер
+        эти значения больше не читает и не пишет.
+      changes:
+        - dropColumn:
+            tableName: species
+            columnName: link_image_url
+        - dropColumn:
+            tableName: background
+            columnName: link_image_url
+      rollback:
+        - addColumn:
+            tableName: species
+            columns:
+              - column:
+                  name: link_image_url
+                  type: VARCHAR(255)
+        - addColumn:
+            tableName: background
+            columns:
+              - column:
+                  name: link_image_url
+                  type: VARCHAR(255)

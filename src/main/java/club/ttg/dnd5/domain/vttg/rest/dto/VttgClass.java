@@ -203,14 +203,23 @@ public class VttgClass {
      * владения навыками. Без них потребитель угадывает ASI по виду ключа
      * ({@code asi-4}), и на переведённых или самописных классах шаг молча пропадает.
      * Флаги выводятся только когда взведены — у обычного умения полей нет.</p>
+     *
+     * <p>Выданные заклинания разложены по уровню КЛАССА, на котором они открываются:
+     * {@code grantedSpells} — с уровнем самого умения, {@code grantedSpellsByLevel} —
+     * позже («Заклинания домена»: 3, 5, 7 и 9 уровни). Отметки подготовки и
+     * характеристика лежат в {@code featData} ({@code grantedSpellsAlwaysPrepared} и
+     * ссылки {@code grantedSpells}). Списки классов целиком ({@code grantedClassSpells})
+     * выведены полем умения, а не блоком даров: потребитель, который про них не знает,
+     * иначе положил бы на лист весь список класса без спроса.</p>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Feature(String key, String name, String description, Integer level,
                           String subclassKey, List<Choice> choices, ChoiceConfig choiceConfig,
                           Boolean abilityImprovement, Boolean fightingStyleChoice,
                           SkillChoices skillChoice, Boolean isInformationalOnly,
-                          List<String> grantedSpells, List<ActiveEffect> activeEffects,
-                          VttgFeatData featData) {
+                          List<String> grantedSpells, Map<String, List<String>> grantedSpellsByLevel,
+                          List<VttgFeatData.GrantedClassSpells> grantedClassSpells,
+                          List<ActiveEffect> activeEffects, VttgFeatData featData) {
 
         /**
          * Умение без собственных флагов: развороты {@code scaling} и записи, у которых в
@@ -219,7 +228,7 @@ public class VttgClass {
         public Feature(String key, String name, String description, Integer level,
                        String subclassKey, List<Choice> choices) {
             this(key, name, description, level, subclassKey, choices, null,
-                    null, null, null, null, null, null, null);
+                    null, null, null, null, null, null, null, null, null);
         }
     }
 
@@ -291,16 +300,23 @@ public class VttgClass {
      * @param progression максимум по уровням: ключ — уровень строкой, значение — число
      * @param min         нижняя граница максимума: ниже неё формула не опускает; {@code null} — её нет
      * @param subclassKey ключ подкласса, если счётчик принадлежит ему; иначе {@code null}
+     * @param shortRest   что возвращает короткий отдых; {@code null} — у ресурса из колонки
+     *                    таблицы, он описан только {@code recovery}
+     * @param longRest    что возвращает продолжительный отдых; {@code null} — как у {@code shortRest}
      * @param featureKey  ключ умения, механикой которого заведён ресурс; {@code null} — ресурс
      *                    самой записи или колонки таблицы. Ресурс умения лежит в счётчиках класса
      *                    (только там известен уровень класса для ступеней), и без этого ключа
      *                    потребитель не может вернуть его в умение: в мастерской «Бардовское
      *                    вдохновение» оказывалось ресурсом класса, а само умение — пустым
+     * @param startsEmpty ресурс появляется на листе пустым (0 из максимума): его набирают
+     *                    действием, а не отдыхом; {@code null} — появляется полным, как и ресурс
+     *                    из колонки таблицы
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Counter(String key, String name, String shortName, int startLevel, String recovery,
                           Map<String, Integer> progression, String formula, Integer min, String subclassKey,
-                          String featureKey) {
+                          String featureKey, VttgFeatData.RestRule shortRest, VttgFeatData.RestRule longRest,
+                          Boolean startsEmpty) {
     }
 
     /**

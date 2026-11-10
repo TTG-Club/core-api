@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-10-17-01-bastion-event-item
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Предмет, полученный событием бастиона («Волшебное открытие», «Сокровище»), выбирают из
+        раздела «Магические предметы»: ссылка на выбранный предмет рядом с его названием.
+      changes:
+        - addColumn:
+            tableName: player_bastion_event
+            columns:
+              - column:
+                  name: note_url
+                  type: VARCHAR(200)

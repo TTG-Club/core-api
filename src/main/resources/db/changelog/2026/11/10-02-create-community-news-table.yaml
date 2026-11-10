@@ -1,0 +1,103 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-10-02-create-community-news-table
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        «Новости сообщества» — отдельный инструмент со своими правами (не тип статьи):
+        короткие заметки со ссылкой на источник и, при желании, роликом. Публикация как
+        у статей (черновик / активна / отложенная дата / доступ по ссылке / мягкое удаление),
+        но без тегов, рейтинга, ревизий и кросс-постинга в соцсети.
+      changes:
+        - createTable:
+            tableName: community_news
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_community_news
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uc_community_news_url
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: author_name
+                  type: VARCHAR(128)
+              - column:
+                  name: source_url
+                  type: VARCHAR(512)
+              - column:
+                  name: preview_image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: video_url
+                  type: VARCHAR(512)
+              - column:
+                  name: preview
+                  type: TEXT
+              - column:
+                  name: content
+                  type: TEXT
+              - column:
+                  name: publish_date_time
+                  type: DATETIME
+              - column:
+                  name: draft
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: accessible_by_link
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deleted
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: last_username
+                  type: VARCHAR(255)
+        # Лента и модерация фильтруют по флагам публикации и сортируют по дате выхода.
+        - createIndex:
+            tableName: community_news
+            indexName: community_news_publication_index
+            columns:
+              - column:
+                  name: deleted
+              - column:
+                  name: draft
+              - column:
+                  name: active
+              - column:
+                  name: publish_date_time
+      rollback:
+        - dropTable:
+            tableName: community_news

@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.common.model.Roll;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.weapon.Damage;
@@ -71,6 +72,25 @@ class VttgMagicItemMapperTest {
     }
 
     /** Источник в url не дублируется в id: "adamantine-armor-dmg" остаётся как есть. */
+    /** Хранилище магического предмета: своё поле записи, невесомость отдаётся true. */
+    @Test
+    void exportsContainer() {
+        MagicItem bag = new MagicItem();
+        bag.setUrl("bag-of-holding-dmg");
+        bag.setCategory(MagicItemCategory.SUBJECT);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        bag.setSource(source);
+        bag.setContainer(new ItemContainer(500.0, true));
+
+        JsonNode container = objectMapper.valueToTree(mapper.toVttg(bag)).get("container");
+        assertEquals(500, container.get("capacityWeight").asInt());
+        assertTrue(container.get("weightless").asBoolean());
+
+        bag.setContainer(null);
+        assertFalse(objectMapper.valueToTree(mapper.toVttg(bag)).has("container"));
+    }
+
     @Test
     void doesNotDuplicateSourceSuffixAlreadyPresentInUrl() {
         MagicItem item = new MagicItem();
@@ -129,6 +149,36 @@ class VttgMagicItemMapperTest {
         assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
     }
 
+    /**
+     * Зелье уходит своей категорией {@code potion} (значок колбы в VTTG) в свой лист «Зелья».
+     * Свиток остаётся чудесным предметом.
+     */
+    @Test
+    void mapsPotionIntoPotionsSection() {
+        MagicItem potion = new MagicItem();
+        potion.setUrl("potion-of-healing");
+        potion.setName("Зелье лечения");
+        potion.setCategory(MagicItemCategory.POTION);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        potion.setSource(source);
+
+        VttgMagicItem potionResult = mapper.toVttg(potion);
+        assertEquals("equipment", potionResult.getType());
+        assertEquals("potion", potionResult.getEquipmentCategory());
+        assertEquals("potions", potionResult.getSection());
+
+        MagicItem scroll = new MagicItem();
+        scroll.setUrl("spell-scroll");
+        scroll.setName("Свиток заклинания");
+        scroll.setCategory(MagicItemCategory.SCROLL);
+        scroll.setSource(source);
+
+        VttgMagicItem scrollResult = mapper.toVttg(scroll);
+        assertEquals("wondrous", scrollResult.getEquipmentCategory());
+        assertEquals("wondrous", scrollResult.getSection());
+    }
+
     /** Галочка «Расходуемый» работает и без условия применения. */
     @Test
     void marksConsumableByFlag() {
@@ -144,7 +194,10 @@ class VttgMagicItemMapperTest {
         assertEquals(Boolean.TRUE, mapper.toVttg(item).getConsumable());
     }
 
-    /** Надетый предмет не расходуется: признака в выгрузке нет вовсе. */
+    /**
+     * Надетый предмет не расходуется и не работает «при себе»: обоих признаков в выгрузке
+     * нет вовсе.
+     */
     @Test
     void keepsWornItemNotConsumable() {
         MagicItem item = wandOfFear();
@@ -156,6 +209,18 @@ class VttgMagicItemMapperTest {
 
         assertNull(result.getConsumable());
         assertFalse(objectMapper.valueToTree(result).has("consumable"));
+        assertFalse(objectMapper.valueToTree(result).has("activeWhenCarried"));
+    }
+
+    /** «При себе» уезжает признаком: эффекты работают без отметки «надет». */
+    @Test
+    void marksCarriedItemActiveWhenCarried() {
+        MagicItem item = wandOfFear();
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActivation(MagicItemActivation.CARRIED);
+        item.setMechanics(mechanics);
+
+        assertEquals(Boolean.TRUE, mapper.toVttg(item).getActiveWhenCarried());
     }
 
     /** Доспешные поля опускаются для не-брони — как в эталоне (жезл). */
@@ -1090,6 +1155,48 @@ class VttgMagicItemMapperTest {
 
         assertNull(mapper.toVttg(item).getActiveEffects());
         assertEquals(1, mapper.toVttg(item).getMagicBonus());
+    }
+
+    /**
+     * Эффект с заменами свойств оружия на самом магическом оружии: в VTTG он действует
+     * только на этот предмет, а выгрузка отдаёт его теми же строками, без бонуса к КД
+     * и без перевода ключей вида оружия в условии.
+     */
+    @Test
+    void exportsWeaponOverrideEffectOfMagicWeaponAsAuthored() throws Exception {
+        MagicItem item = new MagicItem();
+        item.setUrl("druid-staff");
+        item.setName("Посох друида");
+        item.setCategory(MagicItemCategory.WEAPON);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        item.setSource(source);
+        JsonNode authored = objectMapper.readTree("""
+                {
+                  "id": "effect_druid_staff_force",
+                  "name": "Силовой удар",
+                  "origin": "item",
+                  "transfer": true,
+                  "duration": { "type": "permanent" },
+                  "changes": [
+                    { "key": "weapon.attackAbility", "mode": "override", "priority": 20,
+                      "value": "spell",
+                      "condition": "weapon.baseType === \\"quarterstaff\\"" },
+                    { "key": "weapon.damageType", "mode": "override", "priority": 20,
+                      "value": "force" }
+                  ],
+                  "flags": []
+                }
+                """);
+        MagicItemMechanics mechanics = new MagicItemMechanics();
+        mechanics.setActiveEffects(List.of(objectMapper.treeToValue(authored, ActiveEffect.class)));
+        item.setMechanics(mechanics);
+
+        JsonNode exported = objectMapper.readTree(objectMapper.writeValueAsString(mapper.toVttg(item)))
+                .get("activeEffects");
+
+        assertEquals(1, exported.size());
+        assertEquals(authored, exported.get(0));
     }
 
     private DamagePart damagePart(String formula) {
