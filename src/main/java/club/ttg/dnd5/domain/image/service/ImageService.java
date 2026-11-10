@@ -38,11 +38,21 @@ public class ImageService
      @Value("${image.validation.max-bytes:2097152}")
     private long maxBytes;
 
+    /** Картинка шире — пропорционально уменьшается до этой ширины перед сохранением (не отклоняется). */
     @Value("${image.validation.max-width:2048}")
     private int maxWidth;
 
+    /** Картинка выше — пропорционально уменьшается до этой высоты перед сохранением (не отклоняется). */
     @Value("${image.validation.max-height:2048}")
     private int maxHeight;
+
+    /**
+     * Предел исходного размера в пикселях (ширина × высота). Защита от «бомб»: PNG в пару сотен килобайт
+     * может развернуться в десятки тысяч пикселей по стороне и занять гигабайты памяти при декодировании.
+     * По умолчанию 50 Мп — с запасом для фото с камер и сканов.
+     */
+    @Value("${image.validation.max-source-pixels:50000000}")
+    private long maxSourcePixels;
 
     @Value("${image.validation.allowed-types:png,jpg,jpeg,webp,bmp}")
     private List<String> allowedTypes;
@@ -198,11 +208,12 @@ public class ImageService
             );
         }
 
-        if (dims.width() > maxWidth || dims.height() > maxHeight)
+        // Больше maxWidth × maxHeight — не ошибка: такую картинку уменьшит convertToWebp
+        if ((long) dims.width() * dims.height() > maxSourcePixels)
         {
             throw new ImageValidationException(
-                    "Изображение велико: " + dims.width() + "x" + dims.height()
-                            + " (max " + maxWidth + "x" + maxHeight + ")"
+                    "Изображение слишком большое: " + dims.width() + "x" + dims.height()
+                            + " (не больше " + maxSourcePixels / 1_000_000 + " Мп)"
             );
         }
     }
@@ -233,6 +244,9 @@ public class ImageService
         {
             options = options.withoutAlpha();
         }
+
+        // Пропорционально вписываем в maxWidth × maxHeight; картинки меньше не трогаем
+        options = options.resizeToFit(maxWidth, maxHeight);
 
         try
         {
