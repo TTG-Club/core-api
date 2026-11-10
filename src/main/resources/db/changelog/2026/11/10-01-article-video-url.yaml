@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-10-01-article-video-url
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Ссылка на ролик YouTube или ВК Видео у статьи / новости. На сайте плеер
+        показывается вместо обложки, обложка остаётся его заставкой. Пусто — видео нет.
+      changes:
+        - addColumn:
+            tableName: article
+            columns:
+              - column:
+                  name: video_url
+                  type: VARCHAR(512)
+      rollback:
+        - dropColumn:
+            tableName: article
+            columnName: video_url

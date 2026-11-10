@@ -68,6 +68,10 @@ public class ArticleDetailedResponse {
     @Nullable
     private String previewImageUrl;
 
+    @Schema(description = "Ссылка на ролик YouTube или ВК Видео; показывается вместо обложки")
+    @Nullable
+    private String videoUrl;
+
     @Schema(description = "Текст превью")
     @NotNull
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
