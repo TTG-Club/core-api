@@ -29,10 +29,12 @@ import java.time.Instant;
 public class CommunityNewsRequest {
 
     @NotBlank
+    @Size(max = 255)
     @Schema(description = "Уникальный url новости сообщества (slug)")
     private String url;
 
     @NotBlank
+    @Size(max = 255)
     @Schema(description = "Заголовок")
     private String title;
 

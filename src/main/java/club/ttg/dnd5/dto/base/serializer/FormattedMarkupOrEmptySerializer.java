@@ -15,7 +15,7 @@ public class FormattedMarkupOrEmptySerializer extends FormattedMarkupDescription
     @Override
     public void serialize(String value, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
             throws IOException {
-        if (StringUtils.isEmpty(value)) {
+        if (StringUtils.isBlank(value)) {
             jsonGenerator.writeString("");
             return;
         }

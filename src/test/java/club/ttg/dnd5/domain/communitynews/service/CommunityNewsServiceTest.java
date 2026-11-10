@@ -52,7 +52,7 @@ class CommunityNewsServiceTest {
         request.setSourceUrl("");
         request.setVideoUrl("  ");
         request.setPreview("[\"анонс\"]");
-        request.setContent("");
+        request.setContent(" \n ");
         return request;
     }
 
@@ -134,7 +134,7 @@ class CommunityNewsServiceTest {
         assertNull(news.getAuthorName());
         assertNull(news.getSourceUrl());
         assertNull(news.getVideoUrl());
-        assertEquals("", news.getContent());
+        assertNull(news.getContent());
     }
 
     @Test

@@ -32,6 +32,7 @@ public interface CommunityNewsMapper {
     @Mapping(target = "sourceUrl", source = "sourceUrl", qualifiedByName = "blankToNull")
     @Mapping(target = "previewImageUrl", source = "previewImageUrl", qualifiedByName = "blankToNull")
     @Mapping(target = "videoUrl", source = "videoUrl", qualifiedByName = "blankToNull")
+    @Mapping(target = "content", source = "content", qualifiedByName = "blankToNull")
     @BaseMapping.TimestampedMappingIgnore
     CommunityNews toEntity(CommunityNewsRequest request);
 
@@ -44,6 +45,7 @@ public interface CommunityNewsMapper {
     @Mapping(target = "sourceUrl", source = "sourceUrl", qualifiedByName = "blankToNull")
     @Mapping(target = "previewImageUrl", source = "previewImageUrl", qualifiedByName = "blankToNull")
     @Mapping(target = "videoUrl", source = "videoUrl", qualifiedByName = "blankToNull")
+    @Mapping(target = "content", source = "content", qualifiedByName = "blankToNull")
     @BaseMapping.TimestampedMappingIgnore
     void updateEntity(@MappingTarget CommunityNews news, CommunityNewsRequest request);
 

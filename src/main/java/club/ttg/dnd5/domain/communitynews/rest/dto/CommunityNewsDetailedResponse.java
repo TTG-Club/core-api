@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.communitynews.rest.dto;
 
-import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionSerializer;
+import club.ttg.dnd5.dto.base.serializer.MarkupDescriptionOrEmptySerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -14,8 +14,8 @@ import lombok.Setter;
 @Setter
 public class CommunityNewsDetailedResponse extends CommunityNewsShortResponse {
 
-    @JsonSerialize(using = MarkupDescriptionSerializer.class)
-    @Schema(description = "Полный текст (разметка); null — новость из одного превью")
+    @JsonSerialize(using = MarkupDescriptionOrEmptySerializer.class, nullsUsing = MarkupDescriptionOrEmptySerializer.class)
+    @Schema(description = "Полный текст (разметка); пустая строка — новость из одного превью")
     private String content;
 
     @NotNull

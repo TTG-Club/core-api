@@ -104,6 +104,21 @@ class CommunityNewsControllerTest {
         assertEquals("", json.get("content").asText());
         assertEquals("", json.get("authorName").asText());
 
+        // Полная новость без текста: фронт ждёт разметку (строку), а не null.
+        club.ttg.dnd5.domain.communitynews.rest.dto.CommunityNewsDetailedResponse detailed =
+                new club.ttg.dnd5.domain.communitynews.rest.dto.CommunityNewsDetailedResponse();
+        detailed.setPreview("[\"анонс\"]");
+        JsonNode detailedJson = new ObjectMapper().findAndRegisterModules().valueToTree(detailed);
+        assertTrue(detailedJson.get("content").isTextual());
+        assertEquals("", detailedJson.get("content").asText());
+        detailed.setContent("[\"текст\"]");
+        ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+        detailed.setContent("  \n ");
+        // Пробелы нельзя писать «сырым» значением — получился бы невалидный JSON.
+        assertEquals("", objectMapper.readTree(objectMapper.writeValueAsString(detailed)).get("content").asText());
+        detailed.setContent("[\"текст\"]");
+        assertTrue(objectMapper.readTree(objectMapper.writeValueAsString(detailed)).get("content").isArray());
+
         // Пустой content из формы принимается обратно как пустая строка, а не ломает разбор.
         CommunityNewsRequest back = new ObjectMapper().findAndRegisterModules()
                 .readValue("{\"content\":\"\",\"preview\":\"[\\\"анонс\\\"]\"}", CommunityNewsRequest.class);

@@ -54,6 +54,9 @@ public class VkPublisher {
     /** Качество JPEG при перекодировании обложки из WebP под требования ВК (см. {@link #toVkFormat}). */
     private static final float COVER_JPEG_QUALITY = 0.9f;
 
+    /** «Method is unavailable with group auth»: метод недоступен с ключом сообщества. */
+    private static final int GROUP_AUTH_ERROR_CODE = 27;
+
     /** Коды ошибок VK, при которых имеет смысл повторить (временные). Остальное — перманентный отказ. */
     private static final Set<Integer> TRANSIENT_ERROR_CODES = Set.of(
             1,  // Unknown error occurred — VK рекомендует повторить позже
@@ -232,7 +235,9 @@ public class VkPublisher {
                     .filter(StringUtils::hasText)
                     .collect(Collectors.joining(","));
             ApiOutcome outcome = call.send(buildMessage(article, true), attachments);
-            if (outcome.result() != SendResult.REJECTED) {
+            // Повтор без ролика — только если отказ мог быть из-за него. Ключу сообщества wall.edit
+            // всегда отвечает 27 («недоступно с ключом сообщества») — повтор дал бы ту же ошибку.
+            if (outcome.result() != SendResult.REJECTED || outcome.errorCode() == GROUP_AUTH_ERROR_CODE) {
                 return outcome;
             }
             log.info("VK не принял ролик {} вложением для {} — отправляю ссылкой в тексте",
@@ -384,7 +389,7 @@ public class VkPublisher {
                 int code = error.path("error_code").asInt();
                 log.warn("VK {} вернул ошибку {}: {}", method, code, error.path("error_msg").asText());
                 return new ApiOutcome(
-                        TRANSIENT_ERROR_CODES.contains(code) ? SendResult.TRANSIENT : SendResult.REJECTED, null);
+                        TRANSIENT_ERROR_CODES.contains(code) ? SendResult.TRANSIENT : SendResult.REJECTED, null, code);
             }
             return new ApiOutcome(SendResult.SENT, json != null ? json.get("response") : null);
         } catch (RestClientResponseException ex) {
@@ -534,6 +539,10 @@ public class VkPublisher {
     }
 
     /** Итог вызова VK API: результат и полезная нагрузка ({@code response} для методов, тело — для загрузки). */
-    private record ApiOutcome(SendResult result, JsonNode response) {
+    /** {@code errorCode} — код ошибки VK ({@code error.error_code}), 0 — ошибки VK не было. */
+    private record ApiOutcome(SendResult result, JsonNode response, int errorCode) {
+        ApiOutcome(SendResult result, JsonNode response) {
+            this(result, response, 0);
+        }
     }
 }
