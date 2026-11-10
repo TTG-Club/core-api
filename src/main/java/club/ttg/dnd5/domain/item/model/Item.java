@@ -75,6 +75,14 @@ public class Item extends NamedEntity {
     private Boolean consumable;
 
     /**
+     * Предмет-хранилище: рюкзак, мешок, сундук ({@code DnDGameItem.container} в вокабуляре
+     * VTTG). Пусто — не контейнер.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private ItemContainer container;
+
+    /**
      * Активные эффекты предмета в вокабуляре VTTG — та же модель, что у заклинания,
      * черты и магического предмета.
      *

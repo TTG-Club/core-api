@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.article.service;
 import club.ttg.dnd5.config.properties.DiscordProperties;
 import club.ttg.dnd5.domain.article.model.Article;
 import club.ttg.dnd5.domain.article.model.DiscordMention;
+import club.ttg.dnd5.domain.common.validation.VideoUrls;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,6 +60,9 @@ public class DiscordPublisher {
 
     /** Подпись ссылки на новость на сайте, которой заканчивается компактный пост. */
     private static final String READ_MORE_LABEL = "Подробнее читайте на сайте";
+
+    /** Подпись перед ссылкой на ролик новости. */
+    private static final String VIDEO_LABEL = "🎬 Видео:";
 
     /** Пустая строка между абзацами текста компактного поста. */
     private static final Pattern BLANK_LINE = Pattern.compile("\\R\\s*\\R");
@@ -223,7 +227,10 @@ public class DiscordPublisher {
         String titleLine = StringUtils.hasText(title) ? "**" + escapeMarkdown(title) + "**" : "";
         // Пинг — отдельной строкой над текстом; в первом сообщении вместе с заголовком он образует «шапку».
         String mentionLine = mentionText(mention);
-        String head = Stream.of(mentionLine, titleLine)
+        // Ссылка на ролик — под заголовком и без <>: Discord сам развернёт под постом плеер/превью YouTube.
+        String video = VideoUrls.normalize(article.getVideoUrl());
+        String videoLine = video == null ? "" : VIDEO_LABEL + " " + video;
+        String head = Stream.of(mentionLine, titleLine, videoLine)
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining("\n\n"));
         // Ссылка на сайт у компактного поста дописывается к последнему сообщению. Какой кусок окажется

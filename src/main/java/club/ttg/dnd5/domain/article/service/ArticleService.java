@@ -11,6 +11,7 @@ import club.ttg.dnd5.domain.article.rest.dto.ArticleShortResponse;
 import club.ttg.dnd5.domain.article.rest.mapper.ArticleMapper;
 import club.ttg.dnd5.domain.common.rest.dto.rating.RatingResponse;
 import club.ttg.dnd5.domain.common.service.RatingService;
+import club.ttg.dnd5.domain.common.validation.VideoUrls;
 import club.ttg.dnd5.domain.filter.rest.dto.FilterMetadataResponse;
 import club.ttg.dnd5.domain.filter.rest.dto.SupportsConfig;
 import club.ttg.dnd5.domain.revision.model.RevisionOperation;
@@ -62,6 +63,7 @@ public class ArticleService {
         validateUrlNonExistence(request.getUrl());
 
         Article toSave = articleMapper.toEntity(request);
+        toSave.setVideoUrl(VideoUrls.normalize(request.getVideoUrl()));
         applyPublication(toSave, request);
         applyTags(toSave, request);
 
@@ -80,6 +82,7 @@ public class ArticleService {
         }
 
         articleMapper.updateEntity(toUpdate, request);
+        toUpdate.setVideoUrl(VideoUrls.normalize(request.getVideoUrl()));
         applyPublication(toUpdate, request);
         applyTags(toUpdate, request);
 
@@ -333,6 +336,7 @@ public class ArticleService {
 
     public ArticleDetailedResponse preview(ArticleRequest request) {
         Article entity = articleMapper.toEntity(request);
+        entity.setVideoUrl(VideoUrls.normalize(request.getVideoUrl()));
         applyPublication(entity, request);
         applyTags(entity, request);
         Instant now = Instant.now();

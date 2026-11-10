@@ -413,3 +413,11 @@ databaseChangeLog:
       file: db/changelog/2026/10/18-03-update-full-name-search-view-magic-item-show-in-list.yaml
   - include:
       file: db/changelog/2026/10/26-01-initiative-temporary-hit-points.yaml
+  - include:
+      file: db/changelog/2026/11/08-01-item-container.yaml
+  - include:
+      file: db/changelog/2026/11/08-02-item-container-fill.yaml
+  - include:
+      file: db/changelog/2026/11/10-01-article-video-url.yaml
+  - include:
+      file: db/changelog/2026/11/10-02-create-community-news-table.yaml

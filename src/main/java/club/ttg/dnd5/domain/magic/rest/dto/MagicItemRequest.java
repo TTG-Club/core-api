@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.magic.rest.dto;
 
 import club.ttg.dnd5.domain.common.rest.dto.BaseRequest;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import club.ttg.dnd5.domain.magic.model.Attunement;
 import club.ttg.dnd5.domain.magic.model.MagicItemBonuses;
 import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
@@ -49,6 +51,28 @@ public class MagicItemRequest extends BaseRequest {
 
     @Schema(description = "true если предмет расходуемый")
     private boolean consumable;
+
+    /**
+     * Предмет-хранилище: вместимость в фунтах и невесомость содержимого. {@code null} —
+     * не контейнер, пустой объект — контейнер без ограничения.
+     *
+     * <p>Сохранение меняет поле, только если запрос его прислал (хотя бы {@code null}):
+     * форма, которая о поле не знает, не стирает разметку предмета.</p>
+     */
+    @Schema(description = "Хранилище: capacityWeight — вместимость в фунтах, weightless — содержимое не весит."
+            + " null — не контейнер; поле не прислано — остаётся как было",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private ItemContainer container;
+
+    /** Прислал ли запрос поле {@link #container}: отсутствие поля не стирает его при сохранении. */
+    @JsonIgnore
+    @Schema(hidden = true)
+    private boolean containerSet;
+
+    public void setContainer(ItemContainer container) {
+        this.container = container;
+        this.containerSet = true;
+    }
 
     @Schema(description = "true если предмет — заклинательная фокусировка")
     private boolean focus;
