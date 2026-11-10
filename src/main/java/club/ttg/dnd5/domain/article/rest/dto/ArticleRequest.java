@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.article.rest.dto;
 import club.ttg.dnd5.domain.article.model.ArticleType;
 import club.ttg.dnd5.domain.article.model.DiscordMention;
 import club.ttg.dnd5.domain.article.model.TelegramPostFormat;
+import club.ttg.dnd5.domain.common.validation.VideoUrl;
 import club.ttg.dnd5.dto.base.deserializer.MarkupDescriptionDeserializer;
 import club.ttg.dnd5.dto.base.serializer.FormattedMarkupDescriptionSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -48,6 +49,12 @@ public class ArticleRequest {
     @Schema(description = "Cсылка на превью-изображение")
     @Nullable
     private String previewImageUrl;
+
+    @Nullable
+    @VideoUrl
+    @Schema(description = "Ссылка на ролик YouTube или ВК Видео (только https://, до 512 символов). На сайте "
+            + "показывается вместо обложки, обложка остаётся заставкой плеера. Пусто или null — видео нет.")
+    private String videoUrl;
 
     @Nullable
     @Schema(description = "Дата публикации. Будущая дата при draft=false, active=true — запись запланирована "

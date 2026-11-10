@@ -51,6 +51,13 @@ public class Article extends Timestamped {
 
     private String previewImageUrl;
 
+    /**
+     * Ссылка на ролик YouTube или ВК Видео. На сайте плеер показывается вместо обложки,
+     * обложка ({@code previewImageUrl}) остаётся его заставкой. NULL — видео нет.
+     */
+    @Column(length = 512)
+    private String videoUrl;
+
     @Column(columnDefinition = "TEXT")
     private String content;
 

@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.common.model.Roll;
 import club.ttg.dnd5.domain.common.dictionary.ArmorCategory;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.ItemCategory;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.weapon.Damage;
@@ -71,6 +72,25 @@ class VttgMagicItemMapperTest {
     }
 
     /** Источник в url не дублируется в id: "adamantine-armor-dmg" остаётся как есть. */
+    /** Хранилище магического предмета: своё поле записи, невесомость отдаётся true. */
+    @Test
+    void exportsContainer() {
+        MagicItem bag = new MagicItem();
+        bag.setUrl("bag-of-holding-dmg");
+        bag.setCategory(MagicItemCategory.SUBJECT);
+        Source source = new Source();
+        source.setAcronym("DMG");
+        bag.setSource(source);
+        bag.setContainer(new ItemContainer(500.0, true));
+
+        JsonNode container = objectMapper.valueToTree(mapper.toVttg(bag)).get("container");
+        assertEquals(500, container.get("capacityWeight").asInt());
+        assertTrue(container.get("weightless").asBoolean());
+
+        bag.setContainer(null);
+        assertFalse(objectMapper.valueToTree(mapper.toVttg(bag)).has("container"));
+    }
+
     @Test
     void doesNotDuplicateSourceSuffixAlreadyPresentInUrl() {
         MagicItem item = new MagicItem();

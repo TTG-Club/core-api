@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.article.service;
 
 import club.ttg.dnd5.config.properties.VkProperties;
 import club.ttg.dnd5.domain.article.model.Article;
+import club.ttg.dnd5.domain.common.validation.VideoUrls;
 import club.ttg.dnd5.domain.image.service.ImageConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,10 @@ import org.springframework.web.client.RestClientResponseException;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Отправляет и синхронизирует пост статьи / новости на стене сообщества ВКонтакте — через ключ доступа
@@ -49,6 +53,9 @@ public class VkPublisher {
 
     /** Качество JPEG при перекодировании обложки из WebP под требования ВК (см. {@link #toVkFormat}). */
     private static final float COVER_JPEG_QUALITY = 0.9f;
+
+    /** «Method is unavailable with group auth»: метод недоступен с ключом сообщества. */
+    private static final int GROUP_AUTH_ERROR_CODE = 27;
 
     /** Коды ошибок VK, при которых имеет смысл повторить (временные). Остальное — перманентный отказ. */
     private static final Set<Integer> TRANSIENT_ERROR_CODES = Set.of(
@@ -110,7 +117,7 @@ public class VkPublisher {
      * залить по перманентной причине (напр. VK не принял картинку), пост уходит текстом.
      */
     public PublishResult publish(Article article) {
-        String message = buildMessage(article);
+        String message = buildMessage(article, false);
         if (!StringUtils.hasText(message)) {
             log.warn("Пустой заголовок и текст — пропускаю отправку {} в VK", article.getUrl());
             return PublishResult.giveUp();
@@ -123,14 +130,16 @@ public class VkPublisher {
         }
         String attachment = cover.attachment();
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("owner_id", ownerId());
-        params.add("from_group", "1");
-        params.add("message", message);
-        if (attachment != null) {
-            params.add("attachments", attachment);
-        }
-        ApiOutcome outcome = callMethod("wall.post", params);
+        ApiOutcome outcome = withVideo(article, attachment, (text, attachments) -> {
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("owner_id", ownerId());
+            params.add("from_group", "1");
+            params.add("message", text);
+            if (StringUtils.hasText(attachments)) {
+                params.add("attachments", attachments);
+            }
+            return callMethod("wall.post", params);
+        });
         return switch (outcome.result()) {
             case SENT -> {
                 Long postId = postId(outcome.response());
@@ -158,7 +167,7 @@ public class VkPublisher {
      * {@link EditOutcome#newAttachment()} — планировщик сохранит её, чтобы не заливать фото на каждой правке.
      */
     public EditOutcome editPost(Article article) {
-        String message = buildMessage(article);
+        String message = buildMessage(article, false);
         if (!StringUtils.hasText(message)) {
             // Правка сделала запись пустой — корректной альтернативы нет: прекращаем попытки (флаг снимет поллер).
             return EditOutcome.of(EditResult.GIVE_UP);
@@ -177,14 +186,17 @@ public class VkPublisher {
             uploadedAttachment = cover.attachment();
         }
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("owner_id", ownerId());
-        params.add("post_id", String.valueOf(article.getVkPostId()));
-        params.add("message", message);
-        if (StringUtils.hasText(attachment)) {
-            params.add("attachments", attachment);
-        }
-        EditResult status = switch (callMethod("wall.edit", params).result()) {
+        ApiOutcome outcome = withVideo(article, attachment, (text, attachments) -> {
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("owner_id", ownerId());
+            params.add("post_id", String.valueOf(article.getVkPostId()));
+            params.add("message", text);
+            if (StringUtils.hasText(attachments)) {
+                params.add("attachments", attachments);
+            }
+            return callMethod("wall.edit", params);
+        });
+        EditResult status = switch (outcome.result()) {
             case SENT -> EditResult.SYNCED;
             case TRANSIENT -> EditResult.RETRY;
             // Пост удалён/нельзя изменить — прекращаем попытки.
@@ -208,9 +220,48 @@ public class VkPublisher {
         };
     }
 
-    /** Собирает текст поста: заголовок + текст описания, усечённые до лимита VK. */
-    private String buildMessage(Article article) {
+    /**
+     * Отправляет пост с учётом ролика новости. Ролик ВК Видео ({@code vk.com/video<oid>_<id>}) уходит
+     * вложением рядом с обложкой; если ВК такое вложение не принял (ролик закрыт, удалён, не виден
+     * сообществу) — пост повторяется без него, со ссылкой в тексте, чтобы новость всё равно вышла.
+     * Ролик YouTube (и любой нераспознанный) — сразу ссылкой в тексте.
+     * <p>
+     * Сохраняется ({@code vkAttachment}) по-прежнему только обложка: ролик берётся из новости на каждой правке.
+     */
+    private ApiOutcome withVideo(Article article, String photoAttachment, PostCall call) {
+        Optional<String> video = VideoUrls.vkVideoAttachment(article.getVideoUrl());
+        if (video.isPresent()) {
+            String attachments = Stream.of(photoAttachment, video.get())
+                    .filter(StringUtils::hasText)
+                    .collect(Collectors.joining(","));
+            ApiOutcome outcome = call.send(buildMessage(article, true), attachments);
+            // Повтор без ролика — только если отказ мог быть из-за него. Ключу сообщества wall.edit
+            // всегда отвечает 27 («недоступно с ключом сообщества») — повтор дал бы ту же ошибку.
+            if (outcome.result() != SendResult.REJECTED || outcome.errorCode() == GROUP_AUTH_ERROR_CODE) {
+                return outcome;
+            }
+            log.info("VK не принял ролик {} вложением для {} — отправляю ссылкой в тексте",
+                    video.get(), article.getUrl());
+        }
+        return call.send(buildMessage(article, false), photoAttachment);
+    }
+
+    /** Один вызов {@code wall.post}/{@code wall.edit} с готовым текстом и строкой вложений. */
+    @FunctionalInterface
+    private interface PostCall {
+        ApiOutcome send(String message, String attachments);
+    }
+
+    /**
+     * Собирает текст поста: заголовок, ссылка на ролик (если он не приложен вложением) и текст описания,
+     * усечённые до лимита VK. Ссылка идёт перед описанием, чтобы усечение длинного текста её не съело.
+     */
+    private String buildMessage(Article article, boolean videoAttached) {
         String title = article.getTitle() == null ? "" : article.getTitle().strip();
+        String video = VideoUrls.normalize(article.getVideoUrl());
+        if (video != null && !videoAttached) {
+            title = StringUtils.hasText(title) ? title + "\n\n🎬 Видео: " + video : "🎬 Видео: " + video;
+        }
         String body = formatter.toText(description(article));
         String combined;
         if (StringUtils.hasText(title)) {
@@ -338,7 +389,7 @@ public class VkPublisher {
                 int code = error.path("error_code").asInt();
                 log.warn("VK {} вернул ошибку {}: {}", method, code, error.path("error_msg").asText());
                 return new ApiOutcome(
-                        TRANSIENT_ERROR_CODES.contains(code) ? SendResult.TRANSIENT : SendResult.REJECTED, null);
+                        TRANSIENT_ERROR_CODES.contains(code) ? SendResult.TRANSIENT : SendResult.REJECTED, null, code);
             }
             return new ApiOutcome(SendResult.SENT, json != null ? json.get("response") : null);
         } catch (RestClientResponseException ex) {
@@ -488,6 +539,10 @@ public class VkPublisher {
     }
 
     /** Итог вызова VK API: результат и полезная нагрузка ({@code response} для методов, тело — для загрузки). */
-    private record ApiOutcome(SendResult result, JsonNode response) {
+    /** {@code errorCode} — код ошибки VK ({@code error.error_code}), 0 — ошибки VK не было. */
+    private record ApiOutcome(SendResult result, JsonNode response, int errorCode) {
+        ApiOutcome(SendResult result, JsonNode response) {
+            this(result, response, 0);
+        }
     }
 }

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.article.service;
 import club.ttg.dnd5.config.properties.TelegramProperties;
 import club.ttg.dnd5.domain.article.model.Article;
 import club.ttg.dnd5.domain.article.model.TelegramPostFormat;
+import club.ttg.dnd5.domain.common.validation.VideoUrls;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,9 @@ public class TelegramPublisher {
      * (Telegram обрезает его и считает сообщение пустым), а word joiner не отображается ничем.
      */
     private static final String INSTANT_VIEW_TEXT = "\u2060";
+
+    /** \u041f\u043e\u0434\u043f\u0438\u0441\u044c \u043f\u0435\u0440\u0435\u0434 \u0441\u0441\u044b\u043b\u043a\u043e\u0439 \u043d\u0430 \u0440\u043e\u043b\u0438\u043a \u043d\u043e\u0432\u043e\u0441\u0442\u0438. */
+    private static final String VIDEO_LABEL = "\ud83c\udfac \u0412\u0438\u0434\u0435\u043e:";
 
     /** Итог одного вызова Bot API. */
     private enum SendResult {
@@ -264,7 +268,19 @@ public class TelegramPublisher {
      */
     private String instantViewText(Article article) {
         String summary = summaryHtml(article);
-        return summary == null ? INSTANT_VIEW_TEXT : summary;
+        String video = videoLineHtml(article);
+        if (video == null) {
+            return summary == null ? INSTANT_VIEW_TEXT : summary;
+        }
+        return summary == null ? video : summary + "\n\n" + video;
+    }
+
+    /**
+     * Строка со ссылкой на ролик новости (Telegram-HTML). {@code null} — видео у записи нет.
+     */
+    private String videoLineHtml(Article article) {
+        String video = VideoUrls.normalize(article.getVideoUrl());
+        return video == null ? null : VIDEO_LABEL + " <a href=\"" + escape(video) + "\">" + escape(video) + "</a>";
     }
 
     /**
@@ -306,6 +322,10 @@ public class TelegramPublisher {
         String summary = summaryHtml(article);
         if (summary != null) {
             text.append(summary).append("\n\n");
+        }
+        String video = videoLineHtml(article);
+        if (video != null) {
+            text.append(video).append("\n\n");
         }
         return text.append(link).toString();
     }
@@ -430,8 +450,15 @@ public class TelegramPublisher {
      */
     private List<String> buildMessages(Article article, int firstLimit) {
         String title = nullToEmpty(article.getTitle());
+        String video = VideoUrls.normalize(article.getVideoUrl());
         String head = "<b>" + escape(title) + "</b>";
-        int firstBodyLimit = Math.max(0, firstLimit - title.length() - 2);
+        int headLength = title.length();
+        if (video != null) {
+            // Ссылка на ролик — сразу под заголовком: при длинном тексте она не уедет в хвост поста.
+            head += "\n\n" + videoLineHtml(article);
+            headLength += 2 + VIDEO_LABEL.length() + 1 + video.length();
+        }
+        int firstBodyLimit = Math.max(0, firstLimit - headLength - 2);
         List<String> bodyChunks = formatter.toHtmlChunks(description(article), firstBodyLimit, MESSAGE_LIMIT);
 
         List<String> messages = new ArrayList<>();

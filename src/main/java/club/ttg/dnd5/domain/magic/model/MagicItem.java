@@ -4,6 +4,7 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.common.dictionary.Rarity;
 import club.ttg.dnd5.domain.common.model.NamedEntity;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.magic.model.mechanics.MagicItemMechanics;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -102,6 +103,14 @@ public class MagicItem extends NamedEntity {
      * True если расходуемый
      */
     private boolean consumable;
+    /**
+     * Предмет-хранилище: Сумка хранения, Удобный рюкзак Хеварда, Переносная дыра
+     * ({@code DnDGameItem.container} в вокабуляре VTTG). Пусто — не контейнер; признак
+     * от связанного немагического предмета не наследуется.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private ItemContainer container;
     /**
      * True если предметом можно пользоваться как заклинательной фокусировкой (посохи,
      * волшебные палочки, жезлы).

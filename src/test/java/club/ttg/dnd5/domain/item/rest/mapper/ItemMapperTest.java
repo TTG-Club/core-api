@@ -2,12 +2,14 @@ package club.ttg.dnd5.domain.item.rest.mapper;
 
 import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.DamagePart;
 import club.ttg.dnd5.domain.item.model.weapon.Weapon;
 import club.ttg.dnd5.domain.item.rest.dto.ItemRequest;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +41,33 @@ class ItemMapperTest {
 
     @InjectMocks
     private ItemMapperImpl mapper;
+
+    /**
+     * Хранилище меняется, только если запрос прислал поле: форма, которая о нём не знает,
+     * разметку не стирает, а явный {@code null} снимает признак.
+     */
+    @Test
+    void containerChangesOnlyWhenRequestSendsIt() throws Exception {
+        Item item = new Item();
+        item.setContainer(new ItemContainer(30.0, null));
+
+        ObjectMapper json = new ObjectMapper();
+        mapper.updateEntity(json.readValue("{\"name\":{\"rus\":\"Рюкзак\"}}", ItemRequest.class), null, item);
+        assertEquals(30.0, item.getContainer().getCapacityWeight());
+
+        mapper.updateEntity(json.readValue("{\"container\":{\"capacityWeight\":40}}", ItemRequest.class), null, item);
+        assertEquals(40.0, item.getContainer().getCapacityWeight());
+
+        mapper.updateEntity(json.readValue("{\"container\":null}", ItemRequest.class), null, item);
+        assertNull(item.getContainer());
+
+        Item created = mapper.toEntity(json.readValue("{\"container\":{}}", ItemRequest.class), null);
+        assertNotNull(created.getContainer());
+        assertNull(created.getContainer().getCapacityWeight());
+
+        ItemRequest form = mapper.toRequest(item);
+        assertFalse(json.readTree(json.writeValueAsString(form)).has("containerSet"));
+    }
 
     /** Части урона и боевые поля оружия доезжают до записи и обратно в форму. */
     @Test

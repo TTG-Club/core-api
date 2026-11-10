@@ -300,6 +300,8 @@ public class VttgMagicItemMapper {
                 // Расход: признак самой записи, применение «при использовании»,
                 // расходуемая основа либо сам боеприпас
                 .consumable(consumable(item, mechanics, ammunition))
+                // Хранилище — признак самой записи: от основы не наследуется
+                .container(VttgItemMapper.container(item.getContainer()))
                 .activeWhenCarried(activeWhenCarried(item))
                 .isAdamantine(item.isAdamantine())
                 .magicAttunement(requiresAttunement ? "required" : "none")

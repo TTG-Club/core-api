@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.common.model.Roll;
 import club.ttg.dnd5.domain.item.model.Armor;
 import club.ttg.dnd5.domain.item.model.Item;
+import club.ttg.dnd5.domain.item.model.ItemContainer;
 import club.ttg.dnd5.domain.item.model.ItemType;
 import club.ttg.dnd5.domain.item.model.tool.Tool;
 import club.ttg.dnd5.domain.item.model.weapon.AmmunitionType;
@@ -543,6 +544,25 @@ class VttgItemMapperTest {
 
         item.setActiveEffects(List.of());
         assertFalse(json(item).has("activeEffects"));
+    }
+
+    /** Хранилище: вместимость уходит числом, невесомость — только когда true; обычный предмет без поля. */
+    @Test
+    void exportsContainer() {
+        Item backpack = baseItem("backpack-phb", "Рюкзак", "Backpack");
+        backpack.setContainer(new ItemContainer(30.0, false));
+        JsonNode container = json(backpack).get("container");
+        assertEquals(30, container.get("capacityWeight").asInt());
+        assertFalse(container.has("weightless"));
+
+        Item box = baseItem("box", "Ящик", "Box");
+        box.setContainer(new ItemContainer());
+        JsonNode empty = json(box).get("container");
+        assertTrue(empty.isObject());
+        assertEquals(0, empty.size());
+
+        Item rope = baseItem("rope-phb", "Верёвка", "Rope");
+        assertFalse(json(rope).has("container"));
     }
 
     private JsonNode json(Item item) {
