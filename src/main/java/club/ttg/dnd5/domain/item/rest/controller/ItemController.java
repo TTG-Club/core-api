@@ -23,7 +23,7 @@ import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v2/item")
+@RequestMapping({"/api/v2/items", "/api/v2/item"})
 @Tag(name = "Снаряжение и предметы", description = "REST API снаряжение и прочие предметы")
 public class ItemController {
     private final ItemFilterService itemFilterService;
