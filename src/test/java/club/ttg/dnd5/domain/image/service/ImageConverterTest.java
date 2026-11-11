@@ -67,6 +67,68 @@ class ImageConverterTest {
         assertEquals("jpg", fromJpeg.extension());
     }
 
+    @Test
+    void wideImageIsScaledDownProportionally() throws IOException {
+        BufferedImage result = decode(ImageConverter.toWebp(write(sized(4096, 1024, false), "png"),
+                "image/png", "wide.png", WebpOptions.lossless().resizeToFit(2048, 2048)).bytes());
+
+        assertEquals(2048, result.getWidth());
+        assertEquals(512, result.getHeight());
+    }
+
+    @Test
+    void tallImageIsScaledDownProportionally() throws IOException {
+        BufferedImage result = decode(ImageConverter.toWebp(write(sized(1000, 3000, false), "png"),
+                "image/png", "tall.png", WebpOptions.lossless().resizeToFit(2048, 2048)).bytes());
+
+        assertEquals(683, result.getWidth());
+        assertEquals(2048, result.getHeight());
+    }
+
+    @Test
+    void smallImageKeepsItsSize() throws IOException {
+        BufferedImage result = decode(ImageConverter.toWebp(write(sized(800, 600, false), "png"),
+                "image/png", "small.png", WebpOptions.lossless().resizeToFit(2048, 2048)).bytes());
+
+        assertEquals(800, result.getWidth());
+        assertEquals(600, result.getHeight());
+    }
+
+    @Test
+    void transparencySurvivesResize() throws IOException {
+        BufferedImage result = decode(ImageConverter.toWebp(write(sized(5000, 2500, true), "png"),
+                "image/png", "alpha.png", WebpOptions.lossless().resizeToFit(2048, 2048)).bytes());
+
+        assertEquals(2048, result.getWidth());
+        assertEquals(1024, result.getHeight());
+        assertEquals(0, result.getRGB(result.getWidth() - 1, 0) >>> 24, "правая половина должна остаться прозрачной");
+    }
+
+    @Test
+    void extremelyThinImageDoesNotCollapseToZero() throws IOException {
+        BufferedImage result = decode(ImageConverter.toWebp(write(sized(9000, 1, false), "png"),
+                "image/png", "line.png", WebpOptions.lossless().resizeToFit(2048, 2048)).bytes());
+
+        assertEquals(2048, result.getWidth());
+        assertEquals(1, result.getHeight());
+    }
+
+    /** Картинка заданного размера; с alpha — левая половина залита, правая прозрачная. */
+    static BufferedImage sized(int w, int h, boolean alpha) {
+        BufferedImage image = new BufferedImage(w, h, alpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        g.setColor(Color.ORANGE);
+        g.fillRect(0, 0, alpha ? w / 2 : w, h);
+        g.dispose();
+        return image;
+    }
+
+    private static BufferedImage decode(byte[] bytes) throws IOException {
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));
+        assertNotNull(image);
+        return image;
+    }
+
     private static BufferedImage opaqueImage() {
         BufferedImage image = new BufferedImage(16, 9, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
@@ -89,7 +151,7 @@ class ImageConverterTest {
         return ImageConverter.toWebp(write(image, "png"), "image/png", "cover.png", WebpOptions.lossless()).bytes();
     }
 
-    private static byte[] write(BufferedImage image, String format) throws IOException {
+    static byte[] write(BufferedImage image, String format) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ImageIO.write(image, format, out);
         return out.toByteArray();

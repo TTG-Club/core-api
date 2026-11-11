@@ -232,6 +232,10 @@ public final class ImageConverter
                 targetW = (int) Math.round(targetW * k);
             }
 
+            // У очень вытянутых картинок вторая сторона при округлении может обнулиться
+            targetW = Math.max(1, targetW);
+            targetH = Math.max(1, targetH);
+
             if (targetW != w || targetH != h)
             {
                 image = resize(image, targetW, targetH, options.highQualityResize);
@@ -257,7 +261,35 @@ public final class ImageConverter
         return image;
     }
 
+    /**
+     * Масштабирует картинку до заданного размера. В качественном режиме сильное уменьшение делается
+     * в несколько шагов (каждый — не больше чем вдвое): бикубика за один проход из 6000 px в 2048 px
+     * берёт лишь часть исходных пикселей, и на мелких деталях появляются «лесенки» и муар.
+     */
     private static BufferedImage resize(BufferedImage src, int targetW, int targetH, boolean highQuality)
+    {
+        if (!highQuality)
+        {
+            return resizeOnce(src, targetW, targetH, false);
+        }
+
+        BufferedImage current = src;
+        int w = src.getWidth();
+        int h = src.getHeight();
+        while (w / 2 >= targetW && h / 2 >= targetH)
+        {
+            w /= 2;
+            h /= 2;
+            current = resizeOnce(current, w, h, true);
+        }
+        if (w != targetW || h != targetH)
+        {
+            current = resizeOnce(current, targetW, targetH, true);
+        }
+        return current;
+    }
+
+    private static BufferedImage resizeOnce(BufferedImage src, int targetW, int targetH, boolean highQuality)
     {
         int type = src.getColorModel().hasAlpha() ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
 
