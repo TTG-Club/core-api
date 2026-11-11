@@ -366,6 +366,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/2026/09/25-02-player-bastion-turns-orders-treasury.yaml
   - include:
+      file: db/changelog/2026/09/25-03-clear-basic-facility-space.yaml
+  - include:
       file: db/changelog/2026/09/26-01-create-vttg-compendium-version.yaml
   - include:
       file: db/changelog/2026/10/06-01-drop-link-image-url.yaml

@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-09-25-03-clear-basic-facility-space
+      author: Magistrus
+      changes:
+        # Пространство базового сооружения выбирает игрок при закладке бастиона.
+        - sql:
+            sql: UPDATE bastion_facility SET space = NULL WHERE category = 'BASIC'

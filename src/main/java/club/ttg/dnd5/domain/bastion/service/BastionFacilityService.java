@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.bastion.service;
 
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
+import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionFacilityDetailResponse;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionFacilityQueryRequest;
@@ -68,6 +69,7 @@ public class BastionFacilityService {
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(BastionFacilityRequest request) {
         validateOrders(request);
+        clearBasicSpace(request);
         if (facilityRepository.existsById(request.getUrl())) {
             throw new EntityExistException(String.format("Сооружение бастиона с url %s уже существует",
                     request.getUrl()));
@@ -81,6 +83,7 @@ public class BastionFacilityService {
     @Transactional
     public String update(String url, BastionFacilityRequest request) {
         validateOrders(request);
+        clearBasicSpace(request);
         BastionFacility existing = findByUrl(url);
         Source source = findSource(request);
 
@@ -113,6 +116,7 @@ public class BastionFacilityService {
 
     public BastionFacilityDetailResponse preview(final BastionFacilityRequest request) {
         validateOrders(request);
+        clearBasicSpace(request);
         return withResolvedChoices(facilityMapper.toDetail(facilityMapper.toEntity(request, findSource(request))));
     }
 
@@ -135,6 +139,16 @@ public class BastionFacilityService {
         if (inOrders || inOptions) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Приказ «Обслуживать» отдаётся всему бастиону и не может быть приказом сооружения");
+        }
+    }
+
+    /**
+     * Пространство базового сооружения выбирает игрок при закладке бастиона, поэтому в
+     * справочнике у базовых его нет.
+     */
+    private static void clearBasicSpace(BastionFacilityRequest request) {
+        if (request.getCategory() == FacilityCategory.BASIC) {
+            request.setSpace(null);
         }
     }
 
