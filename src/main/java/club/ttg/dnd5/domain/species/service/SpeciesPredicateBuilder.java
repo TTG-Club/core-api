@@ -39,9 +39,29 @@ public class SpeciesPredicateBuilder
         {
             builder.and(PARENT_URL_PATH.isNull());
         }
+        applyCommonFilters(builder, request);
+        return builder;
+    }
+
+    /**
+     * Отбор происхождений (подвидов): та же выдача с фильтрами раздела, но только
+     * происхождения. Нужен окну выбора происхождений в редакторах — общий список
+     * их не отдаёт, а ручка всех происхождений не умеет ни искать, ни фильтровать.
+     */
+    public BooleanBuilder buildLineages(final SpeciesQueryRequest request)
+    {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(Q.isHiddenEntity.isFalse());
+        builder.and(PredicateUtils.buildTextSearch(request.getSearch(), Q.name, Q.english, Q.alternative));
+        builder.and(PARENT_URL_PATH.isNotNull());
+        applyCommonFilters(builder, request);
+        return builder;
+    }
+
+    private void applyCommonFilters(final BooleanBuilder builder, final SpeciesQueryRequest request)
+    {
         PredicateUtils.applyFilterEnum(builder, request.getCreatureType(), TYPE_PATH, CreatureType.class);
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "species", "source");
         PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
-        return builder;
     }
 }

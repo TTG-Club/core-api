@@ -46,4 +46,18 @@ class ClassPredicateBuilderTest {
 
         assertTrue(ClassPredicateBuilder.build(request).toString().contains(PARENT_IS_NULL));
     }
+
+    /** Выдача подклассов: только подклассы — и без поиска, и с поиском. */
+    @Test
+    void subclassesKeepOnlySubclasses() {
+        var request = new ClassQueryRequest();
+
+        assertTrue(ClassPredicateBuilder.buildSubclasses(request).toString()
+                .contains("characterClass.parentUrl is not null"));
+
+        request.setSearch("рыцарь");
+
+        assertTrue(ClassPredicateBuilder.buildSubclasses(request).toString()
+                .contains("characterClass.parentUrl is not null"));
+    }
 }

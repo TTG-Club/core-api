@@ -73,6 +73,14 @@ public class ClassController {
         return classService.getSubclasses();
     }
 
+    @Operation(summary = "Поиск подклассов", description = "Поиск подклассов с GET-параметрами фильтрации классов")
+    @GetMapping("/subclasses/search")
+    public List<ClassShortResponse> searchSubclasses(
+            @ParameterObject @ModelAttribute ClassQueryRequest request)
+    {
+        return classService.searchSubclasses(request);
+    }
+
     @GetMapping("/{parentUrl}/subclasses")
     public List<ClassShortResponse> getSubClassesByParentUrl(@PathVariable String parentUrl) {
         return classService.getSubclasses(parentUrl);

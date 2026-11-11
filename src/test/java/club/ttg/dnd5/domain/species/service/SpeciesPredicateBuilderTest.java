@@ -50,4 +50,18 @@ class SpeciesPredicateBuilderTest {
 
         assertTrue(SpeciesPredicateBuilder.build(request).toString().contains(PARENT_IS_NULL));
     }
+
+    /** Выдача происхождений: только подвиды — и без поиска, и с поиском. */
+    @Test
+    void lineagesKeepOnlySubspecies() {
+        var request = new SpeciesQueryRequest();
+
+        assertTrue(SpeciesPredicateBuilder.buildLineages(request).toString()
+                .contains("species.parent_url is not null"));
+
+        request.setSearch("дроу");
+
+        assertTrue(SpeciesPredicateBuilder.buildLineages(request).toString()
+                .contains("species.parent_url is not null"));
+    }
 }

@@ -80,6 +80,14 @@ public class ClassService {
                 .collect(Collectors.toList());
     }
 
+    public List<ClassShortResponse> searchSubclasses(ClassQueryRequest request) {
+        var predicate = ClassPredicateBuilder.buildSubclasses(request);
+        return classQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+                .stream()
+                .map(classMapper::toShort)
+                .collect(Collectors.toList());
+    }
+
     public boolean exists(String url) {
         return classRepository.existsById(url);
     }

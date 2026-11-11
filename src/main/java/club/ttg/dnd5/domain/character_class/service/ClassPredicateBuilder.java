@@ -44,6 +44,36 @@ public class ClassPredicateBuilder
             builder.and(Q.parentUrl.isNull());
         }
 
+        applyCommonFilters(builder, request);
+
+        return builder;
+    }
+
+    /**
+     * Отбор подклассов: та же выдача с фильтрами раздела, но только подклассы.
+     * Нужен окну выбора подклассов в редакторах — общий список их не отдаёт, а
+     * ручка всех подклассов не умеет ни искать, ни фильтровать, ни листать.
+     */
+    public BooleanBuilder buildSubclasses(final ClassQueryRequest request)
+    {
+        BooleanBuilder builder = new BooleanBuilder();
+
+        builder.and(Q.isHiddenEntity.isFalse());
+        builder.and(PredicateUtils.buildTextSearch(
+                request.getSearch(),
+                Q.name,
+                Q.english,
+                Q.alternative
+        ));
+        builder.and(Q.parentUrl.isNotNull());
+
+        applyCommonFilters(builder, request);
+
+        return builder;
+    }
+
+    private void applyCommonFilters(final BooleanBuilder builder, final ClassQueryRequest request)
+    {
         PathBuilder<Object> characterClass = new PathBuilder<>(Object.class, Q.getMetadata());
 
         applyEnumOrdinalFilter(
@@ -55,8 +85,6 @@ public class ClassPredicateBuilder
 
         PredicateUtils.applySourcesFilter(builder, request.getSource(), "characterClass", "source");
         PredicateUtils.applyStringFilter(builder, request.getSrdVersion(), Q.srdVersion);
-
-        return builder;
     }
 
     public void applyEnumOrdinalFilter(

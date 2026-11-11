@@ -79,6 +79,13 @@ public class SpeciesController {
         return speciesService.getLineages();
     }
 
+    @Operation(summary = "Поиск происхождений", description = "Поиск происхождений (подвидов) с GET-параметрами фильтрации видов")
+    @GetMapping("/lineages/search")
+    public List<SpeciesShortResponse> searchLineages(@ParameterObject SpeciesQueryRequest request)
+    {
+        return speciesService.searchLineages(request);
+    }
+
     @GetMapping("/{url}/lineages")
     @Operation(summary = "Получить подвиды по URL родительского вида",
             description = "Возвращает список подвидов, связанных с указанным родительским видом по его URL.")
