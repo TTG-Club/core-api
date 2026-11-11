@@ -74,13 +74,14 @@ public class CommunityNewsRequest {
             + "появится на сайте сама. Если не задана при публикации — ставится «сейчас»")
     private Instant publishDateTime;
 
-    @NotBlank
-    @Schema(description = "Текст превью (разметка)")
+    @Nullable
+    @Schema(description = "Анонс (разметка). Сайт его больше не использует — может отсутствовать")
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @JsonSerialize(using = FormattedMarkupOrEmptySerializer.class, nullsUsing = FormattedMarkupOrEmptySerializer.class)
     private String preview;
 
-    @Schema(description = "Полный текст (разметка). Может быть пустым — новость состоит из одного превью")
+    @NotBlank
+    @Schema(description = "Текст новости (разметка). Обязателен")
     @JsonDeserialize(using = MarkupDescriptionDeserializer.class)
     @JsonSerialize(using = FormattedMarkupOrEmptySerializer.class, nullsUsing = FormattedMarkupOrEmptySerializer.class)
     private String content;

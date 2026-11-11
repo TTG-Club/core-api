@@ -4,6 +4,10 @@ import club.ttg.dnd5.domain.communitynews.model.CommunityNewsRoles;
 import club.ttg.dnd5.domain.communitynews.rest.dto.CommunityNewsRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.security.access.annotation.Secured;
@@ -123,5 +127,30 @@ class CommunityNewsControllerTest {
         CommunityNewsRequest back = new ObjectMapper().findAndRegisterModules()
                 .readValue("{\"content\":\"\",\"preview\":\"[\\\"анонс\\\"]\"}", CommunityNewsRequest.class);
         assertEquals("", back.getContent());
+    }
+
+    @Test
+    void previewIsOptionalAndContentIsRequired() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+            Validator validator = factory.getValidator();
+
+            // Сайт анонс не отправляет: новость без preview, но с текстом — валидна.
+            CommunityNewsRequest withoutPreview = objectMapper.readValue(
+                    "{\"url\":\"news\",\"title\":\"Новость\",\"content\":\"[\\\"текст\\\"]\"}",
+                    CommunityNewsRequest.class);
+            assertTrue(validator.validate(withoutPreview).isEmpty());
+
+            // Без текста — ошибка именно по content.
+            CommunityNewsRequest withoutContent = objectMapper.readValue(
+                    "{\"url\":\"news\",\"title\":\"Новость\",\"content\":\"\"}",
+                    CommunityNewsRequest.class);
+            Set<String> invalidFields = validator.validate(withoutContent).stream()
+                    .map(ConstraintViolation::getPropertyPath)
+                    .map(Object::toString)
+                    .collect(Collectors.toSet());
+            assertEquals(Set.of("content"), invalidFields);
+        }
     }
 }

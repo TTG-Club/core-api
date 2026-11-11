@@ -137,9 +137,8 @@ class VideoUrlsTest {
         request.setUrl("news");
         request.setTitle("Новость");
         request.setAuthorName("");
-        request.setPreview("[\"текст\"]");
-        request.setContent("");
-        assertTrue(validator.validate(request).isEmpty(), "пустые автор и текст допустимы");
+        request.setContent("[\"текст\"]");
+        assertTrue(validator.validate(request).isEmpty(), "пустые автор и анонс допустимы");
 
         request.setSourceUrl("ftp://example.com");
         request.setVideoUrl("http://youtu.be/x");
