@@ -5,12 +5,14 @@ import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.repository.BastionFacilityRepository;
+import club.ttg.dnd5.domain.bastion.rest.dto.BastionFacilityDetailResponse;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionFacilityRequest;
 import club.ttg.dnd5.domain.bastion.rest.mapper.BastionFacilityMapper;
 import club.ttg.dnd5.domain.item.repository.ItemRepository;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.exception.ApiException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,18 +20,26 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class BastionFacilityServiceTest {
     private final BastionFacilityRepository repository = mock(BastionFacilityRepository.class);
+    private final BastionFacilityMapper mapper = mock(BastionFacilityMapper.class);
     private final BastionFacilityService service = new BastionFacilityService(
             repository,
             mock(SourceService.class),
-            mock(BastionFacilityMapper.class),
+            mapper,
             mock(BastionFacilityQueryDslSearchService.class),
             mock(EntityRevisionService.class),
             new FacilityChoiceOptions(mock(ItemRepository.class)));
+
+    @BeforeEach
+    void stubMapper() {
+        when(mapper.toDetail(any())).thenReturn(new BastionFacilityDetailResponse());
+    }
 
     /** «Обслуживать» отдаётся всему бастиону — сооружение его не принимает. */
     @Test
