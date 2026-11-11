@@ -421,3 +421,5 @@ databaseChangeLog:
       file: db/changelog/2026/11/10-01-article-video-url.yaml
   - include:
       file: db/changelog/2026/11/10-02-create-community-news-table.yaml
+  - include:
+      file: db/changelog/2026/11/11-01-notification-view-column.yaml

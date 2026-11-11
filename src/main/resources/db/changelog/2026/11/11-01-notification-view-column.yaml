@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-11-01-notification-view-column
+      author: Peterko
+      comment: >
+        Колонку notification.view (лимит показов рекламы) ни одна миграция не
+        создавала: на старой базе она появилась вне Liquibase, а база, поднятая
+        с нуля, осталась без неё, и GET /api/v2/notification падал с 500.
+        Без значения по умолчанию: null = показывать без ограничения, а 0
+        скрыл бы все существующие уведомления.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: notification
+                columnName: view
+      changes:
+        - addColumn:
+            tableName: notification
+            columns:
+              - column:
+                  name: view
+                  type: BIGINT
+      rollback:
+        - dropColumn:
+            tableName: notification
+            columnName: view
