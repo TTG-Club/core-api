@@ -2,7 +2,12 @@ package club.ttg.dnd5.domain.common.rest.controller;
 
 import club.ttg.dnd5.domain.common.model.OnlineType;
 import club.ttg.dnd5.domain.common.service.OnlineUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,12 +33,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v2/online")
+@Tag(name = "Онлайн",
+        description = "REST API онлайна: кто сейчас на сайте и пользуются ли его инструментами. "
+                + "Считает всё online-service, эти ручки — посредник к нему")
 public class OnlineUserController
 {
     private static final String VISITOR_COOKIE = "visitorId";
 
     private final OnlineUserService service;
 
+    @Operation(summary = "Отметить, что посетитель на сайте, и узнать, сколько сейчас онлайн. Открыто всем. "
+            + "Без тела посетитель определяется по авторизации или по cookie visitorId (гостю она выставляется)")
     @PostMapping("/heartbeat")
     public ResponseEntity<OnlineUserService.HeartbeatResponse> heartbeat(
             @CookieValue(name = VISITOR_COOKIE, required = false) String visitorId,
@@ -95,6 +105,23 @@ public class OnlineUserController
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Сайт раз в минуту сообщает, сколько секунд посетитель работал с инструментом. Открыто всем:
+     * гости тоже пользуются инструментами.
+     */
+    @Operation(summary = "Отметить время работы посетителя с инструментом сайта (например, ширмой Мастера). "
+            + "Открыто всем, слать раз в минуту, пока с инструментом работают. Ответ — 204; "
+            + "нарушение правил полей — 400")
+    @PostMapping("/usage")
+    public ResponseEntity<Void> usage(@Valid @RequestBody OnlineUsageRequest request)
+    {
+        service.usage(request.feature(), request.key(), request.type(), request.activeSeconds());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Сколько посетителей было на сайте за последние windowMinutes минут "
+            + "(от 1 до 1440): гости, зарегистрированные и всего")
     @GetMapping("/count")
     public Map<String, Object> count(@RequestParam(defaultValue = "30") long windowMinutes)
     {
@@ -111,6 +138,8 @@ public class OnlineUserController
         );
     }
 
+    @Operation(summary = "Статистика для админки по всем сайтам: онлайн, настройки отображения "
+            + "и работа с инструментами за разные периоды. Только для роли ADMIN")
     @Secured("ADMIN")
     @GetMapping("/stats")
     public OnlineUserService.OnlineAdminStatsResponse stats()
@@ -132,14 +161,18 @@ public class OnlineUserController
         return authentication.getName();
     }
 
+    @Schema(description = "Отметка о том, что посетитель на сайте")
     public record OnlineHeartbeatRequest(
+            @Schema(description = "Кто на сайте: имя пользователя или UUID гостя")
             @NotBlank
             @Size(max = 128)
             String key,
 
+            @Schema(description = "UUID, под которым посетитель был гостем до входа")
             @Size(max = 128)
             String previousGuestKey,
 
+            @Schema(description = "Гость или зарегистрированный пользователь")
             @NotNull
             OnlineType type,
 
@@ -147,7 +180,31 @@ public class OnlineUserController
              * Настройки отображения посетителя (тема, ширина сайта) для статистики в админке.
              * Не обязательны: online-service сам отбросит то, что не отслеживает.
              */
+            @Schema(description = "Настройки отображения посетителя (тема, ширина сайта): имя настройки - значение")
             @Size(max = 8)
             Map<String, String> preferences
+    ) {}
+
+    @Schema(description = "Отметка о времени работы посетителя с инструментом сайта")
+    public record OnlineUsageRequest(
+            @Schema(description = "Инструмент сайта", example = "dm-screen")
+            @NotBlank
+            @Size(max = 32)
+            String feature,
+
+            @Schema(description = "Кто работал: имя пользователя или UUID гостя")
+            @NotBlank
+            @Size(max = 128)
+            String key,
+
+            @Schema(description = "Гость или зарегистрированный пользователь")
+            @NotNull
+            OnlineType type,
+
+            @Schema(description = "Сколько секунд посетитель работал с инструментом с прошлой отметки", example = "60")
+            @NotNull
+            @Min(0)
+            @Max(300)
+            Integer activeSeconds
     ) {}
 }

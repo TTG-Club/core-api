@@ -41,6 +41,24 @@ class RateLimitFilterTest
     }
 
     @Test
+    void usageEndpointSkipsRateLimit() throws ServletException, IOException
+    {
+        // Отметки идут раз в минуту с каждой открытой вкладки и не должны тратить лимит посетителя.
+        RateLimitFilter filter = singleTokenFilter();
+
+        for (int i = 0; i < 3; i++)
+        {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v2/online/usage");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            filter.doFilter(request, response, new MockFilterChain());
+
+            assertEquals(200, response.getStatus());
+            assertNull(response.getHeader("X-RateLimit-Remaining"));
+        }
+    }
+
+    @Test
     void otherEndpointsUseRateLimit() throws ServletException, IOException
     {
         RateLimitProperties properties = new RateLimitProperties();

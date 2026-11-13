@@ -154,6 +154,14 @@ public class SpeciesService {
                 .collect(Collectors.toList());
     }
 
+    public List<SpeciesShortResponse> searchLineages(SpeciesQueryRequest request) {
+        var predicate = SpeciesPredicateBuilder.buildLineages(request);
+        return speciesQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize())
+                .stream()
+                .map(speciesMapper::toShort)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     @CacheEvict(cacheNames = "countAllMaterials")
     public String save(SpeciesRequest request) {

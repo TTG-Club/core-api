@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.common.service;
 
 import club.ttg.dnd5.config.properties.OnlineServiceProperties;
 import club.ttg.dnd5.domain.common.model.OnlineType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -54,6 +55,31 @@ public class OnlineUserService
                     .body(HeartbeatResponse.class);
 
             return response == null ? new HeartbeatResponse(0) : response;
+        }
+        catch (RestClientResponseException ex)
+        {
+            throw asResponseStatusException(ex);
+        }
+        catch (RestClientException ex)
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Online service is unavailable", ex);
+        }
+    }
+
+    /**
+     * Отметка о работе посетителя с инструментом сайта (например, ширмой Мастера). Считает всё
+     * online-service, мы только добавляем сайт и служебный токен.
+     */
+    public void usage(String feature, String key, OnlineType type, int activeSeconds)
+    {
+        try
+        {
+            restClient.post()
+                    .uri("/api/v1/online/usage")
+                    .headers(this::addServiceHeaders)
+                    .body(new UsageRequest(properties.getSiteId(), feature, key, type, activeSeconds))
+                    .retrieve()
+                    .toBodilessEntity();
         }
         catch (RestClientResponseException ex)
         {
@@ -159,32 +185,110 @@ public class OnlineUserService
 
     public record HeartbeatResponse(long total) {}
 
+    public record UsageRequest(String siteId, String feature, String key, OnlineType type, int activeSeconds) {}
+
     /**
-     * @param players сколько посетителей сейчас в игровых мирах. Это подмножество гостей и
-     *                зарегистрированных, поэтому в {@code total} оно не складывается. Поле
-     *                отдаёт только online-service, и мы обязаны его пронести дальше: без него
-     *                админка не отличит «никто не играет» от «числа нет».
-     * @param preferences чем пользуются посетители сайта (тема, ширина сайта) за разные периоды.
-     *                    Без этого поля срезы не дошли бы до админки.
+     * Поля {@code players}, {@code preferences} и {@code usage} отдаёт только online-service, и мы
+     * обязаны пронести их дальше: иначе до админки они не дойдут.
      */
+    @Schema(description = "Статистика одного сайта")
     public record OnlineStatsResponse(
+            @Schema(description = "За сколько последних минут посчитан онлайн")
             long windowMinutes,
+
+            @Schema(description = "Сайт", example = "5e24")
             String siteId,
+
+            @Schema(description = "Сколько гостей онлайн")
             long guests,
+
+            @Schema(description = "Сколько зарегистрированных пользователей онлайн")
             long registered,
+
+            @Schema(description = "Сколько посетителей сейчас в игровых мирах. Это часть гостей и "
+                    + "зарегистрированных, в total они второй раз не складываются")
             long players,
+
+            @Schema(description = "Всего онлайн: гости и зарегистрированные")
             long total,
-            List<PreferencePeriodStats> preferences
+
+            @Schema(description = "Чем пользуются посетители (тема, ширина сайта) за разные периоды")
+            List<PreferencePeriodStats> preferences,
+
+            @Schema(description = "Работа с инструментами сайта (например, ширмой Мастера) за разные периоды. "
+                    + "Пока online-service не обновлён, поля нет — придёт null", nullable = true)
+            List<FeatureUsageStats> usage
+    ) {}
+
+    @Schema(description = "Настройки отображения посетителей за период")
+    public record PreferencePeriodStats(
+            @Schema(description = "За сколько последних суток (включая сегодня) посчитаны посетители")
+            int days,
+
+            @Schema(description = "Имя настройки - значение - число уникальных посетителей")
+            Map<String, Map<String, Long>> preferences
+    ) {}
+
+    @Schema(description = "Работа с одним инструментом сайта")
+    public record FeatureUsageStats(
+            @Schema(description = "Инструмент сайта", example = "dm-screen")
+            String feature,
+
+            @Schema(description = "Те же числа за разные периоды")
+            List<UsagePeriodStats> periods
     ) {}
 
     /**
-     * @param days        за сколько последних суток (включая сегодня) посчитаны посетители
-     * @param preferences имя настройки - значение - число уникальных посетителей
+     * «Засчитанный день» посетителя — день, в который он набрал не меньше порога времени работы.
+     * Порог задаётся в online-service; открыть страницу и уйти — не в счёт.
      */
-    public record PreferencePeriodStats(int days, Map<String, Map<String, Long>> preferences) {}
+    @Schema(description = "Работа с инструментом за период. «Засчитанный день» посетителя — день, в который "
+            + "он проработал с инструментом не меньше порога, заданного в online-service")
+    public record UsagePeriodStats(
+            @Schema(description = "За сколько последних суток (включая сегодня) посчитан срез")
+            int days,
 
-    public record OnlineCount(long guests, long registered, long players, long total) {}
+            @Schema(description = "Сколько разных посетителей открывали инструмент")
+            long visitors,
 
-    public record OnlineAdminStatsResponse(long windowMinutes, OnlineCount total, List<OnlineStatsResponse> sites) {}
+            @Schema(description = "Сколько из них действительно работали: есть хотя бы один засчитанный день")
+            long users,
+
+            @Schema(description = "Сколько возвращались: два и более засчитанных дня")
+            long returning,
+
+            @Schema(description = "Сколько всего засчитанных дней, сумма по посетителям")
+            long activeDays,
+
+            @Schema(description = "Сколько минут набрано за засчитанные дни, с округлением вниз")
+            long activeMinutes
+    ) {}
+
+    @Schema(description = "Число посетителей онлайн")
+    public record OnlineCount(
+            @Schema(description = "Гости")
+            long guests,
+
+            @Schema(description = "Зарегистрированные пользователи")
+            long registered,
+
+            @Schema(description = "Сколько из них сейчас в игровых мирах; в total второй раз не складываются")
+            long players,
+
+            @Schema(description = "Всего: гости и зарегистрированные")
+            long total
+    ) {}
+
+    @Schema(description = "Статистика онлайна для админки")
+    public record OnlineAdminStatsResponse(
+            @Schema(description = "За сколько последних минут посчитан онлайн")
+            long windowMinutes,
+
+            @Schema(description = "Онлайн по всем сайтам вместе")
+            OnlineCount total,
+
+            @Schema(description = "То же по каждому сайту, плюс настройки отображения и работа с инструментами")
+            List<OnlineStatsResponse> sites
+    ) {}
 }
 

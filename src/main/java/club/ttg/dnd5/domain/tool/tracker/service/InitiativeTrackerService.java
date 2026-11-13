@@ -298,7 +298,7 @@ public class InitiativeTrackerService {
         if (!StringUtils.hasText(request.getName())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Укажите имя игрока");
         }
-        validatePlayerLimit(tracker.getId(), 1);
+        validatePlayerLimit(tracker.getId());
         InitiativeParticipant participant =
                 newParticipant(tracker, ParticipantType.PLAYER, participantRepository.findMaxSeq(tracker.getId()) + 1);
         participant.setName(request.getName().trim());
@@ -368,8 +368,8 @@ public class InitiativeTrackerService {
         return participant;
     }
 
-    private void validatePlayerLimit(UUID trackerId, int toAdd) {
-        if (participantRepository.countByTrackerIdAndType(trackerId, ParticipantType.PLAYER) + toAdd
+    private void validatePlayerLimit(UUID trackerId) {
+        if (participantRepository.countByTrackerIdAndType(trackerId, ParticipantType.PLAYER) + 1
                 > MAX_PLAYERS_PER_TRACKER) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     String.format("Достигнут лимит игроков в трекере: %d", MAX_PLAYERS_PER_TRACKER));
