@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-13-01-create-dm-screen-table
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            tableName: dm_screen
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_dm_screen
+                  name: id
+                  type: uuid
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              # Окна ширмы целиком: записи сайта и заметки мастера в порядке клиента.
+              - column:
+                  name: windows
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: datetime
+              - column:
+                  name: updated_at
+                  type: datetime
+              - column:
+                  name: username
+                  type: varchar(255)
+              - column:
+                  name: last_username
+                  type: varchar(255)
+  - changeSet:
+      id: 2026-11-13-01-create-dm-screen-user-index
+      author: Peterko
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        # Ширма у пользователя одна: уникальность владельца не даёт завести вторую
+        # даже при одновременных первых сохранениях.
+        - createIndex:
+            columns:
+              - column:
+                  name: user_id
+            indexName: dm_screen_user_id_index
+            tableName: dm_screen
+            unique: true
