@@ -30,6 +30,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class RateLimitFilter extends OncePerRequestFilter
 {
     private static final String ONLINE_HEARTBEAT_PATH = "/api/v2/online/heartbeat";
+    /** Минутные отметки работы с инструментом: иначе они съедали бы общий лимит запросов гостя. */
+    private static final String ONLINE_USAGE_PATH = "/api/v2/online/usage";
 
     private final RateLimitProperties properties;
 
@@ -47,7 +49,7 @@ public class RateLimitFilter extends OncePerRequestFilter
         if (path == null || path.isEmpty()) {
             path = request.getRequestURI();
         }
-        return ONLINE_HEARTBEAT_PATH.equals(path);
+        return ONLINE_HEARTBEAT_PATH.equals(path) || ONLINE_USAGE_PATH.equals(path);
     }
 
     @Override
