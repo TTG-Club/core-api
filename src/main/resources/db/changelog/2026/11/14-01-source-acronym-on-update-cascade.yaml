@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-14-01-source-acronym-on-update-cascade
+      author: Peterko
+      comment: >
+        Внешние ключи на source получают ON UPDATE CASCADE: смена акронима источника
+        одним UPDATE переносит ссылки всех разделов каталога.
+      changes:
+        - sqlFile:
+            path: sql/14-01-source-acronym-on-update-cascade.sql
+            relativeToChangelogFile: true
+            splitStatements: false

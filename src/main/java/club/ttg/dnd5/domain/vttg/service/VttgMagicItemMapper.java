@@ -374,7 +374,7 @@ public class VttgMagicItemMapper {
         // `duration`, `disabled` и `transfer` обязательны (по ним он идёт циклом
         // и сравнением), и эффект без них уронил бы сборку эффектов надетого.
         ActiveEffect effect = new ActiveEffect();
-        effect.setId(item.getUrl() + "-armor-class");
+        effect.setId(VttgUrlAliases.original(item.getUrl()) + "-armor-class");
         effect.setName(ARMOR_CLASS_EFFECT_NAME);
         effect.setDescription("");
         effect.setIcon(ARMOR_CLASS_EFFECT_ICON);
@@ -444,7 +444,8 @@ public class VttgMagicItemMapper {
      * <p>Slug — латиница/цифры/дефис (имя файла у VTTG = id).</p>
      */
     private String id(String url, String sourceKey) {
-        String slug = slug(url);
+        // Первоначальный адрес: id у пользователей VTTG не должен меняться вместе с адресом страницы.
+        String slug = slug(VttgUrlAliases.original(url));
         if (slug.isEmpty()) {
             return sourceKey;
         }
@@ -458,11 +459,12 @@ public class VttgMagicItemMapper {
      */
     private String variantUrl(MagicItem item, String base, Map<String, List<Item>> baseCache) {
         Item resolved = findBase(item.getCategory(), baseCache, base);
-        String suffix = resolved != null ? slug(resolved.getUrl()) : "";
+        String suffix = resolved != null ? slug(VttgUrlAliases.original(resolved.getUrl())) : "";
         if (suffix.isEmpty()) {
             suffix = slug(base);
         }
-        return suffix.isEmpty() ? item.getUrl() : item.getUrl() + "-" + suffix;
+        String url = VttgUrlAliases.original(item.getUrl());
+        return suffix.isEmpty() ? url : url + "-" + suffix;
     }
 
     /**
@@ -747,11 +749,12 @@ public class VttgMagicItemMapper {
 
     /** Url дополнительного варианта по связанному предмету: url предмета + slug url базы (стабильный, уникальный). */
     private String variantUrlForLinked(MagicItem item, Item base) {
-        String suffix = slug(base.getUrl());
+        String suffix = slug(VttgUrlAliases.original(base.getUrl()));
         if (suffix.isEmpty()) {
             suffix = slug(base.getName());
         }
-        return suffix.isEmpty() ? item.getUrl() : item.getUrl() + "-" + suffix;
+        String url = VttgUrlAliases.original(item.getUrl());
+        return suffix.isEmpty() ? url : url + "-" + suffix;
     }
 
     /**

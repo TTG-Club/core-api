@@ -136,6 +136,17 @@ public class VttgPayloadStore {
     }
 
     /**
+     * Payload, посчитанный в обход хранилища (черты), с первоначальными адресами записей
+     * ({@link VttgUrlAliases}). Пока адреса не меняли, DTO возвращается как есть.
+     */
+    public Object withOriginalUrls(Object dto) {
+        if (dto == null || !VttgUrlAliases.active()) {
+            return dto;
+        }
+        return VttgUrlAliases.apply(objectMapper.valueToTree(dto));
+    }
+
+    /**
      * Пересчитывает пакет url: гидрация + маппинг в одной read-only транзакции (маппер может
      * дочитывать ленивые связи). Если пакет падает целиком (например, сущность не гидрируется
      * из-за некорректного jsonb), деградирует до поштучной обработки: сбойные сущности
@@ -177,7 +188,7 @@ public class VttgPayloadStore {
         for (E entity : entities) {
             String url = urlOf.apply(entity);
             try {
-                JsonNode payload = objectMapper.valueToTree(toDto.apply(entity));
+                JsonNode payload = VttgUrlAliases.apply(objectMapper.valueToTree(toDto.apply(entity)));
                 payloads.put(url, payload);
                 recomputed.add(new VttgExport(type, url, payload, validStamp.get(url), schemaVersion));
             } catch (RuntimeException failure) {

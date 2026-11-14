@@ -427,3 +427,11 @@ databaseChangeLog:
       file: db/changelog/2026/11/11-01-notification-view-column.yaml
   - include:
       file: db/changelog/2026/11/13-01-create-dm-screen-table.yaml
+  - include:
+      file: db/changelog/2026/11/14-01-source-acronym-on-update-cascade.yaml
+  - include:
+      file: db/changelog/2026/11/14-02-source-vttg-key.yaml
+  - include:
+      file: db/changelog/2026/11/14-03-entity-url-history.yaml
+  - include:
+      file: db/changelog/2026/11/14-04-catalog-url-on-update-cascade.yaml

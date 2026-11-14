@@ -78,7 +78,8 @@ final class VttgToolKeys {
         if (!StringUtils.hasText(url)) {
             return null;
         }
-        String candidate = url.trim().toLowerCase(Locale.ROOT)
+        // Ключ по первоначальному адресу: после смены адреса страницы владение не теряется.
+        String candidate = VttgUrlAliases.original(url.trim()).toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "")
                 // Притяжательный апостроф: «Calligrapher's Supplies» на сайте становится

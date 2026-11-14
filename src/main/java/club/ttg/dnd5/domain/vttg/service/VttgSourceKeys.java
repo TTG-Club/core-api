@@ -16,7 +16,7 @@ import java.util.Map;
  * ({@code VttgChangesResponse#sources}). Разойдись эти два места — записи остались бы
  * без названия источника, поэтому и ключ записи, и ключ словаря считаются здесь.</p>
  */
-final class VttgSourceKeys {
+public final class VttgSourceKeys {
     /** Ключ, когда источник не указан. */
     static final String FALLBACK = "srd";
     /** Поле записи с ключом источника. */
@@ -38,16 +38,34 @@ final class VttgSourceKeys {
      * <p>{@code PHB24} сводится к {@code phb}: в TTG Club это отдельный источник, а в
      * вокабуляре VTTG «Книга игрока» одна.</p>
      *
+     * <p>Если у источника меняли акроним, ключ остаётся прежним ({@link Source#getVttgKey()}):
+     * по нему у пользователей VTTG названы файлы записей и собраны ссылки между ними.</p>
+     *
      * @param source источник сущности; {@code null} — источник не задан
      */
-    static String of(Source source) {
-        if (source == null || !StringUtils.hasText(source.getAcronym())) {
+    public static String of(Source source) {
+        if (source == null) {
             return FALLBACK;
         }
-        if ("PHB24".equalsIgnoreCase(source.getAcronym())) {
+        if (StringUtils.hasText(source.getVttgKey())) {
+            return source.getVttgKey();
+        }
+        return ofAcronym(source.getAcronym());
+    }
+
+    /**
+     * Ключ, который получает источник с таким акронимом, пока акроним не меняли.
+     *
+     * @param acronym акроним источника
+     */
+    public static String ofAcronym(String acronym) {
+        if (!StringUtils.hasText(acronym)) {
+            return FALLBACK;
+        }
+        if ("PHB24".equalsIgnoreCase(acronym)) {
             return "phb";
         }
-        return source.getAcronym().toLowerCase(Locale.ROOT);
+        return acronym.toLowerCase(Locale.ROOT);
     }
 
     /**

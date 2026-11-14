@@ -1,0 +1,63 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-14-03-entity-url-history
+      author: Peterko
+      comment: >
+        Прежние адреса записей каталога: по ним страницы продолжают открываться после
+        смены адреса (смена акронима источника). Цепочки схлопнуты: каждый прежний
+        адрес указывает на текущий. Таблицу не чистить — без неё старые ссылки умрут.
+      changes:
+        - createTable:
+            tableName: entity_url_history
+            columns:
+              - column:
+                  name: section
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_entity_url_history
+              - column:
+                  name: old_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_entity_url_history
+              - column:
+                  name: new_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: changed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: changed_by
+                  type: VARCHAR(255)
+        - createIndex:
+            tableName: entity_url_history
+            indexName: entity_url_history_new_url_index
+            columns:
+              - column:
+                  name: section
+              - column:
+                  name: new_url
+        - createTable:
+            tableName: vttg_url_alias
+            remarks: Текущий адрес записи → адрес, под которым она впервые ушла в выгрузку VTTG
+            columns:
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_vttg_url_alias
+              - column:
+                  name: original_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
