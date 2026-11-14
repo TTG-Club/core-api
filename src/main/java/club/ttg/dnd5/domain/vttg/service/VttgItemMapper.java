@@ -666,15 +666,8 @@ public class VttgItemMapper {
         return item.getTypes() != null && item.getTypes().contains(type);
     }
 
-    private double weight(String weight) {
-        if (!StringUtils.hasText(weight)) {
-            return 0;
-        }
-        Matcher matcher = LEADING_NUMBER.matcher(weight);
-        if (!matcher.find()) {
-            return 0;
-        }
-        return Double.parseDouble(matcher.group(1).replace(',', '.'));
+    private double weight(Double weight) {
+        return weight == null ? 0 : weight;
     }
 
     private int parseInt(String value) {

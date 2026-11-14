@@ -263,7 +263,7 @@ class VttgMagicItemMapperTest {
         base.setName("Длинный меч");
         base.setEnglish("Longsword");
         base.setDescription("");
-        base.setWeight("3 фунта");
+        base.setWeight(3.0);
         base.setCategory(ItemCategory.WEAPON);
         Weapon weapon = new Weapon();
         weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
@@ -467,7 +467,7 @@ class VttgMagicItemMapperTest {
         base.setName(name);
         base.setEnglish(english);
         base.setDescription("");
-        base.setWeight("0");
+        base.setWeight(0.0);
         base.setCost(cost);
         base.setCoin(Coin.GC);
         base.setCategory(ItemCategory.ARMOR);
@@ -766,7 +766,7 @@ class VttgMagicItemMapperTest {
     @Test
     void mapsMagicArrowsAsAmmunition() {
         MagicItem item = magicArrow("arrow-1", "Стрела +1",
-                ammunition("arrow-phb", "Стрела", "0,05 фнт.", "5", Coin.CC));
+                ammunition("arrow-phb", "Стрела", 0.05, "5", Coin.CC));
 
         List<VttgMagicItem> variants = mapper.toVttgVariants(item, new HashMap<>());
         assertEquals(1, variants.size());
@@ -797,7 +797,7 @@ class VttgMagicItemMapperTest {
     @Test
     void skipsMagicItemLinkedOnlyToSkippedBundle() {
         MagicItem item = magicArrow("arrows-1", "Стрелы +1",
-                ammunition("arrows-phb", "Стрелы", "1 фнт.", "1", Coin.GC));
+                ammunition("arrows-phb", "Стрелы", 1.0, "1", Coin.GC));
 
         assertTrue(mapper.toVttgVariants(item, new HashMap<>()).isEmpty());
         assertEquals(List.of(), mapper.toVttgPayload(item, new HashMap<>()));
@@ -873,8 +873,8 @@ class VttgMagicItemMapperTest {
         item.setRarity(Rarity.UNCOMMON);
         item.setAdamantine(true);
         item.setItems(Set.of(
-                ammunition("arrow-phb", "Стрела", "0,05 фнт.", "5", Coin.CC),
-                ammunition("arrows-phb", "Стрелы", "1 фнт.", "1", Coin.GC)));
+                ammunition("arrow-phb", "Стрела", 0.05, "5", Coin.CC),
+                ammunition("arrows-phb", "Стрелы", 1.0, "1", Coin.GC)));
         Source source = new Source();
         source.setAcronym("DMG");
         item.setSource(source);
@@ -886,7 +886,7 @@ class VttgMagicItemMapperTest {
         assertEquals("gear", variants.get(0).getSection());
     }
 
-    private Item ammunition(String url, String name, String weight, String cost, Coin coin) {
+    private Item ammunition(String url, String name, Double weight, String cost, Coin coin) {
         Item base = new Item();
         base.setUrl(url);
         base.setName(name);
@@ -935,7 +935,7 @@ class VttgMagicItemMapperTest {
         base.setName("Короткий меч");
         base.setEnglish("Shortsword");
         base.setDescription("");
-        base.setWeight("2 фунта");
+        base.setWeight(2.0);
         base.setCategory(ItemCategory.WEAPON);
         Weapon weapon = new Weapon();
         weapon.setCategory(WeaponCategory.MATERIAL_MELEE);
@@ -1225,7 +1225,7 @@ class VttgMagicItemMapperTest {
         base.setName("Боевой посох");
         base.setEnglish("Quarterstaff");
         base.setDescription("");
-        base.setWeight("4 фунта");
+        base.setWeight(4.0);
         base.setCategory(ItemCategory.WEAPON);
         base.setTypes(Set.of(ItemType.SPELLCASTING_FOCUS));
         Weapon weapon = new Weapon();

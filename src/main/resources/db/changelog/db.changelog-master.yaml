@@ -435,3 +435,5 @@ databaseChangeLog:
       file: db/changelog/2026/11/14-03-entity-url-history.yaml
   - include:
       file: db/changelog/2026/11/14-04-catalog-url-on-update-cascade.yaml
+  - include:
+      file: db/changelog/2026/11/14-05-item-weight-pounds.yaml

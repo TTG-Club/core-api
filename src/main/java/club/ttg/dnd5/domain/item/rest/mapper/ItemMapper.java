@@ -23,6 +23,7 @@ public interface ItemMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @BaseMapping.BaseSourceMapping
     @Mapping(source = ".", target = "cost", qualifiedByName = "getCost")
+    @Mapping(source = "weight", target = "weight", qualifiedByName = "getWeight")
     @BaseItem
     ItemDetailResponse toDetailResponse(final Item item);
 
@@ -83,6 +84,22 @@ public interface ItemMapper {
             return "варьируется";
         }
         return item.getCost() + " " + item.getCoin().getShortName();
+    }
+
+    /**
+     * Вес для показа: фунты с подписью «фнт.» (единица в D&D 5e всегда одна), дробная
+     * часть через запятую без лишних нулей — 0.25 → «0,25 фнт.». Пусто — «—».
+     */
+    @Named("getWeight")
+    default String getWeight(Double weight) {
+        if (weight == null) {
+            return "—";
+        }
+        String number = java.math.BigDecimal.valueOf(weight)
+                .stripTrailingZeros()
+                .toPlainString()
+                .replace('.', ',');
+        return number + " фнт.";
     }
 
     @Mapping(source = "types", target = "types", qualifiedByName = "typeToSting")

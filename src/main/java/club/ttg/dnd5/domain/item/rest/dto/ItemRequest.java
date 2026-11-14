@@ -31,8 +31,9 @@ public class ItemRequest extends BaseRequest {
     private Integer cost;
     @Schema(description = "Номинал монеты в стоимости", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Coin coin;
-    @Schema(description = "Вес предмета", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private String weight;
+    @Schema(description = "Вес предмета в фунтах, дроби десятичными (¼ → 0.25). Пусто — вес не указан",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED, examples = "0.25")
+    private Double weight;
 
     /**
      * Оружие

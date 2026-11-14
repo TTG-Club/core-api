@@ -21,8 +21,8 @@ public class ItemDetailResponse extends BaseResponse {
     /** Стоимость предмета */
     @Schema(description = "Стоимость", examples = "10 зм.")
     private String cost;
-    /** Вес предмета */
-    @Schema(description = "Вес", examples = "2 фунта")
+    /** Вес предмета для показа: число фунтов с подписью «фнт.» или «—», если вес не указан. */
+    @Schema(description = "Вес", examples = {"2 фнт.", "0,25 фнт.", "—"})
     private String weight;
 
     /**
