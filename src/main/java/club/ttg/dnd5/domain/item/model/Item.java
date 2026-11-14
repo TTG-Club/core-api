@@ -36,8 +36,12 @@ public class Item extends NamedEntity {
     /** Номинал монеты */
     @Enumerated(EnumType.STRING)
     private Coin coin;
-    /** Вес предмета */
-    private String weight;
+    /**
+     * Вес предмета в фунтах — по правилам D&D 5e вес всегда в фунтах, дроби десятичными
+     * (¼ → 0.25). Пусто — вес не указан («—» в справочнике). Подпись «фнт.» добавляется
+     * при выдаче.
+     */
+    private Double weight;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
