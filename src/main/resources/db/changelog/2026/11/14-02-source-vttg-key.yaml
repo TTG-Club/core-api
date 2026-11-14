@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-14-02-source-vttg-key
+      author: Peterko
+      comment: >
+        Ключ источника в выгрузке VTTG, замороженный при смене акронима: записи
+        компендиума у пользователей VTTG привязаны к этому ключу и не должны его терять.
+      changes:
+        - addColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: vttg_key
+                  type: VARCHAR(255)

@@ -30,4 +30,7 @@ public interface SourceRepository extends JpaRepository<Source, String> {
 
     boolean existsByUrl(String url);
 
+    /** Числится ли ключ выгрузки VTTG за другим источником (не с акронимом {@code acronym}). */
+    boolean existsByVttgKeyAndAcronymNot(String vttgKey, String acronym);
+
 }

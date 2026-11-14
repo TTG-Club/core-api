@@ -29,6 +29,20 @@ class VttgSourceKeysTest {
         assertEquals(Set.of("phb", "uaasu", "uaau"), keys);
     }
 
+    /** После смены акронима ключ источника в выгрузке остаётся прежним. */
+    @Test
+    void renamedSourceKeepsFrozenKey() {
+        club.ttg.dnd5.domain.source.model.Source source = new club.ttg.dnd5.domain.source.model.Source();
+        source.setAcronym("XGTE");
+        assertEquals("xgte", VttgSourceKeys.of(source));
+
+        source.setVttgKey("xge");
+
+        assertEquals("xge", VttgSourceKeys.of(source));
+        assertEquals("phb", VttgSourceKeys.ofAcronym("PHB24"));
+        assertEquals(VttgSourceKeys.FALLBACK, VttgSourceKeys.of(null));
+    }
+
     /** Разделители черт приходят картой — у них только собственный ключ. */
     @Test
     void collectsSourceKeyOfMapPayload() {
