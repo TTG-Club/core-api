@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.source.service;
 
+import club.ttg.dnd5.domain.common.url.CatalogUrlRenamer;
 import club.ttg.dnd5.domain.filter.model.AbstractSavedFilter;
 import club.ttg.dnd5.domain.source.event.SourceAcronymChangedEvent;
 import club.ttg.dnd5.domain.source.model.Source;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.metamodel.EntityType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -24,7 +26,8 @@ import java.util.stream.Collectors;
  * <p>Акроним — первичный ключ {@code source}; через JPA его не поменять, поэтому ключ
  * меняется нативным запросом. Ссылки разделов каталога переезжают каскадом внешних
  * ключей ({@code ON UPDATE CASCADE}); следом те же колонки обновляются явно — на случай
- * таблицы, где внешнего ключа исторически нет. Работает только внутри транзакции
+ * таблицы, где внешнего ключа исторически нет. Вслед за акронимом меняются адреса записей
+ * источника ({@link CatalogUrlRenamer}). Работает только внутри транзакции
  * вызывающего: либо поменялось везде, либо нигде.</p>
  */
 @Component
@@ -34,14 +37,18 @@ public class SourceAcronymRenamer {
     @PersistenceContext
     private EntityManager entityManager;
     private final ApplicationEventPublisher events;
+    private final CatalogUrlRenamer urlRenamer;
 
-    public SourceAcronymRenamer(ApplicationEventPublisher events) {
+    @Autowired
+    public SourceAcronymRenamer(ApplicationEventPublisher events, CatalogUrlRenamer urlRenamer) {
         this.events = events;
+        this.urlRenamer = urlRenamer;
     }
 
-    SourceAcronymRenamer(EntityManager entityManager, ApplicationEventPublisher events) {
+    SourceAcronymRenamer(EntityManager entityManager, ApplicationEventPublisher events, CatalogUrlRenamer urlRenamer) {
         this.entityManager = entityManager;
         this.events = events;
+        this.urlRenamer = urlRenamer;
     }
 
     /**
@@ -79,6 +86,10 @@ public class SourceAcronymRenamer {
         }
 
         renameInSavedFilters(oldAcronym, newAcronym);
+
+        // Адреса записей источника (fireball-phb → fireball-ph) меняются вслед за акронимом.
+        entityManager.flush();
+        urlRenamer.rename(oldAcronym, newAcronym, username);
 
         entityManager.flush();
         entityManager.clear();

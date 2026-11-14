@@ -84,7 +84,7 @@ public class VttgItemMapper {
 
     /** Идёт ли предмет в компендиум отдельной записью. */
     static boolean isExported(Item item) {
-        return !SKIPPED_URLS.contains(item.getUrl());
+        return !SKIPPED_URLS.contains(VttgUrlAliases.original(item.getUrl()));
     }
 
     public Map<String, Object> toVttg(Item item) {
@@ -288,7 +288,8 @@ public class VttgItemMapper {
      * предметов). Если {@code url} уже оканчивается на ключ источника — повторно его не добавляем.
      */
     private String id(Item item, String sourceKey) {
-        String slug = slug(item.getUrl());
+        // Первоначальный адрес: id у пользователей VTTG не должен меняться вместе с адресом страницы.
+        String slug = slug(VttgUrlAliases.original(item.getUrl()));
         if (slug.isEmpty()) {
             return sourceKey;
         }

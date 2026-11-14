@@ -419,7 +419,7 @@ public class VttgChangesService {
 
     private VttgChange featChange(Feat feat) {
         return new VttgChange(FEATS, feat.getUrl(),
-                changedAt(feat.getUpdatedAt(), feat.getCreatedAt()), featMapper.toVttg(feat));
+                changedAt(feat.getUpdatedAt(), feat.getCreatedAt()), payloadStore.withOriginalUrls(featMapper.toVttg(feat)));
     }
 
     private Window window(Instant sinceParam) {

@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.source.service;
 
+import club.ttg.dnd5.domain.common.url.CatalogUrlRenamer;
 import club.ttg.dnd5.domain.filter.model.AbstractSavedFilter;
 import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
 import club.ttg.dnd5.domain.source.event.SourceAcronymChangedEvent;
@@ -37,7 +38,8 @@ import static org.mockito.Mockito.when;
 class SourceAcronymRenamerTest {
     private final EntityManager entityManager = mock(EntityManager.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final SourceAcronymRenamer renamer = new SourceAcronymRenamer(entityManager, events);
+    private final CatalogUrlRenamer urlRenamer = mock(CatalogUrlRenamer.class);
+    private final SourceAcronymRenamer renamer = new SourceAcronymRenamer(entityManager, events, urlRenamer);
 
     /** Запросы в порядке выполнения и их параметры. */
     private final List<String> statements = new ArrayList<>();
@@ -83,9 +85,11 @@ class SourceAcronymRenamerTest {
         assertTrue(statements.get(2).contains("from saved_filter"));
         assertEquals("%\"XGE\"%", parameters.get(statements.get(2)).get("pattern"));
 
-        InOrder order = inOrder(entityManager, events);
+        InOrder order = inOrder(entityManager, urlRenamer, events);
         order.verify(entityManager).flush();
         order.verify(entityManager).createNativeQuery(statements.get(0));
+        order.verify(entityManager).flush();
+        order.verify(urlRenamer).rename("XGE", "XGTE", "admin");
         order.verify(entityManager).flush();
         order.verify(entityManager).clear();
         order.verify(events).publishEvent(new SourceAcronymChangedEvent("XGE", "XGTE", "admin"));
