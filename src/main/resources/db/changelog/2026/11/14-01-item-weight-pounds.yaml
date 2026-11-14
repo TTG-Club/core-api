@@ -1,0 +1,81 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-14-01-item-weight-pounds-column
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Вес обычного предмета — число фунтов вместо свободной строки. По правилам D&D 5e
+        (PHB/DMG 2014 и 2024) вес предмета всегда в фунтах, поэтому подпись «фнт.»
+        добавляет выдача, а не данные. Старый текст остаётся в weight_text: значения,
+        которые миграция не смогла разобрать, там видно и можно перенести руками.
+      changes:
+        - renameColumn:
+            tableName: item
+            oldColumnName: weight
+            newColumnName: weight_text
+        - addColumn:
+            tableName: item
+            columns:
+              - column:
+                  name: weight
+                  type: double precision
+      rollback:
+        - dropColumn:
+            tableName: item
+            columnName: weight
+        - renameColumn:
+            tableName: item
+            oldColumnName: weight_text
+            newColumnName: weight
+
+  - changeSet:
+      id: 2026-11-14-02-item-weight-pounds-fill
+      author: Magistrus
+      comment: >
+        Перенос веса из текста в число фунтов. Понимает «3», «3 фнт.», «2 фунта», «1,5»,
+        «1/4», «1 1/2», «1½», «½ фнт.», «3 lb». Переносится только значение, у которого
+        после числа ничего нет или стоит фунт (ф…/lb): «—», «разный» и всё с другой
+        единицей остаются пустыми и лежат в weight_text для ручной проверки. Время
+        изменения предмета не сдвигается.
+
+        Проверка — что не перенеслось:
+        SELECT url, name, weight_text FROM item
+        WHERE weight IS NULL AND weight_text IS NOT NULL AND btrim(weight_text) <> '';
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: true
+            sql: |
+              SET search_path TO ttg, public;
+
+              UPDATE item AS i
+              SET weight = p.value
+              FROM (
+                  SELECT n.url,
+                         CASE
+                             WHEN m.f IS NOT NULL
+                                 THEN coalesce(m.f[1]::float8, 0) + m.f[2]::float8 / nullif(m.f[3]::float8, 0)
+                             ELSE m.d[1]::float8
+                         END AS value,
+                         btrim(regexp_replace(n.s, '^[0-9./ ]+', '')) AS rest
+                  FROM (
+                      SELECT url,
+                             btrim(regexp_replace(
+                                 replace(replace(replace(replace(lower(weight_text),
+                                     ',', '.'), '½', ' 1/2'), '¼', ' 1/4'), '¾', ' 3/4'),
+                                 '\s+', ' ', 'g')) AS s
+                      FROM item
+                      WHERE weight_text IS NOT NULL
+                  ) AS n
+                  CROSS JOIN LATERAL (
+                      SELECT regexp_match(n.s, '^(?:(\d+(?:\.\d+)?) )?(\d+)/(\d+)') AS f,
+                             regexp_match(n.s, '^(\d+(?:\.\d+)?)') AS d
+                  ) AS m
+              ) AS p
+              WHERE i.url = p.url
+                AND p.value IS NOT NULL
+                AND (p.rest = '' OR p.rest ~ '^(ф|lb)');
+      rollback:
+        - sql:
+            sql: SELECT 1;

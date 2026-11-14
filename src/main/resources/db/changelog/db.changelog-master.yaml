@@ -427,3 +427,5 @@ databaseChangeLog:
       file: db/changelog/2026/11/11-01-notification-view-column.yaml
   - include:
       file: db/changelog/2026/11/13-01-create-dm-screen-table.yaml
+  - include:
+      file: db/changelog/2026/11/14-01-item-weight-pounds.yaml

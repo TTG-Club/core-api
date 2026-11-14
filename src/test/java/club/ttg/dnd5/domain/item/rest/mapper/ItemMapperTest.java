@@ -183,6 +183,30 @@ class ItemMapperTest {
     }
 
     /**
+     * Вес хранится числом фунтов, а деталь показывает его с подписью «фнт.»: единица в
+     * D&amp;D 5e одна, поэтому в данных её не держат. Пустой вес — прочерк.
+     */
+    @Test
+    void showsWeightInPoundsInDetailResponse() {
+        Item item = new Item();
+        item.setTypes(Set.of(ItemType.ADVENTURING_GEAR));
+
+        item.setWeight(3.0);
+        assertEquals("3 фнт.", mapper.toDetailResponse(item).getWeight());
+        item.setWeight(0.25);
+        assertEquals("0,25 фнт.", mapper.toDetailResponse(item).getWeight());
+        item.setWeight(1.5);
+        assertEquals("1,5 фнт.", mapper.toDetailResponse(item).getWeight());
+        item.setWeight(0.0);
+        assertEquals("0 фнт.", mapper.toDetailResponse(item).getWeight());
+        item.setWeight(null);
+        assertEquals("—", mapper.toDetailResponse(item).getWeight());
+
+        item.setWeight(0.25);
+        assertEquals(0.25, mapper.toRequest(item).getWeight());
+    }
+
+    /**
      * Предмет без новых блоков сохраняется как раньше: девять сотен записей справочника
      * шлют форму без них, и появление пустышек ломало бы вывод категорий на столе.
      */
