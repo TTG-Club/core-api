@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.common.url;
 import club.ttg.dnd5.util.UrlTokens;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,7 @@ public class UrlTokenRewriter {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
     public UrlTokenRewriter() {
     }
 

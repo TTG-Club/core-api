@@ -4,6 +4,7 @@ import club.ttg.dnd5.exception.EntityExistException;
 import club.ttg.dnd5.util.SlugifyUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +43,7 @@ public class CatalogUrlRenamer {
     private EntityManager entityManager;
     private final UrlTokenRewriter rewriter;
 
+    @Autowired
     public CatalogUrlRenamer(UrlTokenRewriter rewriter) {
         this.rewriter = rewriter;
     }
