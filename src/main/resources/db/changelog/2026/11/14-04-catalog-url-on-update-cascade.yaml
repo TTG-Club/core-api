@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-14-04-catalog-url-on-update-cascade
+      author: Peterko
+      comment: >
+        Внешние ключи на таблицы каталога получают ON UPDATE CASCADE: смена адреса
+        записи одним UPDATE переносит связи (классы и виды заклинаний, родители,
+        связанные предметы).
+      changes:
+        - sqlFile:
+            path: sql/14-04-catalog-url-on-update-cascade.sql
+            relativeToChangelogFile: true
+            splitStatements: false

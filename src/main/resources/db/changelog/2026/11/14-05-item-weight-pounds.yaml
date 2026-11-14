@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 2026-11-14-01-item-weight-pounds-column
+      id: 2026-11-14-05-item-weight-pounds-column
       author: Magistrus
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       comment: >
@@ -29,7 +29,7 @@ databaseChangeLog:
             newColumnName: weight
 
   - changeSet:
-      id: 2026-11-14-02-item-weight-pounds-fill
+      id: 2026-11-14-05-item-weight-pounds-fill
       author: Magistrus
       comment: >
         Перенос веса из текста в число фунтов. Понимает «3», «3 фнт.», «2 фунта», «1,5»,

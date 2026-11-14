@@ -1,5 +1,8 @@
 package club.ttg.dnd5.domain.common.model;
 
+import club.ttg.dnd5.domain.common.url.CatalogUrlGuard;
+import jakarta.persistence.EntityListeners;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
@@ -11,6 +14,7 @@ import org.springframework.data.domain.Persistable;
 @Getter
 @Setter
 @MappedSuperclass
+@EntityListeners(CatalogUrlGuard.class)
 public abstract class NamedEntity extends Timestamped implements Persistable<String> {
     @Id
     @Column(nullable = false, unique = true)
