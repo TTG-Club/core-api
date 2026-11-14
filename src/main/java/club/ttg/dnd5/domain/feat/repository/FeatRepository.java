@@ -14,6 +14,10 @@ import java.util.List;
 
 @Repository
 public interface FeatRepository extends JpaRepository<Feat, String> {
+    /** Названия черт по набору url — для подстановки в черты на выбор у предыстории. */
+    @Query("select f.url as url, f.name as name from Feat f where f.url in :urls")
+    List<FeatNameRef> findNamesByUrls(@Param("urls") Collection<String> urls);
+
     @Query(value = """
             select f from Feat f
             where replace(replace(f.name, 'Ё', 'Е'), 'ё', 'е') ilike concat('%', :searchLine, '%')
