@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.vttg.service;
 
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.vttg.rest.dto.VttgDamagePart;
@@ -11,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,7 +68,7 @@ public class VttgSpellMechanicsExtractor {
         boolean structuredHealing = effect != null && hasValues(effect.getHealingTypes());
         boolean healing = formulaHealing || structuredHealing || hasHealing(text);
         String formula = formulas == null
-                ? (damageCleared(effect) ? null : extractFormula(text, healing))
+                ? (damageCleared(effect) || damageInActiveEffects(spell) ? null : extractFormula(text, healing))
                 : firstFormulaOnly(formulas.getFirst());
         String damageType = structuredDamageType(formulas);
 
@@ -158,6 +160,22 @@ public class VttgSpellMechanicsExtractor {
         return effect != null
                 && effect.getDamageFormulas() != null
                 && effect.getDamageFormulas().isEmpty();
+    }
+
+    /**
+     * Урон заклинания перенесён в его активные эффекты: включённый эффект сам
+     * наносит урон при наложении (варианты «Обычная туча» / «Буря» у Призыва
+     * молнии). Кости в описании тогда описывают тот же урон, и догадка по тексту
+     * добавила бы его второй раз — уже без спасброска. Форма сайта пустой список
+     * формул не сохраняет (пишет {@code null}), поэтому одного
+     * {@link #damageCleared(SpellEffect)} тут мало.
+     */
+    private boolean damageInActiveEffects(Spell spell) {
+        List<ActiveEffect> effects = spell.getActiveEffects();
+        return effects != null && effects.stream()
+                .filter(Objects::nonNull)
+                .filter(activeEffect -> !Boolean.TRUE.equals(activeEffect.getDisabled()))
+                .anyMatch(activeEffect -> hasValues(activeEffect.getDamageParts()));
     }
 
     private String structuredDamageType(List<String> formulas) {
