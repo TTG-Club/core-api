@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-16-01-source-officiality-category
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Тип источника смешивал два признака: кто выпустил книгу и что это за книга.
+        Вместо source.type — два поля:
+        officiality (OFFICIAL / TEST / THIRD_PARTY / HOMEBREW) и
+        category (CORE / SETTING / ADVENTURE).
+        Перенос: OFFICIAL → OFFICIAL + CORE, SETTING → OFFICIAL + SETTING,
+        MODULE → OFFICIAL + ADVENTURE, TEST → TEST + CORE,
+        THIRD_PARTY → THIRD_PARTY + CORE, CUSTOM → HOMEBREW + CORE.
+        Источник без типа считается официальным (основные правила).
+        Представление общего поиска зависит от source.type, поэтому пересоздаётся
+        с колонкой source_officiality.
+
+        Проверка — неофициальные источники, у которых категорию стоит уточнить руками:
+        SELECT acronym, name, officiality, category FROM source WHERE officiality <> 'OFFICIAL';
+      changes:
+        - sql:
+            sql: DROP VIEW IF EXISTS full_name_search_view;
+        - addColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: officiality
+                  type: varchar(32)
+              - column:
+                  name: category
+                  type: varchar(32)
+        - sql:
+            sql: >
+              UPDATE source
+              SET officiality = CASE type
+                                    WHEN 'TEST' THEN 'TEST'
+                                    WHEN 'THIRD_PARTY' THEN 'THIRD_PARTY'
+                                    WHEN 'CUSTOM' THEN 'HOMEBREW'
+                                    ELSE 'OFFICIAL'
+                                END,
+                  category    = CASE type
+                                    WHEN 'SETTING' THEN 'SETTING'
+                                    WHEN 'MODULE' THEN 'ADVENTURE'
+                                    ELSE 'CORE'
+                                END;
+        - addNotNullConstraint:
+            tableName: source
+            columnName: officiality
+        - addNotNullConstraint:
+            tableName: source
+            columnName: category
+        - dropColumn:
+            tableName: source
+            columnName: type
+        - sqlFile:
+            path: sql/16-01-update-full-name-search-view-source-officiality.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql:
+            sql: DROP VIEW IF EXISTS full_name_search_view;
+        - addColumn:
+            tableName: source
+            columns:
+              - column:
+                  name: type
+                  type: varchar(255)
+        - sql:
+            sql: >
+              UPDATE source
+              SET type = CASE
+                             WHEN officiality = 'TEST' THEN 'TEST'
+                             WHEN officiality = 'THIRD_PARTY' THEN 'THIRD_PARTY'
+                             WHEN officiality = 'HOMEBREW' THEN 'CUSTOM'
+                             WHEN category = 'SETTING' THEN 'SETTING'
+                             WHEN category = 'ADVENTURE' THEN 'MODULE'
+                             ELSE 'OFFICIAL'
+                         END;
+        - dropColumn:
+            tableName: source
+            columnName: officiality
+        - dropColumn:
+            tableName: source
+            columnName: category
+        - sqlFile:
+            path: ../10/sql/18-03-update-full-name-search-view-magic-item-show-in-list.sql
+            relativeToChangelogFile: true

@@ -1,6 +1,6 @@
 package club.ttg.dnd5.domain.full_text_search.model;
 
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceOfficiality;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -41,7 +41,7 @@ public class FullTextSearchView {
     private String sourceName;
     private String sourceEnglish;
     @Enumerated(EnumType.STRING)
-    private SourceType sourceType;
+    private SourceOfficiality sourceOfficiality;
     private Integer page;
     @Column(name = "created_at")
     private Instant createdAt;

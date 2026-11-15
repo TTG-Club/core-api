@@ -12,7 +12,10 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SourceDetailResponse extends BaseResponse {
-    private String type;
+    @Schema(description = "Степень официальности источника")
+    private String officiality;
+    @Schema(description = "Категория источника")
+    private String category;
     private String image;
     @JsonSerialize(using = MarkupDescriptionSerializer.class)
     private String authors;

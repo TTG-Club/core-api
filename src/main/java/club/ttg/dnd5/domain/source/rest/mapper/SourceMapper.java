@@ -18,8 +18,8 @@ public interface SourceMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = "acronym", target = "name.label")
     @Mapping(target = "source.name", ignore = true)
-    @Mapping(source = "type.group", target = "source.group.name")
-    @Mapping(source = "type.label", target = "source.group.label")
+    @Mapping(source = "officiality.group", target = "source.group.name")
+    @Mapping(source = "officiality.label", target = "source.group.label")
     @Mapping(source = "name", target = "source.name.name")
     @Mapping(source = "english", target = "source.name.english")
     @Mapping(source = "acronym", target = "source.name.label")
@@ -27,12 +27,13 @@ public interface SourceMapper {
 
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "source.name", ignore = true)
-    @Mapping(source = "type.group", target = "source.group.name")
-    @Mapping(source = "type.label", target = "source.group.label")
+    @Mapping(source = "officiality.group", target = "source.group.name")
+    @Mapping(source = "officiality.label", target = "source.group.label")
     @Mapping(source = "name", target = "source.name.name")
     @Mapping(source = "english", target = "source.name.english")
     @Mapping(source = "acronym", target = "source.name.label")
-    @Mapping(source = "type.name", target = "type")
+    @Mapping(source = "officiality.name", target = "officiality")
+    @Mapping(source = "category.name", target = "category")
     @Mapping(target = "imageUrl", source = "image")
     SourceDetailResponse toDetail(Source source);
 
