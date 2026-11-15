@@ -4,7 +4,7 @@ import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SearchBody;
 import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
 import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceOfficiality;
 import club.ttg.dnd5.domain.source.model.filter.SourceSavedFilter;
 import club.ttg.dnd5.domain.source.repository.SourceSavedFilterRepository;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
@@ -218,12 +218,12 @@ public class SourceSavedFilterService
                     .build();
         }
 
-        Map<SourceType, List<Source>> sourceMap = sources.stream()
-                .filter(source -> source != null && source.getType() != null)
-                .collect(Collectors.groupingBy(Source::getType));
+        Map<SourceOfficiality, List<Source>> sourceMap = sources.stream()
+                .filter(source -> source != null && source.getOfficiality() != null)
+                .collect(Collectors.groupingBy(Source::getOfficiality));
 
         SourceFilterInfo filterInfo = new SourceFilterInfo(
-                Arrays.stream(SourceType.values())
+                Arrays.stream(SourceOfficiality.values())
                         .filter(sourceMap::containsKey)
                         .map(type -> new SourceGroupFilter(
                                 sourceMap.get(type).stream()

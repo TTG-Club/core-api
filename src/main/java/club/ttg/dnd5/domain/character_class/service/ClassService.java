@@ -197,7 +197,8 @@ public class ClassService {
                 .filter(subclass -> !subclass.isHiddenEntity())
                 .filter(subclass -> sources.contains(subclass.getSource().getAcronym()))
                 .sorted(Comparator
-                        .comparing((CharacterClass c) -> c.getSource().getType().ordinal())
+                        .comparing((CharacterClass c) -> c.getSource().getOfficiality().ordinal())
+                        .thenComparing(c -> c.getSource().getCategory().ordinal())
                         .thenComparing(CharacterClass::getName)
                 )
                 .map(classMapper::toShort)

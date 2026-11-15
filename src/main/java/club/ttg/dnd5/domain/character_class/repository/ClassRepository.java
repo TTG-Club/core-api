@@ -22,13 +22,16 @@ public interface ClassRepository extends JpaRepository<CharacterClass, String> {
     SELECT c FROM CharacterClass c
     WHERE c.parent IS NOT NULL
     ORDER BY
-      CASE c.source.type
+      CASE c.source.officiality
         WHEN 'OFFICIAL' then 1
+        WHEN 'TEST' then 2
+        WHEN 'THIRD_PARTY' then 3
+        WHEN 'HOMEBREW' then 4
+      end,
+      CASE c.source.category
+        WHEN 'CORE' then 1
         WHEN 'SETTING' then 2
-        WHEN 'MODULE' then 3
-        WHEN 'TEST' then 4
-        WHEN 'THIRD_PARTY' then 5
-        WHEN 'CUSTOM' then 6
+        WHEN 'ADVENTURE' then 3
       end,
       c.parent.name,
       c.name

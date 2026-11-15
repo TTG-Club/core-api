@@ -3,7 +3,8 @@ package club.ttg.dnd5.domain.source.service;
 import club.ttg.dnd5.domain.filter.model.FilterInfo;
 import club.ttg.dnd5.domain.filter.model.SourceFilterInfo;
 import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceCategory;
+import club.ttg.dnd5.domain.source.model.SourceOfficiality;
 import club.ttg.dnd5.domain.source.model.filter.SourceSavedFilter;
 import club.ttg.dnd5.domain.source.repository.SourceSavedFilterRepository;
 import club.ttg.dnd5.domain.source.rest.dto.filter.SourceGroupFilter;
@@ -88,7 +89,8 @@ class SourceSavedFilterServiceTest {
         Source source = new Source();
         source.setAcronym(acronym);
         source.setName(acronym);
-        source.setType(SourceType.OFFICIAL);
+        source.setOfficiality(SourceOfficiality.OFFICIAL);
+        source.setCategory(SourceCategory.CORE);
         return source;
     }
 

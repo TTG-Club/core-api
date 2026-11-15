@@ -39,6 +39,7 @@ public interface BastionFacilityMapper {
     @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(source = "request.category", target = "category")
     @Mapping(target = "source", source = "source")
     BastionFacility toEntity(BastionFacilityRequest request, Source source);
 
@@ -48,6 +49,7 @@ public interface BastionFacilityMapper {
     @Mapping(source = "request.original", target = "original")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
+    @Mapping(source = "request.category", target = "category")
     @Mapping(target = "source", source = "source")
     void updateEntity(BastionFacilityRequest request, Source source, @MappingTarget BastionFacility facility);
 
