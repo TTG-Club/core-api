@@ -55,6 +55,15 @@ class CreatureInitiativeCalculatorTest {
         assertEquals(3, CreatureInitiativeCalculator.initiativeBonus(creature));
     }
 
+    @Test
+    void extraBonusExcludesDexterityModifier() {
+        // ЛОВ 18 (+4), опыт 5000 (ПМ 4), множитель 1 → только ПМ 4
+        assertEquals(4, CreatureInitiativeCalculator.extraBonus(creature(18, (byte) 1, 5_000L)));
+        // ЛОВ 14 (+2), множитель 0 → добавки нет
+        assertEquals(0, CreatureInitiativeCalculator.extraBonus(creature(14, (byte) 0, 450L)));
+        assertEquals(0, CreatureInitiativeCalculator.extraBonus(new Creature()));
+    }
+
     private static Creature creature(int dexterity, byte multiplier, Long experience) {
         CreatureAbility dex = new CreatureAbility();
         dex.setValue((short) dexterity);

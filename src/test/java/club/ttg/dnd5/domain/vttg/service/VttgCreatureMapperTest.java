@@ -489,8 +489,8 @@ class VttgCreatureMapperTest {
     }
 
     /**
-     * Инициатива уезжает тем же расчётом, что и на карточке сайта: модификатор ЛОВ плюс бонус
-     * мастерства за множитель. Пара «13 / +3» — это пассивное значение и сам модификатор.
+     * В initiative — полное значение, как на карточке сайта («13 / +3» — пассивное значение и
+     * модификатор). В initiativeBonus — только добавка сверх ЛОВ: модификатор VTTG прибавит сам.
      */
     @Test
     void exportsInitiative() {
@@ -502,7 +502,7 @@ class VttgCreatureMapperTest {
 
         assertEquals("13", initiative.get("label"));
         assertEquals("+3", initiative.get("value"));
-        assertEquals(3, system.get("initiativeBonus"));
+        assertEquals(0, system.get("initiativeBonus"));
     }
 
     /** Владение инициативой из статблока добавляет бонус мастерства по опасности. */
@@ -517,8 +517,25 @@ class VttgCreatureMapperTest {
 
         Map<String, Object> system = mapper.toVttg(creature).getSystem();
 
-        assertEquals(5, system.get("initiativeBonus"));
+        assertEquals(2, system.get("initiativeBonus"));
         assertEquals("15", ((Map<?, ?>) system.get("initiative")).get("label"));
+        assertEquals("+5", ((Map<?, ?>) system.get("initiative")).get("value"));
+    }
+
+    /** Тень: ЛОВ 14, без владения инициативой — в VTTG +2, а не +4 (ЛОВ не удваивается). */
+    @Test
+    void doesNotDoubleDexterityInInitiativeBonus() {
+        Creature creature = creature("shadow-mm");
+        creature.setAbilities(abilitiesWithDexterity(14));
+        creature.setExperience(100L);
+        CreatureInitiative initiative = new CreatureInitiative();
+        initiative.setMultiplier((byte) 0);
+        creature.setInitiative(initiative);
+
+        Map<String, Object> system = mapper.toVttg(creature).getSystem();
+
+        assertEquals(0, system.get("initiativeBonus"));
+        assertEquals("+2", ((Map<?, ?>) system.get("initiative")).get("value"));
     }
 
     /** Секция описания: подзаголовок, места обитания, сокровища и текст — всё в одном блоке. */
