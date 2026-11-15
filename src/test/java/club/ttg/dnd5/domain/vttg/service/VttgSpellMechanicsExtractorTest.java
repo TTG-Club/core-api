@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.vttg.service;
 
 import club.ttg.dnd5.domain.common.dictionary.HealingType;
+import club.ttg.dnd5.domain.common.model.ActiveEffect;
+import club.ttg.dnd5.domain.common.model.DamagePart;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.model.SpellEffect;
 import club.ttg.dnd5.domain.spell.model.enums.SpellSaveEffect;
@@ -148,6 +150,54 @@ class VttgSpellMechanicsExtractorTest {
 
         assertEquals("1к8", result.damageFormula());
         assertEquals("1к8@dmg.necrotic", result.damageParts().getFirst().getFormula());
+    }
+
+    @Test
+    void damageInActiveEffectsSuppressesTextGuess() {
+        // Призыв молнии: урон перенесён в варианты эффекта, а форма сайта вместо
+        // пустого списка формул пишет null. Кости описания — тот же урон.
+        Spell spell = new Spell();
+        spell.setEffect(new SpellEffect());
+        spell.setActiveEffects(List.of(activeEffectWithDamage("(@castLevel)d10@dmg.lightning", null)));
+
+        var result = extractor.extract(spell,
+                "Каждое существо получает {@roll 3к10} урона электричеством при провале.");
+
+        assertNull(result.damageFormula());
+        assertNull(result.damageParts());
+    }
+
+    @Test
+    void disabledEffectDamageStillAllowsTextGuess() {
+        Spell spell = new Spell();
+        spell.setEffect(new SpellEffect());
+        spell.setActiveEffects(List.of(activeEffectWithDamage("1к6@dmg.fire", true)));
+
+        var result = extractor.extract(spell,
+                "Цель получает {@roll 1к8} урона некротической энергией.");
+
+        assertEquals("1к8@dmg.necrotic", result.damageParts().getFirst().getFormula());
+    }
+
+    @Test
+    void effectWithoutDamageStillAllowsTextGuess() {
+        Spell spell = new Spell();
+        spell.setEffect(new SpellEffect());
+        spell.setActiveEffects(List.of(new ActiveEffect()));
+
+        var result = extractor.extract(spell,
+                "Цель получает {@roll 1к8} урона некротической энергией.");
+
+        assertEquals("1к8@dmg.necrotic", result.damageParts().getFirst().getFormula());
+    }
+
+    private static ActiveEffect activeEffectWithDamage(String formula, Boolean disabled) {
+        DamagePart part = new DamagePart();
+        part.setFormula(formula);
+        ActiveEffect effect = new ActiveEffect();
+        effect.setDamageParts(List.of(part));
+        effect.setDisabled(disabled);
+        return effect;
     }
 
     @Test

@@ -136,4 +136,66 @@ class InstantViewHtmlFormatterTest {
         assertTrue(formatter.toHtml("").isEmpty());
         assertTrue(formatter.toHtml("[]").isEmpty());
     }
+
+    @Test
+    void imageNodeBecomesFigureWithAbsoluteUrlAndCaption() {
+        String html = formatter.toHtml("""
+                ["Первый абзац.",
+                 {"type": "image", "attrs": {"url": "/s3/articles/user/map.webp", "float": "left", "width": 40,
+                    "alt": "Карта долины", "caption": "Долина Ледяного Ветра"}},
+                 "Второй абзац."]
+                """);
+
+        assertEquals("<p>Первый абзац.</p>"
+                + "<figure><img src=\"https://ttg.club/s3/articles/user/map.webp\">"
+                + "<figcaption>Долина Ледяного Ветра</figcaption></figure>"
+                + "<p>Второй абзац.</p>", html);
+    }
+
+    @Test
+    void imageWithoutCaptionHasNoFigcaption() {
+        // Алиас img; абсолютный адрес остаётся как есть, пустая подпись не даёт <figcaption>.
+        String html = formatter.toHtml("""
+                ["Абзац.", {"type": "img", "attrs": {"url": "https://cdn.example.com/a.png", "caption": "  "}}]
+                """);
+
+        assertEquals("<p>Абзац.</p><figure><img src=\"https://cdn.example.com/a.png\"></figure>", html);
+    }
+
+    @Test
+    void imageAttributesAreEscaped() {
+        String html = formatter.toHtml("""
+                [{"type": "image", "attrs": {"url": "/s3/a.png?x=1&y=\\"2\\"", "caption": "Меч <+1> & щит"}}]
+                """);
+
+        assertEquals("<figure><img src=\"https://ttg.club/s3/a.png?x=1&amp;y=&quot;2&quot;\">"
+                + "<figcaption>Меч &lt;+1&gt; &amp; щит</figcaption></figure>", html);
+    }
+
+    @Test
+    void imageWithUnsafeUrlIsSkipped() {
+        // Допустим только путь сайта (/…, но не //…) либо http(s)://… — остальное на страницу не попадает.
+        String html = formatter.toHtml("""
+                ["До.",
+                 {"type": "image", "attrs": {"url": "javascript:alert(1)", "caption": "Подпись"}},
+                 {"type": "image", "attrs": {"url": "//evil.example.com/a.png"}},
+                 {"type": "image", "attrs": {"caption": "Без адреса"}},
+                 "После."]
+                """);
+
+        assertEquals("<p>До.</p><p>После.</p>", html);
+    }
+
+    @Test
+    void plainTextSkipsImageWithCaption() {
+        // В og:description подпись картинки не попадает и абзацы не склеивает.
+        String plain = formatter.toPlain("""
+                ["Первый абзац.",
+                 {"type": "image", "attrs": {"url": "/s3/articles/user/map.webp", "float": "left", "width": 40,
+                    "alt": "Карта долины", "caption": "Долина Ледяного Ветра"}},
+                 "Второй абзац."]
+                """);
+
+        assertEquals("Первый абзац. Второй абзац.", plain);
+    }
 }

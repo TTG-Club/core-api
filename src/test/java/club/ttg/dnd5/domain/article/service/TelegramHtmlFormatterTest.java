@@ -55,4 +55,29 @@ class TelegramHtmlFormatterTest {
     void emptySummaryGivesSingleEmptyChunk() {
         assertEquals(List.of(""), formatter.toHtmlChunks("   ", LIMIT, LIMIT));
     }
+
+    @Test
+    void imageNodeIsSkippedWithoutTraceAndEmptyBlock() {
+        String markup = """
+                ["Первый абзац.",
+                 {"type": "image", "attrs": {"url": "/s3/articles/user/map.webp", "float": "left", "width": 40,
+                    "alt": "Карта долины", "caption": "Долина Ледяного Ветра"}},
+                 "Второй абзац."]
+                """;
+
+        assertEquals(List.of("Первый абзац.\n\nВторой абзац."), formatter.toHtmlChunks(markup, LIMIT, LIMIT));
+        // В видимую длину картинка тоже не входит: плоский текст — только два абзаца.
+        assertEquals("Первый абзац.\n\nВторой абзац.", formatter.toPlain(markup));
+    }
+
+    @Test
+    void imageAliasAndImageOnlyContentGiveNoText() {
+        // Алиас img — тот же узел; из одной картинки текста не выходит (публиковать нечего).
+        String markup = """
+                [{"type": "img", "attrs": {"url": "https://example.com/a.png", "caption": "Подпись"}}]
+                """;
+
+        assertEquals(List.of(""), formatter.toHtmlChunks(markup, LIMIT, LIMIT));
+        assertEquals("", formatter.toPlain(markup));
+    }
 }

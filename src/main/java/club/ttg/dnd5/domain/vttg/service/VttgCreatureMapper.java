@@ -186,7 +186,9 @@ public class VttgCreatureMapper {
         result.put("challengeRating", challengeRating);
         result.put("proficiencyBonus", ChallengeRating.getPb(experience));
         result.put("initiative", initiative(initiativeBonus));
-        result.put("initiativeBonus", initiativeBonus);
+        // VTTG сам прибавляет модификатор ЛОВ к initiativeBonus: сюда — только добавка сверх него,
+        // иначе Ловкость посчитается дважды. В initiative выше — полное значение для показа.
+        result.put("initiativeBonus", CreatureInitiativeCalculator.extraBonus(creature));
         result.put("savingThrows", savingThrows(creature));
         result.put("skills", skills(creature.getSkills()));
         result.put("defenses", defenses(creature));

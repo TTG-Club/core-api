@@ -608,4 +608,44 @@ class VttgMarkupConverterTest {
                 converter.toText(markup)
         );
     }
+
+    @Test
+    void skipsImageNodeBetweenParagraphs() {
+        String markup = """
+                ["Первый абзац.",
+                 {"type": "image", "attrs": {"url": "/s3/articles/user/map.webp", "float": "left", "width": 40,
+                    "alt": "Карта долины", "caption": "Долина Ледяного Ветра"}},
+                 "Второй абзац."]
+                """;
+
+        // Ни адреса, ни подписи, ни лишней пустой строки — в любом режиме выгрузки.
+        assertEquals("Первый абзац.\n\nВторой абзац.", converter.toText(markup));
+        assertEquals("Первый абзац.\n\nВторой абзац.", converter.toTextKeepingRolls(markup));
+        assertEquals("Первый абзац.\n\nВторой абзац.", converter.toTextKeepingMarkers(markup));
+    }
+
+    @Test
+    void descriptionOfImagesOnlyIsEmpty() {
+        // Без текста вокруг сырой JSON узла не должен уехать в компендиум; img — алиас image.
+        String markup = """
+                [{"type": "image", "attrs": {"url": "/s3/a.webp", "caption": "Подпись"}},
+                 {"type": "img", "attrs": {"url": "https://example.com/b.png"}}]
+                """;
+
+        assertEquals("", converter.toText(markup));
+        assertEquals("", converter.toTextKeepingRolls(markup));
+        assertEquals("", converter.toTextKeepingMarkers(markup));
+    }
+
+    @Test
+    void skipsImageNodeInsideQuote() {
+        String markup = """
+                [{"type": "quote", "content": [
+                    {"type": "text", "text": "Текст цитаты."},
+                    {"type": "img", "attrs": {"url": "/s3/a.webp", "caption": "Подпись"}}
+                ]}]
+                """;
+
+        assertEquals("Текст цитаты.", converter.toText(markup));
+    }
 }

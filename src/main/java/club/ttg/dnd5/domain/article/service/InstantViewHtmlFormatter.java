@@ -41,6 +41,8 @@ public class InstantViewHtmlFormatter {
     private static final Set<String> QUOTE_TYPES = Set.of("quote", "blockquote", "q");
     private static final Set<String> HEADING_TYPES = Set.of("heading", "h");
     private static final Set<String> SEPARATOR_TYPES = Set.of("separator", "hr");
+    /** Картинка в тексте: узел без содержимого, адрес и подпись лежат в {@code attrs}. */
+    private static final Set<String> IMAGE_TYPES = Set.of("image", "img");
 
     private static final Pattern MD_BOLD = Pattern.compile("\\*\\*(.+?)\\*\\*", Pattern.DOTALL);
     private static final Pattern MD_ITALIC = Pattern.compile("\\*(.+?)\\*", Pattern.DOTALL);
@@ -88,7 +90,9 @@ public class InstantViewHtmlFormatter {
 
     /** Разметка → обычный текст без тегов (для {@code og:description} и подобного). */
     public String toPlain(String markup) {
+        // Картинка вместе с подписью в описание не идёт: это не текст статьи.
         String text = toHtml(markup)
+                .replaceAll("(?s)<figure>.*?</figure>", " ")
                 .replaceAll("</(p|h[1-6]|li|blockquote|tr)>", " ")
                 .replaceAll("<[^>]+>", "");
         text = ENTITY.matcher(text).replaceAll(match -> switch (match.group(1)) {
@@ -102,7 +106,7 @@ public class InstantViewHtmlFormatter {
 
     /**
      * Разбивает контент на блоки. Хранимая форма — JSON-массив: строки-абзацы и узлы-объекты
-     * (цитата/заголовок/разделитель/список/таблица — по {@code type}). Не-массив (обычная строка) —
+     * (цитата/заголовок/разделитель/список/таблица/картинка — по {@code type}). Не-массив (обычная строка) —
      * один блок.
      */
     private List<JsonNode> blocks(String markup) {
@@ -127,6 +131,9 @@ public class InstantViewHtmlFormatter {
         if (SEPARATOR_TYPES.contains(type)) {
             return "<hr>";
         }
+        if (IMAGE_TYPES.contains(type)) {
+            return figure(block.path("attrs"));
+        }
 
         String text = clean(markupConverter.toTextKeepingMarkers(preprocessLinks(block.toString())));
         if (text.isEmpty()) {
@@ -143,6 +150,30 @@ public class InstantViewHtmlFormatter {
             return "<h" + level + ">" + inline + "</h" + level + ">";
         }
         return body(text);
+    }
+
+    /**
+     * Картинка в тексте → {@code <figure>} с абсолютным адресом и подписью (если она есть) — так
+     * картинку ждёт формат Instant View. Обтекание и ширина там не выражаются и опускаются.
+     * Адрес допустим только как путь сайта ({@code /s3/...}, но не {@code //хост}) либо
+     * {@code http(s)://...}; с любым другим (в том числе {@code javascript:}) узел пропускается.
+     */
+    private String figure(JsonNode attrs) {
+        String url = attrs.path("url").asText("").strip();
+        boolean absolute = url.startsWith("http://") || url.startsWith("https://");
+        boolean sitePath = url.startsWith("/") && !url.startsWith("//");
+        if (!absolute && !sitePath) {
+            return "";
+        }
+
+        StringBuilder html = new StringBuilder("<figure><img src=\"")
+                .append(escapeAttribute(absolute ? url : site() + url))
+                .append("\">");
+        String caption = attrs.path("caption").asText("").strip();
+        if (!caption.isEmpty()) {
+            html.append("<figcaption>").append(escape(caption)).append("</figcaption>");
+        }
+        return html.append("</figure>").toString();
     }
 
     /**
@@ -453,6 +484,11 @@ public class InstantViewHtmlFormatter {
 
     private static String escape(String s) {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    /** Как {@link #escape}, но ещё и кавычка — для значения атрибута. */
+    private static String escapeAttribute(String s) {
+        return escape(s).replace("\"", "&quot;");
     }
 
     private static boolean looksLikeJson(String s) {

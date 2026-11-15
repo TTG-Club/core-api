@@ -598,6 +598,50 @@ class VttgSpellMapperTest {
 
     /** Активные эффекты заклинания («Злая насмешка») экспортируются без преобразования, включая consumeOn/flags. */
     @Test
+    void callLightningDamageLivesOnlyInEffectVariants() {
+        // Призыв молнии как на сайте: формулы и спасброски «Боя» очищены (null),
+        // урон — в двух вариантах эффекта со своим спасброском.
+        Spell spell = new Spell();
+        spell.setUrl("call-lightning-phb");
+        spell.setName("Призыв молнии");
+        spell.setEnglish("Call Lightning");
+        spell.setLevel(3L);
+        spell.setSchool(SpellSchool.builder().school(MagicSchool.CONJURATION).build());
+        AreaOfEffect area = new AreaOfEffect();
+        area.setType(AreaOfEffectType.SPHERE);
+        area.setValue1(5);
+        SpellEffect effect = new SpellEffect();
+        effect.setTargetType(SpellTargetType.AREA);
+        effect.setAreaOfEffect(area);
+        effect.setDamageTypes(List.of(DamageType.LIGHTNING));
+        effect.setSaveEffect(SpellSaveEffect.HALF);
+        spell.setEffect(effect);
+        spell.setDescription("[\"Каждое существо в пределах 5 футов от этой точки должно совершить "
+                + "спасбросок Ловкости, получая {@dice 3к10} урона Электричеством при провале "
+                + "или половину этого урона при успехе.\"]");
+        spell.setActiveEffects(List.of(
+                lightningVariant("effect-call-lightning-phb-bolt", "(@castLevel)d10@dmg.lightning"),
+                lightningVariant("effect-call-lightning-phb-storm", "(@castLevel + 1)d10@dmg.lightning")));
+
+        var result = mapper.toVttg(spell);
+
+        assertNull(result.getDamageParts());
+        assertEquals(2, result.getActiveEffects().size());
+    }
+
+    private static ActiveEffect lightningVariant(String id, String formula) {
+        DamagePart part = new DamagePart();
+        part.setFormula(formula);
+        part.setTarget("selected");
+        ActiveEffect variant = new ActiveEffect();
+        variant.setId(id);
+        variant.setEffectTarget("target");
+        variant.setDisabled(false);
+        variant.setDamageParts(List.of(part));
+        return variant;
+    }
+
+    @Test
     void exportsSpellActiveEffects() {
         Spell spell = new Spell();
         spell.setUrl("vicious-mockery");

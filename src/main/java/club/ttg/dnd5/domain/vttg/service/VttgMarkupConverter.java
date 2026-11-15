@@ -24,6 +24,12 @@ public class VttgMarkupConverter {
     private static final Set<String> BLOCK_CONTENT_TYPES = Set.of(
             "doc", "blockquote", "bulletList", "orderedList", "listItem", "table", "tableRow"
     );
+    /**
+     * Картинка в тексте — блочный узел без содержимого ({@code attrs}: адрес, обтекание, ширина,
+     * подпись). Ни в компендиуме VTTG, ни в постах каналов картинок внутри текста нет, поэтому
+     * узел пропускается целиком, вместе с подписью.
+     */
+    private static final Set<String> IMAGE_TYPES = Set.of("image", "img");
     private static final Map<String, String> SITE_LINK_SECTIONS = siteLinkSections();
     /**
      * Ссылка на раздел сайта: {@code {@item кинжал|url:dagger-phb}}. Типы — ключи
@@ -151,7 +157,13 @@ public class VttgMarkupConverter {
         }
 
         try {
-            String extracted = extract(objectMapper.readTree(markup), target).trim();
+            JsonNode root = objectMapper.readTree(markup);
+            String extracted = extract(root, target).trim();
+            // Описание из одних картинок текста не даёт. Без этой проверки сработал бы запасной
+            // путь ниже, и наружу уехал бы сырой JSON узла.
+            if (!StringUtils.hasText(extracted) && containsImage(root)) {
+                return "";
+            }
             String source = StringUtils.hasText(extracted) ? extracted : markup;
             return replaceMarkup(source, target);
         } catch (Exception ignored) {
@@ -180,6 +192,10 @@ public class VttgMarkupConverter {
         if (node.isObject()) {
             String type = node.path("type").asText();
 
+            // Картинка в тексте: пустой результат родитель отбрасывает, пустой строки не остаётся.
+            if (IMAGE_TYPES.contains(type)) {
+                return "";
+            }
             // Перенос строки — и ProseMirror (hardBreak), и фронтовый узел (break).
             if ("hardBreak".equals(type) || "break".equals(type)) {
                 return "\n";
@@ -475,6 +491,19 @@ public class VttgMarkupConverter {
             }
         });
         return String.join(blockContent ? "\n\n" : "", parts);
+    }
+
+    /** Есть ли в дереве разметки узел-картинка (на любой глубине). */
+    private static boolean containsImage(JsonNode node) {
+        if (node.isObject() && IMAGE_TYPES.contains(node.path("type").asText())) {
+            return true;
+        }
+        for (JsonNode child : node) {
+            if (containsImage(child)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean hasBlockContent(String type) {
