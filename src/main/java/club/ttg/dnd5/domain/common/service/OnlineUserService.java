@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.common.service;
 
 import club.ttg.dnd5.config.properties.OnlineServiceProperties;
 import club.ttg.dnd5.domain.common.model.OnlineType;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -133,6 +134,36 @@ public class OnlineUserService
 
             return response == null
                     ? new OnlineAdminStatsResponse(0, new OnlineCount(0, 0, 0, 0), List.of())
+                    : response;
+        }
+        catch (RestClientResponseException ex)
+        {
+            throw asResponseStatusException(ex);
+        }
+        catch (RestClientException ex)
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Online service is unavailable", ex);
+        }
+    }
+
+    /**
+     * Посещаемость по суткам. Считает и хранит её online-service, ответ отдаём как есть.
+     */
+    public OnlineHistoryResponse getHistory(int days)
+    {
+        try
+        {
+            OnlineHistoryResponse response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/online/history")
+                            .queryParam("days", days)
+                            .build())
+                    .headers(this::addServiceHeaders)
+                    .retrieve()
+                    .body(OnlineHistoryResponse.class);
+
+            return response == null
+                    ? new OnlineHistoryResponse(null, null, null, new OnlineHistorySeries(List.of()), List.of())
                     : response;
         }
         catch (RestClientResponseException ex)
@@ -289,6 +320,76 @@ public class OnlineUserService
 
             @Schema(description = "То же по каждому сайту, плюс настройки отображения и работа с инструментами")
             List<OnlineStatsResponse> sites
+    ) {}
+
+    /*
+     * Дата и время — строками: online-service уже отдаёт их в нужном поясе, а пересборка через
+     * java.time могла бы сдвинуть смещение (например, в UTC). Числа — обёртками: день без данных
+     * приходит с null, и до админки должен дойти null, а не 0.
+     */
+    @Schema(description = "Посещаемость по суткам для админки")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record OnlineHistoryResponse(
+            @Schema(description = "Часовой пояс, в котором считаются сутки", example = "Europe/Moscow")
+            String zone,
+
+            @Schema(description = "Первый день периода", example = "2026-10-18")
+            String from,
+
+            @Schema(description = "Последний день периода, сегодня", example = "2026-11-16")
+            String to,
+
+            @Schema(description = "По всем сайтам вместе")
+            OnlineHistorySeries total,
+
+            @Schema(description = "То же по каждому сайту")
+            List<OnlineSiteHistory> sites
+    ) {}
+
+    @Schema(description = "Посещаемость по дням")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record OnlineHistorySeries(
+            @Schema(description = "Дни периода по порядку")
+            List<OnlineHistoryDay> days
+    ) {}
+
+    @Schema(description = "Посещаемость одного сайта по дням")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record OnlineSiteHistory(
+            @Schema(description = "Сайт", example = "5e14")
+            String siteId,
+
+            @Schema(description = "Дни периода по порядку")
+            List<OnlineHistoryDay> days
+    ) {}
+
+    @Schema(description = "Посещаемость за одни сутки. В день без данных числа и peakAt — null")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record OnlineHistoryDay(
+            @Schema(description = "День", example = "2026-11-16")
+            String date,
+
+            @Schema(description = "Разных посетителей за сутки", nullable = true)
+            Long visitors,
+
+            @Schema(description = "Из них гостей", nullable = true)
+            Long guests,
+
+            @Schema(description = "Из них зарегистрированных", nullable = true)
+            Long registered,
+
+            @Schema(description = "Наибольший онлайн за сутки", nullable = true)
+            Long peakOnline,
+
+            @Schema(description = "Когда был наибольший онлайн", example = "2026-11-16T21:35:00+03:00",
+                    nullable = true)
+            String peakAt,
+
+            @Schema(description = "Средний онлайн за сутки", nullable = true)
+            Double averageOnline,
+
+            @Schema(description = "Наибольшее число посетителей в игровых мирах за сутки", nullable = true)
+            Long peakPlayers
     ) {}
 }
 

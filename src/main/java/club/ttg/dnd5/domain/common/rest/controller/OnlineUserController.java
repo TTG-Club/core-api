@@ -147,6 +147,16 @@ public class OnlineUserController
         return service.getStats();
     }
 
+    @Operation(summary = "Посещаемость по суткам за последние days дней (от 1 до 365, включая сегодня): "
+            + "по всем сайтам вместе и по каждому. Дни без данных приходят с null в числах. "
+            + "Только для роли ADMIN")
+    @Secured("ADMIN")
+    @GetMapping("/history")
+    public OnlineUserService.OnlineHistoryResponse history(@RequestParam(defaultValue = "30") int days)
+    {
+        return service.getHistory(Math.clamp(days, 1, 365));
+    }
+
     private static boolean isAuthenticated(Authentication authentication)
     {
         return authentication != null
