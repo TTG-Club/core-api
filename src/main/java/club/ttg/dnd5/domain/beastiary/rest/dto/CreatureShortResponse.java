@@ -12,4 +12,8 @@ public class CreatureShortResponse extends ShortResponse {
     private String challengeRailing;
     @Schema(description = "Тип (или типы) существ")
     private String type;
+    @Schema(description = "Опыт за победу над существом")
+    private Long experience;
+    @Schema(description = "Опыт за победу над существом в его логове; нет, если логова нет")
+    private Long experienceInLair;
 }
