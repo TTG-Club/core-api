@@ -71,6 +71,9 @@ public class CreatureRequest extends BaseRequest {
     private CreatureLairRequest lair;
     @Schema(description = "Секция описательных характеристик существа")
     private CreatureSectionRequest section;
+    @Schema(description = "Спутники — url существ, с которыми это существо обычно встречается",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<String> companions;
 
     @Schema(description = "Активные эффекты существа в вокабуляре VTTG")
     private List<ActiveEffect> activeEffects;

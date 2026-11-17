@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-16-02-creature-companions-column
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Спутники существа — url существ бестиария, с которыми оно обычно встречается
+        (рыцарь и боевой конь). Генератор столкновений охотнее берёт их в свиту.
+      changes:
+        - addColumn:
+            tableName: bestiary
+            columns:
+              - column:
+                  name: companions
+                  type: jsonb
+      rollback:
+        - dropColumn:
+            tableName: bestiary
+            columnName: companions

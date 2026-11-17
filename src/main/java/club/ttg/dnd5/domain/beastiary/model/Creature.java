@@ -241,6 +241,14 @@ public class Creature extends NamedEntity {
     private CreatureSection section;
 
     /**
+     * Спутники — url существ, с которыми это существо обычно встречается (рыцарь и
+     * боевой конь). Генератор столкновений охотнее берёт их в свиту.
+     */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<String> companions;
+
+    /**
      * Активные эффекты существа в вокабуляре VTTG — та же модель и та же колонка, что у
      * черты ({@code Feat.activeEffects}) и предмета.
      *
