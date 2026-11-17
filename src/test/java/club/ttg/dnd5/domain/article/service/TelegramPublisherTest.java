@@ -106,6 +106,27 @@ class TelegramPublisherTest {
     }
 
     @Test
+    void videoBecomesCardOfInstantViewPost() {
+        // Ролик у новости стоит вместо обложки: карточкой поста должен быть сам ролик (плеер), а не
+        // страница Instant View со ссылкой на ролик в тексте — иначе пост приходится править руками.
+        String video = "https://www.youtube.com/watch?v=ptN1if6LvxY";
+        Article article = article();
+        article.setVideoUrl(video);
+
+        server.expect(requestTo(SEND_MESSAGE))
+                .andExpect(jsonPath("$.text").value("<b>Бестиарий пополнился</b>\n\n"
+                        + "🎬 Видео: <a href=\"" + video + "\">" + video + "</a>\n\n"
+                        + "<a href=\"https://t.me/iv?url=https%3A%2F%2Fttg.club%2Fiv%2Farticles%2Fbestiary-update"
+                        + "&amp;rhash=" + RHASH + "\">Читать новость →</a>"))
+                .andExpect(jsonPath("$.link_preview_options.url").value(video))
+                .andExpect(jsonPath("$.link_preview_options.show_above_text").value(true))
+                .andRespond(withSuccess(OK_RESPONSE, MediaType.APPLICATION_JSON));
+
+        assertEquals(TelegramPublisher.PublishResult.Status.POSTED, publisher.publish(article).status());
+        server.verify();
+    }
+
+    @Test
     void retriesRightAwayAfterShortFloodWait() {
         // Telegram отвечает 429, пока сам готовит карточку ссылки: пережидаем названную паузу и повторяем
         // тут же — к следующему тику планировщика всё началось бы заново.

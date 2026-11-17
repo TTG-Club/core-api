@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
  * должно быть ни одной лишней строки. Исключение — включённое в админке короткое описание
  * ({@code telegramSummaryEnabled}): тогда вместо заглушки под карточкой идёт выжимка новости.
  * Ни лимит 4096, ни заливка картинки в этом режиме не при чём.
+ * Новость с роликом ({@code videoUrl}) — особый случай в обоих режимах: карточкой поста становится сам
+ * ролик (плеер YouTube / ВК Видео), а в режиме Instant View заголовок и ссылка на статью в IV уходят в текст.
  * Режим включается, когда задан {@code telegram.instant-view-rhash} (шаблон создан на
  * instantview.telegram.org, см. {@code docs/telegram-instant-view.md}), а у записи выбран вид
  * {@link TelegramPostFormat#INSTANT_VIEW} (по умолчанию).
@@ -134,7 +136,8 @@ public class TelegramPublisher {
         String instantViewUrl = instantViewUrl(article);
         if (instantViewUrl != null) {
             SendOutcome sent = send("sendMessage",
-                    linkPreviewPayload(instantViewText(article), instantViewUrl));
+                    linkPreviewPayload(instantViewText(article, instantViewUrl),
+                            cardUrl(article, instantViewUrl)));
             if (sent.result() == SendResult.REJECTED || sent.retryAfterSeconds() != null) {
                 // Карточку собрать не удалось (страница ещё не отдаётся роботу, битый rhash) — новость
                 // всё равно должна уйти. Сюда же попадает 429, не снятый паузой: так Telegram отвечает,
@@ -154,7 +157,8 @@ public class TelegramPublisher {
         // Обложку показываем превью-ссылкой НАД текстом (link_preview_options.show_above_text): пост уходит
         // одним текстовым сообщением (первый кусок — до 4096, а не 1024 как в подписи к фото). Требует
         // публичного URL обложки — Telegram качает её сам. Если URL не публичный — фоллбэк на фото ниже.
-        String cover = coverUrl(article.getPreviewImageUrl());
+        // У новости с роликом карточкой над текстом идёт сам ролик (плеер), а не обложка — как на сайте.
+        String cover = cardUrl(article, coverUrl(article.getPreviewImageUrl()));
         if (cover != null) {
             List<String> messages = buildMessages(article, MESSAGE_LIMIT);
             SendOutcome first = send("sendMessage", linkPreviewPayload(messages.get(0), cover));
@@ -266,13 +270,35 @@ public class TelegramPublisher {
      * админке, иначе — невидимая заглушка {@link #INSTANT_VIEW_TEXT}. Заголовок и обложку в текст не
      * дублируем — их показывает сама карточка.
      */
-    private String instantViewText(Article article) {
+    private String instantViewText(Article article, String instantViewUrl) {
         String summary = summaryHtml(article);
         String video = videoLineHtml(article);
         if (video == null) {
             return summary == null ? INSTANT_VIEW_TEXT : summary;
         }
-        return summary == null ? video : summary + "\n\n" + video;
+        // Новость с роликом: карточку занимает плеер (см. cardUrl), поэтому заголовок пишем в тексте сами,
+        // а статью в Instant View открывает ссылка в конце — карточки IV у такого поста нет.
+        StringBuilder text = new StringBuilder();
+        String title = nullToEmpty(article.getTitle());
+        if (StringUtils.hasText(title)) {
+            text.append("<b>").append(escape(title)).append("</b>\n\n");
+        }
+        if (summary != null) {
+            text.append(summary).append("\n\n");
+        }
+        return text.append(video).append("\n\n")
+                .append("<a href=\"").append(escape(instantViewUrl)).append("\">Читать новость →</a>")
+                .toString();
+    }
+
+    /**
+     * Адрес, по которому Telegram строит карточку поста. У новости с роликом это сам ролик: только так
+     * в канале появляется плеер (YouTube / ВК Видео), а не простая ссылка под чужой карточкой — на сайте
+     * ролик тоже стоит вместо обложки. Без ролика — {@code fallback} (страница Instant View либо обложка).
+     */
+    private static String cardUrl(Article article, String fallback) {
+        String video = VideoUrls.normalize(article.getVideoUrl());
+        return video == null ? fallback : video;
     }
 
     /**
@@ -352,9 +378,9 @@ public class TelegramPublisher {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("chat_id", properties.getChatId());
             payload.put("message_id", article.getTelegramMessageId());
-            payload.put("text", instantViewText(article));
+            payload.put("text", instantViewText(article, instantViewUrl));
             payload.put("parse_mode", properties.getParseMode());
-            payload.put("link_preview_options", linkPreviewOptions(instantViewUrl));
+            payload.put("link_preview_options", linkPreviewOptions(cardUrl(article, instantViewUrl)));
             return switch (send("editMessageText", payload).result()) {
                 case SENT -> EditResult.SYNCED;
                 case TRANSIENT -> EditResult.RETRY;
@@ -379,7 +405,7 @@ public class TelegramPublisher {
         // Текстовый пост с обложкой-превью: пере-передаём link_preview_options, иначе editMessageText потеряет
         // картинку над текстом. Для поста без обложки (cover == null) ключ не добавляем — поведение прежнее.
         if (!photo) {
-            String cover = coverUrl(article.getPreviewImageUrl());
+            String cover = cardUrl(article, coverUrl(article.getPreviewImageUrl()));
             if (cover != null) {
                 payload.put("link_preview_options", linkPreviewOptions(cover));
             }
