@@ -437,3 +437,7 @@ databaseChangeLog:
       file: db/changelog/2026/11/14-04-catalog-url-on-update-cascade.yaml
   - include:
       file: db/changelog/2026/11/14-05-item-weight-pounds.yaml
+  - include:
+      file: db/changelog/2026/11/16-01-source-officiality-category.yaml
+  - include:
+      file: db/changelog/2026/11/16-02-creature-companions.yaml

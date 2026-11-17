@@ -36,6 +36,7 @@ class OnlineUserServiceTest
     private final AtomicReference<String> receivedMethod = new AtomicReference<>();
     private final AtomicReference<String> receivedToken = new AtomicReference<>();
     private final AtomicReference<String> receivedBody = new AtomicReference<>();
+    private final AtomicReference<String> receivedQuery = new AtomicReference<>();
 
     private HttpServer server;
     private OnlineUserService service;
@@ -158,10 +159,57 @@ class OnlineUserServiceTest
         assertNull(site.usage());
     }
 
+    @Test
+    void historyIsForwardedWithDaysAndTokenAndKeepsNulls()
+    {
+        respond("/api/v1/online/history", 200, """
+                {
+                  "zone": "Europe/Moscow", "from": "2026-11-15", "to": "2026-11-16",
+                  "total": { "days": [
+                    { "date": "2026-11-15", "visitors": null, "guests": null, "registered": null,
+                      "peakOnline": null, "peakAt": null, "averageOnline": null, "peakPlayers": null },
+                    { "date": "2026-11-16", "visitors": 812, "guests": 700, "registered": 112,
+                      "peakOnline": 41, "peakAt": "2026-11-16T21:35:00+03:00",
+                      "averageOnline": 17.3, "peakPlayers": 3 }
+                  ] },
+                  "sites": [ { "siteId": "5e14", "days": [] } ]
+                }
+                """);
+
+        OnlineUserService.OnlineHistoryResponse history = service.getHistory(2);
+
+        assertEquals("GET", receivedMethod.get());
+        assertEquals("days=2", receivedQuery.get());
+        assertEquals(TOKEN, receivedToken.get());
+        assertEquals("Europe/Moscow", history.zone());
+        assertEquals(
+                new OnlineUserService.OnlineHistoryDay("2026-11-15", null, null, null, null, null, null, null),
+                history.total().days().get(0)
+        );
+        assertEquals(
+                new OnlineUserService.OnlineHistoryDay("2026-11-16", 812L, 700L, 112L, 41L,
+                        "2026-11-16T21:35:00+03:00", 17.3, 3L),
+                history.total().days().get(1)
+        );
+        assertEquals("5e14", history.sites().getFirst().siteId());
+    }
+
+    @Test
+    void historyTurnsOnlineServiceFailureIntoBadGateway()
+    {
+        respond("/api/v1/online/history", 500, null);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> service.getHistory(30));
+
+        assertEquals(HttpStatus.BAD_GATEWAY, exception.getStatusCode());
+    }
+
     private void respond(String path, int status, String json)
     {
         server.createContext(path, exchange -> {
             receivedMethod.set(exchange.getRequestMethod());
+            receivedQuery.set(exchange.getRequestURI().getRawQuery());
             receivedToken.set(exchange.getRequestHeaders().getFirst("X-Online-Token"));
             receivedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
 

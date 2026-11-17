@@ -56,6 +56,9 @@ public interface CreatureMapper {
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toShortChallengeRating")
     @Mapping(source = "types", target = "type", qualifiedByName = "toType")
+    @Mapping(source = "types.values", target = "typeCodes")
+    @Mapping(source = "types.text", target = "subtype")
+    @Mapping(source = "section.sectionName", target = "family")
     CreatureShortResponse toShort(Creature creature);
 
     @BaseMapping.BaseSourceMapping

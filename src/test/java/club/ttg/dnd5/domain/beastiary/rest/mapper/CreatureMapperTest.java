@@ -1,6 +1,8 @@
 package club.ttg.dnd5.domain.beastiary.rest.mapper;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.beastiary.model.CreatureCategory;
+import club.ttg.dnd5.domain.beastiary.model.CreatureSection;
 import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellComponents;
 import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellGroup;
 import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellRef;
@@ -9,6 +11,8 @@ import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellUsageMode;
 import club.ttg.dnd5.domain.beastiary.model.spellcasting.CreatureSpellcastingBlock;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.common.dictionary.Ability;
+import club.ttg.dnd5.domain.common.dictionary.Alignment;
+import club.ttg.dnd5.domain.common.dictionary.CreatureType;
 import club.ttg.dnd5.domain.common.dictionary.RechargeType;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
 import org.junit.jupiter.api.Test;
@@ -118,5 +122,52 @@ class CreatureMapperTest {
         Creature creature = new Creature();
 
         assertNull(mapper.toRequest(creature).getSpellcasting());
+    }
+
+    /**
+     * Спутники переживают круг «форма открыла запись и сохранила»: {@code /raw} отдаёт их
+     * тем же полем, а сохранение пишет обратно в JSONB.
+     */
+    @Test
+    void formKeepsCompanionsThroughSaveCycle() {
+        Creature creature = new Creature();
+        creature.setCompanions(List.of("warhorse-mm"));
+
+        CreatureRequest request = mapper.toRequest(creature);
+
+        assertEquals(List.of("warhorse-mm"), request.getCompanions());
+
+        Creature saved = mapper.toEntity(request, null);
+
+        assertEquals(List.of("warhorse-mm"), saved.getCompanions());
+    }
+
+    /**
+     * Поиск отдаёт генератору столкновений всё, по чему он собирает группу: коды типов,
+     * подтип, семейство, мировоззрение и спутников.
+     */
+    @Test
+    void searchExposesEncounterCompatibilityFields() {
+        CreatureCategory types = new CreatureCategory();
+        types.setValues(List.of(CreatureType.FEY));
+        types.setText("гоблиноид");
+
+        CreatureSection section = new CreatureSection();
+        section.setSectionName("Гоблины");
+
+        Creature creature = new Creature();
+        creature.setTypes(types);
+        creature.setSection(section);
+        creature.setAlignment(Alignment.CHAOTIC_NEUTRAL);
+        creature.setCompanions(List.of("wolf-mm"));
+        creature.setExperience(50L);
+
+        var response = mapper.toShort(creature);
+
+        assertEquals(List.of("FEY"), response.getTypeCodes());
+        assertEquals("гоблиноид", response.getSubtype());
+        assertEquals("Гоблины", response.getFamily());
+        assertEquals("CHAOTIC_NEUTRAL", response.getAlignment());
+        assertEquals(List.of("wolf-mm"), response.getCompanions());
     }
 }

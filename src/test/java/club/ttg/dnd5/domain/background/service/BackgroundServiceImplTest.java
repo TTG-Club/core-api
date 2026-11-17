@@ -15,7 +15,8 @@ import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.item.service.EquipmentNameResolver;
 import club.ttg.dnd5.domain.revision.service.EntityRevisionService;
 import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceCategory;
+import club.ttg.dnd5.domain.source.model.SourceOfficiality;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -149,7 +150,8 @@ class BackgroundServiceImplTest {
         source.setUrl("source");
         source.setName("Source");
         source.setEnglish("Source");
-        source.setType(SourceType.OFFICIAL);
+        source.setOfficiality(SourceOfficiality.OFFICIAL);
+        source.setCategory(SourceCategory.CORE);
         return source;
     }
 }

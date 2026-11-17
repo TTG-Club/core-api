@@ -14,7 +14,8 @@ import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.FeatCategory;
 import club.ttg.dnd5.domain.feat.repository.FeatRepository;
 import club.ttg.dnd5.domain.source.model.Source;
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceCategory;
+import club.ttg.dnd5.domain.source.model.SourceOfficiality;
 import club.ttg.dnd5.domain.source.repository.SourceRepository;
 import club.ttg.dnd5.domain.species.model.Species;
 import club.ttg.dnd5.domain.species.repository.SpeciesRepository;
@@ -251,7 +252,8 @@ class RelatedEntitySaveIsolationIntegrationTest {
         source.setUrl(id);
         source.setName(id + " name");
         source.setEnglish(id + " english");
-        source.setType(SourceType.OFFICIAL);
+        source.setOfficiality(SourceOfficiality.OFFICIAL);
+        source.setCategory(SourceCategory.CORE);
         return sourceRepository.saveAndFlush(source);
     }
 

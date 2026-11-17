@@ -36,8 +36,19 @@ public class Source extends Timestamped {
     @Column(columnDefinition = "TEXT")
     private String original;
 
+    /**
+     * Степень официальности: официальный, тестовый (UA), от третьих лиц, хомбрю
+     */
     @Enumerated(EnumType.STRING)
-    private SourceType type;
+    @Column(nullable = false)
+    private SourceOfficiality officiality;
+
+    /**
+     * Категория: основные правила, сеттинг, приключения
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SourceCategory category;
     /**
      * Издатель
      */

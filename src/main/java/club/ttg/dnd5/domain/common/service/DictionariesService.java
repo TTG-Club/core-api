@@ -14,7 +14,8 @@ import club.ttg.dnd5.domain.item.model.weapon.Property;
 import club.ttg.dnd5.domain.magic.model.MagicItemCategory;
 import club.ttg.dnd5.domain.magic.model.MagicItemTheme;
 import club.ttg.dnd5.domain.common.model.notification.NotificationType;
-import club.ttg.dnd5.domain.source.model.SourceType;
+import club.ttg.dnd5.domain.source.model.SourceCategory;
+import club.ttg.dnd5.domain.source.model.SourceOfficiality;
 import club.ttg.dnd5.domain.spell.model.ComparisonOperator;
 import club.ttg.dnd5.domain.spell.model.enums.AreaOfEffectType;
 import club.ttg.dnd5.domain.spell.model.enums.CastingUnit;
@@ -357,11 +358,20 @@ public class DictionariesService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<SelectOptionDto> getSourceTypes() {
-        return Arrays.stream(SourceType.values())
-                .map(weaponCategory -> SelectOptionDto.builder()
-                        .label(weaponCategory.getName())
-                        .value(weaponCategory.name())
+    public Collection<SelectOptionDto> getSourceOfficialities() {
+        return Arrays.stream(SourceOfficiality.values())
+                .map(officiality -> SelectOptionDto.builder()
+                        .label(officiality.getName())
+                        .value(officiality.name())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<SelectOptionDto> getSourceCategories() {
+        return Arrays.stream(SourceCategory.values())
+                .map(category -> SelectOptionDto.builder()
+                        .label(category.getName())
+                        .value(category.name())
                         .build())
                 .collect(Collectors.toList());
     }

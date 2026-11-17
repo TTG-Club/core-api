@@ -785,22 +785,41 @@ public class DictionariesController {
         return dictionariesService.getWeaponAmmunitionType();
     }
 
-    @Operation(summary = "Типы источников")
-    @GetMapping("/source/types")
+    @Operation(summary = "Степени официальности источников")
+    @GetMapping("/source/officialities")
     @ApiResponse(
             responseCode = "200",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject("""
                             [
-                              { "label": "Стрела", "value": "ARROW" },
-                              { "label": "Болт", "value": "BOLT" },
-                              { "label": "Игла для трубки", "value": "SLING_BULLET" },
+                              { "label": "Официальные", "value": "OFFICIAL" },
+                              { "label": "Неизведанная аркана", "value": "TEST" },
+                              { "label": "3rd party", "value": "THIRD_PARTY" },
+                              { "label": "Homebrew", "value": "HOMEBREW" }
                             ]
                             """)
             )
     )
-    public Collection<SelectOptionDto> getSourceTypes() {
-        return dictionariesService.getSourceTypes();
+    public Collection<SelectOptionDto> getSourceOfficialities() {
+        return dictionariesService.getSourceOfficialities();
+    }
+
+    @Operation(summary = "Категории источников")
+    @GetMapping("/source/categories")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject("""
+                            [
+                              { "label": "Основные правила", "value": "CORE" },
+                              { "label": "Сеттинг", "value": "SETTING" },
+                              { "label": "Приключения", "value": "ADVENTURE" }
+                            ]
+                            """)
+            )
+    )
+    public Collection<SelectOptionDto> getSourceCategories() {
+        return dictionariesService.getSourceCategories();
     }
 
     @Operation(summary = "Типы статей / новостей")

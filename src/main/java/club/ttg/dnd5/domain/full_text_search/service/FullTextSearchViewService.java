@@ -148,11 +148,11 @@ public class FullTextSearchViewService {
 
     /**
      * Источник (книга) есть не у всех разделов: у статей / новостей его нет,
-     * тогда sourceType и page отсутствуют — возвращаем null, чтобы не разыменовывать
+     * тогда sourceOfficiality и page отсутствуют — возвращаем null, чтобы не разыменовывать
      * их (в т.ч. не распаковывать null Integer в примитивный page).
      */
     private SourceResponse getSource(FullTextSearchView ftsv) {
-        if (ftsv.getSourceType() == null) {
+        if (ftsv.getSourceOfficiality() == null) {
             return null;
         }
         return SourceResponse.builder()
@@ -162,8 +162,8 @@ public class FullTextSearchViewService {
                         .english(ftsv.getSourceEnglish())
                         .build())
                 .group(NameResponse.builder()
-                        .name(ftsv.getSourceType().getGroup())
-                        .label(ftsv.getSourceType().getLabel())
+                        .name(ftsv.getSourceOfficiality().getGroup())
+                        .label(ftsv.getSourceOfficiality().getLabel())
                         .build())
                 .page(ftsv.getPage())
                 .build();
