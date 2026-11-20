@@ -206,7 +206,8 @@ class QueryRequestArgumentResolverTest
                     "vulnerability=FAIR,COLD&vulnerability_mode=1"
                             + "&resistance=POISON&resistance_union=1"
                             + "&damageImmunity=NECROTIC,PSYCHIC"
-                            + "&conditionImmunity=CHARMED,FRIGHTENED&conditionImmunity_mode=1&conditionImmunity_union=1");
+                            + "&conditionImmunity=CHARMED,FRIGHTENED"
+                            + "&conditionImmunity_mode=1&conditionImmunity_union=1");
 
             assertEquals(Set.of(DamageType.FIRE, DamageType.COLD), request.getVulnerability().getValues());
             assertTrue(request.getVulnerability().isExclude());

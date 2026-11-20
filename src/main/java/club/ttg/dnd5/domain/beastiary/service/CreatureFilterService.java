@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -144,22 +145,14 @@ public class CreatureFilterService
 
         // Уязвимости, сопротивления и иммунитеты: у существа их бывает несколько,
         // поэтому доступны и «Исключать», и совпадение всех выбранных значений.
-        groups.add(damageTypeGroup("vulnerability", "Уязвимость к урону"));
-        groups.add(damageTypeGroup("resistance", "Сопротивление к урону"));
-        groups.add(damageTypeGroup("damageImmunity", "Иммунитет к урону"));
-        groups.add(FilterGroupMeta.builder()
-                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "conditionImmunity"))
-                .name("Иммунитет к состояниям")
-                .supports(SupportsConfig.builder().mode(true).union(true).build())
-                .values(Arrays.stream(Condition.values())
-                        .map(c -> FilterValueMeta.builder()
-                                .id(c.name())
-                                .value(c.name())
-                                .name(c.getName())
-                                .build())
-                        .sorted(Comparator.comparing(FilterValueMeta::getName))
-                        .toList())
-                .build());
+        groups.add(multiValueEnumGroup("vulnerability", "Уязвимость к урону",
+                DamageType.values(), DamageType::getName));
+        groups.add(multiValueEnumGroup("resistance", "Сопротивление к урону",
+                DamageType.values(), DamageType::getName));
+        groups.add(multiValueEnumGroup("damageImmunity", "Иммунитет к урону",
+                DamageType.values(), DamageType::getName));
+        groups.add(multiValueEnumGroup("conditionImmunity", "Иммунитет к состояниям",
+                Condition.values(), Condition::getName));
 
         // Теги — из DISTINCT-запроса + pre-persisted хэши
         Map<String, String> tagHashes = filterHashMappingRepository.findAllByCategory(FilterHashCategory.TAG)
@@ -234,22 +227,28 @@ public class CreatureFilterService
     }
 
     /**
-     * Группа фильтра по типам урона — общая для уязвимостей, сопротивлений и иммунитетов.
+     * Группа фильтра по enum-массиву существа, где значений бывает несколько: доступны и
+     * «Исключать», и совпадение всех выбранных. Значения отсортированы по названию.
      *
-     * @param field поле {@link CreatureQueryRequest}, из которого берётся ключ группы
-     * @param name  название группы на сайте
+     * @param field       поле {@link CreatureQueryRequest}, из которого берётся ключ группы
+     * @param name        название группы на сайте
+     * @param values      все значения enum
+     * @param displayName название значения на сайте
      */
-    private static FilterGroupMeta damageTypeGroup(final String field, final String name)
+    private static <E extends Enum<E>> FilterGroupMeta multiValueEnumGroup(final String field,
+                                                                         final String name,
+                                                                         final E[] values,
+                                                                         final Function<E, String> displayName)
     {
         return FilterGroupMeta.builder()
                 .key(FilterKeys.keyOf(CreatureQueryRequest.class, field))
                 .name(name)
                 .supports(SupportsConfig.builder().mode(true).union(true).build())
-                .values(Arrays.stream(DamageType.values())
-                        .map(d -> FilterValueMeta.builder()
-                                .id(d.name())
-                                .value(d.name())
-                                .name(d.getName())
+                .values(Arrays.stream(values)
+                        .map(value -> FilterValueMeta.builder()
+                                .id(value.name())
+                                .value(value.name())
+                                .name(displayName.apply(value))
                                 .build())
                         .sorted(Comparator.comparing(FilterValueMeta::getName))
                         .toList())

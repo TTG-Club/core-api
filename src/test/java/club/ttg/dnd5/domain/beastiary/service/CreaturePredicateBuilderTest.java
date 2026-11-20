@@ -23,14 +23,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code … and types @> … and lair is null or … and source in (…)}: во второй ветке
  * {@code or} терялись поиск и тип — {@code type=DRAGON} вместе с {@code lair_mode=1}
  * отдавал существ всех типов.
+ * <p>
+ * Фильтры по уязвимостям, сопротивлениям и иммунитетам: каждый ключ идёт в свою колонку,
+ * «Исключать» не теряет существ с пустой колонкой, совпадение всех требует каждое значение.
  */
 class CreaturePredicateBuilderTest
 {
+    /** Ключ фильтра по типам урона → колонка таблицы bestiary. */
+    private static final List<DamageFilter> DAMAGE_FILTERS = List.of(
+            new DamageFilter("vulnerabilities", CreatureQueryRequest::setVulnerability),
+            new DamageFilter("resistance", CreatureQueryRequest::setResistance),
+            new DamageFilter("immunity_to_damage", CreatureQueryRequest::setDamageImmunity));
+
+    private record DamageFilter(String column, BiConsumer<CreatureQueryRequest, QueryFilter<DamageType>> setter)
+    {
+    }
+
     private static QueryFilter<String> excluded()
     {
         QueryFilter<String> filter = new QueryFilter<>();
         filter.setValues(Set.of("1"));
         filter.setExclude(true);
+        return filter;
+    }
+
+    private static <E> QueryFilter<E> filter(final Set<E> values, final boolean exclude, final boolean union)
+    {
+        QueryFilter<E> filter = new QueryFilter<>();
+        filter.setValues(values);
+        filter.setExclude(exclude);
+        filter.setUnion(union);
         return filter;
     }
 
@@ -70,25 +92,6 @@ class CreaturePredicateBuilderTest
         request.setLegendaryAction(excluded());
 
         PredicateSql.assertOrStaysInsideParentheses(sql(request));
-    }
-
-    private static <E> QueryFilter<E> filter(final Set<E> values, final boolean exclude, final boolean union)
-    {
-        QueryFilter<E> filter = new QueryFilter<>();
-        filter.setValues(values);
-        filter.setExclude(exclude);
-        filter.setUnion(union);
-        return filter;
-    }
-
-    /** Ключ фильтра по типам урона → колонка таблицы bestiary. */
-    private static final List<DamageFilter> DAMAGE_FILTERS = List.of(
-            new DamageFilter("vulnerabilities", CreatureQueryRequest::setVulnerability),
-            new DamageFilter("resistance", CreatureQueryRequest::setResistance),
-            new DamageFilter("immunity_to_damage", CreatureQueryRequest::setDamageImmunity));
-
-    private record DamageFilter(String column, BiConsumer<CreatureQueryRequest, QueryFilter<DamageType>> setter)
-    {
     }
 
     @Test
