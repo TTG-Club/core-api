@@ -620,6 +620,32 @@ class VttgFeatMechanicsMapperTest {
     }
 
     /**
+     * Отметка «по ячейкам» («Адепт школы») уезжает в выгрузку как {@code fromSlots} —
+     * только когда она {@code true}; без отметки и с {@code false} поля нет.
+     */
+    @Test
+    void mapsFromSlotsOfGrantedSpellOnlyWhenTrue() {
+        GrantedSpellRef limited = new GrantedSpellRef("fireball-phb", "Огненный шар", 5);
+        limited.setLimitedBySlots(true);
+        GrantedSpellRef off = new GrantedSpellRef("shield-phb", "Щит", null);
+        off.setLimitedBySlots(false);
+
+        Feat feat = baseFeat();
+        FeatMechanics mechanics = new FeatMechanics();
+        SpellGrant spells = new SpellGrant();
+        spells.setSpells(List.of(limited, new GrantedSpellRef("light-phb", "Свет", null), off));
+        mechanics.setSpells(spells);
+        feat.setMechanics(mechanics);
+
+        JsonNode granted = json(feat).get("featData").get("grantedSpells");
+
+        assertTrue(granted.get(0).get("fromSlots").asBoolean());
+        assertEquals(5, granted.get(0).get("requiredLevel").asInt());
+        assertFalse(granted.get(1).has("fromSlots"));
+        assertFalse(granted.get(2).has("fromSlots"));
+    }
+
+    /**
      * «Заклинания метки» — не выдача: лист лишь добавляет их в список класса, и подготовку
      * с ячейкой персонаж тратит сам. Поэтому отдельным полем от {@code grantedSpells}.
      */
