@@ -15,6 +15,7 @@ import club.ttg.dnd5.exception.EntityNotFoundException;
 import club.ttg.dnd5.security.SecurityUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,7 @@ public class SavedCharacterSheetService {
     private static final String HEALTH_FIELD = "health";
     private static final String CURRENT_FIELD = "current";
     private static final String MAX_FIELD = "max";
+    private static final String TEMPORARY_FIELD = "temporary";
 
     private final SavedCharacterSheetRepository savedRepository;
     private final CharacterSheetRepository sheetRepository;
@@ -101,33 +103,36 @@ public class SavedCharacterSheetService {
     }
 
     /**
-     * Текущие хиты чужого листа. Правит их мастер боя: урон и лечение он отмечает в трекере
-     * инициативы, и лист игрока должен их видеть. Меняется ровно {@code health.current} — максимум
-     * лист считает сам, а остального документа правка не касается: он принадлежит владельцу листа.
+     * Текущие и временные хиты чужого листа. Правит их мастер боя: урон, лечение и временные хиты
+     * он отмечает в трекере инициативы, и лист игрока должен их видеть. Меняются ровно
+     * {@code health.current} и {@code health.temporary} (последний — только если прислан; {@code 0}
+     * снимает временные хиты) — максимум лист считает сам, а остального документа правка не касается:
+     * он принадлежит владельцу листа.
      * <p>
      * Право на запись даёт сохранённая ссылка, а не сам токен: запись в {@code saved} привязана к
      * пользователю, поэтому хиты правит тот, кому лист прислали, а не любой, кто увидел ссылку.
      * Отозванная ссылка или удалённый лист — 404, как и при просмотре.
      */
     @Transactional
-    public void updateCurrentHitPoints(UUID savedId, int current) {
+    public void updateHitPoints(UUID savedId, int current, @Nullable Integer temporary) {
         User user = SecurityUtils.getUser();
         SavedCharacterSheet savedSheet = savedRepository.findByIdAndUserId(savedId, user.getUuid())
                 .orElseThrow(() -> new EntityNotFoundException(NOT_FOUND_MESSAGE));
         CharacterSheet sheet = sheetRepository.findById(savedSheet.getSheetId())
                 .filter(found -> !found.isDeleted() && savedSheet.getShareToken().equals(found.getShareToken()))
                 .orElseThrow(() -> new EntityNotFoundException(CharacterSheetService.SHARED_NOT_FOUND_MESSAGE));
-        sheet.setData(withCurrentHitPoints(sheet.getData(), current));
+        sheet.setData(withHitPoints(sheet.getData(), current, temporary));
         sheetRepository.save(sheet);
     }
 
     /**
-     * Копия документа с новыми текущими хитами. Именно копия: {@link JsonNode} изменяемый, и правка
+     * Копия документа с новыми текущими (и, если прислано, временными) хитами. Именно копия: {@link JsonNode} изменяемый, и правка
      * «на месте» осталась бы для грязной проверки Hibernate тем же значением. Число зажимается
      * максимумом самого листа — трекер о правках листа не знает и может прислать устаревшее.
+     * Временные хиты максимумом не зажимаются: по правилам они ему не подчиняются.
      * Формат документа сервер по-прежнему не разбирает: читаются только хиты, которые он и пишет.
      */
-    private static JsonNode withCurrentHitPoints(JsonNode data, int current) {
+    private static JsonNode withHitPoints(JsonNode data, int current, @Nullable Integer temporary) {
         JsonNode document = data.deepCopy();
         if (!(document instanceof ObjectNode sheetDocument)
                 || !(sheetDocument.get(HEALTH_FIELD) instanceof ObjectNode health)) {
@@ -135,6 +140,9 @@ public class SavedCharacterSheetService {
         }
         int max = health.path(MAX_FIELD).asInt(0);
         health.put(CURRENT_FIELD, max > 0 ? Math.clamp(current, 0, max) : Math.max(0, current));
+        if (temporary != null) {
+            health.put(TEMPORARY_FIELD, Math.max(0, temporary));
+        }
         return sheetDocument;
     }
 

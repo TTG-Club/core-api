@@ -307,6 +307,10 @@ public class InitiativeTrackerService {
         // пришлось бы дописывать их вторым запросом, вылавливая id нового участника из ответа.
         participant.setCurrentHitPoints(request.getCurrentHitPoints());
         participant.setMaxHitPoints(request.getMaxHitPoints());
+        // Как и при правке участника: 0 и пусто — временных хитов нет, храним NULL.
+        Integer temporaryHitPoints = request.getTemporaryHitPoints();
+        participant.setTemporaryHitPoints(
+                temporaryHitPoints != null && temporaryHitPoints > 0 ? temporaryHitPoints : null);
         participant.setArmorClass(request.getArmorClass());
         participant.setSheetLink(request.getSheetLink());
         return participant;

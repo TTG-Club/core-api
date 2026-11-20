@@ -190,7 +190,7 @@ class SavedCharacterSheetServiceTest {
     }
 
     @Test
-    void updateCurrentHitPointsWritesOnlyCurrentValue() {
+    void updateHitPointsWritesOnlyCurrentValue() {
         UUID viewer = authenticate();
         CharacterSheet sheet = sharedSheet();
         health(sheet, 27, 38);
@@ -198,7 +198,7 @@ class SavedCharacterSheetServiceTest {
         when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
         when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
 
-        service.updateCurrentHitPoints(saved.getId(), 12);
+        service.updateHitPoints(saved.getId(), 12, null);
 
         JsonNode health = sheet.getData().get("health");
         assertEquals(12, health.get("current").asInt());
@@ -209,7 +209,59 @@ class SavedCharacterSheetServiceTest {
     }
 
     @Test
-    void updateCurrentHitPointsClampsToSheetMaximum() {
+    void updateHitPointsWritesTemporaryWithoutClamping() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        health(sheet, 27, 38);
+        SavedCharacterSheet saved = savedRecord(viewer, sheet);
+        when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        // Временные хиты максимумом не ограничены
+        service.updateHitPoints(saved.getId(), 17, 50);
+
+        JsonNode health = sheet.getData().get("health");
+        assertEquals(17, health.get("current").asInt());
+        assertEquals(50, health.get("temporary").asInt());
+        assertEquals(38, health.get("max").asInt());
+        verify(sheetRepository).save(sheet);
+    }
+
+    @Test
+    void updateHitPointsWithZeroTemporaryClearsIt() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        health(sheet, 27, 38);
+        ((ObjectNode) sheet.getData().get("health")).put("temporary", 8);
+        SavedCharacterSheet saved = savedRecord(viewer, sheet);
+        when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        service.updateHitPoints(saved.getId(), 27, 0);
+
+        assertEquals(0, sheet.getData().get("health").get("temporary").asInt());
+    }
+
+    @Test
+    void updateHitPointsWithoutTemporaryKeepsIt() {
+        UUID viewer = authenticate();
+        CharacterSheet sheet = sharedSheet();
+        health(sheet, 27, 38);
+        ((ObjectNode) sheet.getData().get("health")).put("temporary", 8);
+        SavedCharacterSheet saved = savedRecord(viewer, sheet);
+        when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
+        when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        // Старый клиент шлёт только current — временные хиты листа остаются как были
+        service.updateHitPoints(saved.getId(), 12, null);
+
+        JsonNode health = sheet.getData().get("health");
+        assertEquals(12, health.get("current").asInt());
+        assertEquals(8, health.get("temporary").asInt());
+    }
+
+    @Test
+    void updateHitPointsClampsToSheetMaximum() {
         UUID viewer = authenticate();
         CharacterSheet sheet = sharedSheet();
         health(sheet, 10, 38);
@@ -217,13 +269,13 @@ class SavedCharacterSheetServiceTest {
         when(savedRepository.findByIdAndUserId(saved.getId(), viewer)).thenReturn(Optional.of(saved));
         when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
 
-        service.updateCurrentHitPoints(saved.getId(), 500);
+        service.updateHitPoints(saved.getId(), 500, null);
 
         assertEquals(38, sheet.getData().get("health").get("current").asInt());
     }
 
     @Test
-    void updateCurrentHitPointsOfRevokedLinkIsNotFound() {
+    void updateHitPointsOfRevokedLinkIsNotFound() {
         UUID viewer = authenticate();
         CharacterSheet sheet = sharedSheet();
         health(sheet, 27, 38);
@@ -234,24 +286,24 @@ class SavedCharacterSheetServiceTest {
         when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
 
         assertThrows(EntityNotFoundException.class,
-                () -> service.updateCurrentHitPoints(saved.getId(), 12));
+                () -> service.updateHitPoints(saved.getId(), 12, null));
 
         verify(sheetRepository, never()).save(any());
     }
 
     @Test
-    void updateCurrentHitPointsOfForeignRecordIsNotFound() {
+    void updateHitPointsOfForeignRecordIsNotFound() {
         UUID viewer = authenticate();
         UUID savedId = UUID.randomUUID();
         when(savedRepository.findByIdAndUserId(savedId, viewer)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> service.updateCurrentHitPoints(savedId, 12));
+        assertThrows(EntityNotFoundException.class, () -> service.updateHitPoints(savedId, 12, null));
 
         verify(sheetRepository, never()).save(any());
     }
 
     @Test
-    void updateCurrentHitPointsOfSheetWithoutHealthIsRejected() {
+    void updateHitPointsOfSheetWithoutHealthIsRejected() {
         UUID viewer = authenticate();
         CharacterSheet sheet = sharedSheet();
         SavedCharacterSheet saved = savedRecord(viewer, sheet);
@@ -259,7 +311,7 @@ class SavedCharacterSheetServiceTest {
         when(sheetRepository.findById(sheet.getId())).thenReturn(Optional.of(sheet));
 
         ApiException exception = assertThrows(ApiException.class,
-                () -> service.updateCurrentHitPoints(saved.getId(), 12));
+                () -> service.updateHitPoints(saved.getId(), 12, null));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
         verify(sheetRepository, never()).save(any());

@@ -61,6 +61,12 @@ public class ParticipantAddRequest {
     private Integer maxHitPoints;
 
     @Nullable
+    @PositiveOrZero
+    @Schema(description = "Временные хиты игрока (только для PLAYER): игрок, собранный из листа "
+            + "персонажа, приходит с ними")
+    private Integer temporaryHitPoints;
+
+    @Nullable
     @Min(1)
     @Max(50)
     @Schema(description = "Класс доспеха игрока (только для PLAYER): у существа он свой, из статблока")
