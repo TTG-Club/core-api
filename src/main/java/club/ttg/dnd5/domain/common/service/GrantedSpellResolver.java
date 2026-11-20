@@ -120,9 +120,8 @@ public class GrantedSpellResolver {
             }
             var spell = spellsByUrl.get(ref.getUrl());
             if (spell != null) {
-                Boolean limitedBySlots = Boolean.TRUE.equals(ref.getLimitedBySlots()) ? Boolean.TRUE : null;
-                put(byUrl, new GrantedSpellResponse(spell, ref.getRequiredLevel(), limitedBySlots,
-                        ref.getSpellcastingAbility(), ref.getAlwaysPrepared()));
+                put(byUrl, new GrantedSpellResponse(spell, ref.getRequiredLevel(),
+                        slotLimit(ref.getLimitedBySlots()), ref.getSpellcastingAbility(), ref.getAlwaysPrepared()));
             }
         }
 
@@ -130,7 +129,7 @@ public class GrantedSpellResolver {
             if (classList == null) {
                 continue;
             }
-            Boolean limitedBySlots = Boolean.TRUE.equals(classList.getMaxLevelFromSlots()) ? Boolean.TRUE : null;
+            Boolean limitedBySlots = slotLimit(classList.getMaxLevelFromSlots());
             for (String classUrl : classUrls(classList)) {
                 for (SpellShortResponse spell : spellsByClassUrl.getOrDefault(classUrl, List.of())) {
                     if (matchesLevel(classList, spell)) {
@@ -258,6 +257,11 @@ public class GrantedSpellResolver {
                 && isLimited(existing) && !isLimited(granted))) {
             byUrl.put(url, granted);
         }
+    }
+
+    /** Отметка «по ячейкам» для ответа: только {@code true}, снятая опускается. */
+    private static Boolean slotLimit(final Boolean flag) {
+        return Boolean.TRUE.equals(flag) ? Boolean.TRUE : null;
     }
 
     /** Ограничено ли заклинание ячейками персонажа. */

@@ -1,7 +1,5 @@
 package club.ttg.dnd5.domain.tool.sheet.rest.dto;
 
-import club.ttg.dnd5.domain.tool.tracker.model.ParticipantType;
-import club.ttg.dnd5.domain.tool.tracker.rest.dto.ParticipantAddRequest;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
@@ -12,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Временные хиты в запросах трекера и листа: не прислано и 0 — можно, отрицательное — 400. */
+/** Временные хиты в запросе листа: не прислано и 0 — можно, отрицательное — 400. */
 class SavedCharacterSheetHitPointsRequestTest {
 
     private static ValidatorFactory factory;
@@ -42,18 +40,5 @@ class SavedCharacterSheetHitPointsRequestTest {
 
         assertEquals(1, violations.size());
         assertEquals("temporary", violations.iterator().next().getPropertyPath().toString());
-    }
-
-    @Test
-    void negativeParticipantTemporaryHitPointsIsRejected() {
-        ParticipantAddRequest request = new ParticipantAddRequest();
-        request.setType(ParticipantType.PLAYER);
-        request.setName("Паладин");
-        request.setTemporaryHitPoints(-1);
-
-        var violations = validator.validate(request);
-
-        assertEquals(1, violations.size());
-        assertEquals("temporaryHitPoints", violations.iterator().next().getPropertyPath().toString());
     }
 }

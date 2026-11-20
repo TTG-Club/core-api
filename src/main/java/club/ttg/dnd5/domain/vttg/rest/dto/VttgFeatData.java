@@ -172,9 +172,6 @@ public class VttgFeatData {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record GrantedSpell(String name, String spellId, Integer requiredLevel,
                                String spellcastingAbility, Boolean alwaysPrepared, Boolean fromSlots) {
-        public GrantedSpell {
-            fromSlots = Boolean.TRUE.equals(fromSlots) ? Boolean.TRUE : null;
-        }
     }
 
     /**
