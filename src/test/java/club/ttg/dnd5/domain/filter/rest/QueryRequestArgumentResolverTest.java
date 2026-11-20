@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.filter.rest;
 
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.spell.model.enums.MagicSchool;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureGrouping;
@@ -195,6 +196,32 @@ class QueryRequestArgumentResolverTest
             CreatureQueryRequest request = resolveCreature("grouping=TYPE&sorting=ENGLISH");
             assertEquals(CreatureGrouping.TYPE, request.getGrouping());
             assertEquals(CreatureSorting.ENGLISH, request.getSorting());
+        }
+
+        @Test
+        @DisplayName("уязвимость, сопротивление и иммунитеты существа: значения, _mode и _union")
+        void creatureDamageAndConditionFilters() throws Exception
+        {
+            CreatureQueryRequest request = resolveCreature(
+                    "vulnerability=FAIR,COLD&vulnerability_mode=1"
+                            + "&resistance=POISON&resistance_union=1"
+                            + "&damageImmunity=NECROTIC,PSYCHIC"
+                            + "&conditionImmunity=CHARMED,FRIGHTENED&conditionImmunity_mode=1&conditionImmunity_union=1");
+
+            assertEquals(Set.of(DamageType.FIRE, DamageType.COLD), request.getVulnerability().getValues());
+            assertTrue(request.getVulnerability().isExclude());
+            assertFalse(request.getVulnerability().isUnion());
+
+            assertEquals(Set.of(DamageType.POISON), request.getResistance().getValues());
+            assertTrue(request.getResistance().isUnion());
+            assertFalse(request.getResistance().isExclude());
+
+            assertEquals(Set.of(DamageType.NECROTIC, DamageType.PSYCHIC), request.getDamageImmunity().getValues());
+            assertFalse(request.getDamageImmunity().isExclude());
+
+            assertEquals(Set.of(Condition.CHARMED, Condition.FRIGHTENED), request.getConditionImmunity().getValues());
+            assertTrue(request.getConditionImmunity().isExclude());
+            assertTrue(request.getConditionImmunity().isUnion());
         }
 
         @Test

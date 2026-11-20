@@ -5,7 +5,9 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
@@ -53,7 +55,7 @@ public class CreatureFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        List<FilterGroupMeta> groups = new ArrayList<>(10);
+        List<FilterGroupMeta> groups = new ArrayList<>(14);
 
         // CR
         groups.add(FilterGroupMeta.builder()
@@ -140,6 +142,25 @@ public class CreatureFilterService
                         .toList())
                 .build());
 
+        // Уязвимости, сопротивления и иммунитеты: у существа их бывает несколько,
+        // поэтому доступны и «Исключать», и совпадение всех выбранных значений.
+        groups.add(damageTypeGroup("vulnerability", "Уязвимость к урону"));
+        groups.add(damageTypeGroup("resistance", "Сопротивление к урону"));
+        groups.add(damageTypeGroup("damageImmunity", "Иммунитет к урону"));
+        groups.add(FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, "conditionImmunity"))
+                .name("Иммунитет к состояниям")
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(Condition.values())
+                        .map(c -> FilterValueMeta.builder()
+                                .id(c.name())
+                                .value(c.name())
+                                .name(c.getName())
+                                .build())
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
+                        .toList())
+                .build());
+
         // Теги — из DISTINCT-запроса + pre-persisted хэши
         Map<String, String> tagHashes = filterHashMappingRepository.findAllByCategory(FilterHashCategory.TAG)
                 .stream()
@@ -210,6 +231,29 @@ public class CreatureFilterService
         }
 
         return groups;
+    }
+
+    /**
+     * Группа фильтра по типам урона — общая для уязвимостей, сопротивлений и иммунитетов.
+     *
+     * @param field поле {@link CreatureQueryRequest}, из которого берётся ключ группы
+     * @param name  название группы на сайте
+     */
+    private static FilterGroupMeta damageTypeGroup(final String field, final String name)
+    {
+        return FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, field))
+                .name(name)
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(DamageType.values())
+                        .map(d -> FilterValueMeta.builder()
+                                .id(d.name())
+                                .value(d.name())
+                                .name(d.getName())
+                                .build())
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
+                        .toList())
+                .build();
     }
 
     private List<SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)

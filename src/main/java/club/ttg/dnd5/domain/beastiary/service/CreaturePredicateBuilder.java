@@ -62,6 +62,12 @@ public class CreaturePredicateBuilder
         // Чувства (JSONB: senses->>'key')
         PredicateUtils.applyJsonbSenseFilterQuery(builder, request.getSenses(), "senses");
 
+        // Уязвимости, сопротивления и иммунитеты (JSONB-массивы имён enum: ["FIRE", "COLD"])
+        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getVulnerability(), "vulnerabilities");
+        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getResistance(), "resistance");
+        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getDamageImmunity(), "immunity_to_damage");
+        PredicateUtils.applyJsonbEnumArrayFilter(builder, request.getConditionImmunity(), "immunity_to_condition");
+
         // Умения (JSONB: traits[].name) — хэши резолвлены в traitValues
         PredicateUtils.applyJsonbNamedArrayFilter(builder, request.getTraits(), "traits", "name", traitValues);
 
