@@ -441,3 +441,5 @@ databaseChangeLog:
       file: db/changelog/2026/11/16-01-source-officiality-category.yaml
   - include:
       file: db/changelog/2026/11/16-02-creature-companions.yaml
+  - include:
+      file: db/changelog/2026/11/21-01-magic-item-clarification-from-linked-items.yaml
