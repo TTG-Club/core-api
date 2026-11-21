@@ -165,6 +165,54 @@ class DmScreenControllerTest {
     }
 
     @Test
+    void lockedWindowStaysLockedAfterReload() throws Exception {
+        authenticate(UUID.randomUUID());
+        ObjectNode locked = pageWindow();
+        locked.put("isLocked", true);
+        ObjectNode unlocked = noteWindow("[\"заметка\"]");
+        unlocked.put("isLocked", false);
+
+        assertEquals(204, save(windows(locked, unlocked)).getResponse().getStatus());
+
+        JsonNode loaded = body(mockMvc.perform(get(URL)).andReturn()).get("windows");
+        assertTrue(loaded.get(0).get("isLocked").asBoolean());
+        assertTrue(loaded.get(1).get("isLocked").isBoolean());
+        assertFalse(loaded.get(1).get("isLocked").asBoolean());
+        assertFalse(loaded.get(0).has("locked"));
+    }
+
+    @Test
+    void windowWithoutLockFlagIsSavedAsUnlocked() throws Exception {
+        authenticate(UUID.randomUUID());
+        ObjectNode missing = pageWindow();
+        missing.remove("isLocked");
+        ObjectNode explicitNull = pageWindow();
+        explicitNull.putNull("isLocked");
+
+        assertEquals(204, save(windows(missing, explicitNull)).getResponse().getStatus());
+
+        JsonNode loaded = body(mockMvc.perform(get(URL)).andReturn()).get("windows");
+        for (JsonNode window : loaded) {
+            assertTrue(window.get("isLocked").isBoolean());
+            assertFalse(window.get("isLocked").asBoolean());
+        }
+    }
+
+    @Test
+    void windowsStoredBeforeLockFlagReadAsUnlocked() throws Exception {
+        UUID userId = authenticate(UUID.randomUUID());
+        ObjectNode old = pageWindow();
+        old.remove("isLocked");
+        storedWindows.put(userId, objectMapper.writeValueAsString(windows(old)));
+        storedAt.put(userId, Instant.now());
+
+        JsonNode window = body(mockMvc.perform(get(URL)).andReturn()).get("windows").get(0);
+
+        assertTrue(window.get("isLocked").isBoolean());
+        assertFalse(window.get("isLocked").asBoolean());
+    }
+
+    @Test
     void savingReplacesWindowsCompletely() throws Exception {
         authenticate(UUID.randomUUID());
         save(windows(pageWindow(), noteWindow("[\"первая\"]")));
@@ -347,6 +395,7 @@ class DmScreenControllerTest {
         window.put("height", 600.0);
         window.put("layer", 3);
         window.put("isMinimized", false);
+        window.put("isLocked", false);
         window.putNull("content");
         return window;
     }

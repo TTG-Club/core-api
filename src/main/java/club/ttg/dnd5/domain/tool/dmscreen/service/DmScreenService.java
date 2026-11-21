@@ -94,7 +94,13 @@ public class DmScreenService {
             throw badRequest("На ширме может быть не больше " + MAX_WINDOWS + " окон");
         }
         for (int index = 0; index < windows.size(); index++) {
-            validateWindow(windows.get(index), index + 1);
+            DmScreenWindow window = windows.get(index);
+            validateWindow(window, index + 1);
+            // Закрепление необязательно: явный null хранится как «не закреплено», чтобы клиент
+            // всегда получал булево значение.
+            if (window.getLocked() == null) {
+                window.setLocked(Boolean.FALSE);
+            }
         }
         return new ArrayList<>(windows);
     }

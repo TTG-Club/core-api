@@ -64,6 +64,20 @@ public class GrantedSpellRef extends EntityRef {
     @Schema(description = "Заклинания группы всегда подготовлены")
     private Boolean alwaysPrepared;
 
+    /**
+     * Заклинание доступно, только пока у персонажа есть ячейка заклинаний его круга или
+     * выше — «Когда вы получаете ячейки заклинаний уровня…» у черт «Адепт &lt;школы&gt;».
+     *
+     * <p>Ячейки считаются по общей таблице мультикласса вместе с ячейками магии договора;
+     * заговоры доступны всегда. Условие складывается с {@link #requiredLevel} по «И».
+     * {@code null} — ограничения нет: так читаются и ссылки, сохранённые до появления
+     * поля. Сервер ячеек персонажа не знает, поэтому отметка лишь едет дальше — на сайт
+     * ({@code GrantedSpellResponse.limitedBySlots}) и в выгрузку VTTG
+     * ({@code VttgFeatData.GrantedSpell.fromSlots}).</p>
+     */
+    @Schema(description = "Заклинание доступно только при наличии ячейки его круга или выше")
+    private Boolean limitedBySlots;
+
     public GrantedSpellRef(String url, String name, Integer requiredLevel) {
         super(url, name);
         this.requiredLevel = requiredLevel;

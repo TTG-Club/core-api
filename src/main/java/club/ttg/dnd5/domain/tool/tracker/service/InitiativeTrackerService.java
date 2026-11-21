@@ -202,10 +202,8 @@ public class InitiativeTrackerService {
         if (request.getMaxHitPoints() != null) {
             participant.setMaxHitPoints(request.getMaxHitPoints());
         }
-        // 0 — временные хиты сняты: храним NULL, чтобы в ответе поля не было.
         if (request.getTemporaryHitPoints() != null) {
-            participant.setTemporaryHitPoints(
-                    request.getTemporaryHitPoints() > 0 ? request.getTemporaryHitPoints() : null);
+            participant.setTemporaryHitPoints(temporaryHitPointsOrNull(request.getTemporaryHitPoints()));
         }
         if (request.getArmorClass() != null) {
             participant.setArmorClass(request.getArmorClass());
@@ -294,6 +292,11 @@ public class InitiativeTrackerService {
         return toDetailedResponse(tracker);
     }
 
+    /** 0 и пусто — временных хитов нет: храним NULL, чтобы в ответе поля не было. */
+    private static Integer temporaryHitPointsOrNull(Integer temporaryHitPoints) {
+        return temporaryHitPoints != null && temporaryHitPoints > 0 ? temporaryHitPoints : null;
+    }
+
     private InitiativeParticipant buildPlayer(InitiativeTracker tracker, ParticipantAddRequest request) {
         if (!StringUtils.hasText(request.getName())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Укажите имя игрока");
@@ -307,6 +310,7 @@ public class InitiativeTrackerService {
         // пришлось бы дописывать их вторым запросом, вылавливая id нового участника из ответа.
         participant.setCurrentHitPoints(request.getCurrentHitPoints());
         participant.setMaxHitPoints(request.getMaxHitPoints());
+        participant.setTemporaryHitPoints(temporaryHitPointsOrNull(request.getTemporaryHitPoints()));
         participant.setArmorClass(request.getArmorClass());
         participant.setSheetLink(request.getSheetLink());
         return participant;

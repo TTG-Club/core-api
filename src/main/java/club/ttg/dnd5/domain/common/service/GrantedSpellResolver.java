@@ -120,8 +120,8 @@ public class GrantedSpellResolver {
             }
             var spell = spellsByUrl.get(ref.getUrl());
             if (spell != null) {
-                put(byUrl, new GrantedSpellResponse(spell, ref.getRequiredLevel(), null,
-                        ref.getSpellcastingAbility(), ref.getAlwaysPrepared()));
+                put(byUrl, new GrantedSpellResponse(spell, ref.getRequiredLevel(),
+                        slotLimit(ref.getLimitedBySlots()), ref.getSpellcastingAbility(), ref.getAlwaysPrepared()));
             }
         }
 
@@ -129,7 +129,7 @@ public class GrantedSpellResolver {
             if (classList == null) {
                 continue;
             }
-            Boolean limitedBySlots = Boolean.TRUE.equals(classList.getMaxLevelFromSlots()) ? Boolean.TRUE : null;
+            Boolean limitedBySlots = slotLimit(classList.getMaxLevelFromSlots());
             for (String classUrl : classUrls(classList)) {
                 for (SpellShortResponse spell : spellsByClassUrl.getOrDefault(classUrl, List.of())) {
                     if (matchesLevel(classList, spell)) {
@@ -241,14 +241,32 @@ public class GrantedSpellResolver {
         return true;
     }
 
-    /** Кладёт заклинание, оставляя за уже лежащим наименьший уровень открытия. */
+    /**
+     * Кладёт заклинание, оставляя за уже лежащим наименьший уровень открытия.
+     *
+     * <p>При равном уровне побеждает вариант без ограничения ячейками: то же заклинание,
+     * выданное и «по ячейкам», и без условий, доступно без условий — иначе выдача
+     * оказалась бы слабее написанного.</p>
+     */
     private static void put(final Map<String, GrantedSpellResponse> byUrl, final GrantedSpellResponse granted) {
         var url = granted.getSpell().getUrl();
         var existing = byUrl.get(url);
 
-        if (existing == null || isEarlier(granted.getRequiredLevel(), existing.getRequiredLevel())) {
+        if (existing == null || isEarlier(granted.getRequiredLevel(), existing.getRequiredLevel())
+                || (Objects.equals(granted.getRequiredLevel(), existing.getRequiredLevel())
+                && isLimited(existing) && !isLimited(granted))) {
             byUrl.put(url, granted);
         }
+    }
+
+    /** Отметка «по ячейкам» для ответа: только {@code true}, снятая опускается. */
+    private static Boolean slotLimit(final Boolean flag) {
+        return Boolean.TRUE.equals(flag) ? Boolean.TRUE : null;
+    }
+
+    /** Ограничено ли заклинание ячейками персонажа. */
+    private static boolean isLimited(final GrantedSpellResponse granted) {
+        return Boolean.TRUE.equals(granted.getLimitedBySlots());
     }
 
     /** Раньше ли открывается уровень {@code candidate}; пустой уровень — «сразу». */

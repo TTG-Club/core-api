@@ -342,6 +342,87 @@ class FeatGrantedSpellsTest {
         assertNull(granted.get(0).getRequiredLevel());
     }
 
+    /**
+     * Отметка «по ячейкам» у перечисленного заклинания («Адепт школы») доходит до ответа
+     * как {@code limitedBySlots}; у заклинания без отметки поля нет.
+     */
+    @Test
+    void listedSpellLimitedBySlotsIsPassedToDetail() {
+        GrantedSpellRef limited = new GrantedSpellRef("fireball-phb", null, null);
+        limited.setLimitedBySlots(true);
+        GrantedSpellRef plain = new GrantedSpellRef("light-phb", null, null);
+        GrantedSpellRef off = new GrantedSpellRef("mending-phb", null, null);
+        off.setLimitedBySlots(false);
+        stubFeat(grantOf(limited, plain, off));
+
+        Spell fireball = spellWithUrl("fireball-phb");
+        Spell light = spellWithUrl("light-phb");
+        Spell mending = spellWithUrl("mending-phb");
+        when(spellRepository.findAllShortByUrlIn(any())).thenReturn(List.of(fireball, light, mending));
+        when(spellMapper.toShort(fireball)).thenReturn(spellShort("fireball-phb"));
+        when(spellMapper.toShort(light)).thenReturn(spellShort("light-phb"));
+        when(spellMapper.toShort(mending)).thenReturn(spellShort("mending-phb"));
+
+        var granted = List.copyOf(service.getFeat("evocation-adept-phb").getGrantedSpells());
+
+        assertEquals(3, granted.size());
+        assertEquals(Boolean.TRUE, granted.get(0).getLimitedBySlots());
+        assertNull(granted.get(1).getLimitedBySlots());
+        assertNull(granted.get(2).getLimitedBySlots());
+    }
+
+    /**
+     * Одно заклинание, выданное на одном уровне и «по ячейкам», и без условий, остаётся
+     * без условий — в каком бы порядке ни стояли записи.
+     */
+    @Test
+    void unlimitedVariantWinsOverLimitedAtSameLevel() {
+        for (boolean limitedFirst : new boolean[]{true, false}) {
+            GrantedSpellRef limited = new GrantedSpellRef("fireball-phb", null, 3);
+            limited.setLimitedBySlots(true);
+            GrantedSpellRef plain = new GrantedSpellRef("fireball-phb", null, 3);
+            stubFeat(limitedFirst ? grantOf(limited, plain) : grantOf(plain, limited));
+
+            Spell fireball = spellWithUrl("fireball-phb");
+            when(spellRepository.findAllShortByUrlIn(any())).thenReturn(List.of(fireball));
+            when(spellMapper.toShort(fireball)).thenReturn(spellShort("fireball-phb"));
+
+            var granted = List.copyOf(service.getFeat("evocation-adept-phb").getGrantedSpells());
+
+            assertEquals(1, granted.size());
+            assertNull(granted.get(0).getLimitedBySlots());
+            assertEquals(3, granted.get(0).getRequiredLevel());
+        }
+    }
+
+    /** Более ранний уровень по-прежнему важнее отметки: «по ячейкам» с 1-го лучше, чем без неё с 5-го. */
+    @Test
+    void earlierLimitedVariantWinsOverLaterUnlimited() {
+        GrantedSpellRef limited = new GrantedSpellRef("fireball-phb", null, null);
+        limited.setLimitedBySlots(true);
+        GrantedSpellRef plain = new GrantedSpellRef("fireball-phb", null, 5);
+        stubFeat(grantOf(plain, limited));
+
+        Spell fireball = spellWithUrl("fireball-phb");
+        when(spellRepository.findAllShortByUrlIn(any())).thenReturn(List.of(fireball));
+        when(spellMapper.toShort(fireball)).thenReturn(spellShort("fireball-phb"));
+
+        var granted = List.copyOf(service.getFeat("evocation-adept-phb").getGrantedSpells());
+
+        assertEquals(1, granted.size());
+        assertEquals(Boolean.TRUE, granted.get(0).getLimitedBySlots());
+        assertNull(granted.get(0).getRequiredLevel());
+    }
+
+    private static FeatMechanics grantOf(GrantedSpellRef... refs) {
+        SpellGrant spells = new SpellGrant();
+        spells.setSpells(List.of(refs));
+
+        FeatMechanics mechanics = new FeatMechanics();
+        mechanics.setSpells(spells);
+        return mechanics;
+    }
+
     private static FeatMechanics classListOf(ClassSpellListGrant... classLists) {
         SpellGrant spells = new SpellGrant();
         spells.setClassLists(List.of(classLists));

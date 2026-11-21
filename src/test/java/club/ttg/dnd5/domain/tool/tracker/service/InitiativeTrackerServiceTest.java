@@ -38,6 +38,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -280,6 +281,52 @@ class InitiativeTrackerServiceTest {
         InitiativeParticipant saved = captor.getValue().getFirst();
         assertNotNull(saved.getInitiativeRoll());
         assertEquals(saved.getInitiativeRoll() + 1, saved.getInitiativeTotal());
+    }
+
+    @Test
+    void addPlayerKeepsTemporaryHitPointsFromSheet() {
+        InitiativeTracker tracker = anonymousTracker();
+        when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
+        when(participantRepository.countByTrackerIdAndType(tracker.getId(), ParticipantType.PLAYER))
+                .thenReturn(0L);
+        when(participantRepository.findMaxSeq(tracker.getId())).thenReturn(0);
+
+        ParticipantAddRequest request = new ParticipantAddRequest();
+        request.setType(ParticipantType.PLAYER);
+        request.setName("Паладин");
+        request.setCurrentHitPoints(17);
+        request.setMaxHitPoints(30);
+        request.setTemporaryHitPoints(5);
+
+        service.addParticipants(tracker.getId(), request, tracker.getAccessKey().toString());
+
+        ArgumentCaptor<List<InitiativeParticipant>> captor = ArgumentCaptor.forClass(List.class);
+        verify(participantRepository).saveAll(captor.capture());
+        assertEquals(5, captor.getValue().getFirst().getTemporaryHitPoints());
+    }
+
+    @Test
+    void addPlayerWithZeroOrMissingTemporaryHitPointsStoresNull() {
+        InitiativeTracker tracker = anonymousTracker();
+        when(trackerRepository.findById(tracker.getId())).thenReturn(Optional.of(tracker));
+        when(participantRepository.countByTrackerIdAndType(tracker.getId(), ParticipantType.PLAYER))
+                .thenReturn(0L);
+        when(participantRepository.findMaxSeq(tracker.getId())).thenReturn(0);
+
+        ParticipantAddRequest zero = new ParticipantAddRequest();
+        zero.setType(ParticipantType.PLAYER);
+        zero.setName("Паладин");
+        zero.setTemporaryHitPoints(0);
+        ParticipantAddRequest missing = new ParticipantAddRequest();
+        missing.setType(ParticipantType.PLAYER);
+        missing.setName("Плут");
+
+        service.addParticipants(tracker.getId(), zero, tracker.getAccessKey().toString());
+        service.addParticipants(tracker.getId(), missing, tracker.getAccessKey().toString());
+
+        ArgumentCaptor<List<InitiativeParticipant>> captor = ArgumentCaptor.forClass(List.class);
+        verify(participantRepository, times(2)).saveAll(captor.capture());
+        captor.getAllValues().forEach(saved -> assertNull(saved.getFirst().getTemporaryHitPoints()));
     }
 
     @Test

@@ -421,7 +421,7 @@ public class VttgFeatMechanicsMapper {
             }
             result.add(new VttgFeatData.GrantedSpell(name == null ? url : name, url,
                     ref.getRequiredLevel(), VttgDictionaries.ability(ref.getSpellcastingAbility()),
-                    ref.getAlwaysPrepared()));
+                    ref.getAlwaysPrepared(), flag(ref.getLimitedBySlots())));
         }
         return result;
     }

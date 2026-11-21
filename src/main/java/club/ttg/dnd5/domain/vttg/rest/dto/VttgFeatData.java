@@ -163,10 +163,15 @@ public class VttgFeatData {
      * @param requiredLevel       уровень персонажа, с которого заклинание доступно
      * @param spellcastingAbility характеристика заклинаний группы; пусто — как у записи
      * @param alwaysPrepared      заклинания группы всегда подготовлены; пусто — как у записи
+     * @param fromSlots           заклинание доступно, только пока у персонажа есть ячейка его
+     *                            круга или выше (общая таблица мультикласса плюс магия
+     *                            договора; заговоры — всегда), вместе с {@code requiredLevel}
+     *                            по «И»; только {@code true}, иначе поле опускается — имя то
+     *                            же, что у {@link GrantedClassSpells#fromSlots()}
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record GrantedSpell(String name, String spellId, Integer requiredLevel,
-                               String spellcastingAbility, Boolean alwaysPrepared) {
+                               String spellcastingAbility, Boolean alwaysPrepared, Boolean fromSlots) {
     }
 
     /**

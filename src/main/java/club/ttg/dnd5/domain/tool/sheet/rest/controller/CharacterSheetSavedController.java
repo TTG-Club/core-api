@@ -63,13 +63,14 @@ public class CharacterSheetSavedController {
         return savedSheetService.save(request.getShareToken());
     }
 
-    @Operation(summary = "Текущие хиты сохранённого чужого листа: их отмечает мастер боя. "
-            + "Меняется только health.current — максимум и остальной документ остаются владельца. "
+    @Operation(summary = "Текущие и временные хиты сохранённого чужого листа: их отмечает мастер боя. "
+            + "Меняются только health.current и health.temporary (если прислано) — максимум и остальной "
+            + "документ остаются владельца. "
             + "Отозванная ссылка, удалённый лист и чужая запись — 404")
     @PatchMapping("/{id}/health")
     public void updateHitPoints(@PathVariable final UUID id,
                                 @RequestBody @Valid final SavedCharacterSheetHitPointsRequest request) {
-        savedSheetService.updateCurrentHitPoints(id, request.getCurrent());
+        savedSheetService.updateHitPoints(id, request.getCurrent(), request.getTemporary());
     }
 
     @Operation(summary = "Запрос владельцу на редактирование сохранённого листа. Повтор не дублирует "

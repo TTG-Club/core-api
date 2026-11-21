@@ -5,7 +5,9 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.repository.CreatureRepository;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
 import club.ttg.dnd5.domain.common.dictionary.ChallengeRating;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
@@ -29,6 +31,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -53,7 +56,7 @@ public class CreatureFilterService
 
     private List<FilterGroupMeta> buildFilterGroups()
     {
-        List<FilterGroupMeta> groups = new ArrayList<>(10);
+        List<FilterGroupMeta> groups = new ArrayList<>(14);
 
         // CR
         groups.add(FilterGroupMeta.builder()
@@ -140,6 +143,17 @@ public class CreatureFilterService
                         .toList())
                 .build());
 
+        // Уязвимости, сопротивления и иммунитеты: у существа их бывает несколько,
+        // поэтому доступны и «Исключать», и совпадение всех выбранных значений.
+        groups.add(multiValueEnumGroup("vulnerability", "Уязвимость к урону",
+                DamageType.values(), DamageType::getName));
+        groups.add(multiValueEnumGroup("resistance", "Сопротивление к урону",
+                DamageType.values(), DamageType::getName));
+        groups.add(multiValueEnumGroup("damageImmunity", "Иммунитет к урону",
+                DamageType.values(), DamageType::getName));
+        groups.add(multiValueEnumGroup("conditionImmunity", "Иммунитет к состояниям",
+                Condition.values(), Condition::getName));
+
         // Теги — из DISTINCT-запроса + pre-persisted хэши
         Map<String, String> tagHashes = filterHashMappingRepository.findAllByCategory(FilterHashCategory.TAG)
                 .stream()
@@ -210,6 +224,35 @@ public class CreatureFilterService
         }
 
         return groups;
+    }
+
+    /**
+     * Группа фильтра по enum-массиву существа, где значений бывает несколько: доступны и
+     * «Исключать», и совпадение всех выбранных. Значения отсортированы по названию.
+     *
+     * @param field       поле {@link CreatureQueryRequest}, из которого берётся ключ группы
+     * @param name        название группы на сайте
+     * @param values      все значения enum
+     * @param displayName название значения на сайте
+     */
+    private static <E extends Enum<E>> FilterGroupMeta multiValueEnumGroup(final String field,
+                                                                         final String name,
+                                                                         final E[] values,
+                                                                         final Function<E, String> displayName)
+    {
+        return FilterGroupMeta.builder()
+                .key(FilterKeys.keyOf(CreatureQueryRequest.class, field))
+                .name(name)
+                .supports(SupportsConfig.builder().mode(true).union(true).build())
+                .values(Arrays.stream(values)
+                        .map(value -> FilterValueMeta.builder()
+                                .id(value.name())
+                                .value(value.name())
+                                .name(displayName.apply(value))
+                                .build())
+                        .sorted(Comparator.comparing(FilterValueMeta::getName))
+                        .toList())
+                .build();
     }
 
     private List<SourceGroupMeta> buildSourceGroups(Set<String> selectedSources)

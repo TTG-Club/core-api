@@ -2,7 +2,9 @@ package club.ttg.dnd5.domain.beastiary.rest.dto;
 
 import club.ttg.dnd5.domain.beastiary.model.sense.CreatureSenses;
 import club.ttg.dnd5.domain.common.dictionary.Alignment;
+import club.ttg.dnd5.domain.common.dictionary.Condition;
 import club.ttg.dnd5.domain.common.dictionary.CreatureType;
+import club.ttg.dnd5.domain.common.dictionary.DamageType;
 import club.ttg.dnd5.domain.common.dictionary.Habitat;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import club.ttg.dnd5.domain.filter.rest.FilterParam;
@@ -44,6 +46,30 @@ public class CreatureQueryRequest extends AbstractQueryRequest
 
     @FilterParam(enumClass = CreatureSenses.class)
     private QueryFilter<CreatureSenses> senses;
+
+    /**
+     * Уязвимость к урону (колонка {@code vulnerabilities}).
+     */
+    @FilterParam(enumClass = DamageType.class)
+    private QueryFilter<DamageType> vulnerability;
+
+    /**
+     * Сопротивление к урону (колонка {@code resistance}).
+     */
+    @FilterParam(enumClass = DamageType.class)
+    private QueryFilter<DamageType> resistance;
+
+    /**
+     * Иммунитет к урону (колонка {@code immunity_to_damage}).
+     */
+    @FilterParam(enumClass = DamageType.class)
+    private QueryFilter<DamageType> damageImmunity;
+
+    /**
+     * Иммунитет к состояниям (колонка {@code immunity_to_condition}).
+     */
+    @FilterParam(enumClass = Condition.class)
+    private QueryFilter<Condition> conditionImmunity;
 
     @FilterParam
     private QueryFilter<String> traits;
