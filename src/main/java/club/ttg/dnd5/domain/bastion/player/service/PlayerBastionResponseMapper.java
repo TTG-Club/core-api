@@ -3,10 +3,13 @@ package club.ttg.dnd5.domain.bastion.player.service;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
+import club.ttg.dnd5.domain.bastion.model.FacilityMechanic;
+import club.ttg.dnd5.domain.bastion.model.GroveCreature;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceOption;
 import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
 import club.ttg.dnd5.domain.bastion.model.StableAnimalKind;
+import club.ttg.dnd5.domain.bastion.player.activity.FacilityMechanicsService;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionActivityService;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastion;
 import club.ttg.dnd5.domain.bastion.player.model.PlayerBastionEditor;
@@ -200,14 +203,40 @@ public class PlayerBastionResponseMapper {
                 facility.getPendingReadyOnTurn(),
                 isEnlargeable(facility, reference),
                 isBarrack(reference) ? facility.getDefenders() : null,
-                isBarrack(reference) ? BastionRules.barrackCapacity(facility.getSpace()) : null,
+                isBarrack(reference) ? BastionRules.defenderCapacity(reference, facility.getSpace()) : null,
                 craftableItems(facility, reference, options),
                 isMenagerie(reference) ? menagerie(facility) : null,
                 isStable(reference) ? stable(facility, bestiary) : null,
                 isUnavailable(facility) ? facility.getUnavailableOnTurn() : null,
                 isUnavailable(facility) ? facility.getUnavailableReason() : null,
                 missingHirelings(facility) > 0 ? missingHirelings(facility) : null,
-                source.map(BastionFacility::getFurniture).orElse(null));
+                source.map(BastionFacility::getFurniture).orElse(null),
+                source.map(BastionFacility::getMechanics).orElse(List.of()).stream()
+                        .map(mechanic -> new BastionLabel(mechanic.name(), mechanic.getName()))
+                        .toList(),
+                FacilityMechanicsService.isHousing(reference) ? housing(facility, reference) : null,
+                Optional.ofNullable(facility.getReturningDefenders()).filter(turns -> !turns.isEmpty())
+                        .map(turns -> turns.stream().sorted().toList())
+                        .orElse(null),
+                facility.isSupporters());
+    }
+
+    private static PlayerBastionResponse.Housing housing(PlayerBastionFacility facility, BastionFacility reference) {
+        List<PlayerBastionResponse.Creature> creatures = Optional.ofNullable(facility.getCreatures())
+                .orElse(List.of())
+                .stream()
+                .map(creature -> new PlayerBastionResponse.Creature(creature.getId(), creature.getName(),
+                        sizeLabel(creature.getSize()), creature.getChallenge(),
+                        FacilityMechanicsService.housingSpace(reference, creature), creature.isDefender()))
+                .toList();
+        List<PlayerBastionResponse.GroveBeast> table = reference.has(FacilityMechanic.NATURE_GROVE)
+                ? Arrays.stream(GroveCreature.values())
+                        .map(beast -> new PlayerBastionResponse.GroveBeast(beast.name(), beast.getName(),
+                                sizeLabel(beast.getSize()), BastionRules.groveSpace(beast.getSize())))
+                        .toList()
+                : null;
+        return new PlayerBastionResponse.Housing(FacilityMechanicsService.housingCapacity(reference),
+                FacilityMechanicsService.housingOccupied(facility, reference), creatures, table);
     }
 
     /** Сколько наёмников событие забрало и им ещё не нашли замену в текущий ход бастиона. */

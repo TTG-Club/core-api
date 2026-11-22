@@ -36,6 +36,10 @@ public class BastionFacilityDetailResponse extends BaseResponse {
     private Boolean menagerie;
     @Schema(description = "Конюшня: в ней живут верховые животные, «Торговать» покупает и продаёт их")
     private Boolean stable;
+    @Schema(description = "Сколько защитников помещается; null — по правилам барака")
+    private Integer defenderCapacity;
+    @Schema(description = "Механики, которые бастион разыгрывает сам")
+    private List<BastionLabel> mechanics;
     @Schema(description = "Приказы сооружения")
     private List<BastionLabel> orders;
     @Schema(description = "Варианты исполнения приказов")

@@ -3,6 +3,7 @@ package club.ttg.dnd5.domain.bastion.rest.mapper;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
+import club.ttg.dnd5.domain.bastion.model.FacilityMechanic;
 import club.ttg.dnd5.domain.bastion.model.FacilityPrerequisite;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.rest.dto.BastionFacilityDetailResponse;
@@ -16,6 +17,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {BaseMapping.class})
@@ -50,6 +52,10 @@ public interface BastionFacilityMapper {
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(source = "request.srdVersion", target = "srdVersion")
     @Mapping(source = "request.category", target = "category")
+    @Mapping(source = "request.mechanics", target = "mechanics",
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(source = "request.defenderCapacity", target = "defenderCapacity",
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "source", source = "source")
     void updateEntity(BastionFacilityRequest request, Source source, @MappingTarget BastionFacility facility);
 
@@ -70,6 +76,10 @@ public interface BastionFacilityMapper {
 
     default BastionLabel toLabel(FacilityPrerequisite prerequisite) {
         return prerequisite == null ? null : new BastionLabel(prerequisite.name(), prerequisite.getName());
+    }
+
+    default BastionLabel toLabel(FacilityMechanic mechanic) {
+        return mechanic == null ? null : new BastionLabel(mechanic.name(), mechanic.getName());
     }
 
     default BastionLabel toLabel(BastionOrder order) {

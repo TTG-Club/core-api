@@ -95,6 +95,13 @@ public class PlayerBastionOrder extends Timestamped {
     @Column(columnDefinition = "TEXT")
     private String result;
 
+    /**
+     * Что выпало при выполнении приказа: бросок приглашения, выручка, найденные диковины.
+     * Пишет сервер при ходе, в отличие от {@link #result}.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String outcome;
+
     /** Пояснение игрока к приказу: тема исследования, что изготовить. */
     @Column(columnDefinition = "TEXT")
     private String note;

@@ -117,7 +117,32 @@ public record PlayerBastionResponse(
             @Schema(description = "Наёмники, которых забрало событие и которым ещё ищут замену; "
                     + "null — все на месте") Integer hirelingsMissing,
             @Schema(description = "Предметы интерьера сооружения для готовой комнаты на плане; "
-                    + "null — набор по умолчанию") List<PlanDocument.FurnitureKind> furniture) {
+                    + "null — набор по умолчанию") List<PlanDocument.FurnitureKind> furniture,
+            @Schema(description = "Механики, которые бастион разыгрывает сам") List<BastionLabel> mechanics,
+            @Schema(description = "Существа-защитники рощи, кузницы конструктов или лиминального пространства; "
+                    + "null — сооружение их не держит") Housing housing,
+            @Schema(description = "Ходы, к которым вернутся уничтоженные защитники-нежить; null — никто не вернётся")
+            List<Integer> returningDefenders,
+            @Schema(description = "Сторонники бесплатной столовой ждут следующего события бастиона")
+            boolean supporters) {
+    }
+
+    /**
+     * Существа, которых сооружение вербует по своей механике.
+     *
+     * @param capacity  вместимость: у рощи — в восьмых большого существа, у лиминального
+     *                  пространства — сущностей; null — без ограничения
+     * @param occupied  занято
+     * @param creatures существа сооружения
+     * @param table     таблица «Существа Рощи Изумрудного Анклава»; null — у сооружения своей таблицы нет
+     */
+    @Schema(description = "Существа-защитники сооружения")
+    public record Housing(Integer capacity, int occupied, List<Creature> creatures, List<GroveBeast> table) {
+    }
+
+    /** Существо из таблицы рощи. */
+    @Schema(description = "Существо из таблицы рощи")
+    public record GroveBeast(String value, String name, BastionLabel size, int space) {
     }
 
     /**
