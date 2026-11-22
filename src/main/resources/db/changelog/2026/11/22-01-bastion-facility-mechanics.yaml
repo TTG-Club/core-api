@@ -8,7 +8,8 @@ databaseChangeLog:
         приглашения с броском кости, существа рощи, конструкты и сущности, рыцарь и лазарет
         при нападении, сторонники столовой, возвращение нежити, путешествие подвижного
         бастиона, опасное исследование, призраки, выручка маяка и цирка, открытые кошельки
-        и диковины. Сооружений может ещё не быть в справочнике — тогда UPDATE ничего не меняет.
+        и диковины. Сооружение ищется по url или английскому названию: на стенде его могли
+        завести раньше под другим url. Если сооружения нет, UPDATE ничего не меняет.
       changes:
         - addColumn:
             tableName: bastion_facility
@@ -44,30 +45,30 @@ databaseChangeLog:
             sql: >
               UPDATE bastion_facility f SET mechanics = v.m::jsonb
               FROM (VALUES
-                  ('emerald-enclave-grove-frhof', '["INVITATION", "NATURE_GROVE"]'),
-                  ('harper-hideout-frhof', '["INVITATION"]'),
-                  ('lords-alliance-noble-residence-frhof', '["INVITATION"]'),
-                  ('order-of-the-gauntlet-tournament-field-frhof', '["KNIGHT"]'),
-                  ('red-wizard-necropolis-frhof', '["UNDEAD_RETURN"]'),
-                  ('spirit-vault-rhw', '["HAUNTED", "PERILOUS_RESEARCH"]'),
-                  ('liminal-space-rhw', '["HAUNTED", "INVITATION", "LIMINAL_ENTITIES"]'),
-                  ('cabinet-of-curiosities-rhw', '["CURIOSITIES"]'),
-                  ('infirmary-rhw', '["TRIAGE"]'),
-                  ('orien-helm-efa', '["TRAVEL"]'),
-                  ('navigators-helm-efa', '["TRAVEL"]'),
-                  ('lyrandar-helm-efa', '["TRAVEL"]'),
-                  ('construct-forge-efa', '["CONSTRUCTS"]'),
-                  ('entertainment-salon-au', '["OPEN_PURSES"]'),
-                  ('soup-kitchen-au', '["SUPPORTERS"]'),
-                  ('lighthouse-au', '["SALVAGE"]'),
-                  ('circus-tent-au', '["PERFORMANCE"]')
-              ) AS v(url, m)
-              WHERE f.url = v.url
+                  ('emerald-enclave-grove-frhof', 'Emerald Enclave Grove', '["INVITATION", "NATURE_GROVE"]'),
+                  ('harper-hideout-frhof', 'Harper Hideout', '["INVITATION"]'),
+                  ('lords-alliance-noble-residence-frhof', 'Lords'' Alliance Noble Residence', '["INVITATION"]'),
+                  ('order-of-the-gauntlet-tournament-field-frhof', 'Order of the Gauntlet Tournament Field', '["KNIGHT"]'),
+                  ('red-wizard-necropolis-frhof', 'Red Wizard Necropolis', '["UNDEAD_RETURN"]'),
+                  ('spirit-vault-rhw', 'Spirit Vault', '["HAUNTED", "PERILOUS_RESEARCH"]'),
+                  ('liminal-space-rhw', 'Liminal Space', '["HAUNTED", "INVITATION", "LIMINAL_ENTITIES"]'),
+                  ('cabinet-of-curiosities-rhw', 'Cabinet of Curiosities', '["CURIOSITIES"]'),
+                  ('infirmary-rhw', 'Infirmary', '["TRIAGE"]'),
+                  ('orien-helm-efa', 'Orien Helm', '["TRAVEL"]'),
+                  ('navigators-helm-efa', 'Navigator''s Helm', '["TRAVEL"]'),
+                  ('lyrandar-helm-efa', 'Lyrandar Helm', '["TRAVEL"]'),
+                  ('construct-forge-efa', 'Construct Forge', '["CONSTRUCTS"]'),
+                  ('entertainment-salon-au', 'Entertainment Salon', '["OPEN_PURSES"]'),
+                  ('soup-kitchen-au', 'Soup Kitchen', '["SUPPORTERS"]'),
+                  ('lighthouse-au', 'Lighthouse', '["SALVAGE"]'),
+                  ('circus-tent-au', 'Circus Tent', '["PERFORMANCE"]')
+              ) AS v(url, english, m)
+              WHERE f.url = v.url OR lower(f.english) = lower(v.english)
         - sql:
             comment: Некрополь Красных Волшебников — барак нежити на 8 защитников
             sql: >
               UPDATE bastion_facility SET barrack = true, defender_capacity = 8
-              WHERE url = 'red-wizard-necropolis-frhof'
+              WHERE url = 'red-wizard-necropolis-frhof' OR lower(english) = 'red wizard necropolis'
         - sql:
             comment: Вложение в диковины — вариант приказа с ценой вместо суммы на словах
             sql: >
@@ -77,4 +78,4 @@ databaseChangeLog:
                 {"order": "TRADE", "name": "редкие диковины", "description": "Через 28 дней наёмник приносит редкие магические предметы; количество и шанс проклятия — по числу сооружений с призраками.", "days": 28, "cost": 6000, "costNote": null, "minLevel": null},
                 {"order": "TRADE", "name": "очень редкие диковины", "description": "Через 28 дней наёмник приносит очень редкие магические предметы; количество и шанс проклятия — по числу сооружений с призраками.", "days": 28, "cost": 60000, "costNote": null, "minLevel": null}
               ]'::jsonb
-              WHERE url = 'cabinet-of-curiosities-rhw'
+              WHERE url = 'cabinet-of-curiosities-rhw' OR lower(english) = 'cabinet of curiosities'
