@@ -125,6 +125,21 @@ public class PlayerBastionFacility extends Timestamped {
     @Column(name = "hirelings_back_on_turn")
     private Integer hirelingsBackOnTurn;
 
+    /**
+     * Ходы, к которым в сооружение возвращаются уничтоженные защитники-нежить, — по одному
+     * на защитника (некрополь).
+     */
+    @Type(JsonType.class)
+    @Column(name = "returning_defenders", columnDefinition = "jsonb", nullable = false)
+    private List<Integer> returningDefenders = new ArrayList<>();
+
+    /**
+     * Сторонники наготове: при следующем событии бастиона они заменят потерянных защитников
+     * и наёмников (бесплатная столовая).
+     */
+    @Column(nullable = false)
+    private boolean supporters;
+
     /** Сколько наёмников нет в сооружении в ход {@code turn}. */
     public int missingHirelings(int turn) {
         return hirelingsBackOnTurn != null && turn < hirelingsBackOnTurn ? hirelingsLost : 0;

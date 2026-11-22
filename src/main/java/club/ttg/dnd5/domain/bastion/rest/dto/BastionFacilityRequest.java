@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityEnlargement;
 import club.ttg.dnd5.domain.bastion.model.FacilityFeature;
+import club.ttg.dnd5.domain.bastion.model.FacilityMechanic;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilityPrerequisite;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
@@ -53,6 +54,12 @@ public class BastionFacilityRequest extends BaseRequest {
 
     @Schema(description = "Конюшня: в ней живут верховые животные, «Торговать» покупает и продаёт их")
     private Boolean stable;
+
+    @Schema(description = "Сколько защитников помещается в сооружении-бараке; пусто — по правилам барака")
+    private Integer defenderCapacity;
+
+    @Schema(description = "Механики, которые бастион разыгрывает сам; пусто при правке — не менять")
+    private List<FacilityMechanic> mechanics;
 
     @Schema(description = "Приказы сооружения")
     private List<BastionOrder> orders;

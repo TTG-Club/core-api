@@ -67,6 +67,23 @@ public class BastionFacility extends NamedEntity {
      */
     private Boolean stable;
 
+    /**
+     * Сколько защитников помещается в сооружении с {@link #barrack}; {@code null} — по
+     * правилам барака ({@link BastionRules#barrackCapacity}).
+     */
+    @Column(name = "defender_capacity")
+    private Integer defenderCapacity;
+
+    /** Механики, которые бастион разыгрывает сам; пусто — механик нет. */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<FacilityMechanic> mechanics;
+
+    /** Есть ли у сооружения механика. */
+    public boolean has(FacilityMechanic mechanic) {
+        return mechanics != null && mechanics.contains(mechanic);
+    }
+
     /** Приказы, которые принимает сооружение. */
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

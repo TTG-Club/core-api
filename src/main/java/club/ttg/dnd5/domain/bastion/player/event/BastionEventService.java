@@ -3,6 +3,8 @@ package club.ttg.dnd5.domain.bastion.player.event;
 import club.ttg.dnd5.domain.bastion.model.BastionFacility;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
+import club.ttg.dnd5.domain.bastion.model.FacilityMechanic;
+import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionActivityService;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerEntry;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerRepository;
 import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent.Decision;
@@ -24,7 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.LongSupplier;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * События бастиона: сразу после приказа «Обслуживать» сервер бросает 1к100 по таблице
@@ -192,6 +196,15 @@ public class BastionEventService {
         return events;
     }
 
+    /**
+     * Событие за одного персонажа вне «Обслуживать» — например, когда рубка ведёт подвижный
+     * бастион.
+     */
+    public PlayerBastionEvent rollFor(PlayerBastion bastion, PlayerBastionMember member,
+                                      Map<String, BastionFacility> reference, UUID userId) {
+        return roll(bastion, member, reference, userId, null, null);
+    }
+
     /** Обслуживали ли бастион с событиями в этот ход. */
     public boolean rolledOnTurn(PlayerBastion bastion, int turn) {
         return eventRepository.existsByBastionIdAndTurn(bastion.getId(), turn);
@@ -224,13 +237,15 @@ public class BastionEventService {
         event.setResolvedBy(userId);
 
         BastionEventDetails details = event.getDetails();
+        // Сторонники бесплатной столовой ждут только до следующего броска события
+        Optional<String> supporters = consumeSupporters(member, reference);
         switch (type) {
             case ALL_IS_WELL -> {
                 details.setDetailRoll(dice.roll(ALL_IS_WELL_DETAILS.size()));
                 details.setDetail(ALL_IS_WELL_DETAILS.get(details.getDetailRoll() - 1));
                 event.setSummary("Ничего существенного не происходит. " + details.getDetail());
             }
-            case ATTACK -> event.setSummary(attack(bastion, member, reference, event));
+            case ATTACK -> event.setSummary(attack(bastion, member, reference, event, supporters));
             case CRIMINAL_HIRELING -> criminal(member, reference, event);
             case EXTRAORDINARY_OPPORTUNITY -> {
                 event.setStatus(Status.PENDING);
@@ -241,7 +256,7 @@ public class BastionEventService {
                         .formatted(OPPORTUNITY_COST_GP));
             }
             case FRIENDLY_VISITORS -> {
-                long amount = hundreds();
+                long amount = gold(member, reference, true, this::hundreds);
                 details.setAmountGp(amount);
                 String target = randomFacility(member, reference, false)
                         .map(facility -> remember(details, facility, reference))
@@ -251,10 +266,14 @@ public class BastionEventService {
                 event.setSummary("Дружелюбные посетители просят ненадолго воспользоваться %s и платят %d зм. "
                         .formatted(target, amount) + "Приказы сооружения это не прерывает.");
             }
-            case GUEST -> guest(bastion, event, userId);
+            case GUEST -> guest(bastion, member, reference, event, userId);
             case LOST_HIRELINGS -> event.setSummary(randomFacility(member, reference, true)
                     .map(facility -> {
                         String name = remember(details, facility, reference);
+                        if (supporters.isPresent()) {
+                            return "Наёмники «%s» могли бы пропасть, но их места сразу заняли сторонники из «%s»."
+                                    .formatted(name, supporters.get());
+                        }
                         loseHirelings(facility, hirelings(facility, reference, event.getTurn()), event.getTurn());
                         disable(facility, event.getTurn() + 1, "Наёмники пропали");
                         return "Наёмники «%s» пропали: сооружение не работает в ход %d, в конце хода им бесплатно "
@@ -266,7 +285,7 @@ public class BastionEventService {
                 event.setSummary("Наёмники бесплатно находят или случайно создают необычный магический предмет "
                         + "на ваш выбор — зелье или свиток.");
             }
-            case REFUGEES -> refugees(bastion, event, userId);
+            case REFUGEES -> refugees(bastion, member, reference, event, userId);
             case REQUEST_FOR_AID -> {
                 event.setStatus(Status.PENDING);
                 event.setSummary("Местный лидер просит помощи: идёт поиск пропавшего или в округе орудуют "
@@ -298,7 +317,8 @@ public class BastionEventService {
      * защитников нет, случайное специализированное сооружение повреждено на следующий ход.
      */
     private String attack(PlayerBastion bastion, PlayerBastionMember member,
-                          Map<String, BastionFacility> reference, PlayerBastionEvent event) {
+                          Map<String, BastionFacility> reference, PlayerBastionEvent event,
+                          Optional<String> supporters) {
         BastionEventDetails details = event.getDetails();
         StringBuilder summary = new StringBuilder("Враждебные силы атакуют бастион и терпят поражение.");
         if (bastion.getGuests().removeIf(guest -> guest.getKind() == BastionGuest.Kind.REFUGEES)) {
@@ -326,14 +346,52 @@ public class BastionEventService {
                     .orElse(" Защитников и специализированных сооружений нет.")).toString();
         }
 
-        int diceCount = bastion.isDefenseWallsEnclosed()
-                ? ATTACK_DICE - BastionRules.DEFENSIVE_WALL_DEFENDER_DICE_REDUCTION
-                : ATTACK_DICE;
+        int diceCount = ATTACK_DICE;
         if (bastion.isDefenseWallsEnclosed()) {
+            diceCount -= BastionRules.DEFENSIVE_WALL_DEFENDER_DICE_REDUCTION;
             summary.append(" Бастион окружён защитными стенами.");
         }
-        details.setDice(dice.rolls(diceCount, 6));
-        long ones = details.getDice().stream().filter(value -> value == 1).count();
+        int turn = bastion.getTurn();
+        long knights = working(member, reference, turn)
+                .filter(facility -> reference.get(facility.getFacilityUrl()).has(FacilityMechanic.KNIGHT))
+                .filter(facility -> hirelings(facility, reference, turn) > 0)
+                .count();
+        if (knights > 0) {
+            diceCount -= (int) knights;
+            summary.append(" Рыцарь турнирного поля помогает защитникам.");
+        }
+        long entities = working(member, reference, turn)
+                .filter(facility -> reference.get(facility.getFacilityUrl()).has(FacilityMechanic.LIMINAL_ENTITIES))
+                .flatMap(facility -> facility.getCreatures().stream())
+                .filter(MenagerieCreature::isDefender)
+                .count();
+        if (entities > 0) {
+            diceCount -= (int) entities;
+            summary.append(" Сущности демиплана (%d) наводят ужас на врагов.".formatted(entities));
+        }
+        diceCount = Math.max(0, diceCount);
+
+        List<Integer> rolled = new ArrayList<>(dice.rolls(diceCount, 6));
+        int rerolls = working(member, reference, turn)
+                .filter(facility -> reference.get(facility.getFacilityUrl()).has(FacilityMechanic.TRIAGE))
+                .mapToInt(facility -> hirelings(facility, reference, turn))
+                .sum();
+        int rerolled = 0;
+        for (int index = 0; index < rolled.size() && rerolled < rerolls; index++) {
+            if (rolled.get(index) == 1) {
+                rolled.set(index, dice.roll(6));
+                rerolled++;
+            }
+        }
+        if (rerolled > 0) {
+            summary.append(" Лазарет перебросил единиц: %d.".formatted(rerolled));
+        }
+        details.setDice(rolled);
+        long ones = rolled.stream().filter(value -> value == 1).count();
+        if (ones > 0 && supporters.isPresent()) {
+            return summary.append(" На %dк6 единиц: %d — но места павших сразу заняли сторонники из «%s», "
+                    .formatted(diceCount, ones, supporters.get()) + "защитников не убыло.").toString();
+        }
         List<String> lost = lose(defenders, (int) Math.min(ones, defenders.size()));
         details.setLost(lost);
         return summary.append(lost.isEmpty()
@@ -353,14 +411,15 @@ public class BastionEventService {
         }
         BastionEventDetails details = event.getDetails();
         String name = remember(details, facility.get(), reference);
-        details.setAmountGp(hundreds());
+        details.setAmountGp(gold(member, reference, false, this::hundreds));
         event.setStatus(Status.PENDING);
         event.setSummary("Чиновники пришли с ордером на арест наёмника из «%s». Оставить его можно за взятку %d зм, "
                 .formatted(name, details.getAmountGp()) + "иначе его арестуют и увезут.");
     }
 
     /** Гость по 1к4. */
-    private void guest(PlayerBastion bastion, PlayerBastionEvent event, UUID userId) {
+    private void guest(PlayerBastion bastion, PlayerBastionMember member, Map<String, BastionFacility> reference,
+                       PlayerBastionEvent event, UUID userId) {
         BastionEventDetails details = event.getDetails();
         details.setDetailRoll(dice.roll(GUESTS.size()));
         details.setDetail(GUESTS.get(details.getDetailRoll() - 1));
@@ -378,7 +437,7 @@ public class BastionEventService {
                 guest.setKind(BastionGuest.Kind.SANCTUARY);
                 guest.setName("Гость, просящий убежища");
                 guest.setLeavesOnTurn(event.getTurn() + 1);
-                details.setAmountGp(hundreds());
+                details.setAmountGp(gold(member, reference, true, this::hundreds));
                 credit(bastion, details.getAmountGp(), event.getType(), userId);
                 summary += " Перед отъездом он дарит %d зм.".formatted(details.getAmountGp());
             }
@@ -396,11 +455,12 @@ public class BastionEventService {
     }
 
     /** Беженцы: 2к4 человек, платят 1к6 × 100 зм и остаются. */
-    private void refugees(PlayerBastion bastion, PlayerBastionEvent event, UUID userId) {
+    private void refugees(PlayerBastion bastion, PlayerBastionMember member, Map<String, BastionFacility> reference,
+                          PlayerBastionEvent event, UUID userId) {
         BastionEventDetails details = event.getDetails();
         details.setDice(dice.rolls(2, 4));
         details.setCount(details.getDice().stream().mapToInt(Integer::intValue).sum());
-        details.setAmountGp(hundreds());
+        details.setAmountGp(gold(member, reference, true, this::hundreds));
         credit(bastion, details.getAmountGp(), event.getType(), userId);
 
         BastionGuest guest = new BastionGuest();
@@ -514,7 +574,7 @@ public class BastionEventService {
         details.setCount(count);
         details.setDice(dice.rolls(count, 6));
         int total = details.getDice().stream().mapToInt(Integer::intValue).sum();
-        long reward = hundreds();
+        long reward = member == null ? hundreds() : gold(member, reference, true, this::hundreds);
         if (total >= AID_SUCCESS_TOTAL) {
             details.setAmountGp(reward);
             credit(bastion, reward, event.getType(), userId);
@@ -566,9 +626,16 @@ public class BastionEventService {
         for (PlayerBastionFacility facility : member.getFacilities()) {
             BastionFacility source = reference.get(facility.getFacilityUrl());
             if (PlayerBastionResponseMapper.isBarrack(source)) {
+                boolean undead = source.has(FacilityMechanic.UNDEAD_RETURN);
+                int returnsOn = bastion.getTurn()
+                        + PlayerBastionActivityService.turnsFor(BastionRules.UNDEAD_RETURN_DAYS);
                 for (int index = 0; index < facility.getDefenders(); index++) {
-                    defenders.add(new Defender("защитник из «%s»".formatted(source.getName()),
-                            () -> facility.setDefenders(Math.max(0, facility.getDefenders() - 1))));
+                    defenders.add(new Defender("защитник из «%s»".formatted(source.getName()), () -> {
+                        facility.setDefenders(Math.max(0, facility.getDefenders() - 1));
+                        if (undead) {
+                            facility.getReturningDefenders().add(returnsOn);
+                        }
+                    }));
                 }
             }
             for (MenagerieCreature creature : facility.getCreatures()) {
@@ -618,7 +685,7 @@ public class BastionEventService {
     }
 
     /** Сколько наёмников сейчас в сооружении: по справочнику за вычетом забранных событиями. */
-    private static int hirelings(PlayerBastionFacility facility, Map<String, BastionFacility> reference, int turn) {
+    public static int hirelings(PlayerBastionFacility facility, Map<String, BastionFacility> reference, int turn) {
         int total = Optional.ofNullable(reference.get(facility.getFacilityUrl()))
                 .map(BastionFacility::getHirelings)
                 .orElse(0);
@@ -629,7 +696,7 @@ public class BastionEventService {
      * Событие забирает наёмников в ход {@code turn}: замену им бесплатно находят в конце
      * следующего хода, поэтому вернутся они через ход.
      */
-    private static void loseHirelings(PlayerBastionFacility facility, int count, int turn) {
+    public static void loseHirelings(PlayerBastionFacility facility, int count, int turn) {
         if (count < 1) {
             return;
         }
@@ -647,9 +714,90 @@ public class BastionEventService {
         return name;
     }
 
-    private static void disable(PlayerBastionFacility facility, int turn, String reason) {
+    public static void disable(PlayerBastionFacility facility, int turn, String reason) {
         facility.setUnavailableOnTurn(turn);
         facility.setUnavailableReason(reason);
+    }
+
+    /**
+     * Золото по приказу или событию. С открытыми кошельками (салон развлечений персонажа)
+     * кость бросается дважды: получаете больший результат, платите меньший.
+     *
+     * @param income {@code true} — бастион получает золото, {@code false} — платит
+     */
+    public long gold(PlayerBastionMember member, Map<String, BastionFacility> reference, boolean income,
+                     LongSupplier roll) {
+        long first = roll.getAsLong();
+        boolean openPurses = working(member, reference, member.getBastion().getTurn())
+                .anyMatch(facility -> reference.get(facility.getFacilityUrl()).has(FacilityMechanic.OPEN_PURSES));
+        if (!openPurses) {
+            return first;
+        }
+        long second = roll.getAsLong();
+        return income ? Math.max(first, second) : Math.min(first, second);
+    }
+
+    /**
+     * Защитники-нежить возвращаются к наступающему ходу, если некрополь работает и в нём есть
+     * место; иначе они не возвращаются вовсе.
+     *
+     * @return строки для журнала хода
+     */
+    public List<String> returnUndead(PlayerBastion bastion, int next, Map<String, BastionFacility> reference) {
+        List<String> summary = new ArrayList<>();
+        for (PlayerBastionMember member : bastion.getMembers()) {
+            for (PlayerBastionFacility facility : member.getFacilities()) {
+                BastionFacility source = reference.get(facility.getFacilityUrl());
+                List<Integer> returning = facility.getReturningDefenders();
+                if (source == null || returning == null || returning.stream().noneMatch(turn -> turn <= next)) {
+                    continue;
+                }
+                long due = returning.stream().filter(turn -> turn <= next).count();
+                returning.removeIf(turn -> turn <= next);
+                boolean closed = !facility.isReady()
+                        || facility.getUnavailableOnTurn() != null && facility.getUnavailableOnTurn() >= next;
+                int capacity = BastionRules.defenderCapacity(source, facility.getSpace());
+                int back = closed ? 0 : (int) Math.min(due, Math.max(0, capacity - facility.getDefenders()));
+                facility.setDefenders(facility.getDefenders() + back);
+                if (back > 0) {
+                    summary.add("В «%s» вернулись защитники-нежить: %d (%d из %d)".formatted(source.getName(), back,
+                            facility.getDefenders(), capacity));
+                }
+                if (back < due) {
+                    summary.add("Защитники-нежить не вернулись в «%s»: %d — сооружение %s".formatted(source.getName(),
+                            due - back, closed ? "не работает" : "заполнено"));
+                }
+            }
+        }
+        return summary;
+    }
+
+    /** Готовые и работающие в этот ход сооружения персонажа, которые есть в справочнике. */
+    private static Stream<PlayerBastionFacility> working(PlayerBastionMember member,
+                                                         Map<String, BastionFacility> reference, int turn) {
+        return member.getFacilities().stream()
+                .filter(PlayerBastionFacility::isReady)
+                .filter(facility -> reference.get(facility.getFacilityUrl()) != null)
+                .filter(facility -> facility.getUnavailableOnTurn() == null || facility.getUnavailableOnTurn() != turn);
+    }
+
+    /**
+     * Сторонники бесплатной столовой персонажа уходят на это событие.
+     *
+     * @return название столовой; пусто — сторонников нет
+     */
+    private static Optional<String> consumeSupporters(PlayerBastionMember member,
+                                                      Map<String, BastionFacility> reference) {
+        Optional<String> name = Optional.empty();
+        for (PlayerBastionFacility facility : member.getFacilities()) {
+            if (facility.isSupporters()) {
+                facility.setSupporters(false);
+                name = Optional.of(Optional.ofNullable(reference.get(facility.getFacilityUrl()))
+                        .map(BastionFacility::getName)
+                        .orElse(facility.getFacilityUrl()));
+            }
+        }
+        return name;
     }
 
     /** 1к6 × 100 зм. */

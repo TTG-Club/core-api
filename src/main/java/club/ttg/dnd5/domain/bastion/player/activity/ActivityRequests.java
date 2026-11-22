@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.bastion.player.activity;
 
 import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
+import club.ttg.dnd5.domain.bastion.model.GroveCreature;
 import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
 import club.ttg.dnd5.domain.bastion.model.StableAnimalKind;
 import club.ttg.dnd5.domain.bastion.player.event.PlayerBastionEvent;
@@ -70,12 +71,18 @@ public final class ActivityRequests {
      * @param name      название существа не из таблицы
      * @param size      размер существа не из таблицы
      * @param challenge показатель опасности существа не из таблицы: «1/4», «2»
+     * @param grove     для рощи Изумрудного Анклава: существо из таблицы рощи
      */
-    @Schema(description = "Существо для зверинца")
+    @Schema(description = "Существо для зверинца или рощи")
     public record RecruitCreature(MenagerieBeast beast,
                                   @Size(max = 100) String name,
                                   club.ttg.dnd5.domain.common.dictionary.Size size,
-                                  @Size(max = 8) String challenge) {
+                                  @Size(max = 8) String challenge,
+                                  GroveCreature grove) {
+        public RecruitCreature(MenagerieBeast beast, String name,
+                               club.ttg.dnd5.domain.common.dictionary.Size size, String challenge) {
+            this(beast, name, size, challenge, null);
+        }
     }
 
     /**

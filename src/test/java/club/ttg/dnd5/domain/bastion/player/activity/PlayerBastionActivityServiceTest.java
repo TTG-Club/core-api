@@ -6,6 +6,8 @@ import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoice;
 import club.ttg.dnd5.domain.bastion.model.FacilityChoiceSource;
+import club.ttg.dnd5.domain.bastion.model.FacilityMechanic;
+import club.ttg.dnd5.domain.bastion.model.GroveCreature;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
@@ -86,6 +88,7 @@ class PlayerBastionActivityServiceTest {
     private final PlayerBastionEventRepository eventRepository = mock(PlayerBastionEventRepository.class);
     private final MagicItemRepository magicItemRepository = mock(MagicItemRepository.class);
     private final QueueDice dice = new QueueDice();
+    private final BastionEventService eventService = new BastionEventService(eventRepository, ledgerRepository, dice);
     private final PlayerBastionActivityService service = new PlayerBastionActivityService(
             bastionRepository, facilityRepository, orderRepository, ledgerRepository, turnRepository,
             new PlayerBastionAccess(bastionRepository, mock(PlayerBastionEditorRepository.class), client, userService),
@@ -93,8 +96,9 @@ class PlayerBastionActivityServiceTest {
                     new FacilityChoiceOptions(itemRepository), creatureRepository),
             mock(EntityManager.class),
             new FacilityChoiceOptions(itemRepository),
-            new BastionEventService(eventRepository, ledgerRepository, dice),
-            eventRepository, magicItemRepository);
+            eventService,
+            eventRepository, magicItemRepository,
+            new FacilityMechanicsService(dice, eventService, ledgerRepository));
 
     private final UUID gameId = UUID.randomUUID();
     private final UUID masterId = UUID.randomUUID();
@@ -105,13 +109,31 @@ class PlayerBastionActivityServiceTest {
     private final List<PlayerBastionLedgerEntry> ledger = new ArrayList<>();
     private final List<PlayerBastionTurn> turns = new ArrayList<>();
     private final List<PlayerBastionEvent> events = new ArrayList<>();
-    private final Map<String, BastionFacility> reference = Map.of(
+    private final Map<String, BastionFacility> reference = merge(Map.of(
             "library", library(),
             "barrack", barrack(),
             "workshop", workshop(),
             "menagerie", menagerie(),
             "stable", stable(),
-            "bedroom", basic("bedroom"));
+            "bedroom", basic("bedroom"),
+            "necropolis", necropolis()),
+            Map.of(
+            "grove", mechanical("grove", "Роща Изумрудного Анклава", 2, BastionOrder.RECRUIT, "существо природы",
+                    7, 0, FacilityMechanic.INVITATION, FacilityMechanic.NATURE_GROVE),
+            "liminal", mechanical("liminal", "Лиминальное пространство", 1, BastionOrder.RECRUIT, "незнакомца",
+                    7, 1000, FacilityMechanic.HAUNTED, FacilityMechanic.INVITATION,
+                    FacilityMechanic.LIMINAL_ENTITIES),
+            "forge", constructForge(),
+            "field", mechanical("field", "Турнирное поле", 1, BastionOrder.EMPOWER, "провести турнир",
+                    14, 2000, FacilityMechanic.KNIGHT),
+            "infirmary", mechanical("infirmary", "Лазарет", 2, BastionOrder.CRAFT, "противоядие",
+                    7, 0, FacilityMechanic.TRIAGE),
+            "circus", mechanical("circus", "Цирковой шатёр", 4, BastionOrder.TRADE, "цирковое представление",
+                    7, 0, FacilityMechanic.PERFORMANCE),
+            "salon", mechanical("salon", "Салон развлечений", 2, BastionOrder.RESEARCH, "узнать секреты",
+                    7, 0, FacilityMechanic.OPEN_PURSES),
+            "helm", mechanical("helm", "Штурвал навигатора", 1, BastionOrder.EMPOWER, "путешествие",
+                    null, 0, FacilityMechanic.TRAVEL)));
 
     private PlayerBastion bastion;
     private PlayerBastionMember member;
@@ -960,6 +982,240 @@ class PlayerBastionActivityServiceTest {
     }
 
     /** Кости с заранее заданными бросками; когда они кончаются, выпадает 1. */
+    // ------------------------------------------------------------------ механики сооружений
+
+    /** Роща: существо из таблицы поселяется при чётном броске и становится защитником. */
+    @Test
+    void groveSettlesCreatureOnEvenRoll() {
+        PlayerBastionFacility grove = addFacility("grove", FacilitySpace.VAST);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(grove.getId(), BastionOrder.RECRUIT, null,
+                null, null, null, new ActivityRequests.RecruitCreature(null, null, null, null, GroveCreature.UNICORN)));
+        assertEquals("Единорог", orders.getFirst().getOptionName());
+        dice.push(4);
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+
+        assertEquals(1, grove.getCreatures().size());
+        assertEquals(GroveCreature.UNICORN, grove.getCreatures().getFirst().getGrove());
+        assertTrue(orders.getFirst().getOutcome().contains("выпало 4 — приглашение принято"));
+        assertTrue(turns.getFirst().getSummary().getFirst().contains("Единорог поселяется"));
+    }
+
+    /** Нечётный бросок — приглашение отклонено; огромному существу нужна пустая роща. */
+    @Test
+    void groveRejectsOnOddRollAndChecksSpace() {
+        PlayerBastionFacility grove = addFacility("grove", FacilitySpace.VAST);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(grove.getId(), BastionOrder.RECRUIT, null,
+                null, null, null, new ActivityRequests.RecruitCreature(null, null, null, null, GroveCreature.TREANT)));
+        dice.push(3);
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertTrue(grove.getCreatures().isEmpty());
+        assertTrue(orders.getFirst().getOutcome().contains("отклонено"));
+
+        grove.getCreatures().add(creature("Трент", Size.LARGE));
+        actAs(playerId);
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(grove.getId(), BastionOrder.RECRUIT, null, null, null, null,
+                        new ActivityRequests.RecruitCreature(null, null, null, null, GroveCreature.AWAKENED_TREE))))
+                .getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(grove.getId(), BastionOrder.RECRUIT, null, null))).getStatus());
+    }
+
+    /** Лиминальное пространство: ритуал стоит 1000 зм, при нечётном броске сущность убивает наёмника. */
+    @Test
+    void liminalFailureKillsHireling() {
+        bastion.setTreasuryGp(1500);
+        PlayerBastionFacility liminal = addFacility("liminal", FacilitySpace.VAST);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(liminal.getId(), BastionOrder.RECRUIT,
+                null, null));
+        assertEquals(500, bastion.getTreasuryGp());
+        dice.push(5);
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+
+        assertTrue(liminal.getCreatures().isEmpty());
+        assertEquals(1, liminal.getUnavailableOnTurn());
+        assertEquals(1, liminal.missingHirelings(1));
+        assertEquals(0, liminal.missingHirelings(2));
+    }
+
+    /** Кузница конструктов: вариант задаёт конструкт, цену и срок; конструкт становится защитником. */
+    @Test
+    void constructForgeBuildsDefender() {
+        bastion.setTreasuryGp(1000);
+        member.setCharacterLevel(17);
+        PlayerBastionFacility forge = addFacility("forge", FacilitySpace.VAST);
+        actAs(playerId);
+        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(forge.getId(), BastionOrder.RECRUIT, null, null))).getStatus());
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(forge.getId(), BastionOrder.RECRUIT,
+                "конструкт (Пугало)", null));
+        assertEquals(0, bastion.getTreasuryGp());
+        assertEquals(2, orders.getFirst().getCompletesOnTurn());
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertTrue(forge.getCreatures().isEmpty());
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertEquals("Пугало", forge.getCreatures().getFirst().getName());
+        assertTrue(forge.getCreatures().getFirst().isDefender());
+    }
+
+    /** Некрополь: 8 мест; уничтоженная нежить возвращается через 14 дней, если есть место. */
+    @Test
+    void necropolisHoldsEightAndUndeadReturn() {
+        PlayerBastionFacility necropolis = addFacility("necropolis", FacilitySpace.ROOMY);
+        necropolis.setDefenders(8);
+        actAs(playerId);
+        assertEquals(HttpStatus.CONFLICT, assertThrows(ApiException.class, () -> service.giveOrder(bastion.getId(),
+                new ActivityRequests.GiveOrder(necropolis.getId(), BastionOrder.RECRUIT, null, null))).getStatus());
+
+        dice.push(52, 1, 2, 3, 4, 5, 6);
+        maintainTurn();
+        assertEquals(7, necropolis.getDefenders());
+        assertEquals(List.of(2), necropolis.getReturningDefenders());
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+        assertEquals(8, necropolis.getDefenders());
+        assertTrue(necropolis.getReturningDefenders().isEmpty());
+    }
+
+    /** Рыцарь и сущность снимают по кости потерь, лазарет перебрасывает единицы по числу наёмников. */
+    @Test
+    void knightEntitiesAndTriageSoftenAttack() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setDefenders(5);
+        addFacility("field", FacilitySpace.VAST);
+        addFacility("infirmary", FacilitySpace.ROOMY);
+        PlayerBastionFacility liminal = addFacility("liminal", FacilitySpace.VAST);
+        liminal.getCreatures().add(creature(FacilityMechanicsService.LIMINAL_ENTITY_NAME, null));
+        dice.push(52, 1, 1, 1, 5, 6, 6);
+
+        maintainTurn();
+
+        PlayerBastionEvent event = events.getFirst();
+        assertEquals(List.of(6, 6, 1, 5), event.getDetails().getDice());
+        assertTrue(event.getSummary().contains("4к6"));
+        assertTrue(event.getSummary().contains("Лазарет перебросил единиц: 2"));
+        assertEquals(1, event.getDetails().getLost().size());
+    }
+
+    /** Сторонники столовой заменяют павших при следующем событии и уходят. */
+    @Test
+    void supportersReplaceLostDefenders() {
+        PlayerBastionFacility barrack = addBarrack();
+        barrack.setDefenders(3);
+        barrack.setSupporters(true);
+        dice.push(52, 1, 1, 1, 1, 1, 1);
+
+        maintainTurn();
+
+        assertEquals(3, barrack.getDefenders());
+        assertFalse(barrack.isSupporters());
+        assertTrue(events.getFirst().getSummary().contains("сторонники"));
+    }
+
+    /** Цирк приносит 2к6 × 10 зм; с открытыми кошельками салона — лучший из двух бросков. */
+    @Test
+    void circusIncomeWithOpenPurses() {
+        PlayerBastionFacility circus = addFacility("circus", FacilitySpace.VAST);
+        addFacility("salon", FacilitySpace.ROOMY);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(circus.getId(), BastionOrder.TRADE,
+                null, null));
+        dice.push(1, 1, 6, 5);
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+
+        assertEquals(210, bastion.getTreasuryGp());
+        assertEquals(PlayerBastionLedgerEntry.Reason.INCOME, ledger.getLast().getReason());
+        assertTrue(orders.getFirst().getOutcome().contains("110 зм"));
+    }
+
+    /** Рубка подвижного бастиона: «Усилить» бросает событие, как «Обслуживать». */
+    @Test
+    void travelOrderRollsEvent() {
+        PlayerBastionFacility helm = addFacility("helm", FacilitySpace.CRAMPED);
+        actAs(playerId);
+        service.giveOrder(bastion.getId(), new ActivityRequests.GiveOrder(helm.getId(), BastionOrder.EMPOWER,
+                null, null));
+        dice.push(10);
+
+        actAs(masterId);
+        service.performTurn(bastion.getId(), new ActivityRequests.Turn(null, Map.of()));
+
+        assertEquals(1, events.size());
+        assertEquals(BastionEventType.ALL_IS_WELL, events.getFirst().getType());
+        assertFalse(turns.getFirst().isMaintain());
+    }
+
+    private static Map<String, BastionFacility> merge(Map<String, BastionFacility> first,
+                                                      Map<String, BastionFacility> second) {
+        Map<String, BastionFacility> all = new java.util.HashMap<>(first);
+        all.putAll(second);
+        return all;
+    }
+
+    private PlayerBastionFacility addFacility(String url, FacilitySpace space) {
+        PlayerBastionFacility facility = new PlayerBastionFacility();
+        facility.setId(UUID.randomUUID());
+        facility.setMember(member);
+        facility.setFacilityUrl(url);
+        facility.setSpace(space);
+        facility.setPrerequisiteConfirmed(true);
+        member.getFacilities().add(facility);
+        return facility;
+    }
+
+    private static BastionFacility mechanical(String url, String name, int hirelings, BastionOrder order,
+                                              String optionName, Integer days, int cost,
+                                              FacilityMechanic... mechanics) {
+        BastionFacility facility = new BastionFacility();
+        facility.setUrl(url);
+        facility.setName(name);
+        facility.setCategory(FacilityCategory.SPECIAL);
+        facility.setLevel(5L);
+        facility.setHirelings(hirelings);
+        facility.setOrders(List.of(order));
+        FacilityOrderOption option = new FacilityOrderOption();
+        option.setOrder(order);
+        option.setName(optionName);
+        option.setDays(days);
+        option.setCost(cost);
+        facility.setOrderOptions(List.of(option));
+        facility.setMechanics(List.of(mechanics));
+        return facility;
+    }
+
+    private static BastionFacility constructForge() {
+        BastionFacility facility = mechanical("forge", "Кузница конструктов", 2, BastionOrder.RECRUIT,
+                "конструкт (Пугало)", 14, 1000, FacilityMechanic.CONSTRUCTS);
+        FacilityOrderOption broom = new FacilityOrderOption();
+        broom.setOrder(BastionOrder.RECRUIT);
+        broom.setName("конструкт (Оживлённая метла)");
+        broom.setDays(7);
+        broom.setCost(250);
+        facility.setOrderOptions(List.of(facility.getOrderOptions().getFirst(), broom));
+        return facility;
+    }
+
+    private static BastionFacility necropolis() {
+        BastionFacility facility = mechanical("necropolis", "Некрополь", 1, BastionOrder.RECRUIT,
+                "защитников-нежить", null, 0, FacilityMechanic.UNDEAD_RETURN);
+        facility.setBarrack(true);
+        facility.setDefenderCapacity(8);
+        return facility;
+    }
+
     private static final class QueueDice extends BastionDice {
         private final Deque<Integer> queue = new ArrayDeque<>();
 

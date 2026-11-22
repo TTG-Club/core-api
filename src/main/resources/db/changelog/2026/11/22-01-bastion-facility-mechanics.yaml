@@ -1,0 +1,80 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-22-01-bastion-facility-mechanics
+      author: Magistrus
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Механики сооружений из FRHoF, RHW, EFA и AU, которые бастион разыгрывает сам:
+        приглашения с броском кости, существа рощи, конструкты и сущности, рыцарь и лазарет
+        при нападении, сторонники столовой, возвращение нежити, путешествие подвижного
+        бастиона, опасное исследование, призраки, выручка маяка и цирка, открытые кошельки
+        и диковины. Сооружений может ещё не быть в справочнике — тогда UPDATE ничего не меняет.
+      changes:
+        - addColumn:
+            tableName: bastion_facility
+            columns:
+              - column:
+                  name: defender_capacity
+                  type: INTEGER
+              - column:
+                  name: mechanics
+                  type: JSONB
+        - addColumn:
+            tableName: player_bastion_facility
+            columns:
+              - column:
+                  name: returning_defenders
+                  type: JSONB
+                  defaultValueComputed: "'[]'::jsonb"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: supporters
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: player_bastion_order
+            columns:
+              - column:
+                  name: outcome
+                  type: TEXT
+        - sql:
+            sql: >
+              UPDATE bastion_facility f SET mechanics = v.m::jsonb
+              FROM (VALUES
+                  ('emerald-enclave-grove-frhof', '["INVITATION", "NATURE_GROVE"]'),
+                  ('harper-hideout-frhof', '["INVITATION"]'),
+                  ('lords-alliance-noble-residence-frhof', '["INVITATION"]'),
+                  ('order-of-the-gauntlet-tournament-field-frhof', '["KNIGHT"]'),
+                  ('red-wizard-necropolis-frhof', '["UNDEAD_RETURN"]'),
+                  ('spirit-vault-rhw', '["HAUNTED", "PERILOUS_RESEARCH"]'),
+                  ('liminal-space-rhw', '["HAUNTED", "INVITATION", "LIMINAL_ENTITIES"]'),
+                  ('cabinet-of-curiosities-rhw', '["CURIOSITIES"]'),
+                  ('infirmary-rhw', '["TRIAGE"]'),
+                  ('orien-helm-efa', '["TRAVEL"]'),
+                  ('navigators-helm-efa', '["TRAVEL"]'),
+                  ('lyrandar-helm-efa', '["TRAVEL"]'),
+                  ('construct-forge-efa', '["CONSTRUCTS"]'),
+                  ('entertainment-salon-au', '["OPEN_PURSES"]'),
+                  ('soup-kitchen-au', '["SUPPORTERS"]'),
+                  ('lighthouse-au', '["SALVAGE"]'),
+                  ('circus-tent-au', '["PERFORMANCE"]')
+              ) AS v(url, m)
+              WHERE f.url = v.url
+        - sql:
+            comment: Некрополь Красных Волшебников — барак нежити на 8 защитников
+            sql: >
+              UPDATE bastion_facility SET barrack = true, defender_capacity = 8
+              WHERE url = 'red-wizard-necropolis-frhof'
+        - sql:
+            comment: Вложение в диковины — вариант приказа с ценой вместо суммы на словах
+            sql: >
+              UPDATE bastion_facility SET order_options = '[
+                {"order": "TRADE", "name": "обычные диковины", "description": "Через 28 дней наёмник приносит обычные магические предметы; количество и шанс проклятия — по числу сооружений с призраками.", "days": 28, "cost": 150, "costNote": null, "minLevel": null},
+                {"order": "TRADE", "name": "необычные диковины", "description": "Через 28 дней наёмник приносит необычные магические предметы; количество и шанс проклятия — по числу сооружений с призраками.", "days": 28, "cost": 600, "costNote": null, "minLevel": null},
+                {"order": "TRADE", "name": "редкие диковины", "description": "Через 28 дней наёмник приносит редкие магические предметы; количество и шанс проклятия — по числу сооружений с призраками.", "days": 28, "cost": 6000, "costNote": null, "minLevel": null},
+                {"order": "TRADE", "name": "очень редкие диковины", "description": "Через 28 дней наёмник приносит очень редкие магические предметы; количество и шанс проклятия — по числу сооружений с призраками.", "days": 28, "cost": 60000, "costNote": null, "minLevel": null}
+              ]'::jsonb
+              WHERE url = 'cabinet-of-curiosities-rhw'
