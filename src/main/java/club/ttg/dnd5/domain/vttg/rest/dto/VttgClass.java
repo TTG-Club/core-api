@@ -284,9 +284,15 @@ public class VttgClass {
      * @param count       сколько вариантов выбирают на уровне получения умения
      * @param progression сколько выбрано ВСЕГО к уровню: ключ — уровень класса строкой,
      *                    значение — итог, а не прибавка (как у {@link Counter#progression()})
+     * @param replacement когда на новом уровне можно заменить ОДИН ранее выбранный вариант
+     *                    на другой доступный: {@code every-level} — на любом уровне класса
+     *                    (воззвания колдуна), {@code choice-levels} — только на уровнях, где у
+     *                    выбора есть ступень: уровень получения умения или ключ
+     *                    {@code progression} (манёвры 2014); {@code null} — замены нет
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record ChoiceConfig(String label, Integer count, Map<String, Integer> progression) {
+    public record ChoiceConfig(String label, Integer count, Map<String, Integer> progression,
+                               String replacement) {
     }
 
     /**

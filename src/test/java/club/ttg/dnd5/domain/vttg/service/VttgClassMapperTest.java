@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.character_class.model.CasterType;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionReplacement;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionsChoice;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
@@ -228,6 +229,30 @@ class VttgClassMapperTest {
         assertEquals(1, config.get("count").asInt());
         assertEquals(1, config.get("progression").get("1").asInt());
         assertEquals(3, config.get("progression").get("2").asInt());
+        // Без правила замены поля нет: потребитель замену не предлагает
+        assertNull(config.get("replacement"));
+    }
+
+    /** Правило замены выбранного варианта выгружается словарём VTTG в обоих значениях. */
+    @Test
+    void exportsChoiceReplacement() {
+        assertEquals("every-level", exportedReplacement(ClassFeatureOptionReplacement.EVERY_LEVEL));
+        assertEquals("choice-levels", exportedReplacement(ClassFeatureOptionReplacement.CHOICE_LEVELS));
+    }
+
+    private String exportedReplacement(ClassFeatureOptionReplacement replacement) {
+        CharacterClass fighter = baseClass("fighter", "Воин", "Fighter");
+        ClassFeature superiority = feature("combat-superiority", 3, "Превосходство в бою", "Выберите манёвры.");
+        ClassFeatureOption option = new ClassFeatureOption();
+        option.setKey("trip-attack");
+        superiority.setOptions(List.of(option));
+        ClassFeatureOptionsChoice choice = new ClassFeatureOptionsChoice();
+        choice.setCount(3);
+        choice.setReplacement(replacement);
+        superiority.setOptionsChoice(choice);
+        fighter.setFeatures(List.of(superiority));
+
+        return json(fighter).get("features").get(0).get("choiceConfig").get("replacement").asText();
     }
 
     /** Справочный список вариантов остаётся справкой: настройки выбора у него нет. */
