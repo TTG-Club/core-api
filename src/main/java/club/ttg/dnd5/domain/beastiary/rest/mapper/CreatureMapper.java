@@ -98,7 +98,7 @@ public interface CreatureMapper {
     @Mapping(source = ".", target = "legendary", qualifiedByName = "toLegendary")
     CreatureDetailResponse toDetail(Creature creature);
 
-    @BaseMapping.BaseShortResponseNameMapping
+    @BaseMapping.BaseRequestNameMapping
     @BaseMapping.BaseSourceRequestMapping
     @Mapping(target = "ac.value", source = "armor.armorClass")
     @Mapping(target = "ac.text", source = "armor.text")
