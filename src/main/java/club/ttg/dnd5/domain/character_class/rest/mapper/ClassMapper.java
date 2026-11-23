@@ -39,6 +39,18 @@ public interface ClassMapper
     @Mapping(target = "image", source = ".", qualifiedByName = "toImageUrl")
     ClassShortResponse toShort(CharacterClass characterClass);
 
+    /**
+     * Краткий ответ для списков без флага подклассов: ленивая коллекция
+     * {@code subclasses} не читается, флаг списку проставляет {@code ClassService}
+     * одним запросом на все строки.
+     */
+    @Named("toShortListItem")
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(target = "hasSubclasses", ignore = true)
+    @Mapping(target = "image", source = ".", qualifiedByName = "toImageUrl")
+    ClassShortResponse toShortListItem(CharacterClass characterClass);
+
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "levels", source = "features", qualifiedByName = "getLevels")
