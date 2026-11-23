@@ -18,7 +18,11 @@ import java.util.List;
 @Service
 public class ClassQueryDslSearchService extends AbstractQueryDslSearchService<CharacterClass, QCharacterClass> {
     private static final QCharacterClass CLASS = QCharacterClass.characterClass;
-    private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{CLASS.name.asc()};
+    /**
+     * По названию, при равных названиях — по слагу: у подклассов из разных источников названия
+     * совпадают, и без второго ключа их взаимный порядок (а с ним и границы страниц) не определён.
+     */
+    private static final OrderSpecifier<?>[] ORDER = new OrderSpecifier[]{CLASS.name.asc(), CLASS.url.asc()};
     private static final QCharacterClassListItem LIST_ITEM =
             new QCharacterClassListItem(CLASS.getMetadata().getName());
 
