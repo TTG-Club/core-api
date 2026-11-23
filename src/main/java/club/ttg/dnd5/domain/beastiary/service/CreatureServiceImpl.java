@@ -8,6 +8,7 @@ import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureQueryRequest;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureShortResponse;
 import club.ttg.dnd5.domain.beastiary.rest.mapper.CreatureMapper;
+import club.ttg.dnd5.dto.base.filters.FilterIdUtils;
 import club.ttg.dnd5.domain.filter.model.FilterHashCategory;
 import club.ttg.dnd5.domain.filter.service.FilterHashService;
 import club.ttg.dnd5.domain.source.service.SourceService;
@@ -61,7 +62,7 @@ public class CreatureServiceImpl implements CreatureService {
         // Резолв хэшей traits → оригинальные значения
         var traitValues = resolveHashes(request.getTraits());
         // Резолв хэшей tags → оригинальные значения
-        var tagValues = resolveHashes(request.getTag());
+        var tagValues = resolveTagHashes(request.getTag());
 
         var predicate = CreaturePredicateBuilder.build(request, traitValues, tagValues);
         return creatureQueryDslSearchService.searchListItems(predicate, request.getPage(), request.getPageSize(),
@@ -88,6 +89,81 @@ public class CreatureServiceImpl implements CreatureService {
             }
         }
         return resolved;
+    }
+
+    /**
+     * Теги типа по хэшам из запроса. Сначала — по таблице соответствий, а чего в ней нет,
+     * находится среди тегов самих существ.
+     *
+     * <p>В таблицу тег попадает только при сохранении существа через форму сайта. Записи,
+     * залитые скриптами или перенесённые из другой базы, её не пополняют, а список фильтра
+     * для такого тега всё равно выдаёт вычисленный хэш. Без второго шага хэш не находился,
+     * условие по тегу пропускалось, и фильтр возвращал весь бестиарий.</p>
+     *
+     * @param filter фильтр по тегам из запроса.
+     * @return названия тегов; пусто — фильтр не задан.
+     */
+    private List<String> resolveTagHashes(final club.ttg.dnd5.dto.base.filters.QueryFilter<String> filter)
+    {
+        if (filter == null || !filter.isActive() || filter.getValues() == null || filter.getValues().isEmpty())
+        {
+            return List.of();
+        }
+
+        java.util.Map<String, String> tagsByHash = new java.util.HashMap<>();
+        for (FilterHashMapping mapping : filterHashMappingRepository.findAllByHashIn(filter.getValues()))
+        {
+            tagsByHash.put(mapping.getHash(), mapping.getValue());
+        }
+
+        boolean hasUnknownHash = filter.getValues().stream()
+                .anyMatch(value -> value.length() == FilterIdUtils.SHORT_HASH_LENGTH && !tagsByHash.containsKey(value));
+        if (hasUnknownHash)
+        {
+            tagsByComputedHash(creatureRepository.findDistinctTags()).forEach(tagsByHash::putIfAbsent);
+        }
+
+        List<String> resolved = new java.util.ArrayList<>();
+        for (String value : filter.getValues())
+        {
+            if (value.length() != FilterIdUtils.SHORT_HASH_LENGTH)
+            {
+                resolved.add(value);
+            }
+            else if (tagsByHash.containsKey(value))
+            {
+                resolved.add(tagsByHash.get(value));
+            }
+        }
+        return resolved;
+    }
+
+    /**
+     * Хэши тегов, вычисленные по самим тегам, — тем же правилом, что в списке фильтра
+     * ({@code CreatureFilterService}): строка тегов делится по запятым, края обрезаются.
+     *
+     * @param tagTexts строки тегов существ, по одной на существо.
+     * @return тег по его хэшу.
+     */
+    static java.util.Map<String, String> tagsByComputedHash(final java.util.Collection<String> tagTexts)
+    {
+        java.util.Map<String, String> tagsByHash = new java.util.HashMap<>();
+        for (String tagText : tagTexts)
+        {
+            if (tagText == null)
+            {
+                continue;
+            }
+            for (String tag : tagText.split(","))
+            {
+                String trimmed = tag.trim();
+                if (!trimmed.isEmpty())
+                {
+                    tagsByHash.putIfAbsent(FilterIdUtils.shortHash(trimmed), trimmed);
+                }
+            }
+        }
+        return tagsByHash;
     }
 
     @Override

@@ -28,6 +28,27 @@ class SpellPredicateBuilderTest {
     }
 
     @Test
+    void upcastableExcludeAlsoTakesSpellsWithoutTheFlag() {
+        SpellQueryRequest request = new SpellQueryRequest();
+        QueryFilter<String> filter = new QueryFilter<>();
+        filter.setValues(Set.of("1"));
+        filter.setExclude(true);
+        request.setUpcastable(filter);
+
+        String excluded = SpellPredicateBuilder.build(request, Set.of(), Set.of()).toString();
+
+        // «Не усиливается» — это и false, и незаполненный признак
+        assertTrue(excluded.contains("spell.upcastable is null"), excluded);
+        assertTrue(excluded.contains("spell.upcastable = false"), excluded);
+
+        filter.setExclude(false);
+        String included = SpellPredicateBuilder.build(request, Set.of(), Set.of()).toString();
+
+        assertTrue(included.contains("spell.upcastable = true"), included);
+        assertFalse(included.contains("is null"), included);
+    }
+
+    @Test
     void withoutClassGroupRequiresMissingClassAffiliation() {
         SpellQueryRequest request = new SpellQueryRequest();
         request.setClassGroup(SpellQueryRequest.WITHOUT_CLASS_GROUP);

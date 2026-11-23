@@ -16,7 +16,7 @@ import java.util.HexFormat;
 @UtilityClass
 public class FilterIdUtils
 {
-    private static final int SHORT_HASH_LENGTH = 8;
+    public static final int SHORT_HASH_LENGTH = 8;
 
     /**
      * Вычисляет короткий хэш (8 hex-символов) от строки.
