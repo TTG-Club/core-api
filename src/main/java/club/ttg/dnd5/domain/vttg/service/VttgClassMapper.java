@@ -6,6 +6,7 @@ import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassFeature;
 import club.ttg.dnd5.domain.common.model.SectionType;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOption;
+import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionReplacement;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureOptionsChoice;
 import club.ttg.dnd5.domain.character_class.model.ClassFeatureScaling;
 import club.ttg.dnd5.domain.character_class.model.ClassResourceRecovery;
@@ -628,7 +629,21 @@ public class VttgClassMapper {
         }
         String label = StringUtils.hasText(choice.getLabel()) ? choice.getLabel() : optionsName;
         return new VttgClass.ChoiceConfig(optional(label), choice.getCount(),
-                choiceProgression(choice.getScaling()));
+                choiceProgression(choice.getScaling()), choiceReplacement(choice.getReplacement()));
+    }
+
+    /**
+     * Правило замены выбранного варианта в словаре VTTG: {@code every-level} либо
+     * {@code choice-levels}; {@code null} — замены нет, и поля в выгрузке нет.
+     */
+    private String choiceReplacement(ClassFeatureOptionReplacement replacement) {
+        if (replacement == null) {
+            return null;
+        }
+        return switch (replacement) {
+            case EVERY_LEVEL -> "every-level";
+            case CHOICE_LEVELS -> "choice-levels";
+        };
     }
 
     /** Ступени количества по уровням: {@code уровень строкой → сколько выбрано всего}. */

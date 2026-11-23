@@ -28,6 +28,10 @@ import java.util.Optional;
  * ступень называет, сколько всего выбрано К её уровню, а не сколько добавилось.
  * Воззваний у колдуна одно с первого уровня и три со второго — значит, на
  * втором игрок выбирает два новых.</p>
+ *
+ * <p>{@link #replacement} — можно ли на новом уровне заменить один уже выбранный
+ * вариант на другой: воззвания колдуна меняют на любом уровне, манёвры (2014) — только
+ * на уровнях, где берут новые. Без признака замены нет.</p>
  */
 @Getter
 @Setter
@@ -47,6 +51,11 @@ public class ClassFeatureOptionsChoice {
     @Schema(description = "Ступени количества по уровням класса: с какого уровня сколько выбрано ВСЕГО")
     private List<ChoiceScaling> scaling;
 
+    @Schema(description = "Замена одного выбранного варианта при повышении уровня: EVERY_LEVEL — на любом "
+            + "уровне класса, CHOICE_LEVELS — только на уровнях ступеней выбора; пусто — замены нет",
+            example = "EVERY_LEVEL")
+    private ClassFeatureOptionReplacement replacement;
+
     public ClassFeatureOptionsChoice(ClassFeatureOptionsChoice choice) {
         this.label = choice.getLabel();
         this.count = choice.getCount();
@@ -55,5 +64,6 @@ public class ClassFeatureOptionsChoice {
                 .stream()
                 .map(step -> new ChoiceScaling(step.getLevel(), step.getCount()))
                 .toList();
+        this.replacement = choice.getReplacement();
     }
 }

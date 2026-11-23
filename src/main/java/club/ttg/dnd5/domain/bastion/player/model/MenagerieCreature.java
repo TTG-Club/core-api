@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.bastion.player.model;
 
+import club.ttg.dnd5.domain.bastion.model.GroveCreature;
 import club.ttg.dnd5.domain.bastion.model.MenagerieBeast;
 import club.ttg.dnd5.domain.common.dictionary.Size;
 import lombok.Getter;
@@ -22,6 +23,9 @@ public class MenagerieCreature {
 
     /** Существо из таблицы зверинца; {@code null} — существо не из таблицы, с согласия Мастера. */
     private MenagerieBeast beast;
+
+    /** Существо из таблицы рощи Изумрудного Анклава. */
+    private GroveCreature grove;
 
     private String name;
 

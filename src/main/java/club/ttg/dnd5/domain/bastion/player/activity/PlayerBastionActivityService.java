@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.bastion.model.BastionOrder;
 import club.ttg.dnd5.domain.bastion.model.BastionRules;
 import club.ttg.dnd5.domain.bastion.model.FacilityCategory;
 import club.ttg.dnd5.domain.bastion.model.FacilityEnlargement;
+import club.ttg.dnd5.domain.bastion.model.FacilityMechanic;
 import club.ttg.dnd5.domain.bastion.model.FacilityOrderOption;
 import club.ttg.dnd5.domain.bastion.model.FacilitySpace;
 import club.ttg.dnd5.domain.bastion.player.activity.PlayerBastionLedgerEntry.Reason;
@@ -87,6 +88,7 @@ public class PlayerBastionActivityService {
     private final BastionEventService events;
     private final PlayerBastionEventRepository eventRepository;
     private final MagicItemRepository magicItemRepository;
+    private final FacilityMechanicsService mechanics;
 
     /** Сколько ходов занимает дело на столько-то дней; меньше хода не бывает. */
     public static int turnsFor(Integer days) {
@@ -135,6 +137,7 @@ public class PlayerBastionActivityService {
                         order.getCreatedAt(),
                         order.getNote(),
                         order.getResult(),
+                        order.getOutcome(),
                         order.getStatus() == OrderStatus.ACTIVE
                                 && order.getGivenOnTurn() == bastion.getTurn()
                                 && bastion.getStatus() == PlayerBastionStatus.ACTIVE
@@ -240,10 +243,15 @@ public class PlayerBastionActivityService {
                 throw conflict("Сооружение «%s» уже выполняет приказ".formatted(reference.getName()));
             }
 
-            Optional<FacilityOrderOption> option = findOption(reference, request.order(), request.optionName());
-            if (StringUtils.hasText(request.optionName()) && option.isEmpty()) {
+            Optional<FacilityOrderOption> named = findOption(reference, request.order(), request.optionName());
+            if (StringUtils.hasText(request.optionName()) && named.isEmpty()) {
                 throw badRequest("У «%s» нет варианта «%s»".formatted(reference.getName(), request.optionName()));
             }
+            // Сооружение, которое вербует существ по механике, берёт свой единственный вариант сам
+            boolean housing = FacilityMechanicsService.recruitsCreature(reference, request.order());
+            Optional<FacilityOrderOption> option = housing && named.isEmpty()
+                    ? singleOption(reference, request.order())
+                    : named;
             option.map(FacilityOrderOption::getMinLevel)
                     .filter(minLevel -> minLevel > facility.getMember().getCharacterLevel())
                     .ifPresent(minLevel -> {
@@ -251,10 +259,13 @@ public class PlayerBastionActivityService {
                     });
 
             boolean recruitDefenders = isRecruitDefenders(reference, request.order());
-            if (recruitDefenders && facility.getDefenders() >= BastionRules.barrackCapacity(facility.getSpace())) {
+            if (recruitDefenders
+                    && facility.getDefenders() >= BastionRules.defenderCapacity(reference, facility.getSpace())) {
                 throw conflict("В «%s» больше не помещается защитников".formatted(reference.getName()));
             }
-            MenagerieCreature creature = recruitCreature(facility, reference, request, master);
+            MenagerieCreature creature = housing
+                    ? mechanics.recruit(facility, reference, request, option)
+                    : recruitCreature(facility, reference, request, master);
             StableAnimal animal = tradeAnimal(facility, reference, request, master);
             boolean sale = animal != null && trimToNull(request.trade().sellAnimalId()) != null;
             // Защитников барак вербует бесплатно, какую бы цену ни указал вариант; существо
@@ -278,7 +289,9 @@ public class PlayerBastionActivityService {
                 order.setItemName(craft.name());
             });
             // Срок изготовления предмета считается по его цене и наёмникам, а не по варианту
-            Integer days = creature != null
+            Integer days = housing
+                    ? option.map(FacilityOrderOption::getDays).orElse(BastionRules.MENAGERIE_RECRUIT_DAYS)
+                    : creature != null
                     ? Integer.valueOf(BastionRules.MENAGERIE_RECRUIT_DAYS)
                     : animal != null ? Integer.valueOf(BastionRules.STABLE_TRADE_DAYS)
                     : item.map(PlayerBastionResponse.CraftableItem::days)
@@ -503,6 +516,7 @@ public class PlayerBastionActivityService {
         }
 
         buildWallBlocks(bastion, next, summary);
+        summary.addAll(events.returnUndead(bastion, next, reference));
 
         List<PlayerBastionOrder> givenThisTurn = orderRepository.findAllByBastionIdAndGivenOnTurnAndStatusNot(
                 bastionId, bastion.getTurn(), OrderStatus.CANCELLED);
@@ -512,6 +526,8 @@ public class PlayerBastionActivityService {
         // Ход без приказов — тоже обслуживание: событие бросается, если его ещё не было
         if (maintain && !events.rolledOnTurn(bastion, bastion.getTurn())) {
             events.rollForMaintain(bastion, reference, userId);
+        } else if (!maintain) {
+            rollForTravel(bastion, givenThisTurn, facilities, reference, userId, summary);
         }
         summary.addAll(events.departures(bastion, next));
 
@@ -527,11 +543,18 @@ public class PlayerBastionActivityService {
             String target = orderFacility
                     .map(facility -> facilityName(facility, reference))
                     .orElse("бастион");
+            BastionFacility orderReference = orderFacility
+                    .map(facility -> reference.get(facility.getFacilityUrl()))
+                    .orElse(null);
+            if (orderFacility.isPresent() && FacilityMechanicsService.handles(orderReference, order)) {
+                order.setOutcome(mechanics.complete(bastion, order, orderFacility.get(), reference, next, userId));
+            }
             String recruited = orderFacility
                     .filter(facility -> isRecruitDefenders(reference.get(facility.getFacilityUrl()), order.getOrder()))
-                    .map(PlayerBastionActivityService::recruitDefenders)
+                    .map(facility -> recruitDefenders(facility, reference.get(facility.getFacilityUrl())))
                     .or(() -> orderFacility
-                            .filter(facility -> order.getCreature() != null)
+                            .filter(facility -> order.getCreature() != null
+                                    && !FacilityMechanicsService.recruitsCreature(orderReference, order.getOrder()))
                             .map(facility -> settleCreature(facility, order.getCreature())))
                     .or(() -> orderFacility
                             .filter(facility -> order.getAnimal() != null)
@@ -539,12 +562,13 @@ public class PlayerBastionActivityService {
                                     ? sellAnimal(bastion, facility, order.getAnimal(), userId)
                                     : settleAnimal(facility, order.getAnimal(), next)))
                     .orElse("");
-            summary.add("Выполнен приказ «%s» — %s%s%s%s".formatted(order.getOrder().getName(), target,
+            summary.add("Выполнен приказ «%s» — %s%s%s%s%s".formatted(order.getOrder().getName(), target,
                     Optional.ofNullable(order.getOptionName())
                             .filter(option -> order.getCreature() == null && order.getAnimal() == null)
                             .map(option -> ": " + option)
                             .orElse(""),
                     recruited,
+                    Optional.ofNullable(order.getOutcome()).map(outcome -> ". " + outcome).orElse(""),
                     Optional.ofNullable(order.getResult()).map(result -> ". " + result).orElse("")));
             orderRepository.save(order);
         }
@@ -779,8 +803,8 @@ public class PlayerBastionActivityService {
      *
      * @return приписка к записи хода: сколько нанято и сколько стало
      */
-    private static String recruitDefenders(PlayerBastionFacility barrack) {
-        int capacity = BastionRules.barrackCapacity(barrack.getSpace());
+    private static String recruitDefenders(PlayerBastionFacility barrack, BastionFacility reference) {
+        int capacity = BastionRules.defenderCapacity(reference, barrack.getSpace());
         int hired = Math.max(0, Math.min(BastionRules.BARRACK_DEFENDERS_PER_RECRUIT,
                 capacity - barrack.getDefenders()));
         barrack.setDefenders(barrack.getDefenders() + hired);
@@ -988,6 +1012,37 @@ public class PlayerBastionActivityService {
                 .orElseThrow(() -> badRequest("«%s» не изготавливает предмет «%s» выбранными инструментами"
                         .formatted(reference.getName(), url)));
         return Optional.of(item);
+    }
+
+    /** Единственный вариант приказа у сооружения; вариантов несколько или нет — пусто. */
+    private static Optional<FacilityOrderOption> singleOption(BastionFacility reference, BastionOrder order) {
+        List<FacilityOrderOption> options = Optional.ofNullable(reference.getOrderOptions()).orElse(List.of()).stream()
+                .filter(option -> option.getOrder() == order)
+                .toList();
+        return options.size() == 1 ? Optional.of(options.getFirst()) : Optional.empty();
+    }
+
+    /**
+     * Приказ «Усилить» рубке подвижного бастиона: Мастер бросает событие бастиона, как при
+     * «Обслуживать», — за каждого персонажа, отдавшего такой приказ в этот ход.
+     */
+    private void rollForTravel(PlayerBastion bastion, List<PlayerBastionOrder> givenThisTurn,
+                               Map<UUID, PlayerBastionFacility> facilities, Map<String, BastionFacility> reference,
+                               UUID userId, List<String> summary) {
+        givenThisTurn.stream()
+                .filter(order -> order.getOrder() == BastionOrder.EMPOWER && order.getFacilityId() != null)
+                .map(order -> facilities.get(order.getFacilityId()))
+                .filter(Objects::nonNull)
+                .filter(facility -> Optional.ofNullable(reference.get(facility.getFacilityUrl()))
+                        .map(source -> source.has(FacilityMechanic.TRAVEL))
+                        .orElse(false))
+                .map(PlayerBastionFacility::getMember)
+                .distinct()
+                .forEach(member -> {
+                    PlayerBastionEvent event = events.rollFor(bastion, member, reference, userId);
+                    summary.add("Бастион в пути (%s): событие «%s»".formatted(member.getCharacterName(),
+                            event.getType().getName()));
+                });
     }
 
     private static Optional<FacilityOrderOption> findOption(BastionFacility reference, BastionOrder order, String name) {

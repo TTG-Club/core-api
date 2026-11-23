@@ -136,6 +136,71 @@ public class BastionRules {
         return space == FacilitySpace.VAST ? BARRACK_VAST_CAPACITY : BARRACK_ROOMY_CAPACITY;
     }
 
+    /**
+     * Сколько защитников помещается в сооружении: у некоторых вместимость задана в
+     * справочнике (некрополь — 8), у остальных — по правилам барака.
+     */
+    public static int defenderCapacity(BastionFacility reference, FacilitySpace space) {
+        return reference != null && reference.getDefenderCapacity() != null
+                ? reference.getDefenderCapacity()
+                : barrackCapacity(space);
+    }
+
+    /** Через сколько дней уничтоженный защитник-нежить возвращается в некрополь. */
+    public static final int UNDEAD_RETURN_DAYS = 14;
+
+    /**
+     * Вместимость рощи в восьмых долях большого существа: огромное — 16, большое — 8,
+     * маленькое или среднее — 2, крошечное — 1. Всего 16: одно огромное или два больших;
+     * 4 маленьких или средних либо 8 крошечных занимают место одного большого.
+     */
+    public static final int GROVE_CAPACITY = 16;
+
+    /** Сколько места в роще занимает существо этого размера; 0 — в роще не живёт. */
+    public static int groveSpace(Size size) {
+        if (size == null) {
+            return 0;
+        }
+        return switch (size) {
+            case TINY -> 1;
+            case SMALL, MEDIUM -> 2;
+            case LARGE -> 8;
+            case HUGE -> 16;
+            default -> 0;
+        };
+    }
+
+    /** Сколько сущностей одновременно живёт в лиминальном пространстве. */
+    public static final int LIMINAL_ENTITIES_MAX = 3;
+
+    /**
+     * Сколько магических предметов приносят диковины и с каким шансом один из них проклят,
+     * по числу сооружений бастиона, населённых призраками.
+     *
+     * @param hauntedFrom наименьшее число сооружений с призраками для этой строки
+     * @param itemsDice   кость числа предметов: 1 — ровно один предмет, 2 — монета (1–2), 3 — 1к3, 4 — 1к4
+     * @param cursedTo    проклят один из предметов, если на 1к100 выпало не больше; 0 — проклятых нет
+     */
+    public record CuriosityRow(int hauntedFrom, int itemsDice, int cursedTo) {
+    }
+
+    public static final List<CuriosityRow> CURIOSITIES = List.of(
+            new CuriosityRow(0, 1, 0),
+            new CuriosityRow(1, 2, 10),
+            new CuriosityRow(3, 3, 20),
+            new CuriosityRow(6, 4, 25));
+
+    /** Строка таблицы «Собранные диковины» для этого числа сооружений с призраками. */
+    public static CuriosityRow curiosities(int haunted) {
+        CuriosityRow found = CURIOSITIES.getFirst();
+        for (CuriosityRow row : CURIOSITIES) {
+            if (haunted >= row.hauntedFrom()) {
+                found = row;
+            }
+        }
+        return found;
+    }
+
     /** Сколько зм стоимости предмета изготавливается за один 8-часовой рабочий день. */
     public static final int CRAFT_GP_PER_DAY = 10;
 

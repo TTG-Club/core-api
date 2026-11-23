@@ -44,6 +44,8 @@ public record ActivityResponse(List<Order> orders, List<Turn> turns, List<Ledger
                         Instant givenAt,
                         String note,
                         String result,
+                        @Schema(description = "Что выпало при выполнении: бросок приглашения, выручка, диковины")
+                        String outcome,
                         boolean canCancel,
                         boolean canWriteResult) {
     }

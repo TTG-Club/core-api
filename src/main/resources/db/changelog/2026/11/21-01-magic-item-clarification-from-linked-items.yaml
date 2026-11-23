@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-21-01-magic-item-clarification-from-linked-items
+      author: Magistrus
+      comment: >
+        Уточнение категории магического предмета («Рапира, Короткий меч, Скимитар»)
+        подзаголовок теперь собирает сам из связанных немагических предметов, а текст
+        clarification идёт следом как дополнение. У записей, где текст — это те же
+        названия связанных предметов, вписанные вручную, он стал дублем: убираем его,
+        иначе перечень встал бы в подзаголовке дважды. Сравнение — без учёта регистра,
+        порядка и пробелов; названия с запятой внутри («Пули, огнестрельное оружие»)
+        делятся по запятой с обеих сторон. Текст, который не повторяет связи
+        («любое простое или воинское»), остаётся как есть. Больше десяти связанных
+        предметов подзаголовок не перечисляет, поэтому такие записи не трогаем.
+      changes:
+        - sql:
+            sql: >-
+              update magic_item m
+              set clarification = null
+              where m.clarification is not null
+                and (select count(*) from magic_item_item l where l.magic_item_id = m.url) between 1 and 10
+                and (
+                  select array_agg(t.part order by t.part)
+                  from (
+                    select lower(btrim(x.part)) as part
+                    from unnest(string_to_array(m.clarification, ',')) as x(part)
+                  ) t
+                  where t.part <> ''
+                ) = (
+                  select array_agg(t.part order by t.part)
+                  from (
+                    select lower(btrim(x.part)) as part
+                    from magic_item_item l
+                    join item i on i.url = l.item_id
+                    cross join lateral unnest(string_to_array(i.name, ',')) as x(part)
+                    where l.magic_item_id = m.url
+                  ) t
+                  where t.part <> ''
+                )
+      rollback:
+        - sql:
+            sql: select 1

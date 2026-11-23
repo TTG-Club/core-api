@@ -16,7 +16,10 @@ import org.springframework.util.StringUtils;
 
 import org.mapstruct.ReportingPolicy;
 
+import java.text.Collator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = "spring", uses = {BaseMapping.class})
@@ -95,13 +98,49 @@ public interface MagicItemMapper
                 .toList();
     }
 
+    /**
+     * Сколько связанных предметов подзаголовок перечисляет по названиям. Больше — не
+     * перечисляет вовсе: у «Убийцы великанов» связано полсотни видов оружия, и такой
+     * перечень в подзаголовке не читается. То же число держит форма сайта
+     * ({@code MAGIC_ITEM_SUBTITLE_BASE_ITEMS_LIMIT}), показывающая перечень до сохранения.
+     */
+    int SUBTITLE_ITEMS_LIMIT = 10;
+
+    /**
+     * Уточнение категории для подзаголовка: названия связанных немагических предметов и
+     * следом текст, вписанный вручную («Рапира, Скимитар, любой с лезвием»). Связанные
+     * предметы автор выбирает из базы, и второй раз вписывать их названия текстом ему
+     * не нужно.
+     *
+     * <p>Названия идут по алфавиту: связи хранятся множеством, порядка выбора у них нет.</p>
+     *
+     * @return уточнение без скобок; пустая строка — уточнять нечем
+     */
+    default String categoryClarification(MagicItem magicItem) {
+        List<String> parts = new ArrayList<>();
+        Set<Item> items = magicItem.getItems();
+        if (items != null && !items.isEmpty() && items.size() <= SUBTITLE_ITEMS_LIMIT) {
+            items.stream()
+                    .map(Item::getName)
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .sorted(Collator.getInstance(Locale.forLanguageTag("ru")))
+                    .forEach(parts::add);
+        }
+        if (StringUtils.hasText(magicItem.getClarification())) {
+            parts.add(magicItem.getClarification().trim());
+        }
+        return String.join(", ", parts);
+    }
+
     @Named("toSubtitle")
     default String toSubtitle(MagicItem magicItem) {
         var builder = new StringBuilder();
         builder.append(StringUtils.capitalize(magicItem.getCategory().getName()));
-        if (StringUtils.hasText(magicItem.getClarification())) {
+        String clarification = categoryClarification(magicItem);
+        if (!clarification.isEmpty()) {
             builder.append(" (");
-            builder.append(magicItem.getClarification());
+            builder.append(clarification);
             builder.append(")");
         }
         builder.append(", ");

@@ -5,6 +5,7 @@ import club.ttg.dnd5.domain.character_class.rest.dto.ClassFeatureRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClassFeatureTest {
@@ -55,5 +56,34 @@ class ClassFeatureTest {
         ClassFeatureDto dto = new ClassFeatureDto(feature, false);
 
         assertTrue(dto.isAbilityImprovement());
+    }
+
+    @Test
+    void optionsChoiceReplacementSurvivesRequestModelDto() {
+        ClassFeatureOptionsChoice choice = new ClassFeatureOptionsChoice();
+        choice.setCount(2);
+        choice.setReplacement(ClassFeatureOptionReplacement.EVERY_LEVEL);
+        ClassFeatureRequest request = new ClassFeatureRequest();
+        request.setName("Eldritch Invocations");
+        request.setOptionsChoice(choice);
+
+        ClassFeature feature = new ClassFeature(request);
+        ClassFeatureDto dto = new ClassFeatureDto(feature, false);
+
+        assertEquals(ClassFeatureOptionReplacement.EVERY_LEVEL, feature.getOptionsChoice().getReplacement());
+        assertEquals(ClassFeatureOptionReplacement.EVERY_LEVEL, dto.getOptionsChoice().getReplacement());
+    }
+
+    @Test
+    void optionsChoiceWithoutReplacementStaysWithout() {
+        ClassFeatureOptionsChoice choice = new ClassFeatureOptionsChoice();
+        choice.setCount(1);
+        ClassFeature feature = new ClassFeature();
+        feature.setName("Metamagic");
+        feature.setOptionsChoice(choice);
+
+        ClassFeatureDto dto = new ClassFeatureDto(feature, false);
+
+        assertNull(dto.getOptionsChoice().getReplacement());
     }
 }
