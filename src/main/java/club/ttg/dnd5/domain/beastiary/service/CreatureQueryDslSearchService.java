@@ -1,7 +1,9 @@
 package club.ttg.dnd5.domain.beastiary.service;
 
 import club.ttg.dnd5.domain.beastiary.model.Creature;
+import club.ttg.dnd5.domain.beastiary.model.CreatureListItem;
 import club.ttg.dnd5.domain.beastiary.model.QCreature;
+import club.ttg.dnd5.domain.beastiary.model.QCreatureListItem;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureGrouping;
 import club.ttg.dnd5.domain.beastiary.rest.dto.CreatureSorting;
 import club.ttg.dnd5.domain.common.model.SectionType;
@@ -22,6 +24,8 @@ import java.util.List;
 public class CreatureQueryDslSearchService extends AbstractQueryDslSearchService<Creature, QCreature>
 {
     private static final QCreature CREATURE = QCreature.creature;
+    /** Запись списка под псевдонимом полной записи — см. {@link #searchListItems}. */
+    private static final QCreatureListItem LIST_ITEM = new QCreatureListItem(CREATURE.getMetadata().getName());
 
     /**
      * Пользовательский рейтинг существа из общей таблицы {@code rating} (раздел {@code bestiary}, ключ — url):
@@ -54,6 +58,29 @@ public class CreatureQueryDslSearchService extends AbstractQueryDslSearchService
     protected OrderSpecifier<?>[] getOrder()
     {
         return getOrder(CreatureGrouping.CHALLENGE_RATING, CreatureSorting.CHALLENGE_RATING);
+    }
+
+    /**
+     * Поиск для списка раздела: те же условия, порядок и пагинация, что у
+     * {@link #search(BooleanBuilder, int, int, CreatureGrouping, CreatureSorting)}, но из
+     * таблицы читаются только поля краткого ответа.
+     *
+     * <p>Запись списка стоит в запросе под тем же псевдонимом {@code creature}, что и полная
+     * запись, поэтому условия и сортировки, заданные по {@link QCreature}, применимы без
+     * изменений.</p>
+     */
+    public List<CreatureListItem> searchListItems(final BooleanBuilder predicate, final int page, final int size,
+                                                  final CreatureGrouping grouping, final CreatureSorting sorting)
+    {
+        JPASQLQuery<CreatureListItem> query = new JPASQLQuery<>(entityManager, dialect);
+
+        return query.select(LIST_ITEM)
+                .from(LIST_ITEM)
+                .where(predicate)
+                .orderBy(getOrder(grouping, sorting))
+                .offset((long) page * size)
+                .limit(size)
+                .fetch();
     }
 
     public List<Creature> search(final BooleanBuilder predicate, final int page, final int size,

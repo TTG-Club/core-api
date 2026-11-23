@@ -16,6 +16,8 @@ import club.ttg.dnd5.domain.source.model.Source;
 import club.ttg.dnd5.domain.source.service.SourceSavedFilterService;
 import club.ttg.dnd5.domain.source.service.SourceService;
 import club.ttg.dnd5.domain.character_class.model.CasterType;
+import club.ttg.dnd5.domain.character_class.model.CharacterClassListItem;
+import club.ttg.dnd5.domain.character_class.repository.ClassListItemRepository;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.character_class.model.ClassTableColumn;
 import club.ttg.dnd5.domain.character_class.model.CounterTableColumns;
@@ -69,19 +71,20 @@ public class ClassService {
     private final EquipmentNameResolver equipmentNameResolver;
     private final EquipmentMapping equipmentMapping;
     private final GrantedSpellResolver grantedSpellResolver;
+    private final ClassListItemRepository classListItemRepository;
 
     public List<ClassShortResponse> search(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.build(request);
         // Подклассы отсекает предикат, а не отбор над страницей: иначе они занимали бы
         // места В странице, и запрос первых тридцати записей отдавал бы четыре класса
-        return toShortList(
-                classQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize()));
+        return toShortListItems(
+                classQueryDslSearchService.searchListItems(predicate, request.getPage(), request.getPageSize()));
     }
 
     public List<ClassShortResponse> searchSubclasses(ClassQueryRequest request) {
         var predicate = ClassPredicateBuilder.buildSubclasses(request);
-        return toShortList(
-                classQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize()));
+        return toShortListItems(
+                classQueryDslSearchService.searchListItems(predicate, request.getPage(), request.getPageSize()));
     }
 
     public boolean exists(String url) {
@@ -172,7 +175,7 @@ public class ClassService {
 
     public List<ClassShortResponse> getSubclasses() {
 
-        return toShortList(classRepository.findAllByParentIsNotNull()
+        return toShortListItems(classListItemRepository.findAllSubclasses()
                 .stream()
                 .filter(characterClass -> !characterClass.isHiddenEntity())
                 .toList());
@@ -216,6 +219,30 @@ public class ClassService {
 
         Set<String> withSubclasses = classRepository.findParentUrlsWithVisibleSubclasses(
                 classes.stream().map(CharacterClass::getUrl).toList());
+
+        return classes.stream()
+                .map(characterClass -> {
+                    ClassShortResponse response = classMapper.toShortListItem(characterClass);
+                    response.setHasSubclasses(withSubclasses.contains(characterClass.getUrl()));
+                    return response;
+                })
+                .toList();
+    }
+
+    /**
+     * То же для записей списка, прочитанных без тяжёлых колонок: поиск разделов «Классы»
+     * и «Подклассы» и общий список подклассов.
+     *
+     * @param classes записи списка.
+     * @return по ответу на каждую запись.
+     */
+    private List<ClassShortResponse> toShortListItems(List<CharacterClassListItem> classes) {
+        if (classes.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> withSubclasses = classRepository.findParentUrlsWithVisibleSubclasses(
+                classes.stream().map(CharacterClassListItem::getUrl).toList());
 
         return classes.stream()
                 .map(characterClass -> {

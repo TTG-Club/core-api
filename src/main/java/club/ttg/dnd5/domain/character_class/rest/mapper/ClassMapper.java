@@ -51,6 +51,16 @@ public interface ClassMapper
     @Mapping(target = "image", source = ".", qualifiedByName = "toImageUrl")
     ClassShortResponse toShortListItem(CharacterClass characterClass);
 
+    /**
+     * Краткий ответ по записи списка — те же правила, что у
+     * {@link #toShortListItem(CharacterClass)}; флаг подклассов проставляет {@code ClassService}.
+     */
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(target = "hasSubclasses", ignore = true)
+    @Mapping(target = "image", source = ".", qualifiedByName = "toListItemImageUrl")
+    ClassShortResponse toShortListItem(CharacterClassListItem characterClass);
+
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "levels", source = "features", qualifiedByName = "getLevels")
@@ -318,6 +328,18 @@ public interface ClassMapper
 
     @Named("toImageUrl")
     default String toImageUrl(CharacterClass characterClass)
+    {
+        if (characterClass.getParent() == null || StringUtils.hasText(characterClass.getImageUrl()))
+        {
+            return characterClass.getImageUrl();
+        }
+
+        return characterClass.getParent().getImageUrl();
+    }
+
+    /** Картинка записи списка: своя, а у подкласса без своей — родительского класса. */
+    @Named("toListItemImageUrl")
+    default String toListItemImageUrl(CharacterClassListItem characterClass)
     {
         if (characterClass.getParent() == null || StringUtils.hasText(characterClass.getImageUrl()))
         {

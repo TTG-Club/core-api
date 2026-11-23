@@ -2,6 +2,7 @@ package club.ttg.dnd5.domain.character_class.service;
 
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
 import club.ttg.dnd5.domain.character_class.model.CharacterClass;
+import club.ttg.dnd5.domain.character_class.repository.ClassListItemRepository;
 import club.ttg.dnd5.domain.character_class.repository.ClassRepository;
 import club.ttg.dnd5.domain.character_class.rest.dto.ClassRequest;
 import club.ttg.dnd5.domain.character_class.rest.mapper.ClassMapper;
@@ -44,7 +45,8 @@ class ClassServiceTest {
             revisionService,
             equipmentNameResolver,
             equipmentMapping,
-            grantedSpellResolver
+            grantedSpellResolver,
+            mock(ClassListItemRepository.class)
     );
 
     @Test

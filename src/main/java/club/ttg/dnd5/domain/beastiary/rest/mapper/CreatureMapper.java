@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.beastiary.rest.mapper;
 
+import club.ttg.dnd5.domain.beastiary.model.CreatureListItem;
 import club.ttg.dnd5.domain.beastiary.model.Creature;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbilities;
 import club.ttg.dnd5.domain.beastiary.model.CreatureAbility;
@@ -60,6 +61,19 @@ public interface CreatureMapper {
     @Mapping(source = "types.text", target = "subtype")
     @Mapping(source = "section.sectionName", target = "family")
     CreatureShortResponse toShort(Creature creature);
+
+    /**
+     * Краткий ответ по записи списка — те же правила, что у {@link #toShort(Creature)}:
+     * поля {@link CreatureListItem} совпадают с читаемыми там полями существа.
+     */
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
+    @Mapping(source = ".", target = "challengeRailing", qualifiedByName = "toShortChallengeRatingOfListItem")
+    @Mapping(source = "types", target = "type", qualifiedByName = "toType")
+    @Mapping(source = "types.values", target = "typeCodes")
+    @Mapping(source = "types.text", target = "subtype")
+    @Mapping(source = "section.sectionName", target = "family")
+    CreatureShortResponse toShort(CreatureListItem creature);
 
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
@@ -504,6 +518,11 @@ public interface CreatureMapper {
 
     @Named("toShortChallengeRating")
     default String toShortChallengeRating(Creature creature) {
+        return ChallengeRating.getCr(creature.getExperience());
+    }
+
+    @Named("toShortChallengeRatingOfListItem")
+    default String toShortChallengeRatingOfListItem(CreatureListItem creature) {
         return ChallengeRating.getCr(creature.getExperience());
     }
 
