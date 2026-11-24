@@ -66,8 +66,10 @@ class RateLimitFilterTest
 
         RateLimitFilter filter = new RateLimitFilter(properties);
         MockHttpServletRequest firstRequest = new MockHttpServletRequest("GET", "/api/v2/online/count");
+        firstRequest.setRemoteAddr("203.0.113.9");
         MockHttpServletResponse firstResponse = new MockHttpServletResponse();
         MockHttpServletRequest secondRequest = new MockHttpServletRequest("GET", "/api/v2/online/count");
+        secondRequest.setRemoteAddr("203.0.113.9");
         MockHttpServletResponse secondResponse = new MockHttpServletResponse();
 
         filter.doFilter(firstRequest, firstResponse, new MockFilterChain());
@@ -145,6 +147,69 @@ class RateLimitFilterTest
         properties.setCapacity(1);
 
         return new RateLimitFilter(properties);
+    }
+
+    @Test
+    void directRequestFromPrivateNetworkSkipsRateLimit() throws ServletException, IOException
+    {
+        // Сайт собирает страницу на сервере и ходит в API по внутренней сети без адреса посетителя
+        RateLimitFilter filter = singleTokenFilter();
+
+        for (String address : new String[]{"10.0.1.7", "172.18.0.5", "192.168.1.4", "127.0.0.1", "fd00::5"})
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/spells/search");
+                request.setRemoteAddr(address);
+                MockHttpServletResponse response = new MockHttpServletResponse();
+
+                filter.doFilter(request, response, new MockFilterChain());
+
+                assertEquals(200, response.getStatus(), address);
+                assertNull(response.getHeader("X-RateLimit-Remaining"), address);
+            }
+        }
+    }
+
+    @Test
+    void forwardedRequestFromPrivateNetworkIsStillLimitedPerVisitor() throws ServletException, IOException
+    {
+        // Запрос посетителя приходит через сайт или прокси из той же сети, но с его адресом
+        RateLimitFilter filter = singleTokenFilter();
+
+        MockHttpServletRequest firstRequest = new MockHttpServletRequest("GET", "/api/v2/spells/search");
+        firstRequest.setRemoteAddr("10.0.1.7");
+        firstRequest.addHeader("X-Forwarded-For", "203.0.113.1");
+        MockHttpServletResponse firstResponse = new MockHttpServletResponse();
+        MockHttpServletRequest secondRequest = new MockHttpServletRequest("GET", "/api/v2/spells/search");
+        secondRequest.setRemoteAddr("10.0.1.7");
+        secondRequest.addHeader("X-Forwarded-For", "203.0.113.1");
+        MockHttpServletResponse secondResponse = new MockHttpServletResponse();
+
+        filter.doFilter(firstRequest, firstResponse, new MockFilterChain());
+        filter.doFilter(secondRequest, secondResponse, new MockFilterChain());
+
+        assertEquals(200, firstResponse.getStatus());
+        assertEquals(429, secondResponse.getStatus());
+    }
+
+    @Test
+    void directRequestFromPublicAddressIsLimited() throws ServletException, IOException
+    {
+        RateLimitFilter filter = singleTokenFilter();
+
+        MockHttpServletRequest firstRequest = new MockHttpServletRequest("GET", "/api/v2/spells/search");
+        firstRequest.setRemoteAddr("198.51.100.7");
+        MockHttpServletResponse firstResponse = new MockHttpServletResponse();
+        MockHttpServletRequest secondRequest = new MockHttpServletRequest("GET", "/api/v2/spells/search");
+        secondRequest.setRemoteAddr("198.51.100.7");
+        MockHttpServletResponse secondResponse = new MockHttpServletResponse();
+
+        filter.doFilter(firstRequest, firstResponse, new MockFilterChain());
+        filter.doFilter(secondRequest, secondResponse, new MockFilterChain());
+
+        assertEquals(200, firstResponse.getStatus());
+        assertEquals(429, secondResponse.getStatus());
     }
 
     private static AnonymousAuthenticationToken anonymous()
