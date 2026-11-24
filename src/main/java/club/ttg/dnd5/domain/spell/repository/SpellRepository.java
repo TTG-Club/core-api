@@ -41,6 +41,42 @@ public interface SpellRepository extends JpaRepository<Spell, String> {
             """)
     List<Spell> findAllShortByClassUrlIn(@Param("classUrls") Collection<String> classUrls);
 
+    /**
+     * Заклинания классов без загрузки самих классов — для выдачи «знает все заклинания друида».
+     *
+     * <p>Отбор тот же, что у {@link #findAllShortByClassUrlIn(Collection)}; классы заклинаний
+     * дочитываются отдельно строками {@link #findClassAffiliationRows(Collection)}.</p>
+     *
+     * @param classUrls слаги классов, чьи списки выдаются.
+     * @return записи справочника; пусто — ни у одного класса заклинаний нет.
+     */
+    @EntityGraph(attributePaths = {"source"})
+    @Query("""
+            select distinct s from Spell s
+            join s.classAffiliation c
+            where c.url in :classUrls
+              and s.isHiddenEntity = false
+            order by s.level, s.name
+            """)
+    List<Spell> findAllByClassUrlIn(@Param("classUrls") Collection<String> classUrls);
+
+    /**
+     * Классы заклинаний одним запросом на весь список: только слаг, название и акроним
+     * источника класса.
+     *
+     * @param spellUrls слаги заклинаний.
+     * @return по строке на каждую пару «заклинание — класс».
+     */
+    @Query("""
+            select new club.ttg.dnd5.domain.spell.repository.SpellClassAffiliationRow(
+                s.url, c.url, c.name, src.acronym)
+            from Spell s
+            join s.classAffiliation c
+            left join c.source src
+            where s.url in :spellUrls
+            """)
+    List<SpellClassAffiliationRow> findClassAffiliationRows(@Param("spellUrls") Collection<String> spellUrls);
+
     @EntityGraph(attributePaths = {
             "source",
             "classAffiliation", "classAffiliation.source",

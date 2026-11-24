@@ -1,6 +1,5 @@
 package club.ttg.dnd5.domain.common.service;
 
-import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.mechanics.ClassSpellListGrant;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
@@ -11,8 +10,10 @@ import club.ttg.dnd5.domain.common.rest.dto.FeatSpellListGroupResponse;
 import club.ttg.dnd5.domain.common.rest.dto.GrantedSpellResponse;
 import club.ttg.dnd5.domain.spell.model.Spell;
 import club.ttg.dnd5.domain.spell.repository.SpellRepository;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationDto;
 import club.ttg.dnd5.domain.spell.rest.dto.SpellShortResponse;
 import club.ttg.dnd5.domain.spell.rest.mapper.SpellMapper;
+import club.ttg.dnd5.domain.spell.service.SpellShortAssembler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 public class GrantedSpellResolver {
     private final SpellRepository spellRepository;
     private final SpellMapper spellMapper;
+    private final SpellShortAssembler spellShortAssembler;
 
     /**
      * Достаёт записи справочника по ссылкам механики — одним запросом на список.
@@ -192,16 +194,17 @@ public class GrantedSpellResolver {
         var result = new LinkedHashMap<String, List<SpellShortResponse>>();
         var seen = new HashSet<String>();
 
-        for (Spell spell : spellRepository.findAllShortByClassUrlIn(wanted)) {
-            // Соединение с таблицей принадлежности может отдать запись дважды: заклинание
-            // доступно двум названным классам, а строки соединения — две
-            if (!seen.add(spell.getUrl())) {
-                continue;
-            }
-            var response = spellMapper.toShort(spell);
-            for (CharacterClass affiliation : Optional.ofNullable(spell.getClassAffiliation())
-                    .orElse(Set.of())) {
-                if (affiliation != null && wanted.contains(affiliation.getUrl())) {
+        // Соединение с таблицей принадлежности может отдать запись дважды: заклинание
+        // доступно двум названным классам, а строки соединения — две
+        List<Spell> spells = spellRepository.findAllByClassUrlIn(wanted).stream()
+                .filter(spell -> seen.add(spell.getUrl()))
+                .toList();
+
+        // Классы заклинаний приходят строками (слаг, название, источник), а не сущностями:
+        // иначе карточка класса с выдачей «весь список» поднимала бы классы целиком
+        for (SpellShortResponse response : spellShortAssembler.toShort(spells)) {
+            for (SpellAffiliationDto affiliation : response.getClasses()) {
+                if (wanted.contains(affiliation.getUrl())) {
                     result.computeIfAbsent(affiliation.getUrl(), url -> new ArrayList<>()).add(response);
                 }
             }

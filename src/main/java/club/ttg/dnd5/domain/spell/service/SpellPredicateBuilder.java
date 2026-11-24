@@ -154,7 +154,9 @@ public class SpellPredicateBuilder {
         // upcastable=1&upcastable_mode=1)
         if (request.getUpcastable() != null && request.getUpcastable().isActive()) {
             if (request.getUpcastable().isExclude()) {
-                builder.and(Q.upcastable.isFalse());
+                // Незаполненный признак — тоже «не усиливается»: иначе такие заклинания
+                // не попадали ни в «да», ни в «нет»
+                builder.and(Q.upcastable.isNull().or(Q.upcastable.isFalse()));
             } else {
                 builder.and(Q.upcastable.isTrue());
             }

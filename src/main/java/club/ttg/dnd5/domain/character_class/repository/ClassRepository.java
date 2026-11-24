@@ -13,10 +13,28 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ClassRepository extends JpaRepository<CharacterClass, String> {
 
     Collection<CharacterClass> findAllByParentIsNull(final Sort by);
+
+    /**
+     * У каких классов из названных есть видимые подклассы — одним запросом.
+     *
+     * <p>Скрытые (мягко удалённые) подклассы не считаются. Чтение ленивой коллекции
+     * {@code CharacterClass.subclasses} ради этого флага поднимало подклассы целиком,
+     * отдельным запросом на каждую строку списка.</p>
+     *
+     * @param parentUrls слаги классов списка.
+     * @return слаги тех из них, у кого есть хотя бы один видимый подкласс.
+     */
+    @Query("""
+            select distinct c.parentUrl from CharacterClass c
+            where c.parentUrl in :parentUrls
+              and c.isHiddenEntity = false
+            """)
+    Set<String> findParentUrlsWithVisibleSubclasses(@Param("parentUrls") Collection<String> parentUrls);
 
     @Query("""
     SELECT c FROM CharacterClass c

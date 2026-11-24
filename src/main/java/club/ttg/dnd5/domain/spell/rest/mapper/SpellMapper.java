@@ -74,6 +74,20 @@ public interface SpellMapper
     @BaseMapping.BaseShortResponseNameMapping
     SpellShortResponse toShort(Spell spell);
 
+    /**
+     * Краткий ответ без классов заклинания: связь {@code classAffiliation} не читается.
+     * Классы подставляет {@code SpellShortAssembler} одним запросом на весь список.
+     */
+    @Mapping(target = "school", source = "school", qualifiedByName = "toSchoolName")
+    @Mapping(target = "additionalType", source = "school.additionalType")
+    @Mapping(target = "concentration", source = "duration", qualifiedByName = "isConcentration")
+    @Mapping(target = "ritual", source = "castingTime", qualifiedByName = "isRitual")
+    @Mapping(target = "classes", ignore = true)
+    @Mapping(target = "spellcastingAbility", source = "effect.spellcastingAbility")
+    @BaseMapping.BaseSourceMapping
+    @BaseMapping.BaseShortResponseNameMapping
+    SpellShortResponse toShortWithoutClasses(Spell spell);
+
     @BaseMapping.BaseSourceMapping
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "school", source = "school", qualifiedByName = "toSchool")
@@ -132,9 +146,6 @@ public interface SpellMapper
             return null;
         }
 
-        SpellAffiliationDto dto = new SpellAffiliationDto();
-        dto.setUrl(entity.getUrl());
-
         String name = entity.getName();
         String sourceAcronym = null;
 
@@ -169,7 +180,23 @@ public interface SpellMapper
             }
         }
 
-        if (sourceAcronym != null)
+        return toAffiliationDto(entity.getUrl(), name, sourceAcronym);
+    }
+
+    /**
+     * Принадлежность заклинания по готовым значениям — общая сборка для сущности и для
+     * строки запроса, чтобы подпись «Название [АКРОНИМ]» строилась в одном месте.
+     *
+     * @param url           слаг записи.
+     * @param name          название записи.
+     * @param sourceAcronym акроним источника; пустой — подпись без акронима.
+     */
+    default SpellAffiliationDto toAffiliationDto(String url, String name, String sourceAcronym)
+    {
+        SpellAffiliationDto dto = new SpellAffiliationDto();
+        dto.setUrl(url);
+
+        if (StringUtils.hasText(sourceAcronym))
         {
             dto.setSource(sourceAcronym);
             dto.setName(name + " [" + sourceAcronym + "]");

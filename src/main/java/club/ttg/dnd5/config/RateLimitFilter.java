@@ -1,5 +1,8 @@
 package club.ttg.dnd5.config;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -32,6 +35,9 @@ public class RateLimitFilter extends OncePerRequestFilter
     private static final String ONLINE_HEARTBEAT_PATH = "/api/v2/online/heartbeat";
     /** Минутные отметки работы с инструментом: иначе они съедали бы общий лимит запросов гостя. */
     private static final String ONLINE_USAGE_PATH = "/api/v2/online/usage";
+    private static final String FORWARDED_FOR_HEADER = "X-Forwarded-For";
+    /** Только цифры, точки, двоеточия и hex: имя хоста сюда не пройдёт и DNS не спросит. */
+    private static final Pattern IP_LITERAL = Pattern.compile("[0-9a-fA-F.:]+");
 
     private final RateLimitProperties properties;
 
@@ -49,7 +55,54 @@ public class RateLimitFilter extends OncePerRequestFilter
         if (path == null || path.isEmpty()) {
             path = request.getRequestURI();
         }
-        return ONLINE_HEARTBEAT_PATH.equals(path) || ONLINE_USAGE_PATH.equals(path);
+        return ONLINE_HEARTBEAT_PATH.equals(path) || ONLINE_USAGE_PATH.equals(path)
+                || isInternalServiceRequest(request);
+    }
+
+    /**
+     * Запрос соседнего сервиса по внутренней сети, а не посетителя.
+     *
+     * <p>Снаружи запросы приходят через обратный прокси, и он всегда проставляет
+     * {@code X-Forwarded-For}. Без этого заголовка и с адресом частной сети приходит только
+     * свой сервис — прежде всего сайт, когда собирает страницу на сервере: у таких запросов
+     * нет адреса посетителя. Раньше все они считались по адресу контейнера сайта в одном
+     * ведре на всех посетителей и ботов сразу, и при его исчерпании страницы падали с 429.</p>
+     *
+     * @param request входящий запрос.
+     * @return {@code true}, если запрос пришёл напрямую из частной сети.
+     */
+    static boolean isInternalServiceRequest(HttpServletRequest request)
+    {
+        String forwarded = request.getHeader(FORWARDED_FOR_HEADER);
+        if (forwarded != null && !forwarded.isBlank())
+        {
+            return false;
+        }
+
+        return isPrivateAddress(request.getRemoteAddr());
+    }
+
+    /** Адрес частной сети или локальный: 10/8, 172.16/12, 192.168/16, 127/8, ::1, fc00::/7. */
+    private static boolean isPrivateAddress(String address)
+    {
+        if (address == null || address.isBlank() || !IP_LITERAL.matcher(address).matches())
+        {
+            return false;
+        }
+
+        try
+        {
+            // Литерал адреса разбирается без обращения к DNS
+            InetAddress parsed = InetAddress.getByName(address);
+            byte[] bytes = parsed.getAddress();
+            boolean uniqueLocalV6 = bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc;
+
+            return parsed.isSiteLocalAddress() || parsed.isLoopbackAddress() || uniqueLocalV6;
+        }
+        catch (UnknownHostException exception)
+        {
+            return false;
+        }
     }
 
     @Override
@@ -116,7 +169,7 @@ public class RateLimitFilter extends OncePerRequestFilter
             return "user:" + authentication.getName();
         }
 
-        String forwarded = request.getHeader("X-Forwarded-For");
+        String forwarded = request.getHeader(FORWARDED_FOR_HEADER);
         if (forwarded != null && !forwarded.isBlank())
         {
             String ip = forwarded.split(",")[0].trim();

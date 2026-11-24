@@ -5,6 +5,9 @@ import club.ttg.dnd5.domain.character_class.model.CharacterClass;
 import club.ttg.dnd5.domain.common.model.EntityRef;
 import club.ttg.dnd5.domain.common.model.mechanics.ClassSpellListGrant;
 import club.ttg.dnd5.domain.common.service.GrantedSpellResolver;
+import club.ttg.dnd5.domain.spell.repository.SpellClassAffiliationRow;
+import club.ttg.dnd5.domain.spell.rest.dto.SpellAffiliationDto;
+import club.ttg.dnd5.domain.spell.service.SpellShortAssembler;
 import club.ttg.dnd5.domain.feat.model.Feat;
 import club.ttg.dnd5.domain.feat.model.mechanics.FeatMechanics;
 import club.ttg.dnd5.domain.common.model.mechanics.GrantedSpellRef;
@@ -78,7 +81,8 @@ class FeatGrantedSpellsTest {
     @BeforeEach
     void setUp() {
         service = new FeatServiceImpl(featRepository, backgroundRepository, featQueryDslSearchService,
-                sourceService, featMapper, new GrantedSpellResolver(spellRepository, spellMapper),
+                sourceService, featMapper, new GrantedSpellResolver(spellRepository, spellMapper,
+                        new SpellShortAssembler(spellRepository, spellMapper)),
                 revisionService);
     }
 
@@ -445,15 +449,17 @@ class FeatGrantedSpellsTest {
 
     /** Заклинания класса в справочнике: у каждого проставлена принадлежность классу. */
     private void stubClassSpells(String classUrl, Spell... spells) {
-        CharacterClass affiliation = new CharacterClass();
-        affiliation.setUrl(classUrl);
-
         for (Spell spell : spells) {
-            spell.setClassAffiliation(Set.of(affiliation));
-            when(spellMapper.toShort(spell)).thenReturn(spellShort(spell.getUrl(), spell.getLevel()));
+            when(spellMapper.toShortWithoutClasses(spell))
+                    .thenReturn(spellShort(spell.getUrl(), spell.getLevel()));
         }
 
-        when(spellRepository.findAllShortByClassUrlIn(any())).thenReturn(List.of(spells));
+        when(spellMapper.toAffiliationDto(any(), any(), any()))
+                .thenAnswer(call -> new SpellAffiliationDto(call.getArgument(0), call.getArgument(1), null));
+        when(spellRepository.findAllByClassUrlIn(any())).thenReturn(List.of(spells));
+        when(spellRepository.findClassAffiliationRows(any())).thenReturn(Arrays.stream(spells)
+                .map(spell -> new SpellClassAffiliationRow(spell.getUrl(), classUrl, classUrl, null))
+                .toList());
     }
 
     private static Spell spellWithLevel(String url, long level) {

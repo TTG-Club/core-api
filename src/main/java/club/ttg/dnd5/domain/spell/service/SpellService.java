@@ -53,6 +53,7 @@ public class SpellService
     private final SpellMapper spellMapper;
     private final SpellQueryDslSearchService spellQueryDslSearchService;
     private final SourceSavedFilterService sourceSavedFilterService;
+    private final SpellShortAssembler spellShortAssembler;
     private final EntityRevisionService revisionService;
 
     public boolean existOrThrow(String url)
@@ -82,11 +83,9 @@ public class SpellService
 
         var predicate = SpellPredicateBuilder.build(request, classUrls, subclassUrls);
 
-        return spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize(),
-                        request.getGrouping(), request.getSorting())
-                .stream()
-                .map(spellMapper::toShort)
-                .collect(Collectors.toList());
+        return spellShortAssembler.toShort(
+                spellQueryDslSearchService.search(predicate, request.getPage(), request.getPageSize(),
+                        request.getGrouping(), request.getSorting()));
     }
 
     @Transactional(readOnly = true)
