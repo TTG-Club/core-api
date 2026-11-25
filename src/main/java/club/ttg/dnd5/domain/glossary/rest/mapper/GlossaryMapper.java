@@ -41,6 +41,7 @@ public interface GlossaryMapper {
     @Mapping(source = "request.name.alternative", target = "alternative", qualifiedByName = "collectToString")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.original", target = "original")
+    @Mapping(source = "request.imageFrame", target = "imageFrame")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(target = "source", source = "source")
     @Mapping(target = "url", ignore = true)
@@ -59,6 +60,7 @@ public interface GlossaryMapper {
     @Mapping(source = "request.url", target = "url")
     @Mapping(source = "request.description", target = "description")
     @Mapping(source = "request.original", target = "original")
+    @Mapping(source = "request.imageFrame", target = "imageFrame")
     @Mapping(source = "request.source.page", target = "sourcePage")
     @Mapping(target = "source", source = "source")
     @BaseMapping.BaseEntityNameMapping

@@ -23,6 +23,12 @@ public enum TagType {
         @JsonProperty(value = "image")
         @Schema(description = "image URL")
         private String imageUrl;
+        /**
+         * Кадр обложки {@code image}. {@code null} в запросе стирает сохранённый кадр
+         * (фронт шлёт его, когда кадр сброшен или картинка заменена).
+         */
+        @Schema(description = "Кадр обложки; null — не настроен")
+        private ImageFrame imageFrame;
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
         private List<String> gallery = new ArrayList<>();
     }

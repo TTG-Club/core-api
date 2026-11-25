@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.rest.dto;
 
+import club.ttg.dnd5.domain.common.model.ImageFrame;
 import club.ttg.dnd5.domain.common.rest.dto.ShortResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,9 @@ import lombok.Setter;
 public class ClassShortResponse extends ShortResponse {
     @Schema(description = "Ссылка на изображение бэкграунда")
     private String image;
+
+    @Schema(description = "Кадр обложки; null — не настроен")
+    private ImageFrame imageFrame;
 
     @Schema(description = "Имеет ли подклассы")
     private boolean hasSubclasses;

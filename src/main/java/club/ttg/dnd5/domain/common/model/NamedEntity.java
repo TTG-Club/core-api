@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
 import lombok.Getter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.Setter;
 import org.springframework.data.domain.Persistable;
 
@@ -34,6 +36,10 @@ public abstract class NamedEntity extends Timestamped implements Persistable<Str
     @Column(columnDefinition = "TEXT")
     private String original;
     private String imageUrl;
+    /** Кадр обложки {@link #imageUrl}; {@code null} — кадр не настроен, картинка стоит по центру. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "image_frame", columnDefinition = "jsonb")
+    private ImageFrame imageFrame;
     /**
      * Indicates whether this entity should be hidden from the frontend.
      * <p>

@@ -1,12 +1,15 @@
 package club.ttg.dnd5.domain.source.model;
 
+import club.ttg.dnd5.domain.common.model.ImageFrame;
 import club.ttg.dnd5.domain.common.model.Timestamped;
 import club.ttg.dnd5.domain.source.rest.dto.PublisherDto;
 import club.ttg.dnd5.domain.source.rest.dto.TranslationDto;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -64,6 +67,11 @@ public class Source extends Timestamped {
     private TranslationDto translation;
 
     private String image;
+
+    /** Кадр обложки {@link #image}; {@code null} — кадр не настроен, картинка стоит по центру. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "image_frame", columnDefinition = "jsonb")
+    private ImageFrame imageFrame;
 
     /**
      * Список авторов, разделенных запятой
