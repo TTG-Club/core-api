@@ -445,3 +445,5 @@ databaseChangeLog:
       file: db/changelog/2026/11/21-01-magic-item-clarification-from-linked-items.yaml
   - include:
       file: db/changelog/2026/11/22-01-bastion-facility-mechanics.yaml
+  - include:
+      file: db/changelog/2026/11/25-01-image-frame.yaml

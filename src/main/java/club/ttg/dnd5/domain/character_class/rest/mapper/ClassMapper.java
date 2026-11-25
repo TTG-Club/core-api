@@ -10,6 +10,7 @@ import club.ttg.dnd5.domain.common.dictionary.WeaponCategory;
 import club.ttg.dnd5.domain.common.rest.dto.select.DiceOptionDto;
 import club.ttg.dnd5.domain.common.rest.mapper.EquipmentMapping;
 import club.ttg.dnd5.dto.base.mapping.BaseMapping;
+import club.ttg.dnd5.domain.common.model.ImageFrame;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -37,6 +38,7 @@ public interface ClassMapper
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "image", source = ".", qualifiedByName = "toImageUrl")
+    @Mapping(target = "imageFrame", source = ".", qualifiedByName = "toImageFrame")
     ClassShortResponse toShort(CharacterClass characterClass);
 
     /**
@@ -49,6 +51,7 @@ public interface ClassMapper
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "hasSubclasses", ignore = true)
     @Mapping(target = "image", source = ".", qualifiedByName = "toImageUrl")
+    @Mapping(target = "imageFrame", source = ".", qualifiedByName = "toImageFrame")
     ClassShortResponse toShortListItem(CharacterClass characterClass);
 
     /**
@@ -59,6 +62,7 @@ public interface ClassMapper
     @BaseMapping.BaseShortResponseNameMapping
     @Mapping(target = "hasSubclasses", ignore = true)
     @Mapping(target = "image", source = ".", qualifiedByName = "toListItemImageUrl")
+    @Mapping(target = "imageFrame", source = ".", qualifiedByName = "toListItemImageFrame")
     ClassShortResponse toShortListItem(CharacterClassListItem characterClass);
 
     @BaseMapping.BaseSourceMapping
@@ -87,6 +91,7 @@ public interface ClassMapper
     @Mapping(target = "hasSubclasses", source = "subclasses", qualifiedByName = "hasSubclasses")
     @Mapping(target = "parent", source = "parent", qualifiedByName = "toShortResponse")
     @Mapping(target = "imageUrl", source = ".", qualifiedByName = "toImageUrl")
+    @Mapping(target = "imageFrame", source = ".", qualifiedByName = "toImageFrame")
     @Mapping(target = "startingEquipment", source = "startingEquipment", qualifiedByName = "toEquipmentOptionDtos")
     // Заклинания и списки расширения подставляет сервис: маппер в справочник не ходит,
     // а листу они нужны с кругом и школой
@@ -131,6 +136,7 @@ public interface ClassMapper
     @Mapping(target = "description", source = "request.description")
     @Mapping(target = "original", source = "request.original")
     @Mapping(target = "imageUrl", source = "request.imageUrl")
+    @Mapping(target = "imageFrame", source = "request.imageFrame")
     @Mapping(target = "hitDice", source = "request.hitDice")
     @Mapping(target = "savingThrows", source = "request.savingThrows")
     @Mapping(target = "features", source = "request.features", qualifiedByName = "toFeatureEntities")
@@ -335,6 +341,30 @@ public interface ClassMapper
         }
 
         return characterClass.getParent().getImageUrl();
+    }
+
+    /** Кадр обложки идёт за картинкой: у подкласса без своей картинки — кадр родителя. */
+    @Named("toImageFrame")
+    default ImageFrame toImageFrame(CharacterClass characterClass)
+    {
+        if (characterClass.getParent() == null || StringUtils.hasText(characterClass.getImageUrl()))
+        {
+            return characterClass.getImageFrame();
+        }
+
+        return characterClass.getParent().getImageFrame();
+    }
+
+    /** Кадр обложки записи списка — по тем же правилам, что и {@link #toListItemImageUrl}. */
+    @Named("toListItemImageFrame")
+    default ImageFrame toListItemImageFrame(CharacterClassListItem characterClass)
+    {
+        if (characterClass.getParent() == null || StringUtils.hasText(characterClass.getImageUrl()))
+        {
+            return characterClass.getImageFrame();
+        }
+
+        return characterClass.getParent().getImageFrame();
     }
 
     /** Картинка записи списка: своя, а у подкласса без своей — родительского класса. */

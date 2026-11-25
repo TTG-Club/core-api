@@ -1,5 +1,6 @@
 package club.ttg.dnd5.domain.character_class.model;
 
+import club.ttg.dnd5.domain.common.model.ImageFrame;
 import club.ttg.dnd5.domain.source.model.Source;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,6 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -41,6 +44,10 @@ public class CharacterClassListItem
     private String english;
 
     private String imageUrl;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "image_frame", columnDefinition = "jsonb")
+    private ImageFrame imageFrame;
 
     @Column(name = "is_hidden_entity")
     private boolean isHiddenEntity;

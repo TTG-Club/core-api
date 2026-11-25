@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-11-25-01-image-frame
+      author: peterkogit
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      comment: >
+        Кадр обложки: точка фокуса и приближение основной картинки записи
+        ({"x": 0..1, "y": 0..1, "zoom": 1..4}). Сам файл не обрезается, кадр применяется
+        при показе в квадрате страницы и в карточке списка. NULL — кадр не настроен.
+        Колонка у всех таблиц записей каталога (общий предок NamedEntity) и у источников.
+      changes:
+        - addColumn: { tableName: background, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: bastion_facility, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: bestiary, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: class, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: feat, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: glossary, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: item, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: magic_item, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: species, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: spell, columns: [ { column: { name: image_frame, type: JSONB } } ] }
+        - addColumn: { tableName: source, columns: [ { column: { name: image_frame, type: JSONB } } ] }
