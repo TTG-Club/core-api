@@ -50,6 +50,8 @@ class BackgroundServiceImplTest {
     private EquipmentNameResolver equipmentNameResolver;
     @Mock
     private GrantedSpellResolver grantedSpellResolver;
+    @Mock
+    private BackgroundRefNameResolver backgroundRefNameResolver;
 
     private BackgroundServiceImpl backgroundService;
 
@@ -65,6 +67,7 @@ class BackgroundServiceImplTest {
                 backgroundMapper,
                 revisionService,
                 equipmentNameResolver,
+                backgroundRefNameResolver,
                 grantedSpellResolver
         );
     }
@@ -114,6 +117,24 @@ class BackgroundServiceImplTest {
 
         assertThat(response.getFeat()).isEqualTo("\"clarifying text\"");
         verify(featRepository, never()).findById(any());
+        verify(backgroundRefNameResolver).resolveNames(response);
+    }
+
+    @Test
+    void getBackgroundResolvesRefNames() {
+        Background background = new Background();
+        background.setUrl("background");
+        background.setName("background name");
+        background.setEnglish("background english");
+        background.setSource(source());
+        background.setAbilities(Set.of());
+        background.setSkillProficiencies(Set.of());
+
+        when(backgroundRepository.findById(background.getUrl())).thenReturn(Optional.of(background));
+
+        BackgroundDetailResponse response = backgroundService.getBackground(background.getUrl());
+
+        verify(backgroundRefNameResolver).resolveNames(response);
     }
 
     private BackgroundRequest request(String featUrl, String featSuffix) {

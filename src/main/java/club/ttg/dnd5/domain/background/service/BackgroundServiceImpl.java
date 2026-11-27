@@ -45,6 +45,7 @@ public class BackgroundServiceImpl implements BackgroundService {
     private final BackgroundMapper backgroundMapper;
     private final EntityRevisionService revisionService;
     private final EquipmentNameResolver equipmentNameResolver;
+    private final BackgroundRefNameResolver backgroundRefNameResolver;
     private final GrantedSpellResolver grantedSpellResolver;
 
 
@@ -52,6 +53,7 @@ public class BackgroundServiceImpl implements BackgroundService {
     public BackgroundDetailResponse getBackground(final String backgroundUrl) {
         BackgroundDetailResponse response = backgroundMapper.toDetail(findByUrl(backgroundUrl));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
+        backgroundRefNameResolver.resolveNames(response);
         response.setGrantedSpells(resolveGrantedSpells(response));
         response.setSpellListGroups(resolveSpellListGroups(response));
         return response;
@@ -187,6 +189,7 @@ public class BackgroundServiceImpl implements BackgroundService {
         var feat = getFeat(request.getFeatUrl());
         BackgroundDetailResponse response = backgroundMapper.toDetail(backgroundMapper.toEntity(request, feat, book));
         equipmentNameResolver.resolveNames(response.getStartingEquipment());
+        backgroundRefNameResolver.resolveNames(response);
         response.setGrantedSpells(resolveGrantedSpells(response));
         response.setSpellListGroups(resolveSpellListGroups(response));
         return response;
