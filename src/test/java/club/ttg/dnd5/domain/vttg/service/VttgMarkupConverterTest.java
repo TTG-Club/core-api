@@ -648,4 +648,46 @@ class VttgMarkupConverterTest {
 
         assertEquals("Текст цитаты.", converter.toText(markup));
     }
+
+    /**
+     * Бейдж в описании доезжает до VTTG маркой той же формы, что на сайте: рендерер
+     * описаний VTTG рисует её плашкой. В полях без рендерера остаётся только текст.
+     */
+    @Test
+    void keepsBadgeMarkerForVttgDescriptions() {
+        assertEquals(
+                "Хозяин {@badge Квест | color:primary}",
+                converter.toTextKeepingRolls("Хозяин {@badge Квест | color:primary}")
+        );
+        assertEquals(
+                "{@badge Опасно | color:error | variant:solid | size:lg}",
+                converter.toTextKeepingRolls("{@badge Опасно|color:error|variant:solid|size:lg}")
+        );
+        assertEquals("Хозяин Квест", converter.toText("Хозяин {@badge Квест | color:primary}"));
+    }
+
+    /** Неизвестные значения атрибутов отбрасываются, бейдж без текста пропадает. */
+    @Test
+    void normalizesBadgeAttributes() {
+        assertEquals("{@badge Метка}", converter.toTextKeepingRolls("{@badge Метка | color:hotpink}"));
+        assertEquals("до  после", converter.toTextKeepingRolls("до {@badge | color:primary} после"));
+    }
+
+    /** Бейдж узлом JSON (фронтовый диалект) и вложенное оформление в тексте бейджа. */
+    @Test
+    void keepsBadgeNodesAndNestedFormatting() {
+        String frontend = """
+                {"type": "paragraph", "content": [
+                  {"type": "text", "text": "Статус "},
+                  {"type": "badge", "attrs": {"color": "success"}, "content": [{"type": "text", "text": "Безопасно"}]}
+                ]}
+                """;
+
+        assertEquals("Статус {@badge Безопасно | color:success}", converter.toTextKeepingRolls(frontend));
+        assertEquals("Статус Безопасно", converter.toText(frontend));
+        assertEquals(
+                "{@badge **Важно** | color:warning}",
+                converter.toTextKeepingRolls("{@badge {@b Важно} | color:warning}")
+        );
+    }
 }

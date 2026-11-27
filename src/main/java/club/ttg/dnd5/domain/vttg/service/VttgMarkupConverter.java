@@ -65,6 +65,19 @@ public class VttgMarkupConverter {
      * необязательны.
      */
     private static final Set<String> ROLL_MARKERS = Set.of("roll", "dice");
+    /**
+     * Бейдж — цветная плашка {@code {@badge текст|color:primary}}. В описаниях VTTG
+     * остаётся маркой в той же форме, что на сайте: рендерер описаний VTTG рисует её
+     * плашкой. Атрибуты — те же, что у {@code MarkupBadge} сайта.
+     */
+    private static final String BADGE_MARKER = "badge";
+    private static final Set<String> BADGE_COLORS = Set.of(
+            "primary", "secondary", "success", "info", "warning", "error", "neutral"
+    );
+    private static final Set<String> BADGE_VARIANTS = Set.of("solid", "outline", "soft", "subtle");
+    private static final Set<String> BADGE_SIZES = Set.of("sm", "md", "lg");
+    /** Символы, которые разорвали бы марку бейджа, если оказались в его тексте. */
+    private static final Pattern BADGE_FORBIDDEN = Pattern.compile("[{}|\\\\]");
 
     private final ObjectMapper objectMapper;
     @Value("${app.url:https://ttg.club}")
@@ -84,7 +97,9 @@ public class VttgMarkupConverter {
      * целыми, иначе {@code {@u ...}} или {@code {@spoiler ...}} потеряли бы вид.</p>
      *
      * <p>{@code VTTG_WITH_ROLLS} — как {@code VTTG}, но броски остаются кнопками: в том
-     * единственном виде {@code {@roll формула}}, который понимает рендерер описаний VTTG.</p>
+     * единственном виде {@code {@roll формула}}, который понимает рендерер описаний VTTG.
+     * Бейджи тоже остаются марками {@code {@badge текст|color:…}} — их рендерер описаний
+     * VTTG рисует плашками, как сайт.</p>
      */
     private enum Target {
         VTTG(true, false),
@@ -93,7 +108,10 @@ public class VttgMarkupConverter {
 
         /** Результат едет прямо в компендиум VTTG. */
         private final boolean vttg;
-        /** Броски остаются маркерами {@code {@roll формула}}, а не сворачиваются в метку. */
+        /**
+         * Результат показывает рендерер описаний VTTG: броски остаются маркерами
+         * {@code {@roll формула}}, бейджи — {@code {@badge ...}}, а не сворачиваются в метку.
+         */
         private final boolean keepRolls;
 
         Target(boolean vttg, boolean keepRolls) {
@@ -392,6 +410,15 @@ public class VttgMarkupConverter {
             return new Roll(content, attrs.path("notation").asText(""), attrs.path("text").asText(""))
                     .render(target);
         }
+        if (target.keepRolls && BADGE_MARKER.equals(type)) {
+            JsonNode attrs = node.path("attrs");
+            return new Badge(
+                    extractContent(node, target),
+                    attrs.path("color").asText(""),
+                    attrs.path("variant").asText(""),
+                    attrs.path("size").asText("")
+            ).render();
+        }
         Wrap wrap = formatting(type, target);
         return wrap == null ? null : wrap.around(extractContent(node, target));
     }
@@ -577,6 +604,9 @@ public class VttgMarkupConverter {
         if (target.vttg && ROLL_MARKERS.contains(tag)) {
             return Roll.parse(body).render(target);
         }
+        if (target.keepRolls && BADGE_MARKER.equals(tag)) {
+            return Badge.parse(body).render();
+        }
         Wrap wrap = formatting(tag, target);
         if (wrap != null) {
             return wrap.around(body == null ? "" : body.trim());
@@ -629,6 +659,59 @@ public class VttgMarkupConverter {
                 return "{@roll " + formula + "}";
             }
             return StringUtils.hasText(text) ? text.trim() : content.trim();
+        }
+    }
+
+    /**
+     * Бейдж сайта ({@code MarkupBadge}). Отдаётся маркой той же формы, что на сайте;
+     * неизвестные значения атрибутов пропускаются — VTTG подставит значение по
+     * умолчанию, как и сайт.
+     *
+     * @param text    текст на плашке
+     * @param color   цвет ({@code ""}, если не задан)
+     * @param variant вид ({@code ""}, если не задан)
+     * @param size    размер ({@code ""}, если не задан)
+     */
+    private record Badge(String text, String color, String variant, String size) {
+        /** Разбирает тело {@code текст|атрибут:значение|...}. */
+        private static Badge parse(String body) {
+            String[] parts = (body == null ? "" : body).split("\\|");
+            Map<String, String> attributes = new LinkedHashMap<>();
+            for (int index = 1; index < parts.length; index++) {
+                int colon = parts[index].indexOf(':');
+                if (colon > 0) {
+                    attributes.put(
+                            parts[index].substring(0, colon).trim().toLowerCase(Locale.ROOT),
+                            parts[index].substring(colon + 1).trim()
+                    );
+                }
+            }
+            return new Badge(
+                    parts.length == 0 ? "" : parts[0],
+                    attributes.getOrDefault("color", ""),
+                    attributes.getOrDefault("variant", ""),
+                    attributes.getOrDefault("size", "")
+            );
+        }
+
+        /** Марка {@code {@badge текст | color:…}}; бейдж без текста не показывается. */
+        private String render() {
+            String label = BADGE_FORBIDDEN.matcher(text).replaceAll("").trim();
+            if (label.isEmpty()) {
+                return "";
+            }
+            StringBuilder result = new StringBuilder("{@badge ").append(label);
+            appendAttribute(result, "color", color, BADGE_COLORS);
+            appendAttribute(result, "variant", variant, BADGE_VARIANTS);
+            appendAttribute(result, "size", size, BADGE_SIZES);
+            return result.append('}').toString();
+        }
+
+        private static void appendAttribute(StringBuilder result, String name, String value, Set<String> allowed) {
+            String normalized = value.trim().toLowerCase(Locale.ROOT);
+            if (allowed.contains(normalized)) {
+                result.append(" | ").append(name).append(':').append(normalized);
+            }
         }
     }
 
