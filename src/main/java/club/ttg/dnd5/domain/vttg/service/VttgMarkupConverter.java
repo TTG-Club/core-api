@@ -707,6 +707,14 @@ public class VttgMarkupConverter {
             return result.append('}').toString();
         }
 
+        /**
+         * Дописывает атрибут марки, если его значение из допустимых.
+         *
+         * @param result  собираемая марка
+         * @param name    имя атрибута
+         * @param value   значение с сайта ({@code ""}, если не задано)
+         * @param allowed допустимые значения
+         */
         private static void appendAttribute(StringBuilder result, String name, String value, Set<String> allowed) {
             String normalized = value.trim().toLowerCase(Locale.ROOT);
             if (allowed.contains(normalized)) {
